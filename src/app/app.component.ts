@@ -7,7 +7,7 @@ import {TerminalComponent} from "./terminal/terminal.component";
   standalone: true,
   imports: [CommonModule, TerminalComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrl: './app.component.scss'
 })
 export class AppComponent {
 }

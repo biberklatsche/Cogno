@@ -20,7 +20,8 @@
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
-            "assets": ["src/assets"]
+            "assets": ["src/assets"],
+            "styles": ["./node_modules/@xterm/xterm/css/xterm.css"]
           },
           "configurations": {
             "production": {
@@ -62,6 +63,15 @@
           "defaultConfiguration": "development"
         }
       }
+    }
+  },
+  "schematics": {
+    "@schematics/angular:component": {
+      "prefix": "app",
+      "style": "scss"
+    },
+    "@schematics/angular:directive": {
+      "prefix": "app"
     }
   }
 }
