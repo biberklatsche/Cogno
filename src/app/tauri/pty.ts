@@ -1,23 +1,18 @@
-import { Injectable } from "@angular/core";
 import {IPty as ITauriPty, spawn} from "tauri-pty";
 import {IDisposable} from "./event";
 
 export interface IPty {
-    init(): void;
     resize(width: number, height: number): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
 }
 
-@Injectable()
-export class PtyService implements IPty {
+export class Pty implements IPty {
 
-    private pty?: ITauriPty = undefined;
+    private pty: ITauriPty;
 
-    constructor() { }
-
-    init() {
-         this.pty = spawn("zsh", [/* args */], {
+    constructor() {
+        this.pty = spawn("zsh", [/* args */], {
             cols: 80,
             rows: 80,
         })

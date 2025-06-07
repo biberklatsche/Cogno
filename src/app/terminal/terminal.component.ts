@@ -1,27 +1,28 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import {PtyService} from "../tauri/pty.service";
+import {IPty, Pty} from "../tauri/pty";
 
 @Component({
   selector: 'app-terminal',
   templateUrl: './terminal.component.html',
   styleUrls: ['./terminal.component.scss'],
   standalone: true,
-  providers: [PtyService]
+  providers: [Pty]
 })
 export class TerminalComponent implements AfterViewInit, OnDestroy {
   @ViewChild('terminalContainer', { static: true }) terminalContainer!: ElementRef<HTMLDivElement>;
 
   private term!: Terminal;
+  private pty: IPty;
   private fitAddon = new FitAddon();
 
   // ID des Subskriptions-Events, um es bei ngOnDestroy abzubestellen
   private stdoutUnlisten: () => void;
   private exitUnlisten: () => void;
 
-  constructor(private pty: PtyService) {
-    pty.init();
+  constructor() {
+    this.pty = new Pty();
     // Platzhalter, wird in ngAfterViewInit überschrieben
     this.stdoutUnlisten = () => {};
     this.exitUnlisten = () => {};
