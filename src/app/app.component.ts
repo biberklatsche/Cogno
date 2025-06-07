@@ -6,7 +6,8 @@ import {TerminalComponent} from "./terminal/terminal.component";
     selector: 'app-root',
     imports: [CommonModule, TerminalComponent],
     templateUrl: './app.component.html',
-    styleUrl: './app.component.scss'
+    styleUrl: './app.component.scss',
+    standalone: true,
 })
 export class AppComponent {
 }

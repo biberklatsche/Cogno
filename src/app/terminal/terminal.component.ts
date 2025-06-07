@@ -1,13 +1,14 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import {spawn} from "tauri-pty";
+import {PtyService} from "../tauri/pty.service";
 
 @Component({
   selector: 'app-terminal',
   templateUrl: './terminal.component.html',
   styleUrls: ['./terminal.component.scss'],
-  standalone: true
+  standalone: true,
+  providers: [PtyService]
 })
 export class TerminalComponent implements AfterViewInit, OnDestroy {
   @ViewChild('terminalContainer', { static: true }) terminalContainer!: ElementRef<HTMLDivElement>;
@@ -19,7 +20,8 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
   private stdoutUnlisten: () => void;
   private exitUnlisten: () => void;
 
-  constructor() {
+  constructor(private pty: PtyService) {
+    pty.init();
     // Platzhalter, wird in ngAfterViewInit überschrieben
     this.stdoutUnlisten = () => {};
     this.exitUnlisten = () => {};
@@ -41,14 +43,9 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
     this.term.loadAddon(this.fitAddon);
     this.term.open(this.terminalContainer.nativeElement);
     this.fitAddon.fit();
-
-    const pty = spawn("zsh", [/* args */], {
-      cols: this.term.cols,
-      rows: this.term.rows,
-    })
-
-    pty.onData(data => this.term.write(data))
-    this.term.onData(data => pty.write(data))
+    this.pty.resize(this.term.cols, this.term.rows);
+    this.pty.onData(data => this.term.write(data))
+    this.term.onData(data => this.pty.write(data))
   }
 
   ngOnDestroy(): void {
