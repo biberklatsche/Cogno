@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import {IPty, Pty} from "../tauri/pty";
+import {IPty, Pty} from "../_tauri/pty";
 
 @Component({
   selector: 'app-terminal',

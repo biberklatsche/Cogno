@@ -9,6 +9,7 @@
     "core:default",
     "opener:default",
     "pty:default",
-    "fs:default"
+    "fs:default",
+    "log:default"
   ]
 }

@@ -20,6 +20,7 @@
     "@angular/platform-browser-dynamic": "^20.0.2",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-fs": "^2.3.0",
+    "@tauri-apps/plugin-log": "^2.4.0",
     "@tauri-apps/plugin-opener": "^2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
@@ -35,11 +36,15 @@
     "@tauri-apps/cli": "^2",
     "@types/jest": "^29.5.14",
     "jest": "^29.7.0",
+    "jest-canvas-mock": "^2.5.2",
     "jest-preset-angular": "^14.6.0",
     "typescript": "~5.8.3"
   },
   "jest": {
     "preset": "jest-preset-angular",
+    "setupFiles": [
+      "jest-canvas-mock"
+    ],
     "setupFilesAfterEnv": [
       "<rootDir>/setup-jest.ts"
     ],
@@ -50,7 +55,10 @@
       "node"
     ],
     "moduleNameMapper": {
-      "^tauri-pty$": "<rootDir>/src/__mocks__/tauri-pty.ts"
+      "^tauri-pty$": "<rootDir>/src/__mocks__/tauri-pty.ts",
+      "^@tauri-apps/plugin-fs$": "<rootDir>/src/__mocks__/plugin-fs.ts",
+      "^@tauri-apps/api/path$": "<rootDir>/src/__mocks__/api-path.ts",
+      "^@tauri-apps/plugin-log$": "<rootDir>/src/__mocks__/plugin-log.ts"
     },
     "testMatch": [
       "**/*.spec.ts"
