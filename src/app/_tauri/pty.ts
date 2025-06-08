@@ -5,6 +5,7 @@ export interface IPty {
     resize(width: number, height: number): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
+    onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable;
 }
 
 export class Pty implements IPty {
@@ -31,5 +32,9 @@ export class Pty implements IPty {
     write(data: string) {
         if(!this.pty) throw Error('Please initialize Pty before write to it.');
         return this.pty.write(data);
+    }
+
+    onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
+        return this.pty.onExit(listener);
     }
 }

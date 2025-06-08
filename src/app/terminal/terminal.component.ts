@@ -45,8 +45,9 @@ export class TerminalComponent implements AfterViewInit, OnDestroy {
     this.term.open(this.terminalContainer.nativeElement);
     this.fitAddon.fit();
     this.pty.resize(this.term.cols, this.term.rows);
-    this.pty.onData(data => this.term.write(data))
-    this.term.onData(data => this.pty.write(data))
+    this.pty.onData(data => this.term.write(data));
+    this.term.onData(data => this.pty.write(data));
+    this.pty.onExit(e => this.term.dispose());
   }
 
   ngOnDestroy(): void {
