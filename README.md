@@ -12,7 +12,7 @@ Cogno 2.0 retains the familiar features you love — like autocomplete, remote s
 
 This architectural shift brings major improvements:
 
-- 🪶 **Massively reduced bundle size** (from ~200 MB down to <20 MB)
+- 🪶 **Massively reduced bundle size** (from ~200 MB down to ~10 MB)
 - 🚀 **Startup time under 100 ms** on most machines
 - 🔒 **Stronger native security** (isolated system APIs, no Node.js context)
 - 🧩 **Tighter system integration** (notifications, tray, file access)
