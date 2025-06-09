@@ -1,15 +1,18 @@
-import {Fs} from "../_tauri/fs";
-import {Observable, Subject} from "rxjs";
-import {Logger} from "../_tauri/logger";
+import {Path} from "../_tauri/path";
 
 export namespace Environment {
 
-    let _settings: Subject<any> = new Subject();
+    let _cognoDir: string = '';
 
-    export let settings: Observable<any> = _settings.asObservable();
+    export function cognoDir(): string {
+        return _cognoDir;
+    }
 
-    export async function init(): Promise<void> {
-        Logger.info("Initializing environment...");
-        _settings.next({'environment': await Fs.configDir()});
+    export async function init() : Promise<void> {
+        await Promise.all([_loadConfigDir()])
+    }
+
+    async function _loadConfigDir()  {
+        _cognoDir = await Path.join(await Path.homeDir(), '.cogno');
     }
 }

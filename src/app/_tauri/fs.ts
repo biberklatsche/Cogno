@@ -1,9 +1,19 @@
-import { readTextFile } from '@tauri-apps/plugin-fs';
-import { appConfigDir } from '@tauri-apps/api/path';
+import {
+    readTextFile as tauriReadTextFile,
+    watch as tauriWatch,
+    exists as tauriExists, WatchEvent
+} from '@tauri-apps/plugin-fs';
+
+
+type UnwatchFn = () => void;
 
 export namespace Fs {
 
-    export const configDir = ():Promise<string> => appConfigDir();
-
-    export const readFile= (path: string): Promise<string> => readTextFile(path);
+    export const readTextFile= (path: string): Promise<string> => tauriReadTextFile(path);
+    export const watchChanges= (path: string, callback: () => void): Promise<UnwatchFn> => {
+        return tauriWatch(path, (event: WatchEvent) => {
+            callback();
+        })
+    };
+    export const exist= (path: string): Promise<boolean> => tauriExists(path);
 }

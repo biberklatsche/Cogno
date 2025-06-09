@@ -7,9 +7,18 @@
   ],
   "permissions": [
     "core:default",
+    "core:path:default",
     "opener:default",
     "pty:default",
     "fs:default",
-    "log:default"
+    "log:default",
+    {
+      "identifier": "fs:scope-home-recursive",
+      "allow": [
+        {
+          "path": "$HOME/.cogno/**"
+        }
+      ]
+    }
   ]
 }

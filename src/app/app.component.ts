@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import {TerminalComponent} from "./terminal/terminal.component";
 import {Environment} from "./environment/environment";
 import {Logger} from "./_tauri/logger";
+import {SettingsFileService} from "./settings/settings-file.service";
 
 @Component({
     selector: 'app-root',
@@ -12,7 +13,11 @@ import {Logger} from "./_tauri/logger";
     standalone: true,
 })
 export class AppComponent {
-    constructor() {
-        Environment.init().then().catch(e => Logger.error('Could not init App.' + e.message));
+    constructor(private settingsFileService: SettingsFileService) {
+        this.initAsync();
+    }
+
+    initAsync(): Promise<void> {
+        return this.settingsFileService.loadAndWatch();
     }
 }
