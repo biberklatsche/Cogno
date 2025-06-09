@@ -15,7 +15,6 @@ This architectural shift brings major improvements:
 - 🪶 **Massively reduced bundle size** (from ~200 MB down to ~10 MB)
 - 🚀 **Startup time under 100 ms** on most machines
 - 🔒 **Stronger native security** (isolated system APIs, no Node.js context)
-- 🧩 **Tighter system integration** (notifications, tray, file access)
 - 🛠️ **Written in Rust for speed & safety**
 
 > 👉 Looking for the original Electron-based version? Check out [Cogno 1.x on GitLab](https://gitlab.com/cogno-rockers/cogno)
