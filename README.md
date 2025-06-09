@@ -28,7 +28,7 @@ Electron has served us well, but Tauri offers a modern native-first approach:
 | Feature           | Electron           | Tauri (Cogno 2.0)      |
 |-------------------|--------------------|-------------------------|
 | Core language     | JavaScript + Node  | Rust + Web frontend     |
-| Bundle size       | ~200–250 MB        | ~5–10 MB                |
+| Bundle size       | ~200–250 MB        | ~10-20 MB                |
 | RAM usage         | High (~200–500 MB) | Very low (~50–80 MB)    |
 | App isolation     | Weak               | Strong + secure APIs    |
 | Dev experience    | Node ecosystem     | Web + Rust power        |
