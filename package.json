@@ -1,6 +1,8 @@
 {
   "name": "cogno",
   "version": "0.1.0",
+  "license": "FSL-1.1-MIT",
+  "licenseText": "SEE LICENSE IN LICENSE",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
