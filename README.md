@@ -8,7 +8,7 @@ Cogno 2.0 is the spiritual successor of [Cogno](https://gitlab.com/cogno-rockers
 
 ## ✨ What's new in Cogno 2.0?
 
-Cogno 2.0 retains the familiar features you love — like autocomplete, remote shell support, workspace awareness, and many more — but under the hood, it's powered by **Tauri** instead of Electron.
+Cogno 2.0 retains the familiar features you love — like autocomplete, remote shell support, workspaces, and many more — but under the hood, it's powered by **Tauri** instead of Electron.
 
 This architectural shift brings major improvements:
 
