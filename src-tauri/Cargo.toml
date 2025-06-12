@@ -3,9 +3,9 @@ name = "Cogno"
 version = "0.1.0"
 description = "A Terminal"
 authors = ["Lars Wolfram"]
-edition = "2021
+edition = "2021"
 license = "FSL-1.1-MIT"
-license-file = "../LICENSE""
+license-file = "../LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
