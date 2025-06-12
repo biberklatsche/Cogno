@@ -13,7 +13,8 @@ export class Pty implements IPty {
     private pty: ITauriPty;
 
     constructor() {
-        this.pty = spawn("C:\\arbeit\\Git\\bin\\sh.exe", [/* args */], {
+        //this.pty = spawn("C:\\arbeit\\Git\\bin\\sh.exe", [/* args */], {
+        this.pty = spawn("zsh", [/* args */], {
             cols: 80,
             rows: 80,
         })

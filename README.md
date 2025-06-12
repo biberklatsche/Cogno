@@ -42,6 +42,29 @@ Cogno 2.0 embraces this shift fully — no Node.js runtime, no Electron overhead
 **Work in progress**  
 This is an ongoing rebuild. Features are being reintroduced one by one in the Tauri-native architecture.
 
+### 🦀 Rust (Backend)
+- [x] Launch shell process
+- [x] Detect available fonts
+- [x] Detect available shells
+- [x] AES crypto module
+- [x] File operations
+- [ ] Autoupdate process
+- [ ] Save window settings
+
+### 🌐 Frontend (Tauri + Angular)
+- [x] Load settings
+- [ ] Edit settings
+- [ ] Save settings
+- [ ] Watch settings file
+- [x] Integrate xterm.js
+- [ ] Custom window styling
+- [ ] Grid management
+- [ ] Tabs management
+- [ ] Load workspaces
+- [ ] Save workspaces
+- [ ] Edit workspaces
+- [ ] Simple DB implementation
+- [ ] Autoupdate process
 ---
 
 ## 🔗 Original Cogno
