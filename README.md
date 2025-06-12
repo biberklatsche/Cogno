@@ -51,7 +51,7 @@ This is an ongoing rebuild. Features are being reintroduced one by one in the Ta
 - [ ] Autoupdate process
 - [ ] Save window settings
 
-### 🌐 Frontend (Tauri + Angular)
+### 🌐 Frontend
 - [x] Load settings
 - [ ] Edit settings
 - [ ] Save settings
