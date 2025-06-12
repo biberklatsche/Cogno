@@ -27,4 +27,16 @@ serde_json = "1"
 tauri-plugin-pty = "0.1.0"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
+which = "5"
+font-kit = "0.11"
+rand = "0.8"
+hex = "0.4"
+ring = "0.16.20"
+aes = "0.7"
+cipher = "0.3"
+block-modes = "0.8.1"
+block-padding = "0.2"
 
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+winapi = { version = "0.3", features = ["winuser"] }

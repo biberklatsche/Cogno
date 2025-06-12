@@ -1,11 +1,12 @@
 import {Path} from "../_tauri/path";
+import { isDevMode } from '@angular/core';
 
 export namespace Environment {
 
-    let _cognoDir: string = '';
+    let _configDir: string = '';
 
-    export function cognoDir(): string {
-        return _cognoDir;
+    export function configDir(): string {
+        return _configDir;
     }
 
     export async function init() : Promise<void> {
@@ -13,6 +14,7 @@ export namespace Environment {
     }
 
     async function _loadConfigDir()  {
-        _cognoDir = await Path.join(await Path.homeDir(), '.cogno');
+        const configDir = isDevMode() ? '.cogno-dev' : '.cogno';
+        _configDir = await Path.join(await Path.homeDir(), configDir);
     }
 }

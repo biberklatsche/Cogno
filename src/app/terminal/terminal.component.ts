@@ -6,7 +6,7 @@ import {IPty, Pty} from "../_tauri/pty";
 @Component({
   selector: 'app-terminal',
   templateUrl: './terminal.component.html',
-  styleUrls: ['./terminal.component.scss'],
+  styleUrls: ['./terminal.component.css'],
   standalone: true,
   providers: [Pty]
 })
