@@ -1,5 +1,6 @@
-import {Path} from "../_tauri/path";
+import {Path} from '../_tauri/path';
 import { isDevMode } from '@angular/core';
+import {OS} from '../_tauri/os';
 
 export namespace Environment {
 
@@ -9,9 +10,15 @@ export namespace Environment {
         return _configDir;
     }
 
+    export function isMacOs(): boolean {
+        return OS.platform() === 'macos';
+    }
+
     export async function init() : Promise<void> {
         await Promise.all([_loadConfigDir()])
     }
+
+
 
     async function _loadConfigDir()  {
         const configDir = isDevMode() ? '.cogno-dev' : '.cogno';

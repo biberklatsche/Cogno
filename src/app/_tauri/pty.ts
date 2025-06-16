@@ -1,5 +1,6 @@
 import {IPty as ITauriPty, spawn} from "tauri-pty";
 import {IDisposable} from "./event";
+import {OS} from './os';
 
 export interface IPty {
     resize(width: number, height: number): void;
@@ -13,8 +14,7 @@ export class Pty implements IPty {
     private pty: ITauriPty;
 
     constructor() {
-        //this.pty = spawn("C:\\arbeit\\Git\\bin\\sh.exe", [/* args */], {
-        this.pty = spawn("zsh", [/* args */], {
+        this.pty = spawn(OS.platform() === 'macos' ? "zsh" : "C:\\arbeit\\Git\\bin\\sh.exe", [/* args */], {
             cols: 80,
             rows: 80,
         })

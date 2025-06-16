@@ -18,7 +18,8 @@ pub fn list_fonts() -> Vec<FontInfo> {
         for handle in handles {
             if let Ok(font) = handle.load() {
                 let name = font.family_name();
-                if seen.insert(name.clone()) { // nur wenn neu
+                if seen.insert(name.clone()) {
+                    // nur wenn neu
                     let is_monospace = font.is_monospace();
                     fonts.push(FontInfo { name, is_monospace });
                 }

@@ -43,7 +43,8 @@ pub fn list_shells() -> Vec<ShellInfo> {
 
         for key_path in git_paths {
             if let Ok(key) = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(key_path) {
-                let install_path_result: Result<String, std::io::Error> = key.get_value("InstallPath");
+                let install_path_result: Result<String, std::io::Error> =
+                    key.get_value("InstallPath");
                 if let Ok(install_path) = install_path_result {
                     let bash_path = format!("{}\\bin\\bash.exe", install_path);
                     if Path::new(&bash_path).exists() {

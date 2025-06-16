@@ -19,6 +19,8 @@
           "path": "$HOME/.cogno/**"
         }
       ]
-    }
+    },
+    "os:default",
+    "os:default"
   ]
 }

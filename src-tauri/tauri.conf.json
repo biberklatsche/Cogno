@@ -10,13 +10,9 @@
     "frontendDist": "../dist/cogno/browser"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Cogno",
-        "width": 800,
-        "height": 600
-      }
-    ],
+    "windows": [{
+      "label": "main"
+    }],
     "security": {
       "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'"
     }
@@ -34,6 +30,9 @@
       "icons/icon.png",
       "icons/icon.ico",
       "icons/icon.icns"
+    ],
+    "resources": [
+      "../src/assets/**/*"
     ]
   }
 }

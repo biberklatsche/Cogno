@@ -14,8 +14,8 @@ pub enum KeyboardLayoutInfo {
 
 #[derive(Serialize)]
 pub struct WindowsKeyboardLayoutInfo {
-    pub id: String,    // KLID wie "00000407"
-    pub name: String,  // Userfreundlicher Name (hier KLID als Fallback)
+    pub id: String,   // KLID wie "00000407"
+    pub name: String, // Userfreundlicher Name (hier KLID als Fallback)
 }
 
 #[derive(Serialize)]
@@ -50,7 +50,9 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
             return None;
         }
         let len = buf.iter().position(|&c| c == 0).unwrap_or(KL_NAMELENGTH);
-        let klid = OsString::from_wide(&buf[..len]).to_string_lossy().to_string();
+        let klid = OsString::from_wide(&buf[..len])
+            .to_string_lossy()
+            .to_string();
         // Fallback: KLID als Name
         return Some(KeyboardLayoutInfo::Windows(WindowsKeyboardLayoutInfo {
             id: klid.clone(),

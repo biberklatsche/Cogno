@@ -1,3 +1,19 @@
+@import '../fonts/roboto/roboto.css';
+@import '../fonts/comfortaa/comfortaa.css';
+@import './animate.min.css';
+@import './settings.scss';
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: var(--appFontFamily), 'Roboto', sans-serif;
+  font-size: var(--appFontSize);
+  color: var(--foreground-color);
+  background-color: var(--background-color);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
 h1 {
   background-color: red;
 }

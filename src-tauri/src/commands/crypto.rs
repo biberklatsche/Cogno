@@ -1,12 +1,12 @@
 // src/commands/crypto.rs
 
+use aes::Aes256;
+use block_modes::block_padding::Pkcs7;
+use block_modes::{BlockMode, Cbc};
+use hex::{decode, encode};
 use rand::{rngs::OsRng, RngCore};
 use ring::pbkdf2::{derive, PBKDF2_HMAC_SHA256};
 use std::num::NonZeroU32;
-use aes::Aes256;
-use block_modes::{BlockMode, Cbc};
-use block_modes::block_padding::Pkcs7;
-use hex::{encode, decode};
 
 // Konstanten
 const SALT_LEN: usize = 16;
@@ -30,9 +30,7 @@ fn derive_key(password: &str, salt: &[u8]) -> [u8; KEY_LEN] {
 /// Verschlüsselt Text mit AES-256-CBC und gibt salt:iv:ciphertext im Hex-Format zurück
 #[tauri::command]
 pub fn encrypt(text: Option<String>, password: Option<String>) -> Result<String, String> {
-    let plaintext = text
-        .filter(|t| !t.is_empty())
-        .ok_or("No text provided")?;
+    let plaintext = text.filter(|t| !t.is_empty()).ok_or("No text provided")?;
 
     let password = password
         .filter(|p| !p.is_empty())
@@ -46,12 +44,17 @@ pub fn encrypt(text: Option<String>, password: Option<String>) -> Result<String,
 
     let key = derive_key(&password, &salt);
 
-    let cipher = Cbc::<Aes256, Pkcs7>::new_from_slices(&key, &iv)
-        .map_err(|_| "Failed to create cipher")?;
+    let cipher =
+        Cbc::<Aes256, Pkcs7>::new_from_slices(&key, &iv).map_err(|_| "Failed to create cipher")?;
 
     let ciphertext = cipher.encrypt_vec(plaintext.as_bytes());
 
-    Ok(format!("{}:{}:{}", encode(salt), encode(iv), encode(ciphertext)))
+    Ok(format!(
+        "{}:{}:{}",
+        encode(salt),
+        encode(iv),
+        encode(ciphertext)
+    ))
 }
 
 #[tauri::command]
@@ -74,10 +77,11 @@ pub fn decrypt(encrypted_text: Option<String>, password: Option<String>) -> Resu
     let ciphertext = decode(parts[2]).map_err(|_| "Failed to decode ciphertext")?;
 
     let key = derive_key(&password, &salt);
-    let cipher = Cbc::<Aes256, Pkcs7>::new_from_slices(&key, &iv)
-        .map_err(|_| "Cipher creation failed")?;
+    let cipher =
+        Cbc::<Aes256, Pkcs7>::new_from_slices(&key, &iv).map_err(|_| "Cipher creation failed")?;
 
-    let plaintext = cipher.decrypt_vec(&ciphertext)
+    let plaintext = cipher
+        .decrypt_vec(&ciphertext)
         .map_err(|_| "Decryption failed")?;
 
     String::from_utf8(plaintext).map_err(|_| "Invalid UTF-8".into())

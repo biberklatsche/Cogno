@@ -3,13 +3,22 @@ import {Fs} from "../_tauri/fs";
 import {Path} from "../_tauri/path";
 import {Environment} from '../environment/environment';
 import {invoke} from '@tauri-apps/api/core';
+import {Settings} from './models/settings';
+import {DEFAULT_SETTINGS} from './models/default-settings';
+import {Observable, Subject} from 'rxjs';
 
 const configFileName = 'settings.json';
 
 @Injectable({
   providedIn: 'root'
 })
-export class SettingsFileService {
+export class SettingsService {
+
+  private _settings: Subject<Settings> = new Subject();
+
+  get settings(): Observable<Settings> {
+    return this._settings.asObservable();
+  }
 
   constructor() { }
 
@@ -38,10 +47,17 @@ export class SettingsFileService {
 
 
     if(await Fs.exist(path)) {
-      const configAsString = await Fs.readTextFile(path);
-      console.log('############', path, configAsString);
+      const settingsAsString = await Fs.readTextFile(path);
+      const settings: Settings = JSON.parse(settingsAsString);
+      if(!settings.general) settings.general = DEFAULT_SETTINGS.general;
+      if(!settings.shortcuts) settings.shortcuts = DEFAULT_SETTINGS.shortcuts;
+      if(!settings.themes || settings.themes.length === 0) settings.themes = DEFAULT_SETTINGS.themes;
+      if(!settings.shells || settings.shells.length === 0) settings.shells = DEFAULT_SETTINGS.shells;
+      if(!settings.remoteShells || settings.remoteShells.length === 0) settings.remoteShells = DEFAULT_SETTINGS.remoteShells;
+      if(!settings.autocomplete ) settings.autocomplete = DEFAULT_SETTINGS.autocomplete;
+      this._settings.next(settings);
     } else {
-      console.log('############ could not load', path);
+      this._settings.next(DEFAULT_SETTINGS);
     }
   }
 }
