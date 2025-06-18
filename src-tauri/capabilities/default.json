@@ -17,10 +17,14 @@
       "allow": [
         {
           "path": "$HOME/.cogno/**"
+        },
+        {
+          "path": "$HOME/.cogno-dev/**"
         }
       ]
     },
     "os:default",
-    "os:default"
+    "core:window:default",
+    "core:window:allow-start-dragging"
   ]
 }

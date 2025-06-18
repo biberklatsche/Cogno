@@ -5,7 +5,6 @@ description = "A Terminal"
 authors = ["Lars Wolfram"]
 edition = "2021"
 license = "FSL-1.1-MIT"
-license-file = "../LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,6 +27,7 @@ tauri-plugin-pty = "0.1.0"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
 tauri-plugin-os = "2"
+tauri-plugin-window-state = "2"
 which = "5"
 font-kit = "0.11"
 rand = "0.8"
@@ -41,3 +41,7 @@ block-padding = "0.2"
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
 winapi = { version = "0.3", features = ["winuser"] }
+
+[target."cfg(target_os = \"macos\")".dependencies]
+objc2 = "0.5.2"
+raw-window-handle = "0.6.2"
