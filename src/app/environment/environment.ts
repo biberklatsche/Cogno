@@ -23,5 +23,6 @@ export namespace Environment {
     async function _loadConfigDir()  {
         const configDir = isDevMode() ? '.cogno-dev' : '.cogno';
         _configDir = await Path.join(await Path.homeDir(), configDir);
+        console.log(`Loaded ${_configDir}`);
     }
 }

@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import {Fs} from "../_tauri/fs";
 import {Path} from "../_tauri/path";
 import {Environment} from '../environment/environment';
-import {invoke} from '@tauri-apps/api/core';
 import {Settings} from './models/settings';
 import {DEFAULT_SETTINGS} from './models/default-settings';
 import {Observable, Subject} from 'rxjs';
@@ -44,7 +43,7 @@ export class SettingsService {
       }).catch(error => console.log('###############decrypteer', error));
     }).catch(error => console.log('###############encryptseer', error));*/
 
-    if(await Fs.exist(path)) {
+    if(await Fs.exists(path)) {
       console.log('exists theme', path);
       const settingsAsString = await Fs.readTextFile(path);
       console.log('load theme', settingsAsString);
@@ -58,26 +57,8 @@ export class SettingsService {
       if(!settings.autocomplete ) settings.autocomplete = DEFAULT_SETTINGS.autocomplete;
       this._settings.next(settings);
       const theme = settings.themes.find(t => t.isDefault) || settings.themes[0];
-      console.log(theme);
-      const rgb = this.hexToRgb(theme.colors.background);
-      console.log(rgb);
-      await invoke('set_window_color', {
-        red: rgb?.r,
-        green: rgb?.g,
-        blue: rgb?.b,
-        alpha: 1.0
-      });
     } else {
       this._settings.next(DEFAULT_SETTINGS);
     }
-  }
-
-  hexToRgb(hex: string) {
-    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : undefined;
   }
 }

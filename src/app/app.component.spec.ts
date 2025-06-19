@@ -1,8 +1,7 @@
 import {AppComponent} from "./app.component";
-import {readTextFile} from "../__mocks__/plugin-fs";
-import {appConfigDir} from "../__mocks__/api-path";
+import {exists, readTextFile} from "../__mocks__/plugin-fs";
 import {SettingsService} from './settings/settings.service';
-import {platform} from '../__mocks__/plugin-os';
+import {DEFAULT_SETTINGS} from "./settings/models/default-settings";
 
 describe('AppComponent', () => {
     let component: AppComponent;
@@ -10,16 +9,14 @@ describe('AppComponent', () => {
 
     beforeEach(() => {
         readTextFile.mockReset();
-        appConfigDir.mockReset();
-        platform.mockReset();
+        exists.mockReset();
         settingsService = new SettingsService();
 
     })
 
-    test('should load settings', (done) => {
-        readTextFile.mockResolvedValueOnce('mocked content');
-        appConfigDir.mockResolvedValueOnce('mocked content');
-        platform.mockResolvedValueOnce('linux');
+    test('app should load settings on init', (done) => {
+        readTextFile.mockResolvedValue(JSON.stringify(DEFAULT_SETTINGS));
+        exists.mockResolvedValue(true)
         settingsService.settings.subscribe(settings => {
             expect(settings).toBeTruthy();
             done();

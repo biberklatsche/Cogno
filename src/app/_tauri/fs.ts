@@ -15,5 +15,5 @@ export namespace Fs {
             callback();
         })
     };
-    export const exist= (path: string): Promise<boolean> => tauriExists(path);
+    export const exists= (path: string): Promise<boolean> => tauriExists(path);
 }

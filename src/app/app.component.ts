@@ -19,7 +19,8 @@ export class AppComponent {
         this.initAsync().then();
     }
 
-    initAsync(): Promise<void> {
-        return this.settingsService.loadAndWatch();
+    async initAsync(): Promise<void> {
+        await Environment.init();
+        await this.settingsService.loadAndWatch();
     }
 }
