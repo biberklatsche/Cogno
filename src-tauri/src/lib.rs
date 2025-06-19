@@ -12,7 +12,6 @@ use commands::crypto::encrypt;
 use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
 use commands::shells::list_shells;
-use commands::window::set_window_color;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,8 +27,7 @@ pub fn run() {
                     list_shells,
                     get_keyboard_layout,
                     decrypt,
-                    encrypt,
-                    set_window_color
+                    encrypt
                 ])
         .setup(|app| {
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
@@ -38,18 +36,17 @@ pub fn run() {
                            .visible(false);
 
            #[cfg(target_os = "macos")]
-           let win_builder = webview_window_builder.title_bar_style(tauri::TitleBarStyle::Transparent);
+           let win_builder = webview_window_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
 
-           #[cfg(not(target_os = "macos"))]
-           let win_builder = webview_window_builder.decorations(false);
+           #[cfg(not(target_os = "macos"))]{
+               // let win_builder = webview_window_builder.decorations(false);
+               webview_window_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+           }
+
 
            let window = win_builder.build().unwrap();
-            window.show().unwrap();
+           window.show().unwrap();
 
-           #[cfg(target_os = "macos")]{
-               let app_handle = app.handle();
-               set_window_color(10.0, 10.0, 10.0, 1.0, app_handle.clone());
-           }
            Ok(())
         })
         .run(tauri::generate_context!())
