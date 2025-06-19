@@ -40,17 +40,17 @@ pub fn run() {
             //window
             //    .set_decorations(true)
             //    .expect("failed to disable decorations");
-           let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+           let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                            .title("")
                            .inner_size(800.0, 600.0);
 
            #[cfg(target_os = "macos")]
-           let win_builder = win_builder.title_bar_style(tauri::TitleBarStyle::Transparent);
+           let win_builder = webview_window_builder.title_bar_style(tauri::TitleBarStyle::Transparent);
 
            #[cfg(target_os = "windows")]
-           let _win_builder = win_builder.decorations(true);
+           let win_builder = webview_window_builder.decorations(false);
 
-           let _window = win_builder.build().unwrap();
+           let window = win_builder.build().unwrap();
 
            #[cfg(target_os = "macos")]{
                let app_handle = app.handle();
