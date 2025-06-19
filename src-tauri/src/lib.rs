@@ -32,32 +32,24 @@ pub fn run() {
                     set_window_color
                 ])
         .setup(|app| {
-            // "main" is the label of the window in tauri.conf.json
-            // let window = app
-            //    .get_webview_window("main")
-            //    .expect("failed to get main window");
-            // window config
-            //window
-            //    .set_decorations(true)
-            //    .expect("failed to disable decorations");
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                            .title("")
-                           .inner_size(800.0, 600.0);
+                           .inner_size(800.0, 600.0)
+                           .visible(false);
 
            #[cfg(target_os = "macos")]
            let win_builder = webview_window_builder.title_bar_style(tauri::TitleBarStyle::Transparent);
 
-           #[cfg(target_os = "windows")]
+           #[cfg(not(target_os = "macos"))]
            let win_builder = webview_window_builder.decorations(false);
 
            let window = win_builder.build().unwrap();
+            window.show().unwrap();
 
            #[cfg(target_os = "macos")]{
                let app_handle = app.handle();
                set_window_color(10.0, 10.0, 10.0, 1.0, app_handle.clone());
            }
-
-
            Ok(())
         })
         .run(tauri::generate_context!())

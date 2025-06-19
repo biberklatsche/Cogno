@@ -6,8 +6,6 @@ import {Logger} from "./_tauri/logger";
 import {SettingsService} from "./settings/settings.service";
 import {invoke} from '@tauri-apps/api/core';
 
-type FontInfo = { name: string; is_monospace: boolean };
-
 @Component({
     selector: 'app-root',
     imports: [CommonModule, TerminalComponent],
@@ -17,11 +15,11 @@ type FontInfo = { name: string; is_monospace: boolean };
 })
 export class AppComponent {
 
-    constructor(private settingsFileService: SettingsService) {
-        this.initAsync();
+    constructor(private settingsService: SettingsService) {
+        this.initAsync().then();
     }
 
     initAsync(): Promise<void> {
-        return this.settingsFileService.loadAndWatch();
+        return this.settingsService.loadAndWatch();
     }
 }

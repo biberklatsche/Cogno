@@ -62,7 +62,8 @@
       "^tauri-pty$": "<rootDir>/src/__mocks__/tauri-pty.ts",
       "^@tauri-apps/plugin-fs$": "<rootDir>/src/__mocks__/plugin-fs.ts",
       "^@tauri-apps/api/path$": "<rootDir>/src/__mocks__/api-path.ts",
-      "^@tauri-apps/plugin-log$": "<rootDir>/src/__mocks__/plugin-log.ts"
+      "^@tauri-apps/plugin-log$": "<rootDir>/src/__mocks__/plugin-log.ts",
+      "^@tauri-apps/plugin-os$": "<rootDir>/src/__mocks__/plugin-os.ts"
     },
     "testMatch": [
       "**/*.spec.ts"
