@@ -45,7 +45,6 @@ export type Theme = HasName & {
   image?: string;
   imageOpacity?: number;
   imageBlur?: number;
-  isImageAvailable?: boolean;
   padding: string;
   paddingAsArray: number[];
   prompt: string;

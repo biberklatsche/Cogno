@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import {Fs} from "../_tauri/fs";
 import {Path} from "../_tauri/path";
 import {Environment} from '../environment/environment';
-import {Settings} from './models/settings';
+import {Settings, Theme} from './models/settings';
 import {DEFAULT_SETTINGS} from './models/default-settings';
-import {Observable, Subject} from 'rxjs';
+import {BehaviorSubject, filter, map, Observable, Subject} from 'rxjs';
 
 const configFileName = 'settings.json';
 
@@ -13,10 +13,17 @@ const configFileName = 'settings.json';
 })
 export class SettingsService {
 
-  private _settings: Subject<Settings> = new Subject();
+  private _settings: BehaviorSubject<Settings | undefined> = new BehaviorSubject<Settings | undefined>(undefined);
 
-  get settings(): Observable<Settings> {
-    return this._settings.asObservable();
+  get settings$(): Observable<Settings> {
+    return this._settings.pipe(filter(s => !!s));
+  }
+
+  get activeTheme$(): Observable<Theme> {
+    return this.settings$.pipe(map(s => {
+      const defaultTheme = s.themes.find(s => s.isDefault);
+      return defaultTheme || DEFAULT_SETTINGS.themes[0];
+    }));
   }
 
   constructor() { }

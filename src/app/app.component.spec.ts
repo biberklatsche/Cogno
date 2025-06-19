@@ -17,7 +17,7 @@ describe('AppComponent', () => {
     test('app should load settings on init', (done) => {
         readTextFile.mockResolvedValue(JSON.stringify(DEFAULT_SETTINGS));
         exists.mockResolvedValue(true)
-        settingsService.settings.subscribe(settings => {
+        settingsService.settings$.subscribe(settings => {
             expect(settings).toBeTruthy();
             done();
         })

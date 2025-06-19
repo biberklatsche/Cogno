@@ -18,8 +18,6 @@ export namespace Environment {
         await Promise.all([_loadConfigDir()])
     }
 
-
-
     async function _loadConfigDir()  {
         const configDir = isDevMode() ? '.cogno-dev' : '.cogno';
         _configDir = await Path.join(await Path.homeDir(), configDir);
