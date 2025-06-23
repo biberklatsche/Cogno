@@ -4,9 +4,7 @@ import {Path} from "../_tauri/path";
 import {Environment} from '../environment/environment';
 import {Settings, Theme} from './models/settings';
 import {DEFAULT_SETTINGS} from './models/default-settings';
-import {BehaviorSubject, filter, map, Observable, Subject} from 'rxjs';
-
-const configFileName = 'settings.json';
+import {BehaviorSubject, filter, map, Observable} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +27,7 @@ export class SettingsService {
   constructor() { }
 
   public async loadAndWatch(): Promise<void> {
-    const path = await Path.join(Environment.configDir(), configFileName);
+    const path = Environment.settingsFilePath();
 
     /*invoke("list_fonts").then(fonts => {
       console.log('###############Fonts', fonts);

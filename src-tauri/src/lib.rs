@@ -22,6 +22,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_pty::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_sql::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
                     list_fonts,
                     list_shells,
@@ -38,11 +39,9 @@ pub fn run() {
            #[cfg(target_os = "macos")]
            let win_builder = webview_window_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
 
-           #[cfg(not(target_os = "macos"))]{
-               // let win_builder = webview_window_builder.decorations(false);
-               webview_window_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
-           }
 
+           #[cfg(not(target_os = "macos"))]
+           let win_builder = webview_window_builder.decorations(false);
 
            let window = win_builder.build().unwrap();
            window.show().unwrap();

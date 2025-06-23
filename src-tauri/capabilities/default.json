@@ -25,6 +25,8 @@
     },
     "os:default",
     "core:window:default",
-    "core:window:allow-start-dragging"
+    "core:window:allow-start-dragging",
+    "sql:default",
+    "sql:allow-execute"
   ]
 }

@@ -1,14 +1,13 @@
-import {Component, OnDestroy, OnInit, signal, Signal, ViewEncapsulation} from '@angular/core';
+import {Component, OnDestroy, signal, ViewEncapsulation} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {TerminalComponent} from "./terminal/terminal.component";
 import {Environment} from "./environment/environment";
-import {Logger} from "./_tauri/logger";
 import {SettingsService} from "./settings/settings.service";
-import {invoke} from '@tauri-apps/api/core';
 import {Theme} from "./settings/models/settings";
 import { Color } from './common/color';
 import { SafeStyle } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
+import {Database} from './_tauri/db';
 
 @Component({
     selector: 'app-root',
@@ -26,6 +25,7 @@ export class AppComponent implements OnDestroy {
 
     constructor(private settingsService: SettingsService) {
         this.initAsync().then();
+
         this.subscriptions.push(this.settingsService.activeTheme$.subscribe(theme => this.setStyle(theme)));
     }
 
@@ -36,6 +36,17 @@ export class AppComponent implements OnDestroy {
     async initAsync(): Promise<void> {
         await Environment.init();
         await this.settingsService.loadAndWatch();
+        const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
+        await db.execute(`
+    CREATE TABLE IF NOT EXISTS todos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL
+    );
+  `);
+        await db.execute("INSERT into todos (title) VALUES ($1)",
+          ["Das hab ich geschafft"]);
+        const todos = await db.query<{ id: number; title: string }>('SELECT * FROM todos');
+        console.log(todos);
     }
 
     private setStyle(theme: Theme): void {
