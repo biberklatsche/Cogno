@@ -45,7 +45,6 @@ pub fn run() {
 
            let window = win_builder.build().unwrap();
            window.show().unwrap();
-
            Ok(())
         })
         .run(tauri::generate_context!())
