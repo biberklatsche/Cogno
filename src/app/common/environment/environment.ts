@@ -1,6 +1,6 @@
-import {Path} from '../_tauri/path';
+import {Path} from '../../_tauri/path';
 import { isDevMode } from '@angular/core';
-import {OS} from '../_tauri/os';
+import {OS} from '../../_tauri/os';
 
 export namespace Environment {
 

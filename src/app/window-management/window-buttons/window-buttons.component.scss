@@ -1,0 +1,138 @@
+:host{
+ height: 0;
+}
+
+#window-buttons {
+  display: flex;
+  height: 29px;
+  flex-direction: row;
+  justify-content: flex-end;
+  transition: opacity 0.5s ease-in-out;
+  -webkit-transition: opacity 0.5s ease-in-out;
+  background-color: var(--background-color-20l);
+  clip-path: inset(0px 0px -15px 0px);
+  -webkit-app-region: no-drag;
+
+  app-icon {
+    &::ng-deep svg {
+      fill: var(--foreground-color-20d);
+    }
+  }
+
+  .btn-flat {
+    border: none;
+    background-color: #00000000;
+    color: var(--foreground-color);
+    outline:none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    app-icon {
+      height: 14px;
+      width: 24px;
+      ::ng-deep svg {
+        height: 14px;
+        width: 24px;
+      }
+      z-index: 1;
+    }
+
+    &:hover{
+      background-color: var(--background-color-40l) !important;
+    }
+    &.close:hover {
+      background-color: var(--highlight-color) !important;
+      app-icon ::ng-deep svg {
+        fill: var(--background-color);
+      }
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      line-height: inherit;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      padding: 0;
+      z-index: 0;
+      color: var(--background-color);
+    }
+  }
+
+  &.linux {
+    .btn-flat {
+      border-radius: 50%;
+      margin: 5px 0  0 10px;
+      height: 22px;
+      width: 22px;
+      &:last-child {
+        margin-right: 5px;
+      }
+      app-icon {
+        height: 14px;
+        width: 14px;
+        ::ng-deep svg {
+          height: 14px;
+          width: 14px;
+        }
+      }
+    }
+  }
+
+  &.win32 {
+    .btn-flat {
+      border-radius: 0;
+      app-icon {
+        height: 14px;
+        width: 24px;
+        ::ng-deep svg {
+          height: 14px;
+          width: 24px;
+        }
+      }
+    }
+  }
+
+
+  #workspace-button {
+    margin-right: 2px;
+  }
+
+  #minimize-button {
+    margin-left: 16px;
+  }
+
+  #update-button {
+    font-size: 1rem;
+    background-color: var(--highlight-color);
+    color: var(--background-color);
+    margin: 2px;
+    display: flex;
+    align-items: center;
+    /*cursor: pointer;*/
+    white-space: nowrap;
+    border: none;
+    border-radius: 3px;
+    padding: 4px;
+
+    width: 26px;
+    overflow: hidden;
+
+    app-icon {
+      height: 17px;
+      width: 17px;
+      &::ng-deep svg {
+        height: 17px;
+        width: 17px;
+        fill: var(--background-color);
+      }
+    }
+
+    &:hover {
+      background-color: var(--highlight-color-20d);
+    }
+  }
+}

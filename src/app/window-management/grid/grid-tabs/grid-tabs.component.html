@@ -1,0 +1,67 @@
+<div class="content-container">
+  <div class="header-container">
+    <div class="space-top"></div>
+    <div class="header">
+      <div class="mac-title-bar" *ngIf="os === 'darwin' && (pane | async).isFirstPane && !(isFullScreen | async)"></div>
+      <ul class="tabs">
+        <li class="space-left"></li>
+        <li *ngFor="let tab of (pane | async).tabs || []; trackBy:trackByFn; let last = last; let first = first; let index = index;" class="tab" id="{{'tab' + tab?.id}}"
+            [ngClass]="{'active': (activeTabId | async) === tab?.id, 'selected': tab.isSelected, 'last': last, 'first': first}"
+            draggable="true"
+            (dragstart)="dragStart($event, tab)"
+            (dragend)="dragEnd($event)"
+            (dragenter)="dragEnter($event)"
+            (dragleave)="dragLeaf($event)"
+            (drop)="drop($event, tab)"
+            (dragover)="dragOver($event)"
+            [@addRemove]
+            (click)="focusTab(tab);"
+            (dblclick)="copyTab(tab);"
+            (mouseup)="closeTabMiddle($event, tab);"
+            (contextmenu)="showContextMenu($event, tab)"
+            [attr.data-keytip]="index + 1"
+            title="{{tab.path}} {{tab.name}}">
+          <app-icon  class="text-icon no-pointer-event" [name]="tab.icon"></app-icon>
+          <span class="name no-pointer-event reverse-ellipses">{{tab.name}} <small *ngIf="tab.subName && !tab.isAppRunning">[{{tab.subName}}]</small></span>
+          <div class="item-space no-pointer-event"></div>
+          <app-icon  class="text-icon no-pointer-event" *ngIf="tab.isCommandRunning && !tab.isAppRunning" [name]="'mdiSpeedometer'"></app-icon>
+          <button class="close" (click)="closeTab($event, tab);">
+            <app-icon  [name]="'mdiClose'"></app-icon>
+          </button>
+        </li>
+        <li class="addButton">
+          <button class="btn add" (click)="addTab()" data-keytip="A">
+            <app-icon color="var(--foreground-color-20d)" name="mdiPlus"></app-icon>
+          </button>
+        </li>
+        <li class="titleBarMenuButton">
+          <button class="btn add" (click)="toggleTitleBarMenu($event)" data-keytip="M" data-keytip-parent>
+            <app-icon color="var(--foreground-color-20d)" name="mdiChevronDown"></app-icon>
+          </button>
+        </li>
+      </ul>
+      <div class="space"
+           (drop)="drop($event, null)"
+           (dragover)="dragOver($event)"
+           (dragenter)="dragEnter($event)"
+           (dragleave)="dragLeaf($event)"
+      >
+        <div *ngIf="!(isDragging | async)" class="drag-window"></div>
+        <div *ngIf="isDragging | async" class="drop-zone"></div>
+        <app-window-buttons *ngIf="(pane | async).isTopRightPane"></app-window-buttons>
+      </div>
+
+    </div>
+  </div>
+  <div #tabContent class="tab-content">
+    <ng-container *ngFor="let tab of (pane | async).tabs || []; trackBy:trackByFn" [ngSwitch]="tab.tabType">
+      <app-loading [isVisible]="(tab.isLoading || tab.hasError) && tab.isSelected" [hasError]="tab.hasError"
+                   (onCloseTab)="closeTab($event, tab)"
+                   (onRemove)="removeErrorFlagOnTab($event, tab)"
+                   (onOpenSettings)="openSettings()"></app-loading>
+    </ng-container>
+    <ng-container *ngIf="((pane | async).tabs || []).length === 0">
+      <app-welcome></app-welcome>
+    </ng-container>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+.container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 12px 0 0 0;
+}
+
+ul {
+  box-shadow: var(--shadow1);
+  color: var(--foreground-color-40l);
+  background-color: var(--background-color-10l);
+  padding: 0;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 17em;
+
+  li{
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--foreground-color-40l);
+    padding: 0.3rem 0.7rem;
+    height: 1.6rem;
+    &:hover {
+      background-color: var(--background-color-30l);
+    }
+    .shortcut {
+      color: var(--background-color-40l);
+    }
+  }
+
+  app-icon, app-shell-icon {
+    margin-right: 5px;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  hr {
+    margin: 5px;
+    border: none;
+    border-top: 2px solid var(--background-color-30l);
+  }
+}

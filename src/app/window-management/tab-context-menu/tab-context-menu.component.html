@@ -1,0 +1,77 @@
+<div class="container" [ngStyle]="positionStyle" [hidden]="!(isVisible | async)">
+  <ul>
+    <li>
+      <a  tabindex="2" (click)="splitVertical()">
+        <span class="text-icon"><app-icon name="mdiArrowSplitVertical"></app-icon>Split Right</span>
+        <span class="shortcut">{{(shortcuts | async)?.splitVertical| shortcut}}</span>
+      </a>
+    </li>
+    <li>
+      <a  tabindex="3" (click)="splitHorizontal()">
+        <span class="text-icon"><app-icon name="mdiArrowSplitHorizontal"></app-icon>Split Down</span>
+        <span class="shortcut">{{(shortcuts | async)?.splitHorizontal| shortcut}}</span>
+      </a>
+    </li>
+    <ng-container *ngIf="showAdvancedTab | async">
+      <li>
+        <a  (click)="splitAndMoveRight()">
+          <span class="text-icon"><app-icon name="mdiCallSplit" style="transform: rotate(180deg)"></app-icon>Split and Move Right</span>
+          <span class="shortcut">{{(shortcuts | async)?.splitAndMoveVertical| shortcut}}</span>
+        </a>
+      </li>
+      <li>
+        <a  (click)="splitAndMoveDown()">
+          <span class="text-icon"><app-icon name="mdiCallSplit" style="transform: scaleY(-1) rotate(90deg)"></app-icon>Split and Move Down</span>
+          <span class="shortcut">{{(shortcuts | async)?.splitAndMoveHorizontal| shortcut}}</span>
+        </a>
+      </li>
+    </ng-container>
+    <ng-container *ngIf="showAdvancedPane | async">
+      <li>
+        <hr>
+      </li>
+      <li>
+        <a  (click)="unsplit()">
+          <span class="text-icon"><app-icon name="mdiCallMerge"></app-icon>Unsplit</span>
+          <span class="shortcut">{{(shortcuts | async)?.unsplit| shortcut}}</span>
+        </a>
+      </li>
+      <li>
+        <a  (click)="swap()">
+          <span class="text-icon"><app-icon name="mdiSwapHorizontal"></app-icon>Swap Panes</span>
+          <span class="shortcut">{{(shortcuts | async)?.swapPanes| shortcut}}</span>
+        </a>
+      </li>
+    </ng-container>
+    <li>
+      <hr>
+    </li>
+    <li>
+      <a  (click)="duplicateTab()">
+        <span class="text-icon"><app-icon name="mdiContentCopy" style="transform: rotate(180deg)"></app-icon>Duplicate Tab</span>
+        <span class="shortcut">{{(shortcuts | async)?.duplicateTab| shortcut}}</span>
+      </a>
+    </li>
+    <li>
+      <a  (click)="closeTab()">
+        <span class="text-icon"><app-icon name="mdiCloseBoxOutline" style="transform: rotate(180deg)"></app-icon>Close Tab</span>
+        <span class="shortcut">{{(shortcuts | async)?.closeTab| shortcut}}</span>
+      </a>
+    </li>
+    <ng-container *ngIf="showAdvancedTab | async">
+      <li>
+        <a  (click)="closeOtherTabs()">
+          <span class="text-icon"><app-icon name="mdiCloseNetworkOutline" style="transform: rotate(180deg)"></app-icon>Close Other Tabs in Group</span>
+          <span class="shortcut">{{(shortcuts | async)?.closeOtherTabs| shortcut}}</span>
+        </a>
+      </li>
+    </ng-container>
+    <li>
+      <a  (click)="closeAllTabs()">
+        <span class="text-icon"><app-icon name="mdiCloseBoxMultipleOutline"
+                                          style="transform: rotate(180deg)"></app-icon>Close All Tabs</span>
+        <span class="shortcut">{{(shortcuts | async)?.closeAllTabs| shortcut}}</span>
+      </a>
+    </li>
+  </ul>
+</div>

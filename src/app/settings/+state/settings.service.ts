@@ -1,30 +1,37 @@
 import { Injectable } from '@angular/core';
-import {Fs} from "../_tauri/fs";
-import {Path} from "../_tauri/path";
-import {Environment} from '../environment/environment';
-import {Settings, Theme} from './models/settings';
-import {DEFAULT_SETTINGS} from './models/default-settings';
-import {BehaviorSubject, filter, map, Observable} from 'rxjs';
+import {Fs} from "../../_tauri/fs";
+import {Environment} from '../../common/environment/environment';
+import {filter, map, Observable} from 'rxjs';
+import {createStore, Store} from '../../common/store/store';
+import {Settings, Theme} from '../+models/settings';
+import {DEFAULT_SETTINGS} from '../+models/default-settings';
+
+type SettingsState = {
+  settings: Settings | undefined;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class SettingsService {
+  private store: Store<SettingsState> = createStore<SettingsState>('settings', {
+    settings: undefined
+  });
 
-  private _settings: BehaviorSubject<Settings | undefined> = new BehaviorSubject<Settings | undefined>(undefined);
 
   get settings$(): Observable<Settings> {
-    return this._settings.pipe(filter(s => !!s));
+    return this.store.select(s => s.settings).pipe(filter(s => !!s));
   }
 
   get activeTheme$(): Observable<Theme> {
     return this.settings$.pipe(map(s => {
-      const defaultTheme = s.themes.find(s => s.isDefault);
-      return defaultTheme || DEFAULT_SETTINGS.themes[0];
+      return s.themes.find(s => s.isDefault) || s.themes[0];
     }));
   }
 
-  constructor() { }
+  constructor() {
+
+  }
 
   public async loadAndWatch(): Promise<void> {
     const path = Environment.settingsFilePath();
@@ -60,10 +67,9 @@ export class SettingsService {
       if(!settings.shells || settings.shells.length === 0) settings.shells = DEFAULT_SETTINGS.shells;
       if(!settings.remoteShells || settings.remoteShells.length === 0) settings.remoteShells = DEFAULT_SETTINGS.remoteShells;
       if(!settings.autocomplete ) settings.autocomplete = DEFAULT_SETTINGS.autocomplete;
-      this._settings.next(settings);
-      const theme = settings.themes.find(t => t.isDefault) || settings.themes[0];
+      this.store.update({settings: settings});
     } else {
-      this._settings.next(DEFAULT_SETTINGS);
+      this.store.update({settings: DEFAULT_SETTINGS});
     }
   }
 }

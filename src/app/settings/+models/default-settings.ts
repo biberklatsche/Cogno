@@ -1,6 +1,6 @@
 import {ColorName, Settings} from './settings';
 import {Shortcuts} from './shortcuts';
-import {Environment} from '../../environment/environment';
+import {Environment} from '../../common/environment/environment';
 
 export const DEFAULT_MAC_SHORTCUTS: Shortcuts = {
   aliases: [

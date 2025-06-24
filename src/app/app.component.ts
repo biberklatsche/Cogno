@@ -1,10 +1,10 @@
 import {Component, OnDestroy, signal, ViewEncapsulation} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {TerminalComponent} from "./terminal/terminal.component";
-import {Environment} from "./environment/environment";
-import {SettingsService} from "./settings/settings.service";
-import {Theme} from "./settings/models/settings";
-import { Color } from './common/color';
+import {TerminalComponent} from './terminal/terminal.component';
+import {Environment} from './common/environment/environment';
+import {SettingsService} from "./settings/+state/settings.service";
+import {Theme} from './settings/+models/settings';
+import { Color } from './common/color/color';
 import { SafeStyle } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import {Database} from './_tauri/db';

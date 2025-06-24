@@ -1,0 +1,8 @@
+<ng-container *ngIf="_node?.left && _node?.right">
+  <app-grid-pane #first style="flex-grow: 1" class="first" *ngIf="_node?.left" [node]="_node.left"></app-grid-pane>
+  <div #splitter class="splitter" (mousedown)="startResize()"></div>
+  <app-grid-pane #second style="flex-grow: 1" class="second" *ngIf="_node?.right" [node]="_node.right"></app-grid-pane>
+</ng-container>
+<ng-container *ngIf="!(_node?.left && _node?.right)">
+  <app-grid-tabs [paneId]="_node?.key" *ngIf="_node?.isLeaf"></app-grid-tabs>
+</ng-container>

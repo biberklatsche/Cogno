@@ -1,4 +1,3 @@
-import {InjectionType, ShellType} from './models';
 import {FontWeight} from '@xterm/xterm';
 import {Shortcuts} from './shortcuts';
 
@@ -110,6 +109,8 @@ export type Colors = {
 }
 
 export type ColorName = keyof Exclude<Colors, 'promptColors' | 'commandError' | 'commandSuccess' | 'commandRunning'>;
+export type InjectionType = 'Auto' | 'Manual' | 'Remote';
+export type ShellType = 'Bash' | 'GitBash'| 'Powershell' | 'ZSH';
 
 export type ShellConfig = HasName & {
   id?: string;
@@ -140,20 +141,20 @@ export type RemoteShellConfig = HasName & {
   passwordInjectionTrigger?: string;
 }
 
-export interface AutocompleteConfig {
+export type AutocompleteConfig = {
   ignore: string[];
   position: 'cursor' | 'line';
   mode: 'always' | 'shortcut';
 }
 
-export interface WindowSettings {
+export type WindowSettings = {
   isMaximized: boolean;
   isInBounds: boolean;
   bounds: Bounds;
 
 }
 
-export interface Bounds {
+export type Bounds = {
   width: number;
   height: number;
   x?: number;
