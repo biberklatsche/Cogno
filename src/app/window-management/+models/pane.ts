@@ -3,7 +3,7 @@ import {Tab} from './tab';
 export class Pane {
   splitDirection?: SplitDirection;
   ratio?: number;
-  tabs?: Tab[] = [];
+  tabs: Tab[] = [];
   isTopRightPane: boolean;
   isFirstPane: boolean;
 
@@ -13,6 +13,4 @@ export class Pane {
   }
 }
 
-export enum SplitDirection {
-  Horizontal, Vertical
-}
+export type SplitDirection = 'horizontal' | 'vertical';

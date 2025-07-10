@@ -5,7 +5,7 @@ import {animate, style, transition, trigger} from '@angular/animations';
 import {platform} from 'os';
 import {TabContextMenuService} from '../../tab-context-menu/+state/tab-context-menu.service';
 import {TitlebarMenuService} from '../../titlebar-menu/+state/titlebar-menu.service';
-import {GridService} from '../../+state/grid.service';
+import {WindowManagementService} from '../../+state/window-management.service';
 import {WindowButtonsService} from '../../window-buttons/+state/window-buttons.service';
 import {Tab} from '../../../+shared/models/tab';
 import {CommonModule} from '@angular/common';
@@ -69,7 +69,7 @@ export class GridTabsComponent implements OnDestroy, OnInit {
     private titleBarMenuService: TitlebarMenuService,
     private windowButtonService: WindowButtonsService,
     private windowService: WindowService,
-    private gridService: GridService
+    private gridService: WindowManagementService
   ) {
   }
 

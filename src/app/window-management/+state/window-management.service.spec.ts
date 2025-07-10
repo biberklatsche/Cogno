@@ -1,5 +1,5 @@
 import {clear, getGridService, getKeyboardService, getSettingsService} from '../../../../../test/factory';
-import {GridService} from './grid.service';
+import {WindowManagementService} from './window-management.service';
 import {SettingsService} from '../../../+shared/services/settings/settings.service';
 import {TestHelper} from '../../../../../test/helper';
 import {KeyboardService} from '../../../+shared/services/keyboard/keyboard.service';
@@ -9,7 +9,7 @@ import {SplitDirection} from '../../../+shared/models/pane';
 
 describe('GridServiceTests', () => {
 
-  let gridService: GridService;
+  let gridService: WindowManagementService;
   let settingsService: SettingsService;
   let keyService: KeyboardService;
 

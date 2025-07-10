@@ -3,7 +3,7 @@ import {Position, TabType} from '../../../../../shared/models/models';
 import {Key} from '../../../common/key';
 import {ShellConfig} from '../../../../../shared/models/settings';
 import {GlobalMenuService} from '../../../+shared/abstract-components/menu/+state/global-menu.service';
-import {GridService} from '../../+state/grid.service';
+import {WindowManagementService} from '../../+state/window-management.service';
 import {ElectronService} from '../../../+shared/services/electron/electron.service';
 import {createStore, Store} from '../../../common/store/store';
 import {SettingsService} from '../../../+shared/services/settings/settings.service';
@@ -25,7 +25,7 @@ export class TitlebarMenuService extends MenuService implements OnDestroy{
 
   private subscriptions: Subscription[] = [];
 
-  constructor(private menuService: GlobalMenuService, private electron: ElectronService, private settingsService: SettingsService, private gridService: GridService) {
+  constructor(private menuService: GlobalMenuService, private electron: ElectronService, private settingsService: SettingsService, private gridService: WindowManagementService) {
     super('TitleBar', menuService);
     this.subscriptions.push(this.settingsService.selectShells().subscribe(shellConfigs => {
       this.store.update({shellConfigs});

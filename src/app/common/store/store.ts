@@ -1,8 +1,10 @@
-import {BehaviorSubject, Observable} from 'rxjs';
-import {distinctUntilChanged, map} from 'rxjs/operators';
+import {BehaviorSubject, Observable, Subject} from 'rxjs';
+import {distinctUntilChanged, filter, map} from 'rxjs/operators';
+
 class RootStore {
 
   private _stateSubject = new BehaviorSubject<any>(null);
+  private _eventSubject = new Subject<Event>();
 
   constructor() {
   }
@@ -47,6 +49,14 @@ class RootStore {
   clearAllStores() {
     this._stateSubject = new BehaviorSubject(null);
   }
+
+  onEvent(filterFn: (filter: Event) => boolean): Observable<Event> {
+    return this._eventSubject.pipe(filter(s => filterFn(s)));
+  }
+
+  sendEvent(event: Event) {
+    this._eventSubject.next(event);
+  }
 }
 
 export const rootStore: RootStore = new RootStore();
@@ -88,6 +98,14 @@ export class Store<State> {
 
   public dispose(): void {
     this.store.destroy(this._id);
+  }
+
+  onEvent(filterFn: (filter: Event) => boolean): Observable<Event> {
+    return this.store.onEvent(filterFn);
+  }
+
+  sendEvent(event: Event) {
+    return this.store.sendEvent(event);
   }
 
   private selectState(): Observable<State> {

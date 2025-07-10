@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {Position} from '../../../../../shared/models/models';
 import {SplitDirection} from '../../../+shared/models/pane';
 import {GlobalMenuService} from '../../../+shared/abstract-components/menu/+state/global-menu.service';
-import {GridService} from '../../+state/grid.service';
+import {WindowManagementService} from '../../+state/window-management.service';
 import {createStore, Store} from '../../../common/store/store';
 import {Observable} from 'rxjs';
 import {MenuService} from '../../../+shared/abstract-components/menu/menu.service';
@@ -21,7 +21,7 @@ export class TabContextMenuService extends MenuService {
 
   private store: Store<TabContextMenuState> = createStore('tabContextMenu', {clickPosition: null, tabId: null, showAdvancedTab: false, showAdvancedPane: false});
 
-  constructor(menuService: GlobalMenuService, private gridService: GridService) {
+  constructor(menuService: GlobalMenuService, private gridService: WindowManagementService) {
     super('TabContext', menuService);
   }
 

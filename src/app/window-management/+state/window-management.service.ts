@@ -4,8 +4,10 @@ import {filter} from 'rxjs/operators';
 import {lastValueFrom, Observable, Subject, Subscription} from 'rxjs';
 import {createStore, Store} from '../../common/store/store';
 import {TabnameBuilder} from './tabname.builder';
-import {Pane} from '../+models/pane';
-import {Tab} from '../+models/tab';
+import {Pane, SplitDirection} from '../+models/pane';
+import {SettingsTabConfig, Tab, TabType, TerminalTab} from '../+models/tab';
+import {SettingsService} from '../../settings/+state/settings.service';
+import {ShellConfig} from '../../settings/+models/settings';
 
 export interface GridState {
   tree: BinaryTree<Pane>;
@@ -18,7 +20,7 @@ export interface GridState {
 @Injectable({
   providedIn: 'root'
 })
-export class GridService implements OnDestroy {
+export class WindowManagementService implements OnDestroy {
 
   private _closeTab = new Subject<string>();
   private _focusTab = new Subject<string>();
@@ -34,20 +36,16 @@ export class GridService implements OnDestroy {
 
   constructor(
     private settingsService: SettingsService,
-    private tabFactory: TabFactory,
-    private keyboardService: KeyboardService,
-    private globalMenuService: GlobalMenuService,
-    private windowService: WindowService,
-    updateService: UpdateService
     ) {
-    lastValueFrom(settingsService.selectSettingsLoaded()).then(() => {
-      this.addNewTab(BinaryTree.ROOT_KEY, TabType.Terminal);
-      if (updateService.getShowReleaseNotes()) {
+
+    settingsService.onSettingsFirstLoaded.subscribe(() => {
+      this.addNewTab(BinaryTree.ROOT_KEY, 'about');
+      /*if (updateService.getShowReleaseNotes()) {
         updateService.disableShowReleaseNotes();
-        this.addNewTab(BinaryTree.ROOT_KEY, TabType.ReleaseNotes);
-      }
+        this.addNewTab(BinaryTree.ROOT_KEY, 'release-notes');
+      }*/
     });
-    this.subscriptions.push(
+    /*this.subscriptions.push(
       this.globalMenuService.selectCurrentActiveMenu()
         .pipe(filter(menu => menu === 'AllClosed'))
         .subscribe(() => this.focusActiveTab()),
@@ -140,7 +138,7 @@ export class GridService implements OnDestroy {
             break;
         }
       })
-    );
+    );*/
   }
 
   ngOnDestroy(): void {
@@ -160,7 +158,9 @@ export class GridService implements OnDestroy {
   }
 
   focusActiveTab(): void {
-    this._focusTab.next(this.store.get(s => s.activeTabId));
+    const activeTabId = this.store.get(s => s.activeTabId);
+    if(activeTabId === undefined) return;
+    this._focusTab.next(activeTabId);
   }
 
   getCountPanes(): number {
@@ -169,7 +169,7 @@ export class GridService implements OnDestroy {
 
   getCountTabs(paneId: string): number {
     const treeNode = this.findPaneNodeByTabId(paneId);
-    return treeNode.data.tabs.length;
+    return treeNode?.data.tabs?.length || 0;
   }
 
   focusTab(id: string) {
@@ -193,20 +193,30 @@ export class GridService implements OnDestroy {
     return this.store.get(s => s.tree.getData(paneId))?.tabs || [];
   }
 
-  selectActiveTabId(): Observable<string> {
+  selectActiveTabId(): Observable<string | undefined> {
     return this.store.select(s => s.activeTabId);
   }
 
-  addNewTabOnActivePane(tabType: TabType, config?: ShellConfig | SettingsTabConfig) {
+  addNewTabOnActivePane(tabType: 'terminal', config: ShellConfig): void;
+  addNewTabOnActivePane(tabType: 'settings', config: SettingsTabConfig): void;
+  addNewTabOnActivePane(tabType: 'about', config?: undefined): void;
+  addNewTabOnActivePane(tabType: 'release-notes', config?: undefined): void;
+  addNewTabOnActivePane(tabType: TabType, config?: ShellConfig | SettingsTabConfig): void {
     const activeTabId = this.store.get(s => s.activeTabId);
+    if(activeTabId === undefined) return;
     const activeTab = this.findTab(activeTabId);
     const activePaneKey = activeTabId ? this.findPaneNodeByTabId(activeTabId).key : BinaryTree.ROOT_KEY;
     const newTab = this.tabFactory.createTab(tabType, config, activeTab);
     this.addTab(activePaneKey, newTab);
   }
 
-  addNewTab(paneId: string, tabType: TabType, shellConfig?: ShellConfig) {
+  addNewTab(paneId: string, tabType: 'terminal', config: ShellConfig): void;
+  addNewTab(paneId: string, tabType: 'settings', config?: undefined): void;
+  addNewTab(paneId: string, tabType: 'about', config?: undefined): void;
+  addNewTab(paneId: string, tabType: 'release-notes', config?: undefined): void;
+  addNewTab(paneId: string, tabType: TabType, shellConfig?: ShellConfig): void {
     const activeTabId = this.store.get(s => s.activeTabId);
+    if(activeTabId === undefined) return;
     const activeTab = this.findTab(activeTabId);
     const newTab = this.tabFactory.createTab(tabType, shellConfig, activeTab);
     this.addTab(paneId, newTab);
@@ -242,7 +252,7 @@ export class GridService implements OnDestroy {
     }
   }
 
-  removeTab(tabId: string, shouldDeleteTab = true): Tab {
+  removeTab(tabId: string, shouldDeleteTab = true): Tab | undefined {
     if(!tabId) {return;}
     const state = this.store.get(s => s);
     let treeNode = this.tryFindPaneNodeByTabId(tabId);
@@ -324,16 +334,6 @@ export class GridService implements OnDestroy {
     }
   }
 
-  updateSuggestionToExecute(suggestion: Suggestion){
-    this.store.update(s => ({suggestionToExecute: {suggestion, tabId: s.activeTabId}}));
-  }
-
-  onExecuteSuggestion(): Observable<{tabId: string; suggestion: Suggestion}> {
-    return this.store.select(state => state.suggestionToExecute).pipe(
-      filter(s => !!s)
-    );
-  }
-
   private findTab(tabId: string): Tab | undefined {
     if(!tabId) return;
     const pane = this.findPaneNodeByTabId(tabId);
@@ -342,7 +342,7 @@ export class GridService implements OnDestroy {
 
   private findTerminalTab(tabId: string): TerminalTab | undefined {
     const tab = this.findTab(tabId);
-    if(tab?.tabType === TabType.Terminal) {
+    if(tab?.tabType === 'terminal') {
       return tab as TerminalTab;
     }
     return undefined;
@@ -380,7 +380,7 @@ export class GridService implements OnDestroy {
     });
   }
 
-  private getNextActiveTabIfTabIsRemoved(currentTabs: Tab[], activeTabId: string): Tab {
+  private getNextActiveTabIfTabIsRemoved(currentTabs: Tab[], activeTabId?: string): Tab {
     const nextActiveTab = currentTabs.find(t => t.id === activeTabId);
     if (!nextActiveTab) {
       return currentTabs[currentTabs.length - 1];
@@ -428,7 +428,7 @@ export class GridService implements OnDestroy {
     if(!tabId) {return;}
     const paneNode = this.findPaneNodeByTabId(tabId);
     const newPaneId = this.splitPane(paneNode, direction);
-    this.addNewTab(newPaneId, TabType.Terminal);
+    this.addNewTab(newPaneId, 'terminal');
   }
 
   splitPaneAndMoveTab(tabId: string, direction: SplitDirection): void {

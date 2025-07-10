@@ -1,7 +1,7 @@
 import {Component, ElementRef, HostBinding, Input, ViewChild} from '@angular/core';
 import {BinaryNode} from '../../../common/tree/binary-tree';
 import {Pane, SplitDirection} from '../../../+shared/models/pane';
-import {GridService} from '../../+state/grid.service';
+import {WindowManagementService} from '../../+state/window-management.service';
 import {WindowService} from '../../../+shared/services/window/window.service';
 import {GridTabsComponent} from '../grid-tabs/grid-tabs.component';
 import {CommonModule} from '@angular/common';
@@ -35,7 +35,7 @@ export class GridPaneComponent {
 
   private readonly WITH_OF_SPLITTER = 4;
 
-  constructor(private elRef: ElementRef, private windowService: WindowService, private gridService: GridService) {
+  constructor(private elRef: ElementRef, private windowService: WindowService, private gridService: WindowManagementService) {
   }
 
   calcStyle(): void {

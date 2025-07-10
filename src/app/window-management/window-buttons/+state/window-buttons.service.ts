@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {IpcChannel} from '../../../../../shared/ipc.chanels';
 import {Observable} from 'rxjs';
 import {NotificationService} from '../../../+shared/notification/notification.service';
-import {GridService} from '../../+state/grid.service';
+import {WindowManagementService} from '../../+state/window-management.service';
 import {createStore, Store} from '../../../common/store/store';
 import {ElectronService} from '../../../+shared/services/electron/electron.service';
 import {SettingsService} from '../../../+shared/services/settings/settings.service';
@@ -30,7 +30,7 @@ export class WindowButtonsService {
     private readonly updateService: UpdateService,
     private readonly notification: NotificationService,
     private readonly workspaceService: WorkspacesService,
-    private readonly gridService: GridService) {
+    private readonly gridService: WindowManagementService) {
   }
 
   getState(): WindowButtonsState {

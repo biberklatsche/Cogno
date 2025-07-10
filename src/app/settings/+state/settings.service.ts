@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {filter, map, Observable} from 'rxjs';
+import {filter, first, lastValueFrom, map, Observable, take} from 'rxjs';
 import {createStore, Store} from '../../common/store/store';
 import {Settings, Theme} from '../+models/settings';
 import {DEFAULT_SETTINGS} from '../+models/default-settings';
+import {EventBus} from '../../common/event-bus/event-bus';
+import {SettingsInitialLoadedEvent} from '../+models/events';
 
 type SettingsState = {
   settings: Settings | undefined;
@@ -18,9 +20,12 @@ export class SettingsService {
     settings: undefined
   });
 
-
   get settings$(): Observable<Settings> {
     return this.store.select(s => s.settings).pipe(filter(s => !!s));
+  }
+
+  get onSettingsFirstLoaded(): Observable<boolean> {
+    return this.settings$.pipe(map(s => !!s), take(1));
   }
 
   get activeTheme$(): Observable<Theme> {

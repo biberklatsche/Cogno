@@ -7,12 +7,25 @@
 <app-autocomplete></app-autocomplete>
 <div class="tab-container">
   <div class="tap-content" *ngFor="let tab of (tabs | async); trackBy:trackByFn" [ngSwitch]="tab.tabType" [id]="tab?.id">
-    <app-terminal data-keytip-container class="content" *ngSwitchCase="TabType.Terminal" [tabId]="tab?.id"
-                  [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-    </app-terminal>
-    <app-about class="content" *ngSwitchCase="TabType.About" [tabId]="tab?.id"
-               [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-    </app-about>
+      @switch (tab.tabType) {
+          @case (TabType.Terminal) {
+              <app-terminal data-keytip-container class="content" [tabId]="tab?.id"
+                            [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+              </app-terminal>
+          }
+          @case (TabType.About) {
+              <app-about class="content" [tabId]="tab?.id"
+                         [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+              </app-about>
+          }
+          @case (TabType.Settings) {
+              <app-about class="content" [tabId]="tab?.id"
+                         [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+              </app-about>
+          }
+      }
+
+
     <app-settings class="content" *ngSwitchCase="TabType.Settings" [tabId]="tab?.id"
                   [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
     </app-settings>
