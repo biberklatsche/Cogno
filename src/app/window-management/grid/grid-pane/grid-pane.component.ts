@@ -1,10 +1,9 @@
 import {Component, ElementRef, HostBinding, Input, ViewChild} from '@angular/core';
 import {BinaryNode} from '../../../common/tree/binary-tree';
-import {Pane, SplitDirection} from '../../../+shared/models/pane';
 import {WindowManagementService} from '../../+state/window-management.service';
-import {WindowService} from '../../../+shared/services/window/window.service';
 import {GridTabsComponent} from '../grid-tabs/grid-tabs.component';
 import {CommonModule} from '@angular/common';
+import {Pane} from "../../+models/pane";
 
 @Component({
     selector: 'app-grid-pane',
@@ -17,21 +16,21 @@ import {CommonModule} from '@angular/common';
 })
 export class GridPaneComponent {
 
-  _node: BinaryNode<Pane>;
+  _node: BinaryNode<Pane> | undefined = undefined;
   @Input()
   public set node(val: BinaryNode<Pane>) {
     this._node = val;
     this.calcStyle();
   }
 
-  @HostBinding('class') classes;
+  @HostBinding('class') classes : string | undefined = undefined;
 
   @ViewChild('first')
-  firstRef: ElementRef;
+  firstRef: ElementRef | undefined = undefined;
   @ViewChild('splitter')
-  splitter: ElementRef;
+  splitter: ElementRef | undefined = undefined;
   @ViewChild('second')
-  secondRef: ElementRef;
+  secondRef: ElementRef | undefined = undefined;
 
   private readonly WITH_OF_SPLITTER = 4;
 
@@ -39,22 +38,15 @@ export class GridPaneComponent {
   }
 
   calcStyle(): void {
-    if (this._node.data) {
-      switch (this._node.data.splitDirection) {
-        case SplitDirection.Horizontal:
-          this.classes = 'horizontal';
-          break;
-        case SplitDirection.Vertical:
-          this.classes = 'vertical';
-          break;
-      }
+    if (this._node?.data) {
+        this.classes = this._node?.data.splitDirection
     }
     setTimeout(t => {
       const htmlElement = (this.elRef.nativeElement as HTMLElement);
       if (this.splitter != null) {
         const page = (this.splitter.nativeElement as HTMLElement).getBoundingClientRect();
-        const ratioX = this._node.data.splitDirection === SplitDirection.Vertical && this._node.data.ratio ? this._node.data.ratio : 0.5;
-        const ratioY = this._node.data.splitDirection === SplitDirection.Horizontal && this._node.data.ratio ? this._node.data.ratio : 0.5;
+        const ratioX = this._node?.data.splitDirection === 'vertical' && this._node.data.ratio ? this._node.data.ratio : 0.5;
+        const ratioY = this._node?.data.splitDirection === 'horizontal' && this._node.data.ratio ? this._node.data.ratio : 0.5;
         this.setSize(htmlElement.offsetLeft + ((htmlElement.offsetWidth - this.WITH_OF_SPLITTER) * ratioX), page.top * ratioY / 0.5);
       }
       this.windowService.resize();
@@ -111,7 +103,9 @@ export class GridPaneComponent {
   };
 
   updatePaneRatio(){
-      const ratio = Number.parseFloat(((this.firstRef as any).elRef.nativeElement as HTMLElement)?.dataset['ratio']);
+      if(!this._node?.key || !this.firstRef) return
+      const ratioAsString = (this.firstRef.nativeElement as HTMLElement)?.dataset['ratio'] ?? '0.5';
+      const ratio = Number.parseFloat(ratioAsString);
       this.gridService.updatePaneRatio(this._node.key, ratio);
   }
 }

@@ -1,36 +1,35 @@
 <app-grid-pane [node]="(tree | async)?.root"></app-grid-pane>
-<app-paste-history-menu></app-paste-history-menu>
-<app-actions></app-actions>
-<app-workspaces-menu></app-workspaces-menu>
-<app-tab-context-menu></app-tab-context-menu>
-<app-titlebar-menu></app-titlebar-menu>
-<app-autocomplete></app-autocomplete>
+<!--app-paste-history-menu></app-paste-history-menu-->
+<!--app-actions></app-actions-->
+<!--app-workspaces-menu></app-workspaces-menu-->
+<!--app-tab-context-menu></app-tab-context-menu-->
+<!--app-titlebar-menu></app-titlebar-menu-->
+<!--app-autocomplete></app-autocomplete-->
 <div class="tab-container">
-  <div class="tap-content" *ngFor="let tab of (tabs | async); trackBy:trackByFn" [ngSwitch]="tab.tabType" [id]="tab?.id">
-      @switch (tab.tabType) {
-          @case (TabType.Terminal) {
-              <app-terminal data-keytip-container class="content" [tabId]="tab?.id"
-                            [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-              </app-terminal>
-          }
-          @case (TabType.About) {
-              <app-about class="content" [tabId]="tab?.id"
-                         [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-              </app-about>
-          }
-          @case (TabType.Settings) {
-              <app-about class="content" [tabId]="tab?.id"
-                         [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-              </app-about>
-          }
-      }
-
-
-    <app-settings class="content" *ngSwitchCase="TabType.Settings" [tabId]="tab?.id"
-                  [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-    </app-settings>
-    <app-release-notes class="content" *ngSwitchCase="TabType.ReleaseNotes" [tabId]="tab?.id"
-                       [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
-    </app-release-notes>
-  </div>
+    @for ( tab of (tabs | async); track tab.id) {
+        <div class="tap-content" [id]="tab?.id">
+            @switch (tab.tabType) {
+                @case ('terminal') {
+                    <app-terminal data-keytip-container class="content" [tabId]="tab?.id"
+                                  [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+                    </app-terminal>
+                }
+                @case ('about') {
+                    <!--app-about class="content" [tabId]="tab?.id"
+                               [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+                    </app-about-->
+                }
+                @case ('settings') {
+                    <!--app-settings class="content" *ngSwitchCase="TabType.Settings" [tabId]="tab?.id"
+                                  [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+                    </app-settings-->
+                }
+                @case ('release-notes') {
+                    <!--app-release-notes class="content" *ngSwitchCase="TabType.ReleaseNotes" [tabId]="tab?.id"
+                                       [ngClass]="{'active': tab?.isSelected, 'inactive': !tab?.isSelected}">
+                    </app-release-notes-->
+                })
+            }
+        </div>
+    }
 </div>

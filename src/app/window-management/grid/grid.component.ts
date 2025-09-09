@@ -9,6 +9,8 @@ import {TitlebarMenuComponent} from '../titlebar-menu/titlebar-menu.component';
 import {Pane} from '../+models/pane';
 import {Tab} from '../+models/tab';
 import {SettingsService} from '../../settings/+state/settings.service';
+import {WindowManagementService} from "../+state/window-management.service";
+import {GridPaneComponent} from "./grid-pane/grid-pane.component";
 
 @Component({
     imports: [
@@ -18,9 +20,9 @@ import {SettingsService} from '../../settings/+state/settings.service';
         //ActionsComponent,
         //WorkspacesMenuComponent,
         //TabContextMenuComponent,
-        TitlebarMenuComponent,
+        //TitlebarMenuComponent,
         //AutocompleteComponent,
-        AboutComponent,
+        //AboutComponent,
         //ReleaseNotesComponent,
         //SettingsComponent,
         //TerminalComponent
@@ -30,20 +32,13 @@ import {SettingsService} from '../../settings/+state/settings.service';
     styleUrls: ['./grid.component.scss'],
     templateUrl: './grid.component.html'
 })
-export class GridComponent implements OnInit {
+export class GridComponent {
 
   public tree: Observable<BinaryTree<Pane>>;
   public tabs: Observable<Tab[]>;
-  public isLightBackground: Observable<boolean>;
 
-  constructor(private gridService: GridService) {
-    this.tree = this.gridService.selectTree();
-    this.tabs = this.gridService.selectAllTabs();
+  constructor(private windowManagementService: WindowManagementService) {
+    this.tree = this.windowManagementService.selectTree();
+    this.tabs = this.windowManagementService.selectAllTabs();
   }
-
-  public trackByFn(index, item) {
-    return item.id;
-  }
-
-  protected readonly TabType = TabType;
 }
