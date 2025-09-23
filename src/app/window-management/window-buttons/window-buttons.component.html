@@ -1,26 +1,12 @@
-<div id="window-buttons" class="{{os}}">
-  <button id="update-button" *ngIf="(isUpdateAvailable | async)" (click)="update()"><app-icon name="mdiRocketLaunch"></app-icon></button>
-  <button class="btn-flat" id="darkmode-button" *ngIf="(isDarkModeAvailable | async)" (click)="toggleDarkMode()" (mouseenter)="darkmodeButtonEnter()" (mouseleave)="darkmodeButtonLeave()">
-    <app-icon [name]="icon | async" title="Switch Mode"></app-icon>
-  </button>
-  <button class="btn-flat" id="workspace-button" data-keytip="W" data-keytip-parent (click)="toggleWorkspace()" [title]="(selectedWorkspace | async)?.name || 'Workspaces'">
-    @if ((selectedWorkspace | async); as workspace) {
-      <span class="badge" [ngStyle]="{'background-color': workspace.color}">{{workspace.token}}</span>
-    } @else {
-      <app-icon name="mdiViewDashboard"></app-icon>
-    }
-  </button>
-  <button class="btn-flat" id="openwindow-button" data-keytip="N"  (click)="openNewWindow()" title="Open New Window">
-    <app-icon name="mdiViewCarousel"></app-icon>
-  </button>
-  <ng-container *ngIf="os === 'win32' || os === 'linux'">
-    <button class="btn-flat" (click)="minimize()">
-      <app-icon name="mdiWindowMinimize"></app-icon>
-    </button>
-    <button class="btn-flat" (click)="toggleMaximize()">
-      <app-icon *ngIf="(isMaximized | async)" name="mdiWindowRestore"></app-icon>
-      <app-icon *ngIf="!(isMaximized | async)" name="mdiWindowMaximize"></app-icon>
-    </button>
-    <button class="btn-flat close" (click)="close()"><app-icon name="mdiClose"></app-icon></button>
-  </ng-container>
-</div>
+@if (os === 'windows' || os === 'linux') {
+    <div id="window-buttons" class="{{os}}">
+        <button class="btn-flat" (click)="minimize()">
+            <app-icon name="mdiWindowMinimize"></app-icon>
+        </button>
+        <button class="btn-flat" (click)="toggleMaximize()">
+            <app-icon [name]="(service.isMaximized()) ? 'mdiWindowRestore' : 'mdiWindowMaximize'"></app-icon>
+        </button>
+        <button class="btn-flat close" (click)="close()"><app-icon name="mdiClose"></app-icon></button>
+    </div>
+}
+

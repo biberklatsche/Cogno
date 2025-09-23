@@ -21,6 +21,7 @@
     "@angular/platform-browser": "^20.0.2",
     "@angular/platform-browser-dynamic": "^20.0.2",
     "@ctrl/tinycolor": "^4.1.0",
+    "@mdi/js": "^7.4.47",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-fs": "^2.3.0",
     "@tauri-apps/plugin-log": "^2.4.0",

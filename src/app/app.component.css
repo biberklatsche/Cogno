@@ -1,3 +1,27 @@
-app-root {
+:host {
+    display: flex;
+    flex-direction: column;
+    --header-height: 34px;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
 
+header {
+    height: var(--header-height);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    overflow: hidden;
+    max-width: 100vw;
+
+    .space {
+        flex: 1;
+        height: var(--header-height);
+    }
+}
+
+main {
+    width: 100vw;
+    height: calc(100vh - var(--header-height));
 }

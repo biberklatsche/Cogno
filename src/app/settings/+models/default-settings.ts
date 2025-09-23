@@ -161,7 +161,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   shells: [],
   remoteShells: [],
-  shortcuts: Environment.isMacOs() ? DEFAULT_MAC_SHORTCUTS : DEFAULT_SHORTCUTS,
+  shortcuts: Environment.platform() === 'macos' ? DEFAULT_MAC_SHORTCUTS : DEFAULT_SHORTCUTS,
   themes: [
    {
       fontsize: 14,

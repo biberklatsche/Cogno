@@ -45,6 +45,12 @@ pub fn run() {
 
            let window = win_builder.build().unwrap();
            window.show().unwrap();
+
+           #[cfg(debug_assertions)] // only include this code on debug builds
+           {
+              window.open_devtools();
+           }
+
            Ok(())
         })
         .run(tauri::generate_context!())

@@ -1,5 +1,4 @@
 import {IPty as ITauriPty, spawn} from "tauri-pty";
-import {IDisposable} from "./event";
 import {OS} from './os';
 
 export interface IPty {
@@ -38,4 +37,11 @@ export class Pty implements IPty {
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
         return this.pty.onExit(listener);
     }
+}
+
+export interface IDisposable {
+    dispose(): void;
+}
+export interface IEvent<T> {
+    (listener: (e: T) => any): IDisposable;
 }

@@ -1,6 +1,6 @@
 import {Path} from '../../_tauri/path';
 import { isDevMode } from '@angular/core';
-import {OS} from '../../_tauri/os';
+import {OS, OsType} from '../../_tauri/os';
 
 export namespace Environment {
 
@@ -20,15 +20,15 @@ export namespace Environment {
         return _dbFileFilePath;
     }
 
-    export function isMacOs(): boolean {
-        return OS.platform() === 'macos';
+    export function platform(): OsType {
+        return OS.platform();
     }
 
     export async function init() : Promise<void> {
-        await Promise.all([_loadConfigDir()])
+        await Promise.all([_determineCognoPaths()])
     }
 
-    async function _loadConfigDir()  {
+    async function _determineCognoPaths()  {
         const homeDirName = isDevMode() ? '.cogno-dev' : '.cogno';
         _homeDir = await Path.join(await Path.homeDir(), homeDirName);
         _dbFileFilePath = await Path.join(_homeDir, 'cogno.db');

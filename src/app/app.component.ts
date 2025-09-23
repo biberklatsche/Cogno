@@ -8,14 +8,14 @@ import { Color } from './common/color/color';
 import { SafeStyle } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import {Database} from './_tauri/db';
+import {WindowButtonsComponent} from "./window-management/window-buttons/window-buttons.component";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, TerminalComponent],
+    imports: [CommonModule, TerminalComponent, WindowButtonsComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css',
-    standalone: true,
-    encapsulation: ViewEncapsulation.None
+    standalone: true
 })
 export class AppComponent implements OnDestroy {
 
@@ -105,8 +105,8 @@ export class AppComponent implements OnDestroy {
         document.documentElement.style.setProperty('--fontWeight', `${theme.fontWeight}`);
         document.documentElement.style.setProperty('--fontFamily', `'${theme.fontFamily}'`);
         document.documentElement.style.setProperty('--appFontFamily', `'${theme.appFontFamily}'`);
-        document.documentElement.style.setProperty('--padding', `${theme.paddingAsArray[3]}rem`);
-        document.documentElement.style.setProperty('--padding-xterm', `${theme.paddingAsArray[0]}rem ${theme.paddingAsArray[1]}rem ${theme.paddingAsArray[2]}rem ${theme.paddingAsArray[3]}rem`);
+        // document.documentElement.style.setProperty('--padding', `${theme.paddingAsArray[3]}rem`);
+        // document.documentElement.style.setProperty('--padding-xterm', `${theme.paddingAsArray[0]}rem ${theme.paddingAsArray[1]}rem ${theme.paddingAsArray[2]}rem ${theme.paddingAsArray[3]}rem`);
         document.documentElement.style.setProperty('--color-command-running', `${theme.colors.commandRunning}`);
         document.documentElement.style.setProperty('--color-command-success', `${theme.colors.commandSuccess}`);
         document.documentElement.style.setProperty('--color-command-error', `${theme.colors.commandError}`);
