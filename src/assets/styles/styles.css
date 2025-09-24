@@ -1,13 +1,8 @@
 @import '../fonts/roboto/roboto.css';
 @import '../fonts/comfortaa/comfortaa.css';
 @import './animate.min.css';
+@import './xterm.css';
 
-:root {
-    --scrollbar-size: 8px;            /* normal */
-    --scrollbar-radius: 8px;
-}
-
-/* ===== Firefox (standards) ===== */
 *{
     scrollbar-width: thin; /* Track bleibt dünn */
     scrollbar-color: var(--background-color-20l) transparent;

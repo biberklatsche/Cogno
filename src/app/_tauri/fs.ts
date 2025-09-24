@@ -7,13 +7,13 @@ import {
 
 type UnwatchFn = () => void;
 
-export namespace Fs {
+export const Fs = {
 
-    export const readTextFile= (path: string): Promise<string> => tauriReadTextFile(path);
-    export const watchChanges= (path: string, callback: () => void): Promise<UnwatchFn> => {
+    readTextFile(path: string): Promise<string> {return tauriReadTextFile(path)},
+    watchChanges(path: string, callback: () => void): Promise<UnwatchFn> {
         return tauriWatch(path, (event: WatchEvent) => {
             callback();
         })
-    };
-    export const exists= (path: string): Promise<boolean> => tauriExists(path);
+    },
+    exists(path: string): Promise<boolean> {return tauriExists(path)}
 }

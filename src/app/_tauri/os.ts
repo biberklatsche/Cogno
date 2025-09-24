@@ -3,8 +3,8 @@ import {type as tauriType} from '@tauri-apps/plugin-os';
 
 export type OsType = "linux" | "windows" | "macos";
 
-export namespace OS {
-  export const platform= (): OsType => {
+export const OS = {
+  platform(): OsType {
      const t = tauriType();
      switch (t) {
          case "linux": return "linux";
@@ -12,5 +12,5 @@ export namespace OS {
          case "macos": return "macos";
          default: throw Error(`Unknown OS type: ${t}`);
      }
-  };
+  }
 }

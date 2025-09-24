@@ -1,8 +1,8 @@
 import { join as tauriJoin, homeDir as tauriHomeDir } from '@tauri-apps/api/path';
 
-export namespace Path {
+export const Path = {
 
-    export const join= (...paths: string[]): Promise<string> => tauriJoin(...paths);
+    join(...paths: string[]): Promise<string> { return tauriJoin(...paths)},
 
-    export const homeDir= ():Promise<string> => tauriHomeDir();
+    homeDir():Promise<string>{return tauriHomeDir()}
 }

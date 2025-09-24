@@ -28,9 +28,9 @@ export class SettingsService {
     return this.settings$.pipe(map(s => !!s), take(1));
   }
 
-  get activeTheme$(): Observable<Theme> {
+  get activeTheme$(): Observable<Theme & {scrollbackLines: number}> {
     return this.settings$.pipe(map(s => {
-      return s.themes.find(s => s.isDefault) || s.themes[0];
+      return {...s.themes.find(s => s.isDefault) || s.themes[0], scrollbackLines: s.general.scrollbackLines};
     }));
   }
 

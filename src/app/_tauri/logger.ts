@@ -11,10 +11,10 @@ import {
 
 export interface LogOptions extends TauriLogOptions{}
 
-export namespace Logger {
-    export const warn = (message: string, options?: LogOptions): void => {tauriWarn(message, options).finally()};
-    export const debug = (message: string, options?: LogOptions): void => {tauriDebug(message, options).finally()};
-    export const trace = (message: string, options?: LogOptions): void => {tauriTrace(message, options).finally()};
-    export const info = (message: string, options?: LogOptions): void => {tauriInfo(message, options).finally()};
-    export const error = (message: string, options?: LogOptions): void => {tauriError(message, options).finally()};
+export const Logger = {
+    warn(message: string, options?: LogOptions): void {tauriWarn(message, options).finally()},
+    debug(message: string, options?: LogOptions): void {tauriDebug(message, options).finally()},
+    trace(message: string, options?: LogOptions): void {tauriTrace(message, options).finally()},
+    info(message: string, options?: LogOptions): void {tauriInfo(message, options).finally()},
+    error(message: string, options?: LogOptions): void {tauriError(message, options).finally()}
 }
