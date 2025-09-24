@@ -3,19 +3,37 @@
 @import './animate.min.css';
 @import './xterm.css';
 
-*{
+* {
     scrollbar-width: thin; /* Track bleibt dünn */
     scrollbar-color: var(--background-color-20l) transparent;
-    scrollbar-gutter: both-edges;
+    scrollbar-gutter: auto;
 }
 
 html, body {
-  margin: 0;
-  height: 100%;
-  font-family: var(--appFontFamily), 'Roboto', sans-serif;
-  font-size: var(--appFontSize);
-  color: var(--foreground-color);
-  background-color: var(--background-color);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+    margin: 0;
+    height: 100%;
+    font-family: var(--appFontFamily), 'Roboto', sans-serif;
+    font-size: var(--appFontSize);
+    color: var(--foreground-color);
+    background: var(--background, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+}
+
+body {
+    position: relative;
+    /* falls nötig: overflow: hidden; */
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+
+    backdrop-filter: blur(var(--background-blur));
+    z-index: -1; /* hinter allem Content */
 }

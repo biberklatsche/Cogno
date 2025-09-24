@@ -12,7 +12,11 @@
   "app": {
     "windows": [],
     "security": {
-      "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'"
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**/*"]
+      },
+      "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self' asset: http://asset.localhost"
     }
   },
   "bundle": {

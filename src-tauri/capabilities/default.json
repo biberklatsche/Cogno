@@ -11,6 +11,7 @@
     "opener:default",
     "pty:default",
     "fs:default",
+    "fs:allow-watch",
     "log:default",
     {
       "identifier": "fs:scope-home-recursive",

@@ -9,6 +9,7 @@ import { SafeStyle } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import {Database} from './_tauri/db';
 import {WindowButtonsComponent} from "./window-management/window-buttons/window-buttons.component";
+import {Fs} from "./_tauri/fs";
 
 @Component({
     selector: 'app-root',
@@ -19,8 +20,6 @@ import {WindowButtonsComponent} from "./window-management/window-buttons/window-
 })
 export class AppComponent implements OnDestroy {
 
-    style: SafeStyle | undefined;
-    imageFilter= signal<string | undefined>(undefined);
     subscriptions: Subscription[] = [];
 
     constructor(private settingsService: SettingsService) {
@@ -54,11 +53,6 @@ export class AppComponent implements OnDestroy {
         const backgroundFactor = this.getBackgroundFactor(theme, isLightTheme);
         const shadowFactor = this.getShadowFactor(isLightTheme);
         const factor = isLightTheme ? -1 : 1;
-        if (theme.image) {
-            this.imageFilter.set(`blur(${theme.imageBlur === undefined ? 10 : theme.imageBlur}px)`);
-        } else {
-            this.imageFilter.set('');
-        }
 
         document.documentElement.style.setProperty('--background-color', `${theme.colors.background}`);
         document.documentElement.style.setProperty('--background-color-10l', `${Color.lightenDarkenColor(theme.colors.background, backgroundFactor * 10)}`);
@@ -111,10 +105,18 @@ export class AppComponent implements OnDestroy {
         document.documentElement.style.setProperty('--color-command-success', `${theme.colors.commandSuccess}`);
         document.documentElement.style.setProperty('--color-command-error', `${theme.colors.commandError}`);
         if (theme.image) {
-            const imageUrl = `url(file:///${theme.image.trim()})`;
+            const imageUrl = `url("${Fs.convertFileSrc(theme.image.trim())}")`;
             const color = theme.colors.background + Color.getHexOpacity(theme.imageOpacity ?? 75);
-            document.body.style.background = `linear-gradient(to bottom, ${color}, ${color}), ${imageUrl} no-repeat center center fixed`;
-            document.body.style.backgroundSize = 'cover';
+
+            // Gradient + Image zusammen in die Variable packen
+            const background = `linear-gradient(to bottom, ${color}, ${color}), ${imageUrl} fixed center center`;
+
+            // CSS-Variablen setzen
+            document.body.style.setProperty("--background", background);
+            document.body.style.setProperty("--background-blur", `${theme.imageBlur ?? 10}px`);
+        } else {
+            const background = `var(--background-color)`;
+            document.body.style.setProperty("--background", background);
         }
     }
 
