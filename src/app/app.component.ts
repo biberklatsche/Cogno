@@ -99,24 +99,29 @@ export class AppComponent implements OnDestroy {
         document.documentElement.style.setProperty('--fontWeight', `${theme.fontWeight}`);
         document.documentElement.style.setProperty('--fontFamily', `'${theme.fontFamily}'`);
         document.documentElement.style.setProperty('--appFontFamily', `'${theme.appFontFamily}'`);
-        // document.documentElement.style.setProperty('--padding', `${theme.paddingAsArray[3]}rem`);
-        // document.documentElement.style.setProperty('--padding-xterm', `${theme.paddingAsArray[0]}rem ${theme.paddingAsArray[1]}rem ${theme.paddingAsArray[2]}rem ${theme.paddingAsArray[3]}rem`);
+        document.documentElement.style.setProperty('--padding-xterm', `${theme.padding}`);
         document.documentElement.style.setProperty('--color-command-running', `${theme.colors.commandRunning}`);
         document.documentElement.style.setProperty('--color-command-success', `${theme.colors.commandSuccess}`);
         document.documentElement.style.setProperty('--color-command-error', `${theme.colors.commandError}`);
         if (theme.image) {
-            const imageUrl = `url("${Fs.convertFileSrc(theme.image.trim())}")`;
+            const url = Fs.convertFileSrc(theme.image.trim());
             const color = theme.colors.background + Color.getHexOpacity(theme.imageOpacity ?? 75);
 
-            // Gradient + Image zusammen in die Variable packen
-            const background = `linear-gradient(to bottom, ${color}, ${color}), ${imageUrl} fixed center center`;
-
-            // CSS-Variablen setzen
-            document.body.style.setProperty("--background", background);
+            // getrennte Variablen, keine Shorthand-„fixed“-Tokens in der CSS-Variable
+            document.body.style.setProperty("--background-image", `url("${url}")`);
+            document.body.style.setProperty("--background-gradient", `linear-gradient(to bottom, ${color}, ${color})`);
             document.body.style.setProperty("--background-blur", `${theme.imageBlur ?? 10}px`);
+
+            // Schalter setzen -> aktiviert das ::before
+            document.body.classList.add("has-background");
         } else {
-            const background = `var(--background-color)`;
-            document.body.style.setProperty("--background", background);
+            // zurück auf Standard
+            document.body.classList.remove("has-background");
+            document.body.style.removeProperty("--background-image");
+            document.body.style.removeProperty("--background-gradient");
+            document.body.style.removeProperty("--background-blur");
+            // falls du eine reine Farbfläche willst:
+            document.body.style.setProperty("--background-color", theme.colors.background);
         }
     }
 

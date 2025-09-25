@@ -24,16 +24,24 @@ html, body {
     overscroll-behavior: none;
 }
 
+
+/* Standard-Background ohne Bild */
 body {
-    position: relative;
-    /* falls nötig: overflow: hidden; */
+    background: var(--background-color);
 }
 
-body::before {
+/* Bild + Overlay-Gradient als fixierte Ebene */
+body.has-background::before {
     content: "";
     position: fixed;
     inset: 0;
-
-    backdrop-filter: blur(var(--background-blur));
-    z-index: -1; /* hinter allem Content */
+    z-index: -1;              /* hinter dem Inhalt */
+    background-image: var(--background-gradient), var(--background-image);
+    background-position: center center, center center;
+    background-size: cover, cover;
+    background-repeat: no-repeat, no-repeat;
+    /* Blur optional */
+    filter: blur(var(--background-blur, 0px));
+    /* WebKit-Repaint-Stabilizer */
+    transform: translateZ(0);
 }

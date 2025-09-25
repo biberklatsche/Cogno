@@ -7,6 +7,7 @@ import {Settings, Theme} from '../+models/settings';
 import {DEFAULT_SETTINGS} from '../+models/default-settings';
 import {EventBus} from '../../common/event-bus/event-bus';
 import {SettingsInitialLoadedEvent} from '../+models/events';
+import { invoke } from '@tauri-apps/api/core';
 
 type SettingsState = {
     settings: Settings | undefined;
@@ -42,8 +43,8 @@ export class SettingsService {
 
         /*invoke("list_fonts").then(fonts => {
           console.log('###############Fonts', fonts);
-        }).catch(error => console.log('###############Fontseer', error));
-
+        }).catch(error => console.log('###############Fontseer', error));*/
+/*
         invoke("list_shells").then(shells => {
           console.log('###############Shells', shells);
         }).catch(error => console.log('###############Shellseer', error));
@@ -84,6 +85,11 @@ export class SettingsService {
         if (!settings.shells || settings.shells.length === 0) settings.shells = DEFAULT_SETTINGS.shells;
         if (!settings.remoteShells || settings.remoteShells.length === 0) settings.remoteShells = DEFAULT_SETTINGS.remoteShells;
         if (!settings.autocomplete) settings.autocomplete = DEFAULT_SETTINGS.autocomplete;
+
+        for (const theme of settings.themes) {
+            theme.padding = theme.padding.split(' ').map(p => `${p}rem`).join(' ');
+        }
+
         this.store.update({settings: settings});
     }
 }

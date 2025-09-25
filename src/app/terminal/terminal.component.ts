@@ -79,8 +79,8 @@ export class TerminalComponent implements AfterViewInit {
             this.resizeObserver?.disconnect()
         });
         const settingsSubscription = this.settingsService.activeTheme$.subscribe(theme => {
-            this.setTheme(theme, theme.scrollbackLines);
             this.applyAddons(theme);
+            this.setTheme(theme, theme.scrollbackLines);
         });
     }
 
@@ -107,10 +107,9 @@ export class TerminalComponent implements AfterViewInit {
         this.theme = t;
         this.terminal!.options.scrollback = scrollbackLines;
         this.terminal!.options.fontSize = this.theme.fontsize;
-        this.terminal!.options.fontFamily = `${this.theme.fontFamily}`;
+        this.terminal!.options.fontFamily = `'${this.theme.fontFamily}', monospace`;
         this.terminal!.options.fontWeight = this.theme.fontWeight;
         this.terminal!.options.fontWeightBold = this.theme.fontWeightBold;
-        this.terminal!.options.cursorStyle = 'bar';
         this.terminal!.options.cursorWidth = this.theme.cursorWidth;
         this.terminal!.options.cursorBlink = this.theme.cursorBlink;
         this.terminal!.options.cursorStyle = this.theme.cursorStyle;

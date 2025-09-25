@@ -5,6 +5,7 @@ use std::collections::HashSet;
 #[derive(Serialize)]
 pub struct FontInfo {
     name: String,
+    postscript: Option<String>,
     is_monospace: bool,
 }
 
@@ -21,7 +22,8 @@ pub fn list_fonts() -> Vec<FontInfo> {
                 if seen.insert(name.clone()) {
                     // nur wenn neu
                     let is_monospace = font.is_monospace();
-                    fonts.push(FontInfo { name, is_monospace });
+                    let postscript = font.postscript_name();
+                    fonts.push(FontInfo { name, postscript, is_monospace });
                 }
             }
         }
