@@ -1,13 +1,10 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {filter, first, lastValueFrom, map, Observable, take} from 'rxjs';
+import {filter, map, Observable, take} from 'rxjs';
 import {createStore, Store} from '../../common/store/store';
-import {Settings, Theme} from '../+models/settings';
-import {DEFAULT_SETTINGS} from '../+models/default-settings';
-import {EventBus} from '../../common/event-bus/event-bus';
-import {SettingsInitialLoadedEvent} from '../+models/events';
-import { invoke } from '@tauri-apps/api/core';
+import {DEFAULT_SETTINGS, Settings, Theme} from "../+models/settings";
+import {SettingsCodec} from "./settings.codec";
 
 type SettingsState = {
     settings: Settings | undefined;
@@ -31,7 +28,7 @@ export class SettingsService {
 
     get activeTheme$(): Observable<Theme & { scrollbackLines: number }> {
         return this.settings$.pipe(map(s => {
-            return {...s.themes.find(s => s.isDefault) || s.themes[0], scrollbackLines: s.general.scrollbackLines};
+            return {...s.theme.default, scrollbackLines: s.general.scrollbackLines};
         }));
     }
 
@@ -61,7 +58,6 @@ export class SettingsService {
         }).catch(error => console.log('###############encryptseer', error));*/
 
         if (await Fs.exists(path)) {
-
             const unwatch = Fs.watchChanges$(path).subscribe(async () => {
                 await this.loadSettings(path);
             });
@@ -74,22 +70,6 @@ export class SettingsService {
 
     private async loadSettings(path: string) {
         const settingsAsString = await Fs.readTextFile(path);
-        this.parseSettings(settingsAsString);
-    }
-
-    private parseSettings(settingsAsString: string) {
-        const settings: Settings = JSON.parse(settingsAsString);
-        if (!settings.general) settings.general = DEFAULT_SETTINGS.general;
-        if (!settings.shortcuts) settings.shortcuts = DEFAULT_SETTINGS.shortcuts;
-        if (!settings.themes || settings.themes.length === 0) settings.themes = DEFAULT_SETTINGS.themes;
-        if (!settings.shells || settings.shells.length === 0) settings.shells = DEFAULT_SETTINGS.shells;
-        if (!settings.remoteShells || settings.remoteShells.length === 0) settings.remoteShells = DEFAULT_SETTINGS.remoteShells;
-        if (!settings.autocomplete) settings.autocomplete = DEFAULT_SETTINGS.autocomplete;
-
-        for (const theme of settings.themes) {
-            theme.padding = theme.padding.split(' ').map(p => `${p}rem`).join(' ');
-        }
-
-        this.store.update({settings: settings});
+        this.store.update({settings: SettingsCodec.fromStringToSettings(settingsAsString)});
     }
 }

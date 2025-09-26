@@ -106,13 +106,13 @@ export class TerminalComponent implements AfterViewInit {
     private setTheme(t: Theme, scrollbackLines: number) {
         this.theme = t;
         this.terminal!.options.scrollback = scrollbackLines;
-        this.terminal!.options.fontSize = this.theme.fontsize;
-        this.terminal!.options.fontFamily = `'${this.theme.fontFamily}', monospace`;
-        this.terminal!.options.fontWeight = this.theme.fontWeight;
-        this.terminal!.options.fontWeightBold = this.theme.fontWeightBold;
-        this.terminal!.options.cursorWidth = this.theme.cursorWidth;
-        this.terminal!.options.cursorBlink = this.theme.cursorBlink;
-        this.terminal!.options.cursorStyle = this.theme.cursorStyle;
+        this.terminal!.options.fontSize = this.theme.terminalFont.size;
+        this.terminal!.options.fontFamily = `'${this.theme.terminalFont.family}', monospace`;
+        this.terminal!.options.fontWeight = this.theme.terminalFont.weight;
+        this.terminal!.options.fontWeightBold = this.theme.terminalFont.weightBold;
+        this.terminal!.options.cursorWidth = this.theme.cursor.width;
+        this.terminal!.options.cursorBlink = this.theme.cursor.blink;
+        this.terminal!.options.cursorStyle = this.theme.cursor.style;
         this.terminal!.options.theme = {
             background: '#00000000',
             cursor: this.theme.colors.cursor ? `${this.theme.colors.cursor}CC` : `${this.theme.colors.highlight}CC`,

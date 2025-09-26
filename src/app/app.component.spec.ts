@@ -1,7 +1,7 @@
 import {AppComponent} from "./app.component";
 import {exists, readTextFile} from "../__mocks__/plugin-fs";
 import {SettingsService} from './settings/+state/settings.service';
-import {DEFAULT_SETTINGS} from "./settings/+models/default-settings";
+import {DEFAULT_SETTINGS} from "./settings/+models/settings";
 
 describe('AppComponent', () => {
     let component: AppComponent;

@@ -94,23 +94,23 @@ export class AppComponent implements OnDestroy {
         document.documentElement.style.setProperty('--shadow1', '0 1px 1px 0 var(--color-shadow3), 0 2px 1px -1px var(--color-shadow1), 0 1px 3px 0 var(--color-shadow2)');
         document.documentElement.style.setProperty('--shadow2', '0 2px 2px 0 var(--color-shadow3), 0 3px 1px -2px var(--color-shadow1), 0 1px 5px 0 var(--color-shadow2)');
         document.documentElement.style.setProperty('--shadow3', '0 3px 4px 0 var(--color-shadow3), 0 3px 3px -2px var(--color-shadow1), 0 1px 8px 0 var(--color-shadow2)');
-        document.documentElement.style.setProperty('--appFontSize', `${theme.appFontsize}px`);
-        document.documentElement.style.setProperty('--fontSize', `${theme.fontsize}px`);
-        document.documentElement.style.setProperty('--fontWeight', `${theme.fontWeight}`);
-        document.documentElement.style.setProperty('--fontFamily', `'${theme.fontFamily}'`);
-        document.documentElement.style.setProperty('--appFontFamily', `'${theme.appFontFamily}'`);
+        document.documentElement.style.setProperty('--appFontSize', `${theme.appFont.size}px`);
+        document.documentElement.style.setProperty('--fontSize', `${theme.terminalFont.size}px`);
+        document.documentElement.style.setProperty('--fontWeight', `${theme.terminalFont.weight}`);
+        document.documentElement.style.setProperty('--fontFamily', `'${theme.terminalFont.family}'`);
+        document.documentElement.style.setProperty('--appFontFamily', `'${theme.appFont.family}'`);
         document.documentElement.style.setProperty('--padding-xterm', `${theme.padding}`);
         document.documentElement.style.setProperty('--color-command-running', `${theme.colors.commandRunning}`);
         document.documentElement.style.setProperty('--color-command-success', `${theme.colors.commandSuccess}`);
         document.documentElement.style.setProperty('--color-command-error', `${theme.colors.commandError}`);
         if (theme.image) {
-            const url = Fs.convertFileSrc(theme.image.trim());
-            const color = theme.colors.background + Color.getHexOpacity(theme.imageOpacity ?? 75);
+            const url = Fs.convertFileSrc(theme.image.path);
+            const color = theme.colors.background + Color.getHexOpacity(theme.image.opacity);
 
             // getrennte Variablen, keine Shorthand-„fixed“-Tokens in der CSS-Variable
             document.body.style.setProperty("--background-image", `url("${url}")`);
             document.body.style.setProperty("--background-gradient", `linear-gradient(to bottom, ${color}, ${color})`);
-            document.body.style.setProperty("--background-blur", `${theme.imageBlur ?? 10}px`);
+            document.body.style.setProperty("--background-blur", `${theme.image.blur}px`);
 
             // Schalter setzen -> aktiviert das ::before
             document.body.classList.add("has-background");

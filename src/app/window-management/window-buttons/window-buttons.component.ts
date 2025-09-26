@@ -2,7 +2,7 @@ import {Component} from '@angular/core';
 import {WindowButtonsService} from './+state/window-buttons.service';
 import {CommonModule} from '@angular/common';
 import {IconComponent} from "../../icons/icon/icon.component";
-import {Environment} from "../../common/environment/environment";
+import {OS} from "../../_tauri/os";
 
 @Component({
     selector: 'app-window-buttons',
@@ -17,7 +17,7 @@ import {Environment} from "../../common/environment/environment";
 })
 export class WindowButtonsComponent {
 
-  public os = Environment.platform();
+  public os = OS.platform();
 
   constructor(public readonly service: WindowButtonsService) { }
 

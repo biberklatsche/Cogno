@@ -1,6 +1,5 @@
 import {Path} from '../../_tauri/path';
 import { isDevMode } from '@angular/core';
-import {OS, OsType} from '../../_tauri/os';
 
 export namespace Environment {
 
@@ -18,10 +17,6 @@ export namespace Environment {
 
     export function dbFilePath(): string {
         return _dbFileFilePath;
-    }
-
-    export function platform(): OsType {
-        return OS.platform();
     }
 
     export async function init() : Promise<void> {
