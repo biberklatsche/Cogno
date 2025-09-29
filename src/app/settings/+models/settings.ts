@@ -46,6 +46,32 @@ export const AppFontSchema = BaseFontSchema.extend({
     family: z.string().default('Roboto'),
 });
 
+const PromptColorNameSchema = z.enum([
+    'black',
+    'red',
+    'green',
+    'yellow',
+    'blue',
+    'magenta',
+    'cyan',
+    'white',
+    'brightBlack',
+    'brightRed',
+    'brightGreen',
+    'brightYellow',
+    'brightBlue',
+    'brightMagenta',
+    'brightCyan',
+    'brightWhite',
+]);
+
+export type PromptColorName = z.infer<typeof PromptColorNameSchema>;
+
+export const PromptColorSchema = z.object({
+    foreground: PromptColorNameSchema,
+    background: PromptColorNameSchema,
+});
+
 export const ColorsSchema = z.object({
     foreground: HexColorSchema.default('#ffffff'),
     background: HexColorSchema.default('#0e1925'),
@@ -67,9 +93,22 @@ export const ColorsSchema = z.object({
     brightCyan: HexColorSchema.default('#32d8c1'),
     brightWhite: HexColorSchema.default('#eeeeee'),
     cursor: HexColorSchema.default('#34bbfe'),
-    commandRunning: HexColorSchema.optional(),
-    commandSuccess: HexColorSchema.optional(),
-    commandError: HexColorSchema.optional(),
+    commandRunning: HexColorSchema.default('#34bbfe'),
+    commandSuccess: HexColorSchema.default('#11d894'),
+    commandError: HexColorSchema.default('#fd1155'),
+    promptColors: z.array(PromptColorSchema).default([
+        {
+            foreground: 'blue',
+            background: 'black'
+        },
+        {
+            foreground: 'cyan',
+            background: 'black'
+        },
+        {
+            foreground: 'green',
+            background: 'black'
+        }]),
 });
 
 export const CursorSchema = z.object({
@@ -209,6 +248,7 @@ const pickDefaultShells = (os: OsType) => {
             id: "7fbb90f5-9c3e-4b1e-99d1-978843daca1c",
             name: "Git Bash",
             shellType: "GitBash",
+            promptVersion: "version1",
             path: "C:\\arbeit\\Git\\bin\\sh.exe",
             args: [
                 "--login",
@@ -226,16 +266,17 @@ const pickDefaultShells = (os: OsType) => {
     } else if (os === "macos") {
         shells.push({
             id: "7fbb90f5-9c3e-4b1e-99d1-978843daca1c",
-            name: "Git Bash",
-            shellType: "GitBash",
-            path: "C:\\arbeit\\Git\\bin\\sh.exe",
+            name: "ZSH",
+            shellType: "ZSH",
+            promptVersion: "version1",
+            path: "/etc/zsh",
             args: [
                 "--login",
                 "-i"
             ],
             default: true,
             useConpty: true,
-            workingDir: "D:\\Projects",
+            workingDir: "/~",
             startTimeout: 100000,
             promptTerminator: "🖕",
             usesFinalSpacePromptTerminator: true,
@@ -247,6 +288,7 @@ const pickDefaultShells = (os: OsType) => {
 
 const ShellTypeEnum = z.enum(["Powershell", "ZSH", "Bash", "GitBash"]);
 const RemoteInjectionTypeEnum = z.enum(["auto", "manual"]);
+const PromptVersionEnum = z.enum(["manual", "version1", "version2"]);
 
 const ShellSchema = z.object({
     id: z.string(),
@@ -260,6 +302,7 @@ const ShellSchema = z.object({
     workingDir: z.string().optional(),
     startTimeout: z.number().int().min(0, "Timeout must be >= 0").default(100000),
     promptTerminator: z.string().default("$"),
+    promptVersion: PromptVersionEnum.default("version1"),
     usesFinalSpacePromptTerminator: z.boolean().default(true),
     injectionType: RemoteInjectionTypeEnum.default("auto"),
     color: HexColorSchema.optional(),

@@ -5,6 +5,7 @@ import {filter, map, Observable, take} from 'rxjs';
 import {createStore, Store} from '../../common/store/store';
 import {DEFAULT_SETTINGS, Settings, Theme} from "../+models/settings";
 import {SettingsCodec} from "./settings.codec";
+import {invoke} from "@tauri-apps/api/core";
 
 type SettingsState = {
     settings: Settings | undefined;
@@ -41,12 +42,14 @@ export class SettingsService {
         /*invoke("list_fonts").then(fonts => {
           console.log('###############Fonts', fonts);
         }).catch(error => console.log('###############Fontseer', error));*/
-/*
-        invoke("list_shells").then(shells => {
-          console.log('###############Shells', shells);
-        }).catch(error => console.log('###############Shellseer', error));
 
-        invoke("get_keyboard_layout").then(layout => {
+        /*invoke("list_shells").then(shells => {
+          console.log('###############Shells', shells);
+
+
+        }).catch(error => console.log('###############Shellseer', error));*/
+
+        /*invoke("get_keyboard_layout").then(layout => {
           console.log('###############layout', layout);
         }).catch(error => console.log('###############layoutseer', error));
 

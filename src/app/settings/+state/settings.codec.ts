@@ -1,7 +1,7 @@
 import {DEFAULT_SETTINGS, Settings, SettingsSchema} from "../+models/settings";
 
 /**
- * SettingsManager
+ * SettingsCodec
  * - parseUserString -> Partial-Objekt aus "dot-properties"-Text
  * - toConfig        -> validiertes Config-Objekt (Defaults via Zod)
  * - diffToString    -> schreibt NUR Unterschiede ggü. Defaults zurück ("dot-properties")
