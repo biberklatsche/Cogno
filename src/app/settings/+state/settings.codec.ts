@@ -8,7 +8,7 @@ import {DEFAULT_SETTINGS, Settings, SettingsSchema} from "../+models/settings";
  */
 export class SettingsCodec {
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */
-    static parseUserString(input: string): Record<string, unknown> {
+    private static parseUserString(input: string): Record<string, unknown> {
         const out: Record<string, unknown> = {};
 
         for (const rawLine of input.split(/\r?\n/)) {
@@ -51,7 +51,7 @@ export class SettingsCodec {
     }
 
     /** Führt die User-Overrides mit den Zod-Defaults zusammen und validiert. */
-    static toSettings(userOverrides: Record<string, unknown>): Settings {
+    private static toSettings(userOverrides: Record<string, unknown>): Settings {
         // Trick: Zod-Defaults füllen alles auf; wir brauchen kein deep-merge.
         return SettingsSchema.parse(userOverrides);
     }

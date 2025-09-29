@@ -24,7 +24,6 @@ export class AppComponent implements OnDestroy {
 
     constructor(private settingsService: SettingsService) {
         this.initAsync().then();
-
         this.subscriptions.push(this.settingsService.activeTheme$.subscribe(theme => this.setStyle(theme)));
     }
 
@@ -35,7 +34,7 @@ export class AppComponent implements OnDestroy {
     async initAsync(): Promise<void> {
         await Environment.init();
         await this.settingsService.loadAndWatch();
-        const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
+        /*const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
         await db.execute(`
     CREATE TABLE IF NOT EXISTS todos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +44,7 @@ export class AppComponent implements OnDestroy {
         await db.execute("INSERT into todos (title) VALUES ($1)",
           ["Das hab ich geschafft"]);
         const todos = await db.query<{ id: number; title: string }>('SELECT * FROM todos');
-        console.log(todos);
+        console.log(todos);*/
     }
 
     private setStyle(theme: Theme): void {

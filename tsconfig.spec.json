@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": [ "jest" ],
+    "types": [ "vitest/globals" ],
     "esModuleInterop": true,
     "emitDecoratorMetadata": true
   }

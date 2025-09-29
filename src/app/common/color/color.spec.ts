@@ -1,4 +1,5 @@
 import {Color} from './color';
+import { describe, it, expect } from 'vitest';
 
 describe('Color', () => {
 

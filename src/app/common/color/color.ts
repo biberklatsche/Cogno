@@ -12,7 +12,7 @@ export namespace Color {
     return `hsl(${hash % 360},100%,30%)`;
   }
 
-  export function getHexOpacity(opacity: number): string {
+  export function getHexOpacity(opacity: number | undefined | null): string {
     let result = '';
     if (opacity || opacity === 0) {
       if (opacity > 100) {
@@ -64,7 +64,7 @@ export namespace Color {
     return '#' + rs + bs + gs + opacity;
   }
 
-  export function isValid(color: string): boolean {
+  export function isValid(color: string | undefined | null): boolean {
     try {
       if (!color || color.length < 7 || color.length > 7 || color[0] !== '#') {
         return false;

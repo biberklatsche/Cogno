@@ -1,26 +1,23 @@
-import {AppComponent} from "./app.component";
-import {exists, readTextFile} from "../__mocks__/plugin-fs";
-import {SettingsService} from './settings/+state/settings.service';
-import {DEFAULT_SETTINGS} from "./settings/+models/settings";
+import { AppComponent } from './app.component';
+import { SettingsService } from './settings/+state/settings.service';
+import { DestroyRef } from '@angular/core';
+import { describe, beforeEach, test, expect, vi } from 'vitest';
+import { firstValueFrom } from 'rxjs';
 
 describe('AppComponent', () => {
-    let component: AppComponent;
-    let settingsService: SettingsService;
+  let settingsService: SettingsService;
+  const destroyRef: DestroyRef = {
+    onDestroy: vi.fn((_cb: VoidFunction) => {}),
+  } as unknown as DestroyRef;
 
-    beforeEach(() => {
-        readTextFile.mockReset();
-        exists.mockReset();
-        settingsService = new SettingsService();
+  beforeEach(() => {
+    settingsService = new SettingsService(destroyRef);
+  });
 
-    })
-
-    test('app should load settings on init', (done) => {
-        readTextFile.mockResolvedValue(JSON.stringify(DEFAULT_SETTINGS));
-        exists.mockResolvedValue(true)
-        settingsService.settings$.subscribe(settings => {
-            expect(settings).toBeTruthy();
-            done();
-        })
-        component = new AppComponent(settingsService);
-    })
-})
+  test('app should load settings on init', async () => {
+    const settingsPromise = firstValueFrom(settingsService.settings$);
+    const component = new AppComponent(settingsService);
+    const settings = await settingsPromise;
+    expect(settings).toBeTruthy();
+  });
+});
