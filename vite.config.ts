@@ -11,7 +11,16 @@ export default defineConfig({
     include: ['src/**/*.spec.ts'],
     coverage: {
       reporter: ['text', 'lcov'],
-      reportsDirectory: 'coverage'
+      reportsDirectory: 'coverage',
+      all: true,
+      include: ['src/app/**/*.ts'],
+      exclude: [
+        'src/app/_tauri/**',
+        '**/*.spec.ts',
+        '**/*.test.ts',
+        '**/__mocks__/**',
+        '**/*.d.ts'
+      ]
     }
   }
 });
