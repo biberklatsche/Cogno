@@ -23,8 +23,21 @@ export class SettingsCodec {
 
             let value: unknown = rawVal;
 
-            // Primitive Heuristiken: number, boolean, JSON-Array/-Objekt
-            if (/^-?\d+$/.test(rawVal) || /^-?\d+\.\d+$/.test(rawVal)) {
+            // Quoted strings: unwrap first (so "false" stays a string, not boolean)
+            const isDq = rawVal.length >= 2 && rawVal.startsWith('"') && rawVal.endsWith('"');
+            const isSq = rawVal.length >= 2 && rawVal.startsWith("'") && rawVal.endsWith("'");
+            if (isDq) {
+                try {
+                    // JSON.parse handles escape sequences for double-quoted strings
+                    value = JSON.parse(rawVal);
+                } catch {
+                    value = rawVal.slice(1, -1);
+                }
+            } else if (isSq) {
+                // For single quotes, just strip the outer quotes
+                value = rawVal.slice(1, -1);
+            } else if (/^-?\d+$/.test(rawVal) || /^-?\d+\.\d+$/.test(rawVal)) {
+                // Primitive Heuristiken: number
                 value = Number(rawVal);
             } else if (rawVal === "true") {
                 value = true;
@@ -34,6 +47,7 @@ export class SettingsCodec {
                 (rawVal.startsWith("[") && rawVal.endsWith("]")) ||
                 (rawVal.startsWith("{") && rawVal.endsWith("}"))
             ) {
+                // Arrays/Objects via JSON
                 try { value = JSON.parse(rawVal); } catch { /* fällt auf string zurück */ }
             }
 
@@ -63,9 +77,14 @@ export class SettingsCodec {
     }
 
     /** Erzeugt nur die Abweichungen (Diff) zwischen Defaults und aktueller Config als "dot-properties"-Text. */
-    static diffToString(current: Settings): string {
-        const diff = this.diffObjects(DEFAULT_SETTINGS, current);
-        const lines = this.toDotProperties(diff);
+    static diffToString(settings: Settings): string {
+        const diff = this.diffObjects(DEFAULT_SETTINGS, settings);
+        return this.toDotString(diff);
+    }
+
+    /** Erzeugt nur die Abweichungen (Diff) zwischen Defaults und aktueller Config als "dot-properties"-Text. */
+    static toDotString(settings: Settings): string {
+        const lines = this.toDotProperties(settings);
         // Optionale Sortierung für stabile Ausgaben
         return lines.sort((a, b) => a.localeCompare(b)).join("\n") + (lines.length ? "\n" : "");
     }

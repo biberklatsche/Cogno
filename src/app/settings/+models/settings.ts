@@ -10,7 +10,7 @@ const PaddingSchema = z.object({
     value: z.string().regex(
         /^(\d+)(\s*,\s*\d+){0,3}$/,
         'Padding must contain 1–4 integers separated by commas').default('1'),
-    removeOnFullScreenApp: z.boolean().default(true),
+    remove_on_full_screen_app: z.boolean().default(true),
 });
 
 export const FontWeightSchema = z.union([
@@ -33,9 +33,9 @@ export const FontWeightSchema = z.union([
 const BaseFontSchema = z.object({
     family: z.string(),
     size: z.int().min(1, 'Font size must be at least 1').default(14),
-    enableLigatures: z.boolean().default(false),
+    enable_ligatures: z.boolean().default(false),
     weight: FontWeightSchema.default('normal'),
-    weightBold: FontWeightSchema.default('bold'),
+    weight_bold: FontWeightSchema.default('bold'),
 })
 
 export const TerminalFontSchema = BaseFontSchema.extend({
@@ -65,11 +65,36 @@ const PromptColorNameSchema = z.enum([
     'brightWhite',
 ]);
 
-export type PromptColorName = z.infer<typeof PromptColorNameSchema>;
-
 export const PromptColorSchema = z.object({
     foreground: PromptColorNameSchema,
     background: PromptColorNameSchema,
+});
+
+export const PromptColorListSchema = z.object({
+    1: PromptColorSchema.default({
+            foreground: 'blue',
+            background: 'black'
+        }),
+    2: PromptColorSchema.default({
+        foreground: 'cyan',
+        background: 'black'
+    }),
+    3: PromptColorSchema.default({
+        foreground: 'green',
+        background: 'black'
+    }),
+    4: PromptColorSchema.default({
+        foreground: 'yellow',
+        background: 'black'
+    }),
+    5: PromptColorSchema.default({
+        foreground: 'magenta',
+        background: 'black'
+    }),
+    6: PromptColorSchema.default({
+        foreground: 'red',
+        background: 'black'
+    })
 });
 
 export const ColorsSchema = z.object({
@@ -84,35 +109,23 @@ export const ColorsSchema = z.object({
     magenta: HexColorSchema.default('#e465d9'),
     cyan: HexColorSchema.default('#32d8c1'),
     white: HexColorSchema.default('#eeeeee'),
-    brightBlack: HexColorSchema.default('#32465c'),
-    brightRed: HexColorSchema.default('#fd1155'),
-    brightGreen: HexColorSchema.default('#11d894'),
-    brightYellow: HexColorSchema.default('#fede55'),
-    brightBlue: HexColorSchema.default('#34bbfe'),
-    brightMagenta: HexColorSchema.default('#e465d9'),
-    brightCyan: HexColorSchema.default('#32d8c1'),
-    brightWhite: HexColorSchema.default('#eeeeee'),
+    bright_black: HexColorSchema.default('#32465c'),
+    bright_red: HexColorSchema.default('#fd1155'),
+    bright_green: HexColorSchema.default('#11d894'),
+    bright_yellow: HexColorSchema.default('#fede55'),
+    bright_blue: HexColorSchema.default('#34bbfe'),
+    bright_magenta: HexColorSchema.default('#e465d9'),
+    bright_cyan: HexColorSchema.default('#32d8c1'),
+    bright_white: HexColorSchema.default('#eeeeee'),
     cursor: HexColorSchema.default('#34bbfe'),
-    commandRunning: HexColorSchema.default('#34bbfe'),
-    commandSuccess: HexColorSchema.default('#11d894'),
-    commandError: HexColorSchema.default('#fd1155'),
-    promptColors: z.array(PromptColorSchema).default([
-        {
-            foreground: 'blue',
-            background: 'black'
-        },
-        {
-            foreground: 'cyan',
-            background: 'black'
-        },
-        {
-            foreground: 'green',
-            background: 'black'
-        }]),
+    command_running: HexColorSchema.default('#34bbfe'),
+    command_success: HexColorSchema.default('#11d894'),
+    command_error: HexColorSchema.default('#fd1155'),
+    prompt_color: PromptColorListSchema.default(PromptColorListSchema.parse({})),
 });
 
 export const CursorSchema = z.object({
-    width: z.int().min(0, 'Cursor-With must be at least 0').min(10, 'Cursor-With must be at most 10').default(4),
+    width: z.int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10').default(4),
     blink: z.boolean().default(true),
     style: z
         .enum(['bar', 'underline'])
@@ -128,33 +141,33 @@ export const ImageSchema = z.object({
 });
 
 const ThemeSchema = z.object({
-    terminalFont: TerminalFontSchema.default(TerminalFontSchema.parse({})),
-    appFont: AppFontSchema.default(AppFontSchema.parse({})),
+    terminal_font: TerminalFontSchema.default(TerminalFontSchema.parse({})),
+    app_font: AppFontSchema.default(AppFontSchema.parse({})),
     image: ImageSchema.optional(),
     padding: PaddingSchema.default(PaddingSchema.parse({})),
-    colors: ColorsSchema.default(ColorsSchema.parse({})),
+    color: ColorsSchema.default(ColorsSchema.parse({})),
     cursor: CursorSchema.default(CursorSchema.parse({})),
-    enableWebgl: z.boolean().default(false),
+    enable_webgl: z.boolean().default(false),
 });
 
 const GeneralSchema = z.object({
-    enableTelemetry: z.boolean().default(true),
-    enablePasteOnRightClick: z.boolean().default(false),
-    enableCopyOnSelect: z.boolean().default(false),
-    openTabInSameDirectory: z.boolean().default(true),
-    enableBracketPaste: z.boolean().default(true),
-    scrollbackLines: z
+    enable_telemetry: z.boolean().default(true),
+    enable_paste_on_right_click: z.boolean().default(false),
+    enable_copy_on_select: z.boolean().default(false),
+    open_tab_in_same_directory: z.boolean().default(true),
+    enable_bracket_paste: z.boolean().default(true),
+    scrollback_lines: z
         .number()
         .int()
         .min(0, "Scrollback lines must be at least 0")
         .max(1_000_000, "Scrollback lines must not exceed 1,000,000")
         .default(100000),
     editor: z.object({
-        useCustomEditor: z.boolean().default(false),
-        editorCommand: z.string().default(""),
-        editorArgs: z.array(z.string()).default([]),
+        use_custom_editor: z.boolean().default(false),
+        editor_command: z.string().default(""),
+        editor_args: z.array(z.string()).default([]),
     }).optional(),
-    masterPasswordChecksum: z.string().optional()
+    master_password_checksum: z.string().optional()
 });
 
 const AutocompleteSchema = z.object({
@@ -165,124 +178,245 @@ const AutocompleteSchema = z.object({
     mode: z.enum(["always", "manual", "never"]).default("always"),
 });
 
-const AliasSchema = z.object({
-    command: z.string(),
-    shortcut: z.string(),
-});
-
-const ShortcutsSchema = z.object({
-    aliases: z.array(AliasSchema).default([]),
-
-    showActions: z.string(),
-    bringToFront: z.string(),
-    changeTab: z.string(),
-    nextTab: z.string(),
-    previousTab: z.string(),
-    clearBuffer: z.string(),
-    closeTab: z.string(),
-    closeOtherTabs: z.string(),
-    closeAllTabs: z.string(),
-    splitVertical: z.string(),
-    splitAndMoveVertical: z.string(),
-    splitHorizontal: z.string(),
-    splitAndMoveHorizontal: z.string(),
+const KeybindsSchema = z.object({
+    show_actions: z.string(),
+    bring_to_front: z.string(),
+    change_tab: z.string(),
+    next_tab: z.string(),
+    previous_tab: z.string(),
+    clear_buffer: z.string(),
+    close_tab: z.string(),
+    close_other_tabs: z.string(),
+    close_all_tabs: z.string(),
+    split_vertical: z.string(),
+    split_horizontal: z.string(),
     unsplit: z.string(),
-    swapPanes: z.string(),
-    abortTask: z.string(),
-    abortAllTasks: z.string(),
+    swap_panes: z.string(),
+    abort_task: z.string(),
+    abort_all_tasks: z.string(),
     copy: z.string(),
     cut: z.string(),
     find: z.string(),
-    clearLine: z.string(),
-    clearLineToEnd: z.string(),
-    clearLineToStart: z.string(),
-    deletePreviousWord: z.string(),
-    deleteNextWord: z.string(),
-    goToNextWord: z.string(),
-    goToPreviousWord: z.string(),
-    newTab: z.string(),
-    duplicateTab: z.string(),
+    clear_line: z.string(),
+    clear_line_to_end: z.string(),
+    clear_line_to_start: z.string(),
+    delete_previous_word: z.string(),
+    delete_next_word: z.string(),
+    go_to_next_word: z.string(),
+    go_to_previous_word: z.string(),
+    new_tab: z.string(),
+    duplicate_tab: z.string(),
     paste: z.string(),
-    showAutocompletion: z.string(),
-    showPasteHistory: z.string(),
-    showKeytips: z.string(),
-    showContextKeytips: z.string(),
-    nextArgument: z.string(),
-    previousArgument: z.string(),
-    openSettings: z.string(),
-    openShell1: z.string(),
-    openShell2: z.string(),
-    openShell3: z.string(),
-    openShell4: z.string(),
-    openShell5: z.string(),
-    openShell6: z.string(),
-    openShell7: z.string(),
-    openShell8: z.string(),
-    openShell9: z.string(),
-    scrollToPreviousCommand: z.string(),
-    scrollToNextCommand: z.string(),
-    scrollToPreviousBookmark: z.string(),
-    scrollToNextBookmark: z.string(),
-    selectTextRight: z.string(),
-    selectTextLeft: z.string(),
-    selectWordRight: z.string(),
-    selectWordLeft: z.string(),
-    selectTextToEndOfLine: z.string(),
-    selectTextToStartOfLine: z.string(),
-    openDevTools: z.string(),
-    injectPassword: z.string(),
+    show_autocompletion: z.string(),
+    show_paste_history: z.string(),
+    show_key_tips: z.string(),
+    show_context_key_tips: z.string(),
+    next_argument: z.string(),
+    previous_argument: z.string(),
+    open_settings: z.string(),
+    open_shell_1: z.string(),
+    open_shell_2: z.string(),
+    open_shell_3: z.string(),
+    open_shell_4: z.string(),
+    open_shell_5: z.string(),
+    open_shell_6: z.string(),
+    open_shell_7: z.string(),
+    open_shell_8: z.string(),
+    open_shell_9: z.string(),
+    scroll_to_previous_command: z.string(),
+    scroll_to_next_command: z.string(),
+    scroll_to_previous_bookmark: z.string(),
+    scroll_to_next_bookmark: z.string(),
+    select_text_right: z.string(),
+    select_text_left: z.string(),
+    select_word_right: z.string(),
+    select_word_left: z.string(),
+    select_text_to_end_of_line: z.string(),
+    select_text_to_start_of_line: z.string(),
+    open_dev_tools: z.string(),
+    inject_password: z.string(),
 });
 
-export type Shortcuts = z.infer<typeof ShortcutsSchema>;
+export type Shortcuts = z.infer<typeof KeybindsSchema>;
 
-export const DEFAULT_MAC_SHORTCUTS: Shortcuts = { aliases: [ { command: 'cd ..', shortcut: 'Control+U' } ], showActions: 'Command+P', bringToFront: 'Command+F1', changeTab: 'Command+Tab', nextTab: 'Alt+Right', previousTab: 'Alt+Left', clearBuffer: 'Command+Alt+C', closeTab: 'Command+W', closeOtherTabs: 'Command+Shift+W', closeAllTabs: 'Control+Shift+Q', splitVertical: 'Command+Shift+<', splitAndMoveVertical: 'Command+<', splitHorizontal: 'Command+Shift+-', splitAndMoveHorizontal: 'Command+-', unsplit: 'Command+Shift+U', swapPanes: 'Command+Shift+P', abortTask: 'Control+C', abortAllTasks: 'Control+Shift+C', copy: 'Command+C', cut: 'Command+X', find: 'Command+F', clearLine: 'Control+Y', clearLineToEnd: 'Control+M', clearLineToStart: 'Control+N', deletePreviousWord: 'Control+,', deleteNextWord: 'Control+.', goToNextWord: 'Control+Right', goToPreviousWord: 'Control+Left', newTab: 'Command+T', duplicateTab: 'Command+Shift+D', paste: 'Command+V', showAutocompletion: 'Control+Space', showPasteHistory: 'Command+Shift+H', showKeytips: 'Control+K', showContextKeytips: 'Control+Shift+K', nextArgument: 'Control+Alt+Right', previousArgument: 'Control+Alt+Left', openSettings: 'Command+Shift+S', openShell1: 'Command+1', openShell2: 'Command+2', openShell3: 'Command+3', openShell4: 'Command+4', openShell5: 'Command+5', openShell6: 'Command+6', openShell7: 'Command+7', openShell8: 'Command+8', openShell9: 'Command+9', scrollToPreviousCommand: 'Control+Shift+Up', scrollToNextCommand: 'Control+Shift+Down', scrollToPreviousBookmark: 'Control+Alt+Up', scrollToNextBookmark: 'Control+Alt+Down', selectTextRight: 'Shift+Right', selectTextLeft: 'Shift+Left', selectWordRight: 'Control+Shift+Right', selectWordLeft: 'Control+Shift+Left', selectTextToEndOfLine: 'Shift+End', selectTextToStartOfLine: 'Shift+Home', openDevTools: 'Control+Shift+F12', injectPassword: 'Control+Shift+F' };
-export const DEFAULT_SHORTCUTS: Shortcuts = { aliases: [ { command: 'cd ..', shortcut: 'Control+U' } ], showActions: 'Control+P', bringToFront: 'Control+F1', changeTab: 'Control+Tab', nextTab: 'Alt+Right', previousTab: 'Alt+Left', clearBuffer: 'Control+Alt+C', closeTab: 'Control+W', closeOtherTabs: 'Control+Shift+W', closeAllTabs: 'Control+Shift+Q', splitVertical: 'Control+Shift+<', splitAndMoveVertical: 'Control+<', splitHorizontal: 'Control+Shift+-', splitAndMoveHorizontal: 'Control+-', unsplit: 'Control+Shift+U', swapPanes: 'Control+Shift+P', abortTask: 'Control+C', abortAllTasks: 'Control+Shift+C', copy: 'Control+C', cut: 'Control+X', find: 'Control+F', clearLine: 'Control+Y', clearLineToEnd: 'Control+M', clearLineToStart: 'Control+N', deletePreviousWord: 'Control+,', deleteNextWord: 'Control+.', goToNextWord: 'Control+Right', goToPreviousWord: 'Control+Left', newTab: 'Control+T', duplicateTab: 'Control+Shift+D', paste: 'Control+V', showAutocompletion: 'Control+Space', showPasteHistory: 'Control+Shift+H', showKeytips: 'Control+K', showContextKeytips: 'Control+Shift+K', nextArgument: 'Control+Alt+Right', previousArgument: 'Control+Alt+Left', openSettings: 'Control+Shift+S', openShell1: 'Control+1', openShell2: 'Control+2', openShell3: 'Control+3', openShell4: 'Control+4', openShell5: 'Control+5', openShell6: 'Control+6', openShell7: 'Control+7', openShell8: 'Control+8', openShell9: 'Control+9', scrollToPreviousCommand: 'Control+Shift+Up', scrollToNextCommand: 'Control+Shift+Down', scrollToPreviousBookmark: 'Control+Alt+Up', scrollToNextBookmark: 'Control+Alt+Down', selectTextRight: 'Shift+Right', selectTextLeft: 'Shift+Left', selectWordRight: 'Control+Shift+Right', selectWordLeft: 'Control+Shift+Left', selectTextToEndOfLine: 'Shift+End', selectTextToStartOfLine: 'Shift+Home', openDevTools: 'Control+Shift+F12', injectPassword: 'Control+Shift+F' }
+export const DEFAULT_MAC_KEYBINDS: Shortcuts = {
+  show_actions: 'Command+P',
+  bring_to_front: 'Command+F1',
+  change_tab: 'Command+Tab',
+  next_tab: 'Alt+Right',
+  previous_tab: 'Alt+Left',
+  clear_buffer: 'Command+Alt+C',
+  close_tab: 'Command+W',
+  close_other_tabs: 'Command+Shift+W',
+  close_all_tabs: 'Control+Shift+Q',
+  split_vertical: 'Command+Shift+<',
+  split_horizontal: 'Command+Shift+-',
+  unsplit: 'Command+Shift+U',
+  swap_panes: 'Command+Shift+P',
+  abort_task: 'Control+C',
+  abort_all_tasks: 'Control+Shift+C',
+  copy: 'Command+C',
+  cut: 'Command+X',
+  find: 'Command+F',
+  clear_line: 'Control+Y',
+  clear_line_to_end: 'Control+M',
+  clear_line_to_start: 'Control+N',
+  delete_previous_word: 'Control+,',
+  delete_next_word: 'Control+.',
+  go_to_next_word: 'Control+Right',
+  go_to_previous_word: 'Control+Left',
+  new_tab: 'Command+T',
+  duplicate_tab: 'Command+Shift+D',
+  paste: 'Command+V',
+  show_autocompletion: 'Control+Space',
+  show_paste_history: 'Command+Shift+H',
+  show_key_tips: 'Control+K',
+  show_context_key_tips: 'Control+Shift+K',
+  next_argument: 'Control+Alt+Right',
+  previous_argument: 'Control+Alt+Left',
+  open_settings: 'Command+Shift+S',
+  open_shell_1: 'Command+1',
+  open_shell_2: 'Command+2',
+  open_shell_3: 'Command+3',
+  open_shell_4: 'Command+4',
+  open_shell_5: 'Command+5',
+  open_shell_6: 'Command+6',
+  open_shell_7: 'Command+7',
+  open_shell_8: 'Command+8',
+  open_shell_9: 'Command+9',
+  scroll_to_previous_command: 'Control+Shift+Up',
+  scroll_to_next_command: 'Control+Shift+Down',
+  scroll_to_previous_bookmark: 'Control+Alt+Up',
+  scroll_to_next_bookmark: 'Control+Alt+Down',
+  select_text_right: 'Shift+Right',
+  select_text_left: 'Shift+Left',
+  select_word_right: 'Control+Shift+Right',
+  select_word_left: 'Control+Shift+Left',
+  select_text_to_end_of_line: 'Shift+End',
+  select_text_to_start_of_line: 'Shift+Home',
+  open_dev_tools: 'Control+Shift+F12',
+  inject_password: 'Control+Shift+F'
+};
+export const DEFAULT_KEYBINDS: Shortcuts = {
+  show_actions: 'Control+P',
+  bring_to_front: 'Control+F1',
+  change_tab: 'Control+Tab',
+  next_tab: 'Alt+Right',
+  previous_tab: 'Alt+Left',
+  clear_buffer: 'Control+Alt+C',
+  close_tab: 'Control+W',
+  close_other_tabs: 'Control+Shift+W',
+  close_all_tabs: 'Control+Shift+Q',
+  split_vertical: 'Control+Shift+<',
+  split_horizontal: 'Control+Shift+-',
+  unsplit: 'Control+Shift+U',
+  swap_panes: 'Control+Shift+P',
+  abort_task: 'Control+C',
+  abort_all_tasks: 'Control+Shift+C',
+  copy: 'Control+C',
+  cut: 'Control+X',
+  find: 'Control+F',
+  clear_line: 'Control+Y',
+  clear_line_to_end: 'Control+M',
+  clear_line_to_start: 'Control+N',
+  delete_previous_word: 'Control+,',
+  delete_next_word: 'Control+.',
+  go_to_next_word: 'Control+Right',
+  go_to_previous_word: 'Control+Left',
+  new_tab: 'Control+T',
+  duplicate_tab: 'Control+Shift+D',
+  paste: 'Control+V',
+  show_autocompletion: 'Control+Space',
+  show_paste_history: 'Control+Shift+H',
+  show_key_tips: 'Control+K',
+  show_context_key_tips: 'Control+Shift+K',
+  next_argument: 'Control+Alt+Right',
+  previous_argument: 'Control+Alt+Left',
+  open_settings: 'Control+Shift+S',
+  open_shell_1: 'Control+1',
+  open_shell_2: 'Control+2',
+  open_shell_3: 'Control+3',
+  open_shell_4: 'Control+4',
+  open_shell_5: 'Control+5',
+  open_shell_6: 'Control+6',
+  open_shell_7: 'Control+7',
+  open_shell_8: 'Control+8',
+  open_shell_9: 'Control+9',
+  scroll_to_previous_command: 'Control+Shift+Up',
+  scroll_to_next_command: 'Control+Shift+Down',
+  scroll_to_previous_bookmark: 'Control+Alt+Up',
+  scroll_to_next_bookmark: 'Control+Alt+Down',
+  select_text_right: 'Shift+Right',
+  select_text_left: 'Shift+Left',
+  select_word_right: 'Control+Shift+Right',
+  select_word_left: 'Control+Shift+Left',
+  select_text_to_end_of_line: 'Shift+End',
+  select_text_to_start_of_line: 'Shift+Home',
+  open_dev_tools: 'Control+Shift+F12',
+  inject_password: 'Control+Shift+F'
+}
 
-const pickDefaultShortcuts = (os: OsType) =>
-    os === "macos" ? DEFAULT_MAC_SHORTCUTS : DEFAULT_SHORTCUTS;
+const pickDefaultKeybinds = (os: OsType): Shortcuts =>
+    os === "macos" ? DEFAULT_MAC_KEYBINDS : DEFAULT_KEYBINDS;
 
-const pickDefaultShells = (os: OsType) => {
-    const shells: ShellConfig[] = [];
+const pickDefaultShell = (os: OsType): ShellConfig => {
     if (os === "windows") {
-        shells.push({
-            id: "7fbb90f5-9c3e-4b1e-99d1-978843daca1c",
+        return {
             name: "Git Bash",
-            shellType: "GitBash",
-            promptVersion: "version1",
+            shell_type: "GitBash",
+            prompt_version: "version1",
             path: "C:\\arbeit\\Git\\bin\\sh.exe",
             args: [
                 "--login",
                 "-i"
             ],
             default: true,
-            useConpty: true,
-            workingDir: "D:\\Projects",
-            startTimeout: 100000,
-            promptTerminator: "🖕",
-            usesFinalSpacePromptTerminator: true,
-            injectionType: "manual",
-            isDebugModeEnabled: false
-        })
+            use_conpty: true,
+            working_dir: "D:\\Projects",
+            start_timeout: 100000,
+            prompt_terminator: "🖕",
+            uses_final_space_prompt_terminator: true,
+            injection_type: "manual",
+            is_debug_mode_enabled: false
+        }
     } else if (os === "macos") {
-        shells.push({
-            id: "7fbb90f5-9c3e-4b1e-99d1-978843daca1c",
+        return {
             name: "ZSH",
-            shellType: "ZSH",
-            promptVersion: "version1",
+            shell_type: "ZSH",
+            prompt_version: "version1",
             path: "/etc/zsh",
             args: [
                 "--login",
                 "-i"
             ],
             default: true,
-            useConpty: true,
-            workingDir: "/~",
-            startTimeout: 100000,
-            promptTerminator: "🖕",
-            usesFinalSpacePromptTerminator: true,
-            injectionType: "manual",
-            isDebugModeEnabled: false
-        })
+            use_conpty: true,
+            working_dir: "/~",
+            start_timeout: 100000,
+            prompt_terminator: "🖕",
+            uses_final_space_prompt_terminator: true,
+            injection_type: "manual",
+            is_debug_mode_enabled: false
+        }
+    } else {
+        return {
+            name: "Bash",
+            shell_type: "Bash",
+            prompt_version: "version1",
+            path: "/etc/bash",
+            args: [
+                "--login",
+                "-i"
+            ],
+            default: true,
+            use_conpty: true,
+            working_dir:"/~",
+            start_timeout: 100000,
+            prompt_terminator: "🖕",
+            uses_final_space_prompt_terminator: true,
+            injection_type: "manual",
+            is_debug_mode_enabled: false
+        }
     }
 }
 
@@ -291,36 +425,80 @@ const RemoteInjectionTypeEnum = z.enum(["auto", "manual"]);
 const PromptVersionEnum = z.enum(["manual", "version1", "version2"]);
 
 const ShellSchema = z.object({
-    id: z.string(),
     name: z.string(),
-    shellType: ShellTypeEnum,
+    shell_type: ShellTypeEnum,
     path: z.string(),
     args: z.array(z.string()).default([]),
     default: z.boolean().default(false),
-    isDebugModeEnabled: z.boolean().default(false),
-    useConpty: z.boolean().default(true),
-    workingDir: z.string().optional(),
-    startTimeout: z.number().int().min(0, "Timeout must be >= 0").default(100000),
-    promptTerminator: z.string().default("$"),
-    promptVersion: PromptVersionEnum.default("version1"),
-    usesFinalSpacePromptTerminator: z.boolean().default(true),
-    injectionType: RemoteInjectionTypeEnum.default("auto"),
+    is_debug_mode_enabled: z.boolean().default(false),
+    use_conpty: z.boolean().default(true),
+    working_dir: z.string().optional(),
+    start_timeout: z.number().int().min(0, "Timeout must be >= 0").default(100000),
+    prompt_terminator: z.string().default("$"),
+    prompt_version: PromptVersionEnum.default("version1"),
+    uses_final_space_prompt_terminator: z.boolean().default(true),
+    injection_type: RemoteInjectionTypeEnum.default("auto"),
     color: HexColorSchema.optional(),
 });
 
-const ShellsSchema = z.array(ShellSchema).default([]);
+const ShellListSchema = z.object({
+    1: z.preprocess(
+        (v) => (v == null ? pickDefaultShell(OS.platform()) : v),
+        ShellSchema
+    ),
+    2: ShellSchema.optional(),
+    3: ShellSchema.optional(),
+    4: ShellSchema.optional(),
+    5: ShellSchema.optional(),
+    6: ShellSchema.optional(),
+    7: ShellSchema.optional(),
+    8: ShellSchema.optional(),
+    9: ShellSchema.optional(),
+    10: ShellSchema.optional(),
+    11: ShellSchema.optional(),
+    12: ShellSchema.optional(),
+    13: ShellSchema.optional(),
+    14: ShellSchema.optional(),
+    15: ShellSchema.optional(),
+    16: ShellSchema.optional(),
+    17: ShellSchema.optional(),
+    18: ShellSchema.optional(),
+    19: ShellSchema.optional(),
+    20: ShellSchema.optional()
+});
 
 const RemoteShellSchema = z.object({
     id: z.string(),
-    isDebugModeEnabled: z.boolean().default(false),
+    is_debug_mode_enabled: z.boolean().default(false),
     name: z.string(),
-    shellType: ShellTypeEnum,
-    connectionCommand: z.string(),
+    shell_type: ShellTypeEnum,
+    connection_command: z.string(),
     color: HexColorSchema.optional(),
-    machineName: z.string(),
+    machine_name: z.string(),
 });
 
-const RemoteShellsSchema = z.array(RemoteShellSchema).default([]);
+const RemoteShellListSchema = z.object({
+    1: RemoteShellSchema.optional(),
+    2: RemoteShellSchema.optional(),
+    3: RemoteShellSchema.optional(),
+    4: RemoteShellSchema.optional(),
+    5: RemoteShellSchema.optional(),
+    6: RemoteShellSchema.optional(),
+    7: RemoteShellSchema.optional(),
+    8: RemoteShellSchema.optional(),
+    9: RemoteShellSchema.optional(),
+    10: RemoteShellSchema.optional(),
+    11: RemoteShellSchema.optional(),
+    12: RemoteShellSchema.optional(),
+    13: RemoteShellSchema.optional(),
+    14: RemoteShellSchema.optional(),
+    15: RemoteShellSchema.optional(),
+    16: RemoteShellSchema.optional(),
+    17: RemoteShellSchema.optional(),
+    18: RemoteShellSchema.optional(),
+    19: RemoteShellSchema.optional(),
+    20: RemoteShellSchema.optional(),
+})
 
 /**
  * Single Source of Truth: Alle Defaults leben im Schema.
@@ -329,21 +507,17 @@ const RemoteShellsSchema = z.array(RemoteShellSchema).default([]);
 export const SettingsSchema = z.object({
     general: GeneralSchema.default(GeneralSchema.parse({})),
     autocomplete: AutocompleteSchema.default(AutocompleteSchema.parse({})),
-    shortcuts: z.preprocess(
-        (v) => (v == null ? pickDefaultShortcuts(OS.platform()) : v),
-        ShortcutsSchema
+    keybind: z.preprocess(
+        (v) => (v == null ? pickDefaultKeybinds(OS.platform()) : v),
+        KeybindsSchema
     ),
-    shells: z.preprocess(
-        (v) => (v == null ? pickDefaultShells(OS.platform()) : v),
-        ShellsSchema
-    ),
-    remoteShells: RemoteShellsSchema.optional(),
+    shell: ShellListSchema.default(ShellListSchema.parse({})),
+    remote_shell: RemoteShellListSchema.optional(),
     theme: z.object({
         default: ThemeSchema,
         nightly: ThemeSchema.optional(),
     }).default({
-        default: ThemeSchema.parse({}),
-        nightly: undefined,
+        default: ThemeSchema.parse({})
     }),
 }).strict();
 

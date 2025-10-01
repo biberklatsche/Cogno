@@ -1,4 +1,5 @@
 import {
+    writeTextFile as tauriWriteTextFile,
     readTextFile as tauriReadTextFile,
     watch as tauriWatch,
     exists as tauriExists, WatchEvent
@@ -12,6 +13,7 @@ type UnwatchFn = () => void;
 export const Fs = {
 
     readTextFile(path: string): Promise<string> {return tauriReadTextFile(path)},
+    writeTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data)},
 
     /** 🆕 Observable-API – preferred */
     watchChanges$(path: string, opts?: { recursive?: boolean }): Observable<void> {

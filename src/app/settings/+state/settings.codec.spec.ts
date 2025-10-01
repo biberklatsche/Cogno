@@ -15,86 +15,86 @@ describe('SettingsCodec', () => {
     const text = `
       # comment
       ; another comment
-      
-      general.enableTelemetry=false
-      general.scrollbackLines=12345
-      theme.default.enableWebgl=true
-      theme.default.colors.promptColors=[{"foreground":"red","background":"black"}]
-      shells=[{"id":"1","name":"bash","shellType":"Bash","path":"/bin/bash"}]
+      autocomplete.mode="always"
+      general.enable_telemetry=false
+      general.scrollback_lines=12345
+      theme.default.enable_webgl=true
+      theme.default.colors.prompt_colors=[{"foreground":"red","background":"black"}]
+      shell=[{"id":"1","name":"bash","shellType":"Bash","path":"/bin/bash"}]
     `;
 
     const parsed = SettingsCodec.fromStringToSettings(text);
 
     // Nested structure exists
     expect(parsed.general).toBeDefined();
-    expect(parsed.general.enableTelemetry).toBe(false);
-    expect(parsed.general.scrollbackLines).toBe(12345);
+    expect(parsed.general.enable_telemetry).toBe(false);
+    expect(parsed.general.scrollback_lines).toBe(12345);
 
-    expect(parsed.theme.default.enableWebgl).toBe(true);
+    expect(parsed.theme.default.enable_webgl).toBe(true);
 
     // Arrays/objects are parsed via JSON
-    expect(Array.isArray(parsed.theme.default.colors.promptColors)).toBe(true);
-    expect(parsed.theme.default.colors.promptColors[0]).toEqual({ foreground: 'red', background: 'black' });
+    expect(Array.isArray(parsed.theme.default.colors.prompt_colors)).toBe(true);
+    expect(parsed.theme.default.colors.prompt_colors[0]).toEqual({ foreground: 'red', background: 'black' });
 
-    expect(Array.isArray(parsed.shells)).toBe(true);
-    expect(parsed.shells[0]).toMatchObject({ id: '1', name: 'bash', shellType: 'Bash', path: '/bin/bash' });
+    expect(Array.isArray(parsed.shell)).toBe(true);
+    expect(parsed.shell[0]).toMatchObject({ id: '1', name: 'bash', shell_type: 'Bash', path: '/bin/bash' });
   });
 
   it('toSettings fills defaults and keeps overrides', () => {
       const text = `
-      general.enableTelemetry=false
-      theme.default.enableWebgl=true
+      general.enable_telemetry=false
+      theme.default.enable_webgl=true
     `;
 
     const settings = SettingsCodec.fromStringToSettings(text);
 
     // Overrides applied
-    expect(settings.general.enableTelemetry).toBe(false);
-    expect(settings.theme.default.enableWebgl).toBe(true);
+    expect(settings.general.enable_telemetry).toBe(false);
+    expect(settings.theme.default.enable_webgl).toBe(true);
 
-    // Defaults filled by Zod (e.g., scrollbackLines has default 100000)
-    expect(settings.general.scrollbackLines).toBeGreaterThan(0);
-    expect(settings.general.scrollbackLines).toBe(100000);
+    // Defaults filled by Zod (e.g., scrollback_lines has default 100000)
+    expect(settings.general.scrollback_lines).toBeGreaterThan(0);
+    expect(settings.general.scrollback_lines).toBe(100000);
 
     // Defaults for theme/defaults exist (e.g., cursor width default)
     expect(settings.theme.default.cursor.width).toBeDefined();
   });
 
-  it('toSettings throws on invalid values (e.g., negative scrollbackLines)', () => {
+  it('toSettings throws on invalid values (e.g., negative scrollback_lines)', () => {
       const text = `
-      general.scrollbackLines=-1
+      general.scrollback_lines=-1
     `;
     expect(() => SettingsCodec.fromStringToSettings(text)).toThrowError();
   });
 
   it('fromStringToSettings integrates parse + validate + defaults', () => {
-    const text = `general.enableTelemetry=false\nGeneral.scrollbackLines=9999\n`;
+    const text = `general.enable_telemetry=false\nGeneral.scrollback_lines=9999\n`;
     // Note: keys are case-sensitive in implementation; ensure correct casing
-    const proper = `general.enableTelemetry=false\ngeneral.scrollbackLines=9999\n`;
+    const proper = `general.enable_telemetry=false\ngeneral.scrollback_lines=9999\n`;
     const settings = SettingsCodec.fromStringToSettings(proper);
-    expect(settings.general.enableTelemetry).toBe(false);
-    expect(settings.general.scrollbackLines).toBe(9999);
+    expect(settings.general.enable_telemetry).toBe(false);
+    expect(settings.general.scrollback_lines).toBe(9999);
     // A default field still exists
-    expect(settings.theme.default.enableWebgl).toBe(false);
+    expect(settings.theme.default.enable_webgl).toBe(false);
   });
 
   it('diffToString outputs only differences vs DEFAULT_SETTINGS, JSON-serialized and sorted with trailing newline', () => {
     // Start from defaults and change a handful of values
     // Clone defaults to avoid mutating shared default object references inside zod schemas
     const current: any = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
-    current.general.enableTelemetry = false;
-    current.theme.default.enableWebgl = true;
-    current.general.scrollbackLines = 1234;
-    current.shortcuts.copy = 'Control+Shift+C';
+    current.general.enable_telemetry = false;
+    current.theme.default.enable_webgl = true;
+    current.general.scrollback_lines = 1234;
+    current.keybind.copy = 'Control+Shift+C';
 
     const text = SettingsCodec.diffToString(current as any);
 
     // Should contain exactly these keys in sorted order and JSON-serialized values
     const expectedLines = [
-      'general.enableTelemetry=false',
-      'general.scrollbackLines=1234',
-      'shortcuts.copy="Control+Shift+C"',
-      'theme.default.enableWebgl=true',
+      'general.enable_telemetry=false',
+      'general.scrollback_lines=1234',
+      'keybind.copy="Control+Shift+C"',
+      'theme.default.enable_webgl=true',
     ].sort((a,b)=>a.localeCompare(b));
 
     const lines = text.trimEnd().split('\n');

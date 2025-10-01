@@ -90,7 +90,7 @@ export class TerminalComponent implements AfterViewInit {
         this.terminal!.loadAddon(this.unicodeAddon);
 
         this.terminal!.unicode.activeVersion = '11';
-        if (theme.enableWebgl) {
+        if (theme.enable_webgl) {
             if (!this.webglAddon) {
                 this.webglAddon = new WebglAddon();
             }
@@ -106,36 +106,36 @@ export class TerminalComponent implements AfterViewInit {
     private setTheme(t: Theme, scrollbackLines: number) {
         this.theme = t;
         this.terminal!.options.scrollback = scrollbackLines;
-        this.terminal!.options.fontSize = this.theme.terminalFont.size;
-        this.terminal!.options.fontFamily = `'${this.theme.terminalFont.family}', monospace`;
-        this.terminal!.options.fontWeight = this.theme.terminalFont.weight;
-        this.terminal!.options.fontWeightBold = this.theme.terminalFont.weightBold;
+        this.terminal!.options.fontSize = this.theme.terminal_font.size;
+        this.terminal!.options.fontFamily = `'${this.theme.terminal_font.family}', monospace`;
+        this.terminal!.options.fontWeight = this.theme.terminal_font.weight;
+        this.terminal!.options.fontWeightBold = this.theme.terminal_font.weight_bold;
         this.terminal!.options.cursorWidth = this.theme.cursor.width;
         this.terminal!.options.cursorBlink = this.theme.cursor.blink;
         this.terminal!.options.cursorStyle = this.theme.cursor.style;
         this.terminal!.options.theme = {
             background: '#00000000',
-            cursor: this.theme.colors.cursor ? `${this.theme.colors.cursor}CC` : `${this.theme.colors.highlight}CC`,
-            cursorAccent: `${this.theme.colors.highlight}66`,
-            foreground: this.theme.colors.foreground,
-            selectionBackground: `${this.theme.colors.highlight}88`,
-            selectionInactiveBackground: `${this.theme.colors.highlight}55`,
-            black: this.theme.colors.black,
-            red: this.theme.colors.red,
-            green: this.theme.colors.green,
-            yellow: this.theme.colors.yellow,
-            blue: this.theme.colors.blue,
-            magenta: this.theme.colors.magenta,
-            cyan: this.theme.colors.cyan,
-            white: this.theme.colors.brightWhite,
-            brightBlack: this.theme.colors.brightBlack,
-            brightRed: this.theme.colors.brightRed,
-            brightGreen: this.theme.colors.brightGreen,
-            brightYellow: this.theme.colors.brightYellow,
-            brightBlue: this.theme.colors.brightBlue,
-            brightMagenta: this.theme.colors.brightMagenta,
-            brightCyan: this.theme.colors.brightCyan,
-            brightWhite: this.theme.colors.brightWhite,
+            cursor: this.theme.color.cursor ? `${this.theme.color.cursor}CC` : `${this.theme.color.highlight}CC`,
+            cursorAccent: `${this.theme.color.highlight}66`,
+            foreground: this.theme.color.foreground,
+            selectionBackground: `${this.theme.color.highlight}88`,
+            selectionInactiveBackground: `${this.theme.color.highlight}55`,
+            black: this.theme.color.black,
+            red: this.theme.color.red,
+            green: this.theme.color.green,
+            yellow: this.theme.color.yellow,
+            blue: this.theme.color.blue,
+            magenta: this.theme.color.magenta,
+            cyan: this.theme.color.cyan,
+            white: this.theme.color.bright_white,
+            brightBlack: this.theme.color.bright_black,
+            brightRed: this.theme.color.bright_red,
+            brightGreen: this.theme.color.bright_green,
+            brightYellow: this.theme.color.bright_yellow,
+            brightBlue: this.theme.color.bright_blue,
+            brightMagenta: this.theme.color.bright_magenta,
+            brightCyan: this.theme.color.bright_cyan,
+            brightWhite: this.theme.color.bright_white,
         };
         setTimeout(() => this.resize(), 200);
     }

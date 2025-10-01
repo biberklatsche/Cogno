@@ -12,6 +12,7 @@
     "pty:default",
     "fs:default",
     "fs:allow-watch",
+    "fs:allow-write-text-file",
     "log:default",
     {
       "identifier": "fs:scope-home-recursive",

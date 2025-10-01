@@ -29,7 +29,7 @@ export class SettingsService {
 
     get activeTheme$(): Observable<Theme & { scrollbackLines: number }> {
         return this.settings$.pipe(map(s => {
-            return {...s.theme.default, scrollbackLines: s.general.scrollbackLines};
+            return {...s.theme.default, scrollbackLines: s.general.scrollback_lines};
         }));
     }
 
@@ -60,15 +60,17 @@ export class SettingsService {
           }).catch(error => console.log('###############decrypteer', error));
         }).catch(error => console.log('###############encryptseer', error));*/
 
-        if (await Fs.exists(path)) {
-            const unwatch = Fs.watchChanges$(path).subscribe(async () => {
-                await this.loadSettings(path);
-            });
-            this.destroy.onDestroy(() => unwatch.unsubscribe())
-            await this.loadSettings(path);
-        } else {
-            this.store.update({settings: DEFAULT_SETTINGS});
+        const doesSettingsFileExist = await Fs.exists(path);
+
+        if(!doesSettingsFileExist) {
+            await Fs.writeTextFile(path, SettingsCodec.toDotString(DEFAULT_SETTINGS));
         }
+
+        const unwatch = Fs.watchChanges$(path).subscribe(async () => {
+            await this.loadSettings(path);
+        });
+        this.destroy.onDestroy(() => unwatch.unsubscribe())
+        await this.loadSettings(path);
     }
 
     private async loadSettings(path: string) {
