@@ -60,10 +60,9 @@ export class SettingsService {
           }).catch(error => console.log('###############decrypteer', error));
         }).catch(error => console.log('###############encryptseer', error));*/
 
-        const doesSettingsFileExist = await Fs.exists(path);
 
-        if(!doesSettingsFileExist) {
-            await Fs.writeTextFile(path, SettingsCodec.defaultsToStringWithComments());
+        if(!await Fs.exists(path)) {
+            await Fs.writeTextFile(path, SettingsCodec.defaultSettingsAsComment());
         }
 
         const unwatch = Fs.watchChanges$(path).subscribe(async () => {

@@ -8,7 +8,7 @@ import {DEFAULT_SETTINGS, Settings, SettingsSchema} from "../+models/settings";
  */
 export class SettingsCodec {
     /** Gibt die DEFAULT_SETTINGS als dot-properties-Text mit Schema-Kommentaren (#) zurück. */
-    static defaultsToStringWithComments(): string {
+    static defaultSettingsAsComment(): string {
         return this.toDotString(DEFAULT_SETTINGS, true);
     }
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */
@@ -105,8 +105,8 @@ export class SettingsCodec {
     }
 
     /** Wandelt ein beliebiges Settings-Objekt in dot-properties-Text um. Optional mit Schema-Kommentaren. */
-    static toDotString(settings: Settings, includeComments: boolean = true): string {
-        const lines = this.toDotProperties(settings, "", SettingsSchema, includeComments);
+    static toDotString(settings: Settings, asComments: boolean = true): string {
+        const lines = this.toDotProperties(settings, "", SettingsSchema, asComments);
         // Keine Sortierung mehr, um Kommentare an den zugehörigen Keys zu belassen
         return lines.join("\n") + (lines.length ? "\n" : "");
     }
@@ -137,7 +137,7 @@ export class SettingsCodec {
     }
 
     /** Wandelt ein verschachteltes Objekt in dot-properties-Zeilen um und schreibt Zod-Descriptions als Kommentare (#). */
-    private static toDotProperties(obj: any, prefix = "", schema?: any, includeComments: boolean = true): string[] {
+    private static toDotProperties(obj: any, prefix = "", schema?: any, asComment: boolean = true): string[] {
         const lines: string[] = [];
         // Für stabile, aber vorhersehbare Ausgabe: iteriere nach Schlüsselname sortiert innerhalb derselben Ebene
         for (const k of Object.keys(obj).sort()) {
@@ -148,28 +148,19 @@ export class SettingsCodec {
 
             if (this.isPlainObject(v)) {
                 const unwrapped = this.unwrapSchema(childSchema);
-                lines.push(...this.toDotProperties(v, key, unwrapped, includeComments));
+                lines.push(...this.toDotProperties(v, key, unwrapped, asComment));
             } else {
                 // Beschreibung (falls vorhanden) als Kommentar ausgeben
-                if (includeComments) {
-                    if (key.endsWith('.name')) {
-                        // eslint-disable-next-line no-console
-                        console.log('DESC', key);
-                        // eslint-disable-next-line no-console
-                        console.log('CHILD', key, !!childSchema, childSchema?._def?.typeName);
-                    }
-
+                if (asComment) {
                     const desc = this.getSchemaDescription(childSchema);
-                    // Debug: inspect description for name fields
-
                     if (desc) {
                         for (const l of String(desc).split(/\r?\n/)) {
-                            lines.push(`#${l}`.trimEnd());
+                            lines.push(`#${l.trim()}`);
                         }
                     }
                 }
                 // Strings & komplexe Typen mit JSON serialisieren (liefert auch gültige Arrays/Objekte)
-                lines.push(`${key}=${JSON.stringify(v)}`);
+                lines.push(`${asComment ? '#' : ''}${key}=${JSON.stringify(v)}`);
             }
         }
         return lines;

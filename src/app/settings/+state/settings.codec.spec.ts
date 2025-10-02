@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { SettingsCodec } from './settings.codec';
-import { DEFAULT_SETTINGS, SettingsSchema } from '../+models/settings';
+import { DEFAULT_SETTINGS } from '../+models/settings';
 
 describe('SettingsCodec', () => {
   it('defaultsToStringWithComments includes # comment lines', () => {
-    const text = SettingsCodec.defaultsToStringWithComments();
+    const text = SettingsCodec.defaultSettingsAsComment();
     const lines = text.split('\n');
-    expect(lines.some(l => l.replace(/\r$/, '').startsWith('#The name of the shell'))).toBe(true);
+    expect(lines.some(l => l.startsWith('#The name of the shell'))).toBe(true);
+    expect(lines.every(l => l.length > 0 ? l.startsWith('#') : true)).toBe(true);
   });
 
   it('diffToString does not emit any comments', () => {
