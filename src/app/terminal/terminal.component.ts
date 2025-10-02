@@ -3,7 +3,7 @@ import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
 import {Unicode11Addon} from '@xterm/addon-unicode11';
 import {CanvasAddon} from '@xterm/addon-canvas';
-import {ISearchOptions, SearchAddon} from '@xterm/addon-search';
+import {SearchAddon} from '@xterm/addon-search';
 import {IPty, Pty} from "../_tauri/pty";
 import {SettingsService} from "../settings/+state/settings.service";
 import {Theme} from "../settings/+models/settings";

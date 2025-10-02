@@ -84,9 +84,9 @@ export class SettingsCodec {
 
     /** Erzeugt nur die Abweichungen (Diff) zwischen Defaults und aktueller Config als "dot-properties"-Text. */
     static toDotString(settings: Settings): string {
-        const lines = this.toDotProperties(settings);
-        // Optionale Sortierung für stabile Ausgaben
-        return lines.sort((a, b) => a.localeCompare(b)).join("\n") + (lines.length ? "\n" : "");
+        const lines = this.toDotProperties(settings, "", SettingsSchema);
+        // Keine Sortierung mehr, um Kommentare an den zugehörigen Keys zu belassen
+        return lines.join("\n") + (lines.length ? "\n" : "");
     }
 
     // ---------- Helper ----------
@@ -114,18 +114,74 @@ export class SettingsCodec {
         return out;
     }
 
-    /** Wandelt ein verschachteltes Objekt in dot-properties-Zeilen um. */
-    private static toDotProperties(obj: any, prefix = ""): string[] {
+    /** Wandelt ein verschachteltes Objekt in dot-properties-Zeilen um und schreibt Zod-Descriptions als Kommentare (#). */
+    private static toDotProperties(obj: any, prefix = "", schema?: any): string[] {
         const lines: string[] = [];
-        for (const [k, v] of Object.entries(obj)) {
+        // Für stabile, aber vorhersehbare Ausgabe: iteriere nach Schlüsselname sortiert innerhalb derselben Ebene
+        for (const k of Object.keys(obj).sort()) {
+            const v = (obj as any)[k];
             const key = prefix ? `${prefix}.${k}` : k;
+
+            const childSchema = this.getChildSchema(schema, k);
+
             if (this.isPlainObject(v)) {
-                lines.push(...this.toDotProperties(v, key));
+                lines.push(...this.toDotProperties(v, key, childSchema));
             } else {
+                // Beschreibung (falls vorhanden) als Kommentar ausgeben
+                const desc = this.getSchemaDescription(childSchema);
+                console.log('##################', desc);
+                if (desc) {
+                    for (const l of String(desc).split(/\r?\n/)) {
+                        lines.push(`# ${l}`.trimEnd());
+                    }
+                }
                 // Strings & komplexe Typen mit JSON serialisieren (liefert auch gültige Arrays/Objekte)
                 lines.push(`${key}=${JSON.stringify(v)}`);
             }
         }
         return lines;
+    }
+
+    // ----- Zod Schema Helpers -----
+    private static unwrapSchema(s: any): any {
+        let cur = s;
+        while (cur && cur._def) {
+            // Default/Optional/Nullable: innerType; Effects: schema
+            if (cur._def.innerType) {
+                cur = cur._def.innerType;
+                continue;
+            }
+            if (cur._def.schema) {
+                cur = cur._def.schema;
+                continue;
+            }
+            break;
+        }
+        return cur;
+    }
+
+    private static getChildSchema(parent: any, key: string): any {
+        if (!parent) return undefined;
+        const p = this.unwrapSchema(parent);
+        // ZodObject: shape either function or object
+        const def = p?._def;
+        if (!def) return undefined;
+        let shape: any;
+        if (typeof def.shape === 'function') {
+            shape = def.shape();
+        } else if (def.shape) {
+            shape = def.shape;
+        }
+        if (shape && Object.prototype.hasOwnProperty.call(shape, key)) {
+            return shape[key];
+        }
+        return undefined;
+    }
+
+    private static getSchemaDescription(s: any): string | undefined {
+        if (!s) return undefined;
+        const u = this.unwrapSchema(s);
+        // Zod speichert die Beschreibung in _def.description
+        return u?._def?.description || undefined;
     }
 }

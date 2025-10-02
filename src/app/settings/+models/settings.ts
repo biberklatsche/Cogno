@@ -151,7 +151,7 @@ const ThemeSchema = z.object({
 });
 
 const GeneralSchema = z.object({
-    enable_telemetry: z.boolean().default(true),
+    enable_telemetry: z.boolean().default(true).describe("Test tests \n test test"),
     enable_paste_on_right_click: z.boolean().default(false),
     enable_copy_on_select: z.boolean().default(false),
     open_tab_in_same_directory: z.boolean().default(true),
@@ -159,9 +159,9 @@ const GeneralSchema = z.object({
     scrollback_lines: z
         .number()
         .int()
-        .min(0, "Scrollback lines must be at least 0")
+        .min(100, "Scrollback lines must be at least 100")
         .max(1_000_000, "Scrollback lines must not exceed 1,000,000")
-        .default(100000),
+        .default(10000),
     editor: z.object({
         use_custom_editor: z.boolean().default(false),
         editor_command: z.string().default(""),

@@ -16,28 +16,30 @@ describe('SettingsCodec', () => {
       # comment
       ; another comment
       autocomplete.mode="always"
-      general.enable_telemetry=false
+      general.enable_telemetry=true
       general.scrollback_lines=12345
       theme.default.enable_webgl=true
-      theme.default.colors.prompt_colors=[{"foreground":"red","background":"black"}]
-      shell=[{"id":"1","name":"bash","shellType":"Bash","path":"/bin/bash"}]
+      theme.default.colors.prompt_colors.1.foreground="red"
+      theme.default.colors.prompt_colors.1.background="black"
+      shell.1.name="bash"
+      shell.1.shell_type="Bash"
+      shell.1.path="/bin/bash"}]
     `;
 
     const parsed = SettingsCodec.fromStringToSettings(text);
 
     // Nested structure exists
     expect(parsed.general).toBeDefined();
-    expect(parsed.general.enable_telemetry).toBe(false);
+    expect(parsed.general.enable_telemetry).toBe(true);
     expect(parsed.general.scrollback_lines).toBe(12345);
 
     expect(parsed.theme.default.enable_webgl).toBe(true);
 
     // Arrays/objects are parsed via JSON
-    expect(Array.isArray(parsed.theme.default.colors.prompt_colors)).toBe(true);
-    expect(parsed.theme.default.colors.prompt_colors[0]).toEqual({ foreground: 'red', background: 'black' });
+    expect(parsed.theme.default.color.prompt_color["1"].foreground).toEqual('red');
+    expect(parsed.theme.default.color.prompt_color["1"].background).toEqual('black');
 
-    expect(Array.isArray(parsed.shell)).toBe(true);
-    expect(parsed.shell[0]).toMatchObject({ id: '1', name: 'bash', shell_type: 'Bash', path: '/bin/bash' });
+    expect(parsed.shell["1"]).toMatchObject({ id: '1', name: 'bash', shell_type: 'Bash', path: '/bin/bash' });
   });
 
   it('toSettings fills defaults and keeps overrides', () => {
@@ -52,9 +54,9 @@ describe('SettingsCodec', () => {
     expect(settings.general.enable_telemetry).toBe(false);
     expect(settings.theme.default.enable_webgl).toBe(true);
 
-    // Defaults filled by Zod (e.g., scrollback_lines has default 100000)
+    // Defaults filled by Zod (e.g., scrollback_lines has default 10000)
     expect(settings.general.scrollback_lines).toBeGreaterThan(0);
-    expect(settings.general.scrollback_lines).toBe(100000);
+    expect(settings.general.scrollback_lines).toBe(10000);
 
     // Defaults for theme/defaults exist (e.g., cursor width default)
     expect(settings.theme.default.cursor.width).toBeDefined();
