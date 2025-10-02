@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { SettingsCodec } from './settings.codec';
-import { DEFAULT_SETTINGS } from '../+models/settings';
+import { ConfigCodec } from './config.codec';
+import { DEFAULT_SETTINGS } from '../+models/config';
 
-describe('SettingsCodec', () => {
+describe('ConfigCodec', () => {
   it('defaultsToStringWithComments includes # comment lines', () => {
-    const text = SettingsCodec.defaultSettingsAsComment();
+    const text = ConfigCodec.defaultSettingsAsComment();
     const lines = text.split('\n');
-    expect(lines.some(l => l.startsWith('#The name of the shell'))).toBe(true);
+    expect(lines.some(l => l.startsWith('# The name of the shell'))).toBe(true);
     expect(lines.every(l => l.length > 0 ? l.startsWith('#') : true)).toBe(true);
   });
 
@@ -17,7 +17,7 @@ describe('SettingsCodec', () => {
     curr.general.scrollback_lines = 1234;
     curr.theme.default.enable_webgl = true;
 
-    const diff = SettingsCodec.diffToString(curr);
+    const diff = ConfigCodec.diffToString(curr);
     const diffLines = diff.trimEnd().split('\n');
     // Ensure no comment lines are present
     expect(diffLines.some(l => l.startsWith('#'))).toBe(false);
@@ -37,7 +37,7 @@ describe('SettingsCodec', () => {
       shell.1.path="/bin/zsh"
     `;
 
-    const parsed = SettingsCodec.fromStringToSettings(text);
+    const parsed = ConfigCodec.fromStringToSettings(text);
 
     // Nested structure exists
     expect(parsed.general).toBeDefined();
@@ -62,7 +62,7 @@ describe('SettingsCodec', () => {
       theme.default.enable_webgl=true
     `;
 
-    const settings = SettingsCodec.fromStringToSettings(text);
+    const settings = ConfigCodec.fromStringToSettings(text);
 
     // Overrides applied
     expect(settings.general.enable_telemetry).toBe(false);
@@ -80,14 +80,14 @@ describe('SettingsCodec', () => {
       const text = `
       general.scrollback_lines=-1
     `;
-    expect(() => SettingsCodec.fromStringToSettings(text)).toThrowError();
+    expect(() => ConfigCodec.fromStringToSettings(text)).toThrowError();
   });
 
   it('fromStringToSettings integrates parse + validate + defaults', () => {
     const text = `general.enable_telemetry=false\nGeneral.scrollback_lines=9999\n`;
     // Note: keys are case-sensitive in implementation; ensure correct casing
     const proper = `general.enable_telemetry=false\ngeneral.scrollback_lines=9999\n`;
-    const settings = SettingsCodec.fromStringToSettings(proper);
+    const settings = ConfigCodec.fromStringToSettings(proper);
     expect(settings.general.enable_telemetry).toBe(false);
     expect(settings.general.scrollback_lines).toBe(9999);
     // A default field still exists
@@ -103,7 +103,7 @@ describe('SettingsCodec', () => {
     current.general.scrollback_lines = 1234;
     current.keybind.copy = 'Control+Shift+C';
 
-    const text = SettingsCodec.diffToString(current as any);
+    const text = ConfigCodec.diffToString(current as any);
 
     // Should contain exactly these keys in sorted order and JSON-serialized values
     const expectedLines = [
@@ -120,7 +120,7 @@ describe('SettingsCodec', () => {
     expect(text.endsWith('\n')).toBe(true);
 
     // Ensure defaults produce empty diff
-    const defaultDiff = SettingsCodec.diffToString(DEFAULT_SETTINGS);
+    const defaultDiff = ConfigCodec.diffToString(DEFAULT_SETTINGS);
     expect(defaultDiff).toBe('');
   });
 });

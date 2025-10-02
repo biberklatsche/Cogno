@@ -4,15 +4,15 @@ import { isDevMode } from '@angular/core';
 export namespace Environment {
 
     let _homeDir: string = '';
-    let _settingsFilePath: string = '';
+    let _configFilePath: string = '';
     let _dbFileFilePath: string = '';
 
     export function configDir(): string {
         return _homeDir;
     }
 
-    export function settingsFilePath(): string {
-        return _settingsFilePath;
+    export function configFilePath(): string {
+        return _configFilePath;
     }
 
     export function dbFilePath(): string {
@@ -27,7 +27,7 @@ export namespace Environment {
         const homeDirName = isDevMode() ? '.cogno-dev' : '.cogno';
         _homeDir = await Path.join(await Path.homeDir(), homeDirName);
         _dbFileFilePath = await Path.join(_homeDir, 'cogno.db');
-        _settingsFilePath = await Path.join(_homeDir, 'settings.json');
+        _configFilePath = await Path.join(_homeDir, 'cogno.config');
         console.log(`Loaded ${_homeDir}`);
     }
 }

@@ -8,8 +8,8 @@ const HexColorSchema = z
 
 const PaddingSchema = z.object({
     value: z.string().regex(
-        /^(\d+)(\s*,\s*\d+){0,3}$/,
-        'Padding must contain 1–4 integers separated by commas').default('1'),
+        /^(\d+)(\s+\d+){0,3}$/,
+        'Padding must contain 1–4 integers separated by whitespace').default('1'),
     remove_on_full_screen_app: z.boolean().default(true),
 });
 
@@ -521,11 +521,11 @@ export const SettingsSchema = z.object({
     }),
 }).strict();
 
-export type Settings = z.infer<typeof SettingsSchema>;
+export type Config = z.infer<typeof SettingsSchema>;
 export type Theme = z.infer<typeof ThemeSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 export type RemoteInjectionType = z.infer<typeof RemoteInjectionTypeEnum>;
 
 /** Bequemer Zugriff auf die reinen Defaults (abgeleitet aus dem Schema). */
-export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
+export const DEFAULT_SETTINGS: Config = SettingsSchema.parse({});

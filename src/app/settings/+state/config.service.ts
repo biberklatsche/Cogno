@@ -3,32 +3,31 @@ import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {filter, map, Observable, take} from 'rxjs';
 import {createStore, Store} from '../../common/store/store';
-import {DEFAULT_SETTINGS, Settings, Theme} from "../+models/settings";
-import {SettingsCodec} from "./settings.codec";
-import {invoke} from "@tauri-apps/api/core";
+import {Config, Theme} from "../+models/config";
+import {ConfigCodec} from "./config.codec";
 
-type SettingsState = {
-    settings: Settings | undefined;
+type ConfigState = {
+    config: Config | undefined;
 }
 
 @Injectable({
     providedIn: 'root'
 })
-export class SettingsService {
-    private store: Store<SettingsState> = createStore<SettingsState>('settings', {
-        settings: undefined
+export class ConfigService {
+    private store: Store<ConfigState> = createStore<ConfigState>('settings', {
+        config: undefined
     });
 
-    get settings$(): Observable<Settings> {
-        return this.store.select(s => s.settings).pipe(filter(s => !!s));
+    get config$(): Observable<Config> {
+        return this.store.select(s => s.config).pipe(filter(s => !!s));
     }
 
-    get onSettingsFirstLoaded(): Observable<boolean> {
-        return this.settings$.pipe(map(s => !!s), take(1));
+    get onConfigFirstLoaded(): Observable<boolean> {
+        return this.config$.pipe(map(s => !!s), take(1));
     }
 
     get activeTheme$(): Observable<Theme & { scrollbackLines: number }> {
-        return this.settings$.pipe(map(s => {
+        return this.config$.pipe(map(s => {
             return {...s.theme.default, scrollbackLines: s.general.scrollback_lines};
         }));
     }
@@ -37,7 +36,8 @@ export class SettingsService {
     }
 
     public async loadAndWatch(): Promise<void> {
-        const path = Environment.settingsFilePath();
+        const path = Environment.configFilePath();
+
 
         /*invoke("list_fonts").then(fonts => {
           console.log('###############Fonts', fonts);
@@ -62,18 +62,18 @@ export class SettingsService {
 
 
         if(!await Fs.exists(path)) {
-            await Fs.writeTextFile(path, SettingsCodec.defaultSettingsAsComment());
+            await Fs.writeTextFile(path, ConfigCodec.defaultSettingsAsComment());
         }
 
         const unwatch = Fs.watchChanges$(path).subscribe(async () => {
-            await this.loadSettings(path);
+            await this.loadConfig(path);
         });
         this.destroy.onDestroy(() => unwatch.unsubscribe())
-        await this.loadSettings(path);
+        await this.loadConfig(path);
     }
 
-    private async loadSettings(path: string) {
-        const settingsAsString = await Fs.readTextFile(path);
-        this.store.update({settings: SettingsCodec.fromStringToSettings(settingsAsString)});
+    private async loadConfig(path: string) {
+        const configAsString = await Fs.readTextFile(path);
+        this.store.update({config: ConfigCodec.fromStringToSettings(configAsString)});
     }
 }

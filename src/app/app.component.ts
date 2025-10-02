@@ -2,8 +2,8 @@ import {Component, OnDestroy, signal, ViewEncapsulation} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {TerminalComponent} from './terminal/terminal.component';
 import {Environment} from './common/environment/environment';
-import {SettingsService} from "./settings/+state/settings.service";
-import {Theme} from './settings/+models/settings';
+import {ConfigService} from "./settings/+state/config.service";
+import {Theme} from './settings/+models/config';
 import { Color } from './common/color/color';
 import { Subscription } from 'rxjs';
 import {WindowButtonsComponent} from "./window-management/window-buttons/window-buttons.component";
@@ -20,7 +20,7 @@ export class AppComponent implements OnDestroy {
 
     subscriptions: Subscription[] = [];
 
-    constructor(private settingsService: SettingsService) {
+    constructor(private settingsService: ConfigService) {
         this.initAsync().then();
         this.subscriptions.push(this.settingsService.activeTheme$.subscribe(theme => this.setStyle(theme)));
     }
@@ -96,7 +96,10 @@ export class AppComponent implements OnDestroy {
         document.documentElement.style.setProperty('--fontWeight', `${theme.terminal_font.weight}`);
         document.documentElement.style.setProperty('--fontFamily', `'${theme.terminal_font.family}'`);
         document.documentElement.style.setProperty('--appFontFamily', `'${theme.app_font.family}'`);
-        document.documentElement.style.setProperty('--padding-xterm', `${theme.padding}`);
+        document.documentElement.style.setProperty('--padding-xterm', `${theme.padding.value.trim()
+            .split(/\s+/)
+            .map(num => `${num}rem`)
+            .join(" ")}`);
         document.documentElement.style.setProperty('--color-command-running', `${theme.color.command_running}`);
         document.documentElement.style.setProperty('--color-command-success', `${theme.color.command_success}`);
         document.documentElement.style.setProperty('--color-command-error', `${theme.color.command_error}`);

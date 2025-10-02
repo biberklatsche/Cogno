@@ -5,8 +5,8 @@ import {Unicode11Addon} from '@xterm/addon-unicode11';
 import {CanvasAddon} from '@xterm/addon-canvas';
 import {SearchAddon} from '@xterm/addon-search';
 import {IPty, Pty} from "../_tauri/pty";
-import {SettingsService} from "../settings/+state/settings.service";
-import {Theme} from "../settings/+models/settings";
+import {ConfigService} from "../settings/+state/config.service";
+import {Theme} from "../settings/+models/config";
 import {OS} from "../_tauri/os";
 import {LigaturesAddon} from '@xterm/addon-ligatures';
 import {WebglAddon} from '@xterm/addon-webgl';
@@ -36,7 +36,7 @@ export class TerminalComponent implements AfterViewInit {
 
     private theme: Theme | undefined = undefined;
 
-    constructor(private settingsService: SettingsService, private zone: NgZone, private destroyRef: DestroyRef) {
+    constructor(private settingsService: ConfigService, private zone: NgZone, private destroyRef: DestroyRef) {
         this.pty = new Pty();
     }
 

@@ -1,12 +1,6 @@
-import {DEFAULT_SETTINGS, Settings, SettingsSchema} from "../+models/settings";
+import {DEFAULT_SETTINGS, Config, SettingsSchema} from "../+models/config";
 
-/**
- * SettingsCodec
- * - parseUserString -> Partial-Objekt aus "dot-properties"-Text
- * - toConfig        -> validiertes Config-Objekt (Defaults via Zod)
- * - diffToString    -> schreibt NUR Unterschiede ggü. Defaults zurück ("dot-properties")
- */
-export class SettingsCodec {
+export class ConfigCodec {
     /** Gibt die DEFAULT_SETTINGS als dot-properties-Text mit Schema-Kommentaren (#) zurück. */
     static defaultSettingsAsComment(): string {
         return this.toDotString(DEFAULT_SETTINGS, true);
@@ -87,25 +81,25 @@ export class SettingsCodec {
     }
 
     /** Führt die User-Overrides mit den Zod-Defaults zusammen und validiert. */
-    private static toSettings(userOverrides: Record<string, unknown>): Settings {
+    private static toSettings(userOverrides: Record<string, unknown>): Config {
         // Trick: Zod-Defaults füllen alles auf; wir brauchen kein deep-merge.
         return SettingsSchema.parse(userOverrides);
     }
 
     /** Einmal bequem: direkt von String -> fertige Config. */
-    static fromStringToSettings(input: string): Settings {
+    static fromStringToSettings(input: string): Config {
         const partial = this.parseUserString(input);
         return this.toSettings(partial);
     }
 
     /** Erzeugt nur die Abweichungen (Diff) zwischen Defaults und aktueller Config als "dot-properties"-Text. */
-    static diffToString(settings: Settings): string {
+    static diffToString(settings: Config): string {
         const diff = this.diffObjects(DEFAULT_SETTINGS, settings);
         return this.toDotString(diff, false);
     }
 
     /** Wandelt ein beliebiges Settings-Objekt in dot-properties-Text um. Optional mit Schema-Kommentaren. */
-    static toDotString(settings: Settings, asComments: boolean = true): string {
+    static toDotString(settings: Config, asComments: boolean = true): string {
         const lines = this.toDotProperties(settings, "", SettingsSchema, asComments);
         // Keine Sortierung mehr, um Kommentare an den zugehörigen Keys zu belassen
         return lines.join("\n") + (lines.length ? "\n" : "");
@@ -155,12 +149,12 @@ export class SettingsCodec {
                     const desc = this.getSchemaDescription(childSchema);
                     if (desc) {
                         for (const l of String(desc).split(/\r?\n/)) {
-                            lines.push(`#${l.trim()}`);
+                            lines.push(`# ${l.trim()}`);
                         }
                     }
                 }
                 // Strings & komplexe Typen mit JSON serialisieren (liefert auch gültige Arrays/Objekte)
-                lines.push(`${asComment ? '#' : ''}${key}=${JSON.stringify(v)}`);
+                lines.push(`${asComment ? '# ' : ''}${key}=${JSON.stringify(v)}`);
             }
         }
         return lines;
