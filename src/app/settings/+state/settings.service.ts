@@ -63,7 +63,7 @@ export class SettingsService {
         const doesSettingsFileExist = await Fs.exists(path);
 
         if(!doesSettingsFileExist) {
-            await Fs.writeTextFile(path, SettingsCodec.toDotString(DEFAULT_SETTINGS));
+            await Fs.writeTextFile(path, SettingsCodec.defaultsToStringWithComments());
         }
 
         const unwatch = Fs.watchChanges$(path).subscribe(async () => {

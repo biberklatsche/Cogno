@@ -121,7 +121,7 @@ export const ColorsSchema = z.object({
     command_running: HexColorSchema.default('#34bbfe'),
     command_success: HexColorSchema.default('#11d894'),
     command_error: HexColorSchema.default('#fd1155'),
-    prompt_color: PromptColorListSchema.default(PromptColorListSchema.parse({})),
+    prompt: PromptColorListSchema.default(PromptColorListSchema.parse({})),
 });
 
 export const CursorSchema = z.object({
@@ -425,7 +425,7 @@ const RemoteInjectionTypeEnum = z.enum(["auto", "manual"]);
 const PromptVersionEnum = z.enum(["manual", "version1", "version2"]);
 
 const ShellSchema = z.object({
-    name: z.string(),
+    name: z.string().describe("The name of the shell. This is used for display purposes."),
     shell_type: ShellTypeEnum,
     path: z.string(),
     args: z.array(z.string()).default([]),
@@ -439,7 +439,7 @@ const ShellSchema = z.object({
     uses_final_space_prompt_terminator: z.boolean().default(true),
     injection_type: RemoteInjectionTypeEnum.default("auto"),
     color: HexColorSchema.optional(),
-});
+}).describe("The shell configuration");
 
 const ShellListSchema = z.object({
     1: z.preprocess(

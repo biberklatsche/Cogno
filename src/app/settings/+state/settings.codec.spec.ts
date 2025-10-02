@@ -2,15 +2,25 @@ import { describe, it, expect } from 'vitest';
 import { SettingsCodec } from './settings.codec';
 import { DEFAULT_SETTINGS, SettingsSchema } from '../+models/settings';
 
-/**
- * Pure class tests (no Angular TestBed). We verify:
- * - parseUserString turns dot-properties text into nested objects with primitive heuristics
- * - toSettings validates and fills defaults via Zod
- * - fromStringToSettings convenience method
- * - diffToString only outputs differences vs DEFAULT_SETTINGS, JSON-serialized, sorted and with trailing newline
- */
-
 describe('SettingsCodec', () => {
+  it('defaultsToStringWithComments includes # comment lines', () => {
+    const text = SettingsCodec.defaultsToStringWithComments();
+    const lines = text.split('\n');
+    expect(lines.some(l => l.replace(/\r$/, '').startsWith('#The name of the shell'))).toBe(true);
+  });
+
+  it('diffToString does not emit any comments', () => {
+    // Change some values to produce a diff
+    const curr: any = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    curr.general.enable_telemetry = false;
+    curr.general.scrollback_lines = 1234;
+    curr.theme.default.enable_webgl = true;
+
+    const diff = SettingsCodec.diffToString(curr);
+    const diffLines = diff.trimEnd().split('\n');
+    // Ensure no comment lines are present
+    expect(diffLines.some(l => l.startsWith('#'))).toBe(false);
+  });
   it('parseUserString parses booleans, numbers, JSON and nested keys', () => {
     const text = `
       # comment
@@ -19,11 +29,11 @@ describe('SettingsCodec', () => {
       general.enable_telemetry=true
       general.scrollback_lines=12345
       theme.default.enable_webgl=true
-      theme.default.colors.prompt_colors.1.foreground="red"
-      theme.default.colors.prompt_colors.1.background="black"
-      shell.1.name="bash"
-      shell.1.shell_type="Bash"
-      shell.1.path="/bin/bash"}]
+      theme.default.color.prompt.1.foreground="red"
+      theme.default.color.prompt.1.background="black"
+      shell.1.name="zsh"
+      shell.1.shell_type="ZSH"
+      shell.1.path="/bin/zsh"
     `;
 
     const parsed = SettingsCodec.fromStringToSettings(text);
@@ -36,10 +46,13 @@ describe('SettingsCodec', () => {
     expect(parsed.theme.default.enable_webgl).toBe(true);
 
     // Arrays/objects are parsed via JSON
-    expect(parsed.theme.default.color.prompt_color["1"].foreground).toEqual('red');
-    expect(parsed.theme.default.color.prompt_color["1"].background).toEqual('black');
+    expect(parsed.theme.default.color.prompt["1"].foreground).toEqual('red');
+    expect(parsed.theme.default.color.prompt["1"].background).toEqual('black');
 
-    expect(parsed.shell["1"]).toMatchObject({ id: '1', name: 'bash', shell_type: 'Bash', path: '/bin/bash' });
+    expect(parsed.shell["1"].name).toEqual('zsh');
+    expect(parsed.shell["1"].shell_type).toEqual('ZSH');
+    expect(parsed.shell["1"].path).toEqual('/bin/zsh');
+    expect(parsed.shell["1"].use_conpty).toBe(true);
   });
 
   it('toSettings fills defaults and keeps overrides', () => {
