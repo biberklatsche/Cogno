@@ -1,25 +1,18 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {filter, map, Observable, take} from 'rxjs';
-import {createStore, Store} from '../../common/store/store';
+import {filter, map, Observable, Subject, take} from 'rxjs';
 import {Config, Theme} from "../+models/config";
 import {ConfigCodec} from "./config.codec";
-
-type ConfigState = {
-    config: Config | undefined;
-}
 
 @Injectable({
     providedIn: 'root'
 })
 export class ConfigService {
-    private store: Store<ConfigState> = createStore<ConfigState>('settings', {
-        config: undefined
-    });
+    config: Subject<Config | undefined> = new Subject<Config | undefined>();
 
     get config$(): Observable<Config> {
-        return this.store.select(s => s.config).pipe(filter(s => !!s));
+        return this.config.pipe(filter(s => !!s));
     }
 
     get onConfigFirstLoaded(): Observable<boolean> {
@@ -74,6 +67,6 @@ export class ConfigService {
 
     private async loadConfig(path: string) {
         const configAsString = await Fs.readTextFile(path);
-        this.store.update({config: ConfigCodec.fromStringToSettings(configAsString)});
+        this.config.next(ConfigCodec.fromStringToSettings(configAsString));
     }
 }

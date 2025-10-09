@@ -1,17 +1,27 @@
-import {Component, OnDestroy, signal, ViewEncapsulation} from '@angular/core';
+import {Component, OnDestroy} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {TerminalComponent} from './terminal/terminal.component';
 import {Environment} from './common/environment/environment';
-import {ConfigService} from "./settings/+state/config.service";
-import {Theme} from './settings/+models/config';
+import {ConfigService} from "./config/+state/config.service";
+import {Theme} from './config/+models/config';
 import { Color } from './common/color/color';
 import { Subscription } from 'rxjs';
-import {WindowButtonsComponent} from "./window-management/window-buttons/window-buttons.component";
+import {WindowButtonsComponent} from "./window/window-buttons/window-buttons.component";
 import {Fs} from "./_tauri/fs";
+import {TabListComponent} from "./tab/tab-list/tab-list.component";
+
+window.addEventListener("keydown", (e) => {
+    console.log(e.key);
+   if(e.key == 'e'){
+       e.preventDefault();
+       e.stopPropagation();
+   }
+}, { capture: true });
+
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, TerminalComponent, WindowButtonsComponent],
+    imports: [CommonModule, TerminalComponent, WindowButtonsComponent, TabListComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css',
     standalone: true
@@ -20,9 +30,9 @@ export class AppComponent implements OnDestroy {
 
     subscriptions: Subscription[] = [];
 
-    constructor(private settingsService: ConfigService) {
+    constructor(private configService: ConfigService) {
         this.initAsync().then();
-        this.subscriptions.push(this.settingsService.activeTheme$.subscribe(theme => this.setStyle(theme)));
+        this.subscriptions.push(this.configService.activeTheme$.subscribe(theme => this.setStyle(theme)));
     }
 
     ngOnDestroy(): void {
@@ -31,7 +41,7 @@ export class AppComponent implements OnDestroy {
 
     async initAsync(): Promise<void> {
         await Environment.init();
-        await this.settingsService.loadAndWatch();
+        await this.configService.loadAndWatch();
         /*const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
         await db.execute(`
     CREATE TABLE IF NOT EXISTS todos (

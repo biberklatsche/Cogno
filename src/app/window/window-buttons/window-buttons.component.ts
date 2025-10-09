@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {WindowButtonsService} from './+state/window-buttons.service';
+import {WindowService} from '../+state/window.service';
 import {CommonModule} from '@angular/common';
 import {IconComponent} from "../../icons/icon/icon.component";
 import {OS} from "../../_tauri/os";
@@ -12,14 +12,13 @@ import {OS} from "../../_tauri/os";
         CommonModule,
         IconComponent
     ],
-    providers: [WindowButtonsService],
     standalone: true
 })
 export class WindowButtonsComponent {
 
   public os = OS.platform();
 
-  constructor(public readonly service: WindowButtonsService) { }
+  constructor(public readonly service: WindowService) { }
 
   close() {
     this.service.closeWindow();

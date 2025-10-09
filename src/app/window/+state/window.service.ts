@@ -1,15 +1,14 @@
 import {Injectable, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {AppWindow} from "../../../_tauri/window";
+import {AppWindow} from "../../_tauri/window";
 import {DestroyRef} from '@angular/core';
-import {Logger} from "../../../_tauri/logger";
+import {Logger} from "../../_tauri/logger";
 
 
-@Injectable()
-export class WindowButtonsService {
+@Injectable({providedIn: 'root'})
+export class WindowService {
 
     private _isMaximized = signal<boolean>(false);
-    /** Für Komponenten/Template: direkt lesbar, aber nicht setzbar */
     readonly isMaximized = this._isMaximized.asReadonly();
 
 

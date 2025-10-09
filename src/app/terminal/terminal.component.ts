@@ -5,8 +5,8 @@ import {Unicode11Addon} from '@xterm/addon-unicode11';
 import {CanvasAddon} from '@xterm/addon-canvas';
 import {SearchAddon} from '@xterm/addon-search';
 import {IPty, Pty} from "../_tauri/pty";
-import {ConfigService} from "../settings/+state/config.service";
-import {Theme} from "../settings/+models/config";
+import {ConfigService} from "../config/+state/config.service";
+import {Theme} from "../config/+models/config";
 import {OS} from "../_tauri/os";
 import {LigaturesAddon} from '@xterm/addon-ligatures';
 import {WebglAddon} from '@xterm/addon-webgl';
@@ -36,7 +36,7 @@ export class TerminalComponent implements AfterViewInit {
 
     private theme: Theme | undefined = undefined;
 
-    constructor(private settingsService: ConfigService, private zone: NgZone, private destroyRef: DestroyRef) {
+    constructor(private configService: ConfigService, private zone: NgZone, private destroyRef: DestroyRef) {
         this.pty = new Pty();
     }
 
@@ -78,7 +78,7 @@ export class TerminalComponent implements AfterViewInit {
             this.terminal?.dispose();
             this.resizeObserver?.disconnect()
         });
-        const settingsSubscription = this.settingsService.activeTheme$.subscribe(theme => {
+        const settingsSubscription = this.configService.activeTheme$.subscribe(theme => {
             this.applyAddons(theme);
             this.setTheme(theme, theme.scrollbackLines);
         });

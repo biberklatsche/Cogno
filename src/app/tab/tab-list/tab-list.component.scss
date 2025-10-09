@@ -1,0 +1,72 @@
+:host {
+  display: flex;
+  height: var(--header-height);
+  align-items: stretch;
+  /* Allow the tab list area to take available space but also shrink when needed */
+  flex: 1 1 auto;
+  min-width: 0; /* critical so the flex item can shrink and not push siblings */
+}
+
+.tab-list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  height: var(--header-height);
+  padding: 0 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  /* Ensure the inner scroller stretches to the host width and scrolls instead of growing */
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 6px;
+  background: var(--background-color-10l);
+  color: var(--foreground-color);
+  cursor: pointer;
+  box-shadow: var(--shadow1);
+  /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
+  flex: 0 1 auto;
+  max-width: 240px; /* maximum width */
+  min-width: 64px;  /* optional minimum for aesthetics */
+  min-height: 26px;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--highlight-color);
+  outline-offset: 2px;
+}
+
+.tab:hover {
+  background: var(--background-color-20l);
+}
+
+.icon, .close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.title {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px; /* keep some space for icons and padding */
+  /* show ellipsis at the beginning when text is too long */
+  direction: rtl;      /* moves the ellipsis to the front (left in LTR UI) */
+  text-align: left;    /* keeps visual left alignment of the visible tail */
+}

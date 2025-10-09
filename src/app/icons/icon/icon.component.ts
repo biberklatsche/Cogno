@@ -72,7 +72,7 @@ import {
     mdiWindowRestore
 } from '@mdi/js';
 import {CommonModule} from '@angular/common';
-import {Icon} from '../+models/icon';
+import {Icon} from '../+model/icon';
 
 @Component({
     selector: 'app-icon',

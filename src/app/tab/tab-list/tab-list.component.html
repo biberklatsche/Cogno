@@ -1,0 +1,17 @@
+<nav class="tab-list" aria-label="Open tabs">
+  <ng-container *ngIf="tabs | async as items">
+    <button
+      *ngFor="let tab of items; trackBy: trackById"
+      type="button"
+      class="tab"
+      [attr.data-tab-id]="tab.id"
+      title="{{tab.title}}"
+    >
+      <span class="icon"><app-icon [name]="iconForShell(tab.shellType)"></app-icon></span>
+      <span class="title">{{ tab.title }}</span>
+      <span class="close" (click)="$event.stopPropagation(); onClose(tab)">
+        <app-icon name="mdiClose"></app-icon>
+      </span>
+    </button>
+  </ng-container>
+</nav>

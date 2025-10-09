@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WindowButtonsComponent } from './window-buttons.component';
-import { WindowButtonsService } from './+state/window-buttons.service';
+import { WindowService } from '../+state/window.service';
 import { Subject } from 'rxjs';
 import {AppWindow} from "../../../__mocks__/_tauri-window";
 
@@ -20,7 +20,7 @@ describe('WindowButtonsComponent (class only)', () => {
     (AppWindow.isMaximized as any).mockResolvedValue(initialIsMaximized);
 
     const destroyRef: any = { onDestroy: vi.fn() };
-    const service = new WindowButtonsService(destroyRef);
+    const service = new WindowService(destroyRef);
 
     // Trigger one emission so the service queries isMaximized and updates the signal
     size$.next({ width: 800, height: 600 });
