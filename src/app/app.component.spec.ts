@@ -1,23 +1,23 @@
 import { AppComponent } from './app.component';
-import { ConfigService } from './config/+state/config.service';
-import { DestroyRef } from '@angular/core';
 import { describe, beforeEach, test, expect, vi } from 'vitest';
-import { firstValueFrom } from 'rxjs';
+import { AppBus, CommandBus, EventBus } from './event-bus/event-bus';
+
+// Unit test without Angular TestBed: verifies that AppComponent sends the expected commands on construction
 
 describe('AppComponent', () => {
-  let configService: ConfigService;
-  const destroyRef: DestroyRef = {
-    onDestroy: vi.fn((_cb: VoidFunction) => {}),
-  } as unknown as DestroyRef;
+  let appBus: AppBus;
 
   beforeEach(() => {
-    configService = new ConfigService(destroyRef);
+    appBus = new AppBus(new EventBus(), new CommandBus());
   });
 
-  test('app should load settings on init', async () => {
-    const settingsPromise = firstValueFrom(configService.config$);
-    const component = new AppComponent(configService);
-    const settings = await settingsPromise;
-    expect(settings).toBeTruthy();
+  test('should send LoadConfigCommand and WatchConfigCommand on init (constructor)', () => {
+    const sendSpy = vi.spyOn(appBus, 'send');
+
+    // When we construct the component, it should immediately send the commands
+    const component = new AppComponent(appBus);
+
+    expect(sendSpy).toHaveBeenCalledWith({ type: 'LoadConfigCommand' });
+    expect(sendSpy).toHaveBeenCalledWith({ type: 'WatchConfigCommand' });
   });
 });
