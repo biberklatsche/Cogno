@@ -9,6 +9,7 @@ import { Subscription } from 'rxjs';
 import {WindowButtonsComponent} from "./window/window-buttons/window-buttons.component";
 import {Fs} from "./_tauri/fs";
 import {TabListComponent} from "./tab/tab-list/tab-list.component";
+import {OS} from "./_tauri/os";
 
 window.addEventListener("keydown", (e) => {
     console.log(e.key);
@@ -23,12 +24,13 @@ window.addEventListener("keydown", (e) => {
     selector: 'app-root',
     imports: [CommonModule, TerminalComponent, WindowButtonsComponent, TabListComponent],
     templateUrl: './app.component.html',
-    styleUrl: './app.component.css',
+    styleUrl: './app.component.scss',
     standalone: true
 })
 export class AppComponent implements OnDestroy {
 
-    subscriptions: Subscription[] = [];
+    public os = OS.platform();
+    private subscriptions: Subscription[] = [];
 
     constructor(private configService: ConfigService) {
         this.initAsync().then();

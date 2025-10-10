@@ -3,7 +3,7 @@
   height: var(--header-height);
   align-items: stretch;
   /* Allow the tab list area to take available space but also shrink when needed */
-  flex: 1 1 auto;
+  flex: 9999 1 auto;
   min-width: 0; /* critical so the flex item can shrink and not push siblings */
 }
 
@@ -12,12 +12,12 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  height: var(--header-height);
-  padding: 0 6px;
-  overflow-x: auto;
+  overflow-x: auto;   /* ← horizontal scrollen, wenn’s nicht mehr passt */
   overflow-y: hidden;
   white-space: nowrap;
   flex-wrap: nowrap;
+  height: var(--header-height);
+  padding: 0 6px;
   /* Ensure the inner scroller stretches to the host width and scrolls instead of growing */
   flex: 1 1 auto;
   min-width: 0;
@@ -37,19 +37,13 @@
   cursor: pointer;
   box-shadow: var(--shadow1);
   /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
-  flex: 0 1 auto;
-  max-width: 240px; /* maximum width */
-  min-width: 64px;  /* optional minimum for aesthetics */
   min-height: 26px;
-}
-
-.tab:focus-visible {
-  outline: 2px solid var(--highlight-color);
-  outline-offset: 2px;
-}
-
-.tab:hover {
-  background: var(--background-color-20l);
+  /* Größenlogik */
+  flex: 0 1 240px;
+  max-width: 240px;
+  min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
+  /* wichtig für Container Queries */
+  container-type: inline-size;
 }
 
 .icon, .close {
@@ -69,4 +63,26 @@
   /* show ellipsis at the beginning when text is too long */
   direction: rtl;      /* moves the ellipsis to the front (left in LTR UI) */
   text-align: left;    /* keeps visual left alignment of the visible tail */
+  flex-shrink: 10;
+}
+
+.icon  { flex: 0 1 auto;  flex-shrink: 1; }
+.close { flex: 0 0 16px;   flex-shrink: 0; } /* bleibt immer sichtbar */
+
+@container (max-width: 20px) {
+  .title { display: none; }
+}
+
+/* 2) Noch schmaler: Icon ausblenden, Close bleibt */
+@container (max-width: 50px) {
+  .icon { display: none; }
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--highlight-color);
+  outline-offset: 2px;
+}
+
+.tab:hover {
+  background: var(--background-color-20l);
 }

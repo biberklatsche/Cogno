@@ -16,7 +16,7 @@ import {WebglAddon} from '@xterm/addon-webgl';
 @Component({
     selector: 'app-terminal',
     templateUrl: './terminal.component.html',
-    styleUrls: ['./terminal.component.css'],
+    styleUrls: ['./terminal.component.scss'],
     standalone: true,
     providers: [Pty]
 })

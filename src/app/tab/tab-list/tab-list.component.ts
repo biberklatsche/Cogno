@@ -22,8 +22,6 @@ export class TabListComponent {
         this.tabs = this.tabListService.tabs$;
     }
 
-    trackById(index: number, tab: Tab): string { return tab.id; }
-
     onClose(tab: Tab): void {
         this.tabListService.removeTab(tab);
     }

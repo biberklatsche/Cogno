@@ -29,6 +29,13 @@ export class TabListService {
             {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
             {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
             {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
+            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
             {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: true}])
     }
 

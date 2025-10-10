@@ -1,12 +1,7 @@
 @import '../fonts/roboto/roboto.css';
 @import '../fonts/comfortaa/comfortaa.css';
 @import './xterm.css';
-
-* {
-    scrollbar-width: thin; /* Track bleibt dünn */
-    scrollbar-color: var(--background-color-20l) transparent;
-    scrollbar-gutter: auto;
-}
+@import './scrollbar.css';
 
 html, body {
     margin: 0;

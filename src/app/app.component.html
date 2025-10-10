@@ -1,4 +1,7 @@
 <header>
+    @if (os === 'macos'){
+        <div class="space-left-window-buttons"></div>
+    }
     <app-tab-list></app-tab-list>
     <div data-tauri-drag-region  class="space"></div>
     <app-window-buttons></app-window-buttons>

@@ -1,0 +1,45 @@
+:root {
+    --sb-size: 10px;
+    --sb-thumb: var(--background-color-20l);
+    --sb-thumb-hover: var(--background-color-30l);
+    --sb-track: transparent; /* oder var(--background-color-10l) */
+}
+
+html, body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
+}
+
+/* ===== Firefox ===== */
+* {
+    scrollbar-width: thin; /* thin | auto | none */
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
+    scrollbar-gutter: auto; /* lässt Layout stabiler wirken */
+}
+
+/* ===== WebKit (Chrome, Edge, Safari) ===== */
+*::-webkit-scrollbar {
+    width: var(--sb-size);
+    height: var(--sb-size);
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--sb-track);
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: var(--sb-thumb);
+    border-radius: 10px;
+    border: 2px solid transparent; /* optischer “Padding”-Effekt */
+    background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: var(--sb-thumb-hover);
+    border-radius: 16px;
+    background-clip: border-box;
+}
+
+*::-webkit-scrollbar-corner {
+    background: var(--sb-track);
+}
