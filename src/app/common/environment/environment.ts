@@ -1,33 +1,43 @@
 import {Path} from '../../_tauri/path';
 import { isDevMode } from '@angular/core';
+import {Logger} from "../../_tauri/logger";
 
-export namespace Environment {
+export const Environment = (() => {
+    // --- interne Variablen ---
+    let homeDir = '';
+    let configFilePath = '';
+    let dbFilePath = '';
 
-    let _homeDir: string = '';
-    let _configFilePath: string = '';
-    let _dbFileFilePath: string = '';
-
-    export function configDir(): string {
-        return _homeDir;
-    }
-
-    export function configFilePath(): string {
-        return _configFilePath;
-    }
-
-    export function dbFilePath(): string {
-        return _dbFileFilePath;
-    }
-
-    export async function init() : Promise<void> {
-        await Promise.all([_determineCognoPaths()])
-    }
-
-    async function _determineCognoPaths()  {
+    // --- interne Hilfsfunktionen ---
+    async function determineCognoPaths() {
         const homeDirName = isDevMode() ? '.cogno-dev' : '.cogno';
-        _homeDir = await Path.join(await Path.homeDir(), homeDirName);
-        _dbFileFilePath = await Path.join(_homeDir, 'cogno.db');
-        _configFilePath = await Path.join(_homeDir, 'cogno.config');
-        console.log(`Loaded ${_homeDir}`);
+        homeDir = await Path.join(await Path.homeDir(), homeDirName);
+        dbFilePath = await Path.join(homeDir, 'cogno.db');
+        configFilePath = await Path.join(homeDir, 'cogno.config');
+        console.log(`Loaded ${homeDir}`);
     }
-}
+
+    // --- öffentliches API ---
+    return {
+        /** Gibt das Konfigurationsverzeichnis zurück */
+        configDir(): string {
+            return homeDir;
+        },
+
+        /** Gibt den vollständigen Pfad zur Config-Datei zurück */
+        configFilePath(): string {
+            return configFilePath;
+        },
+
+        /** Gibt den vollständigen Pfad zur Datenbankdatei zurück */
+        dbFilePath(): string {
+            return dbFilePath;
+        },
+
+        /** Initialisiert das Environment (ermittelt alle Pfade) */
+        async init(): Promise<void> {
+            Logger.info('Initializing environment');
+            await determineCognoPaths();
+        },
+    };
+})();

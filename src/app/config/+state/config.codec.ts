@@ -1,9 +1,9 @@
-import {DEFAULT_SETTINGS, Config, SettingsSchema} from "../+models/config";
+import {DEFAULT_CONFIG, Config, ConfigSchema} from "../+models/config";
 
 export class ConfigCodec {
     /** Gibt die DEFAULT_SETTINGS als dot-properties-Text mit Schema-Kommentaren (#) zurück. */
     static defaultSettingsAsComment(): string {
-        return this.toDotString(DEFAULT_SETTINGS, true);
+        return this.toDotString(DEFAULT_CONFIG, true);
     }
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */
     private static parseUserString(input: string): Record<string, unknown> {
@@ -81,26 +81,26 @@ export class ConfigCodec {
     }
 
     /** Führt die User-Overrides mit den Zod-Defaults zusammen und validiert. */
-    private static toSettings(userOverrides: Record<string, unknown>): Config {
+    private static toConfig(userOverrides: Record<string, unknown>): Config {
         // Trick: Zod-Defaults füllen alles auf; wir brauchen kein deep-merge.
-        return SettingsSchema.parse(userOverrides);
+        return ConfigSchema.parse(userOverrides);
     }
 
     /** Einmal bequem: direkt von String -> fertige Config. */
-    static fromStringToSettings(input: string): Config {
+    static fromStringToConfig(input: string): Config {
         const partial = this.parseUserString(input);
-        return this.toSettings(partial);
+        return this.toConfig(partial);
     }
 
     /** Erzeugt nur die Abweichungen (Diff) zwischen Defaults und aktueller Config als "dot-properties"-Text. */
-    static diffToString(settings: Config): string {
-        const diff = this.diffObjects(DEFAULT_SETTINGS, settings);
+    static diffToString(config: Config): string {
+        const diff = this.diffObjects(DEFAULT_CONFIG, config);
         return this.toDotString(diff, false);
     }
 
     /** Wandelt ein beliebiges Settings-Objekt in dot-properties-Text um. Optional mit Schema-Kommentaren. */
     static toDotString(settings: Config, asComments: boolean = true): string {
-        const lines = this.toDotProperties(settings, "", SettingsSchema, asComments);
+        const lines = this.toDotProperties(settings, "", ConfigSchema, asComments);
         // Keine Sortierung mehr, um Kommentare an den zugehörigen Keys zu belassen
         return lines.join("\n") + (lines.length ? "\n" : "");
     }

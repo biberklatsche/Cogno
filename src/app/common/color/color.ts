@@ -1,7 +1,7 @@
 import {TinyColor} from '@ctrl/tinycolor';
 
-export namespace Color {
-  export function hslFromString(color: string): string {
+export const Color = {
+ hslFromString(color: string): string {
     let hash = 0;
     if (color.length > 0) {
       for (let i = 0; i < color.length; i++) {
@@ -10,9 +10,9 @@ export namespace Color {
       }
     }
     return `hsl(${hash % 360},100%,30%)`;
-  }
+  },
 
-  export function getHexOpacity(opacity: number | undefined | null): string {
+  getHexOpacity(opacity: number | undefined | null): string {
     let result = '';
     if (opacity || opacity === 0) {
       if (opacity > 100) {
@@ -29,9 +29,9 @@ export namespace Color {
       }
     }
     return result;
-  }
+  },
 
-  export function lightenDarkenColor(col: string, amt: number): string {
+  lightenDarkenColor(col: string, amt: number): string {
     amt = Math.floor(amt);
     if (col[0] === '#') {
       col = col.slice(1);
@@ -62,9 +62,9 @@ export namespace Color {
     }
     const [rs, gs, bs] = [r, g, b].map(color => color <= 15 ? `0${color.toString(16)}` : color.toString(16));
     return '#' + rs + bs + gs + opacity;
-  }
+  },
 
-  export function isValid(color: string | undefined | null): boolean {
+  isValid(color: string | undefined | null): boolean {
     try {
       if (!color || color.length < 7 || color.length > 7 || color[0] !== '#') {
         return false;
@@ -74,14 +74,14 @@ export namespace Color {
     } catch {
       return false;
     }
-  }
+  },
 
-  export function getBrightness(col: string): number {
+  getBrightness(col: string): number {
     const c = new TinyColor(col);
     return c.getBrightness() / 255;
-  }
+  },
 
-  export function isLight(col: string): boolean {
+  isLight(col: string): boolean {
     const c = new TinyColor(col);
     return c.isLight();
   }

@@ -3,7 +3,7 @@ import {OS, OsType} from "../../_tauri/os";
 
 const HexColorSchema = z
     .string()
-    .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid 6-digit hex color');
+    .regex(/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/, 'Must be a valid 4-, 6-, or 8-digit hex color');
 
 
 const PaddingSchema = z.object({
@@ -504,7 +504,7 @@ const RemoteShellListSchema = z.object({
  * Single Source of Truth: Alle Defaults leben im Schema.
  * Zod füllt fehlende Werte automatisch über .default(...) auf.
  */
-export const SettingsSchema = z.object({
+export const ConfigSchema = z.object({
     general: GeneralSchema.default(GeneralSchema.parse({})),
     autocomplete: AutocompleteSchema.default(AutocompleteSchema.parse({})),
     keybind: z.preprocess(
@@ -521,11 +521,11 @@ export const SettingsSchema = z.object({
     }),
 }).strict();
 
-export type Config = z.infer<typeof SettingsSchema>;
+export type Config = z.infer<typeof ConfigSchema>;
 export type Theme = z.infer<typeof ThemeSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 export type RemoteInjectionType = z.infer<typeof RemoteInjectionTypeEnum>;
 
 /** Bequemer Zugriff auf die reinen Defaults (abgeleitet aus dem Schema). */
-export const DEFAULT_SETTINGS: Config = SettingsSchema.parse({});
+export const DEFAULT_CONFIG: Config = ConfigSchema.parse({});

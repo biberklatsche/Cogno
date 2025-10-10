@@ -1,4 +1,4 @@
-import {ErrorHandler, Injectable, Injector} from '@angular/core';
+import {ErrorHandler, Injectable} from '@angular/core';
 
 // Minimal global error handler that shows a message window whenever an uncaught error occurs.
 // Uses a dependency-free alert() to satisfy the requirement without pulling UI libs.
@@ -7,7 +7,7 @@ import {ErrorHandler, Injectable, Injector} from '@angular/core';
 export class GlobalErrorHandler implements ErrorHandler {
   private isShowing = false;
 
-  constructor(private injector: Injector) {}
+  constructor() {}
 
   handleError(error: unknown): void {
     try {

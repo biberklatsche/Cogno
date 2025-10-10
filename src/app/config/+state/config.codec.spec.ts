@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ConfigCodec } from './config.codec';
-import { DEFAULT_SETTINGS } from '../+models/config';
+import { DEFAULT_CONFIG } from '../+models/config';
 
 describe('ConfigCodec', () => {
   it('defaultsToStringWithComments includes # comment lines', () => {
@@ -12,7 +12,7 @@ describe('ConfigCodec', () => {
 
   it('diffToString does not emit any comments', () => {
     // Change some values to produce a diff
-    const curr: any = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    const curr: any = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
     curr.general.enable_telemetry = false;
     curr.general.scrollback_lines = 1234;
     curr.theme.default.enable_webgl = true;
@@ -37,7 +37,7 @@ describe('ConfigCodec', () => {
       shell.1.path="/bin/zsh"
     `;
 
-    const parsed = ConfigCodec.fromStringToSettings(text);
+    const parsed = ConfigCodec.fromStringToConfig(text);
 
     // Nested structure exists
     expect(parsed.general).toBeDefined();
@@ -62,7 +62,7 @@ describe('ConfigCodec', () => {
       theme.default.enable_webgl=true
     `;
 
-    const settings = ConfigCodec.fromStringToSettings(text);
+    const settings = ConfigCodec.fromStringToConfig(text);
 
     // Overrides applied
     expect(settings.general.enable_telemetry).toBe(false);
@@ -80,14 +80,14 @@ describe('ConfigCodec', () => {
       const text = `
       general.scrollback_lines=-1
     `;
-    expect(() => ConfigCodec.fromStringToSettings(text)).toThrowError();
+    expect(() => ConfigCodec.fromStringToConfig(text)).toThrowError();
   });
 
   it('fromStringToSettings integrates parse + validate + defaults', () => {
     const text = `general.enable_telemetry=false\nGeneral.scrollback_lines=9999\n`;
     // Note: keys are case-sensitive in implementation; ensure correct casing
     const proper = `general.enable_telemetry=false\ngeneral.scrollback_lines=9999\n`;
-    const settings = ConfigCodec.fromStringToSettings(proper);
+    const settings = ConfigCodec.fromStringToConfig(proper);
     expect(settings.general.enable_telemetry).toBe(false);
     expect(settings.general.scrollback_lines).toBe(9999);
     // A default field still exists
@@ -97,7 +97,7 @@ describe('ConfigCodec', () => {
   it('diffToString outputs only differences vs DEFAULT_SETTINGS, JSON-serialized and sorted with trailing newline', () => {
     // Start from defaults and change a handful of values
     // Clone defaults to avoid mutating shared default object references inside zod schemas
-    const current: any = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    const current: any = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
     current.general.enable_telemetry = false;
     current.theme.default.enable_webgl = true;
     current.general.scrollback_lines = 1234;
@@ -120,7 +120,7 @@ describe('ConfigCodec', () => {
     expect(text.endsWith('\n')).toBe(true);
 
     // Ensure defaults produce empty diff
-    const defaultDiff = ConfigCodec.diffToString(DEFAULT_SETTINGS);
+    const defaultDiff = ConfigCodec.diffToString(DEFAULT_CONFIG);
     expect(defaultDiff).toBe('');
   });
 });
