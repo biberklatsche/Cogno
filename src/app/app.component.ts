@@ -4,17 +4,15 @@ import {TerminalComponent} from './terminal/terminal.component';
 import {WindowButtonsComponent} from "./window/window-buttons/window-buttons.component";
 import {TabListComponent} from "./tab/tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
-import {AppBus} from "./event-bus/event-bus";
-import {Environment} from "./common/environment/environment";
-import {StyleService} from "./common/style/style.service";
+import {AppBus} from "./app-bus/app-bus";
 
-window.addEventListener("keydown", (e) => {
+/*window.addEventListener("keydown", (e) => {
     console.log(e.key);
    if(e.key == 'e'){
        e.preventDefault();
        e.stopPropagation();
    }
-}, { capture: true });
+}, { capture: true });*/
 
 
 @Component({
@@ -29,8 +27,9 @@ export class AppComponent {
     os = OS.platform();
 
     constructor(bus: AppBus) {
-        bus.send({type: "LoadConfigCommand"});
-        bus.send({type: "WatchConfigCommand"});
+        bus.publish({type: "LoadConfigCommand"});
+        bus.publish({type: "WatchConfigCommand"});
+        bus.once$({path: ['app', 'config'], type: 'ConfigLoaded'})
     }
 
     async initAsync(): Promise<void> {

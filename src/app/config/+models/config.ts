@@ -370,7 +370,6 @@ const pickDefaultShell = (os: OsType): ShellConfig => {
                 "--login",
                 "-i"
             ],
-            default: true,
             use_conpty: true,
             working_dir: "D:\\Projects",
             start_timeout: 100000,
@@ -389,7 +388,6 @@ const pickDefaultShell = (os: OsType): ShellConfig => {
                 "--login",
                 "-i"
             ],
-            default: true,
             use_conpty: true,
             working_dir: "/~",
             start_timeout: 100000,
@@ -408,7 +406,6 @@ const pickDefaultShell = (os: OsType): ShellConfig => {
                 "--login",
                 "-i"
             ],
-            default: true,
             use_conpty: true,
             working_dir:"/~",
             start_timeout: 100000,
@@ -429,9 +426,8 @@ const ShellSchema = z.object({
     shell_type: ShellTypeEnum,
     path: z.string(),
     args: z.array(z.string()).default([]),
-    default: z.boolean().default(false),
     is_debug_mode_enabled: z.boolean().default(false),
-    use_conpty: z.boolean().default(true),
+    use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
     start_timeout: z.number().int().min(0, "Timeout must be >= 0").default(100000),
     prompt_terminator: z.string().default("$"),
@@ -442,10 +438,7 @@ const ShellSchema = z.object({
 }).describe("The shell configuration");
 
 const ShellListSchema = z.object({
-    1: z.preprocess(
-        (v) => (v == null ? pickDefaultShell(OS.platform()) : v),
-        ShellSchema
-    ),
+    1: ShellSchema.optional(),
     2: ShellSchema.optional(),
     3: ShellSchema.optional(),
     4: ShellSchema.optional(),

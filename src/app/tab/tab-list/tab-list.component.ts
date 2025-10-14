@@ -6,7 +6,7 @@ import {Observable} from "rxjs";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {ShellType} from "../../config/+models/config";
 import {Icon} from "../../icons/+model/icon";
-import {EventBus} from "../../event-bus/event-bus";
+import {AppBus} from "../../app-bus/app-bus";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -18,10 +18,8 @@ export class TabListComponent {
 
     tabs: Observable<Tab[]>;
 
-    constructor(private tabListService: TabListService, private bus: EventBus) {
+    constructor(private tabListService: TabListService) {
         this.tabs = this.tabListService.tabs$;
-
-        bus.onType$('')
     }
 
     closeTab(tab: Tab): void {

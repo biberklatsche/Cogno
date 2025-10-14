@@ -1,6 +1,9 @@
 import {Injectable} from "@angular/core";
 import {Tab} from "../+model/tab";
 import {BehaviorSubject, Observable} from "rxjs";
+import {AppBus} from "../../app-bus/app-bus";
+import {ConfigService} from "../../config/+state/config.service";
+import {ConfigLoadedEvent} from "../../config/+bus/events";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -10,10 +13,11 @@ export class TabListService {
         return this._tabs.asObservable();
     }
 
-    constructor() {
-        this._tabs.next([
-            {'id': '1', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false}
-        ]);
+    constructor(private bus: AppBus, private configService: ConfigService) {
+        this.bus.onceType$('ConfigLoaded').subscribe(e => {
+            const defaultShell = this.configService.config.shell["1"]!;
+            this.addTab({shellType: defaultShell.shell_type, title: defaultShell.name});
+        });
     }
 
     addTab(tabData: Partial<Tab>) {
@@ -21,7 +25,7 @@ export class TabListService {
             tabData.id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
         }
         if(!tabData.title) {
-            tabData.title = 'Tab 1';
+            tabData.title = 'Shell';
         }
         if(!tabData.shellType) {
             tabData.shellType = 'Powershell';
