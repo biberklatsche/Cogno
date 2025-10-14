@@ -3,6 +3,8 @@
         <button
                 type="button"
                 class="tab"
+                [animate.enter]="'animate-tab-enter'"
+                [animate.leave]="'animate-tab-leave'"
                 [attr.data-tab-id]="tab.id"
                 title="{{tab.title}}"
         >

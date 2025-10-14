@@ -45,16 +45,14 @@
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
   /* wichtig für Container Queries */
   container-type: inline-size;
-  transform: scaleX(1);
-  transition: transform 100ms ease-out;
+}
 
-  @starting-style {
-    transform: scaleX(0);
-  }
+.animate-tab-enter{
+  animation: slide-in 100ms;
+}
 
-  @leave-style {
-    transform: scaleX(0);
-  }
+.animate-tab-leave{
+  animation: slide-out 100ms;
 }
 
 .icon, .close {
@@ -96,4 +94,27 @@
 
 .tab:hover {
   background: var(--background-color-20l);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    width: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
 }
