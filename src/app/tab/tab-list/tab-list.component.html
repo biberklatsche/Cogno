@@ -10,10 +10,10 @@
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.shellType)"></app-icon></span>
             <span class="title">{{ tab.title }}</span>
-            <span class="close" (click)="$event.stopPropagation(); onClose(tab)">
+            <span class="close" (click)="$event.stopPropagation(); closeTab(tab)">
                 <app-icon name="mdiClose"></app-icon>
             </span>
         </button>
     }
-    <button class="add" (click)="$event.stopPropagation(); onAdd()"><app-icon name="mdiPlus"></app-icon></button>
+    <button class="add" (click)="$event.stopPropagation(); addTab()"><app-icon name="mdiPlus"></app-icon></button>
 </nav>

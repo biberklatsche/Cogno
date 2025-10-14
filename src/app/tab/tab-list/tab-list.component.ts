@@ -6,6 +6,7 @@ import {Observable} from "rxjs";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {ShellType} from "../../config/+models/config";
 import {Icon} from "../../icons/+model/icon";
+import {EventBus} from "../../event-bus/event-bus";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -17,11 +18,13 @@ export class TabListComponent {
 
     tabs: Observable<Tab[]>;
 
-    constructor(private tabListService: TabListService) {
+    constructor(private tabListService: TabListService, private bus: EventBus) {
         this.tabs = this.tabListService.tabs$;
+
+        bus.onType$('')
     }
 
-    onClose(tab: Tab): void {
+    closeTab(tab: Tab): void {
         this.tabListService.removeTab(tab);
     }
 
@@ -37,7 +40,7 @@ export class TabListComponent {
         }
     }
 
-    onAdd() {
+    addTab() {
         this.tabListService.addTab({});
     }
 }

@@ -17,17 +17,23 @@ export class TabListService {
     }
 
     addTab(tabData: Partial<Tab>) {
-        if(!!tabData.id) {
+        if(!tabData.id) {
             tabData.id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
         }
-        if(!!tabData.title) {
+        if(!tabData.title) {
             tabData.title = 'Tab 1';
         }
-        if(!!tabData.shellType) {
+        if(!tabData.shellType) {
             tabData.shellType = 'Powershell';
         }
+
+        console.log('#####', tabData)
+
         const tab: Tab = tabData as Tab;
         const tabs = [...this._tabs.value];
+
+        console.log('#####', tabs.find(t => t.id === tab.id))
+
         if(tabs.find(t => t.id === tab.id)) return;
         tabs.push(tab);
         this._tabs.next(tabs);

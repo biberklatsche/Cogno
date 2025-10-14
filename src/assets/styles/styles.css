@@ -2,6 +2,7 @@
 @import '../fonts/comfortaa/comfortaa.css';
 @import './xterm.css';
 @import './scrollbar.css';
+@import './theme.css';
 
 html, body {
     margin: 0;
