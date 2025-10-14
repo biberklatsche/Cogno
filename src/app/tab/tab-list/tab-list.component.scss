@@ -27,6 +27,7 @@
 .tab {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   height: 26px;
   padding: 0 8px;
@@ -44,6 +45,16 @@
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
   /* wichtig für Container Queries */
   container-type: inline-size;
+  transform: scaleX(1);
+  transition: transform 100ms ease-out;
+
+  @starting-style {
+    transform: scaleX(0);
+  }
+
+  @leave-style {
+    transform: scaleX(0);
+  }
 }
 
 .icon, .close {

@@ -6,7 +6,6 @@ import {Observable} from "rxjs";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {ShellType} from "../../config/+models/config";
 import {Icon} from "../../icons/+model/icon";
-
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -36,5 +35,9 @@ export class TabListComponent {
             default:
                 return 'mdiConsole';
         }
+    }
+
+    onAdd() {
+        this.tabListService.addTab({});
     }
 }

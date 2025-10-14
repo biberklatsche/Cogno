@@ -12,34 +12,21 @@ export class TabListService {
 
     constructor() {
         this._tabs.next([
-            {'id': '1', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '2', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '3', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '4', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '5', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '6', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '7', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '8', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '9', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '10', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '11', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '12', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '13', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '14', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '15', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '16', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '17', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '18', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '19', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '20', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '21', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '22', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '23', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '24', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false},
-            {'id': '25', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: true}])
+            {'id': '1', 'title': 'Tab 1 asdasöd kaslädk jasöldk jasöld kjws', 'shellType': 'Powershell', isSelected: false}
+        ]);
     }
 
-    addTab(tab: Tab) {
+    addTab(tabData: Partial<Tab>) {
+        if(!!tabData.id) {
+            tabData.id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
+        }
+        if(!!tabData.title) {
+            tabData.title = 'Tab 1';
+        }
+        if(!!tabData.shellType) {
+            tabData.shellType = 'Powershell';
+        }
+        const tab: Tab = tabData as Tab;
         const tabs = [...this._tabs.value];
         if(tabs.find(t => t.id === tab.id)) return;
         tabs.push(tab);
