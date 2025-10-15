@@ -8,6 +8,7 @@ import {ConfigLoadedEvent, ThemeChangedEvent} from "../+bus/events";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {invoke} from "@tauri-apps/api/core";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Injectable({
     providedIn: 'root'
@@ -31,50 +32,25 @@ export class ConfigService {
     }
 
     constructor(private appBus: AppBus, private destroy: DestroyRef) {
-        appBus.onType$('LoadConfigCommand').subscribe(async () => {
-           this.load().then();
+        appBus.onType$('LoadConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
+            await this.loadConfig();
         });
-        appBus.onceType$('WatchConfigCommand').subscribe(async () => {
-            setTimeout(() => this.watch().then(), 1000);
+        appBus.onceType$('WatchConfigCommand').subscribe(() => {
+            setTimeout(async () => await this.watch(), 1000);
         });
     }
 
-    public async load() {
-        Logger.info('Load config...');
-        const path = Environment.configFilePath();
-        /*invoke("list_fonts").then(fonts => {
-          console.log('###############Fonts', fonts);
-        }).catch(error => console.log('###############Fontseer', error));*/
-
-        /*invoke("list_shells").then(shells => {
-          console.log('###############Shells', shells);
-
-
-        }).catch(error => console.log('###############Shellseer', error));*/
-
-        /*invoke("get_keyboard_layout").then(layout => {
-          console.log('###############layout', layout);
-        }).catch(error => console.log('###############layoutseer', error));
-
-        invoke('encrypt', { text: "text234", password: "password" }).then(encrypted_text => {
-          console.log('###############decrypt', encrypted_text);
-          invoke('decrypt', { encryptedText: encrypted_text, password: "password" }).then(text => {
-            console.log('###############decryptet', text);
-          }).catch(error => console.log('###############decrypteer', error));
-        }).catch(error => console.log('###############encryptseer', error));*/
-        await this.loadConfig(path);
-    }
-
-    public async watch() {
+    private async watch() {
         Logger.info('Load and watch config...');
         const path = Environment.configFilePath();
         const unwatch = Fs.watchChanges$(path).pipe(debounceTime(50)).subscribe(async () => {
-            await this.loadConfig(path);
+            await this.loadConfig();
         });
         this.destroy.onDestroy(() => unwatch.unsubscribe());
     }
 
-    private async loadConfig(path: string) {
+    private async loadConfig() {
+        const path = Environment.configFilePath();
         if(!await Fs.exists(path)) {
             await Fs.writeTextFile(path, ConfigCodec.defaultSettingsAsComment());
             const configAsString = await Fs.readTextFile(path);
@@ -84,7 +60,6 @@ export class ConfigService {
         }
         const configAsString = await Fs.readTextFile(path);
         const config = ConfigCodec.fromStringToConfig(configAsString);
-        console.log('Config loaded...', config );
         this._config.next(config);
 
         const configLoadedEvent: ConfigLoadedEvent = {type: 'ConfigLoaded', sourcePath: ['app', 'settings']};

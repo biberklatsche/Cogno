@@ -31,12 +31,8 @@ export class TabListService {
             tabData.shellType = 'Powershell';
         }
 
-        console.log('#####', tabData)
-
         const tab: Tab = tabData as Tab;
         const tabs = [...this._tabs.value];
-
-        console.log('#####', tabs.find(t => t.id === tab.id))
 
         if(tabs.find(t => t.id === tab.id)) return;
         tabs.push(tab);

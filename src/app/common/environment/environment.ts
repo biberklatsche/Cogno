@@ -14,7 +14,7 @@ export const Environment = (() => {
         homeDir = await Path.join(await Path.homeDir(), homeDirName);
         dbFilePath = await Path.join(homeDir, 'cogno.db');
         configFilePath = await Path.join(homeDir, 'cogno.config');
-        console.log(`Loaded ${homeDir}`);
+        Logger.info(`Loaded ${homeDir}`);
     }
 
     // --- öffentliches API ---

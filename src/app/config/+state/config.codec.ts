@@ -179,11 +179,6 @@ export class ConfigCodec {
     }
 
     private static getChildSchema(parent: any, key: string): any {
-
-        if(key === 'name') {
-            console.log('#####');
-        }
-
         if (!parent) return undefined;
         const p = this.unwrapSchema(parent);
         // ZodObject: shape either function or object; try instance first, then _def

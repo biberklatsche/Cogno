@@ -50,10 +50,10 @@ describe('ConfigCodec', () => {
     expect(parsed.theme.default.color.prompt["1"].foreground).toEqual('red');
     expect(parsed.theme.default.color.prompt["1"].background).toEqual('black');
 
-    expect(parsed.shell["1"].name).toEqual('zsh');
-    expect(parsed.shell["1"].shell_type).toEqual('ZSH');
-    expect(parsed.shell["1"].path).toEqual('/bin/zsh');
-    expect(parsed.shell["1"].use_conpty).toBe(true);
+    expect(parsed.shell["1"]!.name).toEqual('zsh');
+    expect(parsed.shell["1"]!.shell_type).toEqual('ZSH');
+    expect(parsed.shell["1"]!.path).toEqual('/bin/zsh');
+    expect(parsed.shell["1"]!.use_conpty).toBe(true);
   });
 
   it('toSettings fills defaults and keeps overrides', () => {
