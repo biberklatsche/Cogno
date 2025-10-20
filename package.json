@@ -48,7 +48,7 @@
     "@angular/compiler-cli": "20.3.4",
     "@tauri-apps/cli": "2",
     "@vitest/coverage-v8": "3.2.4",
-    "happy-dom": "20.0.0",
+    "happy-dom": "^20.0.7",
     "typescript": "~5.8.3",
     "vite": "7.1.9",
     "vite-tsconfig-paths": "5.1.4",
