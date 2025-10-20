@@ -6,7 +6,7 @@ import {Logger} from "../../_tauri/logger";
 
 
 @Injectable({providedIn: 'root'})
-export class WindowService {
+export class AppButtonsService {
 
     private _isMaximized = signal<boolean>(false);
     readonly isMaximized = this._isMaximized.asReadonly();

@@ -1,8 +1,8 @@
 import {Component} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {TerminalComponent} from './terminal/terminal.component';
-import {WindowButtonsComponent} from "./window/window-buttons/window-buttons.component";
-import {TabListComponent} from "./tab/tab-list/tab-list.component";
+import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
+import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
 import {AppBus} from "./app-bus/app-bus";
 
@@ -17,7 +17,7 @@ import {AppBus} from "./app-bus/app-bus";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, TerminalComponent, WindowButtonsComponent, TabListComponent],
+    imports: [CommonModule, TerminalComponent, AppButtonsComponent, TabListComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss',
     standalone: true

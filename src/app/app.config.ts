@@ -6,10 +6,9 @@ import {Environment} from "./common/environment/environment";
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAnimations(),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
       provideEnvironmentInitializer(() => {
-          // erzwingt Instanziierung und startet die Subscription
+          // erzwingt Instanziierung des StyleService
           inject(StyleService);
       }),
   ],

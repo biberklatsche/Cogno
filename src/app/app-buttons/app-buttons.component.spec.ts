@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WindowButtonsComponent } from './window-buttons.component';
-import { WindowService } from '../+state/window.service';
+import { AppButtonsComponent } from './app-buttons.component';
+import { AppButtonsService } from './+state/app-buttons.service';
 import { Subject } from 'rxjs';
-import {AppWindow} from "../../../__mocks__/_tauri-window";
+import {AppWindow} from "../../__mocks__/_tauri-window";
 
 
-describe('WindowButtonsComponent (class only)', () => {
+describe('AppButtonsComponent (class only)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -20,7 +20,7 @@ describe('WindowButtonsComponent (class only)', () => {
     (AppWindow.isMaximized as any).mockResolvedValue(initialIsMaximized);
 
     const destroyRef: any = { onDestroy: vi.fn() };
-    const service = new WindowService(destroyRef);
+    const service = new AppButtonsService(destroyRef);
 
     // Trigger one emission so the service queries isMaximized and updates the signal
     size$.next({ width: 800, height: 600 });
@@ -37,7 +37,7 @@ describe('WindowButtonsComponent (class only)', () => {
   it('calls AppWindow.close() when close() is invoked', async () => {
     const { service, flush } = createServiceWithControlledMaximized(false);
     await flush();
-    const component = new WindowButtonsComponent(service);
+    const component = new AppButtonsComponent(service);
 
     component.close();
 
@@ -47,7 +47,7 @@ describe('WindowButtonsComponent (class only)', () => {
   it('calls AppWindow.minimize() when minimize() is invoked', async () => {
     const { service, flush } = createServiceWithControlledMaximized(false);
     await flush();
-    const component = new WindowButtonsComponent(service);
+    const component = new AppButtonsComponent(service);
 
     component.minimize();
 
@@ -57,7 +57,7 @@ describe('WindowButtonsComponent (class only)', () => {
   it('toggleMaximize() maximizes when not maximized', async () => {
     const { service, flush } = createServiceWithControlledMaximized(false);
     await flush();
-    const component = new WindowButtonsComponent(service);
+    const component = new AppButtonsComponent(service);
 
     expect(service.isMaximized()).toBe(false);
 
@@ -70,7 +70,7 @@ describe('WindowButtonsComponent (class only)', () => {
   it('toggleMaximize() unmaximizes when currently maximized', async () => {
     const { service, flush } = createServiceWithControlledMaximized(true);
     await flush();
-    const component = new WindowButtonsComponent(service);
+    const component = new AppButtonsComponent(service);
 
     expect(service.isMaximized()).toBe(true);
 

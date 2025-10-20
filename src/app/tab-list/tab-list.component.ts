@@ -1,12 +1,12 @@
 import {Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {TabListService} from "../+state/tab-list.service";
-import {Tab} from "../+model/tab";
+import {TabListService} from "./+state/tab-list.service";
+import {Tab} from "./+model/tab";
 import {Observable} from "rxjs";
-import {IconComponent} from "../../icons/icon/icon.component";
-import {ShellType} from "../../config/+models/config";
-import {Icon} from "../../icons/+model/icon";
-import {AppBus} from "../../app-bus/app-bus";
+import {IconComponent} from "../icons/icon/icon.component";
+import {ShellType} from "../config/+models/config";
+import {Icon} from "../icons/+model/icon";
+import {AppBus} from "../app-bus/app-bus";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
