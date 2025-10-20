@@ -17,7 +17,7 @@
   white-space: nowrap;
   flex-wrap: nowrap;
   height: var(--header-height);
-  padding: 0 6px;
+  padding: 0 2rem 0 6px;
   /* Ensure the inner scroller stretches to the host width and scrolls instead of growing */
   flex: 1 1 auto;
   min-width: 0;
@@ -25,6 +25,7 @@
 }
 
 .tab {
+  user-select: none;
   cursor: default;
   display: inline-flex;
   align-items: center;
