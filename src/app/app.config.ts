@@ -3,6 +3,7 @@ import {provideAnimations} from '@angular/platform-browser/animations';
 import { GlobalErrorHandler } from './common/error/global-error.handler';
 import {StyleService} from "./common/style/style.service";
 import {Environment} from "./common/environment/environment";
+import {WorkspaceService} from "./workspace/+state/workspace.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -10,6 +11,7 @@ export const appConfig: ApplicationConfig = {
       provideEnvironmentInitializer(() => {
           // erzwingt Instanziierung des StyleService
           inject(StyleService);
+          inject(WorkspaceService);
       }),
   ],
 };

@@ -5,6 +5,7 @@ import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
 import {AppBus} from "./app-bus/app-bus";
+import {GridListComponent} from "./grid-list/grid-list.component";
 
 /*window.addEventListener("keydown", (e) => {
     console.log(e.key);
@@ -17,7 +18,7 @@ import {AppBus} from "./app-bus/app-bus";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, TerminalComponent, AppButtonsComponent, TabListComponent],
+    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss',
     standalone: true

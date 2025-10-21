@@ -1,15 +1,4 @@
 import {MessageBase} from "../../app-bus/app-bus";
-import {ShellType} from "../../config/+models/config";
+import {WorkspaceConfig} from "../+model/workspace";
 
-export type TabConfig = {
-    splitDirection: SplitDirection,
-    color?: string,
-    name?: string,
-    shellType: ShellType,
-    workingDirectory?: string,
-    children?: TabConfig[],
-}
-
-export type SplitDirection = 'horizontal' | 'vertical';
-
-export type AddTabsEvent = MessageBase<"AddTabsEvent", TabConfig>
+export type WorkspaceLoadedEvent = MessageBase<"WorkspaceLoaded", WorkspaceConfig>

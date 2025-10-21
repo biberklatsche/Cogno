@@ -1,0 +1,5 @@
+@for (grid of gridList$ | async; track grid.id) {
+    <!--section [hidden]="grid.id !== activeTabId"-->
+    <app-grid [node]="grid.tree.root"></app-grid>
+    <!--/section-->
+}

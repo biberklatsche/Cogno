@@ -8,7 +8,7 @@
                 [attr.data-tab-id]="tab.id"
                 title="{{tab.title}}"
         >
-            <span class="icon"><app-icon [name]="iconForShell(tab.shellType)"></app-icon></span>
+            <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
             <span class="title">{{ tab.title }}</span>
             <span class="close" (click)="$event.stopPropagation(); closeTab(tab)">
                 <app-icon name="mdiClose"></app-icon>

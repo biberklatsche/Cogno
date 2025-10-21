@@ -1,0 +1,22 @@
+@if (node) {
+    @if(node.isLeaf) {
+        <app-pane [terminalId]="node.data!.terminalId!">
+        </app-pane>
+    } @else {
+        <div class="grid-container"
+             [ngStyle]="styleForSplit(node.data!.splitDirection!, node.data!.ratio)">
+            <div class="cell min-w-0 min-h-0">
+                <app-grid [node]="node.left!"></app-grid>
+            </div>
+            <div class="divider"
+                 [class.vertical]="node.data!.splitDirection==='vertical'"
+                 [class.horizontal]="node.data!.splitDirection==='horizontal'">
+            </div>
+            <div class="cell min-w-0 min-h-0">
+                <app-grid [node]="node.right!"></app-grid>
+            </div>
+        </div>
+    }
+} @else {
+    <span>Empty</span>
+}

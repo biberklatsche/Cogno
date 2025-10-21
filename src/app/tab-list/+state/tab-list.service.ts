@@ -2,8 +2,8 @@ import {Injectable} from "@angular/core";
 import {Tab} from "../+model/tab";
 import {BehaviorSubject, Observable} from "rxjs";
 import {AppBus} from "../../app-bus/app-bus";
-import {ConfigService} from "../../config/+state/config.service";
-import {ConfigLoadedEvent} from "../../config/+bus/events";
+import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
+import {NodeConfig, LeafNode, PaneConfig, TabId} from "../../workspace/+model/workspace";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -13,24 +13,15 @@ export class TabListService {
         return this._tabs.asObservable();
     }
 
-    constructor(private bus: AppBus, private configService: ConfigService) {
-        this.bus.onceType$('ConfigLoaded').subscribe(e => {
-            const defaultShell = this.configService.config.shell["1"]!;
-            this.addTab({shellType: defaultShell.shell_type, title: defaultShell.name});
+    constructor(private bus: AppBus) {
+        this.bus.onType$('WorkspaceLoaded').subscribe((event: WorkspaceLoadedEvent) => {
+            for (let pane of event.payload!.panes) {
+                this.addTab({id: pane.id, title: 'Shell', activeShellType: 'unknown'});
+            }
         });
     }
 
     addTab(tabData: Partial<Tab>) {
-        if(!tabData.id) {
-            tabData.id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8)
-        }
-        if(!tabData.title) {
-            tabData.title = 'Shell';
-        }
-        if(!tabData.shellType) {
-            tabData.shellType = 'Powershell';
-        }
-
         const tab: Tab = tabData as Tab;
         const tabs = [...this._tabs.value];
 

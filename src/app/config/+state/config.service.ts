@@ -1,10 +1,9 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {BehaviorSubject, debounceTime, filter, map, Observable, Subject} from 'rxjs';
+import {BehaviorSubject, debounceTime, filter, map, Observable} from 'rxjs';
 import {Config, ShellType, Theme} from "../+models/config";
 import {ConfigCodec} from "./config.codec";
-import {ConfigLoadedEvent, ThemeChangedEvent} from "../+bus/events";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {invoke} from "@tauri-apps/api/core";
@@ -61,11 +60,8 @@ export class ConfigService {
         const configAsString = await Fs.readTextFile(path);
         const config = ConfigCodec.fromStringToConfig(configAsString);
         this._config.next(config);
-
-        const configLoadedEvent: ConfigLoadedEvent = {type: 'ConfigLoaded', sourcePath: ['app', 'settings']};
-        const themeChangedEvent: ThemeChangedEvent = {type: 'ThemeChanged', sourcePath: ['app', 'settings']};
-        this.appBus.publish(configLoadedEvent);
-        this.appBus.publish(themeChangedEvent);
+        this.appBus.publish({type: 'ConfigLoaded', sourcePath: ['app', 'settings']});
+        this.appBus.publish({type: 'ThemeChanged', sourcePath: ['app', 'settings']});
         Logger.info('Config loaded...');
     }
 

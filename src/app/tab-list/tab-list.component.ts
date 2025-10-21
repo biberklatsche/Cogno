@@ -26,7 +26,7 @@ export class TabListComponent {
         this.tabListService.removeTab(tab);
     }
 
-    iconForShell(shell: ShellType): Icon  {
+    iconForShell(shell: ShellType | 'unknown'): Icon  {
         switch (shell) {
             case 'Powershell':
                 return 'mdiPowershell';
