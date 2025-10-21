@@ -31,7 +31,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 shells.push(ShellInfo {
                     name: name.to_string(),
                     path: path.display().to_string(),
-                    shell_type: shell_type
+                    shell_type: shell_type.to_string()
                 });
             }
         }
@@ -52,7 +52,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
                         shells.push(ShellInfo {
                             name: "Git Bash".to_string(),
                             path: bash_path,
-                            shell_type: "GitBash"
+                            shell_type: "GitBash".to_string()
                         });
                     }
                 }

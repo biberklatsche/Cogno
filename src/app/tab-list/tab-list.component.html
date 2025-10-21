@@ -3,6 +3,7 @@
         <button
                 type="button"
                 class="tab"
+                [class.is-active] = tab.isActive
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
                 [attr.data-tab-id]="tab.id"

@@ -13,7 +13,7 @@ export class Pty implements IPty {
     private pty: ITauriPty;
 
     constructor() {
-        this.pty = spawn(OS.platform() === 'macos' ? "zsh" : "C:\\_dev\\tools\\Git\\bin\\sh.exe", [/* args */], {
+        this.pty = spawn(OS.platform() === 'macos' ? "zsh" : "C:\\arbeit\\Git\\bin\\bash.exe", [/* args */], {
             cols: 80,
             rows: 80,
         })

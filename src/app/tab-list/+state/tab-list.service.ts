@@ -15,8 +15,8 @@ export class TabListService {
 
     constructor(private bus: AppBus) {
         this.bus.onType$('WorkspaceLoaded').subscribe((event: WorkspaceLoadedEvent) => {
-            for (let pane of event.payload!.panes) {
-                this.addTab({id: pane.id, title: 'Shell', activeShellType: 'unknown'});
+            for (const [index, pane] of event.payload!.panes.entries()) {
+                this.addTab({id: pane.id, title: 'Shell', activeShellType: 'unknown', isActive: index === 0});
             }
         });
     }

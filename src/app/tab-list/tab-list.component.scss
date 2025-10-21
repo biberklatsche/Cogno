@@ -45,6 +45,10 @@
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
   /* wichtig für Container Queries */
   container-type: inline-size;
+  opacity: 0.5;
+  &.is-active {
+    opacity: 1;
+  }
 }
 
 .animate-tab-enter{
