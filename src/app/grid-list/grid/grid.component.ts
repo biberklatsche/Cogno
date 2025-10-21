@@ -1,7 +1,7 @@
 import {Component, Input} from '@angular/core';
 import {BinaryNode} from "../../common/tree/binary-tree";
 import {Pane, SplitDirection} from "../+model/model";
-import {JsonPipe, NgStyle} from "@angular/common";
+import {NgStyle} from "@angular/common";
 import {PaneComponent} from "../pane/pane.component";
 
 @Component({

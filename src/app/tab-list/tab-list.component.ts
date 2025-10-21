@@ -7,6 +7,8 @@ import {IconComponent} from "../icons/icon/icon.component";
 import {ShellType} from "../config/+models/config";
 import {Icon} from "../icons/+model/icon";
 import {AppBus} from "../app-bus/app-bus";
+import {TabId} from '../workspace/+model/workspace';
+import {IdCreator} from '../common/id-creator/id-creator';
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -22,8 +24,8 @@ export class TabListComponent {
         this.tabs = this.tabListService.tabs$;
     }
 
-    closeTab(tab: Tab): void {
-        this.tabListService.removeTab(tab);
+    closeTab(tabId: TabId): void {
+        this.tabListService.removeTab(tabId);
     }
 
     iconForShell(shell: ShellType | 'unknown'): Icon  {
@@ -39,6 +41,11 @@ export class TabListComponent {
     }
 
     addTab() {
-        this.tabListService.addTab({});
+        //TODO: hier muss ein Event gesendet werden.
+        this.tabListService.addTab({id: IdCreator.newId(), title: 'Test', activeShellType: 'unknown', isActive: true});
+    }
+
+    selectTab(tabId: TabId) {
+        this.tabListService.selectTab(tabId);
     }
 }
