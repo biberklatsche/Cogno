@@ -1,5 +1,4 @@
 import {Injectable, Injector, EnvironmentInjector, Type, createComponent, ComponentRef} from '@angular/core';
-import { DomPortal } from '@angular/cdk/portal';
 import {TerminalComponent} from "../../../terminal/terminal.component";
 import {TerminalId} from "../../+model/model";
 

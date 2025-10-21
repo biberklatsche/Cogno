@@ -33,4 +33,24 @@ export class GridComponent {
         }
     }
 
+    private drag?: { node: BinaryNode<Pane>; startX: number; startY: number; startRatio: number; rect: DOMRect };
+
+    startDragDivider(node: BinaryNode<Pane>, ev: MouseEvent) {
+        const rect = (ev.currentTarget as HTMLElement).parentElement!.getBoundingClientRect();
+        this.drag = { node, startX: ev.clientX, startY: ev.clientY, startRatio: node.data!.ratio ?? 0.5, rect };
+        ev.preventDefault();
+    }
+
+    onDragDivider(ev: Event) {
+        if (!this.drag) return;
+        const mouseEvent = ev as MouseEvent;
+        const { node, startX, startY, startRatio, rect } = this.drag;
+        let r = startRatio;
+        if (node.data!.splitDirection === 'vertical') r = startRatio + (mouseEvent.clientX - startX) / rect.width;
+        else r = startRatio + (mouseEvent.clientY - startY) / rect.height;
+        node.data!.ratio = Math.max(0.05, Math.min(0.95, r)); // **nur mutieren, nichts neu bauen**
+    }
+
+    stopDragDivider() { this.drag = undefined; }
+
 }
