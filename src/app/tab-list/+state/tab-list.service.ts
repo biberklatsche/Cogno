@@ -3,7 +3,7 @@ import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, map, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
-import {NodeConfig, LeafNode, PaneConfig, TabId} from "../../workspace/+model/workspace";
+import {PaneConfig, TerminalConfig, GridConfig, TabId} from "../../workspace/+model/workspace";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -16,12 +16,10 @@ export class TabListService {
 
     constructor(private bus: AppBus) {
         this.bus.onType$('WorkspaceLoaded').subscribe((event: WorkspaceLoadedEvent) => {
-            for (const [index, pane] of event.payload!.panes.entries()) {
+            this._tabList.next([]);
+            for (const [index, grid] of event.payload!.grids.entries()) {
                 const isActiveTab = index === 0;
-                this.addTab({id: pane.id, title: 'Shell', activeShellType: 'unknown', isActive: isActiveTab});
-                if(isActiveTab) {
-                    this.selectTab(pane.id)
-                }
+                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: isActiveTab});
             }
         });
     }
@@ -34,6 +32,7 @@ export class TabListService {
         }
         tabList.push(tab);
         this._tabList.next(tabList);
+        this.bus.publish({type: 'TabAddedEvent', payload: {tabId: tab.id}});
     }
 
     removeTab(tabId: TabId) {
@@ -46,6 +45,7 @@ export class TabListService {
            tabList[Math.max(tabIndex - 1, 0)].isActive = true;
         }
         this._tabList.next(tabList);
+        this.bus.publish({type: 'TabRemovedEvent', payload: tabId});
     }
 
     selectTab(tabId: TabId) {
@@ -57,5 +57,6 @@ export class TabListService {
         }
         tabList[tabIndex].isActive = true;
         this._tabList.next(tabList);
+        this.bus.publish({type: 'TabSelectedEvent', payload: tabId});
     }
 }

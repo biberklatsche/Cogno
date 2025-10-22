@@ -1,12 +1,27 @@
-import {Injectable, Injector, EnvironmentInjector, Type, createComponent, ComponentRef} from '@angular/core';
+import {
+    Injectable,
+    Injector,
+    EnvironmentInjector,
+    Type,
+    createComponent,
+    ComponentRef,
+    DestroyRef
+} from '@angular/core';
 import {TerminalComponent} from "../../../terminal/terminal.component";
 import {TerminalId} from "../../+model/model";
+import {AppBus} from "../../../app-bus/app-bus";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {TabRemovedEvent} from "../../../tab-list/+bus/events";
 
 @Injectable({ providedIn: 'root' })
-export class TerminalPortalService {
+export class TerminalComponentFactory {
     private map = new Map<TerminalId, ComponentRef<TerminalComponent>>();
 
-    constructor(private env: EnvironmentInjector, private injector: Injector) {}
+    constructor(private env: EnvironmentInjector, private injector: Injector, bus: AppBus, destroyRef: DestroyRef) {
+        bus.onType$('TabRemovedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
+            this.destroy(event.payload);
+        });
+    }
 
     /** Liefert den bestehenden Portal für paneId – oder erstellt Komponente + Portal genau 1x */
     getOrCreate(terminalId: TerminalId): ComponentRef<TerminalComponent> {
@@ -30,7 +45,8 @@ export class TerminalPortalService {
     }
 
     /** Endgültig schließen (Pane entfernt) */
-    destroy(terminalId: TerminalId) {
+    private destroy(terminalId?: TerminalId) {
+        if (!terminalId) return;
         const ref = this.map.get(terminalId);
         if (!ref) return;
         try {

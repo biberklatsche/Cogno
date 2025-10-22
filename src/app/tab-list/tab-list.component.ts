@@ -41,8 +41,7 @@ export class TabListComponent {
     }
 
     addTab() {
-        //TODO: hier muss ein Event gesendet werden.
-        this.tabListService.addTab({id: IdCreator.newId(), title: 'Test', activeShellType: 'unknown', isActive: true});
+        this.tabListService.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
     }
 
     selectTab(tabId: TabId) {

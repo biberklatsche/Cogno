@@ -1,7 +1,9 @@
 import {IPty as ITauriPty, spawn} from "tauri-pty";
-import {OS} from './os';
+import {ShellConfig} from "../config/+models/config";
+import {IDisposable} from "../common/models/models";
 
 export interface IPty {
+    spawn(shellConfig: ShellConfig): void;
     resize(width: number, height: number): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
@@ -10,38 +12,32 @@ export interface IPty {
 
 export class Pty implements IPty {
 
-    private pty: ITauriPty;
+    private pty: ITauriPty | undefined = undefined;
 
-    constructor() {
-        this.pty = spawn(OS.platform() === 'macos' ? "zsh" : "C:\\arbeit\\Git\\bin\\bash.exe", [/* args */], {
+    spawn(shellConfig: ShellConfig) {
+        this.pty = spawn(shellConfig.path, shellConfig.args, {
             cols: 80,
             rows: 80,
         })
     }
 
     resize(cols: number, rows: number) {
-        if(!this.pty) throw Error('Please initialize Pty before resize.');
+        if(!this.pty) throw Error('Please spawn Pty before resize.');
         this.pty?.resize(cols, rows);
     }
 
     onData( listener: (e: string) => any): IDisposable {
-        if(!this.pty) throw Error('Please initialize Pty before listen on data.');
+        if(!this.pty) throw Error('Please spawn Pty before listen on data.');
         return this.pty.onData(listener);
     }
 
     write(data: string) {
-        if(!this.pty) throw Error('Please initialize Pty before write to it.');
+        if(!this.pty) throw Error('Please spawn Pty before write to it.');
         return this.pty.write(data);
     }
 
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
+        if(!this.pty) throw Error('Please spawn Pty before listen on exit.');
         return this.pty.onExit(listener);
     }
-}
-
-export interface IDisposable {
-    dispose(): void;
-}
-export interface IEvent<T> {
-    (listener: (e: T) => any): IDisposable;
 }

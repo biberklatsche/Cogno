@@ -6,32 +6,33 @@ export type TabId = string;
 export type WorkspaceConfig = {
     name?: string;
     color?: string;
-    panes: PaneConfig[];
+    grids: GridConfig[];
 }
 
-export type PaneConfig = {
-    id: TabId;
-    node: NodeConfig;
+export type GridConfig = {
+    tabId: TabId;
+    pane: PaneConfig;
 }
 
-export type NodeConfig =
+export type PaneConfig =
     | SplitNode
-    | LeafNode;
+    | TerminalConfig;
 
 export interface SplitNode {
     splitDirection: SplitDirection;
     ratio: number;
-    leftChild: NodeConfig;
-    rightChild: NodeConfig;
+    leftChild: PaneConfig;
+    rightChild: PaneConfig;
     shellConfig?: never;
 }
 
-export interface LeafNode {
+export interface TerminalConfig {
     splitDirection?: never;
     ratio?: never;
     child1?: never;
     child2?: never;
-    shellConfig: ShellConfigPosition;
+    shellConfigPosition?: ShellConfigPosition;
+    workingDir?: string;
 }
 
 export type SplitDirection = 'horizontal' | 'vertical';

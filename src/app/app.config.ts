@@ -1,13 +1,18 @@
-import {ApplicationConfig, ErrorHandler, inject, provideEnvironmentInitializer} from "@angular/core";
-import {provideAnimations} from '@angular/platform-browser/animations';
+import {
+    ApplicationConfig,
+    ErrorHandler,
+    inject,
+    provideEnvironmentInitializer,
+    provideZonelessChangeDetection
+} from "@angular/core";
 import { GlobalErrorHandler } from './common/error/global-error.handler';
 import {StyleService} from "./common/style/style.service";
-import {Environment} from "./common/environment/environment";
 import {WorkspaceService} from "./workspace/+state/workspace.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+      provideZonelessChangeDetection(),
       provideEnvironmentInitializer(() => {
           // erzwingt Instanziierung des StyleService
           inject(StyleService);
