@@ -41,11 +41,15 @@ export class TabListService {
         if(tabIndex === -1) return;
         const isActiveTab = tabList[tabIndex].isActive;
         tabList.splice(tabIndex, 1);
+        let nextActiveTab;
         if(isActiveTab && tabList.length > 0) {
-           tabList[Math.max(tabIndex - 1, 0)].isActive = true;
+           nextActiveTab = tabList[Math.max(tabIndex - 1, 0)];
         }
         this._tabList.next(tabList);
         this.bus.publish({type: 'TabRemovedEvent', payload: tabId});
+        if(nextActiveTab) {
+            this.selectTab(nextActiveTab.id);
+        }
     }
 
     selectTab(tabId: TabId) {
