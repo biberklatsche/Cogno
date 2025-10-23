@@ -48,8 +48,8 @@
   opacity: 0.5;
   &.is-active {
     opacity: 1;
+    color: var(--highlight-color);
     background: var(--background-color-10l);
-    border-bottom: 2px solid var(--highlight-color);
   }
 }
 
