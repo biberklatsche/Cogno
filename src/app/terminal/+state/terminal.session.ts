@@ -15,7 +15,6 @@ export class TerminalSession {
     private disposed: boolean = false;
 
     constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
-        this.spawnPty();
         this.subscription.add(this.configService.activeTheme$.pipe(filter(t => !!t), first()).subscribe(theme => {
             if (theme.enable_webgl) {
                 this.renderer.useWebGl();
@@ -32,13 +31,14 @@ export class TerminalSession {
         }));
     }
 
-    spawnPty() {
+    spawnPty(terminalId: TerminalId) {
         const shellConfig = this.configService.config.shell[1]!;
-        this.pty.spawn(shellConfig);
+        this.pty.spawn(terminalId, shellConfig);
     }
 
     bindRenderer(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer);
+        this.spawnPty(this.terminalId);
         this.disposables.push(this.pty?.onData(data => this.renderer?.write(data)));
         this.disposables.push(this.renderer.onData(data => this.pty?.write(data)));
         this.bus.publish({type: "TerminalInitializedEvent", payload: this.terminalId});

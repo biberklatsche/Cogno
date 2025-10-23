@@ -3,7 +3,7 @@ import {ShellConfig} from "../config/+models/config";
 import {IDisposable} from "../common/models/models";
 
 export interface IPty {
-    spawn(shellConfig: ShellConfig): void;
+    spawn(terminalId: string, shellConfig: ShellConfig): void;
     resize(width: number, height: number): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
@@ -19,8 +19,9 @@ export class Pty implements IPty, IDisposable {
 
     private pty: ITauriPty | undefined = undefined;
 
-    spawn(shellConfig: ShellConfig) {
+    spawn(terminalId: string, shellConfig: ShellConfig) {
         this.pty = spawn(shellConfig.path, shellConfig.args, {
+            name: terminalId,
             cols: 80,
             rows: 80,
         });
