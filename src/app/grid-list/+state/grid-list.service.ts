@@ -1,6 +1,6 @@
 import {DestroyRef, Injectable} from "@angular/core";
 import {BehaviorSubject, map, Observable, Subject} from "rxjs";
-import {Grid, GridList, Pane} from "../+model/model";
+import {Grid, GridList, Pane, TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
 import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {PaneConfig, GridConfig, TabId} from "../../workspace/+model/workspace";
@@ -84,5 +84,13 @@ export class GridListService {
     selectGrid(tab?: TabId) {
         if(tab === undefined) return;
         this._activeTabId.next(tab);
+        const grid = this._gridList.value[tab];
+        const terminalId = this.getFirstTerminalId(grid.tree.root);
+        this.bus.publish({type: 'FocusTerminalCommand'});
+    }
+
+    getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
+        if(node.isLeaf) return  node.data!.terminalId!;
+        return this.getFirstTerminalId(node.left!);
     }
 }

@@ -3,6 +3,8 @@ import {IPty, Pty} from "../../_tauri/pty";
 import {IRenderer, Renderer} from "./renderer";
 import {filter, first, Subscription} from "rxjs";
 import {IDisposable} from "../../common/models/models";
+import {AppBus} from "../../app-bus/app-bus";
+import {TerminalId} from "../../grid-list/+model/model";
 
 export class TerminalSession {
 
@@ -12,7 +14,7 @@ export class TerminalSession {
     private readonly disposables: IDisposable[] = [this.renderer];
     private disposed: boolean = false;
 
-    constructor(private configService: ConfigService) {
+    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
         this.spawnPty();
         this.subscription.add(this.configService.activeTheme$.pipe(filter(t => !!t), first()).subscribe(theme => {
             if (theme.enable_webgl) {
@@ -23,6 +25,10 @@ export class TerminalSession {
         }));
         this.subscription.add(this.configService.activeTheme$.subscribe(theme => {
             this.renderer.setTheme(theme, theme.scrollbackLines);
+        }));
+
+        this.subscription.add(this.bus.onType$('FocusTerminalCommand').subscribe(event => {
+            console.log("TerminalSession event", event);
         }));
     }
 

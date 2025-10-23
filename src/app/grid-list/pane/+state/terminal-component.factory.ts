@@ -31,6 +31,7 @@ export class TerminalComponentFactory {
                 environmentInjector: this.env,
                 elementInjector: this.injector,
             });
+            ref.setInput('terminalId', terminalId);
             // einmalige Change Detection zum Rendern
             ref.changeDetectorRef.detectChanges();
             this.map.set(terminalId, ref);
