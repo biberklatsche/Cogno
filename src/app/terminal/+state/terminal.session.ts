@@ -14,7 +14,7 @@ export class TerminalSession {
     private readonly disposables: IDisposable[] = [this.renderer];
     private disposed: boolean = false;
 
-    constructor(private configService: ConfigService, private bus: AppBus, terminalId: TerminalId) {
+    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
         this.spawnPty();
         this.subscription.add(this.configService.activeTheme$.pipe(filter(t => !!t), first()).subscribe(theme => {
             if (theme.enable_webgl) {
@@ -26,24 +26,22 @@ export class TerminalSession {
         this.subscription.add(this.configService.activeTheme$.subscribe(theme => {
             this.renderer.setTheme(theme, theme.scrollbackLines);
         }));
-
-        this.bus.publish({type: "TerminalInitializedEvent", payload: {terminalId}});
-
         this.subscription.add(this.bus.on$({path: ['app', 'terminal', terminalId], type: 'FocusTerminalCommand'}).subscribe(event => {
             event.propagationStopped = true;
-            this.renderer.focus();
+            setTimeout(() => this.renderer.focus());
         }));
     }
 
-    spawnPty(): void {
+    spawnPty() {
         const shellConfig = this.configService.config.shell[1]!;
         this.pty.spawn(shellConfig);
-        this.disposables.push(this.pty?.onData(data => this.renderer?.write(data)));
-        this.disposables.push(this.renderer.onData(data => this.pty?.write(data)));
     }
 
     bindRenderer(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer);
+        this.disposables.push(this.pty?.onData(data => this.renderer?.write(data)));
+        this.disposables.push(this.renderer.onData(data => this.pty?.write(data)));
+        this.bus.publish({type: "TerminalInitializedEvent", payload: this.terminalId});
     }
 
     dispose() {
@@ -52,6 +50,7 @@ export class TerminalSession {
         for (const d of this.disposables.splice(0)) {
             try { d.dispose(); } catch {}
         }
+        this.pty.kill();
         this.subscription.unsubscribe();
     }
 }

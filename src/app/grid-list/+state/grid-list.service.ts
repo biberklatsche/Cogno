@@ -9,6 +9,7 @@ import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {TerminalInitializedEvent} from "../../terminal/+bus/events";
+import {TerminalComponentFactory} from "./terminal-component.factory";
 
 
 @Injectable({providedIn: 'root'})
@@ -23,7 +24,7 @@ export class GridListService {
         return this._activeTabId.asObservable();
     }
 
-    constructor(private bus: AppBus, destroyRef: DestroyRef) {
+    constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
         this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
             for(const tapId in this._gridList.value) {
                 this.removeGrid(tapId);
@@ -83,7 +84,12 @@ export class GridListService {
     removeGrid(tab?: TabId) {
         if(tab === undefined) return;
         const gridList = this._gridList.value;
+        const grid = gridList[tab];
+        const terminalIds = grid.tree.find(s => s.isLeaf).map(s => s.data?.terminalId);
         delete gridList[tab];
+        for (let terminalId of terminalIds) {
+            this.componentFactory.destroy(terminalId);
+        }
         this._gridList.next(gridList);
     }
 

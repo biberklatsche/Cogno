@@ -8,9 +8,14 @@ export interface IPty {
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable;
+    kill(signal?: string): void;
 }
 
-export class Pty implements IPty {
+export class Pty implements IPty, IDisposable {
+
+    kill(signal?: string): void {
+        this.pty?.kill(signal);
+    }
 
     private pty: ITauriPty | undefined = undefined;
 
@@ -18,7 +23,7 @@ export class Pty implements IPty {
         this.pty = spawn(shellConfig.path, shellConfig.args, {
             cols: 80,
             rows: 80,
-        })
+        });
     }
 
     resize(cols: number, rows: number) {
@@ -39,5 +44,10 @@ export class Pty implements IPty {
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
         if(!this.pty) throw Error('Please spawn Pty before listen on exit.');
         return this.pty.onExit(listener);
+    }
+
+    dispose(): void {
+        this.kill();
+        this.pty = undefined;
     }
 }
