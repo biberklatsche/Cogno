@@ -3,7 +3,7 @@ import {ShellConfig} from "../config/+models/config";
 import {IDisposable} from "../common/models/models";
 
 export interface IPty {
-    spawn(terminalId: string, shellConfig: ShellConfig): void;
+    spawn(terminalId: string, shellConfig: ShellConfig): Promise<void>;
     resize(width: number, height: number): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
@@ -13,18 +13,27 @@ export interface IPty {
 
 export class Pty implements IPty, IDisposable {
 
-    kill(signal?: string): void {
-        this.pty?.kill(signal);
+    private pty: ITauriPty | undefined = undefined;
+    private initDone: Promise<void> | undefined;
+
+    async spawn(terminalId: string, shellConfig: ShellConfig) {
+        // Falls vorher schon was lief, nicht parallel überbuchen:
+        await this.initDone?.catch(() => {});
+
+        this.pty = spawn(shellConfig.path, shellConfig.args, {name: terminalId, cols: 80, rows: 25 });
+
+        // Wichtig: das interne Init-Promise abwarten.
+        // _init ist „privat“, aber in 0.1.x praktisch die einzige Möglichkeit – bis du upgradest.
+        const anyPty = this.pty as any;
+        this.initDone = (anyPty._init ?? Promise.resolve()) as Promise<void>;
+
+        // Fail fast, falls Init schiefgeht, statt später „pending“ zu bleiben:
+        await this.initDone;
+        console.log("PTY ready", { pid: anyPty.pid });
     }
 
-    private pty: ITauriPty | undefined = undefined;
-
-    spawn(terminalId: string, shellConfig: ShellConfig) {
-        this.pty = spawn(shellConfig.path, shellConfig.args, {
-            name: terminalId,
-            cols: 80,
-            rows: 80,
-        });
+    kill(signal?: string): void {
+        this.pty?.kill(signal);
     }
 
     resize(cols: number, rows: number) {

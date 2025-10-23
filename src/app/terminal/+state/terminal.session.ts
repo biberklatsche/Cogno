@@ -31,17 +31,18 @@ export class TerminalSession {
         }));
     }
 
-    spawnPty(terminalId: TerminalId) {
+    async spawnPty(terminalId: TerminalId) {
         const shellConfig = this.configService.config.shell[1]!;
-        this.pty.spawn(terminalId, shellConfig);
+        await this.pty.spawn(terminalId, shellConfig);
     }
 
     bindRenderer(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer);
-        this.spawnPty(this.terminalId);
-        this.disposables.push(this.pty?.onData(data => this.renderer?.write(data)));
-        this.disposables.push(this.renderer.onData(data => this.pty?.write(data)));
-        this.bus.publish({type: "TerminalInitializedEvent", payload: this.terminalId});
+        this.spawnPty(this.terminalId).then(pty => {
+            this.disposables.push(this.pty?.onData(data => this.renderer?.write(data)));
+            this.disposables.push(this.renderer.onData(data => this.pty?.write(data)));
+            this.bus.publish({type: "TerminalInitializedEvent", payload: this.terminalId});
+        });
     }
 
     dispose() {
