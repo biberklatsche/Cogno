@@ -4,6 +4,7 @@ import {Observable} from "rxjs";
 import {Grid} from "./+model/model";
 import {AsyncPipe,} from "@angular/common";
 import {GridComponent} from "./grid/grid.component";
+import {TabId} from "../workspace/+model/workspace";
 
 @Component({
   selector: 'app-grid-list',
@@ -17,8 +18,10 @@ import {GridComponent} from "./grid/grid.component";
 export class GridListComponent {
 
     gridList$: Observable<Grid[]>;
+    activeTabId$: Observable<TabId | undefined>;
 
     constructor(gridListService: GridListService) {
         this.gridList$ = gridListService.grids$;
+        this.activeTabId$ = gridListService.activeTabId$;
     }
 }

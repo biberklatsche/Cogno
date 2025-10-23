@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, Input, ViewChild} from '@angular/core';
 import {ShellConfigPosition} from "../../config/+models/config";
-import {TerminalPortalService} from "./+state/terminal-portal.service";
+import {TerminalComponentFactory} from "./+state/terminal-component.factory";
 import {TerminalId} from "../+model/model";
 
 @Component({
@@ -11,15 +11,12 @@ import {TerminalId} from "../+model/model";
 })
 export class PaneComponent implements AfterViewInit {
     @Input({ required: true }) terminalId!: TerminalId;
-    //@Input({ required: true }) shellConfigPosition!: ShellConfigPosition;
-
     @ViewChild('dock', { static: true }) hostRef!: ElementRef<HTMLDivElement>;
 
-
-    constructor(private terminals: TerminalPortalService) {}
+    constructor(private terminalComponents: TerminalComponentFactory) {}
 
     ngAfterViewInit() {
-        this.terminals.attach(this.terminalId, this.hostRef.nativeElement);
+        this.terminalComponents.attach(this.terminalId, this.hostRef.nativeElement);
     }
 }
 

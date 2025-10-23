@@ -7,7 +7,7 @@ export type GridList = Record<TabId, Grid>;
 export type TerminalId = string;
 
 export interface Grid {
-    id: TabId;
+    tabId: TabId;
     tree: BinaryTree<Pane>;
 }
 
@@ -15,7 +15,8 @@ export type Pane = {
     splitDirection?: SplitDirection;
     ratio?: number;
     shellConfigPosition?: ShellConfigPosition;
-    terminalId?: TerminalId;
+    workingDir?: string;
+    terminalId?: string;
 }
 
 export type SplitDirection = 'horizontal' | 'vertical';
