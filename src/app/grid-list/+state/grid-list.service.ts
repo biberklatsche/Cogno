@@ -8,6 +8,7 @@ import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
+import {TerminalInitializedEvent} from "../../terminal/+bus/events";
 
 
 @Injectable({providedIn: 'root'})
@@ -30,7 +31,7 @@ export class GridListService {
             for (let grid of event.payload!.grids) {
                 this.addGrid(grid);
             }
-            this._activeTabId.next(event.payload!.grids[0].tabId);
+            this.selectGrid(event.payload!.grids[0].tabId);
         });
 
         this.bus.onType$('TabRemovedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
@@ -44,6 +45,11 @@ export class GridListService {
 
         this.bus.onType$('TabSelectedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
             this.selectGrid(event.payload);
+        });
+
+        this.bus.onType$('TerminalInitializedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalInitializedEvent) => {
+            const gridId = this.determineGridId(event.payload);
+            this.selectGrid(gridId);
         });
     }
 
@@ -86,11 +92,22 @@ export class GridListService {
         this._activeTabId.next(tab);
         const grid = this._gridList.value[tab];
         const terminalId = this.getFirstTerminalId(grid.tree.root);
-        this.bus.publish({type: 'FocusTerminalCommand'});
+        this.bus.publish({targetPath: ['app', 'terminal', terminalId], type: 'FocusTerminalCommand'});
     }
 
     getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
         if(node.isLeaf) return  node.data!.terminalId!;
         return this.getFirstTerminalId(node.left!);
+    }
+
+    private determineGridId(terminalId?: TerminalId): TabId | undefined {
+        if(!terminalId) return;
+        for (const grid of Object.values(this._gridList.value)) {
+            const node = grid.tree.first(p => p.data!.terminalId === terminalId);
+            if(node && node.isLeaf) {
+                return grid.tabId;
+            }
+        }
+        return;
     }
 }

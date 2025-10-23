@@ -14,7 +14,7 @@ export class TerminalSession {
     private readonly disposables: IDisposable[] = [this.renderer];
     private disposed: boolean = false;
 
-    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
+    constructor(private configService: ConfigService, private bus: AppBus, terminalId: TerminalId) {
         this.spawnPty();
         this.subscription.add(this.configService.activeTheme$.pipe(filter(t => !!t), first()).subscribe(theme => {
             if (theme.enable_webgl) {
@@ -27,8 +27,11 @@ export class TerminalSession {
             this.renderer.setTheme(theme, theme.scrollbackLines);
         }));
 
-        this.subscription.add(this.bus.onType$('FocusTerminalCommand').subscribe(event => {
-            console.log("TerminalSession event", event);
+        this.bus.publish({type: "TerminalInitializedEvent", payload: {terminalId}});
+
+        this.subscription.add(this.bus.on$({path: ['app', 'terminal', terminalId], type: 'FocusTerminalCommand'}).subscribe(event => {
+            event.propagationStopped = true;
+            this.renderer.focus();
         }));
     }
 

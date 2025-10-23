@@ -144,15 +144,19 @@ export class AppBus {
         const chain = buildChain(path);
 
         // capture
-        for (const p of chain.slice(0, -1))
+        for (const p of chain.slice(0, -1)) {
             if (this.dispatch(msg, p, "capture")) return true;
+        }
 
         // target
-        if (this.dispatch(msg, chain[chain.length - 1], "target")) return true;
+        if (this.dispatch(msg, chain[chain.length - 1], "target")){
+            return true;
+        }
 
         // bubble
-        for (const p of [...chain].reverse().slice(1))
+        for (const p of [...chain].reverse().slice(1)){
             if (this.dispatch(msg, p, "bubble")) return true;
+        }
 
         return false;
     }
