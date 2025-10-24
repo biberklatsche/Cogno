@@ -9,7 +9,6 @@
     "core:default",
     "core:path:default",
     "opener:default",
-    "pty:default",
     "fs:default",
     "fs:allow-watch",
     "fs:allow-write-text-file",

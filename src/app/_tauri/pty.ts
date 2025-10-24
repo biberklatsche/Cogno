@@ -1,4 +1,5 @@
-import {IPty as ITauriPty, spawn} from "tauri-pty";
+import {invoke} from "@tauri-apps/api/core";
+import {listen, UnlistenFn} from "@tauri-apps/api/event";
 import {ShellConfig} from "../config/+models/config";
 import {IDisposable} from "../common/models/models";
 
@@ -13,51 +14,95 @@ export interface IPty {
 
 export class Pty implements IPty, IDisposable {
 
-    private pty: ITauriPty | undefined = undefined;
-    private initDone: Promise<void> | undefined;
+    private terminalId: string | undefined = undefined;
+    private dataUnlisten: UnlistenFn | undefined = undefined;
+    private exitUnlisten: UnlistenFn | undefined = undefined;
 
     async spawn(terminalId: string, shellConfig: ShellConfig) {
-        // Falls vorher schon was lief, nicht parallel überbuchen:
-        await this.initDone?.catch(() => {});
+        this.terminalId = terminalId;
 
-        this.pty = spawn(shellConfig.path, shellConfig.args, {name: terminalId, cols: 80, rows: 25 });
+        await invoke('pty_spawn', {
+            program: shellConfig.path,
+            args: shellConfig.args,
+            options: {
+                name: terminalId,
+                cols: 80,
+                rows: 25
+            }
+        });
 
-        // Wichtig: das interne Init-Promise abwarten.
-        // _init ist „privat“, aber in 0.1.x praktisch die einzige Möglichkeit – bis du upgradest.
-        const anyPty = this.pty as any;
-        this.initDone = (anyPty._init ?? Promise.resolve()) as Promise<void>;
-
-        // Fail fast, falls Init schiefgeht, statt später „pending“ zu bleiben:
-        await this.initDone;
-        console.log("PTY ready", { pid: anyPty.pid });
+        console.log("PTY ready", { terminalId });
     }
 
     kill(signal?: string): void {
-        this.pty?.kill(signal);
+        if(!this.terminalId) return;
+        
+        invoke('pty_kill', {
+            terminalId: this.terminalId
+        }).catch(err => console.error('Failed to kill PTY:', err));
     }
 
     resize(cols: number, rows: number) {
-        if(!this.pty) throw Error('Please spawn Pty before resize.');
-        this.pty?.resize(cols, rows);
+        if(!this.terminalId) throw Error('Please spawn Pty before resize.');
+        
+        invoke('pty_resize', {
+            terminalId: this.terminalId,
+            cols,
+            rows
+        }).catch(err => console.error('Failed to resize PTY:', err));
     }
 
-    onData( listener: (e: string) => any): IDisposable {
-        if(!this.pty) throw Error('Please spawn Pty before listen on data.');
-        return this.pty.onData(listener);
+    onData(listener: (e: string) => any): IDisposable {
+        if(!this.terminalId) throw Error('Please spawn Pty before listen on data.');
+        
+        const terminalId = this.terminalId;
+        listen<string>(`pty-data:${terminalId}`, (event) => {
+            listener(event.payload);
+        }).then(unlisten => {
+            this.dataUnlisten = unlisten;
+        });
+
+        return {
+            dispose: () => {
+                this.dataUnlisten?.();
+                this.dataUnlisten = undefined;
+            }
+        };
     }
 
     write(data: string) {
-        if(!this.pty) throw Error('Please spawn Pty before write to it.');
-        return this.pty.write(data);
+        if(!this.terminalId) throw Error('Please spawn Pty before write to it.');
+        
+        invoke('pty_write', {
+            terminalId: this.terminalId,
+            data
+        }).catch(err => console.error('Failed to write to PTY:', err));
     }
 
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
-        if(!this.pty) throw Error('Please spawn Pty before listen on exit.');
-        return this.pty.onExit(listener);
+        if(!this.terminalId) throw Error('Please spawn Pty before listen on exit.');
+        
+        const terminalId = this.terminalId;
+        listen<{exitCode: number, signal?: number}>(`pty-exit:${terminalId}`, (event) => {
+            listener(event.payload);
+        }).then(unlisten => {
+            this.exitUnlisten = unlisten;
+        });
+
+        return {
+            dispose: () => {
+                this.exitUnlisten?.();
+                this.exitUnlisten = undefined;
+            }
+        };
     }
 
     dispose(): void {
         this.kill();
-        this.pty = undefined;
+        this.dataUnlisten?.();
+        this.exitUnlisten?.();
+        this.dataUnlisten = undefined;
+        this.exitUnlisten = undefined;
+        this.terminalId = undefined;
     }
 }

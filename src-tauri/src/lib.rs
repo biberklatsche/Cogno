@@ -6,6 +6,7 @@ use commands::crypto::encrypt;
 use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
 use commands::shells::list_shells;
+use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,15 +15,19 @@ pub fn run() {
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_pty::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
+        .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
                     list_fonts,
                     list_shells,
                     get_keyboard_layout,
                     decrypt,
-                    encrypt
+                    encrypt,
+                    pty_spawn,
+                    pty_write,
+                    pty_resize,
+                    pty_kill
                 ])
         .setup(|app| {
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())

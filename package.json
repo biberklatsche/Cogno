@@ -37,7 +37,6 @@
     "@xterm/addon-webgl": "0.18.0",
     "@xterm/xterm": "5.5.0",
     "rxjs": "7.8.2",
-    "tauri-pty": "0.1.1",
     "tslib": "^2.3.0",
     "zod": "4.1.12"
   },
