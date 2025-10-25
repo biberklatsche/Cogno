@@ -4,7 +4,7 @@ import {IPty} from "../pty/pty";
 import {IDisposable} from "../../../common/models/models";
 import {FitAddon} from "@xterm/addon-fit";
 import {AppBus} from "../../../app-bus/app-bus";
-import {debounce, debounceTime, Subscription} from "rxjs";
+import {debounceTime, Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 
 export class ResizeHandler implements ITerminalHandler {
