@@ -4,16 +4,18 @@ import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
 import {ConfigService} from "../../../config/+state/config.service";
 import {Theme} from "../../../config/+models/config";
-import {FitAddon} from "@xterm/addon-fit";
+import {AppBus, MessageBase} from "../../../app-bus/app-bus";
+import {TerminalId} from "../../../grid-list/+model/model";
+
+export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
 
 export class ThemeHandler implements ITerminalHandler {
 
     private readonly subscription= new Subscription();
     private _terminal?: Terminal;
-    private _fitAddon?: FitAddon;
     private _theme?: Theme;
 
-    constructor(private _configService: ConfigService) {}
+    constructor(private _terminalId: TerminalId, private _configService: ConfigService, private _bus: AppBus) {}
 
     public setTheme(t: Theme, scrollbackLines: number) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
@@ -50,16 +52,15 @@ export class ThemeHandler implements ITerminalHandler {
             brightCyan: this._theme.color.bright_cyan,
             brightWhite: this._theme.color.bright_white,
         };
-        setTimeout(() => this._fitAddon?.fit(), 200);
+        this._bus.publish({targetPath: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
     }
 
     dispose(): void {
         this.subscription?.unsubscribe();
     }
 
-    register(terminal: Terminal, fitAddon: FitAddon): IDisposable {
+    register(terminal: Terminal): IDisposable {
         this._terminal = terminal;
-        this._fitAddon = fitAddon;
         this.subscription.add(this._configService.activeTheme$.subscribe(theme => {
             this.setTheme(theme, theme.scrollbackLines);
         }));

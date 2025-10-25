@@ -3,16 +3,29 @@ import {Terminal} from "@xterm/xterm";
 import {IPty} from "../pty/pty";
 import {IDisposable} from "../../../common/models/models";
 import {FitAddon} from "@xterm/addon-fit";
+import {AppBus} from "../../../app-bus/app-bus";
+import {debounce, debounceTime, Subscription} from "rxjs";
+import {TerminalId} from "../../../grid-list/+model/model";
 
 export class ResizeHandler implements ITerminalHandler {
 
-    private _resizeObserver: ResizeObserver | undefined = undefined;
+    private _subscription?: Subscription;
+    private _resizeObserver?: ResizeObserver;
+    private _fitAddon?: FitAddon;
+    private _terminal?: Terminal;
     private _resizeRaf?: number;
 
     constructor(
+        _terminalId: TerminalId,
         private _pty: IPty,
+        private _bus: AppBus,
         private _terminalContainer: HTMLDivElement
-    ) {}
+    ) {
+        this._subscription?.add(this._bus.on$({path: ['app', 'terminal', _terminalId], type: 'TerminalThemeChanged'}).pipe(debounceTime(200)).subscribe(() => {
+            this._fitAddon?.fit();
+            this._pty.resize(this._terminal?.cols || 80, this._terminal?.rows || 25);
+        }));
+    }
 
     dispose(): void {
         if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
