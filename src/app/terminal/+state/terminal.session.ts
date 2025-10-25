@@ -30,7 +30,7 @@ export class TerminalSession {
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
         this.terminal.open(terminalContainer);
-        this.disposables.push(this.terminal.register(new PtyHandler(this.terminalId, this.configService, this.bus)));
+        this.disposables.push(this.terminal.register(new PtyHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.terminal.register(new ThemeHandler(this.configService)));
         this.disposables.push(this.terminal.register(new TabTitleHandler(this.terminalId, this.bus)));
         this.disposables.push(this.terminal.register(new FocusHandler(this.terminalId, this.bus)));

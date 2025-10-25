@@ -17,8 +17,6 @@ export interface IAppTerminal {
 
     useCanvas(): void;
 
-    resize(): void;
-
     dispose(): void;
 
     register(observer: ITerminalHandler): IDisposable;
@@ -27,8 +25,7 @@ export interface IAppTerminal {
 export class AppTerminal implements IAppTerminal, IDisposable {
 
     private _terminal: Terminal;
-    private _resizeObserver: ResizeObserver | undefined = undefined;
-    private _resizeRaf?: number;
+
     private _fitAddon = new FitAddon();
     private _searchAddon = new SearchAddon();
     private _unicodeAddon = new Unicode11Addon();
@@ -63,13 +60,6 @@ export class AppTerminal implements IAppTerminal, IDisposable {
 
     public open(terminalContainer: HTMLDivElement) {
         this._terminal.open(terminalContainer);
-        this._resizeObserver = new ResizeObserver(() => {
-            // leichtes Throttling gegen Resize-Spam
-            if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
-            this._resizeRaf = requestAnimationFrame(() => this.resize());
-        });
-        this._resizeObserver.observe(terminalContainer, {box: 'content-box'});
-        this.resize();
     }
 
     public useWebGl() {
@@ -86,14 +76,8 @@ export class AppTerminal implements IAppTerminal, IDisposable {
         this._terminal!.loadAddon(this._canvasAddon);
     }
 
-    public resize() {
-        this._fitAddon.fit();
-    }
-
     public dispose() {
-        if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
-        this._resizeObserver?.disconnect();
-        this._resizeObserver = undefined;
+
         this._terminal?.dispose();
     }
 }
