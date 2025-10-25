@@ -1,16 +1,15 @@
 import {Terminal} from "@xterm/xterm";
-import {Theme} from "../../config/+models/config";
-import {OS} from "../../_tauri/os";
+import {OS} from "../../../_tauri/os";
 import {FitAddon} from "@xterm/addon-fit";
 import {SearchAddon} from "@xterm/addon-search";
 import {Unicode11Addon} from "@xterm/addon-unicode11";
 import {LigaturesAddon} from "@xterm/addon-ligatures";
 import {WebglAddon} from "@xterm/addon-webgl";
 import {CanvasAddon} from "@xterm/addon-canvas";
-import {IDisposable} from "../../common/models/models";
-import {ITerminalHandler} from "./handler/handler";
+import {IDisposable} from "../../../common/models/models";
+import {ITerminalHandler} from "../handler/handler";
 
-export interface IAppTerminal {
+export interface IRenderer {
     open(terminalContainer: HTMLDivElement): void;
 
     useWebGl(): void;
@@ -19,10 +18,10 @@ export interface IAppTerminal {
 
     dispose(): void;
 
-    register(observer: ITerminalHandler): IDisposable;
+    register(handler: ITerminalHandler): IDisposable;
 }
 
-export class AppTerminal implements IAppTerminal, IDisposable {
+export class Renderer implements IRenderer, IDisposable {
 
     private _terminal: Terminal;
 

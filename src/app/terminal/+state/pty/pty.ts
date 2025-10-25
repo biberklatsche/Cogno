@@ -1,10 +1,10 @@
 import {invoke} from "@tauri-apps/api/core";
 import {listen, UnlistenFn} from "@tauri-apps/api/event";
-import {ShellConfig} from "../config/+models/config";
-import {IDisposable} from "../common/models/models";
-import {Logger} from "./logger";
+import {ShellConfig} from "../../../config/+models/config";
+import {IDisposable} from "../../../common/models/models";
+import {Logger} from "../../../_tauri/logger";
 
-export interface IPty {
+export interface IPty extends IDisposable{
     spawn(terminalId: string, shellConfig: ShellConfig): Promise<void>;
     resize(width: number, height: number): void;
     onData(listener: (e: string) => any): IDisposable;
@@ -13,7 +13,7 @@ export interface IPty {
     kill(signal?: string): void;
 }
 
-export class Pty implements IPty, IDisposable {
+export class Pty implements IPty {
 
     private terminalId: string | undefined = undefined;
     private dataUnlisten: UnlistenFn | undefined = undefined;
