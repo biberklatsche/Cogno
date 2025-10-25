@@ -1,9 +1,11 @@
-import {Injectable} from "@angular/core";
+import {DestroyRef, Injectable} from "@angular/core";
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, map, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
-import {PaneConfig, TerminalConfig, GridConfig, TabId} from "../../workspace/+model/workspace";
+import {TabId} from "../../workspace/+model/workspace";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -14,13 +16,20 @@ export class TabListService {
         return this._tabList.asObservable();
     }
 
-    constructor(private bus: AppBus) {
-        this.bus.onType$('WorkspaceLoaded').subscribe((event: WorkspaceLoadedEvent) => {
+    constructor(private bus: AppBus, destroyRef: DestroyRef) {
+        this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
             this._tabList.next([]);
             for (const [index, grid] of event.payload!.grids.entries()) {
                 const isActiveTab = index === 0;
                 this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: isActiveTab});
             }
+        });
+        this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
+            const tabList = [...this._tabList.value];
+            const tab = tabList.find(s => s.id === event.payload?.terminalId);
+            if(!tab || !event.payload?.title) return;
+            tab.title = event.payload.title;
+            this._tabList.next(tabList);
         });
     }
 

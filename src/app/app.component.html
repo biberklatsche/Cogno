@@ -1,7 +1,4 @@
-<header>
-    @if (os === 'macos'){
-        <div class="space-left-window-buttons"></div>
-    }
+<header [class.space-left-window-buttons]="os === 'macos'">
     <app-tab-list></app-tab-list>
     <app-window-buttons></app-window-buttons>
 </header>

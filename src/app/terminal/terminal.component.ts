@@ -21,12 +21,11 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     ngOnInit(): void {
         this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId());
         this.destroyRef.onDestroy(() => {
-            console.log('#######destro!!!!')
             this.terminalSession?.dispose();
         });
     }
 
     ngAfterViewInit(): void {
-        this.terminalSession?.bindRenderer(this.terminalContainer.nativeElement);
+        this.terminalSession?.initializeTerminal(this.terminalContainer.nativeElement);
     }
 }

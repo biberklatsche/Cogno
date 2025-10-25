@@ -2,6 +2,7 @@ import {invoke} from "@tauri-apps/api/core";
 import {listen, UnlistenFn} from "@tauri-apps/api/event";
 import {ShellConfig} from "../config/+models/config";
 import {IDisposable} from "../common/models/models";
+import {Logger} from "./logger";
 
 export interface IPty {
     spawn(terminalId: string, shellConfig: ShellConfig): Promise<void>;
@@ -20,7 +21,6 @@ export class Pty implements IPty, IDisposable {
 
     async spawn(terminalId: string, shellConfig: ShellConfig) {
         this.terminalId = terminalId;
-
         await invoke('pty_spawn', {
             program: shellConfig.path,
             args: shellConfig.args,
@@ -30,8 +30,6 @@ export class Pty implements IPty, IDisposable {
                 rows: 25
             }
         });
-
-        console.log("PTY ready", { terminalId });
     }
 
     kill(signal?: string): void {
@@ -39,7 +37,7 @@ export class Pty implements IPty, IDisposable {
         
         invoke('pty_kill', {
             terminalId: this.terminalId
-        }).catch(err => console.error('Failed to kill PTY:', err));
+        }).catch(err => Logger.error('Failed to kill PTY:', err));
     }
 
     resize(cols: number, rows: number) {
@@ -49,7 +47,7 @@ export class Pty implements IPty, IDisposable {
             terminalId: this.terminalId,
             cols,
             rows
-        }).catch(err => console.error('Failed to resize PTY:', err));
+        }).catch(err => Logger.error('Failed to resize PTY:', err));
     }
 
     onData(listener: (e: string) => any): IDisposable {

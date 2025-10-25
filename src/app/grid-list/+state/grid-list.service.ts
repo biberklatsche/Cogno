@@ -8,7 +8,7 @@ import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
-import {TerminalInitializedEvent} from "../../terminal/+bus/events";
+import {PtyInitializedEvent} from "../../terminal/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
 
 
@@ -48,7 +48,7 @@ export class GridListService {
             this.selectGrid(event.payload);
         });
 
-        this.bus.onType$('TerminalInitializedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalInitializedEvent) => {
+        this.bus.onType$('TerminalInitializedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: PtyInitializedEvent) => {
             const gridId = this.determineGridId(event.payload);
             this.selectGrid(gridId);
         });

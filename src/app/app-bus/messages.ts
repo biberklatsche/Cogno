@@ -4,7 +4,8 @@ import {LoadConfigCommand, WatchConfigCommand} from "../config/+bus/commands";
 import {WorkspaceLoadedEvent} from "../workspace/+bus/events";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {FocusTerminalCommand} from "../terminal/+bus/commands";
-import {TerminalInitializedEvent} from "../terminal/+bus/events";
+import {PtyInitializedEvent} from "../terminal/+bus/events";
+import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -15,5 +16,6 @@ export type AppMessage =
     | ThemeChangedEvent
     | LoadConfigCommand
     | WatchConfigCommand
-    | TerminalInitializedEvent
+    | PtyInitializedEvent
+    | TabTitleChangedEvent
     | FocusTerminalCommand;

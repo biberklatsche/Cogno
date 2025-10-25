@@ -16,8 +16,8 @@ header {
     align-items: center;
     overflow: hidden;
     max-width: 100vw;
-    .space-left-window-buttons {
-        min-width: 5rem;
+    &.space-left-window-buttons {
+        padding-left: 65px;
     }
 }
 
