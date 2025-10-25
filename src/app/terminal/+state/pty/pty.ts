@@ -34,7 +34,6 @@ export class Pty implements IPty {
 
     kill(signal?: string): void {
         if(!this.terminalId) return;
-        
         invoke('pty_kill', {
             terminalId: this.terminalId
         }).catch(err => Logger.error('Failed to kill PTY:', err));

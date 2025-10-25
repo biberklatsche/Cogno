@@ -34,7 +34,7 @@ export class PtyHandler implements ITerminalHandler {
             this._bus.publish({type: "TerminalInitializedEvent", payload: this._terminalId});
         });
         fitAddon?.fit();
-        this._pty.resize(terminal.cols, terminal.rows);
+        setTimeout(() => this._pty.resize(terminal.cols, terminal.rows));
         return this;
     }
 

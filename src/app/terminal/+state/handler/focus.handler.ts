@@ -25,7 +25,7 @@ export class FocusHandler implements ITerminalHandler {
             type: 'FocusTerminalCommand'
         }).subscribe(event => {
             event.propagationStopped = true;
-            setTimeout(() => this._terminal?.focus());
+            this._terminal?.focus();
         }));
         return this;
     }

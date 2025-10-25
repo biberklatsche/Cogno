@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpawnOptions {
@@ -21,6 +22,7 @@ pub struct ResizeOptions {
 struct Session {
     master: Box<dyn portable_pty::MasterPty + Send>,
     writer: Box<dyn Write + Send>,
+    should_exit: Arc<AtomicBool>,
 }
 
 pub struct PtyState {
@@ -74,9 +76,12 @@ pub async fn pty_spawn(
         .take_writer()
         .map_err(|e| format!("Failed to take writer: {}", e))?;
 
+    let should_exit = Arc::new(AtomicBool::new(false));
+
     let session = Session {
         master: pair.master,
         writer,
+        should_exit: should_exit.clone(),
     };
 
     {
@@ -88,34 +93,41 @@ pub async fn pty_spawn(
     let terminal_id_clone = terminal_id.clone();
     let app_clone = app.clone();
     let sessions_clone = state.sessions.clone();
-    
+    let should_exit_clone = should_exit.clone();
+
     std::thread::spawn(move || {
         let mut reader = reader;
         let mut buf = [0u8; 8192];
         
         loop {
+            if should_exit_clone.load(Ordering::Relaxed) {
+                break;
+            }
             match std::io::Read::read(&mut reader, &mut buf) {
                 Ok(0) => {
                     // EOF - process exited
                     let _ = app_clone.emit(&format!("pty-exit:{}", terminal_id_clone), serde_json::json!({
                         "exitCode": 0
                     }));
-                    
+
                     // Remove session
                     let mut sessions = sessions_clone.lock().unwrap();
                     sessions.remove(&terminal_id_clone);
                     break;
                 }
                 Ok(n) => {
-                    let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                    let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
+                    if !should_exit_clone.load(Ordering::Relaxed) {
+                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
+                        let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
+                    } else {
+                        break;  // Beenden ohne weitere Events
+                    }
                 }
                 Err(e) => {
-                    eprintln!("PTY read error: {}", e);
                     let _ = app_clone.emit(&format!("pty-exit:{}", terminal_id_clone), serde_json::json!({
                         "exitCode": 1
                     }));
-                    
+
                     // Remove session
                     let mut sessions = sessions_clone.lock().unwrap();
                     sessions.remove(&terminal_id_clone);
@@ -186,7 +198,10 @@ pub fn pty_kill(
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
     
-    if sessions.remove(&terminal_id).is_some() {
+    if let Some(session) = sessions.remove(&terminal_id) {
+        session.should_exit.store(true, Ordering::Relaxed);
+        drop(session.master);  // <-- Schließt den PTY, dadurch gibt read() EOF zurück
+        drop(session.writer);
         Ok(())
     } else {
         Err(format!("Session not found: {}", terminal_id))
