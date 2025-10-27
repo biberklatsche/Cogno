@@ -1,0 +1,22 @@
+import './cogno-en.win';
+import './cogno-es-latin.win';
+import './cogno-en-in.win';
+import './cogno-de.win';
+import './cogno-en-uk.win';
+import './cogno-fr.win';
+import './cogno-pt-br.win';
+import './cogno-es.win';
+import './cogno-en-intl.win';
+import './cogno-pl.win';
+import './cogno-it.win';
+import './cogno-sv.win';
+import './cogno-tr.win';
+import './cogno-pt.win';
+import './cogno-dk.win';
+import './cogno-no.win';
+import './cogno-hu.win';
+import './cogno-de-swiss.win';
+import './cogno-en-belgian.win';
+import './cogno-cz.win';
+
+export { KeyboardLayoutContribution } from './_.contribution';

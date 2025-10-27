@@ -11,14 +11,14 @@ export class WorkspaceService {
             //load workspaces
             let workspace: WorkspaceConfig | undefined = undefined;
             if(workspace === undefined) {
-                /*const nodeLeft: TerminalConfig = {};
+                const nodeLeft: TerminalConfig = {};
                 const nodeRight: TerminalConfig = {};
                 const parent: SplitNode = {
                     splitDirection: 'vertical',
                     ratio: 0.5,
                     leftChild: nodeLeft,
                     rightChild: nodeRight,
-                }*/
+                }
                 const pane: GridConfig = {tabId: IdCreator.newTabId(), pane: {}};
                 workspace = {grids: [pane]};
             } else {
