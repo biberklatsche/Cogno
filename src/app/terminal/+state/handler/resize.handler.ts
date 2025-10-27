@@ -12,19 +12,14 @@ export class ResizeHandler implements ITerminalHandler {
     private _subscription?: Subscription;
     private _resizeObserver?: ResizeObserver;
     private _fitAddon?: FitAddon;
-    private _terminal?: Terminal;
     private _resizeRaf?: number;
 
     constructor(
-        _terminalId: TerminalId,
+        private _terminalId: TerminalId,
         private _pty: IPty,
         private _bus: AppBus,
         private _terminalContainer: HTMLDivElement
     ) {
-        this._subscription?.add(this._bus.on$({path: ['app', 'terminal', _terminalId], type: 'TerminalThemeChanged'}).pipe(debounceTime(200)).subscribe(() => {
-            this._fitAddon?.fit();
-            this._pty.resize(this._terminal?.cols || 80, this._terminal?.rows || 25);
-        }));
     }
 
     dispose(): void {
@@ -43,8 +38,16 @@ export class ResizeHandler implements ITerminalHandler {
             });
         });
         this._resizeObserver.observe(this._terminalContainer, {box: 'content-box'});
-        fitAddon?.fit();
-        this._pty.resize(terminal.cols, terminal.rows);
+        this._subscription?.add(this._bus.on$({path: ['app', 'terminal', this._terminalId]}).subscribe((e) => {
+            switch (e.type) {
+                case 'TerminalInitialized':
+                case 'TerminalThemeChanged':
+                    this._fitAddon?.fit();
+                    this._pty.resize(terminal.cols, terminal.rows);
+                    break;
+            }
+        }));
+
         return this;
     }
 }

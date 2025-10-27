@@ -48,7 +48,7 @@ export class GridListService {
             this.selectGrid(event.payload);
         });
 
-        this.bus.onType$('TerminalInitializedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: PtyInitializedEvent) => {
+        this.bus.onType$('TerminalInitialized').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: PtyInitializedEvent) => {
             const gridId = this.determineGridId(event.payload);
             this.selectGrid(gridId);
         });

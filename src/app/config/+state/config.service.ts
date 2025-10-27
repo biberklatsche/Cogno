@@ -2,12 +2,12 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, debounceTime, filter, map, Observable} from 'rxjs';
-import {Config, ShellType, Theme} from "../+models/config";
+import {Config, Theme} from "../+models/config";
 import {ConfigCodec} from "./config.codec";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
-import {invoke} from "@tauri-apps/api/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {Shells} from "../../_tauri/shells";
 
 @Injectable({
     providedIn: 'root'
@@ -66,7 +66,7 @@ export class ConfigService {
     }
 
     private async setShells(config: Config) {
-        const shells = await invoke<{name: string, path: string, shell_type: ShellType}[]>("list_shells");
+        const shells = await Shells.load();
         const zsh = shells.find(s => s.shell_type === 'ZSH');
         if(zsh) {
             config.shell[1] = {

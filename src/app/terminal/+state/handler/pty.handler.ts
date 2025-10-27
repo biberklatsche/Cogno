@@ -27,14 +27,12 @@ export class PtyHandler implements ITerminalHandler {
         this._resizeObserver = undefined;
     }
 
-    register(terminal: Terminal, fitAddon: FitAddon): IDisposable {
+    register(terminal: Terminal): IDisposable {
         this.spawnPty(this._terminalId).then(_ => {
             this._disposables.push(terminal.onData(data => this._pty?.write(data)));
             this._disposables.push(this._pty?.onData(data => terminal?.write(data)));
-            this._bus.publish({type: "TerminalInitializedEvent", payload: this._terminalId});
+            this._bus.publish({targetPath: ['app', 'terminal', this._terminalId], type: "TerminalInitialized", payload: this._terminalId});
         });
-        fitAddon?.fit();
-        setTimeout(() => this._pty.resize(terminal.cols, terminal.rows));
         return this;
     }
 

@@ -75,7 +75,15 @@ export class ConfigCodec {
                 cur[p] ??= {};
                 cur = cur[p];
             }
-            cur[parts[0]] = value;
+            const last = parts[0];
+            const prev = cur[last];
+            if (prev === undefined) {
+                cur[last] = value;
+            } else if (Array.isArray(prev)) {
+                prev.push(value);
+            } else {
+                cur[last] = [prev, value];
+            }
         }
         return out;
     }
@@ -143,6 +151,25 @@ export class ConfigCodec {
             if (this.isPlainObject(v)) {
                 const unwrapped = this.unwrapSchema(childSchema);
                 lines.push(...this.toDotProperties(v, key, unwrapped, asComment));
+            } else if (Array.isArray(v)) {
+                // Arrays werden als mehrere Zeilen ausgegeben: key=a\nkey=b ...
+                // Beschreibung (falls vorhanden) als Kommentar einmalig voranstellen
+                if (asComment) {
+                    const desc = this.getSchemaDescription(childSchema);
+                    if (desc) {
+                        for (const l of String(desc).split(/\r?\n/)) {
+                            lines.push(`# ${l.trim()}`);
+                        }
+                    }
+                }
+                for (const item of v) {
+                    const rendered = typeof item === 'string'
+                        ? item
+                        : (typeof item === 'number' || typeof item === 'boolean')
+                            ? String(item)
+                            : JSON.stringify(item);
+                    lines.push(`${asComment ? '# ' : ''}${key}=${rendered}`);
+                }
             } else {
                 // Beschreibung (falls vorhanden) als Kommentar ausgeben
                 if (asComment) {
@@ -153,8 +180,13 @@ export class ConfigCodec {
                         }
                     }
                 }
-                // Strings & komplexe Typen mit JSON serialisieren (liefert auch gültige Arrays/Objekte)
-                lines.push(`${asComment ? '# ' : ''}${key}=${JSON.stringify(v)}`);
+                // Strings unquoted, primitives as-is; complex via JSON
+                const rendered = typeof v === 'string'
+                    ? v
+                    : (typeof v === 'number' || typeof v === 'boolean')
+                        ? String(v)
+                        : JSON.stringify(v);
+                lines.push(`${asComment ? '# ' : ''}${key}=${rendered}`);
             }
         }
         return lines;

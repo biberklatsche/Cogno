@@ -8,6 +8,7 @@ import {
 import { GlobalErrorHandler } from './common/error/global-error.handler';
 import {StyleService} from "./common/style/style.service";
 import {WorkspaceService} from "./workspace/+state/workspace.service";
+import {KeybindService} from "./keybinding/keybind.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,6 +18,7 @@ export const appConfig: ApplicationConfig = {
           // erzwingt Instanziierung des StyleService
           inject(StyleService);
           inject(WorkspaceService);
+          inject(KeybindService);
       }),
   ],
 };

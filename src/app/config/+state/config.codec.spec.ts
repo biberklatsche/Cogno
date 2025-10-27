@@ -26,15 +26,15 @@ describe('ConfigCodec', () => {
     const text = `
       # comment
       ; another comment
-      autocomplete.mode="always"
+      autocomplete.mode=always
       general.enable_telemetry=true
       general.scrollback_lines=12345
       theme.default.enable_webgl=true
       theme.default.color.prompt.1.foreground="red"
-      theme.default.color.prompt.1.background="black"
-      shell.1.name="zsh"
-      shell.1.shell_type="ZSH"
-      shell.1.path="/bin/zsh"
+      theme.default.color.prompt.1.background=black
+      shell.1.name=zsh
+      shell.1.shell_type=ZSH
+      shell.1.path=/bin/zsh
     `;
 
     const parsed = ConfigCodec.fromStringToConfig(text);
@@ -53,7 +53,7 @@ describe('ConfigCodec', () => {
     expect(parsed.shell["1"]!.name).toEqual('zsh');
     expect(parsed.shell["1"]!.shell_type).toEqual('ZSH');
     expect(parsed.shell["1"]!.path).toEqual('/bin/zsh');
-    expect(parsed.shell["1"]!.use_conpty).toBe(true);
+    expect(parsed.shell["1"]!.use_conpty).toBeUndefined();
   });
 
   it('toSettings fills defaults and keeps overrides', () => {
@@ -101,7 +101,7 @@ describe('ConfigCodec', () => {
     current.general.enable_telemetry = false;
     current.theme.default.enable_webgl = true;
     current.general.scrollback_lines = 1234;
-    current.keybind.copy = 'Control+Shift+C';
+    current.keybind = ['Control+Shift+C:copy', 'Shift+End:select_text_to_start_of_line'];
 
     const text = ConfigCodec.diffToString(current as any);
 
@@ -109,7 +109,8 @@ describe('ConfigCodec', () => {
     const expectedLines = [
       'general.enable_telemetry=false',
       'general.scrollback_lines=1234',
-      'keybind="Control+Shift+C:copy"',
+      'keybind=Control+Shift+C:copy',
+      'keybind=Shift+End:select_text_to_start_of_line',
       'theme.default.enable_webgl=true',
     ].sort((a,b)=>a.localeCompare(b));
 
