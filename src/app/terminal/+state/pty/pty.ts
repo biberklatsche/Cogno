@@ -1,5 +1,4 @@
-import {invoke} from "@tauri-apps/api/core";
-import {listen, UnlistenFn} from "@tauri-apps/api/event";
+import {UnlistenFn} from "@tauri-apps/api/event";
 import {ShellConfig} from "../../../config/+models/config";
 import {IDisposable} from "../../../common/models/models";
 import {Logger} from "../../../_tauri/logger";
