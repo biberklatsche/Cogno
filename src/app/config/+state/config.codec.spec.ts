@@ -6,7 +6,7 @@ describe('ConfigCodec', () => {
   it('defaultsToStringWithComments includes # comment lines', () => {
     const text = ConfigCodec.defaultSettingsAsComment();
     const lines = text.split('\n');
-    expect(lines.some(l => l.startsWith('# The name of the shell'))).toBe(true);
+    expect(lines.some(l => l.startsWith('# Test'))).toBe(true);
     expect(lines.every(l => l.length > 0 ? l.startsWith('#') : true)).toBe(true);
   });
 
@@ -109,7 +109,7 @@ describe('ConfigCodec', () => {
     const expectedLines = [
       'general.enable_telemetry=false',
       'general.scrollback_lines=1234',
-      'keybind.copy="Control+Shift+C"',
+      'keybind="Control+Shift+C:copy"',
       'theme.default.enable_webgl=true',
     ].sort((a,b)=>a.localeCompare(b));
 
