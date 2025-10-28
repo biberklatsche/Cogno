@@ -22,7 +22,7 @@ export class FocusHandler implements ITerminalHandler {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({
             path: ['app', 'terminal', this._terminalId],
-            type: 'FocusTerminalCommand'
+            type: 'FocusTerminal'
         }).subscribe(event => {
             event.propagationStopped = true;
             this._terminal?.focus();

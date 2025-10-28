@@ -1,9 +1,9 @@
 // Deine fachlichen Typen in einem Union:
 import {ConfigLoadedEvent, ThemeChangedEvent} from "../config/+bus/events";
-import {LoadConfigCommand, WatchConfigCommand} from "../config/+bus/commands";
+import {LoadConfigAction, WatchConfigAction} from "../config/+bus/actions";
 import {WorkspaceLoadedEvent} from "../workspace/+bus/events";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
-import {FocusTerminalCommand} from "../terminal/+bus/commands";
+import {FocusTerminalAction} from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
 import {TerminalThemeChangedEvent} from "../terminal/+state/handler/theme.handler";
@@ -15,9 +15,9 @@ export type AppMessage =
     | WorkspaceLoadedEvent
     | ConfigLoadedEvent
     | ThemeChangedEvent
-    | LoadConfigCommand
-    | WatchConfigCommand
+    | LoadConfigAction
+    | WatchConfigAction
     | PtyInitializedEvent
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
-    | FocusTerminalCommand;
+    | FocusTerminalAction;

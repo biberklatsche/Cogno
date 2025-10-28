@@ -60,8 +60,8 @@ export class ConfigService {
         const configAsString = await Fs.readTextFile(path);
         const config = ConfigCodec.fromStringToConfig(configAsString);
         this._config.next(config);
-        this.appBus.publish({type: 'ConfigLoaded', sourcePath: ['app', 'settings']});
-        this.appBus.publish({type: 'ThemeChanged', sourcePath: ['app', 'settings']});
+        this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
+        this.appBus.publish({type: 'ThemeChanged', path: ['app', 'settings']});
         Logger.info('Config loaded...');
     }
 
