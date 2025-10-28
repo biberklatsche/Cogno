@@ -77,7 +77,7 @@ export class ConfigWriter {
                 const unwrapped = this.unwrapSchema(childSchema);
                 lines.push(...this.toDotProperties(v, key, unwrapped, asComment));
             } else if (Array.isArray(v)) {
-                // Arrays werden als mehrere Zeilen ausgegeben: key=a\nkey=b ...
+                // Arrays: Nur 'keybind' wird mehrzeilig ausgegeben; alle anderen als kommagetrennte Liste ohne Quotes
                 // Beschreibung (falls vorhanden) als Kommentar einmalig voranstellen
                 if (asComment) {
                     const desc = this.getSchemaDescription(childSchema);
@@ -87,13 +87,24 @@ export class ConfigWriter {
                         }
                     }
                 }
-                for (const item of v) {
-                    const rendered = typeof item === 'string'
-                        ? item
-                        : (typeof item === 'number' || typeof item === 'boolean')
-                            ? String(item)
-                            : JSON.stringify(item);
-                    lines.push(`${asComment ? '# ' : ''}${key}=${rendered}`);
+                if (key === 'keybind') {
+                    for (const item of v) {
+                        const rendered = typeof item === 'string'
+                            ? item
+                            : (typeof item === 'number' || typeof item === 'boolean')
+                                ? String(item)
+                                : JSON.stringify(item);
+                        lines.push(`${asComment ? '# ' : ''}${key}=${rendered}`);
+                    }
+                } else {
+                    const renderedItems = v.map(item =>
+                        typeof item === 'string'
+                            ? item
+                            : (typeof item === 'number' || typeof item === 'boolean')
+                                ? String(item)
+                                : JSON.stringify(item)
+                    );
+                    lines.push(`${asComment ? '# ' : ''}${key}=[${renderedItems.join(',')}]`);
                 }
             } else {
                 // Beschreibung (falls vorhanden) als Kommentar ausgeben

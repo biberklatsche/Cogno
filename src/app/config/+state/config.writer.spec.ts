@@ -53,4 +53,21 @@ describe('ConfigWriter', () => {
     const defaultDiff = ConfigWriter.diffToString(DEFAULT_CONFIG);
     expect(defaultDiff).toBe('');
   });
+  it('renders non-keybind arrays as comma-separated without quotes, but keybind stays multiline', () => {
+    const curr: any = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    // change shell args (array) and add a couple keybinds
+    curr.shell[1] = curr.shell[1] || { name: 'Test', shell_type: 'Bash', path: '/bin/bash', args: [] };
+    curr.shell[1].args = ['--login', '-i'];
+    curr.keybind = ['Ctrl+A=doA', 'Shift+End=doB'];
+
+    const diff = ConfigWriter.diffToString(curr);
+    const lines = diff.trimEnd().split('\n');
+
+    // Non-keybind array should be single line comma separated without quotes
+    expect(lines).toContain('shell.1.args=[--login,-i]');
+
+    // Keybind should be emitted as multiple lines (two separate entries)
+    expect(lines).toContain('keybind=Ctrl+A=doA');
+    expect(lines).toContain('keybind=Shift+End=doB');
+  });
 });
