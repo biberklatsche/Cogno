@@ -23,12 +23,5 @@ export class KeybindService {
                 console.log('######fire action', action);
             }
         }, { capture: true });
-        window.addEventListener("keyup", (e) => {
-            const action = this._keybindMatcher.match(e);
-            if(action){
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        }, { capture: true });
     }
 }

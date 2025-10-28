@@ -22,7 +22,7 @@ describe('ConfigCodec', () => {
     // Ensure no comment lines are present
     expect(diffLines.some(l => l.startsWith('#'))).toBe(false);
   });
-  it('parseUserString parses booleans, numbers, JSON and nested keys', () => {
+  it('parseUserString parses booleans, numbers, arrays', () => {
     const text = `
       # comment
       ; another comment
@@ -35,6 +35,8 @@ describe('ConfigCodec', () => {
       shell.1.name=zsh
       shell.1.shell_type=ZSH
       shell.1.path=/bin/zsh
+      keybind=Ctrl+5=run5
+      keybind=Ctrl+6=run6
     `;
 
     const parsed = ConfigCodec.fromStringToConfig(text);
@@ -54,6 +56,9 @@ describe('ConfigCodec', () => {
     expect(parsed.shell["1"]!.shell_type).toEqual('ZSH');
     expect(parsed.shell["1"]!.path).toEqual('/bin/zsh');
     expect(parsed.shell["1"]!.use_conpty).toBeUndefined();
+
+    expect(parsed.keybind[0]).toBe('Ctrl+5=run5');
+    expect(parsed.keybind[1]).toBe('Ctrl+6=run6');
   });
 
   it('toSettings fills defaults and keeps overrides', () => {

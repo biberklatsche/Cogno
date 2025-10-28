@@ -179,8 +179,8 @@ const AutocompleteSchema = z.object({
 });
 
 const KeybindSchema = z.string().regex(
-    /^(?:(?:Command|Control|Ctrl|Alt|Option|Shift|Meta)\+)+.+=[a-zA-Z0-9_]+$/,
-    "Keybind must be in the format Command+Key=action"
+    /^(?:(?:all|unconsumed|performable):)*[^=\s]+=[a-zA-Z0-9_]+(?::[a-zA-Z0-9_]+)*$/,
+    "Keybind must be of the form [triggers:]key[>key...]=action[:arg...]"
 );
 
 const KeybindsSchema = z.array(KeybindSchema);
@@ -200,9 +200,8 @@ export const DEFAULT_MAC_KEYBINDS: Keybinds = [
     'Command+Shift+-=split_horizontal',
     'Command+Shift+U=unsplit',
     'Command+Shift+P=swap_panes',
-    'Control+C=abort_task',
     'Control+Shift+C=abort_all_tasks',
-    'Command+C=copy',
+    'performable:Control+C=copy',
     'Command+X=cut',
     'Command+F=find',
     'Control+Y=clear_line',
@@ -258,9 +257,8 @@ export const DEFAULT_KEYBINDS: Keybinds = [
     'Ctrl+Shift+-=split_horizontal',
     'Ctrl+Shift+U=unsplit',
     'Ctrl+Shift+P=swap_panes',
-    'Ctrl+C=abort_task',
     'Ctrl+Shift+C=abort_all_tasks',
-    'Ctrl+C=copy',
+    'performable:Ctrl+C=copy',
     'Ctrl+X=cut',
     'Ctrl+F=find',
     'Ctrl+Y=clear_line',
