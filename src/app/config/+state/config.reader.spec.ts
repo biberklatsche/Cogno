@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ConfigReader } from './config.reader';
+import { DEFAULT_CONFIG } from '../+models/config';
 
 describe('ConfigReader', () => {
   it('parseUserString parses booleans, numbers, arrays', () => {
@@ -42,8 +43,11 @@ describe('ConfigReader', () => {
     expect(parsed.shell["1"]!.path).toEqual('/bin/zsh');
     expect(parsed.shell["1"]!.use_conpty).toBeUndefined();
 
-    expect(parsed.keybind[0]).toBe('Ctrl+5=run5');
-    expect(parsed.keybind[1]).toBe('Ctrl+6=run6');
+    // Keybind array now concatenates: defaults first, then user values
+    const defaultKeybindCount = DEFAULT_CONFIG.keybind.length;
+    expect(parsed.keybind.length).toBe(defaultKeybindCount + 2);
+    expect(parsed.keybind[defaultKeybindCount]).toBe('Ctrl+5=run5');
+    expect(parsed.keybind[defaultKeybindCount + 1]).toBe('Ctrl+6=run6');
   });
 
   it('toSettings fills defaults and keeps overrides', () => {
@@ -80,5 +84,53 @@ describe('ConfigReader', () => {
     expect(settings.general.scrollback_lines).toBe(9999);
     // A default field still exists
     expect(settings.theme.default.enable_webgl).toBe(false);
+  });
+
+  it('keybind array is concatenated with defaults (defaults first, then user values)', () => {
+    const text = `
+      keybind=Ctrl+5=custom1
+      keybind=Ctrl+6=custom2
+    `;
+    const config = ConfigReader.fromStringToConfig(text);
+    
+    // User keybinds should be appended to defaults
+    const defaultKeybindCount = DEFAULT_CONFIG.keybind.length;
+    expect(config.keybind.length).toBe(defaultKeybindCount + 2);
+    
+    // First entries should be defaults
+    expect(config.keybind[0]).toBe(DEFAULT_CONFIG.keybind[0]);
+    
+    // Last entries should be user-provided
+    expect(config.keybind[defaultKeybindCount]).toBe('Ctrl+5=custom1');
+    expect(config.keybind[defaultKeybindCount + 1]).toBe('Ctrl+6=custom2');
+  });
+
+  it('other arrays (autocomplete.ignore) are replaced, not concatenated', () => {
+    const text = `
+      autocomplete.ignore=[custom1,custom2]
+    `;
+    const config = ConfigReader.fromStringToConfig(text);
+    
+    // Should replace defaults completely, not concatenate
+    expect(config.autocomplete.ignore).toEqual(['custom1', 'custom2']);
+    expect(config.autocomplete.ignore.length).toBe(2);
+    
+    // Should NOT contain default values
+    const defaultIgnore = DEFAULT_CONFIG.autocomplete.ignore;
+    expect(config.autocomplete.ignore).not.toContain(defaultIgnore[0]);
+  });
+
+  it('shell args array is replaced, not concatenated', () => {
+    const text = `
+      shell.1.name=TestShell
+      shell.1.shell_type=Bash
+      shell.1.path=/bin/test
+      shell.1.args=[--custom,--args]
+    `;
+    const config = ConfigReader.fromStringToConfig(text);
+    
+    // Shell args should be replaced, not concatenated with defaults
+    expect(config.shell[1]?.args).toEqual(['--custom', '--args']);
+    expect(config.shell[1]?.args?.length).toBe(2);
   });
 });

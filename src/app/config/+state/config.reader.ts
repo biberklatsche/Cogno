@@ -1,5 +1,4 @@
-import {Config, ConfigSchema} from "../+models/config";
-import { ConfigCodec } from "./config.codec";
+import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
 
 /**
  * Reader-Klasse für das Einlesen/Validieren der Konfiguration.
@@ -16,6 +15,13 @@ export class ConfigReader {
 
     /** Führt die User-Overrides mit den Zod-Defaults zusammen und validiert. */
     private static toConfig(userOverrides: Record<string, unknown>): Config {
+        // Special case: keybind array should be concatenated with defaults (defaults first, then user values)
+        // All other arrays replace defaults completely
+        if (userOverrides['keybind'] && Array.isArray(userOverrides['keybind'])) {
+            const defaultKeybinds = DEFAULT_CONFIG.keybind;
+            const userKeybinds = userOverrides['keybind'];
+            userOverrides['keybind'] = [...defaultKeybinds, ...userKeybinds];
+        }
         // Trick: Zod-Defaults füllen alles auf; wir brauchen kein deep-merge.
         return ConfigSchema.parse(userOverrides);
     }
