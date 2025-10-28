@@ -3,7 +3,8 @@ import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, debounceTime, filter, map, Observable} from 'rxjs';
 import {Config, Theme} from "../+models/config";
-import {ConfigCodec} from "./config.codec";
+import {ConfigReader} from "./config.reader";
+import {ConfigWriter} from "./config.writer";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -51,14 +52,14 @@ export class ConfigService {
     private async loadConfig() {
         const path = Environment.configFilePath();
         if(!await Fs.exists(path)) {
-            await Fs.writeTextFile(path, ConfigCodec.defaultSettingsAsComment());
+            await Fs.writeTextFile(path, ConfigWriter.defaultSettingsAsComment());
             const configAsString = await Fs.readTextFile(path);
-            const config = ConfigCodec.fromStringToConfig(configAsString);
+            const config = ConfigReader.fromStringToConfig(configAsString);
             await this.setShells(config);
-            await Fs.appendTextFile(path, ConfigCodec.diffToString(config));
+            await Fs.appendTextFile(path, ConfigWriter.diffToString(config));
         }
         const configAsString = await Fs.readTextFile(path);
-        const config = ConfigCodec.fromStringToConfig(configAsString);
+        const config = ConfigReader.fromStringToConfig(configAsString);
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
         this.appBus.publish({type: 'ThemeChanged', path: ['app', 'settings']});

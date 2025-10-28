@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { ConfigCodec } from './config.codec';
 import { DEFAULT_CONFIG } from '../+models/config';
+import {ConfigWriter} from "./config.writer";
+import {ConfigReader} from "./config.reader";
 
 describe('ConfigCodec', () => {
   it('defaultsToStringWithComments includes # comment lines', () => {
-    const text = ConfigCodec.defaultSettingsAsComment();
+    const text = ConfigWriter.defaultSettingsAsComment();
     const lines = text.split('\n');
     expect(lines.some(l => l.startsWith('# Test'))).toBe(true);
     expect(lines.every(l => l.length > 0 ? l.startsWith('#') : true)).toBe(true);
@@ -17,16 +18,18 @@ describe('ConfigCodec', () => {
     curr.general.scrollback_lines = 1234;
     curr.theme.default.enable_webgl = true;
 
-    const diff = ConfigCodec.diffToString(curr);
+    const diff = ConfigWriter.diffToString(curr);
     const diffLines = diff.trimEnd().split('\n');
     // Ensure no comment lines are present
     expect(diffLines.some(l => l.startsWith('#'))).toBe(false);
   });
+
   it('parseUserString parses booleans, numbers, arrays', () => {
     const text = `
       # comment
       ; another comment
       autocomplete.mode=always
+      autocomplete.ignore=[cd ..,"cd ."]
       general.enable_telemetry=true
       general.scrollback_lines=12345
       theme.default.enable_webgl=true
@@ -39,12 +42,16 @@ describe('ConfigCodec', () => {
       keybind=Ctrl+6=run6
     `;
 
-    const parsed = ConfigCodec.fromStringToConfig(text);
+    const parsed = ConfigReader.fromStringToConfig(text);
 
     // Nested structure exists
     expect(parsed.general).toBeDefined();
     expect(parsed.general.enable_telemetry).toBe(true);
     expect(parsed.general.scrollback_lines).toBe(12345);
+
+    expect(parsed.autocomplete.mode).toBe('always');
+    expect(parsed.autocomplete.ignore[0]).toBe('cd ..');
+    expect(parsed.autocomplete.ignore[1]).toBe('cd .');
 
     expect(parsed.theme.default.enable_webgl).toBe(true);
 
@@ -67,7 +74,7 @@ describe('ConfigCodec', () => {
       theme.default.enable_webgl=true
     `;
 
-    const settings = ConfigCodec.fromStringToConfig(text);
+    const settings = ConfigReader.fromStringToConfig(text);
 
     // Overrides applied
     expect(settings.general.enable_telemetry).toBe(false);
@@ -85,14 +92,14 @@ describe('ConfigCodec', () => {
       const text = `
       general.scrollback_lines=-1
     `;
-    expect(() => ConfigCodec.fromStringToConfig(text)).toThrowError();
+    expect(() => ConfigReader.fromStringToConfig(text)).toThrowError();
   });
 
   it('fromStringToSettings integrates parse + validate + defaults', () => {
     const text = `general.enable_telemetry=false\nGeneral.scrollback_lines=9999\n`;
     // Note: keys are case-sensitive in implementation; ensure correct casing
     const proper = `general.enable_telemetry=false\ngeneral.scrollback_lines=9999\n`;
-    const settings = ConfigCodec.fromStringToConfig(proper);
+    const settings = ConfigReader.fromStringToConfig(proper);
     expect(settings.general.enable_telemetry).toBe(false);
     expect(settings.general.scrollback_lines).toBe(9999);
     // A default field still exists
@@ -108,7 +115,7 @@ describe('ConfigCodec', () => {
     current.general.scrollback_lines = 1234;
     current.keybind = ['Control+Shift+C=copy', 'Shift+End=select_text_to_start_of_line'];
 
-    const text = ConfigCodec.diffToString(current as any);
+    const text = ConfigWriter.diffToString(current as any);
 
     // Should contain exactly these keys in sorted order and JSON-serialized values
     const expectedLines = [
@@ -126,7 +133,7 @@ describe('ConfigCodec', () => {
     expect(text.endsWith('\n')).toBe(true);
 
     // Ensure defaults produce empty diff
-    const defaultDiff = ConfigCodec.diffToString(DEFAULT_CONFIG);
+    const defaultDiff = ConfigWriter.diffToString(DEFAULT_CONFIG);
     expect(defaultDiff).toBe('');
   });
 });
