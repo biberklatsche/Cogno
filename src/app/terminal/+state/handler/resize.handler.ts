@@ -11,7 +11,6 @@ export class ResizeHandler implements ITerminalHandler {
 
     private _subscription?: Subscription;
     private _resizeObserver?: ResizeObserver;
-    private _fitAddon?: FitAddon;
     private _resizeRaf?: number;
 
     constructor(
@@ -23,9 +22,16 @@ export class ResizeHandler implements ITerminalHandler {
     }
 
     dispose(): void {
-        if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
+        if (this._resizeRaf){
+            cancelAnimationFrame(this._resizeRaf);
+            this._resizeRaf = undefined;
+        }
+
         this._resizeObserver?.disconnect();
         this._resizeObserver = undefined;
+
+        this._subscription?.unsubscribe();
+        this._subscription = undefined;
     }
 
     register(terminal: Terminal, fitAddon: FitAddon): IDisposable {
@@ -33,21 +39,24 @@ export class ResizeHandler implements ITerminalHandler {
             // leichtes Throttling gegen Resize-Spam
             if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
             this._resizeRaf = requestAnimationFrame(() => {
-                fitAddon?.fit();
-                this._pty.resize(terminal.cols, terminal.rows);
+                this._resize(terminal, fitAddon);
             });
         });
         this._resizeObserver.observe(this._terminalContainer, {box: 'content-box'});
-        this._subscription?.add(this._bus.on$({path: ['app', 'terminal', this._terminalId]}).subscribe((e) => {
+        this._subscription = new Subscription();
+        this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]}).subscribe((e) => {
             switch (e.type) {
                 case 'TerminalInitialized':
                 case 'TerminalThemeChanged':
-                    this._fitAddon?.fit();
-                    this._pty.resize(terminal.cols, terminal.rows);
+                    this._resize(terminal, fitAddon);
                     break;
             }
-        }));
-
+        });
         return this;
+    }
+
+    private _resize(terminal: Terminal, fitAddon: FitAddon) {
+        fitAddon.fit();
+        this._pty.resize(terminal.cols, terminal.rows);
     }
 }

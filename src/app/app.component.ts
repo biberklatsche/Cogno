@@ -7,15 +7,6 @@ import {OS} from "./_tauri/os";
 import {AppBus} from "./app-bus/app-bus";
 import {GridListComponent} from "./grid-list/grid-list.component";
 
-/*window.addEventListener("keydown", (e) => {
-    console.log(e.key);
-   if(e.key == 'e'){
-       e.preventDefault();
-       e.stopPropagation();
-   }
-}, { capture: true });*/
-
-
 @Component({
     selector: 'app-root',
     imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent],

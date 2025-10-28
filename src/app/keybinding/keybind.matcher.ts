@@ -1,4 +1,5 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
+import {ActionBase} from "../app-bus/app-bus";
 
 export type KeyCombination = string;
 export type ActionName = string;
@@ -34,10 +35,10 @@ export class KeybindingMatcher {
     // Erstellt Key-String aus KeyboardEvent
     private eventToKeyString(event: KeyboardEvent): string {
         const parts: string[] = [];
-        // Modifier in fester Reihenfolge (wie in deinen Bindings)
+        // Modifier in fester Reihenfolge (alphabetisch sortiert)
+        if (event.altKey) parts.push('Alt');
         if (event.metaKey || event.metaKey) parts.push('Command');
         if (event.ctrlKey) parts.push('Control');
-        if (event.altKey) parts.push('Alt');
         if (event.shiftKey) parts.push('Shift');
         // Haupttaste über Mapping normalisieren
         const normalizedKey = this.keyCodeMapping[event.code] || event.key;
@@ -46,9 +47,9 @@ export class KeybindingMatcher {
     }
 
     // Hauptmethode: Prüft ob Event ein Keybinding trifft
-    match(event: KeyboardEvent): ActionName | undefined {
+    match(event: KeyboardEvent): ActionBase {
         const eventKey = this.eventToKeyString(event);
-        console.log('eventKey', eventKey, this.bindingMap);
-        return this.bindingMap[eventKey];
+        const ActionName = this.bindingMap[eventKey];
+        return {type: ActionName, modifiers:};
     }
 }

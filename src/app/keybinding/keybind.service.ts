@@ -19,7 +19,6 @@ export class KeybindService {
             if(action){
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('####################', action);
             }
         }, { capture: true });
         window.addEventListener("keyup", (e) => {

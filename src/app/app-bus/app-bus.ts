@@ -27,7 +27,7 @@ export type MessageBase<T extends string = string, P = unknown> = {
 }
 
 export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
-    modifier?: 'all' | 'unconsumed' | 'performable'
+    modifiers?: 'all' | 'unconsumed' | 'performable'[]
 }
 
 // Einheitlicher Handler: kann kurzschließen (Command-Style)
