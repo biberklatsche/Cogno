@@ -20,6 +20,7 @@ export class KeybindService {
             if(action){
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('######fire action', action);
             }
         }, { capture: true });
         window.addEventListener("keyup", (e) => {
