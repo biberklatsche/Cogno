@@ -17,7 +17,8 @@ describe('AppComponent', () => {
     // When we construct the component, it should immediately send the commands
     const component = new AppComponent(appBus);
 
-    expect(sendSpy).toHaveBeenCalledWith({ type: 'LoadConfigCommand' });
-    expect(sendSpy).toHaveBeenCalledWith({ type: 'WatchConfigCommand' });
+    // Allow additional properties such as phase added by AppBus.publish
+    expect(sendSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'LoadConfigCommand' }));
+    expect(sendSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'WatchConfigCommand' }));
   });
 });

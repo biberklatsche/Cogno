@@ -1,4 +1,4 @@
-import { describe, it, expect, test, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { KeybindingMatcher } from './keybind.matcher';
 import type { KeyboardMapping } from './keyboard/keyboard-layouts/_.contribution';
 
@@ -11,7 +11,7 @@ function makeEvent(init: KeyboardEventInit & { key?: string; code?: string } = {
   return e;
 }
 
-describe('KeybindingMatcher', () => {
+describe('KeybindingMatcher (linux)', () => {
   let matcher: KeybindingMatcher;
 
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe('KeybindingMatcher', () => {
     expect(action?.type).toBe('undo');
   });
 
-  it('supports Meta modifier on platforms that provide metaKey', () => {
+  it('supports Meta modifier on Linux using "Meta" keyword', () => {
     matcher.initBindings(['Meta+K=openCommandPalette']);
 
     const event = makeEvent({ key: 'k', code: 'KeyK', metaKey: true });
@@ -59,21 +59,81 @@ describe('KeybindingMatcher', () => {
     expect(action?.type).toBe('doA');
   });
 
-    it('should support one trigger', () => {
-        matcher.initBindings(['all:Alt+Ctrl+A=doA']);
+  it('should support one trigger', () => {
+    matcher.initBindings(['all:Alt+Ctrl+A=doA']);
+    const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+    const action = matcher.match(event);
+    expect(action?.type).toBe('doA');
+    expect(action?.triggers).toContain('all');
+  });
+
+  it('should support many triggers', () => {
+    matcher.initBindings(['all:unconsumed:performable:Alt+Ctrl+A=doA']);
+    const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
+    const action = matcher.match(event);
+    expect(action?.type).toBe('doA');
+    expect(action?.triggers).toContain('all');
+    expect(action?.triggers).toContain('unconsumed');
+    expect(action?.triggers).toContain('performable');
+  });
+
+    it('should support one arg', () => {
+        matcher.initBindings(['all:Alt+Ctrl+A=doA:abc']);
         const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
         const action = matcher.match(event);
         expect(action?.type).toBe('doA');
-        expect(action?.triggers).toContain('all');
+        expect(action?.args).toContain('abc');
     });
 
-    it('should support many triggers', () => {
-        matcher.initBindings(['all:unconsumed:performable:Alt+Ctrl+A=doA']);
+    it('should support many args', () => {
+        matcher.initBindings(['all:Alt+Ctrl+A=doA:a:b:c']);
         const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
         const action = matcher.match(event);
         expect(action?.type).toBe('doA');
-        expect(action?.triggers).toContain('all');
-        expect(action?.triggers).toContain('unconsumed');
-        expect(action?.triggers).toContain('performable');
+        expect(action?.args).toContain('a');
+        expect(action?.args).toContain('b');
+        expect(action?.args).toContain('c');
     });
+});
+
+describe('KeybindingMatcher (macos)', () => {
+  let matcher: KeybindingMatcher;
+
+  beforeEach(() => {
+    matcher = new KeybindingMatcher('macos');
+    matcher.initKeyCodeMapping({
+      KeyA: 'A',
+      KeyK: 'K'
+    } as unknown as KeyboardMapping);
+  });
+
+  it('maps metaKey to Command on macOS', () => {
+    matcher.initBindings(['Command+K=openCommandPalette']);
+
+    const event = makeEvent({ key: 'k', code: 'KeyK', metaKey: true });
+    const action = matcher.match(event);
+
+    expect(action?.type).toBe('openCommandPalette');
+  });
+
+  it('maps altKey to Option on macOS', () => {
+    matcher.initBindings(['Option+A=optAction']);
+    const event = makeEvent({ key: 'a', code: 'KeyA', altKey: true });
+    const action = matcher.match(event);
+    expect(action?.type).toBe('optAction');
+  });
+
+  it('maps ctrlKey to Control on macOS (not "Ctrl")', () => {
+    matcher.initBindings(['Control+K=controlAction']);
+    const event = makeEvent({ key: 'k', code: 'KeyK', ctrlKey: true });
+    const action = matcher.match(event);
+    expect(action?.type).toBe('controlAction');
+  });
+
+  it('supports combined modifiers with any order, using mac labels', () => {
+    matcher.initBindings(['Option+Control+A=combo']);
+    const event = makeEvent({ key: 'a', code: 'KeyA', altKey: true, ctrlKey: true });
+    const action = matcher.match(event);
+    expect(action?.type).toBe('combo');
+  });
 });
