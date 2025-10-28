@@ -3,13 +3,14 @@ import {DestroyRef, Injectable} from "@angular/core";
 import {ConfigService} from "../config/+state/config.service";
 import {KeybindingMatcher} from "./keybind.matcher";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {OS} from "../_tauri/os";
 
 @Injectable({
     providedIn: 'root'
 })
 export class KeybindService {
 
-    private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher();
+    private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher(OS.platform());
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));

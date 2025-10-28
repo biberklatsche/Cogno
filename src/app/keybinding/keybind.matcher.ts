@@ -1,20 +1,34 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
-import {ActionBase} from "../app-bus/app-bus";
+import {ActionBase, ActionTrigger, validTriggers} from "../app-bus/app-bus";
+import {OsType} from "../_tauri/os";
 
 export type KeyCombination = string;
-export type ActionName = string;
 
 export class KeybindingMatcher {
-    private bindingMap: Record<KeyCombination, ActionName> = {};
+    private keyCombinationToAction: Record<KeyCombination, ActionBase> = {};
     private keyCodeMapping: KeyboardMapping = {};
+
+    constructor(private _platform: OsType) {
+    }
 
     public initBindings(bindings: string[]) {
         // Einmalig beim Start parsen
         bindings.forEach(binding => {
-            const [keybinding, action] = binding.split(':');
-            const normalized = this.normalizeKeyCombination(keybinding);
-            this.bindingMap[normalized] = action;
+            const [keybindingDef, actionDef] = binding.split('=');
+
+            const triggers = keybindingDef.split(':');
+            const keybinding = triggers.splice(triggers.length - 1, 1);
+            const normalized = this.normalizeKeyCombination(keybinding[0]);
+
+            const args = actionDef.split(':');
+            const actionName = args.splice(0, 1);
+
+            this.keyCombinationToAction[normalized] =  {type: actionName[0], triggers: this.toTriggers(triggers), args: args};
         });
+    }
+
+    private toTriggers(triggers: string[]): ActionTrigger[] {
+        return triggers.filter((s: string): s is ActionTrigger => validTriggers.includes(s as ActionTrigger));
     }
 
     public initKeyCodeMapping(keyCodeMapping: KeyboardMapping) {
@@ -34,12 +48,13 @@ export class KeybindingMatcher {
 
     // Erstellt Key-String aus KeyboardEvent
     private eventToKeyString(event: KeyboardEvent): string {
-        const parts: string[] = [];
+        let parts: string[] = [];
         // Modifier in fester Reihenfolge (alphabetisch sortiert)
-        if (event.altKey) parts.push('Alt');
-        if (event.metaKey || event.metaKey) parts.push('Command');
-        if (event.ctrlKey) parts.push('Control');
+        if (event.altKey) parts.push(this._platform === 'macos' ? 'Option' : 'Alt');
+        if (event.metaKey) parts.push(this._platform === 'macos' ? 'Command' : 'Meta');
+        if (event.ctrlKey) parts.push(this._platform === 'macos' ? 'Control' : 'Ctrl');
         if (event.shiftKey) parts.push('Shift');
+        parts = parts.sort();
         // Haupttaste über Mapping normalisieren
         const normalizedKey = this.keyCodeMapping[event.code] || event.key;
         parts.push(normalizedKey);
@@ -47,9 +62,8 @@ export class KeybindingMatcher {
     }
 
     // Hauptmethode: Prüft ob Event ein Keybinding trifft
-    match(event: KeyboardEvent): ActionBase {
+    match(event: KeyboardEvent): ActionBase | undefined {
         const eventKey = this.eventToKeyString(event);
-        const ActionName = this.bindingMap[eventKey];
-        return {type: ActionName, modifiers:};
+        return this.keyCombinationToAction[eventKey];
     }
 }

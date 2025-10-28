@@ -101,7 +101,7 @@ describe('ConfigCodec', () => {
     current.general.enable_telemetry = false;
     current.theme.default.enable_webgl = true;
     current.general.scrollback_lines = 1234;
-    current.keybind = ['Control+Shift+C:copy', 'Shift+End:select_text_to_start_of_line'];
+    current.keybind = ['Control+Shift+C=copy', 'Shift+End=select_text_to_start_of_line'];
 
     const text = ConfigCodec.diffToString(current as any);
 
@@ -109,8 +109,8 @@ describe('ConfigCodec', () => {
     const expectedLines = [
       'general.enable_telemetry=false',
       'general.scrollback_lines=1234',
-      'keybind=Control+Shift+C:copy',
-      'keybind=Shift+End:select_text_to_start_of_line',
+      'keybind=Control+Shift+C=copy',
+      'keybind=Shift+End=select_text_to_start_of_line',
       'theme.default.enable_webgl=true',
     ].sort((a,b)=>a.localeCompare(b));
 
