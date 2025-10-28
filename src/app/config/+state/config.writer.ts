@@ -2,13 +2,12 @@ import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
 
 /**
  * Writer-Klasse für das Generieren von Konfigurationsdatei-Inhalten.
- * Delegiert aktuell an die bestehende ConfigCodec-Implementierung.
  */
 export class ConfigWriter {
-  /** Gibt die Default-Config als kommentierten dot-properties-Text (#) zurück. */
-  static defaultSettingsAsComment(): string {
-      return this.toDotString(DEFAULT_CONFIG, true);
-  }
+    /** Gibt die Default-Config als kommentierten dot-properties-Text (#) zurück. */
+    static defaultSettingsAsComment(): string {
+        return this.toDotString(DEFAULT_CONFIG, true);
+    }
 
     /** Erstellt die Differenz (gegen Defaults) als dot-properties-Text ohne Kommentare. */
     static diffToString(config: Config): string {
@@ -35,21 +34,73 @@ export class ConfigWriter {
         return out;
     }
 
-    private  static toDotString(settings: Config, asComments: boolean = true): string {
-      const lines = this.toDotProperties(settings, "", ConfigSchema, asComments);
-      // Keine Sortierung mehr, um Kommentare an den zugehörigen Keys zu belassen
-      return lines.join("\n") + (lines.length ? "\n" : "");
-  }
-
+    private static toDotString(settings: Config, asComments: boolean = true): string {
+        const lines = this.toDotProperties(settings, "", ConfigSchema, asComments);
+        return lines.join("\n") + (lines.length ? "\n" : "");
+    }
 
     private static isPlainObject(v: unknown): v is Record<string, unknown> {
         return typeof v === "object" && v !== null && !Array.isArray(v);
     }
 
+    /** Rendert einen Wert als String (ohne Quotes für strings, primitives direkt). */
+    private static renderValue(value: unknown): string {
+        if (typeof value === 'string') return value;
+        if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+        return JSON.stringify(value);
+    }
+
+    /** Fügt Schema-Beschreibung als Kommentarzeilen hinzu, falls vorhanden. */
+    private static addSchemaDescription(lines: string[], schema: any): void {
+        const desc = this.getSchemaDescription(schema);
+        if (desc) {
+            for (const line of String(desc).split(/\r?\n/)) {
+                lines.push(`# ${line.trim()}`);
+            }
+        }
+    }
+
+    /** Wandelt ein verschachteltes Objekt in dot-properties-Zeilen um und schreibt Zod-Descriptions als Kommentare (#). */
+    private static toDotProperties(obj: any, prefix = "", schema?: any, asComment: boolean = true): string[] {
+        const lines: string[] = [];
+
+        for (const k of Object.keys(obj).sort()) {
+            const v = (obj as any)[k];
+            const key = prefix ? `${prefix}.${k}` : k;
+            const childSchema = this.getChildSchema(schema, k);
+            const commentPrefix = asComment ? '# ' : '';
+
+            if (this.isPlainObject(v)) {
+                const unwrapped = this.unwrapSchema(childSchema);
+                lines.push(...this.toDotProperties(v, key, unwrapped, asComment));
+            } else if (Array.isArray(v)) {
+                if (asComment) {
+                    this.addSchemaDescription(lines, childSchema);
+                }
+
+                if (key === 'keybind') {
+                    // Keybinds werden mehrzeilig ausgegeben
+                    for (const item of v) {
+                        lines.push(`${commentPrefix}${key}=${this.renderValue(item)}`);
+                    }
+                } else {
+                    // Andere Arrays als kommagetrennte Liste
+                    const items = v.map(item => this.renderValue(item));
+                    lines.push(`${commentPrefix}${key}=[${items.join(',')}]`);
+                }
+            } else {
+                if (asComment) {
+                    this.addSchemaDescription(lines, childSchema);
+                }
+                lines.push(`${commentPrefix}${key}=${this.renderValue(v)}`);
+            }
+        }
+        return lines;
+    }
+
     private static unwrapSchema(s: any): any {
         let cur = s;
         while (cur && cur._def) {
-            // Default/Optional/Nullable: innerType; Effects: schema
             if (cur._def.innerType) {
                 cur = cur._def.innerType;
                 continue;
@@ -63,110 +114,46 @@ export class ConfigWriter {
         return cur;
     }
 
-    /** Wandelt ein verschachteltes Objekt in dot-properties-Zeilen um und schreibt Zod-Descriptions als Kommentare (#). */
-    private static toDotProperties(obj: any, prefix = "", schema?: any, asComment: boolean = true): string[] {
-        const lines: string[] = [];
-        // Für stabile, aber vorhersehbare Ausgabe: iteriere nach Schlüsselname sortiert innerhalb derselben Ebene
-        for (const k of Object.keys(obj).sort()) {
-            const v = (obj as any)[k];
-            const key = prefix ? `${prefix}.${k}` : k;
-
-            const childSchema = this.getChildSchema(schema, k);
-
-            if (this.isPlainObject(v)) {
-                const unwrapped = this.unwrapSchema(childSchema);
-                lines.push(...this.toDotProperties(v, key, unwrapped, asComment));
-            } else if (Array.isArray(v)) {
-                // Arrays: Nur 'keybind' wird mehrzeilig ausgegeben; alle anderen als kommagetrennte Liste ohne Quotes
-                // Beschreibung (falls vorhanden) als Kommentar einmalig voranstellen
-                if (asComment) {
-                    const desc = this.getSchemaDescription(childSchema);
-                    if (desc) {
-                        for (const l of String(desc).split(/\r?\n/)) {
-                            lines.push(`# ${l.trim()}`);
-                        }
-                    }
-                }
-                if (key === 'keybind') {
-                    for (const item of v) {
-                        const rendered = typeof item === 'string'
-                            ? item
-                            : (typeof item === 'number' || typeof item === 'boolean')
-                                ? String(item)
-                                : JSON.stringify(item);
-                        lines.push(`${asComment ? '# ' : ''}${key}=${rendered}`);
-                    }
-                } else {
-                    const renderedItems = v.map(item =>
-                        typeof item === 'string'
-                            ? item
-                            : (typeof item === 'number' || typeof item === 'boolean')
-                                ? String(item)
-                                : JSON.stringify(item)
-                    );
-                    lines.push(`${asComment ? '# ' : ''}${key}=[${renderedItems.join(',')}]`);
-                }
-            } else {
-                // Beschreibung (falls vorhanden) als Kommentar ausgeben
-                if (asComment) {
-                    const desc = this.getSchemaDescription(childSchema);
-                    if (desc) {
-                        for (const l of String(desc).split(/\r?\n/)) {
-                            lines.push(`# ${l.trim()}`);
-                        }
-                    }
-                }
-                // Strings unquoted, primitives as-is;
-                const rendered = typeof v === 'string'
-                    ? v
-                    : (typeof v === 'number' || typeof v === 'boolean')
-                        ? String(v)
-                        : JSON.stringify(v);
-                lines.push(`${asComment ? '# ' : ''}${key}=${rendered}`);
-            }
-        }
-        return lines;
-    }
-
     private static getChildSchema(parent: any, key: string): any {
         if (!parent) return undefined;
+
         const p = this.unwrapSchema(parent);
-        // ZodObject: shape either function or object; try instance first, then _def
         const def = p?._def;
         if (!def) return undefined;
-        let shape: any;
-        const instShape = (p as any)?.out?.shape;
-        if (typeof instShape === 'function') {
-            shape = instShape.call(p);
-        } else if (instShape) {
-            shape = instShape;
-        }
-        if (!shape) {
-            if (typeof def.shape === 'function') {
-                shape = def.shape();
-            } else if (def.shape) {
-                shape = def.shape;
+
+        const shape = this.extractShape(p, def);
+        if (!shape) return undefined;
+
+        if (Object.prototype.hasOwnProperty.call(shape, key)) {
+            let child = (shape as any)[key];
+            if (typeof child === 'function') {
+                try { child = child(); } catch { /* ignore */ }
             }
+            return child;
         }
-        if (shape) {
-            if (Object.prototype.hasOwnProperty.call(shape, key)) {
-                let child = (shape as any)[key];
-                if (typeof child === 'function') {
-                    try { child = child(); } catch { /* ignore */ }
-                }
-                return child;
-            }
-        }
+        return undefined;
+    }
+
+    private static extractShape(schemaInstance: any, def: any): any {
+        // Versuche zuerst die Instanz-shape
+        const instShape = schemaInstance?.out?.shape;
+        if (typeof instShape === 'function') return instShape.call(schemaInstance);
+        if (instShape) return instShape;
+
+        // Fallback auf _def.shape
+        if (typeof def.shape === 'function') return def.shape();
+        if (def.shape) return def.shape;
+
         return undefined;
     }
 
     private static getSchemaDescription(s: any): string | undefined {
         if (!s) return undefined;
-        // Prefer description on the wrapper itself (e.g., .default(...).describe(...))
+
         const direct = s?.description;
         if (typeof direct === 'string' && direct.length) return direct;
-        const u = this.unwrapSchema(s);
-        // Zod speichert die Beschreibung in _def.description
-        return u?.description || undefined;
+
+        const unwrapped = this.unwrapSchema(s);
+        return unwrapped?.description || undefined;
     }
 }

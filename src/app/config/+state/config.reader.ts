@@ -17,6 +17,9 @@ export class ConfigReader {
     private static toConfig(userOverrides: Record<string, unknown>): Config {
         // Special case: keybind array should be concatenated with defaults (defaults first, then user values)
         // All other arrays replace defaults completely
+        if(userOverrides['keybind'] && !Array.isArray(userOverrides['keybind'])){
+            userOverrides['keybind'] = [userOverrides['keybind']];
+        }
         if (userOverrides['keybind'] && Array.isArray(userOverrides['keybind'])) {
             const defaultKeybinds = DEFAULT_CONFIG.keybind;
             const userKeybinds = userOverrides['keybind'];

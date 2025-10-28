@@ -18,7 +18,7 @@ export class KeybindingMatcher {
         // Reset und neu parsen
         this.sequences = [];
         this.currentMatches = [];
-        bindings.forEach(binding => {
+        bindings.reverse().forEach(binding => {
             const [keybindingDef, actionDef] = binding.split('=');
             if (!keybindingDef || !actionDef) return;
 

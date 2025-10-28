@@ -18,7 +18,6 @@ describe('ConfigReader', () => {
       shell.1.shell_type=ZSH
       shell.1.path=/bin/zsh
       keybind=Ctrl+5=run5
-      keybind=Ctrl+6=run6
     `;
 
     const parsed = ConfigReader.fromStringToConfig(text);
@@ -45,9 +44,8 @@ describe('ConfigReader', () => {
 
     // Keybind array now concatenates: defaults first, then user values
     const defaultKeybindCount = DEFAULT_CONFIG.keybind.length;
-    expect(parsed.keybind.length).toBe(defaultKeybindCount + 2);
+    expect(parsed.keybind.length).toBe(defaultKeybindCount + 1);
     expect(parsed.keybind[defaultKeybindCount]).toBe('Ctrl+5=run5');
-    expect(parsed.keybind[defaultKeybindCount + 1]).toBe('Ctrl+6=run6');
   });
 
   it('toSettings fills defaults and keeps overrides', () => {

@@ -32,6 +32,15 @@ describe('KeybindingMatcher (linux)', () => {
     expect(action?.type).toBe('doA');
   });
 
+    it('should override the first binding', () => {
+        matcher.initBindings(['Shift+Ctrl+A=doA', 'Shift+Ctrl+A=doB']);
+
+        const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, shiftKey: true });
+        const action = matcher.match(event);
+
+        expect(action?.type).toBe('doB');
+    });
+
   it('uses keyCodeMapping to resolve the main key from event.code', () => {
     const mapping: KeyboardMapping = { KeyY: 'Z' } as const; // e.g., on German layout Y key produces Z
     matcher.initKeyCodeMapping(mapping);
