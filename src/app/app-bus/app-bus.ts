@@ -14,32 +14,25 @@ function key(path: BusPath) { return path.join("/"); }
 function buildChain(path: BusPath) { return path.map((_, i) => path.slice(0, i + 1)); }
 
 // ---------------------------------------------------------
-// Gemeinsames Message-Modell (Events + Commands)
+// Gemeinsames Message-Modell (Events + Actions)
 // ---------------------------------------------------------
 export type MessageBase<T extends string = string, P = unknown> = {
     type: T;
     payload?: P;
-    targetPath?: BusPath;     // default ["app"]
-    timestamp?: number;
-    sourcePath?: BusPath;
-    correlationId?: string;
+    path?: BusPath;     // default ["app"]
 
-    // Optional vorhandene Event-Flags (bei Commands i.d.R. ungenutzt)
-    cancelable?: boolean;
+    // Optional vorhandene Event-Flags (bei Actions i.d.R. ungenutzt)
     defaultPrevented?: boolean;
     propagationStopped?: boolean;
     phase?: Phase;
-};
+}
 
-// Hilfsfunktionen für Event-Style-Flags
-export const preventDefaultMessage = (msg: MessageBase<any, unknown>) =>
-    (msg.cancelable = msg.defaultPrevented = true);
-
-export const stopPropagationMessage = (msg: MessageBase<any, unknown>) =>
-    (msg.propagationStopped = true);
+export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
+    modifier?: 'all' | 'unconsumed' | 'performable'
+}
 
 // Einheitlicher Handler: kann kurzschließen (Command-Style)
-export type MessageHandler<M extends AppMessage = AppMessage> =
+export type MessageHandler<M extends MessageBase = MessageBase> =
     (msg: M, ctx: { path: BusPath }) => "handled" | true | void;
 
 // ---------------------------------------------------------
@@ -66,42 +59,42 @@ export class AppBus {
     }
 
     // Reaktives Abo (optional nach Typ/Phase filtern)
-    public on$<K extends AppMessage["type"]>(opts: {
+    public on$<K extends MessageBase["type"]>(opts: {
         path: BusPath;
         type?: K | K[];
         phase?: Phase | Phase[];
-    }): Observable<Extract<AppMessage, { type: K }>> {
+    }): Observable<Extract<MessageBase, { type: K }>> {
         const { path, type, phase } = opts;
         const types = type ? (Array.isArray(type) ? type : [type]) : null;
         const phases = phase ? (Array.isArray(phase) ? phase : [phase]) : null;
 
-        return new Observable<Extract<AppMessage, { type: K }>>(subscriber => {
+        return new Observable<Extract<MessageBase, { type: K }>>(subscriber => {
             const handler: MessageHandler = (msg) => {
                 if (types && !types.includes(msg.type as K)) return;
                 if (phases && msg.phase && !phases.includes(msg.phase)) return; // Phase ist optional
-                subscriber.next(msg as Extract<AppMessage, { type: K }>);
+                subscriber.next(msg as Extract<MessageBase, { type: K }>);
             };
             this.on(path, handler);
             return () => this.off(path, handler);
         });
     }
 
-    public onType$<K extends AppMessage["type"]>(
+    public onType$<K extends MessageBase["type"]>(
         type: K,
         opts?: { path?: BusPath; phase?: Phase | Phase[] }
-    ): Observable<Extract<AppMessage, { type: K }>> {
+    ): Observable<Extract<MessageBase, { type: K }>> {
         return this.on$<K>({ path: opts?.path ?? ["app"], type, phase: opts?.phase });
     }
 
     // One-shot Observable / Promise
-    public once$<K extends AppMessage["type"]>(opts: {
+    public once$<K extends MessageBase["type"]>(opts: {
         path: BusPath;
         type?: K | K[];
         phase?: Phase | Phase[];
-        predicate?: (msg: Extract<AppMessage, { type: K }>) => boolean;
+        predicate?: (msg: Extract<MessageBase, { type: K }>) => boolean;
         timeoutMs?: number;
         signal?: AbortSignal;
-    }): Observable<Extract<AppMessage, { type: K }>> {
+    }): Observable<Extract<MessageBase, { type: K }>> {
         let src = this.on$<K>(opts);
         if (opts.predicate) src = src.pipe(filter(opts.predicate));
         let one = src.pipe(take(1));
@@ -114,21 +107,21 @@ export class AppBus {
         return one;
     }
 
-    public onceType$<K extends AppMessage["type"]>(
+    public onceType$<K extends MessageBase["type"]>(
         type: K,
         opts?: { path?: BusPath; phase?: Phase | Phase[] }
-    ): Observable<Extract<AppMessage, { type: K }>> {
+    ): Observable<Extract<MessageBase, { type: K }>> {
         return this.once$<K>({ path: opts?.path ?? ["app"], type, phase: opts?.phase });
     }
 
-    public waitForOnce<K extends AppMessage["type"]>(opts: {
+    public waitForOnce<K extends MessageBase["type"]>(opts: {
         path: BusPath;
         type?: K | K[];
         phase?: Phase | Phase[];
-        predicate?: (msg: Extract<AppMessage, { type: K }>) => boolean;
+        predicate?: (msg: Extract<MessageBase, { type: K }>) => boolean;
         timeoutMs?: number;
         signal?: AbortSignal;
-    }): Promise<Extract<AppMessage, { type: K }>> {
+    }): Promise<Extract<MessageBase, { type: K }>> {
         return firstValueFrom(this.once$<K>(opts));
     }
 
@@ -137,10 +130,10 @@ export class AppBus {
      * - führt entlang Pfadkette (capture → target → bubble) aus
      * - bricht ab, wenn:
      *   * ein Handler "handled"/true zurückgibt (Command-Style), ODER
-     *   * bei vorhandenen Event-Flags cancelable+defaultPrevented oder propagationStopped gesetzt wird
+     *   * bei vorhandenen Event-Flags defaultPrevented oder propagationStopped gesetzt wird
      */
     public publish(msg: AppMessage): boolean {
-        const path = msg.targetPath ?? ["app"];
+        const path = msg.path ?? ["app"];
         const chain = buildChain(path);
 
         // capture
@@ -161,16 +154,15 @@ export class AppBus {
         return false;
     }
 
-    private dispatch(msg: AppMessage, path: BusPath, phase: Phase): boolean {
+    private dispatch(msg: MessageBase, path: BusPath, phase: Phase): boolean {
         const handlers = this.tree.get(key(path)) ?? [];
-        for (const h of handlers) {
+        for (const handler of handlers) {
             // Klonen, damit Handler Flags toggeln dürfen
-            const clone: AppMessage = { ...(msg as any), phase };
+            const clone: MessageBase = { ...(msg as any), phase };
 
-            const res = h(clone, { path });
+            const res = handler(clone, { path });
 
             // Flags zurückspiegeln (nur wenn vorhanden)
-            if ("cancelable" in clone) (msg as any).cancelable = clone.cancelable;
             if ("defaultPrevented" in clone) (msg as any).defaultPrevented = clone.defaultPrevented;
             if ("propagationStopped" in clone) (msg as any).propagationStopped = clone.propagationStopped;
 
@@ -178,8 +170,8 @@ export class AppBus {
             if (res === "handled" || res === true) return true;
 
             // Kurzschluss: Event-Style
-            if ((msg as any).cancelable && (msg as any).defaultPrevented) return true;
-            if ((msg as any).propagationStopped) return true;
+            if (msg.defaultPrevented) return true;
+            if (msg.propagationStopped) return true;
         }
         return false;
     }

@@ -52,7 +52,7 @@ export class ThemeHandler implements ITerminalHandler {
             brightCyan: this._theme.color.bright_cyan,
             brightWhite: this._theme.color.bright_white,
         };
-        this._bus.publish({targetPath: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
+        this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
     }
 
     dispose(): void {

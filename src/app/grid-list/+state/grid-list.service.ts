@@ -98,7 +98,7 @@ export class GridListService {
         this._activeTabId.next(tab);
         const grid = this._gridList.value[tab];
         const terminalId = this.getFirstTerminalId(grid.tree.root);
-        this.bus.publish({targetPath: ['app', 'terminal', terminalId], type: 'FocusTerminalCommand'});
+        this.bus.publish({path: ['app', 'terminal', terminalId], type: 'FocusTerminalCommand'});
     }
 
     getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
