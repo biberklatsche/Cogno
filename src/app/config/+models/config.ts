@@ -313,6 +313,7 @@ const ShellSchema = z.object({
     shell_type: ShellTypeEnum,
     path: z.string(),
     args: z.array(z.string()).default([]),
+    env: z.record(z.string(), z.string()).optional(),
     is_debug_mode_enabled: z.boolean().default(false),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),

@@ -8,7 +8,7 @@ import {ConfigWriter} from "./config.writer";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {Shells} from "../../_tauri/shells";
+import {ShellConfigurator} from "../shell-configurator";
 
 @Injectable({
     providedIn: 'root'
@@ -31,7 +31,7 @@ export class ConfigService {
         }));
     }
 
-    constructor(private appBus: AppBus, private destroy: DestroyRef) {
+    constructor(private appBus: AppBus, private destroy: DestroyRef, private shells: ShellConfigurator) {
         appBus.onType$('LoadConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
             await this.loadConfig();
         });
@@ -55,7 +55,7 @@ export class ConfigService {
             await Fs.writeTextFile(path, ConfigWriter.defaultSettingsAsComment());
             const configAsString = await Fs.readTextFile(path);
             const config = ConfigReader.fromStringToConfig(configAsString);
-            await this.setShells(config);
+            await this.shells.apply(config);
             await Fs.appendTextFile(path, ConfigWriter.diffToString(config));
         }
         const configAsString = await Fs.readTextFile(path);
@@ -66,110 +66,5 @@ export class ConfigService {
         Logger.info('Config loaded...');
     }
 
-    private async setShells(config: Config) {
-        const shells = await Shells.load();
-        const zsh = shells.find(s => s.shell_type === 'ZSH');
-        if(zsh) {
-            config.shell[1] = {
-                    name: "ZSH",
-                    shell_type: zsh.shell_type,
-                    prompt_version: "version1",
-                    path: zsh.path,
-                    args: [
-                        "--login",
-                        "-i"
-                    ],
-                    working_dir:"/~",
-                    start_timeout: 100000,
-                    prompt_terminator: "🖕",
-                    uses_final_space_prompt_terminator: true,
-                    injection_type: "manual",
-                    is_debug_mode_enabled: false
-            }
-            return;
-        }
-        const gitbash = shells.find(s => s.shell_type === 'GitBash');
-        if(gitbash) {
-            config.shell[1] = {
-                name: "GitBash",
-                shell_type: gitbash.shell_type,
-                prompt_version: "version1",
-                path: gitbash.path,
-                args: [
-                    "--login",
-                    "-i",
-                    "-lc",
-                    `export PATH='${this.windowsPathToMsys(Environment.exeDirPath())}':\"$PATH\"; exec bash -i`
-                ],
-                working_dir:"/~",
-                start_timeout: 100000,
-                prompt_terminator: "🖕",
-                uses_final_space_prompt_terminator: true,
-                injection_type: "manual",
-                is_debug_mode_enabled: false
-            }
-            return;
-        }
-        const powershell = shells.find(s => s.shell_type === 'Powershell');
-        if(powershell) {
-            config.shell[1] = {
-                name: "Powershell",
-                shell_type: powershell.shell_type,
-                prompt_version: "version1",
-                path: powershell.path,
-                args: [
-                    "--login",
-                    "-i"
-                ],
-                working_dir:"/~",
-                start_timeout: 100000,
-                prompt_terminator: "🖕",
-                uses_final_space_prompt_terminator: true,
-                injection_type: "manual",
-                is_debug_mode_enabled: false
-            }
-            return;
-        }
-        const bash = shells.find(s => s.shell_type === 'Bash');
-        if(bash) {
-            config.shell[1] = {
-                name: "Bash",
-                shell_type: bash.shell_type,
-                prompt_version: "version1",
-                path: bash.path,
-                args: [
-                    "--login",
-                    "-i"
-                ],
-                working_dir:"/~",
-                start_timeout: 100000,
-                prompt_terminator: "🖕",
-                uses_final_space_prompt_terminator: true,
-                injection_type: "manual",
-                is_debug_mode_enabled: false
-            }
-            return;
-        }
-    }
 
-    private windowsPathToMsys(p: string): string {
-        let s = p;
-
-        // Entferne Windows-Langpfad Präfix \\?\
-        if (s.startsWith("\\\\?\\")) {
-            s = s.slice(4);
-        }
-
-        // Backslashes -> Forward slashes
-        s = s.replace(/\\/g, "/");
-
-        // "C:/foo" -> "/c/foo"
-        if (s.length >= 2 && s[1] === ":") {
-            const drive = s[0].toLowerCase();
-            const rest = s.slice(2);        // ohne "C:"
-            return `/${drive}${rest}`;
-        }
-
-        return s;
-    }
 }
