@@ -123,7 +123,7 @@ pub async fn pty_spawn(
                         break;  // Beenden ohne weitere Events
                     }
                 }
-                Err(e) => {
+                Err(_e) => {
                     let _ = app_clone.emit(&format!("pty-exit:{}", terminal_id_clone), serde_json::json!({
                         "exitCode": 1
                     }));

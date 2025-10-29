@@ -1,4 +1,4 @@
-use tauri::{Builder, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
 
 mod commands;
 use commands::crypto::decrypt;
@@ -17,6 +17,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // Handle args from a second invocation here
+            if argv.iter().any(|a| a == "--open-new-tab") {
+                // Emit a global event that the frontend can react to
+                let _ = app.emit("cogno://open-new-tab", ());
+            }
+        }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
                     list_fonts,
@@ -48,6 +55,12 @@ pub fn run() {
            #[cfg(debug_assertions)] // only include this code on debug builds
            {
               window.open_devtools();
+           }
+
+           // If this is the first instance and it was started with --open-new-tab,
+           // immediately emit the event so the UI can react.
+           if std::env::args().any(|a| a == "--open-new-tab") {
+               app.emit("cogno://open-new-tab", ()).ok();
            }
 
            Ok(())
