@@ -322,7 +322,6 @@ const ShellSchema = z.object({
     prompt_version: PromptVersionEnum.default("version1"),
     uses_final_space_prompt_terminator: z.boolean().default(true),
     injection_type: RemoteInjectionTypeEnum.default("auto"),
-    color: HexColorSchema.optional(),
 }).describe("The shell configuration");
 
 const ShellListSchema = z.object({

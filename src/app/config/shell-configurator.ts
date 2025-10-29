@@ -7,8 +7,6 @@ import { Environment } from '../common/environment/environment';
 export class ShellConfigurator {
   /**
    * Detects available shells and writes them into the config.shell list starting at position 1.
-   * Ensures PATH is prepended with the Cogno exe dir for Git Bash via -lc export.
-   * For other shells the Rust PTY layer already prepends PATH for the child process.
    */
   async apply(config: Config): Promise<void> {
     const shells = await Shells.load();
@@ -19,7 +17,7 @@ export class ShellConfigurator {
       Bash: 2,
       GitBash: 3,
       Powershell: 4,
-    } as any;
+    };
 
     const sorted = [...shells].sort((a, b) => {
       const wa = weight[a.shell_type as ShellType] ?? 99;
@@ -30,7 +28,7 @@ export class ShellConfigurator {
     let pos = 1 as keyof typeof config.shell;
 
     for (const sh of sorted) {
-      const base: Omit<ShellConfig, 'color'> = {
+      const base: ShellConfig = {
         name: sh.name || sh.shell_type,
         shell_type: sh.shell_type as ShellType,
         prompt_version: 'version1',
@@ -66,23 +64,23 @@ export class ShellConfigurator {
             const exePath = Environment.exeDirPath();
             const exportCmd = `export PATH='${exePath}':"$PATH"; exec bash -i`;
             args.push(exportCmd);
-          break;
+            break;
         }
         case 'Powershell': {
-          // Keep existing behavior from previous implementation
-          args.push('--login', '-i');
-          break;
+            args.push('-NoLogo', '-NoExit', '-Command');
+            const exePath = Environment.exeDirPath();
+            const exportCmd = `$env:Path = '${exePath};'+$env:Path`;
+            args.push(exportCmd);
+            break;
         }
         default: {
           // Fallback: no special args
           break;
         }
       }
-
-      const shellConfig: ShellConfig = { ...base, args } as ShellConfig;
-
+      
       // assign into next available position
-      (config.shell as any)[pos] = shellConfig;
+      (config.shell as any)[pos] = { ...base, args };
       // increment position until 20
       // @ts-ignore numeric increment across union type
       pos = (pos + 1);
