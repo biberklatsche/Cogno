@@ -1,31 +1,13 @@
 use clap::{Arg, Command};
+use cogno_lib::cli::parse_cli;
 
 fn main() {
-    let matches = Command::new("cogno")
-        .disable_help_subcommand(true)
-        .arg(
-            Arg::new("hello-world")
-                .long("hello-world")
-                .action(clap::ArgAction::SetTrue)
-                .help("Prints 'hello world' to stdout and exits"),
-        )
-        .arg(
-            Arg::new("open-new-tab")
-                .long("open-new-tab")
-                .action(clap::ArgAction::SetTrue)
-                .help("Instruct a running instance to open a new tab (or handle on first launch)"),
-        )
-        .allow_external_subcommands(true)
-        .get_matches();
+    let matches = parse_cli();
 
     if matches.get_flag("hello-world") {
         println!("hello world");
-        return;
-    }
+            return;
+        }
 
-    // For --open-new-tab we simply continue starting the app.
-    // The single-instance plugin will forward the args to the already-running instance
-    // and terminate this process. If this is the first instance, lib.rs setup will handle it.
-
-    cogno_lib::run()
+    cogno_lib::run(matches)
 }

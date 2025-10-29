@@ -1,4 +1,9 @@
+pub mod cli; // macht cogno_lib::cli::* sichtbar
+
+
 use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
+use clap::ArgMatches;
+use crate::cli::{parse_cli, parse_cli_from_argv};
 
 mod commands;
 use commands::crypto::decrypt;
@@ -10,7 +15,7 @@ use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
 use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub fn run(matches: ArgMatches) {
     Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_log::Builder::new().build())
@@ -19,10 +24,9 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            // Handle args from a second invocation here
-            if argv.iter().any(|a| a == "--open-new-tab") {
-                // Emit a global event that the frontend can react to
-                let _ = app.emit("cogno://open-new-tab", ());
+            let m = parse_cli_from_argv(argv);
+            if m.get_flag("open-new-tab") {
+                let _ = app.emit("open-new-tab", ());
             }
         }))
         .manage(PtyState::new())
@@ -40,7 +44,11 @@ pub fn run() {
                     get_exe_dir,
                     get_macos_app_bundle
                 ])
-        .setup(|app| {
+        .setup(move |app| {
+           if matches.get_flag("open-new-tab") {
+               app.emit("open-new-tab", ()).ok();
+           }
+
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                            .title("")
                            .inner_size(800.0, 600.0)
@@ -59,12 +67,6 @@ pub fn run() {
            #[cfg(debug_assertions)] // only include this code on debug builds
            {
               window.open_devtools();
-           }
-
-           // If this is the first instance and it was started with --open-new-tab,
-           // immediately emit the event so the UI can react.
-           if std::env::args().any(|a| a == "--open-new-tab") {
-               app.emit("cogno://open-new-tab", ()).ok();
            }
 
            Ok(())

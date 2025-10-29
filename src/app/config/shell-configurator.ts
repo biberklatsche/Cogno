@@ -78,7 +78,7 @@ export class ShellConfigurator {
           break;
         }
       }
-      
+
       // assign into next available position
       (config.shell as any)[pos] = { ...base, args };
       // increment position until 20

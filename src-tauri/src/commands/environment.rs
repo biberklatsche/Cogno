@@ -16,7 +16,6 @@ pub fn get_exe_dir() -> Result<String, String> {
 pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
     #[cfg(target_os = "macos")]
     {
-        use std::path::Path;
         let exe = std::env::current_exe().map_err(|e| e.to_string())?;
         // .../MyApp.app/Contents/MacOS/MyApp  ->  .../MyApp.app
         if let Some(mac_os) = exe.parent()
