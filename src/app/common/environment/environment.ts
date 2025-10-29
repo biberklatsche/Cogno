@@ -7,11 +7,13 @@ export const Environment = (() => {
     let homeDir = '';
     let configFilePath = '';
     let dbFilePath = '';
+    let exeDirPath = ''
 
     // --- interne Hilfsfunktionen ---
     async function determineCognoPaths() {
         const homeDirName = isDevMode() ? '.cogno-dev' : '.cogno';
         homeDir = await Path.join(await Path.homeDir(), homeDirName);
+        exeDirPath = await Path.exeDir();
         dbFilePath = await Path.join(homeDir, 'cogno.db');
         configFilePath = await Path.join(homeDir, 'cogno.config');
         Logger.info(`Loaded ${homeDir}`);
@@ -32,6 +34,11 @@ export const Environment = (() => {
         /** Gibt den vollständigen Pfad zur Datenbankdatei zurück */
         dbFilePath(): string {
             return dbFilePath;
+        },
+
+        /** Gibt den vollständigen Pfad zur eigenen Executable zurück */
+        exeDirPath(): string {
+            return exeDirPath;
         },
 
         /** Initialisiert das Environment (ermittelt alle Pfade) */

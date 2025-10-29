@@ -97,7 +97,9 @@ export class ConfigService {
                 path: gitbash.path,
                 args: [
                     "--login",
-                    "-i"
+                    "-i",
+                    "-lc",
+                    `export PATH='${this.windowsPathToMsys(Environment.exeDirPath())}':\"$PATH\"; exec bash -i`
                 ],
                 working_dir:"/~",
                 start_timeout: 100000,
@@ -148,5 +150,26 @@ export class ConfigService {
             }
             return;
         }
+    }
+
+    private windowsPathToMsys(p: string): string {
+        let s = p;
+
+        // Entferne Windows-Langpfad Präfix \\?\
+        if (s.startsWith("\\\\?\\")) {
+            s = s.slice(4);
+        }
+
+        // Backslashes -> Forward slashes
+        s = s.replace(/\\/g, "/");
+
+        // "C:/foo" -> "/c/foo"
+        if (s.length >= 2 && s[1] === ":") {
+            const drive = s[0].toLowerCase();
+            const rest = s.slice(2);        // ohne "C:"
+            return `/${drive}${rest}`;
+        }
+
+        return s;
     }
 }

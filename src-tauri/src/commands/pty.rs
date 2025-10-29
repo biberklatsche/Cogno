@@ -60,7 +60,7 @@ pub async fn pty_spawn(
 
     let mut cmd = CommandBuilder::new(&program);
     cmd.args(&args);
-    
+
     let _child = pair
         .slave
         .spawn_command(cmd)

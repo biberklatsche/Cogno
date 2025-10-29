@@ -7,6 +7,7 @@ use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
 use commands::shells::list_shells;
 use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
+use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,7 +35,10 @@ pub fn run() {
                     pty_spawn,
                     pty_write,
                     pty_resize,
-                    pty_kill
+                    pty_kill,
+                    get_exe_path,
+                    get_exe_dir,
+                    get_macos_app_bundle
                 ])
         .setup(|app| {
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
