@@ -49,14 +49,23 @@ export class ShellConfigurator {
       switch (sh.shell_type) {
         case 'GitBash': {
           args.push('--login', '-i', '-lc');
-          const msysPath = this.windowsPathToMsys(Environment.exeDirPath());
-          const exportCmd = `export PATH='${msysPath}':"$PATH"; exec bash -i`;
+          const exePath = this.windowsPathToMsys(Environment.exeDirPath());
+          const exportCmd = `export PATH='${exePath}':"$PATH"; exec bash -i`;
           args.push(exportCmd);
           break;
         }
-        case 'ZSH':
+        case 'ZSH':{
+            args.push('--login', '-i', '-lc');
+            const exePath = Environment.exeDirPath();
+            const exportCmd = `export PATH='${exePath}':"$PATH"; exec zsh -i`;
+            args.push(exportCmd);
+            break;
+        }
         case 'Bash': {
-          args.push('--login', '-i');
+            args.push('--login', '-i', '-lc');
+            const exePath = Environment.exeDirPath();
+            const exportCmd = `export PATH='${exePath}':"$PATH"; exec bash -i`;
+            args.push(exportCmd);
           break;
         }
         case 'Powershell': {
