@@ -10,11 +10,11 @@ const PaddingValueSchema = z.string().regex(
     'Padding must be a integer followed by a unit (px|rem|%|em|pt)');
 
 const PaddingSchema = z.object({
-    left: PaddingValueSchema,
-    right: PaddingValueSchema,
-    top: PaddingValueSchema,
-    bottom: PaddingValueSchema,
-    remove_on_full_screen_app: z.boolean(),
+    left: PaddingValueSchema.optional(),
+    right: PaddingValueSchema.optional(),
+    top: PaddingValueSchema.optional(),
+    bottom: PaddingValueSchema.optional(),
+    remove_on_full_screen_app: z.boolean().optional(),
 });
 
 export const FontWeightSchema = z.union([
@@ -35,50 +35,50 @@ export const FontWeightSchema = z.union([
 ]);
 
 export const FontSchema = z.object({
-    family: z.string(),
-    size: z.int().min(1, 'Font size must be at least 1').default(14),
-    enable_ligatures: z.boolean().default(false),
-    weight: FontWeightSchema.default('normal'),
-    weight_bold: FontWeightSchema.default('bold'),
+    family: z.string().optional(),
+    size: z.int().min(1, 'Font size must be at least 1').optional(),
+    enable_ligatures: z.boolean().optional(),
+    weight: FontWeightSchema.optional(),
+    weight_bold: FontWeightSchema.optional(),
 });
 
 export const ColorSchema = z.object({
-    foreground: HexColorSchema,
-    background: HexColorSchema,
-    highlight: HexColorSchema,
-    black: HexColorSchema,
-    red: HexColorSchema,
-    green: HexColorSchema,
-    yellow: HexColorSchema,
-    blue: HexColorSchema,
-    magenta: HexColorSchema,
-    cyan: HexColorSchema,
-    white: HexColorSchema,
-    bright_black: HexColorSchema,
-    bright_red: HexColorSchema,
-    bright_green: HexColorSchema,
-    bright_yellow: HexColorSchema,
-    bright_blue: HexColorSchema,
-    bright_magenta: HexColorSchema,
-    bright_cyan: HexColorSchema,
-    bright_white: HexColorSchema,
+    foreground: HexColorSchema.optional(),
+    background: HexColorSchema.optional(),
+    highlight: HexColorSchema.optional(),
+    black: HexColorSchema.optional(),
+    red: HexColorSchema.optional(),
+    green: HexColorSchema.optional(),
+    yellow: HexColorSchema.optional(),
+    blue: HexColorSchema.optional(),
+    magenta: HexColorSchema.optional(),
+    cyan: HexColorSchema.optional(),
+    white: HexColorSchema.optional(),
+    bright_black: HexColorSchema.optional(),
+    bright_red: HexColorSchema.optional(),
+    bright_green: HexColorSchema.optional(),
+    bright_yellow: HexColorSchema.optional(),
+    bright_blue: HexColorSchema.optional(),
+    bright_magenta: HexColorSchema.optional(),
+    bright_cyan: HexColorSchema.optional(),
+    bright_white: HexColorSchema.optional(),
 });
 
 export const CursorSchema = z.object({
-    width: z.int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10'),
-    blink: z.boolean(),
+    width: z.int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10').optional(),
+    blink: z.boolean().optional(),
     style: z
         .enum(['bar', 'underline'])
         .refine((val) => ['bar', 'underscore'].includes(val), {
             message: 'Cursor style must be either "bar" or "underscore"',
-        }),
-    color: HexColorSchema,
+        }).optional(),
+    color: HexColorSchema.optional(),
 })
 
 export const ImageSchema = z.object({
-    path: z.string(),
-    opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100'),
-    blur: z.int().min(0, 'Blur must be at least 0').max(10, 'Blur must be at most 10'),
+    path: z.string().optional(),
+    opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
+    blur: z.int().min(0, 'Blur must be at least 0').max(10, 'Blur must be at most 10').optional(),
 });
 
 const KeybindSchema = z.string().regex(
@@ -91,9 +91,9 @@ const KeybindsSchema = z.array(KeybindSchema);
 const ShellTypeEnum = z.enum(["Powershell", "ZSH", "Bash", "GitBash"]);
 
 const ShellSchema = z.object({
-    shell_type: ShellTypeEnum,
-    path: z.string(),
-    args: z.array(z.string()).default([]),
+    shell_type: ShellTypeEnum.optional(),
+    path: z.string().optional(),
+    args: z.array(z.string()).default([]).optional(),
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
@@ -122,23 +122,19 @@ const ShellListSchema = z.object({
     20: ShellSchema.optional()
 });
 
-/**
- * Single Source of Truth: Alle Defaults leben im Schema.
- * Zod füllt fehlende Werte automatisch über .default(...) auf.
- */
 export const ConfigSchema = z.object({
-    keybind: KeybindsSchema,
+    keybind: KeybindsSchema.optional(),
     scrollback_lines: z
     .number()
     .int()
     .min(100, "Scrollback lines must be at least 100")
-    .max(1_000_000, "Scrollback lines must not exceed 1,000,000"),
-    enable_webgl: z.boolean(),
-    font: FontSchema,
-    color: ColorSchema,
-    cursor: CursorSchema,
-    padding: PaddingSchema,
-    background_image: ImageSchema,
+    .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
+    enable_webgl: z.boolean().optional(),
+    font: FontSchema.optional(),
+    color: ColorSchema.optional(),
+    cursor: CursorSchema.optional(),
+    padding: PaddingSchema.optional(),
+    background_image: ImageSchema.optional(),
     shell: ShellListSchema.optional(),
 
 

@@ -46,14 +46,16 @@ export class ConfigService {
 
     private async loadConfig() {
         const path = Environment.configFilePath();
+        const defaultConfigString = await DefaultConfig.read();
+
         if(!await Fs.exists(path)) {
-            const config = ConfigReader.fromStringToConfig("");
-            const defaultConfig = ConfigReader.fromStringToConfig(await DefaultConfig.read());
-            await this.shells.apply(config);
-            await Fs.writeTextFile(path, ConfigWriter.diffToString(defaultConfig, config));
+            const userConfig: Config = {shell: {}};
+            await this.shells.apply(userConfig);
+            const defaultConfigParsed = ConfigReader.fromStringToConfig(defaultConfigString, "");
+            await Fs.writeTextFile(path, ConfigWriter.diffToString(defaultConfigParsed, userConfig));
         }
-        const configAsString = await Fs.readTextFile(path);
-        const config = ConfigReader.fromStringToConfig(configAsString);
+        const userConfigString = await Fs.readTextFile(path);
+        const config = ConfigReader.fromStringToConfig(defaultConfigString, userConfigString);
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
         Logger.info('Config loaded...');
