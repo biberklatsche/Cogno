@@ -42,7 +42,7 @@ export const FontSchema = z.object({
     weight_bold: FontWeightSchema.default('bold'),
 });
 
-export const ColorsSchema = z.object({
+export const ColorSchema = z.object({
     foreground: HexColorSchema,
     background: HexColorSchema,
     highlight: HexColorSchema,
@@ -127,10 +127,7 @@ const ShellListSchema = z.object({
  * Zod füllt fehlende Werte automatisch über .default(...) auf.
  */
 export const ConfigSchema = z.object({
-    keybind: z.preprocess(
-        (v) => (v == null ? pickDefaultKeybinds(OS.platform()) : v),
-        KeybindsSchema
-    ),
+    keybind: KeybindsSchema,
     scrollback_lines: z
     .number()
     .int()
@@ -138,7 +135,7 @@ export const ConfigSchema = z.object({
     .max(1_000_000, "Scrollback lines must not exceed 1,000,000"),
     enable_webgl: z.boolean(),
     font: FontSchema,
-    color: ColorsSchema,
+    color: ColorSchema,
     cursor: CursorSchema,
     padding: PaddingSchema,
     background_image: ImageSchema,
@@ -149,11 +146,10 @@ export const ConfigSchema = z.object({
 }).strict();
 
 export type Config = z.infer<typeof ConfigSchema>;
-export type Theme = z.infer<typeof ThemeSchema>;
+export type Font = z.infer<typeof FontSchema>;
+export type Color = z.infer<typeof ColorSchema>;
+export type Cursor = z.infer<typeof CursorSchema>;
+export type Padding = z.infer<typeof PaddingSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
-export type RemoteInjectionType = z.infer<typeof RemoteInjectionTypeEnum>;
-
-/** Bequemer Zugriff auf die reinen Defaults (abgeleitet aus dem Schema). */
-export const DEFAULT_CONFIG: Config = ConfigSchema.parse({});

@@ -23,8 +23,8 @@ export class TerminalSession {
     private disposed: boolean = false;
 
     constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
-        this.subscription.add(configService.activeTheme$.pipe(filter(t => !!t), first()).subscribe(theme => {
-            if (theme.enable_webgl) {
+        this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
+            if (config.enable_webgl) {
                 this.renderer.useWebGl();
             } else {
                 this.renderer.useCanvas();

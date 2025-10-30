@@ -1,4 +1,4 @@
-import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
  * Reader-Klasse für das Einlesen/Validieren der Konfiguration.
@@ -8,25 +8,26 @@ import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
  */
 export class ConfigReader {
   /** Parst einen Konfigurationsstring und gibt eine validierte Config zurück. */
-  static fromStringToConfig(input: string): Config {
-      const partial = this.parseUserString(input);
-      return this.toConfig(partial);
+  static fromStringToConfig(defaultConfigString :string, userConfigString: string): Config {
+      const userConfig = this.parseUserString(userConfigString);
+      const defaultConfig = this.parseUserString(defaultConfigString);
+      return this.toConfig(defaultConfig, userConfig);
   }
 
     /** Führt die User-Overrides mit den Zod-Defaults zusammen und validiert. */
-    private static toConfig(userOverrides: Record<string, unknown>): Config {
+    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): Config {
         // Special case: keybind array should be concatenated with defaults (defaults first, then user values)
         // All other arrays replace defaults completely
-        if(userOverrides['keybind'] && !Array.isArray(userOverrides['keybind'])){
-            userOverrides['keybind'] = [userOverrides['keybind']];
+        if(userConfig['keybind'] && !Array.isArray(userConfig['keybind'])){
+            userConfig['keybind'] = [userConfig['keybind']];
         }
-        if (userOverrides['keybind'] && Array.isArray(userOverrides['keybind'])) {
-            const defaultKeybinds = DEFAULT_CONFIG.keybind;
-            const userKeybinds = userOverrides['keybind'];
-            userOverrides['keybind'] = [...defaultKeybinds, ...userKeybinds];
+        if (userConfig['keybind'] && Array.isArray(userConfig['keybind'])) {
+            const defaultKeybinds = defaultConfig.keybind;
+            const userKeybinds = userConfig['keybind'];
+            userConfig['keybind'] = [...defaultKeybinds, ...userKeybinds];
         }
         // Trick: Zod-Defaults füllen alles auf; wir brauchen kein deep-merge.
-        return ConfigSchema.parse(userOverrides);
+        return ConfigSchema.parse(userConfig);
     }
 
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */

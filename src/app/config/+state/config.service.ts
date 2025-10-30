@@ -1,14 +1,15 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {BehaviorSubject, debounceTime, filter, map, Observable} from 'rxjs';
-import {Config, Theme} from "../+models/config";
+import {BehaviorSubject, debounceTime, filter, Observable} from 'rxjs';
+import {Config} from "../+models/config";
 import {ConfigReader} from "./config.reader";
 import {ConfigWriter} from "./config.writer";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ShellConfigurator} from "../shell-configurator";
+import {DefaultConfig} from "../../_tauri/default-config";
 
 @Injectable({
     providedIn: 'root'
@@ -23,12 +24,6 @@ export class ConfigService {
 
     get config$(): Observable<Config> {
         return this._config.pipe(filter(s => !!s));
-    }
-
-    get activeTheme$(): Observable<Theme & { scrollbackLines: number }> {
-        return this.config$.pipe(map(s => {
-            return {...s.theme.default, scrollbackLines: s.general.scrollback_lines};
-        }));
     }
 
     constructor(private appBus: AppBus, private destroy: DestroyRef, private shells: ShellConfigurator) {
@@ -52,17 +47,15 @@ export class ConfigService {
     private async loadConfig() {
         const path = Environment.configFilePath();
         if(!await Fs.exists(path)) {
-            await Fs.writeTextFile(path, ConfigWriter.defaultSettingsAsComment());
-            const configAsString = await Fs.readTextFile(path);
-            const config = ConfigReader.fromStringToConfig(configAsString);
+            const config = ConfigReader.fromStringToConfig("");
+            const defaultConfig = ConfigReader.fromStringToConfig(await DefaultConfig.read());
             await this.shells.apply(config);
-            await Fs.appendTextFile(path, ConfigWriter.diffToString(config));
+            await Fs.writeTextFile(path, ConfigWriter.diffToString(defaultConfig, config));
         }
         const configAsString = await Fs.readTextFile(path);
         const config = ConfigReader.fromStringToConfig(configAsString);
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
-        this.appBus.publish({type: 'ThemeChanged', path: ['app', 'settings']});
         Logger.info('Config loaded...');
     }
 

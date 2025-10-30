@@ -1,17 +1,13 @@
-import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
  * Writer-Klasse für das Generieren von Konfigurationsdatei-Inhalten.
  */
 export class ConfigWriter {
-    /** Gibt die Default-Config als kommentierten dot-properties-Text (#) zurück. */
-    static defaultSettingsAsComment(): string {
-        return this.toDotString(DEFAULT_CONFIG, true);
-    }
 
     /** Erstellt die Differenz (gegen Defaults) als dot-properties-Text ohne Kommentare. */
-    static diffToString(config: Config): string {
-        const diff = this.diffObjects(DEFAULT_CONFIG, config);
+    static diffToString(defaultConfig: Config, config: Config): string {
+        const diff = this.diffObjects(defaultConfig, config);
         return this.toDotString(diff, false);
     }
 
