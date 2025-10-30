@@ -1,9 +1,9 @@
 pub mod cli; // macht cogno_lib::cli::* sichtbar
-
+pub mod settings;
 
 use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
 use clap::ArgMatches;
-use crate::cli::{parse_cli, parse_cli_from_argv};
+use crate::cli::parse_cli_from_argv;
 
 mod commands;
 use commands::crypto::decrypt;

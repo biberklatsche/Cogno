@@ -34,7 +34,8 @@
       "icons/icon.icns"
     ],
     "resources": [
-      "../src/assets/**/*"
+      "../src/assets/**/*",
+      "src/settings_default.config"
     ]
   }
 }
