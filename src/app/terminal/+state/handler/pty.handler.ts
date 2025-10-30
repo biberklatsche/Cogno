@@ -37,7 +37,7 @@ export class PtyHandler implements ITerminalHandler {
     }
 
     private spawnPty(terminalId: TerminalId) {
-        const shellConfig = this._configService.config.shell[1]!;
+        const shellConfig = this._configService.config.shell![1]!;
         return this._pty.spawn(terminalId, shellConfig);
     }
 
