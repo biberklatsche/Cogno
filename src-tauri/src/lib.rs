@@ -23,10 +23,17 @@ pub fn run(matches: ArgMatches) {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            let m = parse_cli_from_argv(argv);
-            if m.get_flag("open-new-tab") {
-                let _ = app.emit("open-new-tab", ());
-            }
+            let cli = Cli::try_parse_from(args);
+            if let Some(cmd) = cli.command {
+                    match cmd {
+                        CommandType::OpenTab => {
+                            println!("Opening tab...");
+                            let _ = app.emit("open-new-tab", ());
+                            // Code ausführen
+                        }
+                    }
+                    return;
+                }
         }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
