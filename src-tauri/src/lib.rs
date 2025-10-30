@@ -1,5 +1,5 @@
 pub mod cli; // macht cogno_lib::cli::* sichtbar
-pub mod settings;
+pub mod config;
 
 use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
 use clap::ArgMatches;

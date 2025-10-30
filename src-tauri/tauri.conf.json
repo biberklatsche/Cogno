@@ -35,7 +35,9 @@
     ],
     "resources": [
       "../src/assets/**/*",
-      "src/settings_default.config"
+      "src/default_windows.config",
+      "src/default_linux.config",
+      "src/default_macos.config"
     ]
   }
 }
