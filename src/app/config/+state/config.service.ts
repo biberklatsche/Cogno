@@ -4,12 +4,12 @@ import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, debounceTime, filter, Observable} from 'rxjs';
 import {Config} from "../+models/config";
 import {ConfigReader} from "./config.reader";
-import {ConfigWriter} from "./config.writer";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ShellConfigurator} from "../shell-configurator";
 import {DefaultConfig} from "../../_tauri/default-config";
+import {ConfigWriter} from "./config.writer";
 
 @Injectable({
     providedIn: 'root'
@@ -51,8 +51,7 @@ export class ConfigService {
         if(!await Fs.exists(path)) {
             const userConfig: Config = {shell: {}};
             await this.shells.apply(userConfig);
-            const defaultConfigParsed = ConfigReader.fromStringToConfig(defaultConfigString, "");
-            await Fs.writeTextFile(path, ConfigWriter.diffToString(defaultConfigParsed, userConfig));
+            await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }
         const userConfigString = await Fs.readTextFile(path);
         const config = ConfigReader.fromStringToConfig(defaultConfigString, userConfigString);

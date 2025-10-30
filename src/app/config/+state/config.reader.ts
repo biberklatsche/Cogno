@@ -63,7 +63,8 @@ export class ConfigReader {
         return typeof v === "object" && v !== null && !Array.isArray(v);
     }
 
-    private static clone<T>(v: T): T {
+    private static clone<T>(v: T): T | undefined {
+        if(v === undefined) return undefined
         return JSON.parse(JSON.stringify(v));
     }
 
@@ -130,7 +131,8 @@ export class ConfigReader {
         return out;
     }
 
-    private static parseValue(rawVal: string): boolean | number | string {
+    private static parseValue(rawVal: string): boolean | number | string | undefined {
+        if(rawVal.length === 0) return undefined;
         // Quoted strings: unwrap first (so "false" stays a string, not boolean)
         const isDq = rawVal.length >= 2 && rawVal.startsWith('"') && rawVal.endsWith('"');
         const isSq = rawVal.length >= 2 && rawVal.startsWith("'") && rawVal.endsWith("'");

@@ -93,7 +93,7 @@ const ShellTypeEnum = z.enum(["Powershell", "ZSH", "Bash", "GitBash"]);
 const ShellSchema = z.object({
     shell_type: ShellTypeEnum.optional(),
     path: z.string().optional(),
-    args: z.array(z.string()).default([]).optional(),
+    args: z.array(z.string()).optional(),
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
