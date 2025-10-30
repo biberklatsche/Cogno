@@ -5,7 +5,7 @@ import {Config, ConfigSchema} from "../+models/config";
  */
 export class ConfigWriter {
 
-    public static toDotString(settings: Config, asComments: boolean = true): string {
+    public static toDotString(settings: Config, asComments: boolean = false): string {
         const lines = this.toDotProperties(settings, "", ConfigSchema, asComments);
         return lines.join("\n") + (lines.length ? "\n" : "");
     }
@@ -52,18 +52,18 @@ export class ConfigWriter {
                 if (key === 'keybind') {
                     // Keybinds werden mehrzeilig ausgegeben
                     for (const item of v) {
-                        lines.push(`${commentPrefix}${key}=${this.renderValue(item)}`);
+                        lines.push(`${commentPrefix}${key} = ${this.renderValue(item)}`);
                     }
                 } else {
                     // Andere Arrays als kommagetrennte Liste
                     const items = v.map(item => this.renderValue(item));
-                    lines.push(`${commentPrefix}${key}=[${items.join(',')}]`);
+                    lines.push(`${commentPrefix}${key} = [${items.join(',')}]`);
                 }
             } else {
                 if (asComment) {
                     this.addSchemaDescription(lines, childSchema);
                 }
-                lines.push(`${commentPrefix}${key}=${this.renderValue(v)}`);
+                lines.push(`${commentPrefix}${key} = ${this.renderValue(v)}`);
             }
         }
         return lines;

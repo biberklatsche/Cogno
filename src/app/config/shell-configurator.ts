@@ -29,17 +29,10 @@ export class ShellConfigurator {
 
     for (const sh of sorted) {
       const base: ShellConfig = {
-        name: sh.name || sh.shell_type,
         shell_type: sh.shell_type as ShellType,
-        prompt_version: 'version1',
         path: sh.path,
         args: [],
         working_dir: '/~',
-        start_timeout: 100000,
-        prompt_terminator: '🖕',
-        uses_final_space_prompt_terminator: true,
-        injection_type: 'manual',
-        is_debug_mode_enabled: false,
       } as any;
 
       const args: string[] = [];

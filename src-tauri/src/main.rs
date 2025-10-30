@@ -6,16 +6,23 @@ use std::fs;
 fn main() {
     let matches = parse_cli();
 
-    // +show-config flag: output config
-    if matches.get_flag("+show-config") {
-        // If --default is also set, output default config
-        if matches.get_flag("default") {
+    // `--hello-world`: print and exit early
+    if matches.get_flag("hello-world") {
+        println!("hello world");
+        return;
+    }
+
+    // Support `cogno +show-config` and `cogno +show-config --default` via either flag or external subcommand
+    let show_config = matches.get_flag("show-config");
+    let default_cfg = matches.get_flag("default");
+
+    if show_config {
+        if default_cfg {
             match read_default_config() {
                 Ok(content) => println!("{}", content),
                 Err(e) => eprintln!("Error reading default config: {}", e),
             }
         } else {
-            // Otherwise output user config from cogno config file
             let dev_mode = cfg!(debug_assertions);
             match get_cogno_config_file_path(dev_mode) {
                 Ok(config_path) => {

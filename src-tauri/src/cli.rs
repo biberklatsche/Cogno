@@ -16,6 +16,12 @@ pub fn build_cli() -> Command {
                 .help("Instruct a running instance to open a new tab (or handle on first launch)"),
         )
         .arg(
+            Arg::new("show-config")
+                .long("show-config")
+                .action(ArgAction::SetTrue)
+                .help("Prints the user config; combine with --default to print the built-in defaults"),
+        )
+        .arg(
             Arg::new("default")
                 .long("default")
                 .action(ArgAction::SetTrue)
