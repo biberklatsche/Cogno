@@ -2,8 +2,8 @@ pub mod cli; // macht cogno_lib::cli::* sichtbar
 pub mod commands;
 
 use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
-use clap::ArgMatches;
-use crate::cli::parse_cli_from_argv;
+use crate::cli::{Cli, CommandType};
+use clap::Parser;
 use commands::config::get_default_config;
 use commands::crypto::decrypt;
 use commands::crypto::encrypt;
@@ -14,7 +14,7 @@ use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
 use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle, get_cogno_home_dir, get_cogno_config_file_path, get_cogno_db_file_path};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run(matches: ArgMatches) {
+pub fn run(cli: Cli) {
     Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_log::Builder::new().build())
@@ -23,17 +23,17 @@ pub fn run(matches: ArgMatches) {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            let cli = Cli::try_parse_from(args);
-            if let Some(cmd) = cli.command {
+            // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
+            if let Ok(cli) = Cli::try_parse_from(argv) {
+                if let Some(cmd) = cli.command {
                     match cmd {
                         CommandType::OpenTab => {
-                            println!("Opening tab...");
+                            // Öffne neuen Tab im bereits laufenden Fenster
                             let _ = app.emit("open-new-tab", ());
-                            // Code ausführen
                         }
                     }
-                    return;
                 }
+            }
         }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
@@ -55,8 +55,13 @@ pub fn run(matches: ArgMatches) {
                     get_cogno_db_file_path
                 ])
         .setup(move |app| {
-           if matches.get_flag("open-new-tab") {
-               app.emit("open-new-tab", ()).ok();
+           // Beim ersten Start: ggf. gewünschten Command ausführen
+           if let Some(cmd) = cli.command.clone() {
+               match cmd {
+                   CommandType::OpenTab => {
+                       app.emit("open-new-tab", ()).ok();
+                   }
+               }
            }
 
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
