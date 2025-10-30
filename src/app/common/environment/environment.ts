@@ -11,11 +11,11 @@ export const Environment = (() => {
 
     // --- interne Hilfsfunktionen ---
     async function determineCognoPaths() {
-        const homeDirName = isDevMode() ? '.cogno-dev' : '.cogno';
-        homeDir = await Path.join(await Path.homeDir(), homeDirName);
+        const devMode = isDevMode();
+        homeDir = await Path.cognoHomeDir(devMode);
         exeDirPath = await Path.exeDir();
-        dbFilePath = await Path.join(homeDir, 'cogno.db');
-        configFilePath = await Path.join(homeDir, 'cogno.config');
+        dbFilePath = await Path.cognoDbFilePath(devMode);
+        configFilePath = await Path.cognoConfigFilePath(devMode);
         Logger.info(`Loaded ${homeDir}`);
     }
 

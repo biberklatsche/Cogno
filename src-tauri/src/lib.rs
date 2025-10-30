@@ -11,7 +11,7 @@ use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
 use commands::shells::list_shells;
 use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
-use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle};
+use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle, get_cogno_home_dir, get_cogno_config_file_path, get_cogno_db_file_path};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(matches: ArgMatches) {
@@ -42,7 +42,10 @@ pub fn run(matches: ArgMatches) {
                     pty_kill,
                     get_exe_path,
                     get_exe_dir,
-                    get_macos_app_bundle
+                    get_macos_app_bundle,
+                    get_cogno_home_dir,
+                    get_cogno_config_file_path,
+                    get_cogno_db_file_path
                 ])
         .setup(move |app| {
            if matches.get_flag("open-new-tab") {

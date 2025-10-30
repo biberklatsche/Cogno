@@ -11,6 +11,7 @@ dependencies = [
  "block-padding",
  "cipher",
  "clap",
+ "dirs",
  "font-kit",
  "hex",
  "portable-pty",
