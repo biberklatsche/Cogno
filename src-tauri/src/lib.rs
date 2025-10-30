@@ -1,11 +1,10 @@
 pub mod cli; // macht cogno_lib::cli::* sichtbar
-pub mod config;
+pub mod commands;
 
 use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
 use clap::ArgMatches;
 use crate::cli::parse_cli_from_argv;
-
-mod commands;
+use commands::config::get_default_config;
 use commands::crypto::decrypt;
 use commands::crypto::encrypt;
 use commands::fonts::list_fonts;
@@ -31,6 +30,7 @@ pub fn run(matches: ArgMatches) {
         }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
+                    get_default_config,
                     list_fonts,
                     list_shells,
                     get_keyboard_layout,

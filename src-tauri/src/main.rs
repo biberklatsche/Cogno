@@ -1,5 +1,5 @@
 use cogno_lib::cli::parse_cli;
-use cogno_lib::config::read_default_config;
+use cogno_lib::commands::config::read_default_config;
 
 fn main() {
     let matches = parse_cli();
