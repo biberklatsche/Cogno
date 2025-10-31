@@ -26,12 +26,9 @@ pub fn run(cli: Cli) {
             // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(cmd) = cli.command {
-                    match cmd {
-                        CommandType::OpenTab => {
-                            // Öffne neuen Tab im bereits laufenden Fenster
-                            let _ = app.emit("open-new-tab", ());
-                        }
-                    }
+                    // Reiche den Command direkt an den Renderer weiter
+                    eprintln!("command {:?}", cmd);
+                    let _ = app.emit("cli-command", &cmd);
                 }
             }
         }))
@@ -57,11 +54,8 @@ pub fn run(cli: Cli) {
         .setup(move |app| {
            // Beim ersten Start: ggf. gewünschten Command ausführen
            if let Some(cmd) = cli.command.clone() {
-               match cmd {
-                   CommandType::OpenTab => {
-                       app.emit("open-new-tab", ()).ok();
-                   }
-               }
+               // Reiche den Command direkt an den Renderer weiter
+               app.emit("cli-command", &cmd).ok();
            }
 
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())

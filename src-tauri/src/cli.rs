@@ -1,8 +1,12 @@
 use clap::{Parser, ValueEnum};
+use serde::{Deserialize, Serialize};
 
-#[derive(ValueEnum, Debug, Clone)]
+#[derive(Debug, Clone, ValueEnum, Serialize, Deserialize)]
+#[value(rename_all = "snake_case")] // CLI: --command open_new-tab
+#[serde(rename_all = "snake_case")] // Event/JSON: "open-new-tab"
 pub enum CommandType {
-    OpenTab,
+    OpenNewTab,
+    CloseActiveTab,
     // später erweiterbar
 }
 
