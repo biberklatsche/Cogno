@@ -31,6 +31,7 @@ export class TabListService {
             tab.title = event.payload.title;
             this._tabList.next(tabList);
         });
+        this.bus.onType$('ActionFiredEvent')
     }
 
     addTab(tab: Tab) {
