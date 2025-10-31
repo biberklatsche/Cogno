@@ -10,6 +10,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ShellConfigurator} from "../shell-configurator";
 import {DefaultConfig} from "../../_tauri/default-config";
 import {ConfigWriter} from "./config.writer";
+import {registerActionListener} from "../../_tauri/action-listener";
 
 @Injectable({
     providedIn: 'root'
@@ -27,11 +28,14 @@ export class ConfigService {
     }
 
     constructor(private appBus: AppBus, private destroy: DestroyRef, private shells: ShellConfigurator) {
+        registerActionListener();
         appBus.onType$('LoadConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
             await this.loadConfig();
         });
         appBus.onceType$('WatchConfigCommand').subscribe(() => {
-            setTimeout(async () => await this.watch(), 1000);
+            setTimeout(async () => {
+                await this.watch();
+                }, 1000);
         });
     }
 
