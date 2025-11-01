@@ -1,11 +1,19 @@
-import { Injectable } from '@angular/core';
-import {TauriCommandListener} from "../_tauri/command";
+import {DestroyRef, Injectable} from '@angular/core';
+import {CommandType, TauriCommandListener} from "../_tauri/command";
+import {ActionBase, AppBus} from "../app-bus/app-bus";
+
+export type CommandFiredEvent = ActionBase<"CommandFired", CommandType>
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class CommandService {
-  constructor() {
-      TauriCommandListener.register()
+  constructor(bus: AppBus, ref: DestroyRef) {
+      TauriCommandListener.register(command => {
+        bus.publish({type: 'CommandFired', payload: command});
+      }).then(unlisten => {
+          ref.onDestroy(() => unlisten())
+      });
   }
 }

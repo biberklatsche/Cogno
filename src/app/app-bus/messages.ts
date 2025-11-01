@@ -7,6 +7,7 @@ import {FocusTerminalAction} from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
 import {TerminalThemeChangedEvent} from "../terminal/+state/handler/theme.handler";
+import {CommandFiredEvent} from "../command/command.service";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -20,4 +21,5 @@ export type AppMessage =
     | PtyInitializedEvent
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
-    | FocusTerminalAction;
+    | FocusTerminalAction
+    | CommandFiredEvent;
