@@ -1,40 +1,11 @@
-import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
  * Writer-Klasse für das Generieren von Konfigurationsdatei-Inhalten.
  */
 export class ConfigWriter {
-    /** Gibt die Default-Config als kommentierten dot-properties-Text (#) zurück. */
-    static defaultSettingsAsComment(): string {
-        return this.toDotString(DEFAULT_CONFIG, true);
-    }
 
-    /** Erstellt die Differenz (gegen Defaults) als dot-properties-Text ohne Kommentare. */
-    static diffToString(config: Config): string {
-        const diff = this.diffObjects(DEFAULT_CONFIG, config);
-        return this.toDotString(diff, false);
-    }
-
-    /** Berechnet rekursiv nur die Keys, deren Werte sich vom Default unterscheiden. */
-    private static diffObjects(defs: any, cur: any): any {
-        const out: any = {};
-        for (const key of Object.keys(cur)) {
-            const d = (defs ?? {})[key];
-            const a = cur[key];
-
-            if (this.isPlainObject(d) && this.isPlainObject(a)) {
-                const child = this.diffObjects(d, a);
-                if (Object.keys(child).length) out[key] = child;
-            } else if (Array.isArray(d) && Array.isArray(a)) {
-                if (JSON.stringify(d) !== JSON.stringify(a)) out[key] = a;
-            } else if (d !== a) {
-                out[key] = a;
-            }
-        }
-        return out;
-    }
-
-    private static toDotString(settings: Config, asComments: boolean = true): string {
+    public static toDotString(settings: Config, asComments: boolean = false): string {
         const lines = this.toDotProperties(settings, "", ConfigSchema, asComments);
         return lines.join("\n") + (lines.length ? "\n" : "");
     }
@@ -81,18 +52,18 @@ export class ConfigWriter {
                 if (key === 'keybind') {
                     // Keybinds werden mehrzeilig ausgegeben
                     for (const item of v) {
-                        lines.push(`${commentPrefix}${key}=${this.renderValue(item)}`);
+                        lines.push(`${commentPrefix}${key} = ${this.renderValue(item)}`);
                     }
                 } else {
                     // Andere Arrays als kommagetrennte Liste
                     const items = v.map(item => this.renderValue(item));
-                    lines.push(`${commentPrefix}${key}=[${items.join(',')}]`);
+                    lines.push(`${commentPrefix}${key} = [${items.join(',')}]`);
                 }
             } else {
                 if (asComment) {
                     this.addSchemaDescription(lines, childSchema);
                 }
-                lines.push(`${commentPrefix}${key}=${this.renderValue(v)}`);
+                lines.push(`${commentPrefix}${key} = ${this.renderValue(v)}`);
             }
         }
         return lines;

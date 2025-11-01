@@ -6,6 +6,9 @@ import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
+import {filter} from "rxjs/operators";
+import {IdCreator} from "../../common/id-creator/id-creator";
+import {SelectTabCommand} from "../+bus/actions";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -20,9 +23,11 @@ export class TabListService {
         this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
             this._tabList.next([]);
             for (const [index, grid] of event.payload!.grids.entries()) {
-                const isActiveTab = index === 0;
-                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: isActiveTab});
+                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: false});
             }
+        });
+        this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabCommand) => {
+            this.selectTab(event.payload!);
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
             const tabList = [...this._tabList.value];
@@ -31,17 +36,28 @@ export class TabListService {
             tab.title = event.payload.title;
             this._tabList.next(tabList);
         });
+        this.bus.onType$('CommandFired')
+            .subscribe(event => {
+                switch (event.payload) {
+                    case 'open_new_tab':
+                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
+                        break;
+                }
+            });
     }
 
     addTab(tab: Tab) {
         const tabList = [...this._tabList.value];
         if(tabList.some(s => s.id === tab?.id)) return;
-        for(const tab of tabList){
-            tab.isActive = false;
+        if(tab.isActive){
+            for(const other of tabList){
+                other.isActive = false;
+            }
         }
+
         tabList.push(tab);
         this._tabList.next(tabList);
-        this.bus.publish({type: 'TabAddedEvent', payload: {tabId: tab.id}});
+        this.bus.publish({type: 'TabAddedEvent', payload: {tabId: tab.id, isActive: tab.isActive}});
     }
 
     removeTab(tabId: TabId) {

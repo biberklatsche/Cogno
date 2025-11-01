@@ -1,14 +1,15 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {BehaviorSubject, debounceTime, filter, map, Observable} from 'rxjs';
-import {Config, Theme} from "../+models/config";
+import {BehaviorSubject, debounceTime, filter, Observable} from 'rxjs';
+import {Config} from "../+models/config";
 import {ConfigReader} from "./config.reader";
-import {ConfigWriter} from "./config.writer";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {Shells} from "../../_tauri/shells";
+import {ShellConfigurator} from "../shell-configurator";
+import {DefaultConfig} from "../../_tauri/default-config";
+import {ConfigWriter} from "./config.writer";
 
 @Injectable({
     providedIn: 'root'
@@ -25,18 +26,14 @@ export class ConfigService {
         return this._config.pipe(filter(s => !!s));
     }
 
-    get activeTheme$(): Observable<Theme & { scrollbackLines: number }> {
-        return this.config$.pipe(map(s => {
-            return {...s.theme.default, scrollbackLines: s.general.scrollback_lines};
-        }));
-    }
-
-    constructor(private appBus: AppBus, private destroy: DestroyRef) {
+    constructor(private appBus: AppBus, private destroy: DestroyRef, private shells: ShellConfigurator) {
         appBus.onType$('LoadConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
             await this.loadConfig();
         });
         appBus.onceType$('WatchConfigCommand').subscribe(() => {
-            setTimeout(async () => await this.watch(), 1000);
+            setTimeout(async () => {
+                await this.watch();
+                }, 1000);
         });
     }
 
@@ -51,102 +48,19 @@ export class ConfigService {
 
     private async loadConfig() {
         const path = Environment.configFilePath();
+        const defaultConfigString = await DefaultConfig.read();
+
         if(!await Fs.exists(path)) {
-            await Fs.writeTextFile(path, ConfigWriter.defaultSettingsAsComment());
-            const configAsString = await Fs.readTextFile(path);
-            const config = ConfigReader.fromStringToConfig(configAsString);
-            await this.setShells(config);
-            await Fs.appendTextFile(path, ConfigWriter.diffToString(config));
+            const userConfig: Config = {shell: {}};
+            await this.shells.apply(userConfig);
+            await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }
-        const configAsString = await Fs.readTextFile(path);
-        const config = ConfigReader.fromStringToConfig(configAsString);
+        const userConfigString = await Fs.readTextFile(path);
+        const config = ConfigReader.fromStringToConfig(defaultConfigString, userConfigString);
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
-        this.appBus.publish({type: 'ThemeChanged', path: ['app', 'settings']});
         Logger.info('Config loaded...');
     }
 
-    private async setShells(config: Config) {
-        const shells = await Shells.load();
-        const zsh = shells.find(s => s.shell_type === 'ZSH');
-        if(zsh) {
-            config.shell[1] = {
-                    name: "ZSH",
-                    shell_type: zsh.shell_type,
-                    prompt_version: "version1",
-                    path: zsh.path,
-                    args: [
-                        "--login",
-                        "-i"
-                    ],
-                    working_dir:"/~",
-                    start_timeout: 100000,
-                    prompt_terminator: "🖕",
-                    uses_final_space_prompt_terminator: true,
-                    injection_type: "manual",
-                    is_debug_mode_enabled: false
-            }
-            return;
-        }
-        const gitbash = shells.find(s => s.shell_type === 'GitBash');
-        if(gitbash) {
-            config.shell[1] = {
-                name: "GitBash",
-                shell_type: gitbash.shell_type,
-                prompt_version: "version1",
-                path: gitbash.path,
-                args: [
-                    "--login",
-                    "-i"
-                ],
-                working_dir:"/~",
-                start_timeout: 100000,
-                prompt_terminator: "🖕",
-                uses_final_space_prompt_terminator: true,
-                injection_type: "manual",
-                is_debug_mode_enabled: false
-            }
-            return;
-        }
-        const powershell = shells.find(s => s.shell_type === 'Powershell');
-        if(powershell) {
-            config.shell[1] = {
-                name: "Powershell",
-                shell_type: powershell.shell_type,
-                prompt_version: "version1",
-                path: powershell.path,
-                args: [
-                    "--login",
-                    "-i"
-                ],
-                working_dir:"/~",
-                start_timeout: 100000,
-                prompt_terminator: "🖕",
-                uses_final_space_prompt_terminator: true,
-                injection_type: "manual",
-                is_debug_mode_enabled: false
-            }
-            return;
-        }
-        const bash = shells.find(s => s.shell_type === 'Bash');
-        if(bash) {
-            config.shell[1] = {
-                name: "Bash",
-                shell_type: bash.shell_type,
-                prompt_version: "version1",
-                path: bash.path,
-                args: [
-                    "--login",
-                    "-i"
-                ],
-                working_dir:"/~",
-                start_timeout: 100000,
-                prompt_terminator: "🖕",
-                uses_final_space_prompt_terminator: true,
-                injection_type: "manual",
-                is_debug_mode_enabled: false
-            }
-            return;
-        }
-    }
+
 }

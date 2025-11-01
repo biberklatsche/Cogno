@@ -1,4 +1,4 @@
-import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
  * Reader-Klasse für das Einlesen/Validieren der Konfiguration.
@@ -7,30 +7,69 @@ import {Config, ConfigSchema, DEFAULT_CONFIG} from "../+models/config";
  * Aufteilung der Verantwortlichkeiten bereitgestellt wird.
  */
 export class ConfigReader {
-  /** Parst einen Konfigurationsstring und gibt eine validierte Config zurück. */
-  static fromStringToConfig(input: string): Config {
-      const partial = this.parseUserString(input);
-      return this.toConfig(partial);
+  /** Parst zwei Konfigurationsstrings (Defaults und User) und gibt eine validierte, gemergte Config zurück. */
+  static fromStringToConfig(defaultConfigString: string, userConfigString: string): Config;
+  /** Rückwärtskompatibel: Wenn nur ein String übergeben wird, wird er als User-Config interpretiert (ohne Defaults). */
+  static fromStringToConfig(userConfigStringOnly: string): Config;
+  static fromStringToConfig(a: string, b?: string): Config {
+      const defaultConfigString = b === undefined ? "" : a;
+      const userConfigString = b === undefined ? a : b;
+      const userConfig = this.parseConfigString(userConfigString || "");
+      const defaultConfig = this.parseConfigString(defaultConfigString || "");
+      return this.toConfig(defaultConfig, userConfig);
   }
 
-    /** Führt die User-Overrides mit den Zod-Defaults zusammen und validiert. */
-    private static toConfig(userOverrides: Record<string, unknown>): Config {
-        // Special case: keybind array should be concatenated with defaults (defaults first, then user values)
-        // All other arrays replace defaults completely
-        if(userOverrides['keybind'] && !Array.isArray(userOverrides['keybind'])){
-            userOverrides['keybind'] = [userOverrides['keybind']];
-        }
-        if (userOverrides['keybind'] && Array.isArray(userOverrides['keybind'])) {
-            const defaultKeybinds = DEFAULT_CONFIG.keybind;
-            const userKeybinds = userOverrides['keybind'];
-            userOverrides['keybind'] = [...defaultKeybinds, ...userKeybinds];
-        }
-        // Trick: Zod-Defaults füllen alles auf; wir brauchen kein deep-merge.
-        return ConfigSchema.parse(userOverrides);
+    /** Führt die Default-Werte mit den User-Overrides zusammen und validiert.
+     *  Regel: Alle Keys werden ersetzt (User überschreibt Default), außer 'keybind': dort werden Arrays
+     *  zusammengeführt: zuerst Default-Einträge, dann User-Einträge. Andere Arrays werden ersetzt.
+     */
+    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): Config {
+        const merge = (defs: any, usr: any): any => {
+            // Wenn User nicht gesetzt: nimm Defaults komplett
+            if (usr === undefined) return this.clone(defs);
+            // Wenn einer von beiden kein Plain-Object ist (oder Array), ersetze vollständig durch User
+            if (Array.isArray(usr)) {
+                return usr;
+            }
+            if (Array.isArray(defs)) {
+                // Wenn User kein Array, ersetze ebenfalls mit User (Schema-Validierung kümmert sich später)
+                return usr;
+            }
+            if (!this.isPlainObject(usr) || !this.isPlainObject(defs)) {
+                return usr;
+            }
+            // Beide sind Plain-Objects: tief mergen
+            const out: any = {};
+            const keys = new Set<string>([...Object.keys(defs || {}), ...Object.keys(usr || {})]);
+            for (const key of keys) {
+                if (key === 'keybind') {
+                    const d = defs?.[key];
+                    const u = usr?.[key];
+                    const dArr = Array.isArray(d) ? d : (d === undefined ? [] : [d]);
+                    const uArr = Array.isArray(u) ? u : (u === undefined ? [] : [u]);
+                    out[key] = [...dArr, ...uArr];
+                    continue;
+                }
+                out[key] = merge(defs?.[key], usr?.[key]);
+            }
+            return out;
+        };
+
+        const merged = merge(defaultConfig ?? {}, userConfig ?? {});
+        return ConfigSchema.parse(merged);
+    }
+
+    private static isPlainObject(v: unknown): v is Record<string, unknown> {
+        return typeof v === "object" && v !== null && !Array.isArray(v);
+    }
+
+    private static clone<T>(v: T): T | undefined {
+        if(v === undefined) return undefined
+        return JSON.parse(JSON.stringify(v));
     }
 
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */
-    private static parseUserString(input: string): Record<string, unknown> {
+    private static parseConfigString(input: string): Record<string, unknown> {
         const out: Record<string, unknown> = {};
 
         for (const rawLine of input.split(/\r?\n/)) {
@@ -92,7 +131,8 @@ export class ConfigReader {
         return out;
     }
 
-    private static parseValue(rawVal: string): boolean | number | string {
+    private static parseValue(rawVal: string): boolean | number | string | undefined {
+        if(rawVal.length === 0) return undefined;
         // Quoted strings: unwrap first (so "false" stays a string, not boolean)
         const isDq = rawVal.length >= 2 && rawVal.startsWith('"') && rawVal.endsWith('"');
         const isSq = rawVal.length >= 2 && rawVal.startsWith("'") && rawVal.endsWith("'");

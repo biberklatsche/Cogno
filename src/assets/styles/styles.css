@@ -7,8 +7,7 @@
 html, body {
     margin: 0;
     height: 100%;
-    font-family: var(--appFontFamily), 'Roboto', sans-serif;
-    font-size: var(--appFontSize);
+    font-family: 'Roboto', sans-serif;
     color: var(--foreground-color);
     background: var(--background, none);
     background-size: cover;

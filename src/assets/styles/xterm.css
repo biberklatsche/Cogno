@@ -1,3 +1,10 @@
-html {
+.terminal.xterm {
+    padding: var(--padding-xterm);
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
 
+.terminal.xterm.column-select.focus {
+    cursor: default;
 }

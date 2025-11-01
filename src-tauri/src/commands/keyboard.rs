@@ -1,5 +1,4 @@
 use serde::Serialize;
-use tauri::command;
 
 #[derive(Serialize)]
 #[serde(tag = "platform")]
@@ -34,7 +33,7 @@ pub struct MacKeyboardLayoutInfo {
     pub lang: String,
 }
 
-#[command]
+#[tauri::command]
 pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
     // Windows: klassisch über WinAPI (GetKeyboardLayoutNameW)
     #[cfg(target_os = "windows")]

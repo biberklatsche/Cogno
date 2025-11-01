@@ -60,7 +60,7 @@ pub async fn pty_spawn(
 
     let mut cmd = CommandBuilder::new(&program);
     cmd.args(&args);
-    
+
     let _child = pair
         .slave
         .spawn_command(cmd)
@@ -121,9 +121,9 @@ pub async fn pty_spawn(
                         let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
                     } else {
                         break;  // Beenden ohne weitere Events
-                    }
+                        }
                 }
-                Err(e) => {
+                Err(_e) => {
                     let _ = app_clone.emit(&format!("pty-exit:{}", terminal_id_clone), serde_json::json!({
                         "exitCode": 1
                     }));

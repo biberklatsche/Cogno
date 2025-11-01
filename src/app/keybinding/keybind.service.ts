@@ -14,7 +14,7 @@ export class KeybindService {
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
-        configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind));
+        configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind!));
         window.addEventListener("keydown", (e) => {
             const action = this._keybindMatcher.match(e);
             if(action){
