@@ -1,8 +1,10 @@
-import {AfterViewInit, Component, DestroyRef, ElementRef, input, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, DestroyRef, ElementRef, input, OnInit, ViewChild} from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
+import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
+import {SimpleContextMenuComponent, ContextMenuItem} from "../common/menu-overlay/simple-context-menu.component";
 
 @Component({
     selector: 'app-terminal',
@@ -15,7 +17,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalSession?: TerminalSession;
     terminalId= input.required<TerminalId>();
 
-    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef) {
+    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService) {
     }
 
     ngOnInit(): void {
@@ -27,5 +29,17 @@ export class TerminalComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit(): void {
         this.terminalSession?.initializeTerminal(this.terminalContainer.nativeElement);
+    }
+
+    onContextMenu(event: MouseEvent) {
+        event.preventDefault();
+        const items: ContextMenuItem[] = [
+            { label: 'Copy', action: () => console.log('Copy terminal', this.terminalId()) },
+            { label: 'Paste', action: () => console.log('Paste terminal', this.terminalId()) },
+            { separator: true },
+            { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId()) },
+            { label: 'Split Pane', action: () => console.log('Split pane for terminal', this.terminalId()) },
+        ];
+        this.menu.openAt(event, SimpleContextMenuComponent, { items });
     }
 }
