@@ -32,7 +32,7 @@ export class GridListService {
             for (let grid of event.payload!.grids) {
                 this.addGrid(grid);
             }
-            this.selectGrid(event.payload!.grids[0].tabId);
+            this.bus.publish({type: "SelectTab", payload: event.payload!.grids[0].tabId})
         });
 
         this.bus.onType$('TabRemovedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
@@ -48,11 +48,6 @@ export class GridListService {
 
         this.bus.onType$('TabSelectedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
             this.selectGrid(event.payload);
-        });
-
-        this.bus.onceType$('TerminalInitialized').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: PtyInitializedEvent) => {
-            const gridId = this.determineGridId(event.payload);
-            this.selectGrid(gridId);
         });
     }
 

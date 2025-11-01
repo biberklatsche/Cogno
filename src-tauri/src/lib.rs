@@ -2,7 +2,7 @@ pub mod cli; // macht cogno_lib::cli::* sichtbar
 pub mod commands;
 
 use tauri::{Builder, WebviewUrl, WebviewWindowBuilder, Emitter};
-use crate::cli::{Cli, CommandType};
+use crate::cli::{Cli};
 use clap::Parser;
 use commands::config::get_default_config;
 use commands::crypto::decrypt;

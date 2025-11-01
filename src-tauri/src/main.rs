@@ -1,5 +1,5 @@
 use clap::Parser;
-use cogno_lib::cli::{Cli, CommandType};
+use cogno_lib::cli::{Cli};
 use cogno_lib::commands::config::read_default_config;
 use cogno_lib::commands::environment::get_cogno_config_file_path;
 use std::fs;

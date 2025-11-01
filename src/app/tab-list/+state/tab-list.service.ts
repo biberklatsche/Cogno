@@ -8,6 +8,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {filter} from "rxjs/operators";
 import {IdCreator} from "../../common/id-creator/id-creator";
+import {SelectTabCommand} from "../+bus/actions";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -22,9 +23,11 @@ export class TabListService {
         this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
             this._tabList.next([]);
             for (const [index, grid] of event.payload!.grids.entries()) {
-                const isActiveTab = index === 0;
-                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: isActiveTab});
+                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: false});
             }
+        });
+        this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabCommand) => {
+            this.selectTab(event.payload!);
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
             const tabList = [...this._tabList.value];
