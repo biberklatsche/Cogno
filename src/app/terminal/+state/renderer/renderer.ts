@@ -38,6 +38,7 @@ export class Renderer implements IRenderer, IDisposable {
             cursorStyle: 'bar',
             smoothScrollDuration: 0,
             allowTransparency: true,
+            rightClickSelectsWord: false,
             altClickMovesCursor: true,
             windowsPty: OS.platform() === 'windows' ? {backend: 'conpty'} : undefined,
             allowProposedApi: true,

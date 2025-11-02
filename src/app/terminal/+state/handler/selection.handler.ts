@@ -19,6 +19,7 @@ export class SelectionHandler implements ITerminalHandler {
     register(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this._terminal.onSelectionChange((event) => {
+
             console.log("selection change", event);
         });
         return this;
