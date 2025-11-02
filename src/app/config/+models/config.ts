@@ -152,3 +152,8 @@ export type Selection = z.infer<typeof SelectionSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
+export type ActionName =
+    'copy' |
+    'paste' |
+    'open_new_tab' |
+    'close_active_tab';

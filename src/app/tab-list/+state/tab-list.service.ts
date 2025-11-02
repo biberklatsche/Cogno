@@ -36,11 +36,25 @@ export class TabListService {
             tab.title = event.payload.title;
             this._tabList.next(tabList);
         });
-        this.bus.onType$('CommandFired')
+        this.bus.onType$('CliCommandFired')
             .subscribe(event => {
                 switch (event.payload) {
                     case 'open_new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
+                        event.propagationStopped = true;
+                        break;
+                }
+            });
+        this.bus.onType$('KeybindFired').subscribe(event => {
+                switch (event.payload) {
+                    case 'open_new_tab':
+                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
+                        event.propagationStopped = true;
+                        break;
+                    case 'close_active_tab':
+                        const activeTabId = this._tabList.value.find(s => s.isActive)?.id;
+                        this.removeTab(activeTabId);
+                        event.propagationStopped = true;
                         break;
                 }
             });
@@ -60,7 +74,8 @@ export class TabListService {
         this.bus.publish({type: 'TabAddedEvent', payload: {tabId: tab.id, isActive: tab.isActive}});
     }
 
-    removeTab(tabId: TabId) {
+    removeTab(tabId?: TabId) {
+        if(!tabId) return;
         const tabList = [...this._tabList.value];
         const tabIndex = tabList.findIndex(tab => tab.id === tabId);
         if(tabIndex === -1) return;

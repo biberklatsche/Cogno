@@ -10,6 +10,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {PtyInitializedEvent} from "../../terminal/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
+import {KeybindFiredEvent} from "../../keybinding/keybind.service";
 
 
 @Injectable({providedIn: 'root'})
@@ -96,7 +97,7 @@ export class GridListService {
         this._activeTabId.next(tab);
         const grid = this._gridList.value[tab];
         const terminalId = this.getFirstTerminalId(grid.tree.root);
-        this.bus.publish({path: ['app', 'terminal', terminalId], type: 'FocusTerminal'});
+        this.bus.publish({path: ['app', 'terminal'], type: 'FocusTerminal', payload: terminalId});
     }
 
     getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {

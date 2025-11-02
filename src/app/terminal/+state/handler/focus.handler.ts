@@ -9,6 +9,7 @@ export class FocusHandler implements ITerminalHandler {
 
     private subscription: Subscription = new Subscription();
     private _terminal?: Terminal;
+    private _hasFocus: boolean = false;
 
     constructor(private _terminalId: TerminalId, private _bus: AppBus) {
 
@@ -21,16 +22,27 @@ export class FocusHandler implements ITerminalHandler {
     register(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({
-            path: ['app', 'terminal', this._terminalId],
+            path: ['app', 'terminal'],
             type: 'FocusTerminal'
         }).subscribe(event => {
+            if(event.payload !== this._terminalId) {
+                this._hasFocus = false;
+                return;
+            }
             event.propagationStopped = true;
             this.focus();
+
         }));
         return this;
     }
 
     focus() {
+        console.log('#####focus!!!');
         this._terminal?.focus();
+        this._hasFocus = true;
+    }
+
+    hasFocus() {
+        return this._hasFocus;
     }
 }

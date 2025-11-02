@@ -1,7 +1,7 @@
 import {ConfigService} from "../../config/+state/config.service";
 import {IRenderer, Renderer} from "./renderer/renderer";
 import {filter, first, Subscription} from "rxjs";
-import {AppBus} from "../../app-bus/app-bus";
+import {ActionBase, AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TabTitleHandler} from "./handler/tab-title.handler";
 import {PtyHandler} from "./handler/pty.handler";
@@ -39,6 +39,28 @@ export class TerminalSession {
                 this.renderer.useCanvas();
             }
         }));
+        this.subscription.add(this.bus.on$({
+            path: ['app', 'terminal'],
+            type: 'KeybindFired'
+        }).subscribe(async event => {
+            console.log('has focus', this.focusHandler?.hasFocus())
+            if(!this.focusHandler?.hasFocus()) return;
+            let isPerformable = true;
+            switch (event.payload) {
+                case 'copy': {
+                    isPerformable = this.selectionHandler!.hasSelection();
+                    event.defaultPrevented = isPerformable || !event.triggers?.find(s => s === 'performable');
+                    console.log('##### prevent', isPerformable, !event.triggers?.find(s => s === 'performable'));
+
+                    if (isPerformable) {
+                        await Clipboard.writeText(this.selectionHandler!.getSelection());
+                        if(this.configService.config.selection?.clear_on_copy) {
+                            this.selectionHandler?.clearSelection();
+                        }
+                    }
+                }
+            }
+        }));
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
@@ -71,13 +93,11 @@ export class TerminalSession {
             { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId) },
         ];
         if(this.selectionHandler?.hasSelection()){
-            items.unshift({ label: 'Copy', action: async () => {
-                await Clipboard.writeText(this.selectionHandler!.getSelection());
-                this.focusHandler?.focus();
-                if(this.configService.config.selection?.clear_on_copy) {
-                    this.selectionHandler?.clearSelection();
+            items.unshift({ label: 'Copy', action: () => {
+                    this.focusHandler?.focus();
+                    this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy', triggers: ['performable']});
                 }
-            }})
+            })
         }
         return items;
     }

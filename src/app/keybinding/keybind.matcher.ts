@@ -1,8 +1,11 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
-import {ActionBase, ActionTrigger, validTriggers} from "../app-bus/app-bus";
 import {OsType} from "../_tauri/os";
+import {KeybindFiredEvent} from "./keybind.service";
+import {ActionTrigger, validTriggers} from "../app-bus/app-bus";
+import {ActionName} from "../config/+models/config";
 
-type Sequence = { steps: string[]; action: ActionBase };
+
+type Sequence = { steps: string[]; event: KeybindFiredEvent };
 
 export class KeybindingMatcher {
     private sequences: Sequence[] = [];
@@ -29,11 +32,11 @@ export class KeybindingMatcher {
             const normalizedSteps = keybinding.split('>').map(step => this.normalizeKeyCombination(step.trim()));
 
             const args = actionDef.split(':');
-            const actionName = args.splice(0, 1)[0];
+            const actionName = args.splice(0, 1)[0] as ActionName;
 
             this.sequences.push({
                 steps: normalizedSteps,
-                action: { type: actionName, triggers: this.toTriggers(triggers), args: args }
+                event: { type: 'KeybindFired', payload: actionName, triggers: this.toTriggers(triggers), args: args }
             });
         });
     }
@@ -74,7 +77,7 @@ export class KeybindingMatcher {
     }
 
     // Hauptmethode: Prüft ob Event ein Keybinding trifft (unterstützt Sequenzen)
-    match(event: KeyboardEvent): ActionBase | undefined {
+    match(event: KeyboardEvent): KeybindFiredEvent | undefined {
         // Nur auf keydown reagieren, um Doppelzählung zu vermeiden
         if ((event as any).type && (event as any).type !== 'keydown') return undefined;
 
@@ -99,8 +102,9 @@ export class KeybindingMatcher {
         const finished = progressed.find(m => m.index >= m.seq.steps.length);
         if (finished) {
             // Reset nach erfolgreichem Match
+            const event = {... finished.seq.event};
             this.currentMatches = [];
-            return finished.seq.action;
+            return event;
         }
 
         // 4) Status aktualisieren (nur echte Fortschritte behalten)

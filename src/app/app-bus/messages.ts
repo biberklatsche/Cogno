@@ -7,8 +7,9 @@ import {FocusTerminalAction} from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
 import {TerminalThemeChangedEvent} from "../terminal/+state/handler/theme.handler";
-import {CommandFiredEvent} from "../command/command.service";
 import {SelectTabCommand} from "../tab-list/+bus/actions";
+import {CliCommandFiredEvent} from "../cli-command/cli-command.service";
+import {KeybindFiredEvent} from "../keybinding/keybind.service";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -24,4 +25,5 @@ export type AppMessage =
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
     | FocusTerminalAction
-    | CommandFiredEvent;
+    | CliCommandFiredEvent
+    | KeybindFiredEvent;
