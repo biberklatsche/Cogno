@@ -12,6 +12,8 @@ import {IPty, Pty} from "./pty/pty";
 import {ResizeHandler} from "./handler/resize.handler";
 import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
 import {SelectionHandler} from "./handler/selection.handler";
+import {Clipboard} from "../../_tauri/clipboard";
+import {InputHandler} from "./handler/input.handler";
 
 export class TerminalSession {
 
@@ -20,6 +22,7 @@ export class TerminalSession {
 
     private focusHandler?: FocusHandler = undefined;
     private selectionHandler?: SelectionHandler = undefined;
+    private inputHandler?: InputHandler = undefined;
 
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[] = [
@@ -42,17 +45,23 @@ export class TerminalSession {
         this.renderer.open(terminalContainer);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus)
         this.selectionHandler = new SelectionHandler()
+        this.inputHandler = new InputHandler()
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.configService, this.bus)));
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus)));
         this.disposables.push(this.renderer.register(new TabTitleHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
+        this.disposables.push(this.renderer.register(this.inputHandler));
     }
 
     buildContextMenu(): ContextMenuItem[] {
         const items: ContextMenuItem[] = [
-            { label: 'Paste', action: () => console.log('Paste terminal', this.terminalId) },
+            { label: 'Paste', action: async () => {
+                const text = await Clipboard.readText();
+                this.inputHandler?.write(text);
+                this.focusHandler?.focus();
+            }},
             { separator: true },
             { label: 'Split Right', action: () => console.log('Split right for terminal', this.terminalId) },
             { label: 'Split Left', action: () => console.log('Split left for terminal', this.terminalId) },
@@ -62,10 +71,13 @@ export class TerminalSession {
             { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId) },
         ];
         if(this.selectionHandler?.hasSelection()){
-            items.unshift({ label: 'Copy', action: () => {
-                    console.log('Copy terminal', this.terminalId);
-                    this.focusHandler?.focus();
-                } })
+            items.unshift({ label: 'Copy', action: async () => {
+                await Clipboard.writeText(this.selectionHandler!.getSelection());
+                this.focusHandler?.focus();
+                if(this.configService.config.selection?.clear_on_copy) {
+                    this.selectionHandler?.clearSelection();
+                }
+            }})
         }
         return items;
     }

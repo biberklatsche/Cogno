@@ -28,4 +28,12 @@ export class SelectionHandler implements ITerminalHandler {
     hasSelection(): boolean {
         return this._terminal?.hasSelection() ?? false;
     }
+
+    getSelection(): string {
+        return this._terminal?.getSelection() ?? '';
+    }
+
+    clearSelection(): void {
+        this._terminal?.clearSelection();
+    }
 }

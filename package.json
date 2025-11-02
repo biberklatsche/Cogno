@@ -23,6 +23,7 @@
     "@ctrl/tinycolor": "4.1.0",
     "@mdi/js": "7.4.47",
     "@tauri-apps/api": "2.9.0",
+    "@tauri-apps/plugin-clipboard-manager": "2.3.2",
     "@tauri-apps/plugin-fs": "2.4.2",
     "@tauri-apps/plugin-log": "2.7.0",
     "@tauri-apps/plugin-opener": "2.5.0",
