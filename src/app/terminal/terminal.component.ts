@@ -34,13 +34,8 @@ export class TerminalComponent implements OnInit, AfterViewInit {
 
     onContextMenu(event: MouseEvent) {
         event.preventDefault();
-        const items: ContextMenuItem[] = [
-            { label: 'Copy', action: () => console.log('Copy terminal', this.terminalId()) },
-            { label: 'Paste', action: () => console.log('Paste terminal', this.terminalId()) },
-            { separator: true },
-            { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId()) },
-            { label: 'Split Pane', action: () => console.log('Split pane for terminal', this.terminalId()) },
-        ];
+        event.stopPropagation();
+        const items: ContextMenuItem[] = this.terminalSession?.buildContextMenu() ?? [];
         this.menu.openAt(event, ContextMenuComponent, { items });
     }
 }
