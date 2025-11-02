@@ -4,7 +4,7 @@ import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
-import {SimpleContextMenuComponent, ContextMenuItem} from "../common/menu-overlay/simple-context-menu.component";
+import {ContextMenuComponent, ContextMenuItem} from "../common/menu-overlay/context-menu.component";
 
 @Component({
     selector: 'app-terminal',
@@ -40,6 +40,6 @@ export class TerminalComponent implements OnInit, AfterViewInit {
             { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId()) },
             { label: 'Split Pane', action: () => console.log('Split pane for terminal', this.terminalId()) },
         ];
-        this.menu.openAt(event, SimpleContextMenuComponent, { items });
+        this.menu.openAt(event, ContextMenuComponent, { items });
     }
 }

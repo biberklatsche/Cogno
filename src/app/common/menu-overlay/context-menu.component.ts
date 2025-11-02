@@ -8,7 +8,7 @@ export type ContextMenuItem = {
 };
 
 @Component({
-  selector: 'app-simple-context-menu',
+  selector: 'app-context-menu',
   standalone: true,
   template: `
     <div class="ctx-menu" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
@@ -66,7 +66,7 @@ export type ContextMenuItem = {
     `
   ]
 })
-export class SimpleContextMenuComponent {
+export class ContextMenuComponent {
   @Input() items: ContextMenuItem[] = [];
   @Input() close?: () => void;
 
