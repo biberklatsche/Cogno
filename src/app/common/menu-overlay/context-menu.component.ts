@@ -1,11 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-
-export type ContextMenuItem = {
-  label?: string;
-  action?: () => void;
-  disabled?: boolean;
-  separator?: boolean;
-};
+import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.types';
 
 @Component({
   selector: 'app-context-menu',
@@ -66,7 +60,7 @@ export type ContextMenuItem = {
     `
   ]
 })
-export class ContextMenuComponent {
+export class ContextMenuComponent implements ContextMenuOverlayComponent {
   @Input() items: ContextMenuItem[] = [];
   @Input() close?: () => void;
 

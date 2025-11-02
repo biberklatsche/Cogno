@@ -4,7 +4,8 @@ import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
-import {ContextMenuComponent, ContextMenuItem} from "../common/menu-overlay/context-menu.component";
+import { ContextMenuComponent } from "../common/menu-overlay/context-menu.component";
+import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
 
 @Component({
     selector: 'app-terminal',

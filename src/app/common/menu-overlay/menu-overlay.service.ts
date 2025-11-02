@@ -1,4 +1,5 @@
 import {ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, Type, createComponent} from '@angular/core';
+import { MenuOverlayComponent } from './menu-overlay.types';
 
 export type Point = { x: number; y: number };
 
@@ -11,7 +12,7 @@ export interface MenuOverlayRef {
 export class MenuOverlayService {
   private current?: {
     host: HTMLDivElement;
-    compRef: ComponentRef<any>;
+    compRef: ComponentRef<unknown>;
     removeOutsideListener: () => void;
     removeKeyListener: () => void;
     removeScrollResizeListener: () => void;
@@ -21,9 +22,9 @@ export class MenuOverlayService {
 
   constructor(private appRef: ApplicationRef, private env: EnvironmentInjector) {}
 
-  openAt<T>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
+  openAt<T extends MenuOverlayComponent>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
     const point: Point = this.toPoint(pointOrEvent);
-    this.lastOpenEventTs = (pointOrEvent as MouseEvent).timeStamp || performance.now();
+    this.lastOpenEventTs = this.isMouseEvent(pointOrEvent) ? pointOrEvent.timeStamp : performance.now();
 
     // Close existing overlay first
     this.close();
@@ -48,11 +49,12 @@ export class MenuOverlayService {
     });
 
     // Provide default close() to component if it declares one
-    (compRef.instance as any).close = (compRef.instance as any).close ?? (() => this.close());
+    const instance = compRef.instance as T;
+    instance.close = instance.close ?? (() => this.close());
 
     // Apply inputs
     if (inputs) {
-      Object.assign(compRef.instance as any, inputs);
+      Object.assign(instance, inputs);
     }
 
     this.appRef.attachView(compRef.hostView);
@@ -103,7 +105,7 @@ export class MenuOverlayService {
     return ref;
   }
 
-  openForElement<T>(el: HTMLElement, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
+  openForElement<T extends MenuOverlayComponent>(el: HTMLElement, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
     const rect = el.getBoundingClientRect();
     const point: Point = { x: rect.left, y: rect.bottom };
     return this.openAt(point, component, inputs);
@@ -162,11 +164,14 @@ export class MenuOverlayService {
     host.style.top = top + 'px';
   }
 
+  private isMouseEvent(p: Point | MouseEvent): p is MouseEvent {
+    return typeof (p as MouseEvent).clientX === 'number' && typeof (p as MouseEvent).clientY === 'number';
+  }
+
   private toPoint(p: Point | MouseEvent): Point {
-    if ((p as MouseEvent).clientX !== undefined) {
-      const me = p as MouseEvent;
-      return { x: me.clientX, y: me.clientY };
+    if (this.isMouseEvent(p)) {
+      return { x: p.clientX, y: p.clientY };
     }
-    return p as Point;
+    return p;
   }
 }
