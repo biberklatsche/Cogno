@@ -1,8 +1,7 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
 import {OsType} from "../_tauri/os";
 import {KeybindFiredEvent} from "./keybind.service";
-import {ActionTrigger, validTriggers} from "../app-bus/app-bus";
-import {ActionName} from "../config/+models/config";
+import {KeybindActionInterpreter} from "./keybind-action.interpreter";
 
 
 type Sequence = { steps: string[]; event: KeybindFiredEvent };
@@ -25,25 +24,18 @@ export class KeybindingMatcher {
             const [keybindingDef, actionDef] = binding.split('=');
             if (!keybindingDef || !actionDef) return;
 
-            const triggers = keybindingDef.split(':');
-            const keybinding = triggers.splice(triggers.length - 1, 1)[0];
-
+            const action = KeybindActionInterpreter.parse(actionDef);
             // Unterstützt Sequenzen mittels '>'
-            const normalizedSteps = keybinding.split('>').map(step => this.normalizeKeyCombination(step.trim()));
-
-            const args = actionDef.split(':');
-            const actionName = args.splice(0, 1)[0] as ActionName;
+            const normalizedSteps = keybindingDef.split('>').map(step => this.normalizeKeyCombination(step.trim()));
 
             this.sequences.push({
                 steps: normalizedSteps,
-                event: { type: 'KeybindFired', payload: actionName, triggers: this.toTriggers(triggers), args: args }
+                event: { type: 'KeybindFired', payload: action.actionName, triggers: action.triggers, args: action.args }
             });
         });
     }
 
-    private toTriggers(triggers: string[]): ActionTrigger[] {
-        return triggers.filter((s: string): s is ActionTrigger => validTriggers.includes(s as ActionTrigger));
-    }
+
 
     public initKeyCodeMapping(keyCodeMapping: KeyboardMapping) {
         this.keyCodeMapping = keyCodeMapping;

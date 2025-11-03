@@ -2,11 +2,7 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {CliCommandListener} from "../_tauri/cli-command";
 import {ActionBase, AppBus} from "../app-bus/app-bus";
 import {ActionName} from "../config/+models/config";
-
-
-export type CliCommandType = ActionName;
-export type CliCommandFiredEvent = ActionBase<"CliCommandFired", CliCommandType>
-
+import {KeybindActionInterpreter} from "../keybinding/keybind-action.interpreter";
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +10,8 @@ export type CliCommandFiredEvent = ActionBase<"CliCommandFired", CliCommandType>
 export class CliCommandService {
   constructor(bus: AppBus, ref: DestroyRef) {
       CliCommandListener.register(command => {
-        bus.publish({type: 'CliCommandFired', payload: command});
+          const actionDef = KeybindActionInterpreter.parse(command);
+        bus.publish({type: 'KeybindFired', payload: actionDef.actionName, triggers: actionDef.triggers, args: actionDef.args, path: ['app', 'terminal']});
       }).then(unlisten => {
           ref.onDestroy(() => unlisten())
       });

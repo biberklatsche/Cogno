@@ -30,7 +30,7 @@ export class TabListComponent {
 
     iconForShell(shell: ShellType | 'unknown'): Icon  {
         switch (shell) {
-            case 'Powershell':
+            case 'PowerShell':
                 return 'mdiPowershell';
             case 'ZSH':
             case 'Bash':

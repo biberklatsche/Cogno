@@ -86,18 +86,18 @@ export const ImageSchema = z.object({
 });
 
 const KeybindSchema = z.string().regex(
-    /^(?:(?:all|unconsumed|performable):)*[^=\s]+=[a-zA-Z0-9_]+(?::[a-zA-Z0-9_]+)*$/,
-    "Keybind must be of the form [triggers:]key[>key...]=action[:arg...]"
+    /^[^\s=>]+(?:\+[^\s=>]+)*(?:>(?:[^\s=>]+(?:\+[^\s=>]+)*))*=(?:\[(?:all|unconsumed|performable)(?::(?:all|unconsumed|performable))*\])?[A-Za-z0-9_]+(?::[A-Za-z0-9_]+)*$/,
+    "Keybind must be of the form combo[>combo...]=[triggers]action[:arg...]"
 );
 
 const KeybindsSchema = z.array(KeybindSchema);
 
-const ShellTypeEnum = z.enum(["Powershell", "ZSH", "Bash", "GitBash"]);
+const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash", "GitBash"]);
 
 const ShellSchema = z.object({
     shell_type: ShellTypeEnum.optional(),
     path: z.string().optional(),
-    args: z.array(z.string()).optional(),
+    args: z.array(z.string().optional()).optional(),
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),

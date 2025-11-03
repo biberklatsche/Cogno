@@ -16,7 +16,7 @@ export class ShellConfigurator {
       ZSH: 1,
       Bash: 2,
       GitBash: 3,
-      Powershell: 4,
+      PowerShell: 4,
     };
 
     const sorted = [...shells].sort((a, b) => {
@@ -59,7 +59,7 @@ export class ShellConfigurator {
             args.push(exportCmd);
             break;
         }
-        case 'Powershell': {
+        case 'PowerShell': {
             args.push('-NoLogo', '-NoExit', '-Command');
             const exePath = Environment.exeDirPath();
             const exportCmd = `$env:Path = '${exePath};'+$env:Path`;

@@ -36,15 +36,6 @@ export class TabListService {
             tab.title = event.payload.title;
             this._tabList.next(tabList);
         });
-        this.bus.onType$('CliCommandFired')
-            .subscribe(event => {
-                switch (event.payload) {
-                    case 'open_new_tab':
-                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
-                        event.propagationStopped = true;
-                        break;
-                }
-            });
         this.bus.onType$('KeybindFired').subscribe(event => {
                 switch (event.payload) {
                     case 'open_new_tab':

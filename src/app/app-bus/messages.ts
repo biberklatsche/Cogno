@@ -8,7 +8,6 @@ import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
 import {TerminalThemeChangedEvent} from "../terminal/+state/handler/theme.handler";
 import {SelectTabCommand} from "../tab-list/+bus/actions";
-import {CliCommandFiredEvent} from "../cli-command/cli-command.service";
 import {KeybindFiredEvent} from "../keybinding/keybind.service";
 
 export type AppMessage =
@@ -25,5 +24,4 @@ export type AppMessage =
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
     | FocusTerminalAction
-    | CliCommandFiredEvent
     | KeybindFiredEvent;
