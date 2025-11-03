@@ -16,7 +16,8 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.typ
             [disabled]="item.disabled"
             (click)="onItemClick(item)"
             role="menuitem">
-            {{ item.label }}
+              <span>{{ item.label }}</span>
+              <span class="keybinding">{{item.keybinding | keybinding}}</span>
           </button>
         }
       }
@@ -26,16 +27,15 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.typ
     `
     :host { display: block; }
     .ctx-menu {
-      background: #1f1f1f;
-      color: #eaeaea;
-      border: 1px solid #3a3a3a;
+      background: var(--background-color-10l);
+      color: var(--foreground-color);
+      border: 1px solid var(--background-color-20l);
       box-shadow: 0 6px 24px rgba(0,0,0,0.35);
       border-radius: 6px;
       padding: 6px;
       min-width: 180px;
       max-width: 360px;
       user-select: none;
-      font-size: 13px;
     }
     .item {
       display: block;
@@ -49,14 +49,14 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.typ
       cursor: pointer;
     }
     .item:hover:enabled, .item:focus-visible:enabled {
-      background: #2b2b2b;
+      background: var(--background-color-20l);
       outline: none;
     }
     .item:disabled {
       opacity: 0.5;
       cursor: default;
     }
-    .sep { height: 1px; background: #2a2a2a; margin: 6px 4px; }
+    .sep { height: 1px; background: var(--background-color-20l); margin: 6px 4px; }
     `
   ]
 })

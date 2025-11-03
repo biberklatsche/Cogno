@@ -7,6 +7,7 @@ export interface MenuOverlayComponent {
 
 export type ContextMenuItem = {
   label?: string;
+  keybinding?: string;
   action?: () => void;
   disabled?: boolean;
   separator?: boolean;
