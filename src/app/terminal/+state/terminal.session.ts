@@ -1,7 +1,7 @@
 import {ConfigService} from "../../config/+state/config.service";
 import {IRenderer, Renderer} from "./renderer/renderer";
 import {filter, first, Subscription} from "rxjs";
-import {ActionBase, AppBus} from "../../app-bus/app-bus";
+import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TabTitleHandler} from "./handler/tab-title.handler";
 import {PtyHandler} from "./handler/pty.handler";
@@ -13,7 +13,9 @@ import {ResizeHandler} from "./handler/resize.handler";
 import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
 import {SelectionHandler} from "./handler/selection.handler";
 import {Clipboard} from "../../_tauri/clipboard";
+
 import {InputHandler} from "./handler/input.handler";
+import {KeybindListener} from "./keybind/keybind.listener";
 
 export class TerminalSession {
 
@@ -39,28 +41,6 @@ export class TerminalSession {
                 this.renderer.useCanvas();
             }
         }));
-        this.subscription.add(this.bus.on$({
-            path: ['app', 'terminal'],
-            type: 'KeybindFired'
-        }).subscribe(async event => {
-            console.log('has focus', this.focusHandler?.hasFocus())
-            if(!this.focusHandler?.hasFocus()) return;
-            let isPerformable = true;
-            switch (event.payload) {
-                case 'copy': {
-                    isPerformable = this.selectionHandler!.hasSelection();
-                    event.defaultPrevented = isPerformable || !event.triggers?.find(s => s === 'performable');
-                    console.log('##### prevent', isPerformable, !event.triggers?.find(s => s === 'performable'));
-
-                    if (isPerformable) {
-                        await Clipboard.writeText(this.selectionHandler!.getSelection());
-                        if(this.configService.config.selection?.clear_on_copy) {
-                            this.selectionHandler?.clearSelection();
-                        }
-                    }
-                }
-            }
-        }));
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
@@ -75,6 +55,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(this.inputHandler));
+        this.disposables.push(new KeybindListener(this.bus, this.focusHandler, this.selectionHandler, this.inputHandler, this.configService))
     }
 
     buildContextMenu(): ContextMenuItem[] {
@@ -95,7 +76,7 @@ export class TerminalSession {
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
-                    this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy', triggers: ['performable']});
+                    this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy'});
                 }
             })
         }

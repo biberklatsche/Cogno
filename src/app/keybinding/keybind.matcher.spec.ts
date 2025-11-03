@@ -73,7 +73,7 @@ describe('KeybindingMatcher (linux)', () => {
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.payload).toBe('doA');
-    expect(action?.triggers).toContain('all');
+    expect(action?.trigger?.all).toBe(true);
   });
 
   it('should support many triggers', () => {
@@ -81,9 +81,9 @@ describe('KeybindingMatcher (linux)', () => {
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.payload).toBe('doA');
-    expect(action?.triggers).toContain('all');
-    expect(action?.triggers).toContain('unconsumed');
-    expect(action?.triggers).toContain('performable');
+    expect(action?.trigger?.all).toBe(true);
+    expect(action?.trigger?.unconsumed).toBe(true);
+    expect(action?.trigger?.performable).toBe(true);
   });
 
   it('should support one arg', () => {
@@ -143,7 +143,7 @@ describe('KeybindingMatcher (linux)', () => {
     expect(matcher.match(step1)).toBeUndefined();
     const action = matcher.match(step2);
     expect(action?.payload).toBe('doA');
-    expect(action?.triggers).toContain('all');
+    expect(action?.trigger?.all).toBe(true);
     expect(action?.args).toEqual(['x', 'y']);
   });
 

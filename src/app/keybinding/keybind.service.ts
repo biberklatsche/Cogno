@@ -27,7 +27,12 @@ export class KeybindService {
                 console.log('fire!!', keybindFiredEvent);
                 const isHandled = bus.publish(keybindFiredEvent);
                 console.log('is handlet!!', isHandled);
-                if(isHandled || !keybindFiredEvent.triggers?.find(s => s === 'performable')){
+
+                let shouldPreventDefault = true;
+                shouldPreventDefault &&= !keybindFiredEvent.trigger?.unconsumed
+                shouldPreventDefault &&= !(!isHandled && keybindFiredEvent.trigger?.performable)
+
+                if(shouldPreventDefault){
                     e.preventDefault();
                     e.stopPropagation();
                 }

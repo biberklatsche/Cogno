@@ -30,7 +30,7 @@ export class KeybindingMatcher {
 
             this.sequences.push({
                 steps: normalizedSteps,
-                event: { type: 'KeybindFired', payload: action.actionName, triggers: action.triggers, args: action.args }
+                event: { type: 'KeybindFired', payload: action.actionName, trigger: action.trigger, args: action.args }
             });
         });
     }

@@ -8,9 +8,7 @@ import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
-import {PtyInitializedEvent} from "../../terminal/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
-import {KeybindFiredEvent} from "../../keybinding/keybind.service";
 
 
 @Injectable({providedIn: 'root'})

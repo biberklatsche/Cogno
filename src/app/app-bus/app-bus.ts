@@ -30,7 +30,7 @@ export const validTriggers = ['all', 'unconsumed', 'performable'] as const;
 export type ActionTrigger = typeof validTriggers[number];
 
 export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
-    triggers?: ActionTrigger[]
+    trigger?: {all: boolean, unconsumed: boolean, performable: boolean};
     args?: string[];
 }
 
