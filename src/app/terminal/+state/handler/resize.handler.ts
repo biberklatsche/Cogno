@@ -39,7 +39,7 @@ export class ResizeHandler implements ITerminalHandler {
             // leichtes Throttling gegen Resize-Spam
             if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
             this._resizeRaf = requestAnimationFrame(() => {
-                this._resize(terminal, fitAddon);
+                this.resize(terminal, fitAddon);
             });
         });
         this._resizeObserver.observe(this._terminalContainer, {box: 'content-box'});
@@ -48,14 +48,14 @@ export class ResizeHandler implements ITerminalHandler {
             switch (e.type) {
                 case 'TerminalInitialized':
                 case 'TerminalThemeChanged':
-                    this._resize(terminal, fitAddon);
+                    this.resize(terminal, fitAddon);
                     break;
             }
         });
         return this;
     }
 
-    private _resize(terminal: Terminal, fitAddon: FitAddon) {
+    public resize(terminal: Terminal, fitAddon: FitAddon) {
         fitAddon.fit();
         this._pty.resize(terminal.cols, terminal.rows);
     }

@@ -14,7 +14,12 @@ export class ThemeHandler implements ITerminalHandler {
     private readonly subscription= new Subscription();
     private _terminal?: Terminal;
 
-    constructor(private _terminalId: TerminalId, private _configService: ConfigService, private _bus: AppBus) {}
+    constructor(
+        private _terminalId: TerminalId,
+        private _configService: ConfigService,
+        private _bus: AppBus,
+        private _terminalContainer: HTMLDivElement
+    ) {}
 
     public configureTerminal(config: Config) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
@@ -61,6 +66,22 @@ export class ThemeHandler implements ITerminalHandler {
         this._terminal = terminal;
         this.subscription.add(this._configService.config$.subscribe(config => {
             this.configureTerminal(config);
+        }));
+        this.subscription.add(this._bus.on$({type: "FullScreenAppLeaved", path: ['app', 'terminal', this._terminalId]}).subscribe(() => {
+            if(this._configService.config.padding?.remove_on_full_screen_app) {
+                this._terminalContainer.style.removeProperty('--padding-xterm');
+                this._terminalContainer.style.removeProperty('--padding');
+                this._terminalContainer.style.backgroundColor = '';
+                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
+            }
+        }));
+        this.subscription.add(this._bus.on$({type: "FullScreenAppEntered", path: ['app', 'terminal', this._terminalId]}).subscribe(() => {
+            if(this._configService.config.padding?.remove_on_full_screen_app) {
+                this._terminalContainer.style.setProperty('--padding-xterm', '0');
+                this._terminalContainer.style.setProperty('--padding', '0');
+                this._terminalContainer.style.backgroundColor = 'var(--background-color)';
+                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
+            }
         }));
         return this;
     }

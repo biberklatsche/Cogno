@@ -9,6 +9,7 @@ import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler
 import {TerminalThemeChangedEvent} from "../terminal/+state/handler/theme.handler";
 import {SelectTabCommand} from "../tab-list/+bus/actions";
 import {KeybindFiredEvent} from "../keybinding/keybind.service";
+import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -24,4 +25,7 @@ export type AppMessage =
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
     | FocusTerminalAction
-    | KeybindFiredEvent;
+    | KeybindFiredEvent
+    | FullScreenAppEnteredEvent
+    | FullScreenAppLeavedEvent
+    ;

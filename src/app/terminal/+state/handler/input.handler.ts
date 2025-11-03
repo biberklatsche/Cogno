@@ -1,7 +1,5 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
-import {AppBus} from "../../../app-bus/app-bus";
-import {TerminalId} from "../../../grid-list/+model/model";
 import {IDisposable} from "../../../common/models/models";
 
 export class InputHandler implements ITerminalHandler {

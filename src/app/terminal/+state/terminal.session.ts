@@ -15,7 +15,8 @@ import {SelectionHandler} from "./handler/selection.handler";
 import {Clipboard} from "../../_tauri/clipboard";
 
 import {InputHandler} from "./handler/input.handler";
-import {KeybindListener} from "./keybind/keybind.listener";
+import {KeybindExecutor} from "./executer/keybind.executor";
+import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 
 export class TerminalSession {
 
@@ -50,12 +51,13 @@ export class TerminalSession {
         this.inputHandler = new InputHandler()
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.configService, this.bus)));
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer)));
-        this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus)));
+        this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TabTitleHandler(this.terminalId, this.bus)));
+        this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(this.inputHandler));
-        this.disposables.push(new KeybindListener(this.bus, this.focusHandler, this.selectionHandler, this.inputHandler, this.configService))
+        this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.inputHandler, this.configService))
     }
 
     buildContextMenu(): ContextMenuItem[] {

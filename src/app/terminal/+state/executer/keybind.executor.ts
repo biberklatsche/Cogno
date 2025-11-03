@@ -7,7 +7,7 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {Clipboard} from "../../../_tauri/clipboard";
 import {InputHandler} from "../handler/input.handler";
 
-export class KeybindListener implements IDisposable  {
+export class KeybindExecutor implements IDisposable  {
 
     private _subscription?: Subscription;
 

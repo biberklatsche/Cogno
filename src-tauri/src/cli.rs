@@ -1,5 +1,4 @@
-use clap::{Parser, ValueEnum};
-use serde::{Deserialize, Serialize};
+use clap::{Parser};
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "cogno", version, about = "Cogno CLI")]
