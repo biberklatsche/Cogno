@@ -44,11 +44,17 @@ export class ResizeHandler implements ITerminalHandler {
         });
         this._resizeObserver.observe(this._terminalContainer, {box: 'content-box'});
         this._subscription = new Subscription();
-        this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]}).subscribe((e) => {
+        this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]})
+            .subscribe((e) => {
             switch (e.type) {
                 case 'TerminalInitialized':
                 case 'TerminalThemeChanged':
+                case 'TerminalThemePaddingRemoved':
                     this.resize(terminal, fitAddon);
+                    break;
+                case 'TerminalThemePaddingAdded':
+                    // Add a small timeout to prevent wrong rendering on macos (on exit vim)
+                    setTimeout(() => this.resize(terminal, fitAddon), 100);
                     break;
             }
         });

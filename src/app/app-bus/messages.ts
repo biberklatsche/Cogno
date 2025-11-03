@@ -6,7 +6,11 @@ import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus
 import {FocusTerminalAction} from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
-import {TerminalThemeChangedEvent} from "../terminal/+state/handler/theme.handler";
+import {
+    TerminalThemeChangedEvent,
+    TerminalThemePaddingAddedEvent,
+    TerminalThemePaddingRemovedEvent
+} from "../terminal/+state/handler/theme.handler";
 import {SelectTabCommand} from "../tab-list/+bus/actions";
 import {KeybindFiredEvent} from "../keybinding/keybind.service";
 import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
@@ -24,6 +28,8 @@ export type AppMessage =
     | PtyInitializedEvent
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
+    | TerminalThemePaddingAddedEvent
+    | TerminalThemePaddingRemovedEvent
     | FocusTerminalAction
     | KeybindFiredEvent
     | FullScreenAppEnteredEvent

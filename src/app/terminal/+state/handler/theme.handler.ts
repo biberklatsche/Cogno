@@ -8,6 +8,8 @@ import {TerminalId} from "../../../grid-list/+model/model";
 import {Config} from "../../../config/+models/config";
 
 export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
+export type TerminalThemePaddingAddedEvent = MessageBase<"TerminalThemePaddingAdded", TerminalId>;
+export type TerminalThemePaddingRemovedEvent = MessageBase<"TerminalThemePaddingRemoved", TerminalId>;
 
 export class ThemeHandler implements ITerminalHandler {
 
@@ -72,7 +74,7 @@ export class ThemeHandler implements ITerminalHandler {
                 this._terminalContainer.style.removeProperty('--padding-xterm');
                 this._terminalContainer.style.removeProperty('--padding');
                 this._terminalContainer.style.backgroundColor = '';
-                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
+                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemePaddingAdded"});
             }
         }));
         this.subscription.add(this._bus.on$({type: "FullScreenAppEntered", path: ['app', 'terminal', this._terminalId]}).subscribe(() => {
@@ -80,7 +82,7 @@ export class ThemeHandler implements ITerminalHandler {
                 this._terminalContainer.style.setProperty('--padding-xterm', '0');
                 this._terminalContainer.style.setProperty('--padding', '0');
                 this._terminalContainer.style.backgroundColor = 'var(--background-color)';
-                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemeChanged"});
+                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalThemePaddingRemoved"});
             }
         }));
         return this;
