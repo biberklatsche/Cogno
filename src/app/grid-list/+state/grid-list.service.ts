@@ -51,8 +51,8 @@ export class GridListService {
         });
 
         this.bus.onType$('TerminalFocused').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalFocusedEvent) => {
-            const gridList = this._gridList.value;
             if(!this._activeTabId.value) throw new Error("No active tab id found.");
+            const gridList = this._gridList.value;
             Object.values(gridList).forEach((grid: Grid) => {
                const currentFocusedTab = grid.tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false)
                if(currentFocusedTab && currentFocusedTab.data) currentFocusedTab.data.isFocused = false;
@@ -60,9 +60,6 @@ export class GridListService {
             const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
             if(!paneConfig) throw new Error("No active tab id found.");
             paneConfig.isFocused = true;
-
-            console.log('######focused terminalId', paneConfig);
-
             this._gridList.next(gridList);
         });
 
