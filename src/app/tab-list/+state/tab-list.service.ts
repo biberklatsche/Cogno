@@ -62,7 +62,7 @@ export class TabListService {
 
         tabList.push(tab);
         this._tabList.next(tabList);
-        this.bus.publish({type: 'TabAddedEvent', payload: {tabId: tab.id, isActive: tab.isActive}});
+        this.bus.publish({type: 'TabAdded', payload: {tabId: tab.id, isActive: tab.isActive}});
     }
 
     removeTab(tabId?: TabId) {
@@ -77,7 +77,7 @@ export class TabListService {
            nextActiveTab = tabList[Math.max(tabIndex - 1, 0)];
         }
         this._tabList.next(tabList);
-        this.bus.publish({type: 'TabRemovedEvent', payload: tabId});
+        this.bus.publish({type: 'TabRemoved', payload: tabId});
         if(nextActiveTab) {
             this.selectTab(nextActiveTab.id);
         }
@@ -92,6 +92,6 @@ export class TabListService {
         }
         tabList[tabIndex].isActive = true;
         this._tabList.next(tabList);
-        this.bus.publish({type: 'TabSelectedEvent', payload: tabId});
+        this.bus.publish({type: 'TabSelected', payload: tabId});
     }
 }

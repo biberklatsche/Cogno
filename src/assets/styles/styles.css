@@ -7,15 +7,11 @@
 html, body {
     margin: 0;
     height: 100%;
-    font-family: var(--app-font-family), sans-serif;
-    font-size: var(--app-font-size);
     color: var(--foreground-color);
     background: var(--background, none);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
 }
 
@@ -39,4 +35,15 @@ body.has-background::before {
     filter: blur(var(--background-blur, 0px));
     /* WebKit-Repaint-Stabilizer */
     transform: translateZ(0);
+}
+
+*:focus {
+    outline: none;
+}
+
+* {
+    font-family: var(--app-font-family), Roboto, sans-serif;
+    font-size: var(--app-font-size);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }

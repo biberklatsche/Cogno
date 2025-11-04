@@ -160,4 +160,10 @@ export type ActionName =
     'copy' |
     'paste' |
     'open_new_tab' |
-    'close_active_tab';
+    'close_active_tab' |
+    'split_right' |
+    'split_down' |
+    'split_left' |
+    'split_up' |
+    'clear_buffer'
+    ;

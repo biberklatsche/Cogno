@@ -68,12 +68,12 @@ export class TerminalSession {
                 this.focusHandler?.focus();
             }, actionName: 'paste' },
             { separator: true },
-            { label: 'Split Right', action: () => console.log('Split right for terminal', this.terminalId) },
-            { label: 'Split Left', action: () => console.log('Split left for terminal', this.terminalId) },
-            { label: 'Split Down', action: () => console.log('Split down for terminal', this.terminalId) },
-            { label: 'Split Up', action: () => console.log('Split up for terminal', this.terminalId) },
+            { label: 'Split Right', action: () => console.log('Split right for terminal', this.terminalId), actionName: "split_right" },
+            { label: 'Split Left', action: () => console.log('Split left for terminal', this.terminalId), actionName: "split_left" },
+            { label: 'Split Down', action: () => console.log('Split down for terminal', this.terminalId), actionName: "split_down"  },
+            { label: 'Split Up', action: () => console.log('Split up for terminal', this.terminalId), actionName: "split_up"  },
             { separator: true },
-            { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId) },
+            { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId), actionName: "clear_buffer" },
         ];
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {

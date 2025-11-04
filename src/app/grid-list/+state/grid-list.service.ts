@@ -34,20 +34,41 @@ export class GridListService {
             this.bus.publish({type: "SelectTab", payload: event.payload!.grids[0].tabId})
         });
 
-        this.bus.onType$('TabRemovedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
+        this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
         });
 
-        this.bus.onType$('TabAddedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabAddedEvent) => {
+        this.bus.onType$('TabAdded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabAddedEvent) => {
             this.addGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellConfigPosition: event.payload!.shellConfigPosition ?? 1}});
             if(event.payload!.isActive) {
                 this.selectGrid(event.payload!.tabId);
             }
         });
 
-        this.bus.onType$('TabSelectedEvent').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
+        this.bus.onType$('TabSelected').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
             this.selectGrid(event.payload);
         });
+
+        this.bus.onType$('KeybindFired').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            switch (event.payload) {
+                case 'split_right':
+                    console.log('split_right');
+                    event.propagationStopped = true;
+                    break;
+                case 'split_left':
+                    console.log('split_left');
+                    event.propagationStopped = true;
+                    break;
+                case 'split_down':
+                    console.log('split_down');
+                    event.propagationStopped = true;
+                    break;
+                case 'split_up':
+                    console.log('split_up');
+                    event.propagationStopped = true;
+                    break;
+            }
+        })
     }
 
     addGrid(gridConfig: GridConfig) {
