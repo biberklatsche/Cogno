@@ -21,6 +21,7 @@ export class KeybindService {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
         configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind!));
         window.addEventListener("keydown", (e) => {
+            console.log(e);
             const keybindFiredEvent = this._keybindMatcher.match(e);
             if (!keybindFiredEvent) return;
             keybindFiredEvent.path = ['app', 'terminal'];

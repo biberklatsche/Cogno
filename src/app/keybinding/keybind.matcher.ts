@@ -72,6 +72,9 @@ export class KeybindingMatcher {
         parts = parts.sort();
         // Haupttaste über Mapping normalisieren
         const normalizedKey = this.keyCodeMapping[(event as any).code] || (event as any).key;
+
+        console.log('normalizedKey', normalizedKey);
+
         parts.push(normalizedKey);
         return parts.join('+');
     }

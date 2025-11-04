@@ -32,7 +32,9 @@ export class KeyboardMappingService {
             case "macos":
                 const darwinKeyboardMappings = (await import('./keyboard-layouts/layout.contribution.darwin')).KeyboardLayoutContribution.INSTANCE.layoutInfos;
                 const currentDarwinLayout = layout as MacKeyboardLayoutInfo;
+                console.log(currentDarwinLayout);
                 keymapInfo = darwinKeyboardMappings.find(s => (s.layouts).some(i => i.id === currentDarwinLayout.id));
+
                 if(keymapInfo) {
                     return {keymapInfo: keymapInfo, isFallback: false}
                 } else {

@@ -58,15 +58,29 @@ export class GridListService {
                if(currentFocusedTab && currentFocusedTab.data) currentFocusedTab.data.isFocused = false;
             });
             const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
-            if(!paneConfig) throw new Error("No active tab id found.");
+            if(!paneConfig) throw new Error("No pane with id found.");
             paneConfig.isFocused = true;
             this._gridList.next(gridList);
         });
 
         this.bus.onType$('KeybindFired').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            console.log('#########')
             switch (event.payload) {
                 case 'split_right':
                     console.log('split_right');
+
+                    if(!this._activeTabId.value) throw new Error("No active tab id found.");
+                    const gridList = this._gridList.value;
+                    const tree =  gridList[this._activeTabId.value].tree;
+                    const focusedNode = tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false);
+                    if(!focusedNode) throw new Error("No focused pane found.");
+                    const paneParent: Pane = {
+                        splitDirection: 'vertical',
+                        ratio: 0.5
+                    };
+                    const paneChild: Pane = {shellConfigPosition: 1, terminalId: IdCreator.newTerminalId()};
+                    tree.add(focusedNode.key, 'r', paneParent, paneChild);
+                    this._gridList.next(gridList);
                     event.propagationStopped = true;
                     break;
                 case 'split_left':
