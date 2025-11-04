@@ -70,7 +70,7 @@ export class StyleService {
         document.documentElement.style.setProperty('--font-family', `'${config.font!.family}'`);
         document.documentElement.style.setProperty('--app-font-family', `'${config.font!.app!.family}'`);
         document.documentElement.style.setProperty('--app-font-size', `${config.font!.app!.size}px`);
-        document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top} ${config.padding!.right} ${config.padding!.bottom} ${config.padding!.left}`);
+        document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top}rem ${config.padding!.right}rem ${config.padding!.bottom}rem ${config.padding!.left}rem`);
         if (config.background_image?.path) {
             const url = Fs.convertFileSrc(config.background_image.path);
             const color = config.color!.background + Color.getHexOpacity(config.background_image.opacity);

@@ -57,6 +57,7 @@ import {ActionKeybindingPipe, KeybindingPipe} from "../keybinding/keybinding.pip
                 border: none;
                 border-radius: 4px;
                 cursor: default;
+                font-size: .9rem;
                 
                 .keybinding {
                     opacity: 0.5;
