@@ -31,7 +31,7 @@ export class PtyHandler implements ITerminalHandler {
         this.spawnPty(this._terminalId).then(_ => {
             this._disposables.push(terminal.onData(data => this._pty?.write(data)));
             this._disposables.push(this._pty?.onData(data => terminal?.write(data)));
-            this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "FocusTerminal", payload: this._terminalId})
+            this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "FocusTerminal", payload: this._terminalId});
             this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalInitialized", payload: this._terminalId});
         });
         return this;

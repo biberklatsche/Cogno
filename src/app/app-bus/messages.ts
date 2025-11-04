@@ -3,7 +3,7 @@ import {ConfigLoadedEvent, ThemeChangedEvent} from "../config/+bus/events";
 import {LoadConfigAction, WatchConfigAction} from "../config/+bus/actions";
 import {WorkspaceLoadedEvent} from "../workspace/+bus/events";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
-import {FocusTerminalAction} from "../terminal/+bus/actions";
+import {BlurTerminalAction, FocusTerminalAction} from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
 import {
@@ -14,7 +14,7 @@ import {
 import {SelectTabCommand} from "../tab-list/+bus/actions";
 import {KeybindFiredEvent} from "../keybinding/keybind.service";
 import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
-import {TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
+import {TerminalBlurredEvent, TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -32,8 +32,10 @@ export type AppMessage =
     | TerminalThemePaddingAddedEvent
     | TerminalThemePaddingRemovedEvent
     | FocusTerminalAction
+    | BlurTerminalAction
     | KeybindFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent
     | TerminalFocusedEvent
+    | TerminalBlurredEvent
     ;

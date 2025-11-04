@@ -2,10 +2,11 @@ import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
-import {debounceTime, Subscription} from "rxjs";
+import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
 
 export type TerminalFocusedEvent = MessageBase<"TerminalFocused", TerminalId>;
+export type TerminalBlurredEvent = MessageBase<"TerminalBlurred", TerminalId>;
 
 export class FocusHandler implements ITerminalHandler {
 
@@ -27,29 +28,39 @@ export class FocusHandler implements ITerminalHandler {
             path: ['app', 'terminal'],
             type: 'FocusTerminal'
         }).subscribe(event => {
-            if(event.payload !== this._terminalId) return;
-            event.propagationStopped = true;
-            this.focus();
+            if (event.payload === this._terminalId){
+                this.focus();
+            }
         }));
-        this.subscription.add(this._bus.onType$('TerminalFocused').subscribe(event => {
-            if(event.payload === this._terminalId) return;
-            this.blur();
+
+        this.subscription.add(this._bus.on$({
+            path: ['app', 'terminal'],
+            type: 'BlurTerminal'
+        }).subscribe(event => {
+            if (event.payload === this._terminalId){
+                this.blur();
+            }
         }));
+
+        const textarea = terminal.textarea;
+        textarea?.addEventListener("focus", () => {
+            this._hasFocus = true;
+        });
+        textarea?.addEventListener("blur", () => {
+            this._hasFocus = false
+        });
+
         return this;
     }
 
     focus() {
         this._terminal?.focus();
-        this._hasFocus = true;
-        this._bus.publish({type: "TerminalFocused", payload: this._terminalId})
+        this._bus.publish({type: "TerminalFocused", payload: this._terminalId});
     }
 
     blur() {
-        console.info("Focus handler blur", this._terminalId);
         this._terminal?.blur();
-        this._terminal?.element?.blur();
-        this._terminal?.textarea?.blur();
-        this._hasFocus = false;
+        this._bus.publish({type: "TerminalBlurred", payload: this._terminalId});
     }
 
     hasFocus() {
