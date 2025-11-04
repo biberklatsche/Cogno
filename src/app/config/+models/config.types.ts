@@ -3,7 +3,7 @@ import {OS, OsType} from "../../_tauri/os";
 
 const HexColorSchema = z
     .string()
-    .regex(/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/, 'Must be a valid 4-, 6-, or 8-digit hex color');
+    .regex(/^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/, 'Must be a 4-, 6-, or 8-digit hex color');
 
 const PaddingValueSchema = z.number().min(0);
 
