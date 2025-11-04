@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, debounceTime, filter, Observable} from 'rxjs';
-import {Config} from "../+models/config";
+import {ConfigTypes} from "../+models/config.types";
 import {ConfigReader} from "./config.reader";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
@@ -15,14 +15,14 @@ import {ConfigWriter} from "./config.writer";
     providedIn: 'root'
 })
 export class ConfigService {
-    private _config: BehaviorSubject<Config | undefined> = new BehaviorSubject<Config | undefined>(undefined);
+    private _config: BehaviorSubject<ConfigTypes | undefined> = new BehaviorSubject<ConfigTypes | undefined>(undefined);
 
-    get config(): Config {
+    get config(): ConfigTypes {
         if(this._config === undefined) throw new Error('Config is not loaded!');
         return this._config.value!;
     }
 
-    get config$(): Observable<Config> {
+    get config$(): Observable<ConfigTypes> {
         return this._config.pipe(filter(s => !!s));
     }
 
@@ -51,7 +51,7 @@ export class ConfigService {
         const defaultConfigString = await DefaultConfig.read();
 
         if(!await Fs.exists(path)) {
-            const userConfig: Config = {shell: {}};
+            const userConfig: ConfigTypes = {shell: {}};
             await this.shells.apply(userConfig);
             await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }

@@ -25,7 +25,6 @@ import {ActionKeybindingPipe, KeybindingPipe} from "../keybinding/keybinding.pip
         </div>
     `,
     imports: [
-        KeybindingPipe,
         ActionKeybindingPipe
     ],
     styles: [
@@ -47,15 +46,21 @@ import {ActionKeybindingPipe, KeybindingPipe} from "../keybinding/keybinding.pip
             }
 
             .item {
-                display: block;
-                width: 100%;
-                text-align: left;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                min-width: 100%;
+                justify-content: space-between;
                 padding: 8px 10px;
                 background: transparent;
                 color: inherit;
                 border: none;
                 border-radius: 4px;
                 cursor: default;
+                
+                .keybinding {
+                    opacity: 0.5;
+                }
             }
 
             .item:hover:enabled, .item:focus-visible:enabled {

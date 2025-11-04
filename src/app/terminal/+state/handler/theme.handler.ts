@@ -5,7 +5,7 @@ import {IDisposable} from "../../../common/models/models";
 import {ConfigService} from "../../../config/+state/config.service";
 import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
-import {Config} from "../../../config/+models/config";
+import {ConfigTypes} from "../../../config/+models/config.types";
 
 export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
 export type TerminalThemePaddingAddedEvent = MessageBase<"TerminalThemePaddingAdded", TerminalId>;
@@ -23,7 +23,7 @@ export class ThemeHandler implements ITerminalHandler {
         private _terminalContainer: HTMLDivElement
     ) {}
 
-    public configureTerminal(config: Config) {
+    public configureTerminal(config: ConfigTypes) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
         this._terminal.options.scrollback = config.scrollback_lines;
         this._terminal.options.fontSize = config.font!.size;

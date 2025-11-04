@@ -1,7 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import {OS} from "../../_tauri/os";
 import {KeybindService} from "../../keybinding/keybind.service";
-import {ActionName} from "../../config/+models/config";
+import {ActionName} from "../../config/+models/config.types";
 
 @Pipe({
   name: 'keybinding'

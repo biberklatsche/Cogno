@@ -1,5 +1,5 @@
 import {ActionTrigger, validTriggers} from "../app-bus/app-bus";
-import {ActionName} from "../config/+models/config";
+import {ActionName} from "../config/+models/config.types";
 
 export const KeybindActionInterpreter = {
 

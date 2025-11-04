@@ -1,6 +1,6 @@
 // Shared types and interfaces for components used within the menu overlay
 
-import {ActionName} from "../../config/+models/config";
+import {ActionName} from "../../config/+models/config.types";
 
 export interface MenuOverlayComponent {
   // Provided by MenuOverlayService upon open; call to close the overlay

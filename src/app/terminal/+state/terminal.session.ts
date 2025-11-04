@@ -79,7 +79,7 @@ export class TerminalSession {
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
                     this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy'});
-                }, actionName: 'copy' 
+                }, actionName: 'copy'
             })
         }
         return items;

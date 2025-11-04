@@ -1,5 +1,5 @@
 import {invoke} from "@tauri-apps/api/core";
-import {ShellConfig} from "../config/+models/config";
+import {ShellConfig} from "../config/+models/config.types";
 import {TerminalId} from "../grid-list/+model/model";
 import {listen} from "@tauri-apps/api/event";
 

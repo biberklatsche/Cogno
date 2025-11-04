@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Config, ShellConfig, ShellType } from './+models/config';
+import { ConfigTypes, ShellConfig, ShellType } from './+models/config.types';
 import { Shells } from '../_tauri/shells';
 import { Environment } from '../common/environment/environment';
 
@@ -8,7 +8,7 @@ export class ShellConfigurator {
   /**
    * Detects available shells and writes them into the config.shell list starting at position 1.
    */
-  async apply(config: Config): Promise<void> {
+  async apply(config: ConfigTypes): Promise<void> {
     const shells = await Shells.load();
 
     // Stable sort order preference

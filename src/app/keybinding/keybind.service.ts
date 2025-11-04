@@ -5,7 +5,7 @@ import {KeybindingMatcher} from "./keybind.matcher";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {OS} from "../_tauri/os";
 import {ActionBase, AppBus} from "../app-bus/app-bus";
-import {ActionName} from "../config/+models/config";
+import {ActionName} from "../config/+models/config.types";
 
 
 export type KeybindFiredEvent = ActionBase<"KeybindFired", ActionName>

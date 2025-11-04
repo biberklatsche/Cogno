@@ -1,4 +1,4 @@
-import {ShellConfigPosition} from "../../config/+models/config";
+import {ShellConfigPosition} from "../../config/+models/config.types";
 
 
 export type TabId = string;

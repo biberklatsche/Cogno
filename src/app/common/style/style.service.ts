@@ -4,7 +4,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Color} from "../color/color";
 import {Fs} from "../../_tauri/fs";
 import {Logger} from "../../_tauri/logger";
-import {Config} from "../../config/+models/config";
+import {ConfigTypes} from "../../config/+models/config.types";
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +18,7 @@ export class StyleService {
           .subscribe(config => this.setStyle(config));
   }
 
-    private setStyle(config: Config): void {
+    private setStyle(config: ConfigTypes): void {
         Logger.info('Set Css-Variables...');
         const isLightTheme = Color.isLight(config.color!.background!);
         const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
@@ -65,9 +65,11 @@ export class StyleService {
         document.documentElement.style.setProperty('--shadow1', '0 1px 1px 0 var(--color-shadow3), 0 2px 1px -1px var(--color-shadow1), 0 1px 3px 0 var(--color-shadow2)');
         document.documentElement.style.setProperty('--shadow2', '0 2px 2px 0 var(--color-shadow3), 0 3px 1px -2px var(--color-shadow1), 0 1px 5px 0 var(--color-shadow2)');
         document.documentElement.style.setProperty('--shadow3', '0 3px 4px 0 var(--color-shadow3), 0 3px 3px -2px var(--color-shadow1), 0 1px 8px 0 var(--color-shadow2)');
-        document.documentElement.style.setProperty('--fontSize', `${config.font!.size}`);
-        document.documentElement.style.setProperty('--fontWeight', `${config.font!.weight}`);
-        document.documentElement.style.setProperty('--fontFamily', `'${config.font!.family}'`);
+        document.documentElement.style.setProperty('--font-size', `${config.font!.size}px`);
+        document.documentElement.style.setProperty('--font-weight', `${config.font!.weight}`);
+        document.documentElement.style.setProperty('--font-family', `'${config.font!.family}'`);
+        document.documentElement.style.setProperty('--app-font-family', `'${config.font!.app!.family}'`);
+        document.documentElement.style.setProperty('--app-font-size', `${config.font!.app!.size}px`);
         document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top} ${config.padding!.right} ${config.padding!.bottom} ${config.padding!.left}`);
         if (config.background_image?.path) {
             const url = Fs.convertFileSrc(config.background_image.path);
@@ -98,7 +100,7 @@ export class StyleService {
         return 0.5;
     }
 
-    private getBackgroundFactor(config: Config, isLightTheme: boolean) {
+    private getBackgroundFactor(config: ConfigTypes, isLightTheme: boolean) {
         const brightness = Color.getBrightness(config.color!.background!);
         const factor = 1.8 - brightness;
         return isLightTheme ? -factor : factor;

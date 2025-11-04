@@ -34,12 +34,18 @@ export const FontWeightSchema = z.union([
     z.number(),
 ]);
 
+export const AppFontSchema = z.object({
+    family: z.string().optional(),
+    size: z.int().min(1, 'Font size must be at least 1').optional(),
+})
+
 export const FontSchema = z.object({
     family: z.string().optional(),
     size: z.int().min(1, 'Font size must be at least 1').optional(),
     enable_ligatures: z.boolean().optional(),
     weight: FontWeightSchema.optional(),
     weight_bold: FontWeightSchema.optional(),
+    app: AppFontSchema.optional(),
 });
 
 export const ColorSchema = z.object({
@@ -143,7 +149,7 @@ export const ConfigSchema = z.object({
     selection: SelectionSchema.optional(),
 }).strict();
 
-export type Config = z.infer<typeof ConfigSchema>;
+export type ConfigTypes = z.infer<typeof ConfigSchema>;
 export type Font = z.infer<typeof FontSchema>;
 export type Color = z.infer<typeof ColorSchema>;
 export type Cursor = z.infer<typeof CursorSchema>;

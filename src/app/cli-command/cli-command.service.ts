@@ -1,7 +1,7 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {CliCommandListener} from "../_tauri/cli-command";
 import {ActionBase, AppBus} from "../app-bus/app-bus";
-import {ActionName} from "../config/+models/config";
+import {ActionName} from "../config/+models/config.types";
 import {KeybindActionInterpreter} from "../keybinding/keybind-action.interpreter";
 
 @Injectable({

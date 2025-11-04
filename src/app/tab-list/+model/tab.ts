@@ -1,4 +1,4 @@
-import {ShellType} from "../../config/+models/config";
+import {ShellType} from "../../config/+models/config.types";
 import {TabId} from '../../workspace/+model/workspace';
 
 export type TabList = Tab[];

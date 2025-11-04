@@ -4,7 +4,7 @@ import {TabListService} from "./+state/tab-list.service";
 import {Tab} from "./+model/tab";
 import {Observable} from "rxjs";
 import {IconComponent} from "../icons/icon/icon.component";
-import {ShellType} from "../config/+models/config";
+import {ShellType} from "../config/+models/config.types";
 import {Icon} from "../icons/+model/icon";
 import {AppBus} from "../app-bus/app-bus";
 import {TabId} from '../workspace/+model/workspace';

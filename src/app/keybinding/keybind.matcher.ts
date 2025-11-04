@@ -2,7 +2,7 @@ import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
 import {OsType} from "../_tauri/os";
 import {KeybindFiredEvent} from "./keybind.service";
 import {KeybindActionInterpreter} from "./keybind-action.interpreter";
-import {ActionName} from "../config/+models/config";
+import {ActionName} from "../config/+models/config.types";
 
 
 type Sequence = { steps: string[]; event: KeybindFiredEvent };
