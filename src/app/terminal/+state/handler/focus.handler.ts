@@ -2,7 +2,7 @@ import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
-import {Subscription} from "rxjs";
+import {debounceTime, Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
 
 export type TerminalFocusedEvent = MessageBase<"TerminalFocused", TerminalId>;
@@ -27,13 +27,13 @@ export class FocusHandler implements ITerminalHandler {
             path: ['app', 'terminal'],
             type: 'FocusTerminal'
         }).subscribe(event => {
-            if(event.payload !== this._terminalId) {
-                this._hasFocus = false;
-                return;
-            }
+            if(event.payload !== this._terminalId) return;
             event.propagationStopped = true;
             this.focus();
-
+        }));
+        this.subscription.add(this._bus.onType$('TerminalFocused').subscribe(event => {
+            if(event.payload === this._terminalId) return;
+            this.blur();
         }));
         return this;
     }
@@ -41,8 +41,14 @@ export class FocusHandler implements ITerminalHandler {
     focus() {
         this._terminal?.focus();
         this._hasFocus = true;
-        console.log('terminal focused!!!')
+        console.info("Focus handler focus", this._terminalId);
         this._bus.publish({type: "TerminalFocused", payload: this._terminalId})
+    }
+
+    blur() {
+        console.info("Focus handler blur", this._terminalId);
+        this._terminal?.blur();
+        this._hasFocus = false;
     }
 
     hasFocus() {
