@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.types';
-import {KeybindingPipe} from "../keybinding/keybinding.pipe";
+import {ActionKeybindingPipe, KeybindingPipe} from "../keybinding/keybinding.pipe";
 
 @Component({
     selector: 'app-context-menu',
@@ -18,14 +18,15 @@ import {KeybindingPipe} from "../keybinding/keybinding.pipe";
                             (click)="onItemClick(item)"
                             role="menuitem">
                         <span>{{ item.label }}</span>
-                        <span class="keybinding">{{ item.keybinding | keybinding }}</span>
+                        <span class="keybinding">{{ item.actionName | actionkeybinding }}</span>
                     </button>
                 }
             }
         </div>
     `,
     imports: [
-        KeybindingPipe
+        KeybindingPipe,
+        ActionKeybindingPipe
     ],
     styles: [
         `

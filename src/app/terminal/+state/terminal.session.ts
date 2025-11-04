@@ -17,7 +17,6 @@ import {Clipboard} from "../../_tauri/clipboard";
 import {InputHandler} from "./handler/input.handler";
 import {KeybindExecutor} from "./executer/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
-import {KeybindService} from "../../keybinding/keybind.service";
 
 export class TerminalSession {
 
@@ -35,7 +34,7 @@ export class TerminalSession {
     ];
     private disposed: boolean = false;
 
-    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId, private keybindService: KeybindService) {
+    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
         this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
             if (config.enable_webgl) {
                 this.renderer.useWebGl();
@@ -67,7 +66,7 @@ export class TerminalSession {
                 const text = await Clipboard.readText();
                 this.inputHandler?.write(text);
                 this.focusHandler?.focus();
-            }, keybinding: this.keybindService.getKeybinding('paste') },
+            }, actionName: 'paste' },
             { separator: true },
             { label: 'Split Right', action: () => console.log('Split right for terminal', this.terminalId) },
             { label: 'Split Left', action: () => console.log('Split left for terminal', this.terminalId) },
@@ -80,7 +79,7 @@ export class TerminalSession {
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
                     this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy'});
-                }
+                }, actionName: 'copy' 
             })
         }
         return items;

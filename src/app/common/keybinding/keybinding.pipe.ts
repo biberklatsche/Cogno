@@ -1,5 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import {OS} from "../../_tauri/os";
+import {KeybindService} from "../../keybinding/keybind.service";
+import {ActionName} from "../../config/+models/config";
 
 @Pipe({
   name: 'keybinding'
@@ -19,5 +21,23 @@ export class KeybindingPipe implements PipeTransform {
             default:
                 return keybinding.replace('Control', 'Ctrl');
         }
+    }
+}
+
+@Pipe({
+    name: 'actionkeybinding'
+})
+export class ActionKeybindingPipe extends KeybindingPipe {
+
+    constructor(private keybindingService: KeybindService) {
+        super();
+    }
+
+    override transform(action: ActionName | null | undefined): string {
+        if (!action) {
+            return '';
+        }
+        const keybinding = this.keybindingService.getKeybinding(action);
+        return super.transform(keybinding);
     }
 }

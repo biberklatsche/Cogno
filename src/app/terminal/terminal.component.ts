@@ -19,11 +19,11 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalSession?: TerminalSession;
     terminalId= input.required<TerminalId>();
 
-    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService, private keybindService: KeybindService) {
+    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService) {
     }
 
     ngOnInit(): void {
-        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId(), this.keybindService);
+        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId());
         this.destroyRef.onDestroy(() => {
             this.terminalSession?.dispose();
         });
