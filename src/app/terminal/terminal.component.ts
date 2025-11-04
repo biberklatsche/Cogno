@@ -6,6 +6,7 @@ import {TerminalId} from "../grid-list/+model/model";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
 import { ContextMenuComponent } from "../common/menu-overlay/context-menu.component";
 import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
+import {KeybindService} from "../keybinding/keybind.service";
 
 @Component({
     selector: 'app-terminal',
@@ -18,11 +19,11 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalSession?: TerminalSession;
     terminalId= input.required<TerminalId>();
 
-    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService) {
+    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService, private keybindService: KeybindService) {
     }
 
     ngOnInit(): void {
-        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId());
+        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId(), this.keybindService);
         this.destroyRef.onDestroy(() => {
             this.terminalSession?.dispose();
         });

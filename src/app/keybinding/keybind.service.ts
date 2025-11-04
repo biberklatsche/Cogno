@@ -31,4 +31,8 @@ export class KeybindService {
             e.stopPropagation();
         }, {capture: true});
     }
+
+    getKeybinding(actinName: ActionName): string | undefined {
+        return this._keybindMatcher.getKeybinding(actinName);
+    }
 }

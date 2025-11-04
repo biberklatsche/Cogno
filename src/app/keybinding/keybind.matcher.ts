@@ -2,12 +2,16 @@ import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
 import {OsType} from "../_tauri/os";
 import {KeybindFiredEvent} from "./keybind.service";
 import {KeybindActionInterpreter} from "./keybind-action.interpreter";
+import {ActionName} from "../config/+models/config";
 
 
 type Sequence = { steps: string[]; event: KeybindFiredEvent };
 
+export type Keybinding = string;
+
 export class KeybindingMatcher {
     private sequences: Sequence[] = [];
+    private keybindings: Record<string, Keybinding> = {};
     private keyCodeMapping: KeyboardMapping = {};
 
     // Laufender Match-Status über mehrere Keydowns
@@ -28,6 +32,8 @@ export class KeybindingMatcher {
             // Unterstützt Sequenzen mittels '>'
             const normalizedSteps = keybindingDef.split('>').map(step => this.normalizeKeyCombination(step.trim()));
 
+            this.keybindings[action.actionName] = keybindingDef;
+
             this.sequences.push({
                 steps: normalizedSteps,
                 event: { type: 'KeybindFired', payload: action.actionName, trigger: action.trigger, args: action.args }
@@ -35,7 +41,9 @@ export class KeybindingMatcher {
         });
     }
 
-
+    getKeybinding(actinName: ActionName): string | undefined {
+        return this.keybindings[actinName];
+    }
 
     public initKeyCodeMapping(keyCodeMapping: KeyboardMapping) {
         this.keyCodeMapping = keyCodeMapping;
