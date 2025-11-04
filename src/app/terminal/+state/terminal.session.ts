@@ -93,4 +93,8 @@ export class TerminalSession {
         this.disposables.forEach(disposable => disposable.dispose());
         this.subscription.unsubscribe();
     }
+
+    focus(): void{
+        this.focusHandler?.focus();
+    }
 }

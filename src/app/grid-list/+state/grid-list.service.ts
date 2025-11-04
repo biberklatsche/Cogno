@@ -9,6 +9,7 @@ import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
+import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
 
 
 @Injectable({providedIn: 'root'})
@@ -29,7 +30,7 @@ export class GridListService {
                 this.removeGrid(tapId);
             }
             for (let grid of event.payload!.grids) {
-                this.addGrid(grid);
+                this.restoreGrid(grid);
             }
             this.bus.publish({type: "SelectTab", payload: event.payload!.grids[0].tabId})
         });
@@ -39,7 +40,7 @@ export class GridListService {
         });
 
         this.bus.onType$('TabAdded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabAddedEvent) => {
-            this.addGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellConfigPosition: event.payload!.shellConfigPosition ?? 1}});
+            this.restoreGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellConfigPosition: event.payload!.shellConfigPosition ?? 1}});
             if(event.payload!.isActive) {
                 this.selectGrid(event.payload!.tabId);
             }
@@ -47,6 +48,22 @@ export class GridListService {
 
         this.bus.onType$('TabSelected').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
             this.selectGrid(event.payload);
+        });
+
+        this.bus.onType$('TerminalFocused').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalFocusedEvent) => {
+            const gridList = this._gridList.value;
+            if(!this._activeTabId.value) throw new Error("No active tab id found.");
+            Object.values(gridList).forEach((grid: Grid) => {
+               const currentFocusedTab = grid.tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false)
+               if(currentFocusedTab && currentFocusedTab.data) currentFocusedTab.data.isFocused = false;
+            });
+            const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
+            if(!paneConfig) throw new Error("No active tab id found.");
+            paneConfig.isFocused = true;
+
+            console.log('######focused terminalId', paneConfig);
+
+            this._gridList.next(gridList);
         });
 
         this.bus.onType$('KeybindFired').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
@@ -71,7 +88,7 @@ export class GridListService {
         })
     }
 
-    addGrid(gridConfig: GridConfig) {
+    restoreGrid(gridConfig: GridConfig) {
         const gridList = this._gridList.value;
         if(gridList[gridConfig.tabId]) return;
         gridList[gridConfig.tabId] = {tabId: gridConfig.tabId, tree: this.createTree(gridConfig)};
@@ -111,7 +128,6 @@ export class GridListService {
     }
 
     selectGrid(tab?: TabId) {
-        console.log('selectGrid', tab);
         if(tab === undefined) return;
         this._activeTabId.next(tab);
         const grid = this._gridList.value[tab];

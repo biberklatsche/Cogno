@@ -1,9 +1,11 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
-import {AppBus} from "../../../app-bus/app-bus";
+import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
+
+export type TerminalFocusedEvent = MessageBase<"TerminalFocused", TerminalId>;
 
 export class FocusHandler implements ITerminalHandler {
 
@@ -37,9 +39,10 @@ export class FocusHandler implements ITerminalHandler {
     }
 
     focus() {
-        console.log('#####focus!!!');
         this._terminal?.focus();
         this._hasFocus = true;
+        console.log('terminal focused!!!')
+        this._bus.publish({type: "TerminalFocused", payload: this._terminalId})
     }
 
     hasFocus() {

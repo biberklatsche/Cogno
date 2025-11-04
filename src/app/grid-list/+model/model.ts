@@ -17,6 +17,7 @@ export type Pane = {
     shellConfigPosition?: ShellConfigPosition;
     workingDir?: string;
     terminalId?: string;
+    isFocused?: boolean;
 }
 
 export type SplitDirection = 'horizontal' | 'vertical';

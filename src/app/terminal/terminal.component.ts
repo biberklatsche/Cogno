@@ -6,7 +6,6 @@ import {TerminalId} from "../grid-list/+model/model";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
 import { ContextMenuComponent } from "../common/menu-overlay/context-menu.component";
 import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
-import {KeybindService} from "../keybinding/keybind.service";
 
 @Component({
     selector: 'app-terminal',
@@ -39,4 +38,12 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         const items: ContextMenuItem[] = this.terminalSession?.buildContextMenu() ?? [];
         this.menu.openAt(event, ContextMenuComponent, { items });
     }
+
+    focus(event: MouseEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.terminalSession?.focus();
+    }
+
+    protected readonly eval = eval;
 }

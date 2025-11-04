@@ -19,7 +19,7 @@ export class WorkspaceService {
                     leftChild: nodeLeft,
                     rightChild: nodeRight,
                 }
-                const pane: GridConfig = {tabId: IdCreator.newTabId(), pane: {}};
+                const pane: GridConfig = {tabId: IdCreator.newTabId(), pane: parent};
                 workspace = {grids: [pane]};
             } else {
                 //restore workspace

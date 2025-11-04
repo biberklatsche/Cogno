@@ -1,6 +1,6 @@
 @if (node) {
     @if(node.isLeaf) {
-        <app-pane [terminalId]="node.data!.terminalId!">
+        <app-pane [class.focus]="node.data!.isFocused" [terminalId]="node.data!.terminalId!">
         </app-pane>
     } @else {
         <div class="grid-container"
