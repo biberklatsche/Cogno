@@ -41,13 +41,14 @@ export class FocusHandler implements ITerminalHandler {
     focus() {
         this._terminal?.focus();
         this._hasFocus = true;
-        console.info("Focus handler focus", this._terminalId);
         this._bus.publish({type: "TerminalFocused", payload: this._terminalId})
     }
 
     blur() {
         console.info("Focus handler blur", this._terminalId);
         this._terminal?.blur();
+        this._terminal?.element?.blur();
+        this._terminal?.textarea?.blur();
         this._hasFocus = false;
     }
 
