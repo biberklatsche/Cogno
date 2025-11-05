@@ -8,7 +8,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {filter} from "rxjs/operators";
 import {IdCreator} from "../../common/id-creator/id-creator";
-import {SelectTabCommand} from "../+bus/actions";
+import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -26,8 +26,13 @@ export class TabListService {
                 this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: false});
             }
         });
-        this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabCommand) => {
+        this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
             this.selectTab(event.payload!);
+            event.propagationStopped = true;
+        });
+        this.bus.onType$('RemoveTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: RemoveTabAction) => {
+            this.removeTab(event.payload);
+            event.propagationStopped = true;
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
             const tabList = [...this._tabList.value];
@@ -35,17 +40,18 @@ export class TabListService {
             if(!tab || !event.payload?.title) return;
             tab.title = event.payload.title;
             this._tabList.next(tabList);
+            event.propagationStopped = true;
         });
         this.bus.onType$('KeybindFired').subscribe(event => {
                 switch (event.payload) {
                     case 'open_new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
-                        event.propagationStopped = true;
+                        event.performed = true;
                         break;
                     case 'close_active_tab':
                         const activeTabId = this._tabList.value.find(s => s.isActive)?.id;
                         this.removeTab(activeTabId);
-                        event.propagationStopped = true;
+                        event.performed = true;
                         break;
                 }
             });

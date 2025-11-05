@@ -48,13 +48,14 @@ export class BinaryTree<Data> {
         return newNode.key;
     }
 
-    remove(key: string) {
+    remove(key: string): BinaryNode<Data> | undefined {
         const node = BinaryTree.getNode(this._root, key);
         if(!node) return;
         const newChild = node.remove();
         if (newChild?.isRoot) {
             this._root = newChild;
         }
+        return newChild;
     }
 
     find(find: (node: BinaryNode<Data>) => boolean): BinaryNode<Data>[] {

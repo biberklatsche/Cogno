@@ -65,12 +65,8 @@ export class GridListService {
 
         this.bus.onType$('RemovePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
             event.propagationStopped = true;
-            const gridList = this._gridList.value;
             const terminalId: TerminalId = event.payload!;
-            let gridAndNode = this.determineGridId(gridList, terminalId);
-            if(!gridAndNode) return;
-            gridAndNode.grid.tree.remove(gridAndNode.node.key);
-            this._gridList.next(gridList);
+            this.removePane(terminalId);
         });
 
         this.bus.onType$('SplitPaneRight').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
@@ -92,6 +88,22 @@ export class GridListService {
             this.split(event.payload!,'horizontal', 'l');
             event.propagationStopped = true;
         });
+    }
+
+    private removePane(terminalId: TerminalId) {
+        const gridList = this._gridList.value;
+        let gridAndNode = this.determineGridId(gridList, terminalId);
+        if (!gridAndNode) return;
+        if(gridAndNode.node.isRoot) {
+            this.bus.publish({path: ['app', 'terminal'], type: "RemoveTab", payload: gridAndNode.grid.tabId});
+        } else {
+            const wasFocusedNode = gridAndNode.node.data?.isFocused;
+            const newChild = gridAndNode.grid.tree.remove(gridAndNode.node.key);
+            if(wasFocusedNode) {
+                setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: "FocusTerminal", payload: newChild?.data?.terminalId}), 250);
+            }
+        }
+        this._gridList.next(gridList);
     }
 
     private split(terminalId: TerminalId, splitDirection: SplitDirection, side: 'l' | 'r') {
