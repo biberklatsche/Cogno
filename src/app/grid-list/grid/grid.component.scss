@@ -10,13 +10,18 @@
 }
 .divider{
   background: var(--background-color-20l);
+  &:hover{
+    background: var(--background-color-30l);
+  }
 }
 .divider.horizontal {
-  cursor:row-resize;
+  align-self: center;
+  cursor:n-resize;
   height:2px;
 }
 .divider.vertical {
-  cursor:col-resize;
+  justify-self: center;
+  cursor:e-resize;
   width:2px;
 }
 .cell{

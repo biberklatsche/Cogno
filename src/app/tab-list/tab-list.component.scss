@@ -34,7 +34,7 @@
   gap: 6px;
   height: 26px;
   padding: 0 8px;
-  border: none;
+  border: 1px solid var(--background-color-10l);
   border-radius: var(--button-border-radius);
   background: var(--background-color-10l);
   color: var(--foreground-color);
@@ -46,9 +46,10 @@
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
   /* wichtig für Container Queries */
   container-type: inline-size;
-  opacity: 0.5;
+  opacity: 0.6;
   &.is-active {
-    opacity: 1;
+    opacity: 0.8;
+    border: 1px solid var(--background-color-30l);
     color: var(--highlight-color);
     background: var(--background-color-10l);
   }
