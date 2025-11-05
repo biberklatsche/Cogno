@@ -35,6 +35,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     onContextMenu(event: MouseEvent) {
         event.preventDefault();
         event.stopPropagation();
+        this.terminalSession?.focus();
         const items: ContextMenuItem[] = this.terminalSession?.buildContextMenu() ?? [];
         this.menu.openAt(event, ContextMenuComponent, { items });
     }

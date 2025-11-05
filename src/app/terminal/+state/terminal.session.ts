@@ -15,7 +15,7 @@ import {SelectionHandler} from "./handler/selection.handler";
 import {Clipboard} from "../../_tauri/clipboard";
 
 import {InputHandler} from "./handler/input.handler";
-import {KeybindExecutor} from "./executer/keybind.executor";
+import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 
 export class TerminalSession {
@@ -46,9 +46,8 @@ export class TerminalSession {
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer);
-        this.focusHandler = new FocusHandler(this.terminalId, this.bus)
-        this.selectionHandler = new SelectionHandler()
-        this.inputHandler = new InputHandler()
+        this.focusHandler = new FocusHandler(this.terminalId, this.bus);
+        this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.configService, this.bus)));
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
@@ -56,24 +55,37 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
-        this.disposables.push(this.renderer.register(this.inputHandler));
-        this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.inputHandler, this.configService))
+        this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
+        this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
     }
 
     buildContextMenu(): ContextMenuItem[] {
         const items: ContextMenuItem[] = [
             { label: 'Paste', action: async () => {
-                const text = await Clipboard.readText();
-                this.inputHandler?.write(text);
                 this.focusHandler?.focus();
+                this.bus.publish({path: ['app', 'terminal'], type: 'Paste', payload: this.terminalId});
             }, actionName: 'paste' },
             { separator: true },
-            { label: 'Split Right', action: () => console.log('Split right for terminal', this.terminalId), actionName: "split_right" },
-            { label: 'Split Left', action: () => console.log('Split left for terminal', this.terminalId), actionName: "split_left" },
-            { label: 'Split Down', action: () => console.log('Split down for terminal', this.terminalId), actionName: "split_down"  },
-            { label: 'Split Up', action: () => console.log('Split up for terminal', this.terminalId), actionName: "split_up"  },
+            { label: 'Split Right', action: () => {
+                    this.bus.publish({path: ['app', 'terminal'], type: 'SplitPaneRight', payload: this.terminalId});
+                }, actionName: "split_right" },
+            { label: 'Split Left', action: () => {
+                    this.bus.publish({path: ['app', 'terminal'], type: 'SplitPaneLeft', payload: this.terminalId});
+                }, actionName: "split_left" },
+            { label: 'Split Down', action: () => {
+                    this.bus.publish({path: ['app', 'terminal'], type: 'SplitPaneDown', payload: this.terminalId});
+                }, actionName: "split_down"  },
+            { label: 'Split Up', action: () => {
+                    this.bus.publish({path: ['app', 'terminal'], type: 'SplitPaneUp', payload: this.terminalId});
+                }, actionName: "split_up"  },
             { separator: true },
-            { label: 'Clear', action: () => console.log('Clear terminal', this.terminalId), actionName: "clear_buffer" },
+            { label: 'Clear', action: () => {
+                    this.focusHandler?.focus();
+                    this.bus.publish({path: ['app', 'terminal'], type: 'ClearBuffer', payload: this.terminalId});
+                }, actionName: "clear_buffer" },
+            { label: 'Close', action: () => {
+                    this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
+                }, actionName: "close_active_terminal"  },
         ];
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {

@@ -21,13 +21,13 @@ export class KeybindService {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
         configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind!));
         window.addEventListener("keydown", (e) => {
-            console.log(e);
             const keybindFiredEvent = this._keybindMatcher.match(e);
             if (!keybindFiredEvent) return;
             keybindFiredEvent.path = ['app', 'terminal'];
-            const isHandled = bus.publish(keybindFiredEvent);
+            const result = bus.publish(keybindFiredEvent);
             if(keybindFiredEvent.trigger?.unconsumed) return;
-            if(keybindFiredEvent.trigger?.performable && !isHandled) return;
+            if(keybindFiredEvent.trigger?.performable && !result.performed) return;
+            if(result.defaultPrevented || result.propagationStopped) return;
             e.preventDefault();
             e.stopPropagation();
         }, {capture: true});

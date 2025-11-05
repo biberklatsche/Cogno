@@ -162,8 +162,9 @@ export type ActionName =
     'open_new_tab' |
     'close_active_tab' |
     'split_right' |
-    'split_down' |
     'split_left' |
+    'split_down' |
     'split_up' |
+    'close_active_terminal' |
     'clear_buffer'
     ;

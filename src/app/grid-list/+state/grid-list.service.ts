@@ -63,42 +63,51 @@ export class GridListService {
             this._gridList.next(gridList);
         });
 
-        this.bus.onType$('KeybindFired').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
-            switch (event.payload) {
-                case 'split_right':
-                    this.split('vertical', 'r');
-                    event.propagationStopped = true;
-                    break;
-                case 'split_left':
-                    this.split('vertical', 'l');
-                    event.propagationStopped = true;
-                    break;
-                case 'split_down':
-                    this.split('horizontal', 'r');
-                    event.propagationStopped = true;
-                    break;
-                case 'split_up':
-                    this.split('horizontal', 'l');
-                    event.propagationStopped = true;
-                    break;
-            }
-        })
+        this.bus.onType$('RemovePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            event.propagationStopped = true;
+            const gridList = this._gridList.value;
+            const terminalId: TerminalId = event.payload!;
+            let gridAndNode = this.determineGridId(gridList, terminalId);
+            if(!gridAndNode) return;
+            gridAndNode.grid.tree.remove(gridAndNode.node.key);
+            this._gridList.next(gridList);
+        });
+
+        this.bus.onType$('SplitPaneRight').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            this.split(event.payload!,'vertical', 'r');
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('SplitPaneLeft').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            this.split(event.payload!,'vertical', 'l');
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('SplitPaneDown').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            this.split(event.payload!,'horizontal', 'r');
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('SplitPaneUp').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
+            this.split(event.payload!,'horizontal', 'l');
+            event.propagationStopped = true;
+        });
     }
 
-    private split(splitDirection: SplitDirection, side: 'l' | 'r') {
+    private split(terminalId: TerminalId, splitDirection: SplitDirection, side: 'l' | 'r') {
         if (!this._activeTabId.value) throw new Error("No active tab id found.");
         const gridList = this._gridList.value;
         const tree = gridList[this._activeTabId.value].tree;
-        const focusedNode = tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false);
-        if (!focusedNode) throw new Error("No focused pane found.");
+        const node = tree.first(s => (s.isLeaf && s.data?.terminalId === terminalId));
+        if (!node) throw new Error("No focused pane found.");
         const paneParent: Pane = {
             splitDirection: splitDirection,
             ratio: 0.5
         };
-        this.bus.publish({path: ['app', 'terminal'], type: "BlurTerminal", payload: focusedNode.data?.terminalId!});
+        this.bus.publish({path: ['app', 'terminal'], type: "BlurTerminal", payload: node.data?.terminalId!});
 
         const paneChild: Pane = {shellConfigPosition: 1, terminalId: IdCreator.newTerminalId()};
-        tree.add(focusedNode.key, side, paneParent, paneChild);
+        tree.add(node.key, side, paneParent, paneChild);
         this._gridList.next(gridList);
     }
 
@@ -154,12 +163,12 @@ export class GridListService {
         return this.getFirstTerminalId(node.left!);
     }
 
-    private determineGridId(terminalId?: TerminalId): TabId | undefined {
+    private determineGridId(gridList: GridList, terminalId?: TerminalId): {grid: Grid, node: BinaryNode<Pane> }| undefined {
         if(!terminalId) return;
-        for (const grid of Object.values(this._gridList.value)) {
+        for (const grid of Object.values(gridList)) {
             const node = grid.tree.first(p => p.data!.terminalId === terminalId);
             if(node && node.isLeaf) {
-                return grid.tabId;
+                return {grid, node};
             }
         }
         return;

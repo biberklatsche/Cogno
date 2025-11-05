@@ -15,8 +15,7 @@ export class KeybindExecutor implements IDisposable  {
         private _bus: AppBus,
         private _focusHandler: FocusHandler,
         private _selectionHandler: SelectionHandler,
-        private _inputHandler: InputHandler,
-        private _configService: ConfigService,
+        private _terminalId: string,
     ) {
         this._subscription = new Subscription();
         this._subscription.add(this._bus.on$({
@@ -26,21 +25,26 @@ export class KeybindExecutor implements IDisposable  {
             if(!this._focusHandler?.hasFocus() && !event.trigger?.all) return;
             switch (event.payload) {
                 case 'copy': {
-                    event.defaultPrevented = this.calcPreventDefault(event.trigger?.performable, () => this._selectionHandler!.hasSelection());
-                    if (event.defaultPrevented) {
-                        await Clipboard.writeText(this._selectionHandler!.getSelection());
-                        if(this._configService.config.selection?.clear_on_copy) {
-                            this._selectionHandler?.clearSelection();
-                        }
+                    const isPerformable = this.calcPreventDefault(event.trigger?.performable, () => this._selectionHandler!.hasSelection());
+                    if (isPerformable) {
+                        this._bus.publish({type: 'Copy', payload: this._terminalId, path: ['app', 'terminal']});
+                        event.performed = true;
                     }
                     break;
                 }
                 case 'paste': {
-                    event.defaultPrevented = this.calcPreventDefault(event.trigger?.performable, () => this._selectionHandler!.hasSelection());
-                    if (event.defaultPrevented) {
-                        this._inputHandler.write(await Clipboard.readText());
-                    }
+                    this._bus.publish({type: 'Paste', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
                     break;
+                }
+                case 'clear_buffer': {
+                    this._bus.publish({type: 'ClearBuffer', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'close_active_terminal': {
+                    this._bus.publish({type: 'RemovePane', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
                 }
             }
         }));

@@ -5,7 +5,6 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {IPty} from "../pty/pty";
 import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
-import {FitAddon} from "@xterm/addon-fit";
 
 export class PtyHandler implements ITerminalHandler {
 
