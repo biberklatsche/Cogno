@@ -10,6 +10,8 @@ import {filter} from "rxjs/operators";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {KeybindFiredEvent} from "../../keybinding/keybind.service";
+import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ConfigService} from "../../config/+state/config.service";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -20,11 +22,11 @@ export class TabListService {
         return this._tabList.asObservable();
     }
 
-    constructor(private bus: AppBus, destroyRef: DestroyRef) {
+    constructor(private bus: AppBus, private configService: ConfigService, destroyRef: DestroyRef) {
         this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
             this._tabList.next([]);
             for (const [index, grid] of event.payload!.grids.entries()) {
-                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: 'unknown', isActive: false});
+                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: false});
             }
         });
         this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
@@ -46,7 +48,7 @@ export class TabListService {
         this.bus.on$({type: 'KeybindFired', path: ['app', 'terminal']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
                 switch (event.payload) {
                     case 'open_new_tab':
-                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
+                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
@@ -70,6 +72,18 @@ export class TabListService {
 
                 }
             });
+    }
+
+    buildContextMenu(tabId: TabId): ContextMenuItem[] {
+        const items: (ContextMenuItem|undefined)[] = [
+            this._tabList.value.length > 1 ? { label: 'Close other Tabs', action: () => {
+                    this.closeAllTabs(tabId);
+                }, actionName: "close_other_tabs" } : undefined,
+            { label: 'Close all Tabs', action: () => {
+                    this.closeAllTabs();
+                }, actionName: "split_down"  }
+        ];
+        return items.filter(s => !!s);
     }
 
     closeAllTabs(except?: TabId) {

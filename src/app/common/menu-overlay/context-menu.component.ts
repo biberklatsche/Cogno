@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.types';
-import {ActionKeybindingPipe, KeybindingPipe} from "../keybinding/keybinding.pipe";
+import {ActionKeybindingPipe} from "../keybinding/keybinding.pipe";
 
 @Component({
     selector: 'app-context-menu',
@@ -49,6 +49,7 @@ import {ActionKeybindingPipe, KeybindingPipe} from "../keybinding/keybinding.pip
                 display: flex;
                 flex-direction: row;
                 align-items: center;
+                gap: 1rem;
                 min-width: 100%;
                 justify-content: space-between;
                 padding: 8px 10px;

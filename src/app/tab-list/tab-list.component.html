@@ -9,6 +9,7 @@
                 [attr.data-tab-id]="tab.id"
                 title="{{tab.title}}"
                 (click)="selectTab(tab.id)"
+                (contextmenu)="buildContextMenu($event, tab.id)"
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
             <span class="title">{{ tab.title }}</span>

@@ -9,6 +9,9 @@ import {Icon} from "../icons/+model/icon";
 import {AppBus} from "../app-bus/app-bus";
 import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';
+import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
+import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
+import {ContextMenuComponent} from "../common/menu-overlay/context-menu.component";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -20,7 +23,7 @@ export class TabListComponent {
 
     tabs: Observable<Tab[]>;
 
-    constructor(private tabListService: TabListService) {
+    constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
     }
 
@@ -46,5 +49,12 @@ export class TabListComponent {
 
     selectTab(tabId: TabId) {
         this.tabListService.selectTab(tabId);
+    }
+
+    buildContextMenu(event: MouseEvent,tabId: TabId) {
+        event.preventDefault();
+        event.stopPropagation();
+        const items: ContextMenuItem[] = this.tabListService.buildContextMenu(tabId);
+        this.menu.openForElement(event.currentTarget as HTMLElement, ContextMenuComponent, { items });
     }
 }
