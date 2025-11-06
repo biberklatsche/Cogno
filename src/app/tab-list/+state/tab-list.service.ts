@@ -9,6 +9,7 @@ import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.hand
 import {filter} from "rxjs/operators";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
+import {KeybindFiredEvent} from "../../keybinding/keybind.service";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -42,19 +43,47 @@ export class TabListService {
             this._tabList.next(tabList);
             event.propagationStopped = true;
         });
-        this.bus.onType$('KeybindFired').subscribe(event => {
+        this.bus.on$({type: 'KeybindFired', path: ['app', 'terminal']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
                 switch (event.payload) {
                     case 'open_new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: 'unknown', isActive: true});
-                        event.performed = true;
+                        event.performed = !event.trigger?.all;
+                        event.defaultPrevented = true;
                         break;
                     case 'close_active_tab':
                         const activeTabId = this._tabList.value.find(s => s.isActive)?.id;
                         this.removeTab(activeTabId);
-                        event.performed = true;
+                        event.performed = !event.trigger?.all;
+                        event.defaultPrevented = true;
                         break;
+                    case 'close_other_tabs':
+                        const activeTab = this._tabList.value.find(s => s.isActive);
+                        this.closeAllTabs(activeTab?.id);
+                        event.performed = !(event.trigger?.all);
+                        event.defaultPrevented = true;
+                        break;
+                    case 'close_all_tabs':
+                        this.closeAllTabs();
+                        event.performed = !event.trigger?.all;
+                        event.defaultPrevented = true;
+                        break;
+
                 }
             });
+    }
+
+    closeAllTabs(except?: TabId) {
+        const tabsToClose = [...this._tabList.value];
+        if(!except) {
+            this._tabList.next([]);
+        } else {
+            const index = tabsToClose.findIndex(s => s.id === except);
+            const remainingTab = tabsToClose.splice(index, 1);
+            this._tabList.next(remainingTab);
+        }
+        for (const tab of tabsToClose) {
+            this.bus.publish({type: 'TabRemoved', payload: tab.id});
+        }
     }
 
     addTab(tab: Tab) {

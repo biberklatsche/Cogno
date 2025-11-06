@@ -27,7 +27,8 @@ export class KeybindService {
             const result = bus.publish(keybindFiredEvent);
             if(keybindFiredEvent.trigger?.unconsumed) return;
             if(keybindFiredEvent.trigger?.performable && !result.performed) return;
-            if(result.defaultPrevented || result.propagationStopped) return;
+            if(!result.defaultPrevented && !result.propagationStopped) return;
+            console.log('not prevented!!!!!');
             e.preventDefault();
             e.stopPropagation();
         }, {capture: true});
