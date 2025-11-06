@@ -47,4 +47,10 @@ export class TabListComponent {
     selectTab(tabId: TabId) {
         this.tabListService.selectTab(tabId);
     }
+
+    closeTabMiddle(event: MouseEvent, tabId: TabId) {
+        if (event.button === 1) {
+            this.closeTab(tabId);
+        }
+    }
 }
