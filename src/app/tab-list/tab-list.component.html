@@ -12,7 +12,12 @@
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
-            <span class="title">{{ tab.title }}</span>
+            @if (showRename===tab.id) {
+                <input [value]="tab.title" [keydown.esc]=""></input>
+            } @else {
+                <span class="title">{{ tab.title }}</span>
+            }
+
             <span class="close" (click)="$event.stopPropagation(); closeTab(tab.id)">
                 <app-icon name="mdiClose"></app-icon>
             </span>

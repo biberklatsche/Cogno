@@ -1,12 +1,11 @@
 import {DestroyRef, Injectable} from "@angular/core";
-import {Tab, TabList} from '../+model/tab';
+import {Tab, TabList, TabUi} from '../+model/tab';
 import {BehaviorSubject, map, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
-import {filter} from "rxjs/operators";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {KeybindFiredEvent} from "../../keybinding/keybind.service";
@@ -18,7 +17,7 @@ export class TabListService {
 
     private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
 
-    get tabs$(): Observable<Tab[]> {
+    get tabs$(): Observable<TabUi[]> {
         return this._tabList.asObservable();
     }
 
@@ -76,12 +75,16 @@ export class TabListService {
 
     buildContextMenu(tabId: TabId): ContextMenuItem[] {
         const items: (ContextMenuItem|undefined)[] = [
-            this._tabList.value.length > 1 ? { label: 'Close other Tabs', action: () => {
+            this._tabList.value.length > 1 ? { label: 'Close other tabs', action: () => {
                     this.closeAllTabs(tabId);
                 }, actionName: "close_other_tabs" } : undefined,
-            { label: 'Close all Tabs', action: () => {
+            { label: 'Close all tabs', action: () => {
                     this.closeAllTabs();
-                }, actionName: "split_down"  }
+                }, actionName: "split_down"  },
+            {separator: true},
+            { label: 'Rename tab', action: () => {
+                    this.renameTab(tabId);
+                }},
         ];
         return items.filter(s => !!s);
     }
@@ -142,5 +145,13 @@ export class TabListService {
         tabList[tabIndex].isActive = true;
         this._tabList.next(tabList);
         this.bus.publish({type: 'TabSelected', payload: tabId});
+    }
+
+    private renameTab(tabId: TabId) {
+        const tabs = [...this._tabList.value];
+        const tab = tabs.find(s => s.id === tabId);
+        if(!tab) return;
+        tab.showRenameInput = true;
+        this._tabList.next(tabs);
     }
 }

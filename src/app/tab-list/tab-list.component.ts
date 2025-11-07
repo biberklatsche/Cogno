@@ -1,17 +1,16 @@
-import {Component} from '@angular/core';
+import {Component, signal, WritableSignal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
-import {Tab} from "./+model/tab";
 import {Observable} from "rxjs";
 import {IconComponent} from "../icons/icon/icon.component";
 import {ShellType} from "../config/+models/config.types";
 import {Icon} from "../icons/+model/icon";
-import {AppBus} from "../app-bus/app-bus";
 import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
 import {ContextMenuComponent} from "../common/menu-overlay/context-menu.component";
+import {TabUi} from "./+model/tab";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -21,7 +20,8 @@ import {ContextMenuComponent} from "../common/menu-overlay/context-menu.componen
 })
 export class TabListComponent {
 
-    tabs: Observable<Tab[]>;
+    tabs: Observable<TabUi[]>;
+    showRename: WritableSignal<TabId | undefined> = signal(undefined);
 
     constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
