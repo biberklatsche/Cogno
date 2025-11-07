@@ -25,7 +25,6 @@ export class TerminalSession {
 
     private focusHandler?: FocusHandler = undefined;
     private selectionHandler?: SelectionHandler = undefined;
-    private inputHandler?: InputHandler = undefined;
 
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[] = [

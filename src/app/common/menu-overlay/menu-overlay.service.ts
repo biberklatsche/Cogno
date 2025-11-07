@@ -35,7 +35,7 @@ export class MenuOverlayService {
     Object.assign(host.style, {
       position: 'fixed',
       left: point.x + 'px',
-      top: point.y + 'px',
+      top: point.y + 2 + 'px',
       zIndex: '100000',
       visibility: 'hidden', // position first, then reveal after clamp
     } as CSSStyleDeclaration);

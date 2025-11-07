@@ -1,14 +1,16 @@
-import {Component} from '@angular/core';
+import {Component, ElementRef, Signal, signal, ViewChild, WritableSignal, effect} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
-import {Tab} from "./+model/tab";
 import {Observable} from "rxjs";
 import {IconComponent} from "../icons/icon/icon.component";
 import {ShellType} from "../config/+models/config.types";
 import {Icon} from "../icons/+model/icon";
-import {AppBus} from "../app-bus/app-bus";
 import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';
+import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
+import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
+import {ContextMenuComponent} from "../common/menu-overlay/context-menu.component";
+import {Tab} from "./+model/tab";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -19,9 +21,31 @@ import {IdCreator} from '../common/id-creator/id-creator';
 export class TabListComponent {
 
     tabs: Observable<Tab[]>;
+    showRename: Signal<TabId | undefined>;
+    @ViewChild('renameInput') inputRef!: ElementRef<HTMLInputElement>;
 
-    constructor(private tabListService: TabListService) {
+    constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
+        this.showRename = this.tabListService.showRename$;
+
+        // Focus the rename input when it appears
+        effect(() => {
+            const show = this.showRename();
+            if (show) {
+                // Wait for the view to render the input before focusing
+                queueMicrotask(() => {
+                    try {
+                        const el = this.inputRef?.nativeElement;
+                        if (el) {
+                            el.focus();
+                            el.select();
+                        }
+                    } catch {
+                        // ignore if element is not yet available
+                    }
+                });
+            }
+        });
     }
 
     closeTab(tabId: TabId): void {
@@ -52,5 +76,20 @@ export class TabListComponent {
         if (event.button === 1) {
             this.closeTab(tabId);
         }
+    }
+
+    buildContextMenu(event: MouseEvent,tabId: TabId) {
+        event.preventDefault();
+        event.stopPropagation();
+        const items: ContextMenuItem[] = this.tabListService.buildContextMenu(tabId);
+        this.menu.openForElement(event.currentTarget as HTMLElement, ContextMenuComponent, { items });
+    }
+
+    closeRename() {
+        this.tabListService.closeRename();
+    }
+
+    commitRename(value: string) {
+        this.tabListService.commitRename(value);
     }
 }

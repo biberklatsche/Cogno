@@ -4,11 +4,8 @@ import {LoadConfigAction, WatchConfigAction} from "../config/+bus/actions";
 import {WorkspaceLoadedEvent} from "../workspace/+bus/events";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
-    BlurTerminalAction,
-    ClearBufferAction,
-    CopyAction,
-    FocusTerminalAction,
-    PasteAction
+    BlurTerminalAction, ClearBufferAction, CopyAction,
+    FocusTerminalAction, PasteAction,
 } from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
