@@ -1,4 +1,4 @@
-import {Component, ElementRef, Signal, signal, ViewChild, WritableSignal} from '@angular/core';
+import {Component, ElementRef, Signal, signal, ViewChild, WritableSignal, effect} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";
@@ -22,11 +22,30 @@ export class TabListComponent {
 
     tabs: Observable<Tab[]>;
     showRename: Signal<TabId | undefined>;
-    @ViewChild('inp') inputRef!: ElementRef<HTMLInputElement>;
+    @ViewChild('renameInput') inputRef!: ElementRef<HTMLInputElement>;
 
     constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
         this.showRename = this.tabListService.showRename$;
+
+        // Focus the rename input when it appears
+        effect(() => {
+            const show = this.showRename();
+            if (show) {
+                // Wait for the view to render the input before focusing
+                queueMicrotask(() => {
+                    try {
+                        const el = this.inputRef?.nativeElement;
+                        if (el) {
+                            el.focus();
+                            el.select();
+                        }
+                    } catch {
+                        // ignore if element is not yet available
+                    }
+                });
+            }
+        });
     }
 
     closeTab(tabId: TabId): void {
