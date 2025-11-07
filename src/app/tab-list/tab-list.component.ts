@@ -9,7 +9,6 @@ import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
-import {ContextMenuComponent} from "../common/menu-overlay/context-menu.component";
 import {Tab} from "./+model/tab";
 @Component({
   selector: 'app-tab-list',
@@ -82,7 +81,7 @@ export class TabListComponent {
         event.preventDefault();
         event.stopPropagation();
         const items: ContextMenuItem[] = this.tabListService.buildContextMenu(tabId);
-        this.menu.openForElement(event.currentTarget as HTMLElement, ContextMenuComponent, { items });
+        this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
     }
 
     closeRename() {

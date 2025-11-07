@@ -1,5 +1,6 @@
 import {ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, Type, createComponent} from '@angular/core';
-import { MenuOverlayComponent } from './menu-overlay.types';
+import { MenuOverlayComponent, ContextMenuOverlayComponent } from './menu-overlay.types';
+import { ContextMenuComponent } from './context-menu.component';
 
 export type Point = { x: number; y: number };
 
@@ -109,6 +110,17 @@ export class MenuOverlayService {
     const rect = el.getBoundingClientRect();
     const point: Point = { x: rect.left, y: rect.bottom };
     return this.openAt(point, component, inputs);
+  }
+
+  // Convenience: fixed context menu openers
+  openContextAt(pointOrEvent: Point | MouseEvent, inputs?: Partial<ContextMenuOverlayComponent>): MenuOverlayRef {
+    return this.openAt(pointOrEvent, ContextMenuComponent, inputs as any);
+  }
+
+  openContextForElement(el: HTMLElement, inputs?: Partial<ContextMenuOverlayComponent>): MenuOverlayRef {
+    const rect = el.getBoundingClientRect();
+    const point: Point = { x: rect.left, y: rect.bottom };
+    return this.openAt(point, ContextMenuComponent, inputs as any);
   }
 
   close() {

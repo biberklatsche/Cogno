@@ -86,6 +86,8 @@ export class TabListService {
             { label: 'Close all tabs', action: () => this.closeAllTabs(), actionName: "split_down"  },
             {separator: true},
             { label: 'Rename tab', action: () => this._showRename.set(tabId)},
+            {separator: true},
+            { colorpicker: true, action: <ColorName>(name: ColorName) => { console.log('Tab color selected:', name, 'for tab', tabId); } },
         ];
         return items.filter(s => !!s);
     }

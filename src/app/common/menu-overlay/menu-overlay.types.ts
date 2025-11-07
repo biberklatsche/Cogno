@@ -2,17 +2,24 @@
 
 import {ActionName} from "../../config/+models/config.types";
 
+// Local name union used by the color picker item
+export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
+
 export interface MenuOverlayComponent {
   // Provided by MenuOverlayService upon open; call to close the overlay
   close?: () => void;
 }
 
 export type ContextMenuItem = {
+  // Regular action item
   label?: string;
   actionName?: ActionName;
-  action?: () => void;
+  action?: <T>(arg?: T) => void;
   disabled?: boolean;
   separator?: boolean;
+
+  // Fixed color picker embedding
+  colorpicker?: boolean;
 };
 
 export interface ContextMenuOverlayComponent extends MenuOverlayComponent {

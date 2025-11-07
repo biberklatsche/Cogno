@@ -1,6 +1,8 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import { ContextMenuItem, ContextMenuOverlayComponent } from './menu-overlay.types';
+import {Component, Input} from '@angular/core';
+import { ContextMenuItem, ContextMenuOverlayComponent, ColorName } from './menu-overlay.types';
 import {ActionKeybindingPipe} from "../keybinding/keybinding.pipe";
+import {CommonModule} from "@angular/common";
+import {ColorSelectComponent} from "../color/color-select.component";
 
 @Component({
     selector: 'app-context-menu',
@@ -10,6 +12,10 @@ import {ActionKeybindingPipe} from "../keybinding/keybinding.pipe";
             @for (item of items; track item; let i = $index) {
                 @if (item.separator) {
                     <div class="sep" role="separator"></div>
+                } @else if (item.colorpicker) {
+                    <div class="embed" role="none">
+                        <app-color-select (colorSelected)="onColorPick(item, $event)"></app-color-select>
+                    </div>
                 } @else {
                     <button
                             class="item"
@@ -25,7 +31,9 @@ import {ActionKeybindingPipe} from "../keybinding/keybinding.pipe";
         </div>
     `,
     imports: [
-        ActionKeybindingPipe
+        ActionKeybindingPipe,
+        CommonModule,
+        ColorSelectComponent
     ],
     styles: [
         `
@@ -80,6 +88,10 @@ import {ActionKeybindingPipe} from "../keybinding/keybinding.pipe";
                 background: var(--background-color-20l);
                 margin: 6px 4px;
             }
+            
+            .embed {
+                padding: 4px;
+            }
         `
     ]
 })
@@ -87,13 +99,18 @@ export class ContextMenuComponent implements ContextMenuOverlayComponent {
   @Input() items: ContextMenuItem[] = [];
   @Input() close?: () => void;
 
-  @Output() itemSelected = new EventEmitter<ContextMenuItem>();
-
   onItemClick(item: ContextMenuItem) {
     if (item.disabled) return;
     try {
       item.action?.();
-      this.itemSelected.emit(item);
+    } finally {
+      this.close?.();
+    }
+  }
+
+  onColorPick(item: ContextMenuItem, name: ColorName) {
+    try {
+      item.action?.(name);
     } finally {
       this.close?.();
     }
