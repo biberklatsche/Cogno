@@ -10,6 +10,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
+import {FocusActiveTerminalAction} from "../+bus/actions";
 
 
 @Injectable({providedIn: 'root'})
@@ -48,6 +49,12 @@ export class GridListService {
 
         this.bus.onType$('TabSelected').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
             this.selectGrid(event.payload);
+        });
+
+        this.bus.onType$('FocusActiveTerminal').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: FocusActiveTerminalAction) => {
+            const focusedTerminalId = this.getFocusedTerminalId();
+            if(!focusedTerminalId) return;
+            this.bus.publish({path: ['app', 'terminal'], type: "FocusTerminal", payload: focusedTerminalId});
         });
 
         this.bus.onType$('TerminalFocused').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalFocusedEvent) => {
@@ -173,6 +180,19 @@ export class GridListService {
     getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
         if(node.isLeaf) return  node.data!.terminalId!;
         return this.getFirstTerminalId(node.left!);
+    }
+
+    getFocusedTerminalId(): TerminalId | undefined {
+        const activeGrid = this.getActiveGrid();
+        if(!activeGrid) return;
+        const focusedNode = activeGrid.tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false);
+        if(!focusedNode) return;
+        return focusedNode.data!.terminalId!;
+    }
+
+    private getActiveGrid(): Grid | undefined {
+        if(!this._activeTabId.value) return;
+        return this._gridList.value[this._activeTabId.value];
     }
 
     private determineGridId(gridList: GridList, terminalId?: TerminalId): {grid: Grid, node: BinaryNode<Pane> }| undefined {

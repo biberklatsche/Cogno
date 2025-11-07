@@ -12,7 +12,6 @@ import {IPty, Pty} from "./pty/pty";
 import {ResizeHandler} from "./handler/resize.handler";
 import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
 import {SelectionHandler} from "./handler/selection.handler";
-import {Clipboard} from "../../_tauri/clipboard";
 
 import {InputHandler} from "./handler/input.handler";
 import {KeybindExecutor} from "./keybind/keybind.executor";

@@ -80,16 +80,12 @@ export class TabListService {
 
     buildContextMenu(tabId: TabId): ContextMenuItem[] {
         const items: (ContextMenuItem|undefined)[] = [
-            this._tabList.value.length > 1 ? { label: 'Close other tabs', action: () => {
-                    this.closeAllTabs(tabId);
-                }, actionName: "close_other_tabs" } : undefined,
-            { label: 'Close all tabs', action: () => {
-                    this.closeAllTabs();
-                }, actionName: "split_down"  },
+            this._tabList.value.length > 1 ?
+                { label: 'Close other tabs', action: () => this.closeAllTabs(tabId), actionName: "close_other_tabs" }
+                : undefined,
+            { label: 'Close all tabs', action: () => this.closeAllTabs(), actionName: "split_down"  },
             {separator: true},
-            { label: 'Rename tab', action: () => {
-                    this._showRename.set(tabId);
-                }},
+            { label: 'Rename tab', action: () => this._showRename.set(tabId)},
         ];
         return items.filter(s => !!s);
     }
@@ -155,10 +151,13 @@ export class TabListService {
 
     closeRename() {
         this._showRename.set(undefined);
+        const activeTab = this._tabList.value.find(s => s.isActive);
+        if(activeTab) {
+            this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
+        }
     }
 
     commitRename(value: string) {
-
         if(!value?.trim()) return;
         const tabId = this._showRename();
         if(!tabId) return;
@@ -167,6 +166,6 @@ export class TabListService {
         if(!tab) return;
         tab.title = value;
         this._tabList.next(tabList);
-        this._showRename.set(undefined);
+        this.closeRename();
     }
 }

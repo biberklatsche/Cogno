@@ -1,6 +1,7 @@
 import {ActionBase} from "../../app-bus/app-bus";
 import {TerminalId} from "../+model/model";
 
+export type FocusActiveTerminalAction = ActionBase<"FocusActiveTerminal", TerminalId>
 export type RemovePaneAction = ActionBase<"RemovePane", TerminalId>
 export type SplitPaneRightAction = ActionBase<"SplitPaneRight", TerminalId>
 export type SplitPaneLeftAction = ActionBase<"SplitPaneLeft", TerminalId>

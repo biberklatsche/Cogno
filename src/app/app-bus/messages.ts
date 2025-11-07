@@ -19,6 +19,7 @@ import {KeybindFiredEvent} from "../keybinding/keybind.service";
 import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
 import {TerminalBlurredEvent, TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
 import {
+    FocusActiveTerminalAction,
     RemovePaneAction, SplitPaneDownAction,
     SplitPaneLeftAction,
     SplitPaneRightAction,
@@ -56,4 +57,5 @@ export type AppMessage =
     | SplitPaneUpAction
     | SplitPaneDownAction
     | ClearBufferAction
+    | FocusActiveTerminalAction
     ;
