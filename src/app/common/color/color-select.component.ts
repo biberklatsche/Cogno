@@ -28,7 +28,6 @@ interface ColorItem {
                           [attr.aria-label]="c.name"
                           [title]="c.name"
                   >
-                      {{ c.name }}
                   </button>
               }
           </div>
@@ -39,15 +38,14 @@ interface ColorItem {
     :host { display: block; }
     .color-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      grid-auto-rows: 2.5rem;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: .5rem;
     }
     .color-btn {
-      width: 100%;
-      height: 100%;
+      width: 20px;
+      height: 20px;
       border: 1px solid var(--color-shadow2, rgba(0,0,0,.2));
-      border-radius: .375rem;
+      border-radius: 50%;
       box-shadow: var(--shadow1, none);
       cursor: pointer;
       font: inherit;
