@@ -12,8 +12,8 @@
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
-            @if (showRename===tab.id) {
-                <input [value]="tab.title" [keydown.esc]=""></input>
+            @if (showRename()===tab.id) {
+                <input #inp autofocus (keyup.esc)="$event.stopPropagation(); closeRename()" (keyup.enter)="$event.stopPropagation(); commitRename(inp.value);">
             } @else {
                 <span class="title">{{ tab.title }}</span>
             }

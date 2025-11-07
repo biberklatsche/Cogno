@@ -1,4 +1,4 @@
-import {Component, signal, WritableSignal} from '@angular/core';
+import {Component, ElementRef, Signal, signal, ViewChild, WritableSignal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";
@@ -10,7 +10,7 @@ import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
 import {ContextMenuComponent} from "../common/menu-overlay/context-menu.component";
-import {TabUi} from "./+model/tab";
+import {Tab} from "./+model/tab";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
@@ -20,11 +20,13 @@ import {TabUi} from "./+model/tab";
 })
 export class TabListComponent {
 
-    tabs: Observable<TabUi[]>;
-    showRename: WritableSignal<TabId | undefined> = signal(undefined);
+    tabs: Observable<Tab[]>;
+    showRename: Signal<TabId | undefined>;
+    @ViewChild('inp') inputRef!: ElementRef<HTMLInputElement>;
 
     constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
+        this.showRename = this.tabListService.showRename$;
     }
 
     closeTab(tabId: TabId): void {
@@ -56,5 +58,13 @@ export class TabListComponent {
         event.stopPropagation();
         const items: ContextMenuItem[] = this.tabListService.buildContextMenu(tabId);
         this.menu.openForElement(event.currentTarget as HTMLElement, ContextMenuComponent, { items });
+    }
+
+    closeRename() {
+        this.tabListService.closeRename();
+    }
+
+    commitRename(value: string) {
+        this.tabListService.commitRename(value);
     }
 }

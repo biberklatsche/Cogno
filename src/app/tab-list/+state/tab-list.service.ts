@@ -1,6 +1,6 @@
-import {DestroyRef, Injectable} from "@angular/core";
-import {Tab, TabList, TabUi} from '../+model/tab';
-import {BehaviorSubject, map, Observable} from 'rxjs';
+import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/core";
+import {Tab, TabList} from '../+model/tab';
+import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {TabId} from "../../workspace/+model/workspace";
@@ -16,9 +16,14 @@ import {ConfigService} from "../../config/+state/config.service";
 export class TabListService {
 
     private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
+    private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
 
-    get tabs$(): Observable<TabUi[]> {
+    get tabs$(): Observable<Tab[]> {
         return this._tabList.asObservable();
+    }
+
+    get showRename$(): Signal<TabId | undefined> {
+        return this._showRename.asReadonly();
     }
 
     constructor(private bus: AppBus, private configService: ConfigService, destroyRef: DestroyRef) {
@@ -83,7 +88,7 @@ export class TabListService {
                 }, actionName: "split_down"  },
             {separator: true},
             { label: 'Rename tab', action: () => {
-                    this.renameTab(tabId);
+                    this._showRename.set(tabId);
                 }},
         ];
         return items.filter(s => !!s);
@@ -136,6 +141,7 @@ export class TabListService {
     }
 
     selectTab(tabId: TabId) {
+        if(this._showRename()) return;
         const tabList = [...this._tabList.value];
         const tabIndex = tabList.findIndex(tab => tab.id === tabId);
         if(tabIndex === -1) return;
@@ -147,11 +153,20 @@ export class TabListService {
         this.bus.publish({type: 'TabSelected', payload: tabId});
     }
 
-    private renameTab(tabId: TabId) {
-        const tabs = [...this._tabList.value];
-        const tab = tabs.find(s => s.id === tabId);
+    closeRename() {
+        this._showRename.set(undefined);
+    }
+
+    commitRename(value: string) {
+
+        if(!value?.trim()) return;
+        const tabId = this._showRename();
+        if(!tabId) return;
+        const tabList = [...this._tabList.value];
+        const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
-        tab.showRenameInput = true;
-        this._tabList.next(tabs);
+        tab.title = value;
+        this._tabList.next(tabList);
+        this._showRename.set(undefined);
     }
 }
