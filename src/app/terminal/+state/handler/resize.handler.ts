@@ -39,23 +39,29 @@ export class ResizeHandler implements ITerminalHandler {
             // leichtes Throttling gegen Resize-Spam
             if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
             this._resizeRaf = requestAnimationFrame(() => {
-                this._resize(terminal, fitAddon);
+                this.resize(terminal, fitAddon);
             });
         });
         this._resizeObserver.observe(this._terminalContainer, {box: 'content-box'});
         this._subscription = new Subscription();
-        this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]}).subscribe((e) => {
+        this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]})
+            .subscribe((e) => {
             switch (e.type) {
                 case 'TerminalInitialized':
                 case 'TerminalThemeChanged':
-                    this._resize(terminal, fitAddon);
+                case 'TerminalThemePaddingRemoved':
+                    this.resize(terminal, fitAddon);
+                    break;
+                case 'TerminalThemePaddingAdded':
+                    // Add a small timeout to prevent wrong rendering on macos (on exit vim)
+                    setTimeout(() => this.resize(terminal, fitAddon), 100);
                     break;
             }
         });
         return this;
     }
 
-    private _resize(terminal: Terminal, fitAddon: FitAddon) {
+    public resize(terminal: Terminal, fitAddon: FitAddon) {
         fitAddon.fit();
         this._pty.resize(terminal.cols, terminal.rows);
     }

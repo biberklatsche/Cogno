@@ -17,7 +17,7 @@ import {TabRemovedEvent} from "../../tab-list/+bus/events";
 export class TerminalComponentFactory {
     private map = new Map<TerminalId, ComponentRef<TerminalComponent>>();
 
-    constructor(private env: EnvironmentInjector, private injector: Injector, bus: AppBus, destroyRef: DestroyRef) {
+    constructor(private env: EnvironmentInjector, private injector: Injector) {
 
     }
 
@@ -41,6 +41,7 @@ export class TerminalComponentFactory {
         const ref = this.getOrCreate(terminalId);
         host.appendChild(ref.location.nativeElement); // reparent – kein Destroy/Neuaufbau
         ref.changeDetectorRef.detectChanges();
+
     }
 
     /** Endgültig schließen (Pane entfernt) */

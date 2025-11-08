@@ -6,12 +6,20 @@
                 [class.is-active] = tab.isActive
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
+                [style.background-color]="tab.color ? '#' + tab.color.hex + '66' : undefined"
                 [attr.data-tab-id]="tab.id"
                 title="{{tab.title}}"
                 (click)="selectTab(tab.id)"
+                (mouseup)="closeTabMiddle($event, tab.id);"
+                (contextmenu)="buildContextMenu($event, tab.id)"
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
-            <span class="title">{{ tab.title }}</span>
+            @if (showRename()===tab.id) {
+                <input #renameInput (keyup.esc)="$event.stopPropagation(); closeRename()" (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);" (blur)="commitRename(renameInput.value);">
+            } @else {
+                <span class="title">{{ tab.title }}</span>
+            }
+
             <span class="close" (click)="$event.stopPropagation(); closeTab(tab.id)">
                 <app-icon name="mdiClose"></app-icon>
             </span>

@@ -1,8 +1,10 @@
-import {AfterViewInit, Component, DestroyRef, ElementRef, input, Input, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, DestroyRef, ElementRef, input, OnInit, ViewChild} from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
+import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
+import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
 
 @Component({
     selector: 'app-terminal',
@@ -15,7 +17,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalSession?: TerminalSession;
     terminalId= input.required<TerminalId>();
 
-    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef) {
+    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService) {
     }
 
     ngOnInit(): void {
@@ -28,4 +30,20 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     ngAfterViewInit(): void {
         this.terminalSession?.initializeTerminal(this.terminalContainer.nativeElement);
     }
+
+    onContextMenu(event: MouseEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.terminalSession?.focus();
+        const items: ContextMenuItem[] = this.terminalSession?.buildContextMenu() ?? [];
+        this.menu.openContextAt(event, { items });
+    }
+
+    focus(event: MouseEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.terminalSession?.focus();
+    }
+
+    protected readonly eval = eval;
 }

@@ -20,7 +20,7 @@ export type MessageBase<T extends string = string, P = unknown> = {
     payload?: P;
     path?: BusPath;     // default ["app"]
 
-    // Optional vorhandene Event-Flags (bei Actions i.d.R. ungenutzt)
+    performed?: boolean;
     defaultPrevented?: boolean;
     propagationStopped?: boolean;
     phase?: Phase;
@@ -30,7 +30,7 @@ export const validTriggers = ['all', 'unconsumed', 'performable'] as const;
 export type ActionTrigger = typeof validTriggers[number];
 
 export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
-    triggers?: ActionTrigger[]
+    trigger?: {all: boolean, unconsumed: boolean, performable: boolean};
     args?: string[];
 }
 
@@ -116,7 +116,7 @@ export class AppBus {
      * - bricht ab, wenn:
      *   * bei vorhandenen Event-Flags defaultPrevented oder propagationStopped gesetzt wird
      */
-    public publish(msg: AppMessage): boolean {
+    public publish(msg: AppMessage): {propagationStopped: boolean, defaultPrevented: boolean, performed?: boolean } {
         const path = msg.path ?? ["app"];
         const chain = buildChain(path);
 
@@ -124,21 +124,20 @@ export class AppBus {
         for (const p of chain.slice(0, -1)) {
             msg.phase = "capture";
             this.subjectFor(p).next(msg);
-            if (msg.defaultPrevented || msg.propagationStopped) return true;
+            if (msg.propagationStopped) return {propagationStopped: msg.propagationStopped, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed};
         }
 
         // target
         msg.phase = "target";
         this.subjectFor(chain[chain.length - 1]).next(msg);
-        if (msg.defaultPrevented || msg.propagationStopped) return true;
+        if (msg.propagationStopped) return {propagationStopped: msg.propagationStopped, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed};
 
         // bubble
         for (const p of [...chain].reverse().slice(1)){
             msg.phase = "bubble";
             this.subjectFor(p).next(msg);
-            if (msg.defaultPrevented || msg.propagationStopped) return true;
+            if (msg.propagationStopped) return {propagationStopped: msg.propagationStopped, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed}
         }
-
-        return false;
+        return {propagationStopped: msg.propagationStopped ?? false, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed};
     }
 }

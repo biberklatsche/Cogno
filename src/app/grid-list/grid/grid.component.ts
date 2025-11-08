@@ -21,13 +21,13 @@ export class GridComponent {
         if (direction === 'vertical') {
             // links | divider | rechts
             return {
-                gridTemplateColumns: `${ratio}fr 6px ${1 - ratio}fr`,
+                gridTemplateColumns: `${ratio}fr 8px ${1 - ratio}fr`,
                 gridTemplateRows: '1fr'
             };
         } else {
             // oben / divider / unten
             return {
-                gridTemplateRows: `${ratio}fr 6px ${1 - ratio}fr`,
+                gridTemplateRows: `${ratio}fr 8px ${1 - ratio}fr`,
                 gridTemplateColumns: '1fr'
             };
         }

@@ -33,6 +33,8 @@
     "core:window:allow-unminimize",
     "core:window:allow-close",
     "sql:default",
-    "sql:allow-execute"
+    "sql:allow-execute",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text"
   ]
 }

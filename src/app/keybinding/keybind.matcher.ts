@@ -1,11 +1,17 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
-import {ActionBase, ActionTrigger, validTriggers} from "../app-bus/app-bus";
 import {OsType} from "../_tauri/os";
+import {KeybindFiredEvent} from "./keybind.service";
+import {KeybindActionInterpreter} from "./keybind-action.interpreter";
+import {ActionName} from "../config/+models/config.types";
 
-type Sequence = { steps: string[]; action: ActionBase };
+
+type Sequence = { steps: string[]; event: KeybindFiredEvent };
+
+export type Keybinding = string;
 
 export class KeybindingMatcher {
     private sequences: Sequence[] = [];
+    private keybindings: Record<string, Keybinding> = {};
     private keyCodeMapping: KeyboardMapping = {};
 
     // Laufender Match-Status über mehrere Keydowns
@@ -22,24 +28,21 @@ export class KeybindingMatcher {
             const [keybindingDef, actionDef] = binding.split('=');
             if (!keybindingDef || !actionDef) return;
 
-            const triggers = keybindingDef.split(':');
-            const keybinding = triggers.splice(triggers.length - 1, 1)[0];
-
+            const action = KeybindActionInterpreter.parse(actionDef);
             // Unterstützt Sequenzen mittels '>'
-            const normalizedSteps = keybinding.split('>').map(step => this.normalizeKeyCombination(step.trim()));
+            const normalizedSteps = keybindingDef.split('>').map(step => this.normalizeKeyCombination(step.trim()));
 
-            const args = actionDef.split(':');
-            const actionName = args.splice(0, 1)[0];
+            this.keybindings[action.actionName] = keybindingDef;
 
             this.sequences.push({
                 steps: normalizedSteps,
-                action: { type: actionName, triggers: this.toTriggers(triggers), args: args }
+                event: { type: 'KeybindFired', payload: action.actionName, trigger: action.trigger, args: action.args }
             });
         });
     }
 
-    private toTriggers(triggers: string[]): ActionTrigger[] {
-        return triggers.filter((s: string): s is ActionTrigger => validTriggers.includes(s as ActionTrigger));
+    getKeybinding(actinName: ActionName): string | undefined {
+        return this.keybindings[actinName];
     }
 
     public initKeyCodeMapping(keyCodeMapping: KeyboardMapping) {
@@ -74,11 +77,13 @@ export class KeybindingMatcher {
     }
 
     // Hauptmethode: Prüft ob Event ein Keybinding trifft (unterstützt Sequenzen)
-    match(event: KeyboardEvent): ActionBase | undefined {
+    match(event: KeyboardEvent): KeybindFiredEvent | undefined {
         // Nur auf keydown reagieren, um Doppelzählung zu vermeiden
         if ((event as any).type && (event as any).type !== 'keydown') return undefined;
 
         const eventKey = this.eventToKeyString(event);
+
+        console.log('eventKey', eventKey);
 
         // 1) Laufende Matches fortsetzen
         const progressed: { seq: Sequence; index: number }[] = [];
@@ -99,8 +104,10 @@ export class KeybindingMatcher {
         const finished = progressed.find(m => m.index >= m.seq.steps.length);
         if (finished) {
             // Reset nach erfolgreichem Match
+            const event = {... finished.seq.event};
             this.currentMatches = [];
-            return finished.seq.action;
+            console.log('event', event);
+            return event;
         }
 
         // 4) Status aktualisieren (nur echte Fortschritte behalten)

@@ -17,12 +17,12 @@ export class KeyboardMappingService {
     }
 
     async loadLayout(): Promise<{keymapInfo: KeymapInfo, isFallback: boolean}> {
-        const layout = await KeyboardLayout.load();
+        const layoutFromOS = await KeyboardLayout.load();
         let keymapInfo: KeymapInfo| undefined;
         switch (OS.platform()) {
             case "windows":
                 const winKeyboardMappings = (await import('./keyboard-layouts/layout.contribution.win')).KeyboardLayoutContribution.INSTANCE.layoutInfos;
-                const currentWinLayout = layout as WindowsKeyboardLayoutInfo;
+                const currentWinLayout = layoutFromOS as WindowsKeyboardLayoutInfo;
                 keymapInfo = winKeyboardMappings.find(s => (s.layouts).some(i => i.id === currentWinLayout.name));
                 if(keymapInfo) {
                     return {keymapInfo: keymapInfo, isFallback: false}
@@ -31,8 +31,8 @@ export class KeyboardMappingService {
                 }
             case "macos":
                 const darwinKeyboardMappings = (await import('./keyboard-layouts/layout.contribution.darwin')).KeyboardLayoutContribution.INSTANCE.layoutInfos;
-                const currentDarwinLayout = layout as MacKeyboardLayoutInfo;
-                keymapInfo = darwinKeyboardMappings.find(s => (s.layouts).some(i => i.id === currentDarwinLayout.id));
+                const osDarwinLayout = layoutFromOS as MacKeyboardLayoutInfo;
+                keymapInfo = darwinKeyboardMappings.find(s => (s.layouts).some(i => i.id === osDarwinLayout.id));
                 if(keymapInfo) {
                     return {keymapInfo: keymapInfo, isFallback: false}
                 } else {
@@ -40,7 +40,7 @@ export class KeyboardMappingService {
                 }
             case "linux":
                 const linuxKeyboardMappings = (await import('./keyboard-layouts/layout.contribution.linux')).KeyboardLayoutContribution.INSTANCE.layoutInfos;
-                const currentLinuxLayout = layout as LinuxKeyboardLayoutInfo;
+                const currentLinuxLayout = layoutFromOS as LinuxKeyboardLayoutInfo;
                 keymapInfo = linuxKeyboardMappings.find(s => (s.layouts).some(i => i.id === currentLinuxLayout.layout));
                 if(keymapInfo) {
                     return {keymapInfo: keymapInfo, isFallback: false}

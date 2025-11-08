@@ -12,22 +12,30 @@ export type TabTitleChangedEvent = MessageBase<"TabTitleChanged", TabTitle>;
 
 export class TabTitleHandler implements ITerminalHandler{
 
-    private readonly OSC_CODE = 0;
-    private _disposable?: IDisposable;
+    private _disposables?: IDisposable[] = undefined;
 
     constructor(private _terminalId: TerminalId, private _bus: AppBus) {
     }
 
     register(terminal: Terminal): IDisposable {
-        this._disposable = terminal.parser
-            .registerOscHandler(this.OSC_CODE, (title: string) => {
+        this._disposables = [];
+        this._disposables.push(terminal.parser
+            .registerOscHandler(0, (title: string) => {
                 this._bus.publish({type: "TabTitleChanged", payload: {terminalId: this._terminalId, title}})
                 return true;
-            });
+            }));
+        this._disposables.push(terminal.parser
+            .registerOscHandler(2, (title: string) => {
+                this._bus.publish({type: "TabTitleChanged", payload: {terminalId: this._terminalId, title}})
+                return true;
+            }));
         return this;
     }
 
     dispose(): void {
-        if (this._disposable) {this._disposable.dispose();}
+        if (this._disposables) {
+            this._disposables.forEach(d => d.dispose());
+            this._disposables = undefined;
+        }
     }
 }

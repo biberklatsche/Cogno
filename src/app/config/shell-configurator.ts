@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Config, ShellConfig, ShellType } from './+models/config';
+import { ConfigTypes, ShellConfig, ShellType } from './+models/config.types';
 import { Shells } from '../_tauri/shells';
 import { Environment } from '../common/environment/environment';
 
@@ -8,7 +8,7 @@ export class ShellConfigurator {
   /**
    * Detects available shells and writes them into the config.shell list starting at position 1.
    */
-  async apply(config: Config): Promise<void> {
+  async apply(config: ConfigTypes): Promise<void> {
     const shells = await Shells.load();
 
     // Stable sort order preference
@@ -16,7 +16,7 @@ export class ShellConfigurator {
       ZSH: 1,
       Bash: 2,
       GitBash: 3,
-      Powershell: 4,
+      PowerShell: 4,
     };
 
     const sorted = [...shells].sort((a, b) => {
@@ -59,7 +59,7 @@ export class ShellConfigurator {
             args.push(exportCmd);
             break;
         }
-        case 'Powershell': {
+        case 'PowerShell': {
             args.push('-NoLogo', '-NoExit', '-Command');
             const exePath = Environment.exeDirPath();
             const exportCmd = `$env:Path = '${exePath};'+$env:Path`;

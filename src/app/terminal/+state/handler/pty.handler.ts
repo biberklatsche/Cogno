@@ -5,7 +5,6 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {IPty} from "../pty/pty";
 import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
-import {FitAddon} from "@xterm/addon-fit";
 
 export class PtyHandler implements ITerminalHandler {
 
@@ -31,8 +30,7 @@ export class PtyHandler implements ITerminalHandler {
         this.spawnPty(this._terminalId).then(_ => {
             this._disposables.push(terminal.onData(data => this._pty?.write(data)));
             this._disposables.push(this._pty?.onData(data => terminal?.write(data)));
-            //TODO: Is this correct, is a terminal focused if it is initialized
-            terminal.focus();
+            this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "FocusTerminal", payload: this._terminalId});
             this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalInitialized", payload: this._terminalId});
         });
         return this;

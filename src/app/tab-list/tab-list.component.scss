@@ -30,10 +30,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
+  font-size: 1rem;
   gap: 6px;
   height: 26px;
   padding: 0 8px;
-  border: none;
+  border: 1px solid var(--background-color-10l);
   border-radius: var(--button-border-radius);
   background: var(--background-color-10l);
   color: var(--foreground-color);
@@ -47,9 +48,13 @@
   container-type: inline-size;
   opacity: 0.5;
   &.is-active {
-    opacity: 1;
-    color: var(--highlight-color);
+    opacity: 0.9;
+    border: 1px solid var(--background-color-30l);
     background: var(--background-color-10l);
+  }
+  &:hover {
+    opacity: 1;
+    background: var(--background-color-20l);
   }
 }
 
@@ -117,10 +122,6 @@
 .tab:focus-visible {
   outline: 2px solid var(--highlight-color);
   outline-offset: 2px;
-}
-
-.tab:hover {
-  background: var(--background-color-20l);
 }
 
 @keyframes slide-in {

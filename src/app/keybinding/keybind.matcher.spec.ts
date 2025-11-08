@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { KeybindingMatcher } from './keybind.matcher';
-import type { KeyboardMapping } from './keyboard/keyboard-layouts/_.contribution';
+import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
 
-function makeEvent(init: KeyboardEventInit & { key?: string; code?: string; type?: 'keydown' | 'keyup' } = {}): KeyboardEvent {
-  const type = init.type ?? 'keydown';
-  const e = new KeyboardEvent(type, init);
+function makeEvent(init: KeyboardEventInit & { key?: string; code?: string; payload?: 'keydown' | 'keyup' } = {}): KeyboardEvent {
+  const payload = init.payload ?? 'keydown';
+  const e = new KeyboardEvent(payload, init);
   Object.defineProperty(e, 'code', { value: init.code ?? '', configurable: true });
   Object.defineProperty(e, 'key', { value: init.key ?? '', configurable: true });
   return e as KeyboardEvent;
@@ -29,7 +29,7 @@ describe('KeybindingMatcher (linux)', () => {
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, shiftKey: true });
     const action = matcher.match(event);
 
-    expect(action?.type).toBe('doA');
+    expect(action?.payload).toBe('doA');
   });
 
     it('should override the first binding', () => {
@@ -38,7 +38,7 @@ describe('KeybindingMatcher (linux)', () => {
         const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, shiftKey: true });
         const action = matcher.match(event);
 
-        expect(action?.type).toBe('doB');
+        expect(action?.payload).toBe('doB');
     });
 
   it('uses keyCodeMapping to resolve the main key from event.code', () => {
@@ -49,7 +49,7 @@ describe('KeybindingMatcher (linux)', () => {
     const event = makeEvent({ key: 'y', code: 'KeyY', ctrlKey: true });
     const action = matcher.match(event);
 
-    expect(action?.type).toBe('undo');
+    expect(action?.payload).toBe('undo');
   });
 
   it('supports Meta modifier on Linux using "Meta" keyword', () => {
@@ -58,47 +58,47 @@ describe('KeybindingMatcher (linux)', () => {
     const event = makeEvent({ key: 'k', code: 'KeyK', metaKey: true });
     const action = matcher.match(event);
 
-    expect(action?.type).toBe('openCommandPalette');
+    expect(action?.payload).toBe('openCommandPalette');
   });
 
   it('should match Alt+Control and Control+Alt as same action', () => {
     matcher.initBindings(['Alt+Ctrl+A=doA']);
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('doA');
+    expect(action?.payload).toBe('doA');
   });
 
   it('should support one trigger', () => {
-    matcher.initBindings(['all:Alt+Ctrl+A=doA']);
+    matcher.initBindings(['Alt+Ctrl+A=[all]doA']);
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('doA');
-    expect(action?.triggers).toContain('all');
+    expect(action?.payload).toBe('doA');
+    expect(action?.trigger?.all).toBe(true);
   });
 
   it('should support many triggers', () => {
-    matcher.initBindings(['all:unconsumed:performable:Alt+Ctrl+A=doA']);
+    matcher.initBindings(['Alt+Ctrl+A=[all:unconsumed:performable]doA']);
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('doA');
-    expect(action?.triggers).toContain('all');
-    expect(action?.triggers).toContain('unconsumed');
-    expect(action?.triggers).toContain('performable');
+    expect(action?.payload).toBe('doA');
+    expect(action?.trigger?.all).toBe(true);
+    expect(action?.trigger?.unconsumed).toBe(true);
+    expect(action?.trigger?.performable).toBe(true);
   });
 
   it('should support one arg', () => {
-    matcher.initBindings(['all:Alt+Ctrl+A=doA:abc']);
+    matcher.initBindings(['Alt+Ctrl+A=doA:abc']);
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('doA');
+    expect(action?.payload).toBe('doA');
     expect(action?.args).toContain('abc');
   });
 
   it('should support many args', () => {
-    matcher.initBindings(['all:Alt+Ctrl+A=doA:a:b:c']);
+    matcher.initBindings(['Alt+Ctrl+A=[all]doA:a:b:c']);
     const event = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, altKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('doA');
+    expect(action?.payload).toBe('doA');
     expect(action?.args).toContain('a');
     expect(action?.args).toContain('b');
     expect(action?.args).toContain('c');
@@ -114,7 +114,7 @@ describe('KeybindingMatcher (linux)', () => {
     expect(action1).toBeUndefined();
 
     const action2 = matcher.match(step2);
-    expect(action2?.type).toBe('new_window');
+    expect(action2?.payload).toBe('new_window');
   });
 
   it('sequence: mismatch should not trigger and should reset', () => {
@@ -131,25 +131,25 @@ describe('KeybindingMatcher (linux)', () => {
 
     // Now complete the proper sequence
     expect(matcher.match(step1)).toBeUndefined();
-    expect(matcher.match(nAlone)?.type).toBe('new_window');
+    expect(matcher.match(nAlone)?.payload).toBe('new_window');
   });
 
   it('sequence retains triggers and args parsing', () => {
-    matcher.initBindings(['all:Ctrl+A>N=doA:x:y']);
+    matcher.initBindings(['Ctrl+A>N=[all]doA:x:y']);
 
     const step1 = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true });
     const step2 = makeEvent({ key: 'n', code: 'KeyN' });
 
     expect(matcher.match(step1)).toBeUndefined();
     const action = matcher.match(step2);
-    expect(action?.type).toBe('doA');
-    expect(action?.triggers).toContain('all');
+    expect(action?.payload).toBe('doA');
+    expect(action?.trigger?.all).toBe(true);
     expect(action?.args).toEqual(['x', 'y']);
   });
 
   it('ignores keyup events for matching', () => {
     matcher.initBindings(['Ctrl+A=doA']);
-    const up = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, type: 'keyup' });
+    const up = makeEvent({ key: 'a', code: 'KeyA', ctrlKey: true, payload: 'keyup' });
     expect(matcher.match(up)).toBeUndefined();
   });
 });
@@ -172,28 +172,28 @@ describe('KeybindingMatcher (macos)', () => {
     const event = makeEvent({ key: 'k', code: 'KeyK', metaKey: true });
     const action = matcher.match(event);
 
-    expect(action?.type).toBe('openCommandPalette');
+    expect(action?.payload).toBe('openCommandPalette');
   });
 
   it('maps altKey to Option on macOS', () => {
     matcher.initBindings(['Option+A=optAction']);
     const event = makeEvent({ key: 'a', code: 'KeyA', altKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('optAction');
+    expect(action?.payload).toBe('optAction');
   });
 
   it('maps ctrlKey to Control on macOS (not "Ctrl")', () => {
     matcher.initBindings(['Control+K=controlAction']);
     const event = makeEvent({ key: 'k', code: 'KeyK', ctrlKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('controlAction');
+    expect(action?.payload).toBe('controlAction');
   });
 
   it('supports combined modifiers with any order, using mac labels', () => {
     matcher.initBindings(['Option+Control+A=combo']);
     const event = makeEvent({ key: 'a', code: 'KeyA', altKey: true, ctrlKey: true });
     const action = matcher.match(event);
-    expect(action?.type).toBe('combo');
+    expect(action?.payload).toBe('combo');
   });
 
   it('supports sequences on macOS using Command label', () => {
@@ -202,6 +202,6 @@ describe('KeybindingMatcher (macos)', () => {
     const step2 = makeEvent({ key: 'a', code: 'KeyA' });
 
     expect(matcher.match(step1)).toBeUndefined();
-    expect(matcher.match(step2)?.type).toBe('action');
+    expect(matcher.match(step2)?.payload).toBe('action');
   });
 });

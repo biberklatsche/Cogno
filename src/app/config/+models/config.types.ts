@@ -3,11 +3,9 @@ import {OS, OsType} from "../../_tauri/os";
 
 const HexColorSchema = z
     .string()
-    .regex(/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/, 'Must be a valid 4-, 6-, or 8-digit hex color');
+    .regex(/^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/, 'Must be a 4-, 6-, or 8-digit hex color');
 
-const PaddingValueSchema = z.string().regex(
-    /^(\d+)(px|rem|%|em|pt)$/,
-    'Padding must be a integer followed by a unit (px|rem|%|em|pt)');
+const PaddingValueSchema = z.number().min(0);
 
 const PaddingSchema = z.object({
     left: PaddingValueSchema.optional(),
@@ -34,12 +32,18 @@ export const FontWeightSchema = z.union([
     z.number(),
 ]);
 
+export const AppFontSchema = z.object({
+    family: z.string().optional(),
+    size: z.int().min(1, 'Font size must be at least 1').optional(),
+})
+
 export const FontSchema = z.object({
     family: z.string().optional(),
     size: z.int().min(1, 'Font size must be at least 1').optional(),
     enable_ligatures: z.boolean().optional(),
     weight: FontWeightSchema.optional(),
     weight_bold: FontWeightSchema.optional(),
+    app: AppFontSchema.optional(),
 });
 
 export const ColorSchema = z.object({
@@ -75,6 +79,10 @@ export const CursorSchema = z.object({
     color: HexColorSchema.optional(),
 })
 
+export const SelectionSchema= z.object({
+    clear_on_copy: z.boolean().optional(),
+})
+
 export const ImageSchema = z.object({
     path: z.string().optional(),
     opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
@@ -82,18 +90,18 @@ export const ImageSchema = z.object({
 });
 
 const KeybindSchema = z.string().regex(
-    /^(?:(?:all|unconsumed|performable):)*[^=\s]+=[a-zA-Z0-9_]+(?::[a-zA-Z0-9_]+)*$/,
-    "Keybind must be of the form [triggers:]key[>key...]=action[:arg...]"
+    /^[^\s=>]+(?:\+[^\s=>]+)*(?:>(?:[^\s=>]+(?:\+[^\s=>]+)*))*=(?:\[(?:all|unconsumed|performable)(?::(?:all|unconsumed|performable))*\])?[A-Za-z0-9_]+(?::[A-Za-z0-9_]+)*$/,
+    "Keybind must be of the form combo[>combo...]=[triggers]action[:arg...]"
 );
 
 const KeybindsSchema = z.array(KeybindSchema);
 
-const ShellTypeEnum = z.enum(["Powershell", "ZSH", "Bash", "GitBash"]);
+const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash", "GitBash"]);
 
 const ShellSchema = z.object({
     shell_type: ShellTypeEnum.optional(),
     path: z.string().optional(),
-    args: z.array(z.string()).optional(),
+    args: z.array(z.string().optional()).optional(),
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
@@ -136,16 +144,30 @@ export const ConfigSchema = z.object({
     padding: PaddingSchema.optional(),
     background_image: ImageSchema.optional(),
     shell: ShellListSchema.optional(),
-
-
-
+    selection: SelectionSchema.optional(),
 }).strict();
 
-export type Config = z.infer<typeof ConfigSchema>;
+export type ConfigTypes = z.infer<typeof ConfigSchema>;
 export type Font = z.infer<typeof FontSchema>;
 export type Color = z.infer<typeof ColorSchema>;
 export type Cursor = z.infer<typeof CursorSchema>;
 export type Padding = z.infer<typeof PaddingSchema>;
+export type Selection = z.infer<typeof SelectionSchema>;
+export type HexColor = z.infer<typeof HexColorSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
+export type ActionName =
+    'copy' |
+    'paste' |
+    'open_new_tab' |
+    'close_active_tab' |
+    'split_right' |
+    'split_left' |
+    'split_down' |
+    'split_up' |
+    'close_active_terminal' |
+    'clear_buffer' |
+    'close_other_tabs' |
+    'close_all_tabs'
+    ;
