@@ -169,5 +169,6 @@ export type ActionName =
     'close_active_terminal' |
     'clear_buffer' |
     'close_other_tabs' |
-    'close_all_tabs'
+    'close_all_tabs'|
+    'toggle_inspector'
     ;

@@ -49,7 +49,7 @@ export class TabListService {
             this._tabList.next(tabList);
             event.propagationStopped = true;
         });
-        this.bus.on$({type: 'KeybindFired', path: ['app', 'terminal']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
+        this.bus.on$({type: 'KeybindFired', path: ['app', 'keybind']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
                 switch (event.payload) {
                     case 'open_new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});

@@ -88,7 +88,7 @@ export class TerminalSession {
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
-                    this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy'});
+                    this.bus.publish({path: ['app', 'keybind'], type: 'KeybindFired', payload: 'copy'});
                 }, actionName: 'copy'
             })
         }

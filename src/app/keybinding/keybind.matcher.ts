@@ -36,7 +36,7 @@ export class KeybindingMatcher {
 
             this.sequences.push({
                 steps: normalizedSteps,
-                event: { type: 'KeybindFired', payload: action.actionName, trigger: action.trigger, args: action.args }
+                event: { type: 'KeybindFired', path: ['app', 'keybind'], payload: action.actionName, trigger: action.trigger, args: action.args }
             });
         });
     }
@@ -77,13 +77,11 @@ export class KeybindingMatcher {
     }
 
     // Hauptmethode: Prüft ob Event ein Keybinding trifft (unterstützt Sequenzen)
-    match(event: KeyboardEvent): KeybindFiredEvent | undefined {
+    match(event: KeyboardEvent): {event: KeybindFiredEvent, eventKey: string} | undefined {
         // Nur auf keydown reagieren, um Doppelzählung zu vermeiden
         if ((event as any).type && (event as any).type !== 'keydown') return undefined;
 
         const eventKey = this.eventToKeyString(event);
-
-        console.log('eventKey', eventKey);
 
         // 1) Laufende Matches fortsetzen
         const progressed: { seq: Sequence; index: number }[] = [];
@@ -106,8 +104,7 @@ export class KeybindingMatcher {
             // Reset nach erfolgreichem Match
             const event = {... finished.seq.event};
             this.currentMatches = [];
-            console.log('event', event);
-            return event;
+            return {event, eventKey: finished.seq.steps.join('>')};
         }
 
         // 4) Status aktualisieren (nur echte Fortschritte behalten)

@@ -25,6 +25,7 @@ import {
     SplitPaneRightAction,
     SplitPaneUpAction
 } from "../grid-list/+bus/actions";
+import {InspectorEvent} from "../inspector/+bus/events";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -58,4 +59,5 @@ export type AppMessage =
     | SplitPaneDownAction
     | ClearBufferAction
     | FocusActiveTerminalAction
+    | InspectorEvent
     ;
