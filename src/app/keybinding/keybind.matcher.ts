@@ -72,9 +72,6 @@ export class KeybindingMatcher {
         parts = parts.sort();
         // Haupttaste über Mapping normalisieren
         const normalizedKey = this.keyCodeMapping[(event as any).code] || (event as any).key;
-
-        console.log('normalizedKey', normalizedKey);
-
         parts.push(normalizedKey);
         return parts.join('+');
     }
@@ -85,6 +82,8 @@ export class KeybindingMatcher {
         if ((event as any).type && (event as any).type !== 'keydown') return undefined;
 
         const eventKey = this.eventToKeyString(event);
+
+        console.log('eventKey', eventKey);
 
         // 1) Laufende Matches fortsetzen
         const progressed: { seq: Sequence; index: number }[] = [];
@@ -107,6 +106,7 @@ export class KeybindingMatcher {
             // Reset nach erfolgreichem Match
             const event = {... finished.seq.event};
             this.currentMatches = [];
+            console.log('event', event);
             return event;
         }
 

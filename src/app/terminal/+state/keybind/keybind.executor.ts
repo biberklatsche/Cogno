@@ -24,6 +24,26 @@ export class KeybindExecutor implements IDisposable  {
         }).subscribe(async event => {
             if(!this._focusHandler?.hasFocus() && !event.trigger?.all) return;
             switch (event.payload) {
+                case 'split_right': {
+                    this._bus.publish({type: 'SplitPaneRight', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'split_left': {
+                    this._bus.publish({type: 'SplitPaneLeft', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'split_down': {
+                    this._bus.publish({type: 'SplitPaneDown', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'split_up': {
+                    this._bus.publish({type: 'SplitPaneUp', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
                 case 'copy': {
                     const isPerformable = this.calcPreventDefault(event.trigger?.performable, () => this._selectionHandler!.hasSelection());
                     if (isPerformable) {

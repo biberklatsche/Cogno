@@ -14,9 +14,9 @@
     "security": {
       "assetProtocol": {
         "enable": true,
-        "scope": ["**/*"]
+        "scope": ["**/*", "$HOME/.cogno-dev/**", "$HOME/.cogno/**", "$HOME/**"]
       },
-      "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self' asset: http://asset.localhost"
+      "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline'; img-src 'self' asset: file: data: blob: http://asset.localhost"
     }
   },
   "bundle": {

@@ -70,7 +70,6 @@ export class AppBus {
             filter((msg): msg is Extract<AppMessage, { type: K }> => {
                 if (types && !types.includes(msg.type as K)) return false;
                 if (phases && msg.phase && !phases.includes(msg.phase)) return false;
-                console.log("fire", msg.type, msg.phase);
                 return true;
             })
         );
