@@ -6,6 +6,7 @@
                 [class.is-active] = tab.isActive
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
+                [style.background-color]="tab.color ? '#' + tab.color.hex + '66' : undefined"
                 [attr.data-tab-id]="tab.id"
                 title="{{tab.title}}"
                 (click)="selectTab(tab.id)"

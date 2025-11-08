@@ -14,12 +14,13 @@ export type ContextMenuItem = {
   // Regular action item
   label?: string;
   actionName?: ActionName;
-  action?: <T>(arg?: T) => void;
+  action?: (arg?: any) => void;
   disabled?: boolean;
   separator?: boolean;
 
   // Fixed color picker embedding
   colorpicker?: boolean;
+  selectedColorName?: ColorName;
 };
 
 export interface ContextMenuOverlayComponent extends MenuOverlayComponent {

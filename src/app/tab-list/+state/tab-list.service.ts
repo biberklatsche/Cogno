@@ -6,11 +6,11 @@ import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
-import {IdCreator} from "../../common/id-creator/id-creator";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {KeybindFiredEvent} from "../../keybinding/keybind.service";
-import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ColorName, ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
+import {IdCreator} from "../../common/id-creator/id-creator";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -79,6 +79,8 @@ export class TabListService {
     }
 
     buildContextMenu(tabId: TabId): ContextMenuItem[] {
+        const tab = this._tabList.value.find(tab => tab.id === tabId);
+        if(!tab) throw new Error("No tab found for TabList");
         const items: (ContextMenuItem|undefined)[] = [
             this._tabList.value.length > 1 ?
                 { label: 'Close other tabs', action: () => this.closeAllTabs(tabId), actionName: "close_other_tabs" }
@@ -87,7 +89,7 @@ export class TabListService {
             {separator: true},
             { label: 'Rename tab', action: () => this._showRename.set(tabId)},
             {separator: true},
-            { colorpicker: true, action: <ColorName>(name: ColorName) => { console.log('Tab color selected:', name, 'for tab', tabId); } },
+            { colorpicker: true, action: (color?: ColorName) => this.setColor(tabId, color), selectedColorName: tab.color?.name},
         ];
         return items.filter(s => !!s);
     }
@@ -114,7 +116,6 @@ export class TabListService {
                 other.isActive = false;
             }
         }
-
         tabList.push(tab);
         this._tabList.next(tabList);
         this.bus.publish({type: 'TabAdded', payload: {tabId: tab.id, isActive: tab.isActive}});
@@ -169,5 +170,17 @@ export class TabListService {
         tab.title = value;
         this._tabList.next(tabList);
         this.closeRename();
+    }
+
+    private setColor(tabId: TabId, name: ColorName | undefined) {
+        const tabList = [...this._tabList.value];
+        const tab = tabList.find(tab => tab.id === tabId);
+        if(!tab) return;
+        if(!name) {
+            tab.color = undefined;
+        } else {
+            tab.color = {hex: (this.configService.config.color as any)[name], name: name};
+        }
+        this._tabList.next(tabList);
     }
 }

@@ -14,7 +14,7 @@ import {ColorSelectComponent} from "../color/color-select.component";
                     <div class="sep" role="separator"></div>
                 } @else if (item.colorpicker) {
                     <div class="embed" role="none">
-                        <app-color-select (colorSelected)="onColorPick(item, $event)"></app-color-select>
+                        <app-color-select (colorSelected)="onColorPick(item, $event)" [selectedColorName]="item.selectedColorName"></app-color-select>
                     </div>
                 } @else {
                     <button

@@ -1,0 +1,10 @@
+input {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    color: var(--color-foreground);
+}
+
+button, a {
+    cursor: default;
+}

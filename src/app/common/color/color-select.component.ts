@@ -8,7 +8,6 @@ import { ColorName } from '../menu-overlay/menu-overlay.types';
 interface ColorItem {
   name: ColorName;
   value: string; // hex with leading '#'
-  text: string;  // text color for contrast
 }
 
 @Component({
@@ -23,7 +22,7 @@ interface ColorItem {
                           type="button"
                           class="color-btn"
                           [style.background]="c.value"
-                          [style.color]="c.text"
+                          [style.border]="'1px solid var(--background-color-30l)'"
                           (click)="onPick(c.name)"
                           [attr.aria-label]="c.name"
                           [title]="c.name"
@@ -42,23 +41,20 @@ interface ColorItem {
       gap: .5rem;
     }
     .color-btn {
-      width: 20px;
-      height: 20px;
-      border: 1px solid var(--color-shadow2, rgba(0,0,0,.2));
+      width: 15px;
+      height: 15px;
+      border: none;  
       border-radius: 50%;
-      box-shadow: var(--shadow1, none);
-      cursor: pointer;
-      font: inherit;
-      font-weight: 600;
-      text-transform: lowercase;
+      opacity: 0.7;  
     }
-    .color-btn:focus-visible { outline: 2px solid var(--highlight-color, #888); outline-offset: 2px; }
+    .color-btn:hover {opacity: 1;} 
     `
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ColorSelectComponent {
   @Output() colorSelected = new EventEmitter<ColorName>();
+  @Input() selectedColorName: ColorName | undefined;
 
   constructor(private readonly config: ConfigService) {}
 
@@ -66,22 +62,21 @@ export class ColorSelectComponent {
     map(cfg => {
       const color = cfg.color ?? {} as any;
       const items: { name: ColorName; hex?: string }[] = [
-        { name: 'red', hex: color.red ? `#${color.red}` : '#FF0000' },
-        { name: 'green', hex: color.green ? `#${color.green}` : '#00FF00' },
-        { name: 'yellow', hex: color.yellow ? `#${color.yellow}` : '#FFFF00' },
-        { name: 'blue', hex: color.blue ? `#${color.blue}` : '#0000FF' },
-        { name: 'magenta', hex: color.magenta ? `#${color.magenta}` : '#FF00FF' },
-        { name: 'cyan', hex: color.cyan ? `#${color.cyan}` : '#00FFFF' },
+        { name: 'red', hex: this.selectedColorName !== 'red' ? `#${color.red}` : '#00000000' },
+        { name: 'green', hex: this.selectedColorName !== 'green' ? `#${color.green}` : '#00000000' },
+        { name: 'yellow', hex: this.selectedColorName !== 'yellow' ? `#${color.yellow}` : '#00000000' },
+        { name: 'blue', hex: this.selectedColorName !== 'blue' ? `#${color.blue}` : '#00000000' },
+        { name: 'magenta', hex: this.selectedColorName !== 'magenta' ? `#${color.magenta}` : '#00000000' },
+        { name: 'cyan', hex: this.selectedColorName !== 'cyan' ? `#${color.cyan}` : '#00000000' },
       ];
       return items.map(i => ({
         name: i.name,
         value: i.hex!,
-        text: ColorUtil.isLight(i.hex!) ? '#000' : '#FFF'
       }));
     })
   );
 
   onPick(name: ColorName): void {
-    this.colorSelected.emit(name);
+    this.colorSelected.emit(name === this.selectedColorName ? undefined : name);
   }
 }

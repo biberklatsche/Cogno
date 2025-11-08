@@ -46,12 +46,15 @@
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
   /* wichtig für Container Queries */
   container-type: inline-size;
-  opacity: 0.6;
+  opacity: 0.5;
   &.is-active {
-    opacity: 0.8;
+    opacity: 0.9;
     border: 1px solid var(--background-color-30l);
-    color: var(--highlight-color);
     background: var(--background-color-10l);
+  }
+  &:hover {
+    opacity: 1;
+    background: var(--background-color-20l);
   }
 }
 
@@ -119,10 +122,6 @@
 .tab:focus-visible {
   outline: 2px solid var(--highlight-color);
   outline-offset: 2px;
-}
-
-.tab:hover {
-  background: var(--background-color-20l);
 }
 
 @keyframes slide-in {
