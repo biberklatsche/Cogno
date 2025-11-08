@@ -1,8 +1,9 @@
-import {DestroyRef, Injectable, Signal, signal, WritableSignal} from '@angular/core';
+import {DestroyRef, Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {fromEvent} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {Keybinding} from "../../keybinding/keybind.matcher";
+import {TerminalId} from "../../grid-list/+model/model";
 
 export type MousePosition = { x: number; y: number };
 export type TerminalMousePosition = { col: number; row: number; char: string };
@@ -13,8 +14,16 @@ export class InspectorService {
 
   private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
   private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
-  private _terminalMousePosition: WritableSignal<TerminalMousePosition | undefined> = signal(undefined);
-  private _terminalDimensions: WritableSignal<TerminalDimensions | undefined> = signal(undefined);
+
+  // Per-terminal maps
+  private _terminalMouseById: WritableSignal<Record<TerminalId, TerminalMousePosition>> = signal({} as Record<TerminalId, TerminalMousePosition>);
+  private _terminalDimsById: WritableSignal<Record<TerminalId, TerminalDimensions>> = signal({} as Record<TerminalId, TerminalDimensions>);
+
+  // Derived list of terminalIds present in either map
+  private _terminalIds = computed<TerminalId[]>(() => {
+      const ids = new Set<string>([...Object.keys(this._terminalMouseById()), ...Object.keys(this._terminalDimsById())]);
+      return Array.from(ids) as TerminalId[];
+  });
 
   public get firedKeybinding(): Signal<Keybinding | undefined> {
       return this._firedKeybinding.asReadonly();
@@ -24,12 +33,16 @@ export class InspectorService {
       return this._mousePosition.asReadonly();
   }
 
-  public get terminalMousePosition(): Signal<TerminalMousePosition | undefined> {
-      return this._terminalMousePosition.asReadonly();
+  public get terminalMouseById(): Signal<Record<TerminalId, TerminalMousePosition>> {
+      return this._terminalMouseById.asReadonly();
   }
 
-  public get terminalDimensions(): Signal<TerminalDimensions | undefined> {
-      return this._terminalDimensions.asReadonly();
+  public get terminalDimsById(): Signal<Record<TerminalId, TerminalDimensions>> {
+      return this._terminalDimsById.asReadonly();
+  }
+
+  public get terminalIds(): Signal<TerminalId[]> {
+      return this._terminalIds;
   }
 
   constructor(bus: AppBus, ref: DestroyRef) {
@@ -41,14 +54,44 @@ export class InspectorService {
                   break;
               }
               case 'terminal-mouse-position': {
-                  this._terminalMousePosition.set(event.payload?.data);
+                  const { terminalId, col, row, char } = event.payload?.data ?? {};
+                  if (!terminalId) break;
+                  const next = { ...this._terminalMouseById() };
+                  next[terminalId as TerminalId] = { col, row, char } as TerminalMousePosition;
+                  this._terminalMouseById.set(next);
                   break;
               }
               case 'terminal-dimensions': {
-                  this._terminalDimensions.set(event.payload?.data);
+                  const { terminalId, cols, rows } = event.payload?.data ?? {};
+                  if (!terminalId) break;
+                  const next = { ...this._terminalDimsById() };
+                  next[terminalId as TerminalId] = { cols, rows } as TerminalDimensions;
+                  this._terminalDimsById.set(next);
                   break;
               }
           }
+      });
+
+      // Remove per-terminal data when pane is closed (listen on both app and app/terminal paths)
+      bus.on$({ path: ['app'], type: 'RemovePane' }).pipe(takeUntilDestroyed(ref)).subscribe(evt => {
+          const id = evt.payload as TerminalId;
+          if (!id) return;
+          const nextMouse = { ...this._terminalMouseById() };
+          const nextDims = { ...this._terminalDimsById() };
+          delete nextMouse[id];
+          delete nextDims[id];
+          this._terminalMouseById.set(nextMouse);
+          this._terminalDimsById.set(nextDims);
+      });
+      bus.on$({ path: ['app','terminal'], type: 'RemovePane' }).pipe(takeUntilDestroyed(ref)).subscribe(evt => {
+          const id = evt.payload as TerminalId;
+          if (!id) return;
+          const nextMouse = { ...this._terminalMouseById() };
+          const nextDims = { ...this._terminalDimsById() };
+          delete nextMouse[id];
+          delete nextDims[id];
+          this._terminalMouseById.set(nextMouse);
+          this._terminalDimsById.set(nextDims);
       });
 
       // Track global mouse movement

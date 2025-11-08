@@ -3,6 +3,7 @@ import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
 import {FitAddon} from "@xterm/addon-fit";
 import {AppBus} from "../../../app-bus/app-bus";
+import {TerminalId} from "../../../grid-list/+model/model";
 
 /**
  * Publishes inspector events with the current terminal cell (col,row)
@@ -12,7 +13,7 @@ export class MouseInspectorHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _listener?: (e: MouseEvent) => void;
 
-  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement) {}
+  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement, private _terminalId: TerminalId) {}
 
   dispose(): void {
     if (this._listener) {
@@ -60,7 +61,7 @@ export class MouseInspectorHandler implements ITerminalHandler {
       this._bus.publish({
         path: ['inspector'],
         type: 'Inspector',
-        payload: { type: 'terminal-mouse-position', data: { col, row, char } }
+        payload: { type: 'terminal-mouse-position', data: { terminalId: this._terminalId, col, row, char } }
       });
     };
 

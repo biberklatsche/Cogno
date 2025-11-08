@@ -1,35 +1,42 @@
 <div class="inspector-table" role="table" aria-label="Inspector">
-  <div class="row" role="row">
-    <div class="label" role="rowheader">Keybinding</div>
-    <div class="value" role="cell">
-      @if (firedKeybinding()) {
-        {{ firedKeybinding() }}
-      } @else { — }
+   <!-- Keybinding row -->
+  <div class="column">
+      <div class="row">Global</div>
+    <div class="row">
+        <div class="label">Keybinding</div>
+        <div class="value">
+            @if (firedKeybinding()) { {{ firedKeybinding() }} } @else { — }
+        </div>
     </div>
+      <div class="row">
+          <div class="label" role="rowheader">Mouse</div>
+          <div class="value" role="cell">
+              @if (mousePosition()) { {{ mousePosition()!.x }}, {{ mousePosition()!.y }} } @else { — }
+          </div>
+      </div>
   </div>
-  <div class="row" role="row">
-    <div class="label" role="rowheader">Mouse</div>
-    <div class="value" role="cell">
-      @if (mousePosition()) {
-        {{ mousePosition()!.x }}, {{ mousePosition()!.y }}
-      } @else { — }
-    </div>
-  </div>
-  <div class="row" role="row">
-    <div class="label" role="rowheader">Terminal Cell</div>
-    <div class="value" role="cell">
-      @if (terminalMousePosition()) {
-        {{ terminalMousePosition()!.col }}, {{ terminalMousePosition()!.row }}, '{{ terminalMousePosition()!.char || ' ' }}'
-      } @else { — }
-    </div>
-  </div>
-  <div class="row" role="row">
-    <div class="label" role="rowheader">Terminal Size</div>
-    <div class="value" role="cell">
-      @if (terminalDimensions()) {
-        {{ terminalDimensions()!.cols }} × {{ terminalDimensions()!.rows }}
-      } @else { — }
-    </div>
-  </div>
+
+    @for (id of terminalIds(); track id; let i = $index;) {
+        <div class="column">
+            <div class="row">Terminal {{i + 1}}</div>
+            <div class="row">
+            <div class="label" role="rowheader">Terminal Cell</div>
+            <div class="value" role="cell">
+                @if (terminalMouseById()[id]) {
+                    {{ terminalMouseById()[id].col }}, {{ terminalMouseById()[id].row }}, '{{ terminalMouseById()[id].char || ' ' }}'
+                } @else { — }
+            </div>
+            </div>
+            <div class="row">
+            <div class="label" role="rowheader">Terminal Size</div>
+            <div class="value" role="cell">
+                @if (terminalDimsById()[id]) {
+                    {{ terminalDimsById()[id].cols }} × {{ terminalDimsById()[id].rows }} }
+                @else { — }
+            </div>
+            </div>
+        </div>
+    }
+
 </div>
 
