@@ -6,6 +6,7 @@ import {Keybinding} from "../../keybinding/keybind.matcher";
 
 export type MousePosition = { x: number; y: number };
 export type TerminalMousePosition = { col: number; row: number; char: string };
+export type TerminalDimensions = { cols: number; rows: number };
 
 @Injectable()
 export class InspectorService {
@@ -13,6 +14,7 @@ export class InspectorService {
   private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
   private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
   private _terminalMousePosition: WritableSignal<TerminalMousePosition | undefined> = signal(undefined);
+  private _terminalDimensions: WritableSignal<TerminalDimensions | undefined> = signal(undefined);
 
   public get firedKeybinding(): Signal<Keybinding | undefined> {
       return this._firedKeybinding.asReadonly();
@@ -26,6 +28,10 @@ export class InspectorService {
       return this._terminalMousePosition.asReadonly();
   }
 
+  public get terminalDimensions(): Signal<TerminalDimensions | undefined> {
+      return this._terminalDimensions.asReadonly();
+  }
+
   constructor(bus: AppBus, ref: DestroyRef) {
       // Listen to app-bus events
       bus.on$({type: 'Inspector', path: ['inspector']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
@@ -36,6 +42,10 @@ export class InspectorService {
               }
               case 'terminal-mouse-position': {
                   this._terminalMousePosition.set(event.payload?.data);
+                  break;
+              }
+              case 'terminal-dimensions': {
+                  this._terminalDimensions.set(event.payload?.data);
                   break;
               }
           }

@@ -23,5 +23,13 @@
       } @else { — }
     </div>
   </div>
+  <div class="row" role="row">
+    <div class="label" role="rowheader">Terminal Size</div>
+    <div class="value" role="cell">
+      @if (terminalDimensions()) {
+        {{ terminalDimensions()!.cols }} × {{ terminalDimensions()!.rows }}
+      } @else { — }
+    </div>
+  </div>
 </div>
 
