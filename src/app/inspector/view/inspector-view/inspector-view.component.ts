@@ -1,5 +1,5 @@
 import {Component, Signal} from '@angular/core';
-import {InspectorService, MousePosition} from "../../+state/inspector.service";
+import {InspectorService, MousePosition, TerminalMousePosition} from "../../+state/inspector.service";
 import {AppBus} from "../../../app-bus/app-bus";
 import {Keybinding} from "../../../keybinding/keybind.matcher";
 
@@ -14,9 +14,11 @@ export class InspectorViewComponent {
 
     firedKeybinding: Signal<Keybinding | undefined>;
     mousePosition: Signal<MousePosition | undefined>;
+    terminalMousePosition: Signal<TerminalMousePosition | undefined>;
 
     constructor(inspectorService: InspectorService) {
         this.firedKeybinding = inspectorService.firedKeybinding;
         this.mousePosition = inspectorService.mousePosition;
+        this.terminalMousePosition = inspectorService.terminalMousePosition;
     }
 }

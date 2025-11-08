@@ -5,12 +5,14 @@ import {AppBus} from "../../app-bus/app-bus";
 import {Keybinding} from "../../keybinding/keybind.matcher";
 
 export type MousePosition = { x: number; y: number };
+export type TerminalMousePosition = { col: number; row: number; char: string };
 
 @Injectable()
 export class InspectorService {
 
   private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
   private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
+  private _terminalMousePosition: WritableSignal<TerminalMousePosition | undefined> = signal(undefined);
 
   public get firedKeybinding(): Signal<Keybinding | undefined> {
       return this._firedKeybinding.asReadonly();
@@ -20,12 +22,20 @@ export class InspectorService {
       return this._mousePosition.asReadonly();
   }
 
+  public get terminalMousePosition(): Signal<TerminalMousePosition | undefined> {
+      return this._terminalMousePosition.asReadonly();
+  }
+
   constructor(bus: AppBus, ref: DestroyRef) {
       // Listen to app-bus events
       bus.on$({type: 'Inspector', path: ['inspector']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
           switch (event.payload?.type) {
               case 'keybind': {
-                    this._firedKeybinding.set(event.payload?.data);
+                  this._firedKeybinding.set(event.payload?.data);
+                  break;
+              }
+              case 'terminal-mouse-position': {
+                  this._terminalMousePosition.set(event.payload?.data);
                   break;
               }
           }

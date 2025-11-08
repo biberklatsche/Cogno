@@ -15,5 +15,13 @@
       } @else { — }
     </div>
   </div>
+  <div class="row" role="row">
+    <div class="label" role="rowheader">Terminal Cell</div>
+    <div class="value" role="cell">
+      @if (terminalMousePosition()) {
+        {{ terminalMousePosition()!.col }}, {{ terminalMousePosition()!.row }}, '{{ terminalMousePosition()!.char || ' ' }}'
+      } @else { — }
+    </div>
+  </div>
 </div>
 
