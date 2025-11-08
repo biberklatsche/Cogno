@@ -1,8 +1,43 @@
+/* Inspector view container: blue background, no outer spacing */
 :host {
   display: block;
   background-color: blue;
+  color: #fff;
   width: 100%;
-  min-height: 100px;
+  min-height: 50px;
+  height: fit-content;
+  max-height: 10vh;
   margin: 0;
   padding: 0;
+}
+
+/* Table-style layout for label/value rows */
+.inspector-table {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.row:first-child {
+  border-top: none;
+}
+
+.label {
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+.value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

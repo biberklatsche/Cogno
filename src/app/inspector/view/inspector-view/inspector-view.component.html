@@ -1,2 +1,19 @@
-<h2>Inspector</h2>
-<p>Keybinding: {{firedKeybinding()}}</p>
+<div class="inspector-table" role="table" aria-label="Inspector">
+  <div class="row" role="row">
+    <div class="label" role="rowheader">Keybinding</div>
+    <div class="value" role="cell">
+      @if (firedKeybinding()) {
+        {{ firedKeybinding() }}
+      } @else { — }
+    </div>
+  </div>
+  <div class="row" role="row">
+    <div class="label" role="rowheader">Mouse</div>
+    <div class="value" role="cell">
+      @if (mousePosition()) {
+        {{ mousePosition()!.x }}, {{ mousePosition()!.y }}
+      } @else { — }
+    </div>
+  </div>
+</div>
+
