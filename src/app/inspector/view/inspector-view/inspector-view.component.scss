@@ -10,6 +10,7 @@
   margin: 0;
   padding: 0;
   font-size: 0.8rem;
+  overflow: auto;
 }
 
 /* Table-style layout for label/value rows */
@@ -23,7 +24,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: max-content max-content;
   gap: 12px;
   align-items: center;
   padding: 8px 12px;

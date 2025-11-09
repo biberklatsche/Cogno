@@ -73,18 +73,8 @@ export class InspectorService {
       });
 
       // Remove per-terminal data when pane is closed (listen on both app and app/terminal paths)
-      bus.on$({ path: ['app'], type: 'RemovePane' }).pipe(takeUntilDestroyed(ref)).subscribe(evt => {
-          const id = evt.payload as TerminalId;
-          if (!id) return;
-          const nextMouse = { ...this._terminalMouseById() };
-          const nextDims = { ...this._terminalDimsById() };
-          delete nextMouse[id];
-          delete nextDims[id];
-          this._terminalMouseById.set(nextMouse);
-          this._terminalDimsById.set(nextDims);
-      });
-      bus.on$({ path: ['app','terminal'], type: 'RemovePane' }).pipe(takeUntilDestroyed(ref)).subscribe(evt => {
-          const id = evt.payload as TerminalId;
+      bus.on$({ path: ['app', 'terminal'], type: 'TerminalRemoved' }).pipe(takeUntilDestroyed(ref)).subscribe(evt => {
+          const id = evt.payload;
           if (!id) return;
           const nextMouse = { ...this._terminalMouseById() };
           const nextDims = { ...this._terminalDimsById() };

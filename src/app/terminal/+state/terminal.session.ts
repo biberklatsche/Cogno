@@ -101,6 +101,7 @@ export class TerminalSession {
 
     dispose() {
         if (this.disposed) return;
+        this.bus.publish({type: 'TerminalRemoved', path: ['app', 'terminal'], payload: this.terminalId});
         this.disposed = true;
         this.renderer.dispose();
         this.pty.dispose();

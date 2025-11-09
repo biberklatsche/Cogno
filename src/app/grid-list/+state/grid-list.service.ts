@@ -65,7 +65,7 @@ export class GridListService {
                if(currentFocusedTab && currentFocusedTab.data) currentFocusedTab.data.isFocused = false;
             });
             const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
-            if(!paneConfig) throw new Error("No pane with id found.");
+            if(!paneConfig) throw new Error(`No pane with id ${event.payload} found.`);
             paneConfig.isFocused = true;
             this._gridList.next(gridList);
         });
@@ -110,6 +110,10 @@ export class GridListService {
                 setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: "FocusTerminal", payload: newChild?.data?.terminalId}), 250);
             }
         }
+        this.componentFactory.destroy(terminalId);
+        console.log('#####remove', terminalId);
+        console.log('removePane', gridAndNode);
+        console.log('list', gridList);
         this._gridList.next(gridList);
     }
 
