@@ -6,8 +6,8 @@ import {ActionName} from "../../config/+models/config.types";
 const modifierOrder: Record<string, number> = {
     Control: 2,
     Command: 5,
-    Alt: 4,
-    Shift: 3,
+    Alt: 3,
+    Shift: 4,
     Meta: 1
 };
 
@@ -20,15 +20,14 @@ export class KeybindingPipe implements PipeTransform {
         if (!keybinding) {
             return '';
         }
-        const parts = keybinding.split('+').sort((a, b) => {
+        let ordered = keybinding.split('+').map(s => s.trim()).sort((a, b) => {
             const orderA = modifierOrder[a] || 999;
             const orderB = modifierOrder[b] || 999;
             return orderA - orderB;
-        });
-        let result = parts.map(s => s.trim()).join('+');
+        }).join('+');
         switch (OS.platform()) {
             case 'macos':
-                result = result
+                ordered = ordered
                     .replace('Command', '⌘')
                     .replace('Control', '⌃')
                     .replace('Shift', '⇧')
@@ -36,9 +35,9 @@ export class KeybindingPipe implements PipeTransform {
                     .replace(/\+/g, ' ')
                  break;
             default:
-                result = result.replace('Control', 'Ctrl');
+                ordered = ordered.replace('Control', 'Ctrl');
         }
-        return result;
+        return ordered;
     }
 }
 

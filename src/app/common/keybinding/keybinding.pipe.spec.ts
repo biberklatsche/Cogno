@@ -32,6 +32,11 @@ describe('KeybindingPipe', () => {
         expect(pipe.transform('Alt + A')).toBe('⌥ A');
     });
 
+    it('macos order', () => {
+        vi.spyOn(OS, 'platform').mockReturnValue('macos');
+
+        expect(pipe.transform('Meta + Command + Shift + Alt + Control + A')).toBe('Meta ⌃ ⌥ ⇧ ⌘ A');
+    });
 
     it('other', () => {
         vi.spyOn(OS, 'platform').mockReturnValue('windows');
