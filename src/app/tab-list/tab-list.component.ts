@@ -1,4 +1,4 @@
-import {Component, ElementRef, Signal, signal, ViewChild, WritableSignal, effect} from '@angular/core';
+import {Component, ElementRef, Signal, ViewChild, effect} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";

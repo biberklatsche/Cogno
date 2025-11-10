@@ -46,6 +46,7 @@ export class TerminalComponentFactory {
 
     /** Endgültig schließen (Pane entfernt) */
     destroy(terminalId?: TerminalId) {
+        console.log('destroy', terminalId);
         if (!terminalId) return;
         const ref = this.map.get(terminalId);
         if (!ref) return;

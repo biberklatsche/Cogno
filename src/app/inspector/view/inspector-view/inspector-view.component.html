@@ -1,0 +1,50 @@
+<div class="inspector-table" role="table" aria-label="Inspector">
+   <!-- Keybinding row -->
+  <div class="column">
+      <div class="row">Global</div>
+    <div class="row">
+        <div class="label">Keybinding</div>
+        <div class="value">
+            @if (firedKeybinding()) { {{ firedKeybinding() }} } @else { — }
+        </div>
+    </div>
+      <div class="row">
+          <div class="label" role="rowheader">Mouse</div>
+          <div class="value" role="cell">
+              @if (mousePosition()) { {{ mousePosition()!.x }}, {{ mousePosition()!.y }} } @else { — }
+          </div>
+      </div>
+  </div>
+
+    @for (id of terminalIds(); track id; let i = $index;) {
+        <div class="column">
+            <div class="row">Terminal {{i + 1}}</div>
+            <div class="row">
+            <div class="label" role="rowheader">Terminal Mouse</div>
+            <div class="value" role="cell">
+                @if (terminalMouseById()[id]) {
+                    {{ terminalMouseById()[id].col }}, {{ terminalMouseById()[id].row }}, '{{ terminalMouseById()[id].char || ' ' }}'
+                } @else { — }
+            </div>
+            </div>
+            <div class="row">
+                <div class="label" role="rowheader">Terminal Cursor</div>
+                <div class="value" role="cell">
+                    @if (terminalCursorById()[id]) {
+                        {{ terminalCursorById()[id].col }}, {{ terminalCursorById()[id].row }}, '{{ terminalCursorById()[id].char || ' ' }}'
+                    } @else { — }
+                </div>
+            </div>
+            <div class="row">
+            <div class="label" role="rowheader">Terminal Size</div>
+            <div class="value" role="cell">
+                @if (terminalDimsById()[id]) {
+                    {{ terminalDimsById()[id].cols }} × {{ terminalDimsById()[id].rows }} }
+                @else { — }
+            </div>
+            </div>
+        </div>
+    }
+
+</div>
+

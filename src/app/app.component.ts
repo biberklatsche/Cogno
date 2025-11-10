@@ -6,10 +6,11 @@ import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
 import {AppBus} from "./app-bus/app-bus";
 import {GridListComponent} from "./grid-list/grid-list.component";
+import {InspectorComponent} from "./inspector/inspector.component";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent],
+    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent, InspectorComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss',
     standalone: true

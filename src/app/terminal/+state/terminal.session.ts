@@ -16,6 +16,8 @@ import {SelectionHandler} from "./handler/selection.handler";
 import {InputHandler} from "./handler/input.handler";
 import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
+import {MouseHandler} from "./handler/mouse.handler";
+import {CursorHandler} from "./handler/cursor.handler";
 
 export class TerminalSession {
 
@@ -54,6 +56,8 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
+        this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId)));
+        this.disposables.push(this.renderer.register(new CursorHandler(this.bus, this.terminalId)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
     }
 
@@ -88,7 +92,7 @@ export class TerminalSession {
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
-                    this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy'});
+                    this.bus.publish({path: ['app', 'keybind'], type: 'KeybindFired', payload: 'copy'});
                 }, actionName: 'copy'
             })
         }
@@ -97,6 +101,7 @@ export class TerminalSession {
 
     dispose() {
         if (this.disposed) return;
+        this.bus.publish({type: 'TerminalRemoved', path: ['app', 'terminal'], payload: this.terminalId});
         this.disposed = true;
         this.renderer.dispose();
         this.pty.dispose();

@@ -6,10 +6,11 @@ import {
     provideZonelessChangeDetection
 } from "@angular/core";
 import { GlobalErrorHandler } from './common/error/global-error.handler';
-import {StyleService} from "./common/style/style.service";
+import {StyleService} from "./style/style.service";
 import {WorkspaceService} from "./workspace/+state/workspace.service";
 import {KeybindService} from "./keybinding/keybind.service";
 import {CliCommandService} from "./cli-command/cli-command.service";
+import {WindowMenuService} from "./menu/window-menu.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
           inject(WorkspaceService);
           inject(KeybindService);
           inject(CliCommandService);
+          inject(WindowMenuService);
       }),
   ],
 };

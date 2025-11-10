@@ -23,10 +23,10 @@ export class KeybindService {
         window.addEventListener("keydown", (e) => {
             const keybindFiredEvent = this._keybindMatcher.match(e);
             if (!keybindFiredEvent) return;
-            keybindFiredEvent.path = ['app', 'terminal'];
-            const result = bus.publish(keybindFiredEvent);
-            if(keybindFiredEvent.trigger?.unconsumed) return;
-            if(keybindFiredEvent.trigger?.performable && !result.performed) return;
+            const result = bus.publish(keybindFiredEvent.event);
+            bus.publish({type: "Inspector", path: ['inspector'], payload: {type: 'keybind', data: keybindFiredEvent.eventKey}});
+            if(keybindFiredEvent.event.trigger?.unconsumed) return;
+            if(keybindFiredEvent.event.trigger?.performable && !result.performed) return;
             if(!result.defaultPrevented && !result.propagationStopped) return;
             e.preventDefault();
             e.stopPropagation();

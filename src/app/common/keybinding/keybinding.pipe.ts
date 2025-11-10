@@ -3,6 +3,14 @@ import {OS} from "../../_tauri/os";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {ActionName} from "../../config/+models/config.types";
 
+const modifierOrder: Record<string, number> = {
+    Control: 2,
+    Command: 5,
+    Alt: 3,
+    Shift: 4,
+    Meta: 1
+};
+
 @Pipe({
   name: 'keybinding'
 })
@@ -12,15 +20,24 @@ export class KeybindingPipe implements PipeTransform {
         if (!keybinding) {
             return '';
         }
+        let ordered = keybinding.split('+').map(s => s.trim()).sort((a, b) => {
+            const orderA = modifierOrder[a] || 999;
+            const orderB = modifierOrder[b] || 999;
+            return orderA - orderB;
+        }).join('+');
         switch (OS.platform()) {
             case 'macos':
-                return keybinding
+                ordered = ordered
                     .replace('Command', '⌘')
                     .replace('Control', '⌃')
-                    .replace('Alt', '⌥');
+                    .replace('Shift', '⇧')
+                    .replace('Alt', '⌥')
+                    .replace(/\+/g, ' ')
+                 break;
             default:
-                return keybinding.replace('Control', 'Ctrl');
+                ordered = ordered.replace('Control', 'Ctrl');
         }
+        return ordered;
     }
 }
 

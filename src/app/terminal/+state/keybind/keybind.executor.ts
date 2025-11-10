@@ -19,7 +19,7 @@ export class KeybindExecutor implements IDisposable  {
     ) {
         this._subscription = new Subscription();
         this._subscription.add(this._bus.on$({
-            path: ['app', 'terminal'],
+            path: ['app', 'keybind'],
             type: 'KeybindFired'
         }).subscribe(async event => {
             if(!this._focusHandler?.hasFocus() && !event.trigger?.all) return;

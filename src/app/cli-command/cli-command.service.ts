@@ -11,7 +11,7 @@ export class CliCommandService {
   constructor(bus: AppBus, ref: DestroyRef) {
       CliCommandListener.register(command => {
           const actionDef = KeybindActionInterpreter.parse(command);
-        bus.publish({type: 'KeybindFired', payload: actionDef.actionName, trigger: actionDef.trigger, args: actionDef.args, path: ['app', 'terminal']});
+        bus.publish({type: 'KeybindFired', payload: actionDef.actionName, trigger: actionDef.trigger, args: actionDef.args, path: ['app', 'keybind']});
       }).then(unlisten => {
           ref.onDestroy(() => unlisten())
       });

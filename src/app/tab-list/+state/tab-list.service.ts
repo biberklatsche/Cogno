@@ -49,7 +49,7 @@ export class TabListService {
             this._tabList.next(tabList);
             event.propagationStopped = true;
         });
-        this.bus.on$({type: 'KeybindFired', path: ['app', 'terminal']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
+        this.bus.on$({type: 'KeybindFired', path: ['app', 'keybind']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
                 switch (event.payload) {
                     case 'open_new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});
@@ -64,12 +64,12 @@ export class TabListService {
                         break;
                     case 'close_other_tabs':
                         const activeTab = this._tabList.value.find(s => s.isActive);
-                        this.closeAllTabs(activeTab?.id);
+                        this.removeAllTabs(activeTab?.id);
                         event.performed = !(event.trigger?.all);
                         event.defaultPrevented = true;
                         break;
                     case 'close_all_tabs':
-                        this.closeAllTabs();
+                        this.removeAllTabs();
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
@@ -82,10 +82,11 @@ export class TabListService {
         const tab = this._tabList.value.find(tab => tab.id === tabId);
         if(!tab) throw new Error("No tab found for TabList");
         const items: (ContextMenuItem|undefined)[] = [
+            { label: 'Close tab', action: () => this.removeTab(tabId), actionName: "close_active_tab"  },
             this._tabList.value.length > 1 ?
-                { label: 'Close other tabs', action: () => this.closeAllTabs(tabId), actionName: "close_other_tabs" }
+                { label: 'Close other tabs', action: () => this.removeAllTabs(tabId), actionName: "close_other_tabs" }
                 : undefined,
-            { label: 'Close all tabs', action: () => this.closeAllTabs(), actionName: "split_down"  },
+            { label: 'Close all tabs', action: () => this.removeAllTabs(), actionName: "close_all_tabs"  },
             {separator: true},
             { label: 'Rename tab', action: () => this._showRename.set(tabId)},
             {separator: true},
@@ -94,7 +95,7 @@ export class TabListService {
         return items.filter(s => !!s);
     }
 
-    closeAllTabs(except?: TabId) {
+    removeAllTabs(except?: TabId) {
         const tabsToClose = [...this._tabList.value];
         if(!except) {
             this._tabList.next([]);

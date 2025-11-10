@@ -19,22 +19,27 @@ describe('KeybindingPipe', () => {
 
     it('macos command', () => {
         vi.spyOn(OS, 'platform').mockReturnValue('macos');
-        expect(pipe.transform('Command + A')).toBe('⌘ + A');
+        expect(pipe.transform('Command + A')).toBe('⌘ A');
     });
 
     it('macos control', () => {
         vi.spyOn(OS, 'platform').mockReturnValue('macos');
-        expect(pipe.transform('Control + A')).toBe('⌃ + A');
+        expect(pipe.transform('Control + A')).toBe('⌃ A');
     });
 
     it('macos option', () => {
         vi.spyOn(OS, 'platform').mockReturnValue('macos');
-        expect(pipe.transform('Alt + A')).toBe('⌥ + A');
+        expect(pipe.transform('Alt + A')).toBe('⌥ A');
     });
 
+    it('macos order', () => {
+        vi.spyOn(OS, 'platform').mockReturnValue('macos');
+
+        expect(pipe.transform('Meta + Command + Shift + Alt + Control + A')).toBe('Meta ⌃ ⌥ ⇧ ⌘ A');
+    });
 
     it('other', () => {
         vi.spyOn(OS, 'platform').mockReturnValue('windows');
-        expect(pipe.transform('Control + A')).toBe('Ctrl + A');
+        expect(pipe.transform('Control + A')).toBe('Ctrl+A');
     });
 });
