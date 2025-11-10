@@ -64,5 +64,10 @@ export class ResizeHandler implements ITerminalHandler {
     public resize(terminal: Terminal, fitAddon: FitAddon) {
         fitAddon.fit();
         this._pty.resize(terminal.cols, terminal.rows);
+        this._bus.publish({
+            path: ["inspector"],
+            type: "Inspector",
+            payload: { type: "terminal-dimensions", data: { terminalId: this._terminalId, cols: terminal.cols, rows: terminal.rows } }
+        });
     }
 }

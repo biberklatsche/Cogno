@@ -9,7 +9,7 @@ import {TerminalId} from "../../../grid-list/+model/model";
  * Publishes inspector events with the current terminal cell (col,row)
  * under the mouse while moving over the terminal container.
  */
-export class MouseInspectorHandler implements ITerminalHandler {
+export class MouseHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _listener?: (e: MouseEvent) => void;
 
