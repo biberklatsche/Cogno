@@ -1,5 +1,11 @@
 import {Component, Signal} from '@angular/core';
-import {InspectorService, MousePosition, TerminalMousePosition, TerminalDimensions} from "../../+state/inspector.service";
+import {
+    InspectorService,
+    MousePosition,
+    TerminalMousePosition,
+    TerminalDimensions,
+    TerminalCursorPosition
+} from "../../+state/inspector.service";
 import {Keybinding} from "../../../keybinding/keybind.matcher";
 import {TerminalId} from "../../../grid-list/+model/model";
 
@@ -17,6 +23,7 @@ export class InspectorViewComponent {
 
     terminalIds: Signal<TerminalId[]>;
     terminalMouseById: Signal<Record<TerminalId, TerminalMousePosition>>;
+    terminalCursorById: Signal<Record<TerminalId, TerminalCursorPosition>>;
     terminalDimsById: Signal<Record<TerminalId, TerminalDimensions>>;
 
     constructor(inspectorService: InspectorService) {
@@ -25,6 +32,7 @@ export class InspectorViewComponent {
 
         this.terminalIds = inspectorService.terminalIds;
         this.terminalMouseById = inspectorService.terminalMouseById;
+        this.terminalCursorById = inspectorService.terminalCursorById;
         this.terminalDimsById = inspectorService.terminalDimsById;
     }
 }

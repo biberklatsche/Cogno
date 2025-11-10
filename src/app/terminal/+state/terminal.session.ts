@@ -17,6 +17,7 @@ import {InputHandler} from "./handler/input.handler";
 import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
+import {CursorHandler} from "./handler/cursor.handler";
 
 export class TerminalSession {
 
@@ -56,6 +57,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
         this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId)));
+        this.disposables.push(this.renderer.register(new CursorHandler(this.bus, this.terminalId)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
     }
 

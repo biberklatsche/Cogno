@@ -20,12 +20,20 @@
         <div class="column">
             <div class="row">Terminal {{i + 1}}</div>
             <div class="row">
-            <div class="label" role="rowheader">Terminal Cell</div>
+            <div class="label" role="rowheader">Terminal Mouse</div>
             <div class="value" role="cell">
                 @if (terminalMouseById()[id]) {
                     {{ terminalMouseById()[id].col }}, {{ terminalMouseById()[id].row }}, '{{ terminalMouseById()[id].char || ' ' }}'
                 } @else { — }
             </div>
+            </div>
+            <div class="row">
+                <div class="label" role="rowheader">Terminal Cursor</div>
+                <div class="value" role="cell">
+                    @if (terminalCursorById()[id]) {
+                        {{ terminalCursorById()[id].col }}, {{ terminalCursorById()[id].row }}, '{{ terminalCursorById()[id].char || ' ' }}'
+                    } @else { — }
+                </div>
             </div>
             <div class="row">
             <div class="label" role="rowheader">Terminal Size</div>

@@ -7,6 +7,7 @@ import {TerminalId} from "../../grid-list/+model/model";
 
 export type MousePosition = { x: number; y: number };
 export type TerminalMousePosition = { col: number; row: number; char: string };
+export type TerminalCursorPosition = { col: number; row: number; char: string };
 export type TerminalDimensions = { cols: number; rows: number };
 
 @Injectable()
@@ -17,6 +18,7 @@ export class InspectorService {
 
   // Per-terminal maps
   private _terminalMouseById: WritableSignal<Record<TerminalId, TerminalMousePosition>> = signal({} as Record<TerminalId, TerminalMousePosition>);
+  private _terminalCursorById: WritableSignal<Record<TerminalId, TerminalCursorPosition>> = signal({} as Record<TerminalId, TerminalCursorPosition>);
   private _terminalDimsById: WritableSignal<Record<TerminalId, TerminalDimensions>> = signal({} as Record<TerminalId, TerminalDimensions>);
 
   // Derived list of terminalIds present in either map
@@ -36,6 +38,10 @@ export class InspectorService {
   public get terminalMouseById(): Signal<Record<TerminalId, TerminalMousePosition>> {
       return this._terminalMouseById.asReadonly();
   }
+
+    public get terminalCursorById(): Signal<Record<TerminalId, TerminalMousePosition>> {
+        return this._terminalCursorById.asReadonly();
+    }
 
   public get terminalDimsById(): Signal<Record<TerminalId, TerminalDimensions>> {
       return this._terminalDimsById.asReadonly();
@@ -59,6 +65,14 @@ export class InspectorService {
                   const next = { ...this._terminalMouseById() };
                   next[terminalId as TerminalId] = { col, row, char } as TerminalMousePosition;
                   this._terminalMouseById.set(next);
+                  break;
+              }
+              case 'terminal-cursor-position': {
+                  const { terminalId, col, row, char } = event.payload?.data ?? {};
+                  if (!terminalId) break;
+                  const next = { ...this._terminalCursorById() };
+                  next[terminalId as TerminalId] = { col, row, char } as TerminalCursorPosition;
+                  this._terminalCursorById.set(next);
                   break;
               }
               case 'terminal-dimensions': {

@@ -38,8 +38,8 @@ export class MouseHandler implements ITerminalHandler {
       const cellW = Math.floor(rect.width / cols);
       const cellH = Math.floor(rect.height / rows);
 
-      let col = Math.floor(relX / cellW); // 1-based
-      let row = Math.floor(relY / cellH); // 1-based
+      let col = Math.floor(relX / cellW);
+      let row = Math.round(relY / cellH); // hier round, da sonst schon ab der halben höhe die koordinate umspringt
 
       // clamp to terminal bounds
       if (col < 1) col = 1; else if (col > cols) col = cols;
