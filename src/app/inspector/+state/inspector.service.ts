@@ -5,9 +5,10 @@ import {AppBus} from "../../app-bus/app-bus";
 import {Keybinding} from "../../keybinding/keybind.matcher";
 import {TerminalId} from "../../grid-list/+model/model";
 
+export type TerminalIdentifier = {terminalId: string};
 export type MousePosition = { x: number; y: number };
-export type TerminalMousePosition = { col: number; row: number; char: string };
-export type TerminalCursorPosition = { col: number; row: number; char: string };
+export type TerminalMousePosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number; };
+export type TerminalCursorPosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number;  };
 export type TerminalDimensions = { cols: number; rows: number };
 
 @Injectable()
@@ -60,26 +61,26 @@ export class InspectorService {
                   break;
               }
               case 'terminal-mouse-position': {
-                  const { terminalId, col, row, char } = event.payload?.data ?? {};
-                  if (!terminalId) break;
+                  const data = event.payload!.data as TerminalMousePosition & TerminalIdentifier;
+                  if (!data) break;
                   const next = { ...this._terminalMouseById() };
-                  next[terminalId as TerminalId] = { col, row, char } as TerminalMousePosition;
+                  next[data.terminalId] = data;
                   this._terminalMouseById.set(next);
                   break;
               }
               case 'terminal-cursor-position': {
-                  const { terminalId, col, row, char } = event.payload?.data ?? {};
-                  if (!terminalId) break;
+                  const data = event.payload?.data as TerminalCursorPosition & TerminalIdentifier;
+                  if (!data) break;
                   const next = { ...this._terminalCursorById() };
-                  next[terminalId as TerminalId] = { col, row, char } as TerminalCursorPosition;
+                  next[data.terminalId] = data;
                   this._terminalCursorById.set(next);
                   break;
               }
               case 'terminal-dimensions': {
-                  const { terminalId, cols, rows } = event.payload?.data ?? {};
-                  if (!terminalId) break;
+                  const data = event.payload!.data as TerminalDimensions & TerminalIdentifier;
+                  if (!data) break;
                   const next = { ...this._terminalDimsById() };
-                  next[terminalId as TerminalId] = { cols, rows } as TerminalDimensions;
+                  next[data.terminalId] = data;
                   this._terminalDimsById.set(next);
                   break;
               }

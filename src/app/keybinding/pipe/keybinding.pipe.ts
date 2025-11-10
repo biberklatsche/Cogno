@@ -1,14 +1,15 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import {OS} from "../../_tauri/os";
-import {KeybindService} from "../../keybinding/keybind.service";
+import {KeybindService} from "../keybind.service";
 import {ActionName} from "../../config/+models/config.types";
+import {Modifier} from "../modifier";
 
 const modifierOrder: Record<string, number> = {
+    Meta: 1,
     Control: 2,
-    Command: 5,
     Alt: 3,
     Shift: 4,
-    Meta: 1
+    Command: 5
 };
 
 @Pipe({
@@ -20,24 +21,20 @@ export class KeybindingPipe implements PipeTransform {
         if (!keybinding) {
             return '';
         }
-        let ordered = keybinding.split('+').map(s => s.trim()).sort((a, b) => {
-            const orderA = modifierOrder[a] || 999;
-            const orderB = modifierOrder[b] || 999;
-            return orderA - orderB;
-        }).join('+');
+        const parts = keybinding.split('+').map(k => k.trim()).filter(Boolean);
+        if (parts.length === 0) return '';
+
+        const modifiers = Modifier.normalizeView(parts.slice(0, -1), OS.platform());
+        const key = parts[parts.length - 1];
+
         switch (OS.platform()) {
             case 'macos':
-                ordered = ordered
-                    .replace('Command', '⌘')
-                    .replace('Control', '⌃')
-                    .replace('Shift', '⇧')
-                    .replace('Alt', '⌥')
-                    .replace(/\+/g, ' ')
-                 break;
+                return [...modifiers, key].join(' ');
+            case 'windows':
+            case 'linux':
             default:
-                ordered = ordered.replace('Control', 'Ctrl');
+                return [...modifiers, key].join('+');
         }
-        return ordered;
     }
 }
 

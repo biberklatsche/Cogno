@@ -11,23 +11,25 @@ import {TerminalId} from "../../../grid-list/+model/model";
  */
 export class MouseHandler implements ITerminalHandler {
   private _terminal?: Terminal;
+  private readonly _screenElement?: HTMLElement;
   private _listener?: (e: MouseEvent) => void;
 
-  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement, private _terminalId: TerminalId) {}
+  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement, private _terminalId: TerminalId) {
+      this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
+  }
 
   dispose(): void {
     if (this._listener) {
-      this._terminalContainer.removeEventListener('mousemove', this._listener);
+      this._screenElement?.removeEventListener('mousemove', this._listener);
       this._listener = undefined;
     }
   }
 
   register(terminal: Terminal, _fit?: FitAddon): IDisposable {
     this._terminal = terminal;
-
     this._listener = (evt: MouseEvent) => {
-      if (!this._terminal) return;
-      const rect = this._terminalContainer.getBoundingClientRect();
+      if (!this._terminal || !this._screenElement) return;
+      const rect = this._screenElement.getBoundingClientRect();
       const cols = this._terminal.cols || 0;
       const rows = this._terminal.rows || 0;
       if (cols <= 0 || rows <= 0 || rect.width <= 0 || rect.height <= 0) return;
@@ -38,18 +40,20 @@ export class MouseHandler implements ITerminalHandler {
       const cellW = Math.floor(rect.width / cols);
       const cellH = Math.floor(rect.height / rows);
 
-      let col = Math.floor(relX / cellW);
-      let row = Math.round(relY / cellH); // hier round, da sonst schon ab der halben höhe die koordinate umspringt
+      let col = Math.floor(relX / cellW) + 1;
+      let row = Math.floor(relY / cellH) + 1;
 
       // clamp to terminal bounds
       if (col < 1) col = 1; else if (col > cols) col = cols;
       if (row < 1) row = 1; else if (row > rows) row = rows;
 
+      const buffer = this._terminal.buffer.active as any;
+      const absRow = (buffer.viewportY ?? 0) + (row - 1);
       // Try to read the character under the mouse from xterm's buffer
       let char = '';
       try {
-        const buffer = this._terminal.buffer.active as any;
-        const absRow = (buffer.viewportY ?? 0) + (row - 1); // 0-based absolute row in buffer
+
+        // 0-based absolute row in buffer
         const line = buffer.getLine?.(absRow);
         const cell = line?.getCell?.(col - 1);
         const ch = cell?.getChars?.();
@@ -61,11 +65,11 @@ export class MouseHandler implements ITerminalHandler {
       this._bus.publish({
         path: ['inspector'],
         type: 'Inspector',
-        payload: { type: 'terminal-mouse-position', data: { terminalId: this._terminalId, col, row, char } }
+        payload: { type: 'terminal-mouse-position', data: { terminalId: this._terminalId, viewportCol: col, viewportRow: row, char: char, col: col, row: absRow + 1} }
       });
     };
 
-    this._terminalContainer.addEventListener('mousemove', this._listener, { passive: true });
+    this._screenElement?.addEventListener('mousemove', this._listener, { passive: true });
 
     return this;
   }

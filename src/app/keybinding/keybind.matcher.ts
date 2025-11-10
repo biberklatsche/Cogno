@@ -3,6 +3,7 @@ import {OsType} from "../_tauri/os";
 import {KeybindFiredEvent} from "./keybind.service";
 import {KeybindActionInterpreter} from "./keybind-action.interpreter";
 import {ActionName} from "../config/+models/config.types";
+import {Modifier} from "./modifier";
 
 
 type Sequence = { steps: string[]; event: KeybindFiredEvent };
@@ -54,8 +55,7 @@ export class KeybindingMatcher {
         const parts = keys.split('+').map(k => k.trim()).filter(Boolean);
         if (parts.length === 0) return '';
 
-        // Sortiere Modifier für Konsistenz (außer der eigentliche Key kommt zuletzt)
-        const modifiers = parts.slice(0, -1).sort();
+        const modifiers = Modifier.normalizeAll(parts.slice(0, -1));
         const key = parts[parts.length - 1];
 
         return [...modifiers, key].join('+');
@@ -63,15 +63,9 @@ export class KeybindingMatcher {
 
     // Erstellt Key-String aus KeyboardEvent
     private eventToKeyString(event: KeyboardEvent): string {
-        let parts: string[] = [];
-        // Modifier in fester Reihenfolge (alphabetisch sortiert)
-        if (event.altKey) parts.push(this._platform === 'macos' ? 'Option' : 'Alt');
-        if (event.metaKey) parts.push(this._platform === 'macos' ? 'Command' : 'Meta');
-        if (event.ctrlKey) parts.push(this._platform === 'macos' ? 'Control' : 'Ctrl');
-        if (event.shiftKey) parts.push('Shift');
-        parts = parts.sort();
+        let parts: string[] = Modifier.transform(event);
         // Haupttaste über Mapping normalisieren
-        const normalizedKey = this.keyCodeMapping[(event as any).code] || (event as any).key;
+        const normalizedKey = this.keyCodeMapping[event.code] || event.key;
         parts.push(normalizedKey);
         return parts.join('+');
     }
@@ -79,7 +73,7 @@ export class KeybindingMatcher {
     // Hauptmethode: Prüft ob Event ein Keybinding trifft (unterstützt Sequenzen)
     match(event: KeyboardEvent): {event: KeybindFiredEvent, eventKey: string} | undefined {
         // Nur auf keydown reagieren, um Doppelzählung zu vermeiden
-        if ((event as any).type && (event as any).type !== 'keydown') return undefined;
+        if (event.type && event.type !== 'keydown') return undefined;
 
         const eventKey = this.eventToKeyString(event);
 
