@@ -12,7 +12,7 @@ export class PaneComponent implements AfterViewInit {
     terminalId = input.required<TerminalId>();
     @ViewChild('dock', { static: true }) hostRef!: ElementRef<HTMLDivElement>;
 
-    private _lastAttached?: TerminalId;
+    private _attachedTerminalId?: TerminalId;
     private _viewReady = signal(false);
 
     constructor(private terminalComponents: TerminalComponentFactory) {
@@ -23,11 +23,11 @@ export class PaneComponent implements AfterViewInit {
             const id = this.terminalId();
             const host = this.hostRef?.nativeElement;
             if (!id || !host) return;
-            if (this._lastAttached !== id) {
+            if (this._attachedTerminalId !== id) {
                 // Clear previous content to avoid multiple components in the dock
                 while (host.firstChild) host.removeChild(host.firstChild);
                 this.terminalComponents.attach(id, host);
-                this._lastAttached = id;
+                this._attachedTerminalId= id;
             }
         });
     }

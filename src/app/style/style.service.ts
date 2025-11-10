@@ -1,10 +1,10 @@
 import {DestroyRef, Injectable} from '@angular/core';
-import {ConfigService} from "../../config/+state/config.service";
+import {ConfigService} from "../config/+state/config.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {Color} from "../color/color";
-import {Fs} from "../../_tauri/fs";
-import {Logger} from "../../_tauri/logger";
-import {ConfigTypes} from "../../config/+models/config.types";
+import {Color} from "../common/color/color";
+import {Fs} from "../_tauri/fs";
+import {Logger} from "../_tauri/logger";
+import {ConfigTypes} from "../config/+models/config.types";
 
 @Injectable({
   providedIn: 'root'
