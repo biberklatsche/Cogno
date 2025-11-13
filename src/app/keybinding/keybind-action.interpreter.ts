@@ -1,9 +1,11 @@
 import {ActionTrigger, validTriggers} from "../app-bus/app-bus";
 import {ActionName} from "../config/+models/config.types";
 
+export type ActionDefinition = {actionName: ActionName, trigger?: {all: boolean, unconsumed: boolean, performable: boolean}, args?: string[]}
+
 export const KeybindActionInterpreter = {
 
-    parse(actionDef: string): {actionName: ActionName, trigger?: {all: boolean, unconsumed: boolean, performable: boolean}, args?: string[]} {
+    parse(actionDef: string): ActionDefinition {
         let trigger:{all: boolean, unconsumed: boolean, performable: boolean} | undefined = undefined;
         if(actionDef.includes('[') && actionDef.includes(']')){
             const triggersList = actionDef.substring(actionDef.indexOf('[') + 1, actionDef.lastIndexOf(']')).split(':');

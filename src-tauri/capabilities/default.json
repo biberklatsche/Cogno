@@ -35,6 +35,7 @@
     "sql:default",
     "sql:allow-execute",
     "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-read-text"
+    "clipboard-manager:allow-read-text",
+    "process:default"
   ]
 }

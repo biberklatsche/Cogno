@@ -20,6 +20,7 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())

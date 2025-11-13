@@ -3,9 +3,9 @@ import {DestroyRef, Injectable} from "@angular/core";
 import {ConfigService} from "../config/+state/config.service";
 import {KeybindingMatcher} from "./keybind.matcher";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {OS} from "../_tauri/os";
 import {ActionBase, AppBus} from "../app-bus/app-bus";
 import {ActionName} from "../config/+models/config.types";
+import {ActionDefinition} from "./keybind-action.interpreter";
 
 
 export type KeybindFiredEvent = ActionBase<"KeybindFired", ActionName>
@@ -15,7 +15,7 @@ export type KeybindFiredEvent = ActionBase<"KeybindFired", ActionName>
 })
 export class KeybindService {
 
-    private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher(OS.platform());
+    private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher();
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, bus: AppBus, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
@@ -35,5 +35,9 @@ export class KeybindService {
 
     getKeybinding(actinName: ActionName): string | undefined {
         return this._keybindMatcher.getKeybinding(actinName);
+    }
+
+    getActionDefinition(actionName: ActionName): ActionDefinition | undefined {
+        return this._keybindMatcher.getAction(actionName);
     }
 }

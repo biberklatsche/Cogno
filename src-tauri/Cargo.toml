@@ -42,6 +42,7 @@ cipher = "0.3"
 block-modes = "0.8.1"
 block-padding = "0.2"
 dirs = "6.0.0"
+tauri-plugin-process = "2"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
