@@ -27,8 +27,8 @@ export class GridListService {
 
     constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
         this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
-            for(const tapId in this._gridList.value) {
-                this.removeGrid(tapId);
+            for(const tabId in this._gridList.value) {
+                this.removeGrid(tabId);
             }
             for (let grid of event.payload!.grids) {
                 this.restoreGrid(grid);
@@ -111,9 +111,6 @@ export class GridListService {
             }
         }
         this.componentFactory.destroy(terminalId);
-        console.log('#####remove', terminalId);
-        console.log('removePane', gridAndNode);
-        console.log('list', gridList);
         this._gridList.next(gridList);
     }
 

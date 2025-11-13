@@ -12,7 +12,6 @@ export interface IPty extends IDisposable{
     write(data: string): void;
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable;
     kill(signal?: string): void;
-    get dimensions(): TerminalDimensions;
 }
 
 export class Pty implements IPty {
@@ -25,10 +24,6 @@ export class Pty implements IPty {
     async spawn(terminalId: string, shellConfig: ShellConfig) {
         this._terminalId = terminalId;
         await TauriPty.spawn(this._terminalId, shellConfig);
-    }
-
-    get dimensions(): TerminalDimensions {
-        return this._terminalDimensions;
     }
 
     kill(signal?: string): void {

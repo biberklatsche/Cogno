@@ -30,7 +30,7 @@ export class TabListService {
         this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
             this._tabList.next([]);
             for (const [index, grid] of event.payload!.grids.entries()) {
-                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: false});
+                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: false}, true);
             }
         });
         this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
@@ -109,7 +109,7 @@ export class TabListService {
         }
     }
 
-    addTab(tab: Tab) {
+    addTab(tab: Tab, silent: boolean = false) {
         const tabList = [...this._tabList.value];
         if(tabList.some(s => s.id === tab?.id)) return;
         if(tab.isActive){
@@ -119,6 +119,7 @@ export class TabListService {
         }
         tabList.push(tab);
         this._tabList.next(tabList);
+        if(silent) return;
         this.bus.publish({type: 'TabAdded', payload: {tabId: tab.id, isActive: tab.isActive}});
     }
 

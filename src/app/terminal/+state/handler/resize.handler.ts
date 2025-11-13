@@ -16,8 +16,6 @@ export class ResizeHandler implements ITerminalHandler {
     private _resizeRaf?: number;
     private _ptyResizeTimeout: number | null = null;
 
-    private _currentRendererDimensions: TerminalDimensions = {rows: 0, cols: 0};
-
     constructor(
         private _terminalId: TerminalId,
         private _pty: IPty,
@@ -66,26 +64,29 @@ export class ResizeHandler implements ITerminalHandler {
     }
 
     public resize(terminal: Terminal, fitAddon: FitAddon) {
+        const currentDimensions: TerminalDimensions = {cols: terminal.cols, rows: terminal.rows};
         const newRendererDimensions = fitAddon.proposeDimensions();
-
-        if(!this.areDimensionsEqual(newRendererDimensions, this._currentRendererDimensions)) {
+        if(!newRendererDimensions) return;
+        if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
             fitAddon.fit();
-            this._currentRendererDimensions.rows  = newRendererDimensions?.rows || 0;
-            this._currentRendererDimensions.cols = newRendererDimensions?.cols || 0;
+            const terminalDimensions: TerminalDimensions = {cols: terminal.cols, rows: terminal.rows};
+
+            if(!this.areDimensionsEqual(newRendererDimensions, terminalDimensions)){
+                throw new Error('dimensions are not equal!');
+            }
+
             this._bus.publish({
                 path: ["inspector"],
                 type: "Inspector",
-                payload: { type: "terminal-dimensions", data: { terminalId: this._terminalId, cols: terminal.cols, rows: terminal.rows } }
+                payload: { type: "terminal-dimensions", data: { terminalId: this._terminalId, cols: newRendererDimensions.cols, rows: newRendererDimensions.rows } }
             });
-        }
-        const ptyDimensions = this._pty.dimensions;
-        if(!this.areDimensionsEqual(ptyDimensions, this._currentRendererDimensions)){
+
             if (this._ptyResizeTimeout !== null) {
                 clearTimeout(this._ptyResizeTimeout);
             }
 
             this._ptyResizeTimeout = window.setTimeout(() => {
-                this._pty.resize(this._currentRendererDimensions);
+                this._pty.resize(newRendererDimensions);
                 this._ptyResizeTimeout = null;
             }, 100);
         }
