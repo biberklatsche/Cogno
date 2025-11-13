@@ -58,7 +58,6 @@ export class ResizeHandler implements ITerminalHandler {
                     setTimeout(() => this.resize(terminal, fitAddon), 100);
                     break;
                 case 'TerminalThemePaddingAdded':
-                    // Add a small timeout to prevent wrong rendering on macos (on exit vim)
                     setTimeout(() => this.resize(terminal, fitAddon), 100);
                     break;
             }
