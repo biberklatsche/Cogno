@@ -3,79 +3,86 @@ import {ShellConfig} from "../../../config/+models/config.types";
 import {IDisposable} from "../../../common/models/models";
 import {Logger} from "../../../_tauri/logger";
 import {TauriPty} from "../../../_tauri/pty";
+import {TerminalDimensions} from '../handler/resize.handler';
 
 export interface IPty extends IDisposable{
     spawn(terminalId: string, shellConfig: ShellConfig): Promise<void>;
-    resize(width: number, height: number): void;
+    resize(dimensions: TerminalDimensions): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable;
     kill(signal?: string): void;
+    get dimensions(): TerminalDimensions;
 }
 
 export class Pty implements IPty {
 
-    private terminalId: string | undefined = undefined;
-    private dataUnlisten: UnlistenFn | undefined = undefined;
-    private exitUnlisten: UnlistenFn | undefined = undefined;
+    private _terminalId: string | undefined = undefined;
+    private _dataUnlisten: UnlistenFn | undefined = undefined;
+    private _exitUnlisten: UnlistenFn | undefined = undefined;
+    private _terminalDimensions: TerminalDimensions = {cols:0, rows:0}
 
     async spawn(terminalId: string, shellConfig: ShellConfig) {
-        this.terminalId = terminalId;
-        await TauriPty.spawn(this.terminalId, shellConfig);
+        this._terminalId = terminalId;
+        await TauriPty.spawn(this._terminalId, shellConfig);
+    }
+
+    get dimensions(): TerminalDimensions {
+        return this._terminalDimensions;
     }
 
     kill(signal?: string): void {
-        if(!this.terminalId) return;
-        TauriPty.kill(this.terminalId)
+        if(!this._terminalId) return;
+        TauriPty.kill(this._terminalId)
             .catch(err => Logger.error('Failed to kill PTY:', err));
     }
 
-    resize(cols: number, rows: number) {
-        if(!this.terminalId) throw Error('Please spawn Pty before resize.');
-        
-        TauriPty.resize(this.terminalId, cols, rows).catch(err => Logger.error('Failed to resize PTY:', err));
+    resize(dimensions: TerminalDimensions) {
+        if(!this._terminalId) throw Error('Please spawn Pty before resize.');
+        this._terminalDimensions = {...dimensions};
+        TauriPty.resize(this._terminalId, dimensions.cols, dimensions.rows).catch(err => Logger.error('Failed to resize PTY:', err));
     }
 
     onData(listener: (e: string) => any): IDisposable {
-        if(!this.terminalId) throw Error('Please spawn Pty before listen on data.');
-        const terminalId = this.terminalId;
+        if(!this._terminalId) throw Error('Please spawn Pty before listen on data.');
+        const terminalId = this._terminalId;
         TauriPty.onData(terminalId, listener).then(unlisten => {
-            this.dataUnlisten = unlisten;
+            this._dataUnlisten = unlisten;
         });
         return {
             dispose: () => {
-                this.dataUnlisten?.();
-                this.dataUnlisten = undefined;
+                this._dataUnlisten?.();
+                this._dataUnlisten = undefined;
             }
         };
     }
 
     write(data: string) {
-        if(!this.terminalId) throw Error('Please spawn Pty before write to it.');
-        TauriPty.write(this.terminalId, data)
+        if(!this._terminalId) throw Error('Please spawn Pty before write to it.');
+        TauriPty.write(this._terminalId, data)
             .catch(err => console.error('Failed to write to PTY:', err));
     }
 
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
-        if(!this.terminalId) throw Error('Please spawn Pty before listen on exit.');
-        const terminalId = this.terminalId;
+        if(!this._terminalId) throw Error('Please spawn Pty before listen on exit.');
+        const terminalId = this._terminalId;
         TauriPty.onExit(terminalId, listener).then(unlisten => {
-            this.exitUnlisten = unlisten;
+            this._exitUnlisten = unlisten;
         });
         return {
             dispose: () => {
-                this.exitUnlisten?.();
-                this.exitUnlisten = undefined;
+                this._exitUnlisten?.();
+                this._exitUnlisten = undefined;
             }
         };
     }
 
     dispose(): void {
         this.kill();
-        this.dataUnlisten?.();
-        this.exitUnlisten?.();
-        this.dataUnlisten = undefined;
-        this.exitUnlisten = undefined;
-        this.terminalId = undefined;
+        this._dataUnlisten?.();
+        this._exitUnlisten?.();
+        this._dataUnlisten = undefined;
+        this._exitUnlisten = undefined;
+        this._terminalId = undefined;
     }
 }
