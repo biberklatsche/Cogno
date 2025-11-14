@@ -4,12 +4,12 @@ import {fromEvent} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {Keybinding} from "../../keybinding/keybind.matcher";
 import {TerminalId} from "../../grid-list/+model/model";
+import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
 
 export type TerminalIdentifier = {terminalId: string};
 export type MousePosition = { x: number; y: number };
 export type TerminalMousePosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number; };
 export type TerminalCursorPosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number;  };
-export type TerminalDimensions = { cols: number; rows: number };
 
 @Injectable()
 export class InspectorService {

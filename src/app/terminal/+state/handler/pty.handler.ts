@@ -27,7 +27,7 @@ export class PtyHandler implements ITerminalHandler {
     }
 
     register(terminal: Terminal): IDisposable {
-        this.spawnPty(this._terminalId).then(_ => {
+        this.spawnPty(this._terminalId, terminal).then(_ => {
             this._disposables.push(terminal.onData(data => this._pty?.write(data)));
             this._disposables.push(this._pty?.onData(data => terminal?.write(data)));
             this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "FocusTerminal", payload: this._terminalId});
@@ -36,9 +36,10 @@ export class PtyHandler implements ITerminalHandler {
         return this;
     }
 
-    private spawnPty(terminalId: TerminalId) {
+    private spawnPty(terminalId: TerminalId, terminal: Terminal) {
         const shellConfig = this._configService.config.shell![1]!;
-        return this._pty.spawn(terminalId, shellConfig);
+        console.log('#####', {cols: terminal.cols, rows: terminal.rows});
+        return this._pty.spawn(terminalId, shellConfig, {cols: terminal.cols, rows: terminal.rows});
     }
 
 }

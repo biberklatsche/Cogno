@@ -6,7 +6,7 @@ import {TauriPty} from "../../../_tauri/pty";
 import {TerminalDimensions} from '../handler/resize.handler';
 
 export interface IPty extends IDisposable{
-    spawn(terminalId: string, shellConfig: ShellConfig): Promise<void>;
+    spawn(terminalId: string, shellConfig: ShellConfig, dimensions: TerminalDimensions): Promise<void>;
     resize(dimensions: TerminalDimensions): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
@@ -19,11 +19,10 @@ export class Pty implements IPty {
     private _terminalId: string | undefined = undefined;
     private _dataUnlisten: UnlistenFn | undefined = undefined;
     private _exitUnlisten: UnlistenFn | undefined = undefined;
-    private _terminalDimensions: TerminalDimensions = {cols:0, rows:0}
 
-    async spawn(terminalId: string, shellConfig: ShellConfig) {
+    async spawn(terminalId: string, shellConfig: ShellConfig, dimensions: TerminalDimensions): Promise<void> {
         this._terminalId = terminalId;
-        await TauriPty.spawn(this._terminalId, shellConfig);
+        await TauriPty.spawn(this._terminalId, shellConfig, dimensions);
     }
 
     kill(signal?: string): void {
@@ -34,7 +33,6 @@ export class Pty implements IPty {
 
     resize(dimensions: TerminalDimensions) {
         if(!this._terminalId) throw Error('Please spawn Pty before resize.');
-        this._terminalDimensions = {...dimensions};
         TauriPty.resize(this._terminalId, dimensions.cols, dimensions.rows).catch(err => Logger.error('Failed to resize PTY:', err));
     }
 

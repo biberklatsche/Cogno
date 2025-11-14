@@ -2,9 +2,10 @@ import {invoke} from "@tauri-apps/api/core";
 import {ShellConfig} from "../config/+models/config.types";
 import {TerminalId} from "../grid-list/+model/model";
 import {listen} from "@tauri-apps/api/event";
+import {TerminalDimensions} from "../terminal/+state/handler/resize.handler";
 
 export const TauriPty = {
-    spawn(terminalId: TerminalId, shellConfig: ShellConfig) {
+    spawn(terminalId: TerminalId, shellConfig: ShellConfig, dimensions: TerminalDimensions) {
         return invoke('pty_spawn', {
         program: shellConfig.path,
         args: shellConfig.args,

@@ -3,11 +3,11 @@ import {
     InspectorService,
     MousePosition,
     TerminalMousePosition,
-    TerminalDimensions,
     TerminalCursorPosition
 } from "../../+state/inspector.service";
 import {Keybinding} from "../../../keybinding/keybind.matcher";
 import {TerminalId} from "../../../grid-list/+model/model";
+import {TerminalDimensions} from "../../../terminal/+state/handler/resize.handler";
 
 @Component({
   selector: 'app-inspector-view',

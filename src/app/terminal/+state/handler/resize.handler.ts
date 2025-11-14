@@ -50,7 +50,7 @@ export class ResizeHandler implements ITerminalHandler {
         this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]})
             .subscribe((e) => {
             switch (e.type) {
-                case 'TerminalInitialized':
+                //case 'TerminalInitialized':
                 case 'TerminalThemeChanged':
                 case 'TerminalThemePaddingRemoved':
                     setTimeout(() => this.resize(terminal, fitAddon), 100);
