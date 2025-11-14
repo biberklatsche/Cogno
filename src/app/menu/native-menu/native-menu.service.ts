@@ -9,6 +9,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ActionName} from "../../config/+models/config.types";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {AppBus} from "../../app-bus/app-bus";
+import {AppWindow} from "../../_tauri/window";
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +21,11 @@ export class NativeMenuService {
       if(OS.platform() === 'macos') {
           configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(async () => {
               await this.buildMenu();
+          });
+          AppWindow.onFocusChanged$.subscribe(async (focus) => {
+              if(focus) {
+                  await this.buildMenu();
+              }
           });
       }
 

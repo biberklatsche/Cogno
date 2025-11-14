@@ -41,11 +41,9 @@ export class AppComponent {
             });
 
         // Ensure all PTY instances of this window are killed when the window is closed
-        AppWindow.onCloseRequestedOnce(() => {
+        AppWindow.onCloseRequested$.subscribe(() => {
             // Best-effort kill; do not block the close
             Pty.killAll();
-        }).catch(err => {
-            console.error('Failed to register window close handler:', err);
         });
     }
 

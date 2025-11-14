@@ -5,6 +5,7 @@ import { UnlistenFn } from "@tauri-apps/api/event";
 import { distinctUntilChanged } from "rxjs/operators";
 
 const win = getCurrentWindow();
+
 export const AppWindow = {
     isFocused(): Promise<boolean> { return win.isFocused()},
     isVisible(): Promise<boolean>{ return win.isVisible()},
@@ -17,17 +18,35 @@ export const AppWindow = {
     unmaximize(): Promise<void> {return win.unmaximize()},
 
     /**
-     * Registers a one-shot close listener and automatically unlistens after first call.
+     * Observable stream of window close requests, similar to windowSize$.
+     * - Emits on every close request event until unsubscribed.
+     * - Properly unregisters the native listener on teardown.
      */
-    async onCloseRequestedOnce(handler: (event: CloseRequestedEvent) => void | Promise<void>): Promise<void> {
-        const unlisten = await win.onCloseRequested(async (evt) => {
-            try {
-                await handler(evt);
-            } finally {
+    onCloseRequested$: new Observable<CloseRequestedEvent>((subscriber) => {
+        let unlisten: UnlistenFn | null = null;
+        let unsubscribed = false;
+
+        win
+            .onCloseRequested((evt) => {
+                // Emit every time the user requests to close the window
+                subscriber.next(evt);
+            })
+            .then((fn) => {
+                if (unsubscribed) {
+                    try { fn(); } catch {}
+                } else {
+                    unlisten = fn;
+                }
+            })
+            .catch((err) => subscriber.error(err));
+
+        return () => {
+            unsubscribed = true;
+            if (unlisten) {
                 try { unlisten(); } catch {}
             }
-        });
-    },
+        };
+    }),
 
     windowSize$: new Observable<{ width: number; height: number }>(
         (subscriber) => {
@@ -72,6 +91,45 @@ export const AppWindow = {
             };
         }
     ).pipe(distinctUntilChanged((a, b) => a.width === b.width && a.height === b.height)),
+
+    /**
+     * Observable stream of window focus state changes, similar to windowSize$.
+     * - Emits the current focus state immediately on subscription.
+     * - Emits on every subsequent focus change until unsubscribed.
+     * - Properly unregisters the native listener on teardown.
+     */
+    onFocusChanged$: new Observable<boolean>((subscriber) => {
+        let unlisten: UnlistenFn | null = null;
+        let unsubscribed = false;
+
+        // 1) Emit the current focus state once at subscription
+        win
+            .isFocused()
+            .then((focused) => subscriber.next(focused))
+            .catch((err) => subscriber.error(err));
+
+        // 2) Listen for focus change events
+        win
+            .onFocusChanged(({ payload }) => {
+                subscriber.next(!!payload);
+            })
+            .then((fn) => {
+                if (unsubscribed) {
+                    try { fn(); } catch {}
+                } else {
+                    unlisten = fn;
+                }
+            })
+            .catch((err) => subscriber.error(err));
+
+        // 3) Teardown
+        return () => {
+            unsubscribed = true;
+            if (unlisten) {
+                try { unlisten(); } catch {}
+            }
+        };
+    }).pipe(distinctUntilChanged()),
 }
 
 export type WindowSize = { width: number, height: number };
