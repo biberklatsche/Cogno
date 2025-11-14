@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, DestroyRef} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {TerminalComponent} from './terminal/terminal.component';
 import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
@@ -8,10 +8,12 @@ import {AppBus} from "./app-bus/app-bus";
 import {GridListComponent} from "./grid-list/grid-list.component";
 import {InspectorComponent} from "./inspector/inspector.component";
 import {AppMenuButtonComponent} from "./menu/app-menu/app-menu-button.component";
+import {take} from "rxjs/operators";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent, InspectorComponent, AppMenuButtonComponent],
+    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent, InspectorComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss',
     standalone: true
@@ -20,10 +22,17 @@ export class AppComponent {
 
     os = OS.platform();
 
-    constructor(bus: AppBus) {
+    constructor(bus: AppBus, ref: DestroyRef) {
         bus.publish({type: "LoadConfigCommand"});
         bus.publish({type: "WatchConfigCommand"});
-        bus.once$({path: ['app', 'config'], type: 'ConfigLoaded'})
+        bus.once$({path: ['app', 'config'], type: 'ConfigLoaded'});
+        bus.on$({path: ['app', 'keybind'], type: 'KeybindFired'})
+            .pipe(takeUntilDestroyed(ref))
+            .subscribe((e)=> {
+               if(e.payload === 'new_window') {
+                   //open new tauri window here!!!
+               }
+            });
     }
 
     async initAsync(): Promise<void> {
