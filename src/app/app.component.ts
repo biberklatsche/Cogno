@@ -10,6 +10,7 @@ import {InspectorComponent} from "./inspector/inspector.component";
 import {AppMenuButtonComponent} from "./menu/app-menu/app-menu-button.component";
 import {take} from "rxjs/operators";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {invoke} from "@tauri-apps/api/core";
 
 @Component({
     selector: 'app-root',
@@ -29,8 +30,11 @@ export class AppComponent {
         bus.on$({path: ['app', 'keybind'], type: 'KeybindFired'})
             .pipe(takeUntilDestroyed(ref))
             .subscribe((e)=> {
-               if(e.payload === 'new_window') {
-                   //open new tauri window here!!!
+               if (e.payload === 'new_window') {
+                   // Create a new Tauri window with the same content as the main window
+                   invoke('new_window').catch((err) => {
+                       console.error('Failed to open new window', err);
+                   });
                }
             });
     }

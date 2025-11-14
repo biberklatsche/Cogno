@@ -5,3 +5,4 @@ pub mod keyboard;
 pub mod shells;
 pub mod pty;
 pub mod environment;
+pub mod window;

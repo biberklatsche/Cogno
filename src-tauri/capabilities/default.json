@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
+  "description": "Capability for the main and secondary windows",
   "windows": [
-    "main"
+    "main",
+    "win-*"
   ],
   "permissions": [
     "core:default",
@@ -12,7 +13,9 @@
     "fs:default",
     "fs:allow-watch",
     "fs:allow-write-text-file",
+    "fs:allow-exists",
     "log:default",
+    "log:allow-log",
     {
       "identifier": "fs:scope-home-recursive",
       "allow": [
@@ -32,6 +35,8 @@
     "core:window:allow-minimize",
     "core:window:allow-unminimize",
     "core:window:allow-close",
+    "core:window:allow-inner-size",
+    "core:event:allow-listen",
     "sql:default",
     "sql:allow-execute",
     "clipboard-manager:allow-write-text",

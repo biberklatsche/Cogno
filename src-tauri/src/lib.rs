@@ -12,6 +12,7 @@ use commands::keyboard::get_keyboard_layout;
 use commands::shells::list_shells;
 use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
 use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle, get_cogno_home_dir, get_cogno_config_file_path, get_cogno_db_file_path};
+use commands::window::new_window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
@@ -51,7 +52,8 @@ pub fn run(cli: Cli) {
                     get_macos_app_bundle,
                     get_cogno_home_dir,
                     get_cogno_config_file_path,
-                    get_cogno_db_file_path
+                    get_cogno_db_file_path,
+                    new_window
                 ])
         .setup(move |app| {
            // Beim ersten Start: ggf. gewünschten Command ausführen
