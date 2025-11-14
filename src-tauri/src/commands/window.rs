@@ -24,10 +24,5 @@ pub fn new_window(app: tauri::AppHandle) -> Result<(), String> {
     let window = win_builder.build().map_err(|e| e.to_string())?;
     window.show().map_err(|e| e.to_string())?;
 
-    #[cfg(debug_assertions)]
-    {
-        window.open_devtools();
-    }
-
     Ok(())
 }

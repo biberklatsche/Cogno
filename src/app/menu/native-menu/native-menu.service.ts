@@ -48,6 +48,7 @@ export class NativeMenuService {
       const fileSubmenu = await Submenu.new({
           text: 'File',
           items: [
+              await this.buildMenuItem('new_window', 'New Window'),
               await this.buildMenuItem('new_tab', 'New Tab'),
               await PredefinedMenuItem.new({
                   item: 'Separator',
