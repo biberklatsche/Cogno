@@ -1,7 +1,8 @@
-import {getCurrentWindow} from "@tauri-apps/api/window";
-import {Observable} from "rxjs";
-import {UnlistenFn} from "@tauri-apps/api/event";
-import {distinctUntilChanged} from "rxjs/operators";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { CloseRequestedEvent } from "@tauri-apps/api/window";
+import { Observable } from "rxjs";
+import { UnlistenFn } from "@tauri-apps/api/event";
+import { distinctUntilChanged } from "rxjs/operators";
 
 const win = getCurrentWindow();
 export const AppWindow = {
@@ -14,6 +15,19 @@ export const AppWindow = {
     unminimize(): Promise<void> {return win.unminimize()},
     maximize(): Promise<void> {return win.maximize()},
     unmaximize(): Promise<void> {return win.unmaximize()},
+
+    /**
+     * Registers a one-shot close listener and automatically unlistens after first call.
+     */
+    async onCloseRequestedOnce(handler: (event: CloseRequestedEvent) => void | Promise<void>): Promise<void> {
+        const unlisten = await win.onCloseRequested(async (evt) => {
+            try {
+                await handler(evt);
+            } finally {
+                try { unlisten(); } catch {}
+            }
+        });
+    },
 
     windowSize$: new Observable<{ width: number; height: number }>(
         (subscriber) => {

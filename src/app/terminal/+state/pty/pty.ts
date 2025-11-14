@@ -16,9 +16,26 @@ export interface IPty extends IDisposable{
 
 export class Pty implements IPty {
 
+    private static readonly _instances = new Set<Pty>();
+
+    static killAll(signal?: string): void {
+        // Iterate over a copy to avoid mutation issues during kills/dispose
+        Array.from(Pty._instances).forEach(instance => {
+            try {
+                instance.kill(signal);
+            } catch (err) {
+                Logger.error('Failed to kill PTY on window close.');
+            }
+        });
+    }
+
     private _terminalId: string | undefined = undefined;
     private _dataUnlisten: UnlistenFn | undefined = undefined;
     private _exitUnlisten: UnlistenFn | undefined = undefined;
+
+    constructor() {
+        Pty._instances.add(this);
+    }
 
     async spawn(terminalId: string, shellConfig: ShellConfig, dimensions: TerminalDimensions): Promise<void> {
         this._terminalId = terminalId;
@@ -77,5 +94,6 @@ export class Pty implements IPty {
         this._dataUnlisten = undefined;
         this._exitUnlisten = undefined;
         this._terminalId = undefined;
+        Pty._instances.delete(this);
     }
 }

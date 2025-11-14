@@ -11,6 +11,8 @@ import {AppMenuButtonComponent} from "./menu/app-menu/app-menu-button.component"
 import {take} from "rxjs/operators";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {invoke} from "@tauri-apps/api/core";
+import {Pty} from "./terminal/+state/pty/pty";
+import {AppWindow} from "./_tauri/window";
 
 @Component({
     selector: 'app-root',
@@ -37,6 +39,14 @@ export class AppComponent {
                    });
                }
             });
+
+        // Ensure all PTY instances of this window are killed when the window is closed
+        AppWindow.onCloseRequestedOnce(() => {
+            // Best-effort kill; do not block the close
+            Pty.killAll();
+        }).catch(err => {
+            console.error('Failed to register window close handler:', err);
+        });
     }
 
     async initAsync(): Promise<void> {

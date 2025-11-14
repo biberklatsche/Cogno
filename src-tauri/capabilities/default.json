@@ -35,6 +35,7 @@
     "core:window:allow-minimize",
     "core:window:allow-unminimize",
     "core:window:allow-close",
+    "core:window:allow-destroy",
     "core:window:allow-inner-size",
     "core:event:allow-listen",
     "sql:default",
