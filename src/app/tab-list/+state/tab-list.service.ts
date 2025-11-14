@@ -51,7 +51,7 @@ export class TabListService {
         });
         this.bus.on$({type: 'KeybindFired', path: ['app', 'keybind']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
                 switch (event.payload) {
-                    case 'open_new_tab':
+                    case 'new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;

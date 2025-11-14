@@ -10,10 +10,11 @@ import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
 import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
 import {Tab} from "./+model/tab";
+import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+    imports: [CommonModule, IconComponent, AppMenuButtonComponent],
   templateUrl: './tab-list.component.html',
   styleUrl: './tab-list.component.scss'
 })

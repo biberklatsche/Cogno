@@ -25,5 +25,7 @@
             </span>
         </button>
     }
-    <button class="add" (click)="$event.stopPropagation(); addTab()"><app-icon name="mdiPlus"></app-icon></button>
+    <button class="tab-list-btn" (click)="$event.stopPropagation(); addTab()"><app-icon name="mdiPlus"></app-icon></button>
+    <app-menu-button></app-menu-button>
+
 </nav>

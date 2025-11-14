@@ -161,7 +161,7 @@ export type ShellType = z.infer<typeof ShellTypeEnum>;
 export type ActionName =
     'copy' |
     'paste' |
-    'open_new_tab' |
+    'new_tab' |
     'close_active_tab' |
     'split_right' |
     'split_left' |
@@ -172,5 +172,6 @@ export type ActionName =
     'close_other_tabs' |
     'close_all_tabs'|
     'toggle_inspector'|
-    'quit'
+    'quit'|
+    'new_window'
     ;

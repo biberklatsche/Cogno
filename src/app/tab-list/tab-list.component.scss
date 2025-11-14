@@ -75,24 +75,11 @@
   cursor: default;
 }
 
-.close, .add {
+.close {
   opacity: 0.5;
   &:hover {
     opacity: 1;
   }
-}
-
-.add {
-  border: none;
-  cursor: default;
-  border-radius: var(--button-border-radius);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  background: var(--background-color-10l);
-  color: var(--foreground-color);
 }
 
 .title {

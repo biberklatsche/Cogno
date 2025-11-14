@@ -1,3 +1,20 @@
 html {
     --button-border-radius:6px;
 }
+
+.tab-list-btn {
+    border: none;
+    cursor: default;
+    border-radius: var(--button-border-radius);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--background-color-10l);
+    color: var(--foreground-color);
+    opacity: 0.5;
+    &:hover {
+        opacity: 1;
+    }
+}
