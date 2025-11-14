@@ -29,9 +29,7 @@ pub fn run(cli: Cli) {
             // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(cmd) = cli.command {
-                    // Reiche den Command direkt an den Renderer weiter
-                    eprintln!("command {:?}", cmd);
-                    let _ = app.emit("cli-command", &cmd);
+                   let _ = app.emit("cli-command", &cmd);
                 }
             }
         }))
@@ -56,11 +54,6 @@ pub fn run(cli: Cli) {
                     new_window
                 ])
         .setup(move |app| {
-           // Beim ersten Start: ggf. gewünschten Command ausführen
-           if let Some(cmd) = cli.command.clone() {
-               // Reiche den Command direkt an den Renderer weiter
-               app.emit("cli-command", &cmd).ok();
-           }
 
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                            .title("")
@@ -76,6 +69,11 @@ pub fn run(cli: Cli) {
 
            let window = win_builder.build().unwrap();
            window.show().unwrap();
+
+           // Beim ersten Start: ggf. gewünschten Command ausführen
+           if let Some(cmd) = cli.command.clone() {
+               let _ = app.emit("cli-command", &cmd);
+           }
 
            #[cfg(debug_assertions)] // only include this code on debug builds
            {
