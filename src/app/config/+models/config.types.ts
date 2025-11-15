@@ -162,16 +162,18 @@ export type ActionName =
     'copy' |
     'paste' |
     'new_tab' |
-    'close_active_tab' |
+    'close_tab' |
     'split_right' |
     'split_left' |
     'split_down' |
     'split_up' |
-    'close_active_terminal' |
+    'close_terminal' |
     'clear_buffer' |
     'close_other_tabs' |
     'close_all_tabs'|
     'toggle_inspector'|
     'quit'|
-    'new_window'
+    'new_window' |
+    'close_window' |
+    'minimize_window'
     ;

@@ -89,7 +89,7 @@ export class TerminalSession {
                 }, actionName: "clear_buffer" },
             { label: 'Close', action: () => {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
-                }, actionName: "close_active_terminal"  },
+                }, actionName: "close_terminal"  },
         ];
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {

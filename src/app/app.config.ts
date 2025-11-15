@@ -11,6 +11,7 @@ import {WorkspaceService} from "./workspace/+state/workspace.service";
 import {KeybindService} from "./keybinding/keybind.service";
 import {CliCommandService} from "./cli-command/cli-command.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
+import {WindowService} from "./window/window.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,6 +24,7 @@ export const appConfig: ApplicationConfig = {
           inject(KeybindService);
           inject(CliCommandService);
           inject(NativeMenuService);
+          inject(WindowService);
       }),
   ],
 };

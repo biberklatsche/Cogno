@@ -66,7 +66,7 @@ export class NativeMenuService {
               await PredefinedMenuItem.new({
                   item: 'Separator',
               }),
-              await this.buildMenuItem('close_active_tab', 'Close Tab'),
+              await this.buildMenuItem('close_tab', 'Close Tab'),
               await this.buildMenuItem('close_other_tabs', 'Close Other Tabs'),
           ],
       });

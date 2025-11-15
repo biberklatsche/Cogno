@@ -56,7 +56,7 @@ export class TabListService {
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
-                    case 'close_active_tab':
+                    case 'close_tab':
                         const activeTabId = this._tabList.value.find(s => s.isActive)?.id;
                         this.removeTab(activeTabId);
                         event.performed = !event.trigger?.all;
@@ -82,7 +82,7 @@ export class TabListService {
         const tab = this._tabList.value.find(tab => tab.id === tabId);
         if(!tab) throw new Error("No tab found for TabList");
         const items: (ContextMenuItem|undefined)[] = [
-            { label: 'Close tab', action: () => this.removeTab(tabId), actionName: "close_active_tab"  },
+            { label: 'Close tab', action: () => this.removeTab(tabId), actionName: "close_tab"  },
             this._tabList.value.length > 1 ?
                 { label: 'Close other tabs', action: () => this.removeAllTabs(tabId), actionName: "close_other_tabs" }
                 : undefined,

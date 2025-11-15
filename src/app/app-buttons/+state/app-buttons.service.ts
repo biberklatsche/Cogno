@@ -14,21 +14,14 @@ export class AppButtonsService {
     readonly isMaximized = this._isMaximized.asReadonly();
 
 
-    constructor(destroyRef: DestroyRef, bus: AppBus) {
+    constructor(destroyRef: DestroyRef, private bus: AppBus) {
         AppWindow.windowSize$.pipe(takeUntilDestroyed(destroyRef)).subscribe(async size => {
             this._isMaximized.set(await AppWindow.isMaximized());
         });
-        bus.on$({type: 'KeybindFired', path: ['app', 'keybind']})
-            .pipe(takeUntilDestroyed(destroyRef))
-            .subscribe(async (event) => {
-               switch (event.payload) {
-                   case 'quit': await Process.exit();
-               }
-            });
     }
 
     closeWindow(): void {
-        AppWindow.close().then(() => Logger.debug('close window'));
+        this.bus.publish({type: "KeybindFired", path: ['app', 'keybind'], payload: "close_window"});
     }
 
     minimizeWindow() {

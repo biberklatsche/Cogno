@@ -27,25 +27,7 @@ export class AppComponent {
     os = OS.platform();
 
     constructor(bus: AppBus, ref: DestroyRef) {
-        bus.publish({type: "LoadConfigCommand"});
-        bus.publish({type: "WatchConfigCommand"});
-        bus.once$({path: ['app', 'config'], type: 'ConfigLoaded'});
-        bus.on$({path: ['app', 'keybind'], type: 'KeybindFired'})
-            .pipe(takeUntilDestroyed(ref))
-            .subscribe((e)=> {
-               if (e.payload === 'new_window') {
-                   // Create a new Tauri window with the same content as the main window
-                   invoke('new_window').catch((err) => {
-                       Logger.error('Failed to open new window', err);
-                   });
-               }
-            });
 
-        AppWindow.onCloseRequested$
-            .pipe(takeUntilDestroyed(ref))
-            .subscribe(() => {
-            bus.publish({type: "KeybindFired", path: ['app', 'keybind'], payload: 'close_all_tabs'});
-        });
     }
 
     async initAsync(): Promise<void> {

@@ -62,7 +62,7 @@ export class KeybindExecutor implements IDisposable  {
                     event.performed = true;
                     break;
                 }
-                case 'close_active_terminal': {
+                case 'close_terminal': {
                     this._bus.publish({type: 'RemovePane', payload: this._terminalId, path: ['app', 'terminal']});
                     event.performed = true;
                 }
