@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
+import {AppBus} from "../../app-bus/app-bus";
+import {ActionFired} from "../../action/action.models";
 
 @Component({
   selector: 'app-emtpy',
@@ -12,6 +14,8 @@ import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
           <span class="keybinding">{{ 'new_tab' | actionkeybinding }}</span>
           <span class="name">New Window</span>
           <span class="keybinding">{{ 'new_window' | actionkeybinding }}</span>
+          <span class="name">Open Settings...</span>
+          <span class="keybinding">{{ 'open_config' | actionkeybinding }}</span>
       </div>
   `,
   styles: [`
@@ -38,8 +42,6 @@ import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
   `]
 })
 export class EmtpyComponent {
-
-
 
     constructor() { }
 }

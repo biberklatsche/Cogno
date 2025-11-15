@@ -46,6 +46,10 @@ export class NativeMenuService {
               await PredefinedMenuItem.new({
                   item: 'Separator',
               }),
+              await this.buildMenuItem('open_config', 'Settings...'),
+              await PredefinedMenuItem.new({
+                  item: 'Separator',
+              }),
               await this.buildMenuItem('quit', 'Quit'),
           ],
       });

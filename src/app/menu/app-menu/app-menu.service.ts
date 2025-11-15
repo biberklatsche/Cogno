@@ -18,7 +18,9 @@ export class AppMenuService {
 
     public buildMenu(): ContextMenuItem[] {
         return [
-            this.buildMenuItem('new_window', 'New Window')
+            this.buildMenuItem('new_window', 'New Window'),
+            { separator: true },
+            this.buildMenuItem('open_config', 'Settings...')
         ];
     }
 

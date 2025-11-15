@@ -18,7 +18,8 @@ export type ActionName =
     'quit'|
     'new_window' |
     'close_window' |
-    'minimize_window'
+    'minimize_window' |
+    'open_config'
     ;
 
 export const ActionFired = {
