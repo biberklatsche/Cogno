@@ -4,7 +4,7 @@ import {AppWindow} from "../../_tauri/window";
 import {DestroyRef} from '@angular/core';
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
-import {Process} from "../../_tauri/process";
+import {ActionFired} from "../../action/action.models";
 
 
 @Injectable({providedIn: 'root'})
@@ -21,7 +21,7 @@ export class AppButtonsService {
     }
 
     closeWindow(): void {
-        this.bus.publish({type: "KeybindFired", path: ['app', 'keybind'], payload: "close_window"});
+        this.bus.publish(ActionFired.create("close_window"));
     }
 
     minimizeWindow() {

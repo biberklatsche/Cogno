@@ -1,16 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import {OS} from "../../_tauri/os";
 import {KeybindService} from "../keybind.service";
-import {ActionName} from "../../config/+models/config.types";
 import {Modifier} from "../modifier";
-
-const modifierOrder: Record<string, number> = {
-    Meta: 1,
-    Control: 2,
-    Alt: 3,
-    Shift: 4,
-    Command: 5
-};
+import {ActionName} from "../../action/action.models";
 
 @Pipe({
   name: 'keybinding'

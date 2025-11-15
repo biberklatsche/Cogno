@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Observable, Subject, firstValueFrom, fromEvent, race } from "rxjs";
+import { Observable, Subject, fromEvent, race } from "rxjs";
 import { filter, take, timeout as rxTimeout } from "rxjs/operators";
 import {AppMessage} from "./messages";
 

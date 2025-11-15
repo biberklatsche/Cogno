@@ -18,8 +18,6 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
-import {ActionName} from "../../config/+models/config.types";
-import {MenuItem} from "@tauri-apps/api/menu/menuItem";
 
 export class TerminalSession {
 
@@ -94,7 +92,7 @@ export class TerminalSession {
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
-                    this.bus.publish({path: ['app', 'keybind'], type: 'KeybindFired', payload: 'copy'});
+                    this.bus.publish({path: ['app', 'action'], type: 'ActionFired', payload: 'copy'});
                 }, actionName: 'copy'
             })
         }

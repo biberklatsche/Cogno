@@ -1,8 +1,7 @@
-// Shared types and interfaces for components used within the menu overlay
-
-import {ActionName} from "../../config/+models/config.types";
 
 // Local name union used by the color picker item
+import {ActionName} from "../../action/action.models";
+
 export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
 
 export interface MenuOverlayComponent {

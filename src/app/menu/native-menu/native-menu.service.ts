@@ -6,10 +6,10 @@ import {Menu} from "@tauri-apps/api/menu/menu";
 import {ConfigService} from "../../config/+state/config.service";
 import {PredefinedMenuItem} from "@tauri-apps/api/menu/predefinedMenuItem";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {ActionName} from "../../config/+models/config.types";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {AppBus} from "../../app-bus/app-bus";
 import {AppWindow} from "../../_tauri/window";
+import {ActionFired, ActionName} from "../../action/action.models";
 
 @Injectable({
   providedIn: 'root'
@@ -39,7 +39,6 @@ export class NativeMenuService {
               await MenuItem.new({
                   id: 'about',
                   text: 'About',
-                  accelerator: this.keybindService.getKeybinding('copy'),
                   action: () => {
                       console.log('About pressed');
                   },
@@ -86,13 +85,11 @@ export class NativeMenuService {
           action: () => {
               const actionDef = this.keybindService.getActionDefinition(actionName);
               if(!actionDef) throw new Error(`Action definition ${actionName} not found.`);
-              this.bus.publish({
-                  type: 'KeybindFired',
-                  payload: actionDef.actionName,
-                  trigger: actionDef.trigger,
-                  args: actionDef.args,
-                  path: ['app', 'keybind']
-              });
+              this.bus.publish(ActionFired.create(
+                  actionDef.actionName,
+                  actionDef.trigger,
+                  actionDef.args,
+          ));
           },
       })
   }

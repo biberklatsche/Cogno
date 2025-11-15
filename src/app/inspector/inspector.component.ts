@@ -18,7 +18,7 @@ export class InspectorComponent {
     showInspector: WritableSignal<boolean> = signal<boolean>(false);
 
     constructor(bus: AppBus, ref: DestroyRef) {
-        bus.on$({type: 'KeybindFired', path: ['app', 'keybind']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
+        bus.on$({type: 'ActionFired', path: ['app', 'action']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
             switch (event.payload) {
                 case 'toggle_inspector': {
                     this.showInspector.update((current) => !current);

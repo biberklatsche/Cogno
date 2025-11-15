@@ -7,10 +7,11 @@ import {TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
-import {KeybindFiredEvent} from "../../keybinding/keybind.service";
 import {ColorName, ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
 import {IdCreator} from "../../common/id-creator/id-creator";
+import {ActionFired, ActionFiredEvent} from "../../action/action.models";
+
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -49,7 +50,9 @@ export class TabListService {
             this._tabList.next(tabList);
             event.propagationStopped = true;
         });
-        this.bus.on$({type: 'KeybindFired', path: ['app', 'keybind']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
+        this.bus.on$(ActionFired.listener())
+            .pipe(takeUntilDestroyed(destroyRef))
+            .subscribe((event: ActionFiredEvent) => {
                 switch (event.payload) {
                     case 'new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});

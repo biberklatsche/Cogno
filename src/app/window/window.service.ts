@@ -15,7 +15,7 @@ export class WindowService {
       bus.publish({type: "LoadConfigCommand"});
       bus.publish({type: "WatchConfigCommand"});
       bus.once$({path: ['app', 'config'], type: 'ConfigLoaded'});
-      bus.on$({path: ['app', 'keybind'], type: 'KeybindFired'})
+      bus.on$({path: ['app', 'action'], type: 'ActionFired'})
           .pipe(takeUntilDestroyed(ref))
           .subscribe(async(event)=> {
               switch (event.payload) {
@@ -37,7 +37,7 @@ export class WindowService {
       AppWindow.onCloseRequested$
           .pipe(takeUntilDestroyed(ref))
           .subscribe(() => {
-              bus.publish({type: "KeybindFired", path: ['app', 'keybind'], payload: 'close_all_tabs'});
+              bus.publish({type: "ActionFired", path: ['app', 'action'], payload: 'close_all_tabs'});
           });
   }
 }

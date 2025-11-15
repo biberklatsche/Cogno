@@ -1,9 +1,9 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {ConfigService} from "../../config/+state/config.service";
-import {ActionName} from "../../config/+models/config.types";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {AppBus} from "../../app-bus/app-bus";
 import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ActionFired, ActionName} from "../../action/action.models";
 
 
 @Injectable({
@@ -26,13 +26,11 @@ export class AppMenuService {
         return { label: text, action: () => {
                 const actionDef = this.keybindService.getActionDefinition(actionName);
                 if(!actionDef) throw new Error(`Action definition ${actionName} not found.`);
-                this.bus.publish({
-                    type: 'KeybindFired',
-                    payload: actionDef.actionName,
-                    trigger: actionDef.trigger,
-                    args: actionDef.args,
-                    path: ['app', 'keybind']
-                });
+                this.bus.publish(ActionFired.create(
+                    actionDef.actionName,
+                    actionDef.trigger,
+                    actionDef.args,
+                ));
             }, actionName: actionName  };
     }
 }

@@ -158,22 +158,3 @@ export type HexColor = z.infer<typeof HexColorSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
-export type ActionName =
-    'copy' |
-    'paste' |
-    'new_tab' |
-    'close_tab' |
-    'split_right' |
-    'split_left' |
-    'split_down' |
-    'split_up' |
-    'close_terminal' |
-    'clear_buffer' |
-    'close_other_tabs' |
-    'close_all_tabs'|
-    'toggle_inspector'|
-    'quit'|
-    'new_window' |
-    'close_window' |
-    'minimize_window'
-    ;

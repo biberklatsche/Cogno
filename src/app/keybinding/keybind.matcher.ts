@@ -1,12 +1,11 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
-import {OsType} from "../_tauri/os";
-import {KeybindFiredEvent} from "./keybind.service";
 import {ActionDefinition, KeybindActionInterpreter} from "./keybind-action.interpreter";
-import {ActionName} from "../config/+models/config.types";
 import {Modifier} from "./modifier";
+import {ActionFiredEvent, ActionName} from "../action/action.models";
+import {ActionFired} from "../action/action.models";
 
 
-type Sequence = { steps: string[]; event: KeybindFiredEvent };
+type Sequence = { steps: string[]; event: ActionFiredEvent };
 
 export type Keybinding = string;
 
@@ -36,7 +35,7 @@ export class KeybindingMatcher {
 
             this.sequences.push({
                 steps: normalizedSteps,
-                event: { type: 'KeybindFired', path: ['app', 'keybind'], payload: action.actionName, trigger: action.trigger, args: action.args }
+                event: ActionFired.create(action.actionName, action.trigger, action.args)
             });
         });
     }
@@ -74,7 +73,7 @@ export class KeybindingMatcher {
     }
 
     // Hauptmethode: Prüft ob Event ein Keybinding trifft (unterstützt Sequenzen)
-    match(event: KeyboardEvent): {event: KeybindFiredEvent, eventKey: string} | undefined {
+    match(event: KeyboardEvent): {event: ActionFiredEvent, eventKey: string} | undefined {
         // Nur auf keydown reagieren, um Doppelzählung zu vermeiden
         if (event.type && event.type !== 'keydown') return undefined;
 

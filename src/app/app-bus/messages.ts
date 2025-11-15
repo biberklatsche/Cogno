@@ -15,7 +15,6 @@ import {
     TerminalThemePaddingRemovedEvent
 } from "../terminal/+state/handler/theme.handler";
 import {RemoveTabAction, SelectTabAction} from "../tab-list/+bus/actions";
-import {KeybindFiredEvent} from "../keybinding/keybind.service";
 import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
 import {TerminalBlurredEvent, TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
 import {
@@ -26,6 +25,7 @@ import {
     SplitPaneUpAction
 } from "../grid-list/+bus/actions";
 import {InspectorEvent} from "../inspector/+bus/events";
+import {ActionFiredEvent} from "../action/action.models";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -47,7 +47,7 @@ export type AppMessage =
     | BlurTerminalAction
     | PasteAction
     | CopyAction
-    | KeybindFiredEvent
+    | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent
     | TerminalFocusedEvent

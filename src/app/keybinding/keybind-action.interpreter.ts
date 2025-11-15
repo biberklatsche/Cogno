@@ -1,5 +1,5 @@
 import {ActionTrigger, validTriggers} from "../app-bus/app-bus";
-import {ActionName} from "../config/+models/config.types";
+import {ActionName} from "../action/action.models";
 
 export type ActionDefinition = {actionName: ActionName, trigger?: {all: boolean, unconsumed: boolean, performable: boolean}, args?: string[]}
 
