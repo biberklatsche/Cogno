@@ -13,6 +13,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {invoke} from "@tauri-apps/api/core";
 import {Pty} from "./terminal/+state/pty/pty";
 import {AppWindow} from "./_tauri/window";
+import {Logger} from "./_tauri/logger";
 
 @Component({
     selector: 'app-root',
@@ -35,15 +36,15 @@ export class AppComponent {
                if (e.payload === 'new_window') {
                    // Create a new Tauri window with the same content as the main window
                    invoke('new_window').catch((err) => {
-                       console.error('Failed to open new window', err);
+                       Logger.error('Failed to open new window', err);
                    });
                }
             });
 
-        // Ensure all PTY instances of this window are killed when the window is closed
-        AppWindow.onCloseRequested$.subscribe(() => {
-            // Best-effort kill; do not block the close
-            Pty.killAll();
+        AppWindow.onCloseRequested$
+            .pipe(takeUntilDestroyed(ref))
+            .subscribe(() => {
+            bus.publish({type: "KeybindFired", path: ['app', 'keybind'], payload: 'close_all_tabs'});
         });
     }
 
