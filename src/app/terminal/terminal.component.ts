@@ -11,8 +11,8 @@ import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
-import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
-import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
+import {ContextMenuOverlayService} from "../common/context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "../common/context-menu-overlay/context-menu-overlay.types";
 
 @Component({
     selector: 'app-terminal',
@@ -34,7 +34,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         return this._terminalId;
     }
 
-    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService) {
+    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: ContextMenuOverlayService) {
     }
 
     ngOnInit(): void {

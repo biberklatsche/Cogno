@@ -4,9 +4,10 @@ import {ActionName} from "../../action/action.models";
 
 export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
 
-export interface MenuOverlayComponent {
-  // Provided by MenuOverlayService upon open; call to close the overlay
+export interface ContextMenuOverlayComponent {
+  // Provided by ContextMenuOverlayService upon open; call to close the overlay
   close?: () => void;
+  items: ContextMenuItem[];
 }
 
 export type ContextMenuItem = {
@@ -21,7 +22,3 @@ export type ContextMenuItem = {
   colorpicker?: boolean;
   selectedColorName?: ColorName;
 };
-
-export interface ContextMenuOverlayComponent extends MenuOverlayComponent {
-  items: ContextMenuItem[];
-}

@@ -7,8 +7,8 @@ import {ShellType} from "../config/+models/config.types";
 import {Icon} from "../icons/+model/icon";
 import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';
-import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
-import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
+import {ContextMenuItem} from "../common/context-menu-overlay/context-menu-overlay.types";
+import {ContextMenuOverlayService} from "../common/context-menu-overlay/context-menu-overlay.service";
 import {Tab} from "./+model/tab";
 import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
 @Component({
@@ -24,7 +24,7 @@ export class TabListComponent {
     showRename: Signal<TabId | undefined>;
     @ViewChild('renameInput') inputRef!: ElementRef<HTMLInputElement>;
 
-    constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
+    constructor(private tabListService: TabListService, private menu: ContextMenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
         this.showRename = this.tabListService.showRename$;
 

@@ -1,5 +1,5 @@
 import {ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, Type, createComponent} from '@angular/core';
-import { MenuOverlayComponent, ContextMenuOverlayComponent } from './menu-overlay.types';
+import { ContextMenuOverlayComponent } from './context-menu-overlay.types';
 import { ContextMenuComponent } from './context-menu.component';
 
 export type Point = { x: number; y: number };
@@ -10,7 +10,7 @@ export interface MenuOverlayRef {
 }
 
 @Injectable({ providedIn: 'root' })
-export class MenuOverlayService {
+export class ContextMenuOverlayService {
   private current?: {
     host: HTMLDivElement;
     compRef: ComponentRef<unknown>;
@@ -23,7 +23,7 @@ export class MenuOverlayService {
 
   constructor(private appRef: ApplicationRef, private env: EnvironmentInjector) {}
 
-  openAt<T extends MenuOverlayComponent>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
+  openAt<T extends ContextMenuOverlayComponent>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
     const point: Point = this.toPoint(pointOrEvent);
     this.lastOpenEventTs = this.isMouseEvent(pointOrEvent) ? pointOrEvent.timeStamp : performance.now();
 

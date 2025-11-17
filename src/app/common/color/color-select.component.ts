@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {map, Observable} from 'rxjs';
 import {ConfigService} from '../../config/+state/config.service';
 import {Color as ColorUtil} from './color';
-import { ColorName } from '../menu-overlay/menu-overlay.types';
+import { ColorName } from '../context-menu-overlay/context-menu-overlay.types';
 
 interface ColorItem {
   name: ColorName;
