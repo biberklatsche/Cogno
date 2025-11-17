@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import {IconComponent} from "../../icons/icon/icon.component";
 import {AppMenuService} from "./app-menu.service";
-import {MenuOverlayService} from "../../common/menu-overlay/menu-overlay.service";
-import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ContextMenuOverlayService} from "../../common/context-menu-overlay/context-menu-overlay.service";
+import {ContextMenuItem} from "../../common/context-menu-overlay/context-menu-overlay.types";
 
 @Component({
   selector: 'app-menu-button',
@@ -18,7 +18,7 @@ import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
 })
 export class AppMenuButtonComponent {
 
-    constructor(private appMenuService: AppMenuService, private  menu: MenuOverlayService) {
+    constructor(private appMenuService: AppMenuService, private  menu: ContextMenuOverlayService) {
     }
 
     openMenu(event: Event) {

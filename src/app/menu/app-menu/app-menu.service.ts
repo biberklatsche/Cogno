@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {ConfigService} from "../../config/+state/config.service";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {AppBus} from "../../app-bus/app-bus";
-import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ContextMenuItem} from "../../common/context-menu-overlay/context-menu-overlay.types";
 import {ActionFired, ActionName} from "../../action/action.models";
 
 

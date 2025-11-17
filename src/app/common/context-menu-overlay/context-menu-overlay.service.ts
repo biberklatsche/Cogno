@@ -4,7 +4,7 @@ import { ContextMenuComponent } from './context-menu.component';
 
 export type Point = { x: number; y: number };
 
-export interface MenuOverlayRef {
+export interface ContextMenuOverlayRef {
   close: () => void;
   isOpen: () => boolean;
 }
@@ -23,7 +23,7 @@ export class ContextMenuOverlayService {
 
   constructor(private appRef: ApplicationRef, private env: EnvironmentInjector) {}
 
-  openAt<T extends ContextMenuOverlayComponent>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): MenuOverlayRef {
+  openAt<T extends ContextMenuOverlayComponent>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): ContextMenuOverlayRef {
     const point: Point = this.toPoint(pointOrEvent);
     this.lastOpenEventTs = this.isMouseEvent(pointOrEvent) ? pointOrEvent.timeStamp : performance.now();
 
@@ -98,7 +98,7 @@ export class ContextMenuOverlayService {
       },
     };
 
-    const ref: MenuOverlayRef = {
+    const ref: ContextMenuOverlayRef = {
       close: () => this.close(),
       isOpen: () => !!this.current,
     };
@@ -107,11 +107,11 @@ export class ContextMenuOverlayService {
   }
 
   // Convenience: fixed context menu openers
-  openContextAt(pointOrEvent: Point | MouseEvent, inputs?: Partial<ContextMenuOverlayComponent>): MenuOverlayRef {
+  openContextAt(pointOrEvent: Point | MouseEvent, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
     return this.openAt(pointOrEvent, ContextMenuComponent, inputs as any);
   }
 
-  openContextForElement(el: HTMLElement, inputs?: Partial<ContextMenuOverlayComponent>): MenuOverlayRef {
+  openContextForElement(el: HTMLElement, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
     const rect = el.getBoundingClientRect();
     const point: Point = { x: rect.left, y: rect.bottom };
     return this.openAt(point, ContextMenuComponent, inputs as any);
