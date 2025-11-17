@@ -2,7 +2,7 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[tauri::command]
-pub fn new_window(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn new_window(app: tauri::AppHandle) -> Result<(), String> {
     // Generate a unique label for the new window
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -10,16 +10,16 @@ pub fn new_window(app: tauri::AppHandle) -> Result<(), String> {
         .as_millis();
     let label = format!("win-{}", millis);
 
-    let webview_window_builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::default())
+    let builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::default())
         .title("")
         .inner_size(800.0, 600.0)
         .visible(false);
 
     #[cfg(target_os = "macos")]
-    let win_builder = webview_window_builder.title_bar_style(tauri::TitleBarStyle::Overlay);
+    let win_builder = builder.title_bar_style(tauri::TitleBarStyle::Overlay);
 
     #[cfg(not(target_os = "macos"))]
-    let win_builder = webview_window_builder.decorations(false);
+    let win_builder = builder.decorations(false);
 
     let window = win_builder.build().map_err(|e| e.to_string())?;
     window.show().map_err(|e| e.to_string())?;
