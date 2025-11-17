@@ -1,5 +1,8 @@
-@for (grid of gridList$ | async; track grid.tabId) {
-    <app-grid [class.hidden]="grid.tabId !== (activeTabId$ | async)" [node]="grid.tree.root"></app-grid>
-} @empty {
-    <app-emtpy></app-emtpy>
-}
+<div class="main">
+    @for (grid of gridList$ | async; track grid.tabId) {
+        <app-grid [class.hidden]="grid.tabId !== (activeTabId$ | async)" [node]="grid.tree.root"></app-grid>
+    } @empty {
+        <app-emtpy></app-emtpy>
+    }
+</div>
+<app-side-menu></app-side-menu>

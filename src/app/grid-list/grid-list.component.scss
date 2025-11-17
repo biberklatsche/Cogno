@@ -1,20 +1,28 @@
 :host {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: row;
   height: 100%;
   width: 100%;
 }
 
-app-grid {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  top: 0;
-
-  &.hidden {
-    transform: translateX(-1000000px);
+.main {
+  flex: 1;
+  position: relative;
+  app-grid {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    &.hidden {
+      transform: translateX(-1000000px);
+    }
   }
+}
+
+app-side-menu {
+
 }
 
 
