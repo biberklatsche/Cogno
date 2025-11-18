@@ -12,6 +12,7 @@ import {KeybindService} from "./keybinding/keybind.service";
 import {CliCommandService} from "./cli-command/cli-command.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
+import {InspectorService} from "./inspector/+state/inspector.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,6 +22,7 @@ export const appConfig: ApplicationConfig = {
           // erzwingt Instanziierung des StyleService
           inject(StyleService);
           inject(WorkspaceService);
+          inject(InspectorService);
           inject(KeybindService);
           inject(CliCommandService);
           inject(NativeMenuService);

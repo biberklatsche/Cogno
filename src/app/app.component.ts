@@ -1,23 +1,13 @@
-import {Component, DestroyRef} from '@angular/core';
+import {Component} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {TerminalComponent} from './terminal/terminal.component';
 import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
-import {AppBus} from "./app-bus/app-bus";
 import {GridListComponent} from "./grid-list/grid-list.component";
-import {InspectorComponent} from "./inspector/inspector.component";
-import {AppMenuButtonComponent} from "./menu/app-menu/app-menu-button.component";
-import {take} from "rxjs/operators";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {invoke} from "@tauri-apps/api/core";
-import {Pty} from "./terminal/+state/pty/pty";
-import {AppWindow} from "./_tauri/window";
-import {Logger} from "./_tauri/logger";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent, InspectorComponent],
+    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent],
     template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>
@@ -25,7 +15,6 @@ import {Logger} from "./_tauri/logger";
     </header>
     <main>
         <app-grid-list></app-grid-list>
-        <app-inspector></app-inspector>
     </main>
     `,
     styles: [

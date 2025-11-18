@@ -70,4 +70,7 @@ export type Icon =
     | 'mdiRefreshAuto'
     | 'mdiSpiderThread'
     | 'mdiPin'
-    | 'mdiPinOff';
+    | 'mdiPinOff'
+    | 'mdiDotsSquare'
+    | 'mdiCropSquare'
+    | 'mdiAlphaIBox';

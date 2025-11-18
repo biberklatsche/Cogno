@@ -10,10 +10,6 @@ export type SideMenuItem = {
     action?: (arg?: any) => void;
     disabled?: boolean;
     separator?: boolean;
-    // Controls how the aside is shown when this item is active
-    // false (default) = pushes content (takes layout space)
-    // true = overlays on top of existing content without reducing width
-    overlay?: boolean;
     // Optional component to render in the side "aside" area when this item is active
     component: Type<any>;
 };
@@ -23,9 +19,8 @@ export class SideMenuService {
 
     private _menuItems: WritableSignal<SideMenuItem[]>  = signal<SideMenuItem[]>([]);
     private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<SideMenuItem | undefined>(undefined);
-
-    constructor() {
-    }
+    private _pinned: WritableSignal<boolean> = signal<boolean>(false);
+    private _displacement: WritableSignal<boolean> = signal<boolean>(false);
 
     get menu(): Signal<SideMenuItem[]> {
         return this._menuItems.asReadonly();
@@ -35,8 +30,19 @@ export class SideMenuService {
         return this._selectedItem.asReadonly();
     }
 
+    get pinned(): Signal<boolean> {
+        return this._pinned.asReadonly();
+    }
+
+    get displacement(): Signal<boolean> {
+        return this._displacement.asReadonly();
+    }
+
     addMenuItem(item: SideMenuItem): void {
-        this._menuItems.update(s => [...s, item]);
+        this._menuItems.update(s => {
+            if(s.find(s => s.label === item.label)) {return s;}
+            return [...s, item]}
+        );
     }
 
     toggle(item: SideMenuItem): void {
@@ -45,9 +51,10 @@ export class SideMenuService {
     }
 
     togglePin() {
-        const current = this._selectedItem();
-        if (!current) return;
-        current.overlay = !current?.overlay;
-        this._selectedItem.set(current);
+        this._pinned.update(s => !s);
+    }
+
+    toggleDisplacement() {
+        this._displacement.update(s => !s);
     }
 }

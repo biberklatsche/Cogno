@@ -35,8 +35,7 @@ export class WorkspaceService {
             sideMenuService.addMenuItem({
                 label: 'Workspace',
                 icon: 'mdiViewDashboard',
-                component: WorkspaceSideComponent,
-                overlay: true
+                component: WorkspaceSideComponent
             });
            //}
         });

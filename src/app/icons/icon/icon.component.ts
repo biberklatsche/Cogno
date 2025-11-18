@@ -3,7 +3,7 @@ import {
     mdiAbTesting,
     mdiAccount,
     mdiAccountHeart,
-    mdiAlert,
+    mdiAlert, mdiAlphaIBox,
     mdiArrowDown,
     mdiArrowSplitHorizontal,
     mdiArrowSplitVertical,
@@ -26,9 +26,9 @@ import {
     mdiCog,
     mdiCogs,
     mdiConsole,
-    mdiContentCopy,
-    mdiDesktopClassic,
-    mdiDotsVertical,
+    mdiContentCopy, mdiCropSquare,
+    mdiDesktopClassic, mdiDotsSquare,
+    mdiDotsVertical, mdiFitToPageOutline,
     mdiFolderMove,
     mdiFormatLetterCase,
     mdiFormatLetterMatches,
@@ -54,8 +54,8 @@ import {
     mdiRocketLaunch,
     mdiScanHelper,
     mdiSpeedometer,
-    mdiSpiderThread,
-    mdiSquareEditOutline,
+    mdiSpiderThread, mdiSquare,
+    mdiSquareEditOutline, mdiSquareOpacity,
     mdiStar,
     mdiStarOutline,
     mdiSwapHorizontal,
@@ -316,6 +316,15 @@ export class IconComponent {
             break;
         case('mdiPinOff'):
             this.icon = mdiPinOff;
+            break;
+        case('mdiDotsSquare'):
+            this.icon = mdiDotsSquare;
+            break;
+        case('mdiCropSquare'):
+            this.icon = mdiCropSquare;
+            break;
+        case('mdiAlphaIBox'):
+            this.icon = mdiAlphaIBox;
             break;
       default:
         this.icon = mdiAbTesting;

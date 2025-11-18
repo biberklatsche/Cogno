@@ -1,17 +1,21 @@
 import {DestroyRef, Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {fromEvent} from 'rxjs';
+import {fromEvent, Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {Keybinding} from "../../keybinding/keybind.matcher";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
+import {WorkspaceSideComponent} from "../../workspace/workspace-side/workspace-side.component";
+import {ConfigService} from "../../config/+state/config.service";
+import {SideMenuItem, SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
+import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
 
 export type TerminalIdentifier = {terminalId: string};
 export type MousePosition = { x: number; y: number };
 export type TerminalMousePosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number; };
 export type TerminalCursorPosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number;  };
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class InspectorService {
 
   private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
@@ -52,9 +56,35 @@ export class InspectorService {
       return this._terminalIds;
   }
 
-  constructor(bus: AppBus, ref: DestroyRef) {
+  private _subsciption: Subscription | undefined;
+
+  constructor(private bus: AppBus, ref: DestroyRef, conf: ConfigService, sideMenuService: SideMenuService) {
+      const item: SideMenuItem = {
+          label: 'Inspector',
+          icon: 'mdiAlphaIBox',
+          component: InspectorSideComponent
+      };
       // Listen to app-bus events
-      bus.on$({type: 'Inspector', path: ['inspector']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
+      conf.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
+          //if (config...) {
+          sideMenuService.addMenuItem(item);
+          //}
+      });
+
+      bus.on$({type: 'ActionFired', path: ['app', 'action']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
+          switch (event.payload) {
+              case 'toggle_inspector': {
+                  sideMenuService.toggle(item)
+                  break;
+              }
+          }
+      });
+  }
+
+  init() {
+      this._subsciption?.unsubscribe();
+      this._subsciption = new Subscription();
+      this._subsciption.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
           switch (event.payload?.type) {
               case 'keybind': {
                   this._firedKeybinding.set(event.payload?.data);
@@ -85,10 +115,10 @@ export class InspectorService {
                   break;
               }
           }
-      });
+      }));
 
       // Remove per-terminal data when pane is closed (listen on both app and app/terminal paths)
-      bus.on$({ path: ['app', 'terminal'], type: 'TerminalRemoved' }).pipe(takeUntilDestroyed(ref)).subscribe(evt => {
+      this._subsciption.add(this.bus.on$({ path: ['app', 'terminal'], type: 'TerminalRemoved' }).subscribe(evt => {
           const id = evt.payload;
           if (!id) return;
           const nextMouse = { ...this._terminalMouseById() };
@@ -97,13 +127,23 @@ export class InspectorService {
           delete nextDims[id];
           this._terminalMouseById.set(nextMouse);
           this._terminalDimsById.set(nextDims);
-      });
+      }));
 
       // Track global mouse movement
-      fromEvent<MouseEvent>(window, 'mousemove')
-        .pipe(takeUntilDestroyed(ref))
-        .subscribe(evt => {
-          this._mousePosition.set({ x: evt.clientX, y: evt.clientY });
-        });
+      this._subsciption.add(fromEvent<MouseEvent>(window, 'mousemove')
+          .subscribe(evt => {
+              this._mousePosition.set({ x: evt.clientX, y: evt.clientY });
+          }));
+  }
+
+  dispose() {
+      this._mousePosition.set(undefined);
+      this._firedKeybinding.set(undefined);
+      this._terminalCursorById.set({});
+      this._terminalMouseById.set({});
+      this._terminalDimsById.set({});
+
+      this._subsciption?.unsubscribe();
+      this._subsciption = undefined;
   }
 }
