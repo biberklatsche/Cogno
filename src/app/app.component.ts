@@ -18,17 +18,55 @@ import {Logger} from "./_tauri/logger";
 @Component({
     selector: 'app-root',
     imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent, InspectorComponent],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.scss',
+    template: `
+    <header [class.space-left-window-buttons]="os === 'macos'">
+        <app-tab-list></app-tab-list>
+        <app-window-buttons></app-window-buttons>
+    </header>
+    <main>
+        <app-grid-list></app-grid-list>
+        <app-inspector></app-inspector>
+    </main>
+    `,
+    styles: [
+        `
+            :host {
+                display: flex;
+                flex-direction: column;
+                --header-height: 34px;
+                overflow: hidden;
+                height: 100vh;
+                width: 100vw;
+            }
+
+            header {
+                height: var(--header-height);
+                display: flex;
+                flex-direction: row;
+                /* Keep items in a single row and let flex growth handle spacing */
+                justify-content: flex-start;
+                align-items: center;
+                overflow: hidden;
+                max-width: 100vw;
+                &.space-left-window-buttons {
+                    padding-left: 65px;
+                }
+            }
+
+            main {
+                width: 100vw;
+                height: calc(100vh - var(--header-height));
+                display: flex;
+                flex-direction: column;
+            }
+
+        `
+    ],
     standalone: true
 })
 export class AppComponent {
 
     os = OS.platform();
-
-    constructor(bus: AppBus, ref: DestroyRef) {
-
-    }
 
     async initAsync(): Promise<void> {
         /*const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
