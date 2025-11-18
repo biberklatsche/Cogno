@@ -33,6 +33,7 @@ export class WorkspaceService {
         conf.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
            //if (config...) {
             sideMenuService.addMenuItem({
+                label: 'Workspace',
                 icon: 'mdiViewDashboard',
                 component: WorkspaceSideComponent,
                 overlay: true

@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@
 import {CommonModule} from '@angular/common';
 import {map, Observable} from 'rxjs';
 import {ConfigService} from '../../config/+state/config.service';
-import { ColorName } from '../../menu/context-menu-overlay/context-menu-overlay.types';
+import {ColorName} from "./color";
 
 interface ColorItem {
   name: ColorName;

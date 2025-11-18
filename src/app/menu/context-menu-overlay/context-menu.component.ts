@@ -1,8 +1,9 @@
 import {Component, Input} from '@angular/core';
-import { ContextMenuItem, ContextMenuOverlayComponent, ColorName } from './context-menu-overlay.types';
+import { ContextMenuItem, ContextMenuOverlayComponent } from './context-menu-overlay.types';
 import {CommonModule} from "@angular/common";
 import {ColorSelectComponent} from "../../common/color/color-select.component";
 import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
+import {ColorName} from "../../common/color/color";
 
 @Component({
     selector: 'app-context-menu',

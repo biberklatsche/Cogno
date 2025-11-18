@@ -16,6 +16,12 @@ import {NgComponentOutlet} from "@angular/common";
           <aside class="base-overlay"
                  [class.hidden]="!selectedItem()"
                  [class.overlay]="selectedItem()?.overlay === true">
+              <header>
+                  <button class="tab-list-btn" (click)="togglePin()">
+                      <app-icon [name]="selectedItem()?.overlay ? 'mdiPinOff' : 'mdiPin'"></app-icon>
+                  </button>
+                  <h3>{{selectedItem()?.label}}</h3>
+              </header>
               @if (selectedItem()?.component) {
                   <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
               }
@@ -43,19 +49,26 @@ import {NgComponentOutlet} from "@angular/common";
       aside {
           width: max(33vw, 300px);
           margin-bottom: 4px;
-      }
-      aside.hidden {
-          display: none;
-      }
-      /* overlay mode: show on top without affecting layout */
-      aside.overlay {
-          position: absolute;
-          right: 32px; /* leave room for the vertical menu buttons */
-          top: 0;
-          bottom: 0;
           z-index: 2;
-          max-height: 100%;
-          overflow: auto;
+          &.hidden {
+              display: none;
+          }
+          &.overlay {
+              position: absolute;
+              right: 30px; /* leave room for the vertical menu buttons */
+              top: 0;
+              bottom: 0;
+              
+              max-height: 100%;
+              overflow: auto;
+          }
+          
+          header {
+              display: flex;
+              flex-direction: row;
+              gap: 1rem;
+              align-items: center;
+          }
       }
   `]
 })
@@ -69,5 +82,9 @@ export class SideMenuComponent {
 
     toggle(menuItem: SideMenuItem) {
         this.menuItemService.toggle(menuItem);
+    }
+
+    togglePin() {
+        this.menuItemService.togglePin();
     }
 }

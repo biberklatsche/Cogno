@@ -43,4 +43,11 @@ export class SideMenuService {
         const current = this._selectedItem();
         this._selectedItem.set(current === item ? undefined : item);
     }
+
+    togglePin() {
+        const current = this._selectedItem();
+        if (!current) return;
+        current.overlay = !current?.overlay;
+        this._selectedItem.set(current);
+    }
 }

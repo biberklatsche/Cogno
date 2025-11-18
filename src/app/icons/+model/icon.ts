@@ -68,4 +68,6 @@ export type Icon =
     | 'mdiDotsVertical'
     | 'mdiBookmark'
     | 'mdiRefreshAuto'
-    | 'mdiSpiderThread';
+    | 'mdiSpiderThread'
+    | 'mdiPin'
+    | 'mdiPinOff';

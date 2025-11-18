@@ -9,6 +9,7 @@
 .main {
   flex: 1;
   position: relative;
+  z-index: 1;
   app-grid {
     position: absolute;
     left: 0;
@@ -22,7 +23,7 @@
 }
 
 app-side-menu {
-
+  z-index: 2;
 }
 
 

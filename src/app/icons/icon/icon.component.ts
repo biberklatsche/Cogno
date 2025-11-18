@@ -43,7 +43,7 @@ import {
     mdiNuke,
     mdiOpenInNew,
     mdiPalette,
-    mdiPercentBoxOutline,
+    mdiPercentBoxOutline, mdiPin, mdiPinOff,
     mdiPlus,
     mdiPowershell,
     mdiReddit,
@@ -311,6 +311,12 @@ export class IconComponent {
       case('mdiAccountHeart'):
         this.icon = mdiAccountHeart;
         break;
+        case('mdiPin'):
+            this.icon = mdiPin;
+            break;
+        case('mdiPinOff'):
+            this.icon = mdiPinOff;
+            break;
       default:
         this.icon = mdiAbTesting;
         break;
