@@ -9,8 +9,13 @@ import {NgComponentOutlet} from "@angular/common";
         IconComponent,
         NgComponentOutlet,
     ],
+    host: {
+        '[class.overlay-host]': 'selectedItem()?.overlay === true'
+    },
   template: `
-          <aside class="base-overlay" [class.hidden]="!selectedItem()">
+          <aside class="base-overlay"
+                 [class.hidden]="!selectedItem()"
+                 [class.overlay]="selectedItem()?.overlay === true">
               @if (selectedItem()?.component) {
                   <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
               }
@@ -33,6 +38,7 @@ import {NgComponentOutlet} from "@angular/common";
           flex-direction: column;
           margin: 0 2px 0 2px;
           padding: 0;
+          z-index: 3;
       }
       aside {
           width: max(33vw, 300px);
@@ -40,6 +46,16 @@ import {NgComponentOutlet} from "@angular/common";
       }
       aside.hidden {
           display: none;
+      }
+      /* overlay mode: show on top without affecting layout */
+      aside.overlay {
+          position: absolute;
+          right: 32px; /* leave room for the vertical menu buttons */
+          top: 0;
+          bottom: 0;
+          z-index: 2;
+          max-height: 100%;
+          overflow: auto;
       }
   `]
 })

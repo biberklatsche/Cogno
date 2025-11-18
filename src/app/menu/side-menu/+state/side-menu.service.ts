@@ -10,6 +10,10 @@ export type SideMenuItem = {
     action?: (arg?: any) => void;
     disabled?: boolean;
     separator?: boolean;
+    // Controls how the aside is shown when this item is active
+    // false (default) = pushes content (takes layout space)
+    // true = overlays on top of existing content without reducing width
+    overlay?: boolean;
     // Optional component to render in the side "aside" area when this item is active
     component: Type<any>;
 };

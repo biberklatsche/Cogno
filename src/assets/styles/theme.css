@@ -21,7 +21,7 @@ html {
     }
 }
 .base-overlay {
-    background-color: var(--background-color-10l-o);
+    background-color: var(--background-color-overlay);
     border: 1px solid var(--background-color-20l);
     border-radius: 6px;
     backdrop-filter: blur(5px);

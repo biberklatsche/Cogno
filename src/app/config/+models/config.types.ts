@@ -130,6 +130,10 @@ const ShellListSchema = z.object({
     20: ShellSchema.optional()
 });
 
+const MenuSchema = z.object({
+    opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
+});
+
 export const ConfigSchema = z.object({
     keybind: KeybindsSchema.optional(),
     scrollback_lines: z
@@ -145,6 +149,7 @@ export const ConfigSchema = z.object({
     background_image: ImageSchema.optional(),
     shell: ShellListSchema.optional(),
     selection: SelectionSchema.optional(),
+    menu: MenuSchema.optional(),
 }).strict();
 
 export type ConfigTypes = z.infer<typeof ConfigSchema>;

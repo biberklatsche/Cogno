@@ -48,6 +48,10 @@ describe('Color', () => {
     expect( Color.getHexOpacity(-1)).toEqual('00');
   });
 
+    it('should return no opacity if value is <100 and >0 or smaller', () => {
+        expect( Color.getHexOpacity(90)).toEqual('E6');
+    });
+
   it('should return isLight false if color is black', () => {
     expect( Color.isLight('#000000')).toBeFalsy();
   });

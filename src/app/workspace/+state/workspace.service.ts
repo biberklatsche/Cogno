@@ -35,6 +35,7 @@ export class WorkspaceService {
             sideMenuService.addMenuItem({
                 icon: 'mdiViewDashboard',
                 component: WorkspaceSideComponent,
+                overlay: true
             });
            //}
         });
