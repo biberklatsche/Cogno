@@ -5,6 +5,7 @@ import {TerminalConfig, GridConfig, SplitNode, WorkspaceConfig} from "../+model/
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
+import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService {
@@ -33,6 +34,7 @@ export class WorkspaceService {
            //if (config...) {
             sideMenuService.addMenuItem({
                 icon: 'mdiViewDashboard',
+                component: WorkspaceSideComponent,
             });
            //}
         });

@@ -12,7 +12,7 @@ import {NgComponentOutlet} from "@angular/common";
   template: `
           <aside [class.hidden]="!selectedItem()">
               @if (selectedItem()?.component) {
-                  <ng-container *ngComponentOutlet="selectedItem()?.component"></ng-container>
+                  <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
               }
           </aside>
           <menu>
