@@ -33,7 +33,6 @@ export class WorkspaceService {
            //if (config...) {
             sideMenuService.addMenuItem({
                 icon: 'mdiViewDashboard',
-                action: () => console.log('Workspace loaded'),
             });
            //}
         });

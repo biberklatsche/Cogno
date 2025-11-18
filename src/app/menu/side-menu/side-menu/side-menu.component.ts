@@ -1,20 +1,23 @@
 import {Component, Signal} from '@angular/core';
 import {IconComponent} from "../../../icons/icon/icon.component";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
+import {NgComponentOutlet} from "@angular/common";
 
 @Component({
   selector: 'app-side-menu',
     imports: [
-        IconComponent
+        IconComponent,
+        NgComponentOutlet,
     ],
   template: `
-          <aside></aside>
+          <aside [class.hidden]="!selectedItem()">
+              @if (selectedItem()?.component) {
+                  <ng-container *ngComponentOutlet="selectedItem()?.component"></ng-container>
+              }
+          </aside>
           <menu>
           @for (menuItem of menuItems(); track menuItem) {
-              <button class="btn-flat" (click)="fire(menuItem?.action)">
-                  <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
-              </button>
-              <button class="btn-flat">
+              <button class="btn-flat" (click)="toggle(menuItem)" [class.active]="selectedItem() === menuItem">
                   <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
               </button>
           }
@@ -35,6 +38,9 @@ import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
           width: max(33vw, 300px);
           background-color: red;
       }
+      aside.hidden {
+          display: none;
+      }
       button {
           border: none;
           background-color: #00000000;
@@ -53,18 +59,21 @@ import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
               opacity: 1;
           }
       }
+      button.active {
+          opacity: 1;
+      }
       
   `]
 })
 export class SideMenuComponent {
     menuItems: Signal<SideMenuItem[]>;
+    selectedItem = this.menuItemService.selectedItem;
 
-    constructor(menuItemService: SideMenuService) {
-        this.menuItems = menuItemService.menu;
+    constructor(private menuItemService: SideMenuService) {
+        this.menuItems = this.menuItemService.menu;
     }
 
-    fire(action?: () => void) {
-        if(!action) return;
-        action();
+    toggle(menuItem: SideMenuItem) {
+        this.menuItemService.toggle(menuItem);
     }
 }
