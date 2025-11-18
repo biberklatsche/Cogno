@@ -1,5 +1,7 @@
 import {TinyColor} from '@ctrl/tinycolor';
 
+export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
+
 export const Color = {
  hslFromString(color: string): string {
     let hash = 0;

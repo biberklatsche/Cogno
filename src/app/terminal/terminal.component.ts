@@ -11,8 +11,8 @@ import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
-import {ContextMenuOverlayService} from "../common/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../common/context-menu-overlay/context-menu-overlay.types";
+import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 
 @Component({
     selector: 'app-terminal',

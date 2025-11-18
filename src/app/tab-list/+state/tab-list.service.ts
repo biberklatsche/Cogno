@@ -7,7 +7,7 @@ import {TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
-import {ColorName, ContextMenuItem} from "../../common/context-menu-overlay/context-menu-overlay.types";
+import {ColorName, ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {ActionFired, ActionFiredEvent} from "../../action/action.models";

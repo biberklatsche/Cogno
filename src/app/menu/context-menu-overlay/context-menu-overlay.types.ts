@@ -1,8 +1,7 @@
 
 // Local name union used by the color picker item
 import {ActionName} from "../../action/action.models";
-
-export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
+import {ColorName} from "../../common/color/color";
 
 export interface ContextMenuOverlayComponent {
   // Provided by ContextMenuOverlayService upon open; call to close the overlay

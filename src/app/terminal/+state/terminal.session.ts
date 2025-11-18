@@ -10,7 +10,7 @@ import {FocusHandler} from "./handler/focus.handler";
 import {ThemeHandler} from "./handler/theme.handler";
 import {IPty, Pty} from "./pty/pty";
 import {ResizeHandler} from "./handler/resize.handler";
-import {ContextMenuItem} from "../../common/context-menu-overlay/context-menu-overlay.types";
+import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {SelectionHandler} from "./handler/selection.handler";
 
 import {InputHandler} from "./handler/input.handler";
