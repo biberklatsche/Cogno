@@ -10,14 +10,14 @@ import {NgComponentOutlet} from "@angular/common";
         NgComponentOutlet,
     ],
   template: `
-          <aside [class.hidden]="!selectedItem()">
+          <aside class="base-overlay" [class.hidden]="!selectedItem()">
               @if (selectedItem()?.component) {
                   <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
               }
           </aside>
           <menu>
           @for (menuItem of menuItems(); track menuItem) {
-              <button class="btn-flat" (click)="toggle(menuItem)" [class.active]="selectedItem() === menuItem">
+              <button class="tab-list-btn" (click)="toggle(menuItem)" [class.active]="selectedItem() === menuItem">
                   <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
               </button>
           }
@@ -26,43 +26,21 @@ import {NgComponentOutlet} from "@angular/common";
       :host {
           display: flex;
           flex-direction: row;
+          position: relative;
       }
       menu {
           display: flex;
           flex-direction: column;
-          margin: 0;
+          margin: 0 2px 0 2px;
           padding: 0;
       }
       aside {
-          height: 100%;
           width: max(33vw, 300px);
-          background-color: red;
+          margin-bottom: 4px;
       }
       aside.hidden {
           display: none;
       }
-      button {
-          border: none;
-          background-color: #00000000;
-          color: var(--foreground-color);
-          outline: none;
-          display: inline-flex;
-          justify-content: center;
-          align-items: center;
-          position: relative;
-          opacity: 0.5;
-          app-icon {
-              color: var(--foreground-color-20d);
-              height: calc(var(--header-height) / 2);
-          }
-          &:hover {
-              opacity: 1;
-          }
-      }
-      button.active {
-          opacity: 1;
-      }
-      
   `]
 })
 export class SideMenuComponent {

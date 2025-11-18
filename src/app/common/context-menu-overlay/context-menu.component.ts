@@ -8,7 +8,7 @@ import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
     selector: 'app-context-menu',
     standalone: true,
     template: `
-        <div class="ctx-menu" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
+        <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
                 @if (item.separator) {
                     <div class="sep" role="separator"></div>
@@ -42,12 +42,6 @@ import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
             }
 
             .ctx-menu {
-                background: var(--background-color-10l);
-                color: var(--foreground-color);
-                border: 1px solid var(--background-color-20l);
-                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
-                border-radius: 6px;
-                padding: 6px;
                 min-width: 180px;
                 max-width: 360px;
                 user-select: none;

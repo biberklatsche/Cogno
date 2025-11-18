@@ -11,10 +11,21 @@ html {
     justify-content: center;
     width: 26px;
     height: 26px;
+    padding: 6px;
     background: var(--background-color-10l);
     color: var(--foreground-color);
     opacity: 0.5;
     &:hover {
         opacity: 1;
+        background: var(--background-color-20l);
     }
+}
+.base-overlay {
+    background-color: var(--background-color-10l-o);
+    border: 1px solid var(--background-color-20l);
+    border-radius: 6px;
+    backdrop-filter: blur(5px);
+    color: var(--foreground-color);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    padding: 6px;
 }
