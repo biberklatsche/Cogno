@@ -1,12 +1,15 @@
-import {Injectable} from "@angular/core";
+import {DestroyRef, Injectable} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {TerminalConfig, GridConfig, SplitNode, WorkspaceConfig} from "../+model/workspace";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {ConfigService} from "../../config/+state/config.service";
+import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService {
 
-    constructor(private bus: AppBus) {
+    constructor(private bus: AppBus, conf: ConfigService, sideMenuService: SideMenuService, ref: DestroyRef) {
         this.bus.onceType$('ConfigLoaded').subscribe(e => {
             //load workspaces
             let workspace: WorkspaceConfig | undefined = undefined;
@@ -25,6 +28,14 @@ export class WorkspaceService {
                 //restore workspace
             }
             this.bus.publish({type: 'WorkspaceLoaded', payload: workspace});
+        });
+        conf.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
+           //if (config...) {
+            sideMenuService.addMenuItem({
+                icon: 'mdiViewDashboard',
+                action: () => console.log('Workspace loaded'),
+            });
+           //}
         });
     }
 }
