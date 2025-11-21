@@ -12,13 +12,26 @@ html, body {
 
 /* ===== Firefox ===== */
 * {
-    scrollbar-width: thin; /* thin | auto | none */
-    scrollbar-color: var(--sb-thumb) var(--sb-track);
+    /* Default: hide scrollbars */
+    scrollbar-width: none; /* Firefox: hide */
+    scrollbar-color: transparent transparent;
     scrollbar-gutter: auto; /* lässt Layout stabiler wirken */
+}
+
+/* Show only while scrolling (controlled by body.scrolling) */
+body.scrolling * {
+    scrollbar-width: thin; /* Firefox: show thin */
+    scrollbar-color: var(--sb-thumb) var(--sb-track);
 }
 
 /* ===== WebKit (Chrome, Edge, Safari) ===== */
 *::-webkit-scrollbar {
+    width: 0; /* hide */
+    height: 0; /* hide */
+}
+
+/* Show only while body has .scrolling */
+body.scrolling *::-webkit-scrollbar {
     width: var(--sb-size);
     height: var(--sb-size);
 }
