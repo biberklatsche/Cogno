@@ -30,7 +30,17 @@ export class FocusHandler implements ITerminalHandler {
         }).subscribe(event => {
             if (event.payload === this._terminalId){
                 this.focus();
+            } else {
+                this.blur();
             }
+        }));
+
+        this.subscription.add(this._bus.on$({
+            path: ['app', 'terminal', this._terminalId],
+            type: 'TerminalInitialized'
+        }).subscribe(event => {
+            console.log("focus!!!!!");
+            this.focus();
         }));
 
         this.subscription.add(this._bus.on$({

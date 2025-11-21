@@ -27,20 +27,18 @@ export class WorkspaceService {
                     rightChild: nodeRight,
                 }
                 const tabId = IdCreator.newTabId();
-                const pane: GridConfig = {tabId: tabId, pane: parent};
+                const pane: GridConfig = {tabId: tabId, pane: {}};
                 const tab: TabConfig = {tabId: tabId }
                 workspace = {grids: [pane], tabs: [tab]};
 
                 gridListService.restoreGrids(workspace.grids);
                 tabListService.restoreTabs(workspace.tabs);
-                setTimeout(() => {
-                    const activeTab = workspace!.tabs.find(s => s.isActive);
-                    if(activeTab) {
-                        tabListService.selectTab(activeTab.tabId);
-                    } else {
-                        tabListService.selectTab(workspace!.tabs[0].tabId);
-                    }
-                }, 500);
+                const activeTab = workspace!.tabs.find(s => s.isActive);
+                if(activeTab) {
+                    tabListService.selectTab(activeTab.tabId);
+                } else {
+                    tabListService.selectTab(workspace!.tabs[0].tabId);
+                }
             } else {
                 //restore workspace
             }
