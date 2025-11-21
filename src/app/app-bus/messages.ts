@@ -1,7 +1,6 @@
 // Deine fachlichen Typen in einem Union:
 import {ConfigLoadedEvent, ThemeChangedEvent} from "../config/+bus/events";
 import {LoadConfigAction, WatchConfigAction} from "../config/+bus/actions";
-import {WorkspaceLoadedEvent} from "../workspace/+bus/events";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
     BlurTerminalAction, ClearBufferAction, CopyAction,
@@ -33,7 +32,6 @@ export type AppMessage =
     | TabAddedEvent
     | TabSelectedEvent
     | SelectTabAction
-    | WorkspaceLoadedEvent
     | ConfigLoadedEvent
     | ThemeChangedEvent
     | LoadConfigAction

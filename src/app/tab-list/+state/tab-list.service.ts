@@ -2,8 +2,7 @@ import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/c
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
-import {TabId} from "../../workspace/+model/workspace";
+import {TabConfig, TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
@@ -29,12 +28,6 @@ export class TabListService {
     }
 
     constructor(private bus: AppBus, private configService: ConfigService, destroyRef: DestroyRef) {
-        this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
-            this._tabList.next([]);
-            for (const [index, grid] of event.payload!.grids.entries()) {
-                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: false}, true);
-            }
-        });
         this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
             this.selectTab(event.payload!);
             event.propagationStopped = true;
@@ -182,11 +175,27 @@ export class TabListService {
         const tabList = [...this._tabList.value];
         const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
-        if(!name) {
-            tab.color = undefined;
-        } else {
-            tab.color = {hex: (this.configService.config.color as any)[name], name: name};
-        }
+        tab.color = this.getColorDefinition(name);
         this._tabList.next(tabList);
+    }
+
+    private getColorDefinition(name?: ColorName) {
+        if(!name) return undefined;
+        return {hex: (this.configService.config.color as any)[name], name: name};
+    }
+
+    restoreTabs(tabConfigList: TabConfig[]) {
+        if(tabConfigList.length === 0) this._tabList.next([]);
+        const tabs: TabList = tabConfigList.map(config => {
+            const tab: Tab = {
+                id: config.tabId,
+                color: this.getColorDefinition(config.color),
+                title: config.title ?? 'Shell',
+                isActive: config.isActive ?? false,
+                activeShellType: 'unknown'
+            }
+            return tab
+        });
+        this._tabList.next(tabs);
     }
 }

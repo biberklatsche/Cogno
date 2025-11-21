@@ -1,4 +1,5 @@
 import {ShellConfigPosition} from "../../config/+models/config.types";
+import {ColorName} from "../../common/color/color";
 
 
 export type TabId = string;
@@ -7,6 +8,14 @@ export type WorkspaceConfig = {
     name?: string;
     color?: string;
     grids: GridConfig[];
+    tabs: TabConfig[];
+}
+
+export type TabConfig = {
+    tabId: TabId;
+    isActive?: boolean;
+    color?: ColorName;
+    title?: string;
 }
 
 export type GridConfig = {

@@ -62,5 +62,9 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         this.terminalSession?.focus();
     }
 
+    getTerminalSnapshot(): string {
+        return "";
+    }
+
     protected readonly eval = eval;
 }

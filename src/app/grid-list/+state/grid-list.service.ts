@@ -1,8 +1,7 @@
 import {DestroyRef, Injectable} from "@angular/core";
-import {BehaviorSubject, map, Observable, Subject} from "rxjs";
+import {BehaviorSubject, map, Observable} from "rxjs";
 import {Grid, GridList, Pane, SplitDirection, TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
-import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {PaneConfig, GridConfig, TabId} from "../../workspace/+model/workspace";
 import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
@@ -26,16 +25,6 @@ export class GridListService {
     }
 
     constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
-        this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
-            for(const tabId in this._gridList.value) {
-                this.removeGrid(tabId);
-            }
-            for (let grid of event.payload!.grids) {
-                this.restoreGrid(grid);
-            }
-            this.bus.publish({type: "SelectTab", payload: event.payload!.grids[0].tabId})
-        });
-
         this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
         });
@@ -129,6 +118,15 @@ export class GridListService {
         const paneChild: Pane = {shellConfigPosition: 1, terminalId: IdCreator.newTerminalId()};
         tree.add(node.key, side, paneParent, paneChild);
         this._gridList.next(gridList);
+    }
+
+    restoreGrids(gridConfigList: GridConfig[]) {
+        for(const tabId in this._gridList.value) {
+            this.removeGrid(tabId);
+        }
+        for (let grid of gridConfigList) {
+            this.restoreGrid(grid);
+        }
     }
 
     restoreGrid(gridConfig: GridConfig) {

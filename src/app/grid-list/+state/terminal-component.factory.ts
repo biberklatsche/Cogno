@@ -37,6 +37,11 @@ export class TerminalComponentFactory {
         return ref;
     }
 
+    getSnapshot(terminalId: TerminalId): string {
+        const ref = this.map.get(terminalId);
+        return ref?.instance.getTerminalSnapshot() ?? "";
+    }
+
     attach(terminalId: TerminalId, host: HTMLElement) {
         const ref = this.getOrCreate(terminalId);
         host.appendChild(ref.location.nativeElement); // reparent – kein Destroy/Neuaufbau
@@ -46,7 +51,6 @@ export class TerminalComponentFactory {
 
     /** Endgültig schließen (Pane entfernt) */
     destroy(terminalId?: TerminalId) {
-        console.log('destroy', terminalId);
         if (!terminalId) return;
         const ref = this.map.get(terminalId);
         if (!ref) return;
