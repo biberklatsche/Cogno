@@ -13,6 +13,7 @@ import {CliCommandService} from "./cli-command/cli-command.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
 import {InspectorService} from "./inspector/+state/inspector.service";
+import {ScrollbarService} from "./style/scrollbar.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,6 +28,8 @@ export const appConfig: ApplicationConfig = {
           inject(CliCommandService);
           inject(NativeMenuService);
           inject(WindowService);
+          // initialize ScrollbarService at app startup
+          inject(ScrollbarService);
       }),
   ],
 };

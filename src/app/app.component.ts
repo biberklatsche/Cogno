@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
@@ -53,53 +53,9 @@ import {GridListComponent} from "./grid-list/grid-list.component";
     ],
     standalone: true
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent {
 
     os = OS.platform();
-
-    private scrollingTimeoutId: any = null;
-    private onWheelHandler = () => this.handleUserScroll();
-
-    ngOnInit(): void {
-        const config: string = 'auto';
-        if(config === 'never') {
-            return;
-        }
-        if(config === 'always') {
-            const body = document.body;
-            if (!body.classList.contains('scrolling')) {
-                body.classList.add('scrolling');
-            }
-        } else {
-            window.addEventListener('wheel', this.onWheelHandler, { passive: true } as any);
-        }
-
-
-    }
-
-    ngOnDestroy(): void {
-        window.removeEventListener('wheel', this.onWheelHandler as any, true as any);
-        if (this.scrollingTimeoutId) {
-            clearTimeout(this.scrollingTimeoutId);
-            this.scrollingTimeoutId = null;
-        }
-    }
-
-    private handleUserScroll(): void {
-        const body = document.body;
-
-        if (!body.classList.contains('scrolling')) {
-            body.classList.add('scrolling');
-        }
-
-            if (this.scrollingTimeoutId) {
-                clearTimeout(this.scrollingTimeoutId);
-            }
-            this.scrollingTimeoutId = setTimeout(() => {
-                body.classList.remove('scrolling');
-                this.scrollingTimeoutId = null;
-            }, 600);
-    }
 
     async initAsync(): Promise<void> {
         /*const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
