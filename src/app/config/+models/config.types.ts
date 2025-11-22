@@ -24,7 +24,7 @@ const ScrollbarVisibilityEnum = z
     }).optional();
 
 const ScrollbarSchema = z.object({
-   visible: ScrollbarVisibilityEnum.optional(),
+   visibility: ScrollbarVisibilityEnum.optional(),
 });
 
 export const FontWeightSchema = z.union([

@@ -61,7 +61,20 @@ export class AppComponent implements OnInit, OnDestroy {
     private onWheelHandler = () => this.handleUserScroll();
 
     ngOnInit(): void {
-        window.addEventListener('wheel', this.onWheelHandler, { passive: true } as any);
+        const config: string = 'auto';
+        if(config === 'never') {
+            return;
+        }
+        if(config === 'always') {
+            const body = document.body;
+            if (!body.classList.contains('scrolling')) {
+                body.classList.add('scrolling');
+            }
+        } else {
+            window.addEventListener('wheel', this.onWheelHandler, { passive: true } as any);
+        }
+
+
     }
 
     ngOnDestroy(): void {
@@ -74,16 +87,18 @@ export class AppComponent implements OnInit, OnDestroy {
 
     private handleUserScroll(): void {
         const body = document.body;
+
         if (!body.classList.contains('scrolling')) {
             body.classList.add('scrolling');
         }
-        if (this.scrollingTimeoutId) {
-            clearTimeout(this.scrollingTimeoutId);
-        }
-        this.scrollingTimeoutId = setTimeout(() => {
-            body.classList.remove('scrolling');
-            this.scrollingTimeoutId = null;
-        }, 600);
+
+            if (this.scrollingTimeoutId) {
+                clearTimeout(this.scrollingTimeoutId);
+            }
+            this.scrollingTimeoutId = setTimeout(() => {
+                body.classList.remove('scrolling');
+                this.scrollingTimeoutId = null;
+            }, 600);
     }
 
     async initAsync(): Promise<void> {
