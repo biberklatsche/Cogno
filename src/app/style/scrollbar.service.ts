@@ -1,46 +1,53 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { DestroyRef, Injectable, OnDestroy } from '@angular/core';
+import { ConfigService } from '../config/+state/config.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {ScrollbarVisibility} from "../config/+models/config.types";
 
 /**
- * Service responsible for controlling the visibility/animation state
- * of a custom scrollbar by toggling the `scrolling` class on <body>.
+ * Controls the visibility/animation state of the custom scrollbar by toggling
+ * the `scrolling` class on <body>.
  *
- * Modes:
- * - 'never':  never add the class
+ * Visibility values (from config):
+ * - 'hidden': never add the class
  * - 'always': keep the class permanently
  * - 'auto'  : add class while the user is scrolling and remove after a delay
  */
 @Injectable({ providedIn: 'root' })
 export class ScrollbarService implements OnDestroy {
-  private mode: 'never' | 'always' | 'auto' = 'auto';
+  private visibility: ScrollbarVisibility = 'auto';
   private scrollingTimeoutId: any = null;
   private onWheelHandler = () => this.handleUserScroll();
 
-  constructor() {
-    this.init();
+  constructor(configService: ConfigService, destroyRef: DestroyRef) {
+      configService.config$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(cfg => {
+        const visibility = cfg.scrollbar?.visibility ?? 'auto';
+        this.setVisibility(visibility);
+      });
   }
 
   /**
-   * Change runtime mode if needed (e.g., from a settings page)
+   * Change runtime visibility (driven by config or manual override)
    */
-  setMode(mode: 'never' | 'always' | 'auto'): void {
-    if (this.mode === mode) return;
-
+  setVisibility(visibility: ScrollbarVisibility): void {
+    if (this.visibility === visibility) return;
     // cleanup previous listeners/state
     this.dispose();
-    this.mode = mode;
+    this.visibility = visibility;
     this.init();
   }
 
   private init(): void {
-    const config = this.mode;
+    const visibility = this.visibility;
 
-    if (config === 'never') {
+    if (visibility === 'hidden') {
       // Ensure class is not present
       document.body.classList.remove('scrolling');
       return;
     }
 
-    if (config === 'always') {
+    if (visibility === 'always') {
       const body = document.body;
       if (!body.classList.contains('scrolling')) {
         body.classList.add('scrolling');
@@ -48,7 +55,7 @@ export class ScrollbarService implements OnDestroy {
       return;
     }
 
-    // auto mode: listen to wheel events
+    // auto: listen to wheel events
     window.addEventListener('wheel', this.onWheelHandler as any, { passive: true } as any);
   }
 
