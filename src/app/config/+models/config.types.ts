@@ -15,6 +15,18 @@ const PaddingSchema = z.object({
     remove_on_full_screen_app: z.boolean().optional(),
 });
 
+//hidden, auto, always
+
+const ScrollbarVisibilityEnum = z
+    .enum(['hidden', 'auto', 'always'])
+    .refine((val) => ['hidden', 'auto', 'always'].includes(val), {
+        message: 'Scrollbar visibility must be either "hidden", "auto" or "always"',
+    }).optional();
+
+const ScrollbarSchema = z.object({
+   visible: ScrollbarVisibilityEnum.optional(),
+});
+
 export const FontWeightSchema = z.union([
     z.enum([
         "normal",
@@ -150,6 +162,7 @@ export const ConfigSchema = z.object({
     shell: ShellListSchema.optional(),
     selection: SelectionSchema.optional(),
     menu: MenuSchema.optional(),
+    scrollbar: ScrollbarSchema.optional(),
 }).strict();
 
 export type ConfigTypes = z.infer<typeof ConfigSchema>;
@@ -163,3 +176,4 @@ export type HexColor = z.infer<typeof HexColorSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
+export type ScrollbarVisibility = z.infer<typeof ScrollbarVisibilityEnum>;
