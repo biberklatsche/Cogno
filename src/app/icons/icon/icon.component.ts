@@ -7,7 +7,7 @@ import {
     mdiArrowDown,
     mdiArrowSplitHorizontal,
     mdiArrowSplitVertical,
-    mdiArrowUp,
+    mdiArrowUp, mdiBell, mdiBellBadge,
     mdiBomb,
     mdiBookmark,
     mdiBug,
@@ -325,6 +325,12 @@ export class IconComponent {
             break;
         case('mdiAlphaIBox'):
             this.icon = mdiAlphaIBox;
+            break;
+        case('mdiBell'):
+            this.icon = mdiBell;
+            break;
+        case('mdiBellBadge'):
+            this.icon = mdiBellBadge;
             break;
       default:
         this.icon = mdiAbTesting;

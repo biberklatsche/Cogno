@@ -34,9 +34,9 @@ export class SideMenuService {
 
     addMenuItem(item: SideMenuItem): void {
         this._menuItems.update(s => {
-            const menuItem = s.find(s => s.label === item.label);
-            if(menuItem) {
-                menuItem.hidden = item.hidden;
+            const index = s.findIndex(s => s.label === item.label);
+            if(index > -1) {
+                s[index] = {...s[index], ...item};
                 return [...s];
             }
             return [...s, item]}

@@ -31,6 +31,10 @@ const FeatureInspectorSchema = z.object({
     mode: FeatureModeEnum.optional(),
 });
 
+const FeatureNotificationSchema = z.object({
+    mode: FeatureModeEnum.optional(),
+});
+
 const ScrollbarVisibilityEnum = z
     .enum(['hidden', 'auto', 'always'])
     .refine((val) => ['hidden', 'auto', 'always'].includes(val), {
@@ -179,6 +183,7 @@ export const ConfigSchema = z.object({
     scrollbar: ScrollbarSchema.optional(),
     workspace: FeatureWorkspaceSchema.optional(),
     inspector: FeatureInspectorSchema.optional(),
+    notification: FeatureNotificationSchema.optional(),
 }).strict();
 
 export type ConfigTypes = z.infer<typeof ConfigSchema>;

@@ -144,11 +144,6 @@ export class InspectorService extends SideMenuItemService {
     }
 
     dispose() {
-        this._mousePosition.set(undefined);
-        this._firedKeybinding.set(undefined);
-        this._terminalCursorById.set({});
-        this._terminalMouseById.set({});
-        this._terminalDimsById.set({});
         this._subscription?.unsubscribe();
         this._subscription = undefined;
     }

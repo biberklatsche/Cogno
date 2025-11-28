@@ -73,4 +73,6 @@ export type Icon =
     | 'mdiPinOff'
     | 'mdiDotsSquare'
     | 'mdiCropSquare'
-    | 'mdiAlphaIBox';
+    | 'mdiAlphaIBox'
+    | 'mdiBell'
+    | 'mdiBellBadge';

@@ -61,7 +61,7 @@ export class AppComponent {
 
     async initAsync(): Promise<void> {
         //await DB.create(`sqlite:${Environment.dbFilePath()}`);
-        await DB.execute(`
+        /*await DB.execute(`
     CREATE TABLE IF NOT EXISTS todos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL
@@ -70,6 +70,6 @@ export class AppComponent {
         await DB.execute("INSERT into todos (title) VALUES ($1)",
           ["Das hab ich geschafft"]);
         const todos = await DB.query<{ id: number; title: string }>('SELECT * FROM todos');
-        console.log(todos);
+        console.log(todos);*/
     }
 }

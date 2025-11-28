@@ -20,7 +20,8 @@ export type ActionName =
     'new_window' |
     'close_window' |
     'minimize_window' |
-    'open_config'
+    'open_config' |
+    'toggle_notification'
     ;
 
 export const ActionFired = {

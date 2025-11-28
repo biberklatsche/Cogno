@@ -30,9 +30,11 @@ import {NgComponentOutlet} from "@angular/common";
                 </div>
                 <h3>{{ selectedItem()?.label }}</h3>
             </header>
-            @if (selectedItem()?.component) {
-                <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
-            }
+            <main>
+                @if (selectedItem()?.component) {
+                    <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
+                }
+            </main>
         </aside>
         <menu #menuCol [class.hidden]="visibleItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem) {
@@ -95,6 +97,10 @@ import {NgComponentOutlet} from "@angular/common";
                     flex-direction: row;
                     gap: 2px;
                 }
+            }
+            
+            main {
+                padding: 0.5rem;
             }
         }
     `]

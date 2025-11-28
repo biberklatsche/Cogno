@@ -12,8 +12,9 @@ import {KeybindService} from "./keybinding/keybind.service";
 import {CliCommandService} from "./cli-command/cli-command.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
-import {InspectorService} from "./inspector/+state/inspector.service";
 import {ScrollbarService} from "./style/scrollbar.service";
+import {InspectorService} from "./inspector/+state/inspector.service";
+import {NotificationService} from "./notification/+state/notification.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,6 +23,7 @@ export const appConfig: ApplicationConfig = {
       provideEnvironmentInitializer(() => {
           // erzwingt Instanziierung des StyleService
           inject(StyleService);
+          inject(NotificationService);
           inject(WorkspaceService);
           inject(InspectorService);
           inject(KeybindService);

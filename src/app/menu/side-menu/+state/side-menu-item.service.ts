@@ -5,6 +5,7 @@ import {Subscription} from "rxjs";
 import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
 import {ConfigTypes, FeatureMode} from "../../../config/+models/config.types";
+import {Icon} from "../../../icons/+model/icon";
 
 export abstract class SideMenuItemService {
 
@@ -56,6 +57,10 @@ export abstract class SideMenuItemService {
 
     private removeKeybindHandler() {
         this._keybindSubscription?.unsubscribe();
+    }
+
+    protected updateIcon(icon: Icon) {
+        this.sideMenuService.addMenuItem({...this.menuItem, icon: icon});
     }
 
     abstract dispose(): void;

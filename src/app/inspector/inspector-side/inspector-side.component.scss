@@ -22,7 +22,7 @@
   display: grid;
   gap: 0.5rem 1rem ;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 0;
   border-top: 1px solid rgba(255,255,255,0.2);
 
   &.c2 {
@@ -39,21 +39,9 @@
   }
 
   &:first-child {
+    padding-top: 0;
     border-top: none;
   }
-}
-
-.row {
-  display: grid;
-  grid-template-columns: max-content max-content max-content;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 12px;
-  border-top: 1px solid rgba(255,255,255,0.2);
-}
-
-.row:first-child {
-  border-top: none;
 }
 
 .label {

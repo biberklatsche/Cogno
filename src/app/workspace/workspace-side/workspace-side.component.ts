@@ -6,7 +6,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
   selector: 'app-workspace-side',
   standalone: true,
   template: `
-      @if (isVisible()) {
+      
           <section class="workspace-side">
               <h3>Workspace</h3>
               <p>Dies ist eine Beispiel-Komponente für den Workspace.</p>
@@ -15,12 +15,10 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
                   <li>Info 2</li>
                   <li>Info 3</li>
               </ul>
-          </section>      
-      }
+          </section>
   `,
   styles: [`
     .workspace-side {
-      padding: 12px;
       color: var(--foreground-color);
     }
     h3 { margin: 0 0 8px 0; }
@@ -29,11 +27,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 })
 export class WorkspaceSideComponent {
 
-    isVisible: WritableSignal<boolean> = signal(true);
 
     constructor(config: ConfigService, ref: DestroyRef) {
-        config.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => {
-           this.isVisible.set(c.workspace?.mode !== 'off');
-        });
     }
 }
