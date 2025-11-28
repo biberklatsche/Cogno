@@ -37,7 +37,7 @@
   border: 1px solid ;
   border-color: var(--background-color-10l-ct);
   border-radius: var(--button-border-radius);
-  background: var(--background-color-10l-ct);
+  background: none;
   color: var(--foreground-color-10t);
   /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
   min-height: 26px;

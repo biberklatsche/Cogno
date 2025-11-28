@@ -8,6 +8,7 @@ input {
     border: none;
     outline: none;
     color: var(--color-foreground);
+    font-size: 1rem;;
 }
 
 button, a {

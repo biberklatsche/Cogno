@@ -12,7 +12,7 @@ html {
     width: 26px;
     height: 26px;
     padding: 4px;
-    background: var(--background-color-10l-ct);
+    background: none;
     color: var(--foreground-color-10t);
     &:hover {
         color: var(--foreground-color);
