@@ -12,16 +12,15 @@ html {
     width: 26px;
     height: 26px;
     padding: 4px;
-    background: var(--background-color-10l);
-    color: var(--foreground-color);
-    opacity: 0.5;
+    background: var(--background-color-10l-ct);
+    color: var(--foreground-color-10t);
     &:hover {
-        opacity: 1;
+        color: var(--foreground-color);
         background: var(--background-color-20l);
     }
 }
 .base-overlay {
-    background-color: var(--background-color-overlay);
+    background-color: var(--background-color-10l-ct);
     border: 1px solid var(--background-color-20l);
     border-radius: 6px;
     backdrop-filter: blur(5px);

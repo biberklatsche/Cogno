@@ -24,12 +24,16 @@ export class StyleService {
         const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
         const shadowFactor = this.getShadowFactor(isLightTheme);
         const factor = isLightTheme ? -1 : 1;
+        const opacity = Color.getHexOpacity(config.menu?.opacity)
 
         document.documentElement.style.setProperty('--background-color', `#${config.color!.background}`);
+        document.documentElement.style.setProperty('--background-color-transparent', `#${config.color!.background}${opacity}`);
         document.documentElement.style.setProperty('--background-color-10l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 10)}`);
-        document.documentElement.style.setProperty('--background-color-overlay', `${Color.lightenDarkenColor(`#${config.color!.background!}${Color.getHexOpacity(config.menu?.opacity)}`, backgroundFactor * 10)}`);
+        document.documentElement.style.setProperty('--background-color-10l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 10)}`);
         document.documentElement.style.setProperty('--background-color-20l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 20)}`);
+        document.documentElement.style.setProperty('--background-color-20l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 20)}`);
         document.documentElement.style.setProperty('--background-color-30l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 30)}`);
+        document.documentElement.style.setProperty('--background-color-30l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 30)}`);
         document.documentElement.style.setProperty('--background-color-40l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 40)}`);
         document.documentElement.style.setProperty('--background-color-10d', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * -10)}`);
         document.documentElement.style.setProperty('--background-color-20d', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * -20)}`);
@@ -39,6 +43,7 @@ export class StyleService {
         document.documentElement.style.setProperty('--color-shadow2', `${Color.lightenDarkenColor(`#${config.color!.background!}`, shadowFactor * -20)}`);
         document.documentElement.style.setProperty('--color-shadow3', `${Color.lightenDarkenColor(`#${config.color!.background!}`, shadowFactor * -30)}`);
         document.documentElement.style.setProperty('--foreground-color', `#${config.color!.foreground}`);
+        document.documentElement.style.setProperty('--foreground-color-10t', `#${config.color!.foreground}66`);
         document.documentElement.style.setProperty('--foreground-color-10l', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * 10)}`);
         document.documentElement.style.setProperty('--foreground-color-20l', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * 20)}`);
         document.documentElement.style.setProperty('--foreground-color-30l', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * 30)}`);

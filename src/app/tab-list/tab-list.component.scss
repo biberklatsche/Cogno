@@ -34,10 +34,11 @@
   gap: 6px;
   height: 26px;
   padding: 0 8px;
-  border: 1px solid var(--background-color-10l);
+  border: 1px solid ;
+  border-color: var(--background-color-10l-ct);
   border-radius: var(--button-border-radius);
-  background: var(--background-color-10l);
-  color: var(--foreground-color);
+  background: var(--background-color-10l-ct);
+  color: var(--foreground-color-10t);
   /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
   min-height: 26px;
   /* Größenlogik */
@@ -46,14 +47,18 @@
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
   /* wichtig für Container Queries */
   container-type: inline-size;
-  opacity: 0.5;
   &.is-active {
-    opacity: 0.9;
-    border: 1px solid var(--background-color-30l);
-    background: var(--background-color-10l);
+    color: var(--foreground-color);
+    border-color: var(--background-color-40l);
+    background: var(--background-color-30l-ct);
+    &:hover {
+      border-color: var(--background-color-40l);
+      background: var(--background-color-40l);
+    }
   }
   &:hover {
-    opacity: 1;
+    color: var(--foreground-color);
+    border-color: var(--background-color-20l);
     background: var(--background-color-20l);
   }
 }

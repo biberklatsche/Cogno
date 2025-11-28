@@ -20,7 +20,7 @@ import {NgComponentOutlet} from "@angular/common";
                [class.shift-left]="visibleItems().length > 0"
         >
             <header>
-                <div>
+                <div class="btn-list">
                     <button class="tab-list-btn" (click)="close()">
                         <app-icon [name]="'mdiClose'"></app-icon>
                     </button>
@@ -34,7 +34,7 @@ import {NgComponentOutlet} from "@angular/common";
                 <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
             }
         </aside>
-        <menu #menuCol>
+        <menu #menuCol [class.hidden]="visibleItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem) {
                 <button class="tab-list-btn" (click)="toggle(menuItem)"
                             [class.active]="selectedItem() === menuItem">
@@ -53,9 +53,12 @@ import {NgComponentOutlet} from "@angular/common";
             display: flex;
             flex-direction: column;
             gap: 4px;
-            margin: 0 2px 0 2px;
+            margin: 2px 4px 0 2px;
             padding: 0;
             z-index: 3;
+            &.hidden {
+                margin: 0;
+            }
         }
 
         aside {
@@ -70,7 +73,7 @@ import {NgComponentOutlet} from "@angular/common";
             &.overlay {
                 position: absolute;
                 right: 4px; /* leave room for the vertical menu buttons */
-                top: 0;
+                top: 2px;
                 bottom: 0;
 
                 max-height: 100%;
@@ -78,7 +81,7 @@ import {NgComponentOutlet} from "@angular/common";
             }
             
             &.shift-left {
-                right: 30px;
+                right: 32px;
             }
 
             header {
@@ -86,6 +89,12 @@ import {NgComponentOutlet} from "@angular/common";
                 flex-direction: row;
                 gap: 1rem;
                 align-items: center;
+
+                .btn-list {
+                    display: flex;
+                    flex-direction: row;
+                    gap: 2px;
+                }
             }
         }
     `]
