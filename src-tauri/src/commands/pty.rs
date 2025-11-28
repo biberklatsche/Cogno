@@ -61,7 +61,7 @@ pub async fn pty_spawn(
     let mut cmd = CommandBuilder::new(&program);
     cmd.args(&args);
 
-    let _child = pair
+    let mut child = pair
         .slave
         .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn command: {}", e))?;
@@ -89,10 +89,31 @@ pub async fn pty_spawn(
         sessions.insert(terminal_id.clone(), session);
     }
 
-    // Start reading from PTY in background thread
+    // Thread der auf Child-Prozess-Ende wartet
+    let terminal_id_for_child = terminal_id.clone();
+    let app_for_child = app.clone();
+    let sessions_for_child = state.sessions.clone();
+    
+    std::thread::spawn(move || {
+        // Warte auf Prozess-Ende
+        let exit_code = match child.wait() {
+            Ok(status) => status.exit_code() as i32,
+            Err(_) => 1,
+        };
+        
+        println!("exit!!!! Child process ended with code: {}", exit_code);
+        
+        let _ = app_for_child.emit(&format!("pty-exit:{}", terminal_id_for_child), serde_json::json!({
+            "exitCode": exit_code
+        }));
+        
+        let mut sessions = sessions_for_child.lock().unwrap();
+        sessions.remove(&terminal_id_for_child);
+    });
+
+    // Thread der PTY Output liest
     let terminal_id_clone = terminal_id.clone();
     let app_clone = app.clone();
-    let sessions_clone = state.sessions.clone();
     let should_exit_clone = should_exit.clone();
 
     std::thread::spawn(move || {
@@ -105,14 +126,6 @@ pub async fn pty_spawn(
             }
             match std::io::Read::read(&mut reader, &mut buf) {
                 Ok(0) => {
-                    // EOF - process exited
-                    let _ = app_clone.emit(&format!("pty-exit:{}", terminal_id_clone), serde_json::json!({
-                        "exitCode": 0
-                    }));
-
-                    // Remove session
-                    let mut sessions = sessions_clone.lock().unwrap();
-                    sessions.remove(&terminal_id_clone);
                     break;
                 }
                 Ok(n) => {
@@ -120,17 +133,10 @@ pub async fn pty_spawn(
                         let data = String::from_utf8_lossy(&buf[..n]).to_string();
                         let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
                     } else {
-                        break;  // Beenden ohne weitere Events
-                        }
+                        break;
+                    }
                 }
                 Err(_e) => {
-                    let _ = app_clone.emit(&format!("pty-exit:{}", terminal_id_clone), serde_json::json!({
-                        "exitCode": 1
-                    }));
-
-                    // Remove session
-                    let mut sessions = sessions_clone.lock().unwrap();
-                    sessions.remove(&terminal_id_clone);
                     break;
                 }
             }
@@ -200,7 +206,7 @@ pub fn pty_kill(
     
     if let Some(session) = sessions.remove(&terminal_id) {
         session.should_exit.store(true, Ordering::Relaxed);
-        drop(session.master);  // <-- Schließt den PTY, dadurch gibt read() EOF zurück
+        drop(session.master);
         drop(session.writer);
         Ok(())
     } else {

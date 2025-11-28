@@ -24,7 +24,6 @@ export class KeybindService {
             bus.publish({type: "Inspector", path: ['inspector'], payload: {type: 'keybind', data: ActionFiredEvent.eventKey}});
             if(ActionFiredEvent.event.trigger?.unconsumed) return;
             if(ActionFiredEvent.event.trigger?.performable && !result.performed) return;
-            if(!result.defaultPrevented && !result.propagationStopped) return;
             e.preventDefault();
             e.stopPropagation();
         }, {capture: true});
