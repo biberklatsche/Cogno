@@ -14,15 +14,16 @@ import {ScrollbarVisibility} from "../config/+models/config.types";
  */
 @Injectable({ providedIn: 'root' })
 export class ScrollbarService implements OnDestroy {
-  private visibility: ScrollbarVisibility = 'auto';
+  private visibility: ScrollbarVisibility = 'hidden';
   private scrollingTimeoutId: any = null;
   private onWheelHandler = () => this.handleUserScroll();
 
   constructor(configService: ConfigService, destroyRef: DestroyRef) {
+      this.init();
       configService.config$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(cfg => {
-        const visibility = cfg.scrollbar?.visibility ?? 'auto';
+      .subscribe(config => {
+        const visibility = config.scrollbar?.visibility ?? 'auto';
         this.setVisibility(visibility);
       });
   }
