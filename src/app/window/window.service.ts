@@ -22,14 +22,17 @@ export class WindowService {
                   case 'quit':
                       //Schließt alle Windows
                       await Process.exit();
+                      event.performed = true;
                       break;
                   case 'new_window':
                       invoke('new_window').catch((err) => {
                           Logger.error('Failed to open new window', err);
                       });
+                      event.performed = true;
                       break;
                   case 'close_window':
                       AppWindow.close().then(() => Logger.debug('close window'));
+                      event.performed = true;
                       break;
               }
           });

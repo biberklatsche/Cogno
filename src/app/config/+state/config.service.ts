@@ -10,7 +10,6 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ShellConfigurator} from "../shell-configurator";
 import {DefaultConfig} from "../../_tauri/default-config";
 import {ConfigWriter} from "./config.writer";
-import {Action} from "rxjs/internal/scheduler/Action";
 import {ActionFired} from "../../action/action.models";
 import {Opener} from "../../_tauri/opener";
 

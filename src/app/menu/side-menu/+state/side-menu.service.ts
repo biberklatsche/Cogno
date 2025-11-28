@@ -4,11 +4,10 @@ import {Icon} from "../../../icons/+model/icon";
 
 export type SideMenuItem = {
     // Regular action item
-    label?: string;
-    icon?: Icon;
-    actionName?: ActionName;
-    action?: (arg?: any) => void;
-    disabled?: boolean;
+    label: string;
+    icon: Icon;
+    hidden: boolean;
+    actionName: ActionName;
     separator?: boolean;
     // Optional component to render in the side "aside" area when this item is active
     component: Type<any>;
@@ -19,7 +18,6 @@ export class SideMenuService {
 
     private _menuItems: WritableSignal<SideMenuItem[]>  = signal<SideMenuItem[]>([]);
     private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<SideMenuItem | undefined>(undefined);
-    private _pinned: WritableSignal<boolean> = signal<boolean>(false);
     private _displacement: WritableSignal<boolean> = signal<boolean>(false);
 
     get menu(): Signal<SideMenuItem[]> {
@@ -30,28 +28,38 @@ export class SideMenuService {
         return this._selectedItem.asReadonly();
     }
 
-    get pinned(): Signal<boolean> {
-        return this._pinned.asReadonly();
-    }
-
     get displacement(): Signal<boolean> {
         return this._displacement.asReadonly();
     }
 
     addMenuItem(item: SideMenuItem): void {
         this._menuItems.update(s => {
-            if(s.find(s => s.label === item.label)) {return s;}
+            const menuItem = s.find(s => s.label === item.label);
+            if(menuItem) {
+                menuItem.hidden = item.hidden;
+                return [...s];
+            }
             return [...s, item]}
         );
     }
 
-    toggle(item: SideMenuItem): void {
-        const current = this._selectedItem();
-        this._selectedItem.set(current === item ? undefined : item);
+    removeMenuItem(label: string) {
+        this._menuItems.update(s => {
+            const index = s.findIndex(s => s.label === label);
+            if(index === -1) {return s;}
+            s.splice(index, 1);
+            return [...s]}
+        );
     }
 
-    togglePin() {
-        this._pinned.update(s => !s);
+    toggle(label: string): void {
+        const current = this._selectedItem();
+        const item = this._menuItems().find(s => s.label === label);
+        this._selectedItem.set(current?.label === label ? undefined : item);
+    }
+
+    close() {
+        this._selectedItem.set(undefined);
     }
 
     toggleDisplacement() {

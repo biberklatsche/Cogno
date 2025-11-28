@@ -17,6 +17,20 @@ const PaddingSchema = z.object({
 
 //hidden, auto, always
 
+const FeatureModeEnum = z
+    .enum(['off', 'hidden', 'visible'])
+    .refine((val) => ['off', 'hidden', 'visible'].includes(val), {
+        message: 'Feature mode must be either "off", "hidden" or "visible"',
+    }).optional();
+
+const FeatureWorkspaceSchema = z.object({
+    mode: FeatureModeEnum.optional(),
+});
+
+const FeatureInspectorSchema = z.object({
+    mode: FeatureModeEnum.optional(),
+});
+
 const ScrollbarVisibilityEnum = z
     .enum(['hidden', 'auto', 'always'])
     .refine((val) => ['hidden', 'auto', 'always'].includes(val), {
@@ -163,6 +177,8 @@ export const ConfigSchema = z.object({
     selection: SelectionSchema.optional(),
     menu: MenuSchema.optional(),
     scrollbar: ScrollbarSchema.optional(),
+    workspace: FeatureWorkspaceSchema.optional(),
+    inspector: FeatureInspectorSchema.optional(),
 }).strict();
 
 export type ConfigTypes = z.infer<typeof ConfigSchema>;

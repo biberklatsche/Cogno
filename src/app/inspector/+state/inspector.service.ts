@@ -9,6 +9,7 @@ import {WorkspaceSideComponent} from "../../workspace/workspace-side/workspace-s
 import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuItem, SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
+import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
 
 export type TerminalIdentifier = {terminalId: string};
 export type MousePosition = { x: number; y: number };
@@ -16,7 +17,7 @@ export type TerminalMousePosition = { col: number; row: number; char: string, vi
 export type TerminalCursorPosition = { col: number; row: number; char: string, viewportCol: number; viewportRow: number;  };
 
 @Injectable({providedIn: 'root'})
-export class InspectorService {
+export class InspectorService extends SideMenuItemService {
 
   private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
   private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
@@ -28,7 +29,7 @@ export class InspectorService {
 
   // Derived list of terminalIds present in either map
   private _terminalIds = computed<TerminalId[]>(() => {
-      const ids = new Set<string>([...Object.keys(this._terminalMouseById()), ...Object.keys(this._terminalDimsById())]);
+      const ids = new Set<string>([...Object.keys(this._terminalMouseById()), ...Object.keys(this._terminalDimsById()), ...Object.keys(this._terminalCursorById())]);
       return Array.from(ids) as TerminalId[];
   });
 
@@ -56,35 +57,23 @@ export class InspectorService {
       return this._terminalIds;
   }
 
-  private _subsciption: Subscription | undefined;
+  private _subscription: Subscription | undefined;
 
-  constructor(private bus: AppBus, ref: DestroyRef, conf: ConfigService, sideMenuService: SideMenuService) {
-      const item: SideMenuItem = {
+
+  constructor(sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, ref: DestroyRef) {
+      super(sideMenuService, bus, config, ref, {
           label: 'Inspector',
+          hidden: false,
           icon: 'mdiAlphaIBox',
-          component: InspectorSideComponent
-      };
-      // Listen to app-bus events
-      conf.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
-          //if (config...) {
-          sideMenuService.addMenuItem(item);
-          //}
-      });
-
-      bus.on$({type: 'ActionFired', path: ['app', 'action']}).pipe(takeUntilDestroyed(ref)).subscribe(event => {
-          switch (event.payload) {
-              case 'toggle_inspector': {
-                  sideMenuService.toggle(item)
-                  break;
-              }
-          }
+          component: InspectorSideComponent,
+          actionName: 'toggle_inspector'
       });
   }
 
-  init() {
-      this._subsciption?.unsubscribe();
-      this._subsciption = new Subscription();
-      this._subsciption.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
+  initView() {
+      this.dispose();
+      this._subscription = new Subscription();
+      this._subscription.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
           switch (event.payload?.type) {
               case 'keybind': {
                   this._firedKeybinding.set(event.payload?.data);
@@ -118,19 +107,22 @@ export class InspectorService {
       }));
 
       // Remove per-terminal data when pane is closed (listen on both app and app/terminal paths)
-      this._subsciption.add(this.bus.on$({ path: ['app', 'terminal'], type: 'TerminalRemoved' }).subscribe(evt => {
+      this._subscription.add(this.bus.on$({ path: ['app', 'terminal'], type: 'TerminalRemoved' }).subscribe(evt => {
           const id = evt.payload;
           if (!id) return;
           const nextMouse = { ...this._terminalMouseById() };
           const nextDims = { ...this._terminalDimsById() };
+          const nextCursor = { ...this._terminalCursorById() };
           delete nextMouse[id];
           delete nextDims[id];
+          delete nextCursor[id];
           this._terminalMouseById.set(nextMouse);
           this._terminalDimsById.set(nextDims);
+          this._terminalCursorById.set(nextCursor);
       }));
 
       // Track global mouse movement
-      this._subsciption.add(fromEvent<MouseEvent>(window, 'mousemove')
+      this._subscription.add(fromEvent<MouseEvent>(window, 'mousemove')
           .subscribe(evt => {
               this._mousePosition.set({ x: evt.clientX, y: evt.clientY });
           }));
@@ -142,8 +134,7 @@ export class InspectorService {
       this._terminalCursorById.set({});
       this._terminalMouseById.set({});
       this._terminalDimsById.set({});
-
-      this._subsciption?.unsubscribe();
-      this._subsciption = undefined;
+      this._subscription?.unsubscribe();
+      this._subscription = undefined;
   }
 }

@@ -40,6 +40,6 @@ export class InspectorSideComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        this.inspectorService.init();
+        this.inspectorService.initView();
     }
 }

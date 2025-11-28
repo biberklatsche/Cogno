@@ -15,6 +15,7 @@ export type ActionName =
     'close_other_tabs' |
     'close_all_tabs'|
     'toggle_inspector'|
+    'toggle_workspace'|
     'quit'|
     'new_window' |
     'close_window' |
