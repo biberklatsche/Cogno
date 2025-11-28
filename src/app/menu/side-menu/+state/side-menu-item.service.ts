@@ -4,6 +4,7 @@ import {DestroyRef} from "@angular/core";
 import {Subscription} from "rxjs";
 import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
+import {ConfigTypes, FeatureMode} from "../../../config/+models/config.types";
 
 export abstract class SideMenuItemService {
 
@@ -14,10 +15,11 @@ export abstract class SideMenuItemService {
         protected bus: AppBus,
         config: ConfigService,
         ref: DestroyRef,
-        protected menuItem: SideMenuItem
+        protected menuItem: SideMenuItem,
+        protected configSelector: (config: ConfigTypes) => FeatureMode
     ) {
         config.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
-            switch (config.inspector?.mode) {
+            switch (configSelector(config)) {
                 case 'off': this.dispose(); this.removeKeybindHandler(); this.removeMenuItem(); break;
                 case 'hidden': this.addMenuItem(true); this.addKeybindHandler(); break;
                 case 'visible': {

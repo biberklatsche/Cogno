@@ -192,4 +192,5 @@ export type HexColor = z.infer<typeof HexColorSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
+export type FeatureMode = z.infer<typeof FeatureModeEnum>;
 export type ScrollbarVisibility = z.infer<typeof ScrollbarVisibilityEnum>;

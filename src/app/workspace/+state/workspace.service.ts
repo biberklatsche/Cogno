@@ -8,6 +8,7 @@ import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
+import {ConfigTypes} from "../../config/+models/config.types";
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
@@ -19,7 +20,8 @@ export class WorkspaceService extends SideMenuItemService {
             icon: 'mdiViewDashboard',
             component: WorkspaceSideComponent,
             actionName: 'toggle_workspace'
-        });
+        }, (config: ConfigTypes) => config.workspace?.mode
+        );
 
         this.bus.onceType$('ConfigLoaded').subscribe(e => {
             //load workspaces here
