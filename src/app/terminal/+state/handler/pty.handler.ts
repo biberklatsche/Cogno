@@ -40,6 +40,10 @@ export class PtyHandler implements ITerminalHandler {
                 }
                 terminal.write(data);
             }));
+            this._disposables.push(this._pty?.onExit(data => {
+
+                this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalRemoved", payload: this._terminalId});
+            }));
         });
         return this;
     }

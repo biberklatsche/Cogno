@@ -36,6 +36,7 @@ export const TauriPty = {
 
     onExit(terminalId: TerminalId, listener: (event: {exitCode: number, signal?: number}) => void) {
         return listen<{exitCode: number, signal?: number}>(`pty-exit:${terminalId}`, (event) => {
+            console.log('########!!!', terminalId)
             listener(event.payload);
         });
     },
