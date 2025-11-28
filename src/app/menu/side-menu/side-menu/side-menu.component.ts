@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, ElementRef, HostListener, Signal, ViewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, ElementRef, HostListener, Signal, ViewChild} from '@angular/core';
 import {IconComponent} from "../../../icons/icon/icon.component";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
@@ -16,7 +16,9 @@ import {NgComponentOutlet} from "@angular/common";
     template: `
         <aside #overlayAside class="base-overlay"
                [class.hidden]="!selectedItem()"
-               [class.overlay]="!displacement()">
+               [class.overlay]="!displacement()"
+               [class.shift-left]="visibleItems().length > 0"
+        >
             <header>
                 <div>
                     <button class="tab-list-btn" (click)="close()">
@@ -33,13 +35,11 @@ import {NgComponentOutlet} from "@angular/common";
             }
         </aside>
         <menu #menuCol>
-            @for (menuItem of menuItems(); track menuItem) {
-                @if (!menuItem.hidden) {
-                    <button class="tab-list-btn" (click)="toggle(menuItem)"
+            @for (menuItem of visibleItems(); track menuItem) {
+                <button class="tab-list-btn" (click)="toggle(menuItem)"
                             [class.active]="selectedItem() === menuItem">
-                        <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
-                    </button>
-                }
+                    <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
+                </button>
             }
         </menu>`,
     styles: [`
@@ -69,12 +69,16 @@ import {NgComponentOutlet} from "@angular/common";
 
             &.overlay {
                 position: absolute;
-                right: 30px; /* leave room for the vertical menu buttons */
+                right: 4px; /* leave room for the vertical menu buttons */
                 top: 0;
                 bottom: 0;
 
                 max-height: 100%;
                 overflow: auto;
+            }
+            
+            &.shift-left {
+                right: 30px;
             }
 
             header {
@@ -87,7 +91,8 @@ import {NgComponentOutlet} from "@angular/common";
     `]
 })
 export class SideMenuComponent {
-    menuItems: Signal<SideMenuItem[]>;
+    menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
+    visibleItems: Signal<SideMenuItem[]> = computed(() => this.menuItems().filter(i => !i.hidden));
     selectedItem = this.menuItemService.selectedItem;
     displacement = this.menuItemService.displacement;
 
@@ -95,7 +100,6 @@ export class SideMenuComponent {
     @ViewChild('menuCol', {static: false}) menuColRef?: ElementRef<HTMLElement>;
 
     constructor(private menuItemService: SideMenuService) {
-        this.menuItems = this.menuItemService.menu;
     }
 
     @HostListener('document:keydown', ['$event'])

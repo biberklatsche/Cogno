@@ -3,11 +3,10 @@
   display: block;
   color: #fff;
   width: 100%;
-  min-height: 50px;
   height: fit-content;
   margin: 0;
   padding: 0;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   overflow: auto;
 }
 
@@ -20,9 +19,34 @@
   gap: 1rem;
 }
 
+.table {
+  display: grid;
+  gap: 0.5rem 1rem ;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+
+  &.c2 {
+    grid-template-columns: max-content max-content;
+
+  }
+
+  &.c3 {
+    grid-template-columns: max-content max-content max-content;
+  }
+
+  .span-full {
+    grid-column: 1 / -1;
+  }
+
+  &:first-child {
+    border-top: none;
+  }
+}
+
 .row {
   display: grid;
-  grid-template-columns: max-content max-content;
+  grid-template-columns: max-content max-content max-content;
   gap: 12px;
   align-items: center;
   padding: 8px 12px;
@@ -35,7 +59,7 @@
 
 .label {
   font-weight: 600;
-  opacity: 0.95;
+  opacity: 0.5;
 }
 
 .value {

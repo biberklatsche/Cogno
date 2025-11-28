@@ -1,82 +1,70 @@
 <div class="inspector-table" role="table" aria-label="Inspector">
     <!-- Keybinding row -->
-    <div class="column">
-        <div class="row">Global</div>
-        <div class="row">
-            <div class="label">Keybinding</div>
-            <div class="value">
-                @if (firedKeybinding()) {
-                    {{ firedKeybinding() }}
-                } @else {
-                    —
-                }
-            </div>
+    <div class="table c2">
+        <div class="span-full"><b>Global</b></div>
+        <div class="label">Keybinding</div>
+        <div class="value">
+            @if (firedKeybinding()) {
+                {{ firedKeybinding() }}
+            } @else {
+                —
+            }
         </div>
-        <div class="row">
-            <div class="label" role="rowheader">Mouse</div>
-            <div class="value" role="cell">
-                @if (mousePosition()) {
-                    {{ mousePosition()!.x }}, {{ mousePosition()!.y }}
-                } @else {
-                    —
-                }
-            </div>
+        <div class="label" role="rowheader">Mouse</div>
+        <div class="value" role="cell">
+            @if (mousePosition()) {
+                {{ mousePosition()!.x }}, {{ mousePosition()!.y }}
+            } @else {
+                —
+            }
         </div>
     </div>
 
     @for (id of terminalIds(); track id; let i = $index; ) {
-        <div class="column">
-            <div class="row">Terminal {{ i + 1 }}</div>
-            <div class="row">
-                <div class="label" role="rowheader">Mouse Viewport</div>
-                <div class="value" role="cell">
-                    @if (terminalMouseById()[id]) {
-                        {{ terminalMouseById()[id].viewportCol }}, {{ terminalMouseById()[id].viewportRow }}, '{{ terminalMouseById()[id].char || ' ' }}'
-                    } @else {
-                        —
-                    }
-                </div>
+        <div class="table c3">
+            <div class="span-full"><b>Terminal {{ i + 1 }}</b></div>
+            <div></div>
+            <div class="label">Viewport</div>
+            <div class="label">Absolute</div>
+            <div class="label">Mouse</div>
+            <div class="value">
+                @if (terminalMouseById()[id]) {
+                    {{ terminalMouseById()[id].viewportCol }}, {{ terminalMouseById()[id].viewportRow }}, '{{ terminalMouseById()[id].char || ' ' }}'
+                } @else {
+                    —
+                }
             </div>
-            <div class="row">
-                <div class="label" role="rowheader">Mouse Absolute</div>
-                <div class="value" role="cell">
-                    @if (terminalMouseById()[id]) {
-                        {{ terminalMouseById()[id].col }}, {{ terminalMouseById()[id].row }}, '{{ terminalMouseById()[id].char || ' ' }}'
-                    } @else {
-                        —
-                    }
-                </div>
+            <div class="value">
+                @if (terminalMouseById()[id]) {
+                    {{ terminalMouseById()[id].col }}, {{ terminalMouseById()[id].row }}, '{{ terminalMouseById()[id].char || ' ' }}'
+                } @else {
+                    —
+                }
             </div>
-            <div class="row">
-                <div class="label" role="rowheader">Cursor Viewport</div>
-                <div class="value" role="cell">
-                    @if (terminalCursorById()[id]) {
-                        {{ terminalCursorById()[id].viewportCol }}, {{ terminalCursorById()[id].viewportRow }}, '{{ terminalCursorById()[id].char || ' ' }}'
-                    } @else {
-                        —
-                    }
-                </div>
+            <div class="label">Cursor</div>
+            <div class="value">
+                @if (terminalCursorById()[id]) {
+                    {{ terminalCursorById()[id].viewportCol }}, {{ terminalCursorById()[id].viewportRow }}, '{{ terminalCursorById()[id].char || ' ' }}'
+                } @else {
+                    —
+                }
             </div>
-            <div class="row">
-                <div class="label" role="rowheader">Cursor Absolute</div>
-                <div class="value" role="cell">
-                    @if (terminalCursorById()[id]) {
-                        {{ terminalCursorById()[id].col }}, {{ terminalCursorById()[id].row }}, '{{ terminalCursorById()[id].char || ' ' }}'
-                    } @else {
-                        —
-                    }
-                </div>
+            <div class="value">
+                @if (terminalCursorById()[id]) {
+                    {{ terminalCursorById()[id].col }}, {{ terminalCursorById()[id].row }}, '{{ terminalCursorById()[id].char || ' ' }}'
+                } @else {
+                    —
+                }
             </div>
-            <div class="row">
-                <div class="label" role="rowheader">Size</div>
-                <div class="value" role="cell">
-                    @if (terminalDimsById()[id]) {
-                        {{ terminalDimsById()[id].cols }} × {{ terminalDimsById()[id].rows }}
-                    } @else {
-                        —
-                    }
-                </div>
+            <div class="label">Size</div>
+            <div class="value" role="cell">
+                @if (terminalDimsById()[id]) {
+                    {{ terminalDimsById()[id].cols }} × {{ terminalDimsById()[id].rows }}
+                } @else {
+                    —
+                }
             </div>
+            <div></div>
         </div>
     }
 
