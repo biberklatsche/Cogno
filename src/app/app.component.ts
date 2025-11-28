@@ -4,6 +4,8 @@ import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
 import {GridListComponent} from "./grid-list/grid-list.component";
+import {DB} from "./_tauri/db";
+import {Environment} from "./common/environment/environment";
 
 @Component({
     selector: 'app-root',
@@ -58,16 +60,16 @@ export class AppComponent {
     os = OS.platform();
 
     async initAsync(): Promise<void> {
-        /*const db = await Database.create(`sqlite:${Environment.dbFilePath()}`);
-        await db.execute(`
+        //await DB.create(`sqlite:${Environment.dbFilePath()}`);
+        await DB.execute(`
     CREATE TABLE IF NOT EXISTS todos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL
     );
   `);
-        await db.execute("INSERT into todos (title) VALUES ($1)",
+        await DB.execute("INSERT into todos (title) VALUES ($1)",
           ["Das hab ich geschafft"]);
-        const todos = await db.query<{ id: number; title: string }>('SELECT * FROM todos');
-        console.log(todos);*/
+        const todos = await DB.query<{ id: number; title: string }>('SELECT * FROM todos');
+        console.log(todos);
     }
 }
