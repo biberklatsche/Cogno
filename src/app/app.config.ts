@@ -9,7 +9,7 @@ import { GlobalErrorHandler } from './common/error/global-error.handler';
 import {StyleService} from "./style/style.service";
 import {WorkspaceService} from "./workspace/+state/workspace.service";
 import {KeybindService} from "./keybinding/keybind.service";
-import {CliCommandService} from "./cli-command/cli-command.service";
+import {CliActionService} from "./cli-command/cli-action.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
 import {ScrollbarService} from "./style/scrollbar.service";
@@ -27,7 +27,7 @@ export const appConfig: ApplicationConfig = {
           inject(WorkspaceService);
           inject(InspectorService);
           inject(KeybindService);
-          inject(CliCommandService);
+          inject(CliActionService);
           inject(NativeMenuService);
           inject(WindowService);
           // initialize ScrollbarService at app startup

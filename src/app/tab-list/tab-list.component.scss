@@ -48,18 +48,19 @@
   /* wichtig für Container Queries */
   container-type: inline-size;
   &.is-active {
-    color: var(--foreground-color);
-    border-color: var(--background-color-40l);
-    background: var(--background-color-30l-ct);
+    color: var(--background-color);
+    border-color: var(--highlight-color);
+    background: var(--highlight-color-40d-ct);
     &:hover {
-      border-color: var(--background-color-40l);
-      background: var(--background-color-40l);
+      border-color: var(--highlight-color);
+      color: var(--foreground-color);
+      background: none;
     }
   }
   &:hover {
+    border-color: var(--highlight-color);
     color: var(--foreground-color);
-    border-color: var(--background-color-20l);
-    background: var(--background-color-20l);
+    background: none;
   }
 }
 

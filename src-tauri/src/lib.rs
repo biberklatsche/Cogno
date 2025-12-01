@@ -29,8 +29,8 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
             if let Ok(cli) = Cli::try_parse_from(argv) {
-                if let Some(cmd) = cli.command {
-                   let _ = app.emit("cli-command", &cmd);
+                if let Some(cmd) = cli.action {
+                   let _ = app.emit("cli-action", &cmd);
                 }
             }
         }))
@@ -72,8 +72,8 @@ pub fn run(cli: Cli) {
            window.show().unwrap();
 
            // Beim ersten Start: ggf. gewünschten Command ausführen
-           if let Some(cmd) = cli.command.clone() {
-               let _ = app.emit("cli-command", &cmd);
+           if let Some(cmd) = cli.action.clone() {
+               let _ = app.emit("cli-action", &cmd);
            }
 
            #[cfg(debug_assertions)] // only include this code on debug builds

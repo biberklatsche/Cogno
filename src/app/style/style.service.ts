@@ -27,7 +27,7 @@ export class StyleService {
         const opacity = Color.getHexOpacity(config.menu?.opacity)
 
         document.documentElement.style.setProperty('--background-color', `#${config.color!.background}`);
-        document.documentElement.style.setProperty('--background-color-transparent', `#${config.color!.background}${opacity}`);
+        document.documentElement.style.setProperty('--background-color-ct', `#${config.color!.background}${opacity}`);
         document.documentElement.style.setProperty('--background-color-10l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 10)}`);
         document.documentElement.style.setProperty('--background-color-10l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 10)}`);
         document.documentElement.style.setProperty('--background-color-20l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 20)}`);
@@ -61,6 +61,7 @@ export class StyleService {
         document.documentElement.style.setProperty('--highlight-color-20d', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * -20)}`);
         document.documentElement.style.setProperty('--highlight-color-30d', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * -30)}`);
         document.documentElement.style.setProperty('--highlight-color-40d', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * -40)}`);
+        document.documentElement.style.setProperty('--highlight-color-40d-ct', `${Color.lightenDarkenColor(`#${config.color!.highlight}${opacity}`, factor * -40)}`);
         document.documentElement.style.setProperty('--color-green', `#${config.color!.green}`);
         document.documentElement.style.setProperty('--color-red', `#${config.color!.red}`);
         document.documentElement.style.setProperty('--color-blue', `#${config.color!.blue}`);
