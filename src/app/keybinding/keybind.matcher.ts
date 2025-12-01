@@ -15,11 +15,11 @@ export class KeybindingMatcher {
     private actions: Record<string, ActionDefinition> = {};
     private keyCodeMapping: KeyboardMapping = {};
 
-    // Laufender Match-Status über mehrere Keydowns
+    // Ongoing match state across multiple keydowns
     private currentMatches: { seq: Sequence; index: number }[] = [];
 
     public initBindings(bindings: string[]) {
-        // Reset und neu parsen
+        // Reset and re-parse
         this.sequences = [];
         this.currentMatches = [];
         for (const binding of bindings.reverse()) {
@@ -27,7 +27,7 @@ export class KeybindingMatcher {
             if (!keybindingDef || !actionDef) return;
 
             const action = KeybindActionInterpreter.parse(actionDef);
-            // Unterstützt Sequenzen mittels '>'
+            // Supports sequences using '>'
             const normalizedSteps = keybindingDef.split('>').map(step => this.normalizeKeyCombination(step.trim()));
 
             if(this.actions[action.actionName]) continue;
@@ -53,7 +53,7 @@ export class KeybindingMatcher {
         this.keyCodeMapping = keyCodeMapping;
     }
 
-    // Normalisiert die Key-Kombination zu einem eindeutigen String
+    // Normalizes the key combination to a unique string
     private normalizeKeyCombination(keys: string): string {
         const parts = keys.split('+').map(k => k.trim()).filter(Boolean);
         if (parts.length === 0) return '';
@@ -64,23 +64,23 @@ export class KeybindingMatcher {
         return [...modifiers, key].join('+');
     }
 
-    // Erstellt Key-String aus KeyboardEvent
+    // Creates a key string from a KeyboardEvent
     private eventToKeyString(event: KeyboardEvent): string {
         let parts: string[] = Modifier.transform(event);
-        // Haupttaste über Mapping normalisieren
+        // Normalize the primary key via mapping
         const normalizedKey = this.keyCodeMapping[event.code] || event.key;
         parts.push(normalizedKey);
         return parts.join('+');
     }
 
-    // Hauptmethode: Prüft ob Event ein Keybinding trifft (unterstützt Sequenzen)
+    // Main method: checks whether the event matches a keybinding (supports sequences)
     match(event: KeyboardEvent): {event: ActionFiredEvent, eventKey: string} | undefined {
-        // Nur auf keydown reagieren, um Doppelzählung zu vermeiden
+        // React only to keydown to avoid double counting
         if (event.type && event.type !== 'keydown') return undefined;
 
         const eventKey = this.eventToKeyString(event);
 
-        // 1) Laufende Matches fortsetzen
+        // 1) Continue ongoing matches
         const progressed: { seq: Sequence; index: number }[] = [];
         for (const m of this.currentMatches) {
             if (m.seq.steps[m.index] === eventKey) {
@@ -88,23 +88,23 @@ export class KeybindingMatcher {
             }
         }
 
-        // 2) Neue Matches starten (erster Schritt passt)
+        // 2) Start new matches (first step matches)
         for (const seq of this.sequences) {
             if (seq.steps[0] === eventKey) {
                 progressed.push({ seq, index: 1 });
             }
         }
 
-        // 3) Prüfen, ob ein Match abgeschlossen ist
+        // 3) Check whether a match is completed
         const finished = progressed.find(m => m.index >= m.seq.steps.length);
         if (finished) {
-            // Reset nach erfolgreichem Match
+            // Reset after a successful match
             const event = {... finished.seq.event};
             this.currentMatches = [];
             return {event, eventKey: finished.seq.steps.join('>')};
         }
 
-        // 4) Status aktualisieren (nur echte Fortschritte behalten)
+        // 4) Update status (keep only real progress)
         this.currentMatches = progressed;
         return undefined;
     }

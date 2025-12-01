@@ -89,13 +89,13 @@ pub async fn pty_spawn(
         sessions.insert(terminal_id.clone(), session);
     }
 
-    // Thread der auf Child-Prozess-Ende wartet
+    // Thread that waits for the child process to end
     let terminal_id_for_child = terminal_id.clone();
     let app_for_child = app.clone();
     let sessions_for_child = state.sessions.clone();
     
     std::thread::spawn(move || {
-        // Warte auf Prozess-Ende
+        // Wait for process to end
         let exit_code = match child.wait() {
             Ok(status) => status.exit_code() as i32,
             Err(_) => 1,
@@ -111,7 +111,7 @@ pub async fn pty_spawn(
         sessions.remove(&terminal_id_for_child);
     });
 
-    // Thread der PTY Output liest
+    // Thread that reads PTY output
     let terminal_id_clone = terminal_id.clone();
     let app_clone = app.clone();
     let should_exit_clone = should_exit.clone();
