@@ -22,7 +22,7 @@ export class KeybindingMatcher {
         // Reset und neu parsen
         this.sequences = [];
         this.currentMatches = [];
-        bindings.reverse().forEach(binding => {
+        for (const binding of bindings.reverse()) {
             const [keybindingDef, actionDef] = binding.split('=');
             if (!keybindingDef || !actionDef) return;
 
@@ -30,6 +30,7 @@ export class KeybindingMatcher {
             // Unterstützt Sequenzen mittels '>'
             const normalizedSteps = keybindingDef.split('>').map(step => this.normalizeKeyCombination(step.trim()));
 
+            if(this.actions[action.actionName]) continue;
             this.actions[action.actionName] = action;
             this.keybindings[action.actionName] = keybindingDef;
 
@@ -37,7 +38,7 @@ export class KeybindingMatcher {
                 steps: normalizedSteps,
                 event: ActionFired.create(action.actionName, action.trigger, action.args)
             });
-        });
+        }
     }
 
     getAction(actionName: string): ActionDefinition | undefined {
