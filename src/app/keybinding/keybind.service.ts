@@ -13,11 +13,22 @@ import {ActionName} from "../action/action.models";
 export class KeybindService {
 
     private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher();
+    // simple registry for component-specific key listeners
+    private _listeners: Map<string, { keys: Set<string>, handler: (e: KeyboardEvent) => void }> = new Map();
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, bus: AppBus, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
         configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind!));
         window.addEventListener("keydown", (e) => {
+            // 1) Check registered listeners first (e.g., side menu overlays)
+            for (const [, listener] of this._listeners) {
+                if (listener.keys.has(e.key)) {
+                    try { listener.handler(e); } catch {}
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+            }
             const ActionFiredEvent = this._keybindMatcher.match(e);
             if (!ActionFiredEvent) return;
             const result = bus.publish(ActionFiredEvent.event);
@@ -35,5 +46,16 @@ export class KeybindService {
 
     getActionDefinition(actionName: ActionName): ActionDefinition | undefined {
         return this._keybindMatcher.getAction(actionName);
+    }
+
+    /** Register a temporary key listener by id. Subsequent calls with the same id overwrite keys/handler. */
+    registerListener(id: string, keys: string[], handler: (e: KeyboardEvent) => void): void {
+        const keySet = new Set(keys);
+        this._listeners.set(id, {keys: keySet, handler});
+    }
+
+    /** Remove a previously registered listener. */
+    unregisterListener(id: string): void {
+        this._listeners.delete(id);
     }
 }

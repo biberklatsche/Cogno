@@ -2,6 +2,11 @@ import {Injectable, Signal, signal, Type, WritableSignal} from "@angular/core";
 import {ActionName} from "../../../action/action.models";
 import {Icon} from "../../../icons/+model/icon";
 
+// Components used inside the SideMenu must at least implement this method
+export interface SideMenuItemComponent {
+    onSideMenuKey(event: KeyboardEvent): void;
+}
+
 export type SideMenuItem = {
     // Regular action item
     label: string;
@@ -10,7 +15,9 @@ export type SideMenuItem = {
     actionName: ActionName;
     separator?: boolean;
     // Optional component to render in the side "aside" area when this item is active
-    component: Type<any>;
+    component: Type<SideMenuItemComponent>;
+    // Optional list of keys to listen for while this item is active (default: ['Escape'])
+    keys?: string[];
 };
 
 @Injectable({providedIn: 'root'})

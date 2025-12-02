@@ -1,7 +1,8 @@
-import {ChangeDetectionStrategy, Component, computed, ElementRef, HostListener, Signal, ViewChild} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, ElementRef, Signal, ViewChild, effect, OnDestroy} from '@angular/core';
 import {IconComponent} from "../../../icons/icon/icon.component";
-import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
+import {SideMenuItem, SideMenuItemComponent, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
+import {KeybindService} from "../../../keybinding/keybind.service";
 
 @Component({
     selector: 'app-side-menu',
@@ -32,7 +33,9 @@ import {NgComponentOutlet} from "@angular/common";
             </header>
             <main>
                 @if (selectedItem()?.component) {
-                    <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
+                    <ng-container *ngComponentOutlet="selectedItem()!.component"
+                                  (ngComponentOutletActivate)="onActivate($event)"
+                                  (ngComponentOutletDeactivate)="onDeactivate()"></ng-container>
                 }
             </main>
         </aside>
@@ -105,7 +108,7 @@ import {NgComponentOutlet} from "@angular/common";
         }
     `]
 })
-export class SideMenuComponent {
+export class SideMenuComponent implements OnDestroy {
     menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
     visibleItems: Signal<SideMenuItem[]> = computed(() => this.menuItems().filter(i => !i.hidden));
     selectedItem = this.menuItemService.selectedItem;
@@ -114,13 +117,42 @@ export class SideMenuComponent {
     @ViewChild('overlayAside', {static: false}) overlayAsideRef?: ElementRef<HTMLElement>;
     @ViewChild('menuCol', {static: false}) menuColRef?: ElementRef<HTMLElement>;
 
-    constructor(private menuItemService: SideMenuService) {
+    private activeComponentInstance?: SideMenuItemComponent;
+    private readonly listenerId = 'SideMenuComponentListener';
+
+    constructor(private menuItemService: SideMenuService, private keybindService: KeybindService) {
+        effect(() => {
+            const active = this.selectedItem();
+            if (!active) {
+                this.keybindService.unregisterListener(this.listenerId);
+                return;
+            }
+            const keys = (active.keys && active.keys.length > 0) ? active.keys : ['Escape'];
+            this.keybindService.registerListener(this.listenerId, keys, (event: KeyboardEvent) => this.handleKey(event));
+        });
     }
 
-    @HostListener('document:keydown', ['$event'])
-    onDocumentKeyDown(event: KeyboardEvent) {
-        if (event.key !== 'Escape') return;
-        this.menuItemService.close();
+    ngOnDestroy(): void {
+        this.keybindService.unregisterListener(this.listenerId);
+    }
+
+    private handleKey(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            this.menuItemService.close();
+        }
+        // forward to hosted component if it exposes an optional handler
+        const inst = this.activeComponentInstance as SideMenuItemComponent | undefined;
+        try { inst?.onSideMenuKey(event); } catch {}
+    }
+
+    onActivate(instance: unknown) {
+        // The component is typed via SideMenuItem.component: Type<SideMenuItemComponent>
+        // Cast to the required handler interface.
+        this.activeComponentInstance = instance as SideMenuItemComponent;
+    }
+
+    onDeactivate() {
+        this.activeComponentInstance = undefined;
     }
 
     toggle(menuItem: SideMenuItem) {
