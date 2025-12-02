@@ -5,7 +5,7 @@ import {
     exists as tauriExists, WatchEvent
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc as tauriConvertFileSrc } from "@tauri-apps/api/core";
-import {Observable} from "rxjs";
+import {debounceTime, Observable} from "rxjs";
 
 
 type UnwatchFn = () => void;
@@ -17,7 +17,7 @@ export const Fs = {
     appendTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data, {append: true})},
 
     /** 🆕 Observable-API – preferred */
-    watchChanges$(path: string, opts?: { recursive?: boolean }): Observable<void> {
+    watchChanges$(path: string, opts?: { recursive?: boolean, delayMs?: number }): Observable<void> {
         return new Observable<void>((subscriber) => {
             let unwatch: UnwatchFn | null = null;
 
@@ -25,7 +25,11 @@ export const Fs = {
                 path,
                 (event: WatchEvent) => {
                     // Optional: filtern/normalisieren könntest du hier
-                    subscriber.next();
+                    if(typeof event.type === "object" &&
+                        "modify" in event.type
+                    ) {
+                        subscriber.next();
+                    }
                 },
                 opts
             )
@@ -36,7 +40,7 @@ export const Fs = {
             return () => {
                 try { unwatch?.(); } catch { /* ignore */ }
             };
-        });
+        }).pipe(debounceTime(50));
     },
     exists(path: string): Promise<boolean> {return tauriExists(path)},
 

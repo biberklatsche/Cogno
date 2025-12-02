@@ -1,6 +1,8 @@
-import {Component, DestroyRef, signal, WritableSignal} from '@angular/core';
+import {Component, DestroyRef, OnDestroy, OnInit, signal, WritableSignal} from '@angular/core';
 import {ConfigService} from "../../config/+state/config.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {SideMenuItemComponent} from "../../menu/side-menu/+state/side-menu.service";
+import {WorkspaceService} from "../+state/workspace.service";
 
 @Component({
   selector: 'app-workspace-side',
@@ -25,9 +27,21 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     p { margin: 0 0 12px 0; opacity: .8; }
   `]
 })
-export class WorkspaceSideComponent {
+export class WorkspaceSideComponent implements OnInit, OnDestroy, SideMenuItemComponent{
 
 
-    constructor(config: ConfigService, ref: DestroyRef) {
+    constructor(private service: WorkspaceService) {
+    }
+
+    ngOnDestroy(): void {
+        this.service.dispose();
+    }
+
+    ngOnInit(): void {
+
+    }
+
+    onSideMenuKey(event: KeyboardEvent): void {
+
     }
 }

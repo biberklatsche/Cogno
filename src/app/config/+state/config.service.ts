@@ -47,7 +47,7 @@ export class ConfigService {
     private async watch() {
         Logger.info('Load and watch config...');
         const path = Environment.configFilePath();
-        const unwatch = Fs.watchChanges$(path).pipe(debounceTime(50)).subscribe(async () => {
+        const unwatch = Fs.watchChanges$(path, {delayMs: 500}).subscribe(async () => {
             await this.loadConfig();
         });
         this.destroy.onDestroy(() => unwatch.unsubscribe());
@@ -56,7 +56,6 @@ export class ConfigService {
     private async loadConfig() {
         const path = Environment.configFilePath();
         const defaultConfigString = await DefaultConfig.read();
-
         if(!await Fs.exists(path)) {
             const userConfig: ConfigTypes = {shell: {}};
             await this.shells.apply(userConfig);
