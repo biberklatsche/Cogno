@@ -6,19 +6,10 @@ import {
     error as tauriError,
     attachConsole as tauriAttachConsole,
     attachLogger as tauriAttachLogger,
-    LogOptions as TauriLogOptions, LogLevel,
+    LogOptions as TauriLogOptions,
 } from '@tauri-apps/plugin-log';
 
-tauriAttachConsole();
-tauriAttachLogger((l) => {
-    switch (l.level) {
-        case LogLevel.Info: console.info(l.message); break;
-        case LogLevel.Debug: console.debug(l.message); break;
-        case LogLevel.Warn: console.warn(l.message); break;
-        case LogLevel.Trace: console.trace(l.message); break;
-        case LogLevel.Error: console.error(l.message); break;
-    }
-});
+await tauriAttachConsole();
 
 export interface LogOptions extends TauriLogOptions{}
 

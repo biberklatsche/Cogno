@@ -5,7 +5,7 @@ import {
     exists as tauriExists, WatchEvent
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc as tauriConvertFileSrc } from "@tauri-apps/api/core";
-import {debounceTime, Observable} from "rxjs";
+import {debounceTime, Observable, tap} from "rxjs";
 
 
 type UnwatchFn = () => void;
@@ -26,7 +26,7 @@ export const Fs = {
                 (event: WatchEvent) => {
                     // Optional: filtern/normalisieren könntest du hier
                     if(typeof event.type === "object" &&
-                        "modify" in event.type
+                        "modify" in event.type && event.type.modify.kind === 'data'
                     ) {
                         subscriber.next();
                     }
@@ -40,7 +40,7 @@ export const Fs = {
             return () => {
                 try { unwatch?.(); } catch { /* ignore */ }
             };
-        }).pipe(debounceTime(50));
+        }).pipe(debounceTime(500), tap(() => console.log('#########!!!!')));
     },
     exists(path: string): Promise<boolean> {return tauriExists(path)},
 

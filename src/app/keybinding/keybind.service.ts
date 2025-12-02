@@ -6,6 +6,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ActionDefinition} from "./keybind-action.interpreter";
 import {AppBus} from "../app-bus/app-bus";
 import {ActionName} from "../action/action.models";
+import {Logger} from "../_tauri/logger";
 
 @Injectable({
     providedIn: 'root'
@@ -31,6 +32,7 @@ export class KeybindService {
             }
             const ActionFiredEvent = this._keybindMatcher.match(e);
             if (!ActionFiredEvent) return;
+            Logger.info('Action fired!!!');
             const result = bus.publish(ActionFiredEvent.event);
             bus.publish({type: "Inspector", path: ['inspector'], payload: {type: 'keybind', data: ActionFiredEvent.eventKey}});
             if(ActionFiredEvent.event.trigger?.unconsumed) return;

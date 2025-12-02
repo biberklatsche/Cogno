@@ -23,7 +23,8 @@ describe('KeybindingMatcher (linux)', () => {
         matcher.initKeyCodeMapping({
             KeyA: 'A',
             KeyK: 'K',
-            KeyN: 'N'
+            KeyN: 'N',
+            KeyC: 'C'
         } as unknown as KeyboardMapping);
     });
 
@@ -164,6 +165,19 @@ describe('KeybindingMatcher (linux)', () => {
         const eventA = makeEvent({key: 'a', code: 'KeyA', ctrlKey: true});
 
         expect(matcher.match(eventA)?.event.payload).toEqual('doA');
+        expect(matcher.match(eventB)?.event.payload).toBeUndefined();
+    });
+
+    it('should override same action names twice', () => {
+        matcher.initBindings(['Ctrl+B=doA', 'Ctrl+A=doA']);
+        matcher.initBindings(['Ctrl+B=doA', 'Ctrl+C=doA']);
+
+        const eventC = makeEvent({key: 'c', code: 'KeyC', ctrlKey: true});
+        const eventB = makeEvent({key: 'b', code: 'KeyB', ctrlKey: true});
+        const eventA = makeEvent({key: 'a', code: 'KeyA', ctrlKey: true});
+
+        expect(matcher.match(eventC)?.event.payload).toEqual('doA');
+        expect(matcher.match(eventA)?.event.payload).toBeUndefined();
         expect(matcher.match(eventB)?.event.payload).toBeUndefined();
     });
 });

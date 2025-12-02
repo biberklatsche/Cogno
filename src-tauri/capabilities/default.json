@@ -15,7 +15,6 @@
     "fs:allow-write-text-file",
     "fs:allow-exists",
     "log:default",
-    "log:allow-log",
     {
       "identifier": "fs:scope-home-recursive",
       "allow": [

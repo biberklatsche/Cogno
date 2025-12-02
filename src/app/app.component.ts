@@ -6,6 +6,7 @@ import {OS} from "./_tauri/os";
 import {GridListComponent} from "./grid-list/grid-list.component";
 import {DB} from "./_tauri/db";
 import {Environment} from "./common/environment/environment";
+import {Logger} from "./_tauri/logger";
 
 @Component({
     selector: 'app-root',
@@ -56,6 +57,7 @@ import {Environment} from "./common/environment/environment";
     standalone: true
 })
 export class AppComponent {
+
 
     os = OS.platform();
 
