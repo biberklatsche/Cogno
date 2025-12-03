@@ -2,6 +2,8 @@ import {Component, DestroyRef, OnDestroy, OnInit, signal, WritableSignal} from '
 import {ConfigService} from "../../config/+state/config.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {WorkspaceService} from "../+state/workspace.service";
+import {AppBus} from "../../app-bus/app-bus";
+import {KeybindService} from "../../keybinding/keybind.service";
 
 @Component({
   selector: 'app-workspace-side',
@@ -29,10 +31,14 @@ import {WorkspaceService} from "../+state/workspace.service";
 export class WorkspaceSideComponent implements OnDestroy {
 
 
-    constructor(private workspaceService: WorkspaceService) {
+    constructor(private workspaceService: WorkspaceService, private keybindService: KeybindService) {
+        keybindService.registerListener('workspace', ['ArrowUp', 'ArrowDown'], (event) => {
+            console.log('#####', event);
+        });
     }
 
     ngOnDestroy(): void {
+        this.keybindService.unregisterListener('workspace')
         this.workspaceService.dispose();
     }
 }

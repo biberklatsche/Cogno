@@ -12,8 +12,6 @@ export type SideMenuItem = {
     separator?: boolean;
     // Optional component to render in the side "aside" area when this item is active
     component: Type<any>;
-    // Optional list of keys to listen for while this item is active
-    keys?: string[];
 };
 
 @Injectable({providedIn: 'root'})

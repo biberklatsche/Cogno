@@ -19,7 +19,7 @@ export class WorkspaceService extends SideMenuItemService {
             hidden: false,
             icon: 'mdiViewDashboard',
             component: WorkspaceSideComponent,
-            actionName: 'toggle_workspace'
+            actionName: 'toggle_workspace',
         }, (config: ConfigTypes) => config.workspace?.mode
         );
 
