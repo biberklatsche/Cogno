@@ -8,7 +8,6 @@ import {
 import {Keybinding} from "../../keybinding/keybind.matcher";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
-import {SideMenuItemComponent} from "../../menu/side-menu/+state/side-menu.service";
 
 @Component({
   selector: 'app-inspector-side',
@@ -16,7 +15,7 @@ import {SideMenuItemComponent} from "../../menu/side-menu/+state/side-menu.servi
   templateUrl: './inspector-side.component.html',
   styleUrl: './inspector-side.component.scss'
 })
-export class InspectorSideComponent implements OnInit, OnDestroy, SideMenuItemComponent {
+export class InspectorSideComponent implements OnInit, OnDestroy {
 
     firedKeybinding: Signal<Keybinding | undefined>;
     mousePosition: Signal<MousePosition | undefined>;
@@ -34,10 +33,6 @@ export class InspectorSideComponent implements OnInit, OnDestroy, SideMenuItemCo
         this.terminalMouseById = inspectorService.terminalMouseById;
         this.terminalCursorById = inspectorService.terminalCursorById;
         this.terminalDimsById = inspectorService.terminalDimsById;
-    }
-
-    onSideMenuKey(event: KeyboardEvent): void {
-
     }
 
     ngOnDestroy(): void {

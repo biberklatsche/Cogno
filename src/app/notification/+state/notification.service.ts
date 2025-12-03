@@ -27,7 +27,7 @@ export class NotificationService extends SideMenuItemService {
     }
 
     initView() {
-        this.dispose();
+        this.onDispose();
         this._subscription = new Subscription();
         this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
 
@@ -37,7 +37,7 @@ export class NotificationService extends SideMenuItemService {
         }, 5000)
     }
 
-    dispose() {
+    onDispose() {
         this._subscription?.unsubscribe();
         this._subscription = undefined;
     }

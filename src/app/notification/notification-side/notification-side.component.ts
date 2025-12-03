@@ -2,7 +2,6 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import {
     NotificationService
 } from "../+state/notification.service";
-import {SideMenuItemComponent} from "../../menu/side-menu/+state/side-menu.service";
 
 @Component({
   selector: 'app-notification-side',
@@ -10,13 +9,10 @@ import {SideMenuItemComponent} from "../../menu/side-menu/+state/side-menu.servi
   templateUrl: './notification-side.component.html',
   styleUrl: './notification-side.component.scss'
 })
-export class NotificationSideComponent implements OnInit, OnDestroy, SideMenuItemComponent {
+export class NotificationSideComponent implements OnInit, OnDestroy {
 
     constructor(private notificationService: NotificationService) {
 
-    }
-
-    onSideMenuKey(event: KeyboardEvent): void {
     }
 
     ngOnDestroy(): void {

@@ -1,11 +1,7 @@
 import {Injectable, Signal, signal, Type, WritableSignal} from "@angular/core";
 import {ActionName} from "../../../action/action.models";
 import {Icon} from "../../../icons/+model/icon";
-
-// Components used inside the SideMenu must at least implement this method
-export interface SideMenuItemComponent {
-    onSideMenuKey(event: KeyboardEvent): void;
-}
+import {KeybindService} from "../../../keybinding/keybind.service";
 
 export type SideMenuItem = {
     // Regular action item
@@ -15,14 +11,15 @@ export type SideMenuItem = {
     actionName: ActionName;
     separator?: boolean;
     // Optional component to render in the side "aside" area when this item is active
-    component: Type<SideMenuItemComponent>;
-    // Optional list of keys to listen for while this item is active (default: ['Escape'])
+    component: Type<any>;
+    // Optional list of keys to listen for while this item is active
     keys?: string[];
 };
 
 @Injectable({providedIn: 'root'})
 export class SideMenuService {
 
+    private readonly listenerId = 'SideMenuEscListener';
     private _menuItems: WritableSignal<SideMenuItem[]>  = signal<SideMenuItem[]>([]);
     private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<SideMenuItem | undefined>(undefined);
     private _displacement: WritableSignal<boolean> = signal<boolean>(false);
@@ -37,6 +34,9 @@ export class SideMenuService {
 
     get displacement(): Signal<boolean> {
         return this._displacement.asReadonly();
+    }
+
+    constructor(private keybindService: KeybindService) {
     }
 
     addMenuItem(item: SideMenuItem): void {
@@ -61,12 +61,26 @@ export class SideMenuService {
 
     toggle(label: string): void {
         const current = this._selectedItem();
+        const openItem = current?.label !== label;
+        if(openItem) {
+            this.open(label);
+        } else {
+            this.close();
+        }
+
+    }
+
+    open(label: string): void {
+        const current = this._selectedItem();
+        if(current?.label === label) return;
         const item = this._menuItems().find(s => s.label === label);
-        this._selectedItem.set(current?.label === label ? undefined : item);
+        this.keybindService.registerListener(this.listenerId, ['Escape'], (event: KeyboardEvent) => this.close());
+        this._selectedItem.set(item);
     }
 
     close() {
         this._selectedItem.set(undefined);
+        this.keybindService.unregisterListener(this.listenerId);
     }
 
     toggleDisplacement() {

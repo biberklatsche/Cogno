@@ -143,7 +143,7 @@ export class InspectorService extends SideMenuItemService {
             }));
     }
 
-    dispose() {
+    onDispose() {
         this._subscription?.unsubscribe();
         this._subscription = undefined;
     }

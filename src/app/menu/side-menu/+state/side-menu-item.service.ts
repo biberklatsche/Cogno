@@ -12,16 +12,16 @@ export abstract class SideMenuItemService {
     protected _keybindSubscription?: Subscription;
 
     constructor(
-        protected sideMenuService: SideMenuService,
-        protected bus: AppBus,
-        config: ConfigService,
-        ref: DestroyRef,
-        protected menuItem: SideMenuItem,
-        protected configSelector: (config: ConfigTypes) => FeatureMode
+        protected readonly sideMenuService: SideMenuService,
+        protected readonly bus: AppBus,
+        readonly config: ConfigService,
+        readonly ref: DestroyRef,
+        protected readonly menuItem: SideMenuItem,
+        protected readonly configSelector: (config: ConfigTypes) => FeatureMode
     ) {
         config.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
             switch (configSelector(config)) {
-                case 'off': this.dispose(); this.removeKeybindHandler(); this.removeMenuItem(); break;
+                case 'off': this.onDispose(); this.removeKeybindHandler(); this.removeMenuItem(); break;
                 case 'hidden': this.addMenuItem(true); this.addKeybindHandler(); break;
                 case 'visible': {
                     this.addMenuItem(false);
@@ -47,7 +47,6 @@ export abstract class SideMenuItemService {
                     break;
                 }
             }
-
         }));
     }
 
@@ -63,5 +62,10 @@ export abstract class SideMenuItemService {
         this.sideMenuService.addMenuItem({...this.menuItem, icon: icon});
     }
 
-    abstract dispose(): void;
+    public dispose() {
+        this.removeKeybindHandler();
+        this.onDispose();
+    }
+
+    abstract onDispose(): void;
 }
