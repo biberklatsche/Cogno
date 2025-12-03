@@ -11,10 +11,12 @@ import {ContextMenuItem} from "../menu/context-menu-overlay/context-menu-overlay
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import {Tab} from "./+model/tab";
 import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
+import {TooltipDirective} from "../common/tooltip/tooltip.directive";
+import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
-    imports: [CommonModule, IconComponent, AppMenuButtonComponent],
+    imports: [CommonModule, IconComponent, AppMenuButtonComponent, TooltipDirective, ActionKeybindingPipe],
   templateUrl: './tab-list.component.html',
   styleUrl: './tab-list.component.scss'
 })

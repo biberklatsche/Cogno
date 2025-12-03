@@ -3,12 +3,17 @@ import {IconComponent} from "../../../icons/icon/icon.component";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
 import {KeybindService} from "../../../keybinding/keybind.service";
+import {TooltipDirective} from "../../../common/tooltip/tooltip.directive";
+import {ActionKeybindingPipe, KeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 
 @Component({
     selector: 'app-side-menu',
     imports: [
         IconComponent,
         NgComponentOutlet,
+        TooltipDirective,
+        KeybindingPipe,
+        ActionKeybindingPipe,
     ],
     host: {
         '[class.overlay-host]': '!overlay()'
@@ -40,7 +45,7 @@ import {KeybindService} from "../../../keybinding/keybind.service";
         <menu #menuCol [class.hidden]="visibleItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem) {
                 <button class="tab-list-btn" (click)="toggle(menuItem)"
-                        [class.active]="selectedItem() === menuItem">
+                        [class.active]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                 </button>
             }

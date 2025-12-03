@@ -1,10 +1,8 @@
 import { Component } from '@angular/core';
 import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
-import {AppBus} from "../../app-bus/app-bus";
-import {ActionFired} from "../../action/action.models";
 
 @Component({
-  selector: 'app-emtpy',
+  selector: 'app-empty',
     imports: [
         ActionKeybindingPipe
     ],

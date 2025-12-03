@@ -8,7 +8,7 @@
                 [animate.leave]="'animate-tab-leave'"
                 [style.background-color]="tab.color ? '#' + tab.color.hex + '66' : undefined"
                 [attr.data-tab-id]="tab.id"
-                title="{{tab.title}}"
+                appTooltip="{{tab.title}}"
                 (click)="selectTab(tab.id)"
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
@@ -26,7 +26,7 @@
         </button>
     }
     <div class="tab-list-btns">
-        <button class="tab-list-btn" (click)="$event.stopPropagation(); addTab()"><app-icon name="mdiPlus"></app-icon></button>
+        <button class="tab-list-btn" (click)="$event.stopPropagation(); addTab()" appTooltip="New Tab" [appTooltipSecondary]="'new_tab' | actionkeybinding"><app-icon name="mdiPlus"></app-icon></button>
         <app-menu-button></app-menu-button>
     </div>
 </nav>
