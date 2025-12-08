@@ -48,7 +48,7 @@ export class KeybindingMatcher {
     }
 
     getKeybinding(actinName: ActionName): string | undefined {
-        return this.keybindings[actinName].shortcut;
+        return this.keybindings[actinName]?.shortcut;
     }
 
     public initKeyCodeMapping(keyCodeMapping: KeyboardMapping) {

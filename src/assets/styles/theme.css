@@ -28,3 +28,6 @@ html {
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     padding: 6px;
 }
+.keybinding {
+    opacity: 0.5;
+}

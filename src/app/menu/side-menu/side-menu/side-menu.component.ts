@@ -12,7 +12,6 @@ import {ActionKeybindingPipe, KeybindingPipe} from "../../../keybinding/pipe/key
         IconComponent,
         NgComponentOutlet,
         TooltipDirective,
-        KeybindingPipe,
         ActionKeybindingPipe,
     ],
     host: {

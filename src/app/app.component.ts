@@ -18,15 +18,7 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
     <main>
         <app-grid-list></app-grid-list>
     </main>
-
-    <!-- Command Palette Overlay -->
-    @if (cp.visible()) {
-      <div class="cp-overlay" (click)="cp.close()">
-        <div class="cp-shell" (click)="$event.stopPropagation()">
-          <app-command-palette (onClose)="cp.close()"></app-command-palette>
-        </div>
-      </div>
-    }
+    <app-command-palette></app-command-palette>
     `,
     styles: [
         `
@@ -86,11 +78,7 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
     standalone: true
 })
 export class AppComponent {
-
-
     os = OS.platform();
-
-    constructor(public cp: CommandPaletteService) {}
-
+    constructor() {}
     async initAsync(): Promise<void> {}
 }
