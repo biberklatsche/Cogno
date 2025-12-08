@@ -38,7 +38,7 @@ export class KeybindingMatcher {
 
             this.sequences.push({
                 steps: def.shortcutDefinition.steps,
-                event: ActionFired.create(def.actionDefinition.actionName, def.actionDefinition.trigger, def.actionDefinition.args)
+                event: ActionFired.createFromDefinition(def.actionDefinition)
             });
         }
     }

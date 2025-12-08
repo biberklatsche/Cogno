@@ -89,11 +89,7 @@ export class NativeMenuService {
           action: () => {
               const actionDef = this.keybindService.getActionDefinition(actionName);
               if(!actionDef) throw new Error(`Action definition ${actionName} not found.`);
-              this.bus.publish(ActionFired.create(
-                  actionDef.actionName,
-                  actionDef.trigger,
-                  actionDef.args,
-          ));
+              this.bus.publish(ActionFired.createFromDefinition(actionDef));
           },
       })
   }

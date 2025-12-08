@@ -1,16 +1,13 @@
 import {DestroyRef, Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {fromEvent, Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {Keybinding} from "../../keybinding/keybind.matcher";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
-import {WorkspaceSideComponent} from "../../workspace/workspace-side/workspace-side.component";
 import {ConfigService} from "../../config/+state/config.service";
-import {SideMenuItem, SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
+import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes} from "../../config/+models/config.types";
+import {ConfigTypes, Keybinding} from "../../config/+models/config.types";
 
 export type TerminalIdentifier = { terminalId: string };
 export type MousePosition = { x: number; y: number };

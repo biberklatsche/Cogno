@@ -119,7 +119,7 @@ export class CommandPaletteComponent {
   select(actionDef: ActionDefinition) {
     // Publish via AppBus
     this.bus.publish(
-      ActionFired.create(actionDef.actionName, actionDef.trigger, actionDef.args)
+      ActionFired.createFromDefinition(actionDef)
     );
     this.execute.emit(actionDef);
     this.onClose.emit();
