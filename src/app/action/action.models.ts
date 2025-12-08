@@ -16,6 +16,7 @@ export type ActionName =
     'close_all_tabs'|
     'toggle_inspector'|
     'toggle_workspace'|
+    'open_command_palette'|
     'quit'|
     'new_window' |
     'close_window' |

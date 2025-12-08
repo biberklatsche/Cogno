@@ -1,5 +1,10 @@
 import {KeyboardMapping} from "./keyboard/keyboard-layouts/_.contribution";
-import {ActionDefinition, KeybindActionInterpreter} from "./keybind-action.interpreter";
+import {
+    ActionDefinition,
+    KeybindActionInterpreter,
+    KeybindDefinition,
+    KeybindInterpreter, ShortcutDefinition
+} from "./keybind-action.interpreter";
 import {Modifier} from "./modifier";
 import {ActionFiredEvent, ActionName} from "../action/action.models";
 import {ActionFired} from "../action/action.models";
@@ -7,11 +12,10 @@ import {ActionFired} from "../action/action.models";
 
 type Sequence = { steps: string[]; event: ActionFiredEvent };
 
-export type Keybinding = string;
 
 export class KeybindingMatcher {
     private sequences: Sequence[] = [];
-    private keybindings: Record<string, Keybinding> = {};
+    private keybindings: Record<string, ShortcutDefinition> = {};
     private actions: Record<string, ActionDefinition> = {};
     private keyCodeMapping: KeyboardMapping = {};
 
@@ -25,20 +29,16 @@ export class KeybindingMatcher {
         this.keybindings = {};
         this.actions = {};
         for (const binding of bindings.reverse()) {
-            const [keybindingDef, actionDef] = binding.split('=');
-            if (!keybindingDef || !actionDef) return;
+            const def = KeybindInterpreter.parse(binding);
+            if (!def) return;
 
-            const action = KeybindActionInterpreter.parse(actionDef);
-            // Supports sequences using '>'
-            const normalizedSteps = keybindingDef.split('>').map(step => this.normalizeKeyCombination(step.trim()));
-
-            if(this.actions[action.actionName]) continue;
-            this.actions[action.actionName] = action;
-            this.keybindings[action.actionName] = keybindingDef;
+            if(this.actions[def.actionDefinition.actionName]) continue;
+            this.actions[def.actionDefinition.actionName] = def.actionDefinition;
+            this.keybindings[def.actionDefinition.actionName] = def.shortcutDefinition;
 
             this.sequences.push({
-                steps: normalizedSteps,
-                event: ActionFired.create(action.actionName, action.trigger, action.args)
+                steps: def.shortcutDefinition.steps,
+                event: ActionFired.create(def.actionDefinition.actionName, def.actionDefinition.trigger, def.actionDefinition.args)
             });
         }
     }
@@ -48,22 +48,11 @@ export class KeybindingMatcher {
     }
 
     getKeybinding(actinName: ActionName): string | undefined {
-        return this.keybindings[actinName];
+        return this.keybindings[actinName].shortcut;
     }
 
     public initKeyCodeMapping(keyCodeMapping: KeyboardMapping) {
         this.keyCodeMapping = keyCodeMapping;
-    }
-
-    // Normalizes the key combination to a unique string
-    private normalizeKeyCombination(keys: string): string {
-        const parts = keys.split('+').map(k => k.trim()).filter(Boolean);
-        if (parts.length === 0) return '';
-
-        const modifiers = Modifier.normalizeAll(parts.slice(0, -1));
-        const key = parts[parts.length - 1];
-
-        return [...modifiers, key].join('+');
     }
 
     // Creates a key string from a KeyboardEvent
