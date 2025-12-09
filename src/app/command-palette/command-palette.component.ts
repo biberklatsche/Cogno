@@ -1,24 +1,15 @@
 import {
     Component,
-    afterNextRender,
     computed,
-    output,
     effect,
     signal,
     viewChild,
     DestroyRef,
-    AfterViewInit, ElementRef, Signal
+    ElementRef, Signal, WritableSignal
 } from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {AppBus} from '../app-bus/app-bus';
-import {ActionFired, ActionName} from '../action/action.models';
-import {KeybindService} from '../keybinding/keybind.service';
 import {CommandEntry, CommandPaletteService} from './command-palette.service';
-import {ActionDefinition} from '../keybinding/keybind-action.interpreter';
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
-import {event} from "@tauri-apps/api";
-
-// Use shared ActionDefinition to avoid type duplication
 
 @Component({
     selector: 'app-command-palette',
@@ -33,18 +24,18 @@ import {event} from "@tauri-apps/api";
                         #inputElement
                         (input)="onQuery($event)"
                         (click)="$event.stopPropagation()"
-                        (keydown.enter)="selectFirst()"
+                        (keydown.enter)="fireAction()"
                         placeholder="Type a command…"
                         class="search-input"
                 />
 
                 @if(visible()){
-                    @if (filtered().length > 0) {
-                        <ul class="command-list">
-                            @for (a of filtered(); track a.label) {
-                                <li (click)="select(a)" class="command">
-                                    <span class="label">{{ a.label }}</span>
-                                    <span class="keybinding">{{a.action.actionName | actionkeybinding}}</span>
+                    @if (commandList().length > 0) {
+                        <ul #commandListElement class="command-list">
+                            @for (command of commandList(); track command.label) {
+                                <li (click)="fireAction(command)" class="command" [class.selected]="command.isSelected">
+                                    <span class="label">{{ command.label }}</span>
+                                    <span class="keybinding">{{command.action.actionName | actionkeybinding}}</span>
                                 </li>
                             }
                         </ul>
@@ -102,11 +93,16 @@ import {event} from "@tauri-apps/api";
                 justify-content: space-between;
                 padding: 8px 10px;
                 cursor: default;
-            }
-
-            .command:hover {
-                background: var(--background-color-20l);
-                outline: none;
+                
+                &:hover {
+                    background: var(--background-color-20l);
+                    outline: none;
+                }
+                
+                &.selected {
+                    background: var(--background-color-30l);
+                    outline: none;
+                }
             }
 
             .no-results {
@@ -123,17 +119,16 @@ import {event} from "@tauri-apps/api";
     ],
 })
 export class CommandPaletteComponent {
-    query = signal('');
     visible: Signal<boolean>;
+    commandList: Signal<CommandEntry[]>;
     private inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
+    private listElement = viewChild<ElementRef<HTMLUListElement>>('commandListElement');
 
-    constructor(private keybinds: KeybindService, private destroy: DestroyRef, private service: CommandPaletteService) {
+    constructor(private destroy: DestroyRef, private service: CommandPaletteService) {
         // Register Escape listener to close palette while it's mounted
-        this.visible = this.service.visible;
-        this.keybinds.registerListener('command-palette', ['Escape'], () => {
-            this.service.close();
-        });
-        this.destroy.onDestroy(() => this.keybinds.unregisterListener('command-palette'));
+        this.visible = this.service.isVisible;
+        this.commandList = this.service.commandList;
+        this.destroy.onDestroy(() => this.service.close());
         effect(() => {
             if(this.visible() && this.inputElement()?.nativeElement) {
                 this.inputElement()!.nativeElement.value = '';
@@ -144,32 +139,16 @@ export class CommandPaletteComponent {
 
     onQuery(event: Event) {
         const value = (event.target as HTMLInputElement).value;
-        this.query.set(value);
-    }
-
-    private normalized(s: string): string {
-        return s.toLowerCase().replaceAll('_', ' ').trim();
-    }
-
-    filtered = computed(() => {
-        const q = this.normalized(this.query());
-        const list = this.service.actions();
-        if (!q) return list;
-        return list.filter((a) => a.label.includes(q));
-    });
-
-    selectFirst() {
-        const first = this.filtered()[0];
-        if (first) this.select(first);
-    }
-
-    select(command: CommandEntry) {
-        this.service.fire(command.action);
+        this.service.filter(value);
     }
 
     close(event: Event): void {
         event.stopPropagation();
         event.preventDefault();
         this.service.close();
+    }
+
+    fireAction(command: CommandEntry|undefined = undefined) {
+        this.service.fireAction(command);
     }
 }
