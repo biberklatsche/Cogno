@@ -20,7 +20,8 @@ export class CommandPaletteService {
     private _isVisible = signal(false);
     get isVisible(){return  this._isVisible.asReadonly();}
     private _commandList = signal<CommandEntry[]>([]);
-    get commandList() { return this._commandList.asReadonly();}
+    private _filteredCommandList = signal<CommandEntry[]>([]);
+    get filteredCommandList() { return this._filteredCommandList.asReadonly();}
 
     constructor(private bus: AppBus, private keybinds: KeybindService, config: ConfigService) {
         // Open on ActionFired 'open_command_palette'
@@ -53,9 +54,13 @@ export class CommandPaletteService {
     }
 
     open() {
-        this.keybinds.registerListener('command-palette', ['Escape', 'ArrowDown', 'ArrowUp'], (keyEvent) => {
+        this.keybinds.registerListener('command-palette', ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'], (keyEvent) => {
             switch (keyEvent.key) {
                 case 'Escape':
+                    this.close();
+                    break;
+                case 'Enter':
+                    this.fireAction();
                     this.close();
                     break;
                 case 'ArrowDown':
@@ -67,10 +72,13 @@ export class CommandPaletteService {
             }
         });
         this._isVisible.set(true);
+        const commands = [...this._commandList()];
+        commands.forEach(c => c.isSelected = false);
+        this._filteredCommandList.set(this.selectFirstCommand(commands));
     }
 
     private selectNext(steps: number) {
-        const commands = [...this._commandList()];
+        const commands = [...this._filteredCommandList()];
         const indexOfSelected = commands.findIndex(s => s.isSelected);
         let nextIndex = (indexOfSelected + steps) % commands.length;
         if(nextIndex < 0) {
@@ -78,11 +86,12 @@ export class CommandPaletteService {
         }
         commands[indexOfSelected].isSelected = false;
         commands[nextIndex].isSelected = true;
-        this._commandList.set(commands);
+        this._filteredCommandList.set(commands);
     }
 
     close() {
         this.keybinds.unregisterListener('command-palette');
+        this._filteredCommandList.set([]);
         this._isVisible.set(false);
     }
 
@@ -90,10 +99,18 @@ export class CommandPaletteService {
         const selected = command ?? this._commandList().find(s => s.isSelected);
         if (!selected) return;
         this.bus.publish(ActionFired.createFromDefinition(selected.action));
-        this.close();
     }
 
-    filter(value: string) {
-        
+    filterCommands(filter: string) {
+        const commands = [...this._commandList()];
+        commands.forEach(c => c.isSelected = false);
+        const filteredCommands = this._commandList().filter(s => s.label.includes(filter.toLowerCase()));
+        this._filteredCommandList.set(this.selectFirstCommand(filteredCommands));
+    }
+
+    private selectFirstCommand(commands: CommandEntry[]): CommandEntry[] {
+        if(commands.length == 0) return commands;
+        commands[0].isSelected = true;
+        return commands;
     }
 }

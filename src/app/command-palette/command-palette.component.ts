@@ -24,7 +24,6 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                         #inputElement
                         (input)="onQuery($event)"
                         (click)="$event.stopPropagation()"
-                        (keydown.enter)="fireAction()"
                         placeholder="Type a command…"
                         class="search-input"
                 />
@@ -122,12 +121,11 @@ export class CommandPaletteComponent {
     visible: Signal<boolean>;
     commandList: Signal<CommandEntry[]>;
     private inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
-    private listElement = viewChild<ElementRef<HTMLUListElement>>('commandListElement');
 
     constructor(private destroy: DestroyRef, private service: CommandPaletteService) {
         // Register Escape listener to close palette while it's mounted
         this.visible = this.service.isVisible;
-        this.commandList = this.service.commandList;
+        this.commandList = this.service.filteredCommandList;
         this.destroy.onDestroy(() => this.service.close());
         effect(() => {
             if(this.visible() && this.inputElement()?.nativeElement) {
@@ -139,7 +137,7 @@ export class CommandPaletteComponent {
 
     onQuery(event: Event) {
         const value = (event.target as HTMLInputElement).value;
-        this.service.filter(value);
+        this.service.filterCommands(value);
     }
 
     close(event: Event): void {
