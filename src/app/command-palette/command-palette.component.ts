@@ -109,11 +109,6 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 font-size: 0.9em;
                 padding: 4px 2px;
             }
-            
-            .hidden {
-                z-index: -1;
-                transform: translateX(-100000px);
-            }
         `,
     ],
 })
@@ -123,7 +118,7 @@ export class CommandPaletteComponent {
     private inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
     private commandListElement = viewChild<ElementRef<HTMLUListElement>>('commandListElement');
 
-    constructor(private destroy: DestroyRef, private service: CommandPaletteService) {
+    constructor(private service: CommandPaletteService) {
         // Register Escape listener to close palette while it's mounted
         this.visible = this.service.isVisible;
         this.commandList = this.service.filteredCommandList;
