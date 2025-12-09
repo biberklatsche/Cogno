@@ -72,9 +72,6 @@ export class CommandPaletteService {
             }
         });
         this._isVisible.set(true);
-        const commands = [...this._commandList()];
-        commands.forEach(c => c.isSelected = false);
-        this._filteredCommandList.set(this.selectFirstCommand(commands));
     }
 
     private selectNext(steps: number) {
@@ -91,7 +88,6 @@ export class CommandPaletteService {
 
     close() {
         this.keybinds.unregisterListener('command-palette');
-        this._filteredCommandList.set([]);
         this._isVisible.set(false);
     }
 

@@ -16,34 +16,34 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
     standalone: true,
     imports: [CommonModule, ActionKeybindingPipe],
     template: `
-        <div class="container" [class.hidden]="!visible()" (click)="close($event)">
-            <div class="base-overlay" >
-                <input
-                        autocomplete="off"
-                        type="text"
-                        #inputElement
-                        (input)="onQuery($event)"
-                        (click)="$event.stopPropagation()"
-                        placeholder="Type a command…"
-                        class="search-input"
-                />
-
-                @if(visible()){
-                    @if (commandList().length > 0) {
-                        <ul #commandListElement class="command-list">
-                            @for (command of commandList(); track command.label) {
-                                <li (click)="fireAction(command)" class="command" [class.selected]="command.isSelected">
-                                    <span class="label">{{ command.label }}</span>
-                                    <span class="keybinding">{{command.action.actionName | actionkeybinding}}</span>
-                                </li>
-                            }
-                        </ul>
-                    } @else {
-                        <div class="no-results">No matches</div>
-                    }
-                }
+        @if (visible()) {
+            <div class="container" (click)="close($event)">
+                <div class="base-overlay" >
+                    <input
+                            autocomplete="off"
+                            type="text"
+                            #inputElement
+                            (input)="onQuery($event)"
+                            (click)="$event.stopPropagation()"
+                            placeholder="Type a command…"
+                            class="search-input"
+                    />
+                        @if (commandList().length > 0) {
+                            <ul #commandListElement class="command-list">
+                                @for (command of commandList(); track command.label) {
+                                    <li (click)="fireAction(command)" class="command" [class.selected]="command.isSelected">
+                                        <span class="label">{{ command.label }}</span>
+                                        <span class="keybinding">{{command.action.actionName | actionkeybinding}}</span>
+                                    </li>
+                                }
+                            </ul>
+                        } @else {
+                            <div class="no-results">No matches</div>
+                        }
+                </div>
             </div>
-        </div>
+        }
+        
     `,
     styles: [
         `
@@ -63,7 +63,8 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 margin-top: 3rem;
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
+                gap: 0.5rem;
+                min-width: 300px;
             }
 
             .search-input {
@@ -81,8 +82,6 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 padding: 0;
                 max-height: 240px;
                 overflow: auto;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 6px;
             }
 
             .command {
@@ -91,15 +90,16 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 align-items: center;
                 justify-content: space-between;
                 padding: 8px 10px;
+                gap: 1rem;
                 cursor: default;
                 
                 &:hover {
-                    background: var(--background-color-20l);
+                    background: var(--background-color-30l);
                     outline: none;
                 }
                 
                 &.selected {
-                    background: var(--background-color-30l);
+                    background: var(--background-color-20l);
                     outline: none;
                 }
             }
@@ -121,18 +121,39 @@ export class CommandPaletteComponent {
     visible: Signal<boolean>;
     commandList: Signal<CommandEntry[]>;
     private inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
+    private commandListElement = viewChild<ElementRef<HTMLUListElement>>('commandListElement');
 
     constructor(private destroy: DestroyRef, private service: CommandPaletteService) {
         // Register Escape listener to close palette while it's mounted
         this.visible = this.service.isVisible;
         this.commandList = this.service.filteredCommandList;
-        this.destroy.onDestroy(() => this.service.close());
+
         effect(() => {
-            if(this.visible() && this.inputElement()?.nativeElement) {
-                this.inputElement()!.nativeElement.value = '';
-                this.inputElement()!.nativeElement.focus()
+            const input = this.inputElement()?.nativeElement;
+            if (this.visible() && input) {
+                input.value = '';
+                this.service.filterCommands('');
+                input.focus();
             }
-        })
+        });
+        effect(() => {
+            // Track changes in visibility and command list
+            const visible = this.visible();
+            const list = this.commandList();
+            if (!visible || !list?.length) return;
+
+            const ul = this.commandListElement()?.nativeElement;
+            if (!ul) return;
+
+            const selectedIndex = list.findIndex(c => c.isSelected);
+            if (selectedIndex < 0) return;
+
+            const li = ul.children.item(selectedIndex) as HTMLElement | null;
+            if (!li) return;
+
+            // Scroll the selected item into view without jumping the whole list
+            li.scrollIntoView({block: 'nearest'});
+        });
     }
 
     onQuery(event: Event) {
