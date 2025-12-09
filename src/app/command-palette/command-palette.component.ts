@@ -21,6 +21,9 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 <div class="base-overlay" >
                     <input
                             autocomplete="off"
+                            spellcheck="false"
+                            data-private="off"
+                            autocorrect="off"
                             type="text"
                             #inputElement
                             (input)="onQuery($event)"
