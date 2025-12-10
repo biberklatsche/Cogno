@@ -34,10 +34,10 @@
   gap: 6px;
   height: 26px;
   padding: 0 8px;
-  border: 1px solid ;
-  border-color: var(--background-color-10l-ct);
+  border: 1px solid;
+  border-color: var(--background-color-10l-ct2);
   border-radius: var(--button-border-radius);
-  background: var(--background-color-ct2);
+  background: var(--background-color-10l-ct2);
   color: var(--foreground-color-10t);
   /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
   min-height: 26px;
@@ -48,13 +48,13 @@
   /* wichtig für Container Queries */
   container-type: inline-size;
   &.is-active {
-    color: var(--foreground-color-t);
-    border-color: var(--highlight-color);
-    background: var(--highlight-color-40d-ct2);
+    color: var(--foreground-color);
+    border-color: var(--background-color-10l);
+    background: var(--background-color-20l-ct);
     &:hover {
-      border-color: var(--highlight-color);
       color: var(--foreground-color);
-      background: var(--highlight-color-20d-ct);
+      border-color: var(--background-color);
+      background: var(--background-color-10l-ct);
     }
   }
   &:hover {

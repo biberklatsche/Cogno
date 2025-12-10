@@ -33,10 +33,13 @@ export class StyleService {
         document.documentElement.style.setProperty('--background-color-ct2', `#${config.color!.background}${opacityDouble}`);
         document.documentElement.style.setProperty('--background-color-10l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 10)}`);
         document.documentElement.style.setProperty('--background-color-10l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 10)}`);
+        document.documentElement.style.setProperty('--background-color-10l-ct2', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacityDouble}`, backgroundFactor * 10)}`);
         document.documentElement.style.setProperty('--background-color-20l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 20)}`);
         document.documentElement.style.setProperty('--background-color-20l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 20)}`);
+        document.documentElement.style.setProperty('--background-color-20l-ct2', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacityDouble}`, backgroundFactor * 20)}`);
         document.documentElement.style.setProperty('--background-color-30l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 30)}`);
         document.documentElement.style.setProperty('--background-color-30l-ct', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacity}`, backgroundFactor * 30)}`);
+        document.documentElement.style.setProperty('--background-color-30l-ct2', `${Color.lightenDarkenColor(`#${config.color!.background!}${opacityDouble}`, backgroundFactor * 30)}`);
         document.documentElement.style.setProperty('--background-color-40l', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * 40)}`);
         document.documentElement.style.setProperty('--background-color-10d', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * -10)}`);
         document.documentElement.style.setProperty('--background-color-20d', `${Color.lightenDarkenColor(`#${config.color!.background!}`, backgroundFactor * -20)}`);
