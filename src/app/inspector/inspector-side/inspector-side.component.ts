@@ -36,7 +36,7 @@ export class InspectorSideComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.inspectorService.dispose();
+        this.inspectorService.onDisable();
     }
 
     ngOnInit(): void {

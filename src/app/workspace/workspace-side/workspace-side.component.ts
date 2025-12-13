@@ -39,6 +39,6 @@ export class WorkspaceSideComponent implements OnDestroy {
 
     ngOnDestroy(): void {
         this.keybindService.unregisterListener('workspace')
-        this.workspaceService.dispose();
+        this.workspaceService.onDisable();
     }
 }

@@ -83,7 +83,7 @@ export class InspectorService extends SideMenuItemService {
     }
 
     initView() {
-        this.dispose();
+        this.onDisable();
         this._subscription = new Subscription();
         this._subscription.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
             switch (event.payload?.type) {
@@ -140,7 +140,7 @@ export class InspectorService extends SideMenuItemService {
             }));
     }
 
-    onDispose() {
+    onDisable() {
         this._subscription?.unsubscribe();
         this._subscription = undefined;
     }

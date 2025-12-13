@@ -19,7 +19,7 @@ export class NotificationSideComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.notificationService.dispose();
+        this.notificationService.onDisable();
     }
 
     ngOnInit(): void {

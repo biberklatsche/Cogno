@@ -18,7 +18,7 @@ export type Notification = {
 }
 
 @Injectable({providedIn: 'root'})
-export class NotificationService extends SideMenuItemService implements OnDestroy {
+export class NotificationService extends SideMenuItemService {
 
     private _subscription = new Subscription();
 
@@ -40,7 +40,6 @@ export class NotificationService extends SideMenuItemService implements OnDestro
             (config: ConfigTypes) => config.notification?.mode
         );
         this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
-            console.log('Notification', event);
             if(!event.payload) return;
             const id = Hash.create(event.payload.header + event.payload.body);
             this._notifications.update(notifications =>  {
@@ -58,14 +57,10 @@ export class NotificationService extends SideMenuItemService implements OnDestro
         }));
     }
 
-    ngOnDestroy(): void {
-        this._subscription?.unsubscribe();
-    }
-
     initView() {
     }
 
-    onDispose() {
-
+    onDisable() {
+        this._subscription.unsubscribe();
     }
 }

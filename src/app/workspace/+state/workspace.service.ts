@@ -55,5 +55,5 @@ export class WorkspaceService extends SideMenuItemService {
         });
     }
 
-    onDispose() {}
+    onDisable() {}
 }

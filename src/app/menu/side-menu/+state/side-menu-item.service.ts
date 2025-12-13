@@ -21,7 +21,7 @@ export abstract class SideMenuItemService {
     ) {
         config.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
             switch (configSelector(config)) {
-                case 'off': this.onDispose(); this.removeKeybindHandler(); this.removeMenuItem(); break;
+                case 'off': this.onDisable(); this.removeKeybindHandler(); this.removeMenuItem(); break;
                 case 'hidden': this.addMenuItem(true); this.addKeybindHandler(); break;
                 case 'visible': {
                     this.addMenuItem(false);
@@ -62,10 +62,5 @@ export abstract class SideMenuItemService {
         this.sideMenuService.addMenuItem({...this.menuItem, icon: icon});
     }
 
-    public dispose() {
-        this.removeKeybindHandler();
-        this.onDispose();
-    }
-
-    abstract onDispose(): void;
+    protected abstract onDisable(): void;
 }

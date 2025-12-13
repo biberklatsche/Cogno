@@ -8,6 +8,15 @@ import {AppBus} from "../app-bus/app-bus";
 import {ActionName} from "../action/action.models";
 import {Logger} from "../_tauri/logger";
 
+type Key = string;
+
+interface KeyListener {
+    readonly id: string;
+    readonly handler: (e: KeyboardEvent) => void;
+}
+
+type ListenerStack = KeyListener[];
+
 @Injectable({
     providedIn: 'root'
 })
@@ -15,24 +24,23 @@ export class KeybindService {
 
     private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher();
     // simple registry for component-specific key listeners
-    private _listeners: Map<string, { keys: Set<string>, handler: (e: KeyboardEvent) => void }> = new Map();
+    private readonly listeners = new Map<Key, ListenerStack>();
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, bus: AppBus, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
         configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind!));
         window.addEventListener("keydown", (e) => {
             // 1) Check registered listeners first (e.g., side menu overlays)
-            for (const [, listener] of this._listeners) {
-                if (listener.keys.has(e.key)) {
-                    try { listener.handler(e); } catch {}
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                }
+            const stack = this.listeners.get(e.key);
+            if(stack && stack?.length) {
+                stack.at(-1)?.handler(e);
+                e.preventDefault();
+                e.stopPropagation();
+                return;
             }
             const ActionFiredEvent = this._keybindMatcher.match(e);
             if (!ActionFiredEvent) return;
-            Logger.info('Action fired!!!');
+            Logger.info('Action fired' + ActionFiredEvent.event.payload);
             const result = bus.publish(ActionFiredEvent.event);
             bus.publish({type: "Inspector", path: ['inspector'], payload: {type: 'keybind', data: ActionFiredEvent.eventKey}});
             if(ActionFiredEvent.event.trigger?.unconsumed) return;
@@ -40,6 +48,15 @@ export class KeybindService {
             e.preventDefault();
             e.stopPropagation();
         }, {capture: true});
+    }
+
+    private getStack(key: Key): ListenerStack {
+        let stack = this.listeners.get(key);
+        if (!stack) {
+            stack = [];
+            this.listeners.set(key, stack);
+        }
+        return stack;
     }
 
     getKeybinding(actinName: ActionName): string | undefined {
@@ -51,13 +68,27 @@ export class KeybindService {
     }
 
     /** Register a temporary key listener by id. Subsequent calls with the same id overwrite keys/handler. */
-    registerListener(id: string, keys: string[], handler: (e: KeyboardEvent) => void): void {
-        const keySet = new Set(keys);
-        this._listeners.set(id, {keys: keySet, handler});
+    registerListener(
+        id: string,
+        keys: readonly Key[],
+        handler: (e: KeyboardEvent) => void
+    ): void {
+        for (const key of keys) {
+            const stack = this.getStack(key);
+
+            // remove existing registration
+            const index = stack.findIndex(l => l.id === id);
+            if (index !== -1) stack.splice(index, 1);
+
+            stack.push({ id, handler });
+        }
     }
 
     /** Remove a previously registered listener. */
     unregisterListener(id: string): void {
-        this._listeners.delete(id);
+        for (const stack of this.listeners.values()) {
+            const index = stack.findIndex(l => l.id === id);
+            if (index !== -1) stack.splice(index, 1);
+        }
     }
 }
