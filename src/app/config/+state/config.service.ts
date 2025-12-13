@@ -50,6 +50,7 @@ export class ConfigService {
         const unwatch = Fs.watchChanges$(path, {delayMs: 500}).subscribe(async () => {
             await this.loadConfig();
         });
+        this.appBus.publish({path: ['notification'], type: 'Notification', payload: {header: 'Config', body: 'Config loaded'}})
         this.destroy.onDestroy(() => unwatch.unsubscribe());
     }
 

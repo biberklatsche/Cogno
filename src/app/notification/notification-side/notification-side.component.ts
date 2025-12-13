@@ -1,18 +1,21 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit, Signal} from '@angular/core';
 import {
+    Notification,
+    NotificationId,
     NotificationService
-} from "../+state/notification.service";
+} from '../+state/notification.service';
 
 @Component({
   selector: 'app-notification-side',
   imports: [],
   templateUrl: './notification-side.component.html',
-  styleUrl: './notification-side.component.scss'
-})
+  styleUrl: './notification-side.component.scss'})
 export class NotificationSideComponent implements OnInit, OnDestroy {
 
-    constructor(private notificationService: NotificationService) {
+    notifications: Signal<Notification[]>;
 
+    constructor(private notificationService: NotificationService) {
+        this.notifications = notificationService.notifications;
     }
 
     ngOnDestroy(): void {

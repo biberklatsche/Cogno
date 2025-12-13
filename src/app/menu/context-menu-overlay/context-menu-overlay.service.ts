@@ -82,9 +82,8 @@ export class ContextMenuOverlayService {
     };
     document.addEventListener('keydown', keyListener, true);
 
-    // Close on scroll/resize (keeps simple and prevents desync)
+    // Close on resize (keeps simple and prevents desync)
     const sr = () => this.close();
-    window.addEventListener('scroll', sr, true);
     window.addEventListener('resize', sr, true);
 
     this.current = {
@@ -93,7 +92,6 @@ export class ContextMenuOverlayService {
       removeOutsideListener: () => document.removeEventListener('pointerdown', pointerListener, true),
       removeKeyListener: () => document.removeEventListener('keydown', keyListener, true),
       removeScrollResizeListener: () => {
-        window.removeEventListener('scroll', sr, true);
         window.removeEventListener('resize', sr, true);
       },
     };

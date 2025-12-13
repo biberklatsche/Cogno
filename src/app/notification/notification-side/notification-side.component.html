@@ -1,1 +1,7 @@
-<p>Notification works</p>
+@for (notification of notifications(); track notification.id) {
+    <section>
+        <header>{{notification.header}}</header>
+        <main>{{notification.body}}</main>
+        <div>{{notification.count}}</div>
+    </section>
+}
