@@ -9,12 +9,15 @@ import {NotificationSideComponent} from "../notification-side/notification-side.
 import {Hash} from '../../common/hash/hash';
 
 export type NotificationId = number;
+export type NotificationType = 'error' | 'success' | 'warning' | 'info';
 
 export type Notification = {
     id: NotificationId;
     header: string;
     body?: string;
+    type?: NotificationType,
     count: number;
+    timestamp: Date;
 }
 
 @Injectable({providedIn: 'root'})
@@ -39,16 +42,24 @@ export class NotificationService extends SideMenuItemService {
             },
             (config: ConfigTypes) => config.notification?.mode
         );
-        this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
+    this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
             if(!event.payload) return;
             const id = Hash.create(event.payload.header + event.payload.body);
             this._notifications.update(notifications =>  {
                 if(!notifications[id]) {
-                    notifications[id] = {id: id, body: event.payload!.body, header: event.payload!.header, count: 1}
+                    notifications[id] = {
+                        id: id,
+                        body: event.payload!.body,
+                        header: event.payload!.header,
+                        type: (event.payload as any).type ?? 'info',
+                        count: 3,
+                        timestamp: event.payload!.timestamp ?? new Date()
+                    };
                     return notifications;
                 } else {
                     const notification = notifications[id];
                     notification.count++;
+                    notification.timestamp = event.payload!.timestamp ?? new Date();
                     notifications[id] = notification;
                     return notifications;
                 }
@@ -58,9 +69,18 @@ export class NotificationService extends SideMenuItemService {
     }
 
     initView() {
+        this.updateIcon('mdiBell');
     }
 
     onDisable() {
         this._subscription.unsubscribe();
+    }
+
+    remove(notificationId: NotificationId) {
+        this._notifications.update(ns => {
+            const notifications = {...this._notifications()};
+            delete notifications[notificationId];
+            return notifications;
+        });
     }
 }
