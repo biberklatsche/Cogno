@@ -1,0 +1,52 @@
+/* Workspace Side – Kachel-Layout */
+
+:host, .workspace-side {
+  display: block;
+}
+
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.workspace-tile {
+  border-radius: var(--button-border-radius);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  will-change: transform;
+}
+
+.workspace-tile:hover {
+  background-color: var(--background-color-30l) !important;
+}
+
+/* Inhalt: Icon/Badge + Name */
+.workspace-tile__content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 5px 10px;
+}
+
+.workspace-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+  color: var(--forground-color);
+}
+
+.workspace-name {
+  font-size: 0.95rem;
+  color: var(--color-text, inherit);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

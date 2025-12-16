@@ -32,8 +32,9 @@ export class WorkspaceService extends SideMenuItemService {
             const tabId = IdCreator.newTabId();
             const pane: GridConfig = {tabId: tabId, pane: {}};
             const tab: TabConfig = {tabId: tabId}
-            const defaultWorkspace: WorkspaceConfig = {name: 'Default', color: 'grey', grids: [pane], tabs: [tab]}
-            const workspaces: WorkspaceConfig[] = [defaultWorkspace];
+            const defaultWorkspace: WorkspaceConfig = {name: 'Default Workspace', color: 'grey', grids: [pane], tabs: [tab]}
+            const testWorkspace: WorkspaceConfig = {name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}
+            const workspaces: WorkspaceConfig[] = [defaultWorkspace, testWorkspace];
 
             this._workspaceList.set(workspaces);
 
