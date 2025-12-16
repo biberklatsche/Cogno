@@ -1,0 +1,16 @@
+<section class="workspace-side">
+  <ul class="workspace-grid" role="list">
+    @for (workspace of workspaceList(); track workspace.name) {
+      <li class="workspace-tile" role="listitem"
+          [style.background-color]="workspace.color ? `var(--color-${workspace.color}-10t)` : undefined">
+        <div class="workspace-tile__content">
+          <div class="workspace-badge"
+               [style.background-color]="workspace.color ? `var(--color-${workspace.color})` : undefined">
+            {{ (workspace.name || '')[0] || '?' }}
+          </div>
+          <div class="workspace-name">{{ workspace.name }}</div>
+        </div>
+      </li>
+    }
+  </ul>
+</section>

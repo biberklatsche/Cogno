@@ -1,17 +1,20 @@
-import {DestroyRef, Injectable} from "@angular/core";
+import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
-import {TerminalConfig, GridConfig, SplitNode, WorkspaceConfig, TabConfig} from "../+model/workspace";
+import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
 import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
-import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
 import {ConfigTypes} from "../../config/+models/config.types";
+import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
+
+    _workspaceList: WritableSignal<WorkspaceConfig[]> = signal([]);
+    readonly workspaceList = this._workspaceList.asReadonly();
 
     constructor(bus: AppBus, config: ConfigService, sideMenuService: SideMenuService, gridListService: GridListService, tabListService: TabListService, ref: DestroyRef) {
         super(sideMenuService, bus, config, ref, {
@@ -25,32 +28,26 @@ export class WorkspaceService extends SideMenuItemService {
 
         this.bus.onceType$('ConfigLoaded').subscribe(e => {
             //load workspaces here
-            let workspace: WorkspaceConfig | undefined = undefined;
-            if (workspace === undefined) {
-                const nodeLeft: TerminalConfig = {};
-                const nodeRight: TerminalConfig = {};
-                const parent: SplitNode = {
-                    splitDirection: 'vertical',
-                    ratio: 0.5,
-                    leftChild: nodeLeft,
-                    rightChild: nodeRight,
-                }
-                const tabId = IdCreator.newTabId();
-                const pane: GridConfig = {tabId: tabId, pane: {}};
-                const tab: TabConfig = {tabId: tabId}
-                workspace = {grids: [pane], tabs: [tab]};
 
-                gridListService.restoreGrids(workspace.grids);
-                tabListService.restoreTabs(workspace.tabs);
-                const activeTab = workspace!.tabs.find(s => s.isActive);
-                if (activeTab) {
-                    tabListService.selectTab(activeTab.tabId);
-                } else {
-                    tabListService.selectTab(workspace!.tabs[0].tabId);
-                }
+            const tabId = IdCreator.newTabId();
+            const pane: GridConfig = {tabId: tabId, pane: {}};
+            const tab: TabConfig = {tabId: tabId}
+            const defaultWorkspace: WorkspaceConfig = {name: 'Default Workspace', color: 'grey', grids: [pane], tabs: [tab]}
+            const testWorkspace: WorkspaceConfig = {name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}
+            const workspaces: WorkspaceConfig[] = [defaultWorkspace, testWorkspace];
+
+            this._workspaceList.set(workspaces);
+
+            const restoreWorkspace = workspaces[0];
+
+            gridListService.restoreGrids(restoreWorkspace.grids);
+            tabListService.restoreTabs(restoreWorkspace.tabs);
+            const activeTab = restoreWorkspace!.tabs.find(s => s.isActive);
+            if (activeTab) {
+                tabListService.selectTab(activeTab.tabId);
             } else {
-                //restore workspace
-            }
+                tabListService.selectTab(restoreWorkspace!.tabs[0].tabId);
+           }
 
         });
     }
