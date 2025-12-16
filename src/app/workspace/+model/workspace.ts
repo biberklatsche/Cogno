@@ -6,7 +6,7 @@ export type TabId = string;
 
 export type WorkspaceConfig = {
     name?: string;
-    color?: string;
+    color?: ColorName;
     grids: GridConfig[];
     tabs: TabConfig[];
 }

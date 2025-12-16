@@ -5,7 +5,7 @@ import {ColorName} from "../../common/color/color";
 export type TabList = Tab[];
 
 export type Tab = {
-    color?: {hex: HexColor, name: ColorName};
+    color?: ColorName;
     id: TabId;
     title: string;
     isActive: boolean;

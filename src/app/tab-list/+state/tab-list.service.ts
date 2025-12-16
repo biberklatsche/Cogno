@@ -87,7 +87,7 @@ export class TabListService {
             {separator: true},
             { label: 'Rename tab', action: () => this._showRename.set(tabId)},
             {separator: true},
-            { colorpicker: true, action: (color?: ColorName) => this.setColor(tabId, color), selectedColorName: tab.color?.name},
+            { colorpicker: true, action: (color?: ColorName) => this.setColor(tabId, color), selectedColorName: tab.color},
         ];
         return items.filter(s => !!s);
     }
@@ -175,13 +175,8 @@ export class TabListService {
         const tabList = [...this._tabList.value];
         const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
-        tab.color = this.getColorDefinition(name);
+        tab.color = name;
         this._tabList.next(tabList);
-    }
-
-    private getColorDefinition(name?: ColorName) {
-        if(!name) return undefined;
-        return {hex: (this.configService.config.color as any)[name], name: name};
     }
 
     restoreTabs(tabConfigList: TabConfig[]) {
@@ -189,7 +184,7 @@ export class TabListService {
         const tabs: TabList = tabConfigList.map(config => {
             const tab: Tab = {
                 id: config.tabId,
-                color: this.getColorDefinition(config.color),
+                color: config.color,
                 title: config.title ?? 'Shell',
                 isActive: config.isActive ?? false,
                 activeShellType: 'unknown'

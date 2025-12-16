@@ -1,0 +1,7 @@
+<section class="workspace-side">
+    <ul>
+        @for (workspace of workspaceList(); track workspace.name) {
+            <li [style.background-color]="workspace.color ? `var(--color-${workspace.color}-ct2)` : undefined">{{workspace.name}}</li>
+        }
+    </ul>
+</section>

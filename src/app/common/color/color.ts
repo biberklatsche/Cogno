@@ -1,18 +1,8 @@
 import {TinyColor} from '@ctrl/tinycolor';
 
-export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan';
+export type ColorName = 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'grey';
 
 export const Color = {
- hslFromString(color: string): string {
-    let hash = 0;
-    if (color.length > 0) {
-      for (let i = 0; i < color.length; i++) {
-        hash = color.charCodeAt(i) + ((hash << 5) - hash);
-        hash = hash & hash; // Convert to 32bit integer
-      }
-    }
-    return `hsl(${hash % 360},100%,30%)`;
-  },
 
   getHexOpacity(opacity: number | undefined | null): string {
     let result = '';
@@ -86,5 +76,26 @@ export const Color = {
   isLight(col: string): boolean {
     const c = new TinyColor(col);
     return c.isLight();
+  },
+
+  fromText(text: string): ColorName {
+    const stringToIndex = (str: string, maxExclusive: number = 6): number => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0; // in 32-bit integer verwandeln
+    }
+    const positiveHash = hash >>> 0; // unsigned machen
+    return positiveHash % maxExclusive;
   }
+    switch (stringToIndex(text)) {
+      case 0: return 'red';
+      case 1: return 'green';
+      case 2: return 'yellow';
+      case 3: return 'blue';
+      case 4: return 'magenta';
+      case 5: return 'cyan';
+      default: return 'grey';
+    }
+  },
 }
