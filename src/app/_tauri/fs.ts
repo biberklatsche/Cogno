@@ -16,7 +16,6 @@ export const Fs = {
     writeTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data)},
     appendTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data, {append: true})},
 
-    /** 🆕 Observable-API – preferred */
     watchChanges$(path: string, opts?: { recursive?: boolean, delayMs?: number }): Observable<void> {
         return new Observable<void>((subscriber) => {
             let unwatch: UnwatchFn | null = null;
@@ -24,9 +23,8 @@ export const Fs = {
             tauriWatch(
                 path,
                 (event: WatchEvent) => {
-                    // Optional: filtern/normalisieren könntest du hier
                     if(typeof event.type === "object" &&
-                        "modify" in event.type && event.type.modify.kind === 'data'
+                        "modify" in event.type && (event.type.modify.kind === 'data' || event.type.modify.kind === 'any')
                     ) {
                         subscriber.next();
                     }
@@ -40,7 +38,7 @@ export const Fs = {
             return () => {
                 try { unwatch?.(); } catch { /* ignore */ }
             };
-        }).pipe(debounceTime(500), tap(() => console.log('#########!!!!')));
+        }).pipe(debounceTime(500));
     },
     exists(path: string): Promise<boolean> {return tauriExists(path)},
 
