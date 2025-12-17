@@ -39,7 +39,6 @@ export class FocusHandler implements ITerminalHandler {
             path: ['app', 'terminal', this._terminalId],
             type: 'TerminalInitialized'
         }).subscribe(event => {
-            console.log("focus!!!!!");
             this.focus();
         }));
 

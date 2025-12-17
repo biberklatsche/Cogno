@@ -64,7 +64,7 @@ export class AppBus {
     }): Observable<Extract<AppMessage, { type: K }>> {
         const { path, type, phase } = opts;
         const types = type ? (Array.isArray(type) ? type : [type]) : null;
-        const phases = phase ? (Array.isArray(phase) ? phase : [phase]) : null;
+        const phases = phase ? (Array.isArray(phase) ? phase : [phase]) : ['target'];
 
         return this.subjectFor(path).pipe(
             filter((msg): msg is Extract<AppMessage, { type: K }> => {

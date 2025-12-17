@@ -18,16 +18,12 @@ import {remove} from '@tauri-apps/plugin-fs';
     ],
   templateUrl: './notification-side.component.html',
   styleUrl: './notification-side.component.scss'})
-export class NotificationSideComponent implements OnInit, OnDestroy {
+export class NotificationSideComponent implements OnInit {
 
     notifications: Signal<Notification[]>;
 
     constructor(private notificationService: NotificationService) {
         this.notifications = notificationService.notifications;
-    }
-
-    ngOnDestroy(): void {
-        this.notificationService.onDisable();
     }
 
     ngOnInit(): void {

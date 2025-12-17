@@ -27,10 +27,9 @@ export class NotificationService extends SideMenuItemService {
 
     private _notifications: WritableSignal<Record<NotificationId, Notification>> = signal({});
 
-    readonly notifications: Signal<Notification[]> = computed(() =>
-        Object.values(this._notifications())
-    );
-
+    readonly notifications: Signal<Notification[]> = computed(() => {
+        return Object.values(this._notifications());
+    });
 
     constructor(sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, ref: DestroyRef) {
         super(sideMenuService, bus, config, ref, {
@@ -42,29 +41,30 @@ export class NotificationService extends SideMenuItemService {
             },
             (config: ConfigTypes) => config.notification?.mode
         );
-    this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
-            if(!event.payload) return;
+        this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
+            if (!event.payload) return;
             const id = Hash.create(event.payload.header + event.payload.body);
-            this._notifications.update(notifications =>  {
-                if(!notifications[id]) {
+            this.updateIcon('mdiBellBadge');
+            this._notifications.update(notifications => {
+                if (!notifications[id]) {
                     notifications[id] = {
                         id: id,
                         body: event.payload!.body,
                         header: event.payload!.header,
                         type: (event.payload as any).type ?? 'info',
-                        count: 3,
+                        count: 1,
                         timestamp: event.payload!.timestamp ?? new Date()
                     };
-                    return notifications;
                 } else {
                     const notification = notifications[id];
                     notification.count++;
                     notification.timestamp = event.payload!.timestamp ?? new Date();
                     notifications[id] = notification;
-                    return notifications;
+
                 }
+                return {...notifications};
             });
-            this.updateIcon('mdiBellBadge');
+
         }));
     }
 
@@ -77,10 +77,9 @@ export class NotificationService extends SideMenuItemService {
     }
 
     remove(notificationId: NotificationId) {
-        this._notifications.update(ns => {
-            const notifications = {...this._notifications()};
+        this._notifications.update(notifications => {
             delete notifications[notificationId];
-            return notifications;
+            return {...notifications};
         });
     }
 }

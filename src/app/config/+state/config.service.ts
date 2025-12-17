@@ -47,10 +47,9 @@ export class ConfigService {
     private async watch() {
         Logger.info('Load and watch config...');
         const path = Environment.configFilePath();
-        const unwatch = Fs.watchChanges$(path, {delayMs: 500}).subscribe(async () => {
+        const unwatch = Fs.watchChanges$(path, {delayMs: 1000}).subscribe(async () => {
             await this.loadConfig();
         });
-        this.appBus.publish({path: ['notification'], type: 'Notification', payload: {header: 'Config', body: 'Config loaded'}})
         this.destroy.onDestroy(() => unwatch.unsubscribe());
     }
 
@@ -66,6 +65,7 @@ export class ConfigService {
         const config = ConfigReader.fromStringToConfig(defaultConfigString, userConfigString);
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
+        this.appBus.publish({type: 'Notification', path: ['notification'], payload: {header: 'Config', body: 'Config loaded'}})
         Logger.info('Config loaded...');
     }
 
