@@ -109,7 +109,6 @@ export class CommandPaletteService {
         const selected =
             command ?? this._filteredCommandList().find(c => c.isSelected);
         if (!selected) return;
-        console.log('#######fire', selected.action)
         this.bus.publish(
             ActionFired.createFromDefinition(selected.action)
         );
