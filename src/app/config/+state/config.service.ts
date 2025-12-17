@@ -1,7 +1,7 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {BehaviorSubject, debounceTime, filter, Observable} from 'rxjs';
+import {BehaviorSubject, debounceTime, filter, Observable, Subject, Subscription} from 'rxjs';
 import {ConfigTypes} from "../+models/config.types";
 import {ConfigReader} from "./config.reader";
 import {Logger} from "../../_tauri/logger";
@@ -19,6 +19,8 @@ import {Opener} from "../../_tauri/opener";
 export class ConfigService {
     private _config: BehaviorSubject<ConfigTypes | undefined> = new BehaviorSubject<ConfigTypes | undefined>(undefined);
 
+    private _unwatch: Subscription | undefined;
+
     get config(): ConfigTypes {
         if(this._config === undefined) throw new Error('Config is not loaded!');
         return this._config.value!;
@@ -29,31 +31,33 @@ export class ConfigService {
     }
 
     constructor(private appBus: AppBus, private destroy: DestroyRef, private shells: ShellConfigurator) {
-        appBus.onType$('LoadConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
+        appBus.onceType$('InitConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
             await this.loadConfig();
-        });
-        appBus.onceType$('WatchConfigCommand').subscribe(() => {
-            setTimeout(async () => {
-                await this.watch();
-                }, 1000);
         });
         appBus.on$(ActionFired.listener()).subscribe(async (event) => {
            if (event.payload === 'open_config') {
                await Opener.openPath(Environment.configFilePath())
            }
         });
+        appBus.on$(ActionFired.listener()).subscribe(async (event) => {
+            if (event.payload === 'load_config') {
+                await this.loadConfig();
+                this.appBus.publish({type: 'Notification', path: ['notification'], payload: {header: 'System', body: 'Config loaded'}});
+            }
+        });
     }
 
     private async watch() {
         Logger.info('Load and watch config...');
         const path = Environment.configFilePath();
-        const unwatch = Fs.watchChanges$(path, {delayMs: 1000}).subscribe(async () => {
+        this._unwatch = Fs.watchChanges$(path, {delayMs: 1000}).pipe(takeUntilDestroyed(this.destroy)).subscribe(async () => {
             await this.loadConfig();
+            this.appBus.publish({type: 'Notification', path: ['notification'], payload: {header: 'System', body: 'Config loaded'}});
         });
-        this.destroy.onDestroy(() => unwatch.unsubscribe());
     }
 
     private async loadConfig() {
+        this._unwatch?.unsubscribe();
         const path = Environment.configFilePath();
         const defaultConfigString = await DefaultConfig.read();
         if(!await Fs.exists(path)) {
@@ -63,9 +67,13 @@ export class ConfigService {
         }
         const userConfigString = await Fs.readTextFile(path);
         const config = ConfigReader.fromStringToConfig(defaultConfigString, userConfigString);
+        if(config.enable_watch_config) {
+            setTimeout(async () => {
+                await this.watch();
+            }, 1000);
+        }
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
-        this.appBus.publish({type: 'Notification', path: ['notification'], payload: {header: 'Config', body: 'Config loaded'}})
         Logger.info('Config loaded...');
     }
 

@@ -11,10 +11,8 @@ import {Process} from "../_tauri/process";
   providedIn: 'root'
 })
 export class WindowService {
-  constructor(bus: AppBus, private tablist: TabListService, ref: DestroyRef) {
-      bus.publish({type: "LoadConfigCommand"});
-      bus.publish({type: "WatchConfigCommand"});
-      bus.once$({path: ['app', 'config'], type: 'ConfigLoaded'});
+  constructor(bus: AppBus, ref: DestroyRef) {
+      bus.publish({type: "InitConfigCommand"});
       bus.on$({path: ['app', 'action'], type: 'ActionFired'})
           .pipe(takeUntilDestroyed(ref))
           .subscribe(async(event)=> {

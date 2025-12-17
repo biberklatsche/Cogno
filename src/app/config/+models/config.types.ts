@@ -172,6 +172,7 @@ export const ConfigSchema = z.object({
     .min(100, "Scrollback lines must be at least 100")
     .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
     enable_webgl: z.boolean().optional(),
+    enable_watch_config: z.boolean().optional(),
     font: FontSchema.optional(),
     color: ColorSchema.optional(),
     cursor: CursorSchema.optional(),
