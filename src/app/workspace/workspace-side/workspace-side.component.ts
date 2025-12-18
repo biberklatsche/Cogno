@@ -1,7 +1,7 @@
 import {Component, DestroyRef, OnDestroy, OnInit, Signal, signal, WritableSignal} from '@angular/core';
 import {ConfigService} from "../../config/+state/config.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {WorkspaceService} from "../+state/workspace.service";
+import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {AppBus} from "../../app-bus/app-bus";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {WorkspaceConfig} from "../+model/workspace";
@@ -14,7 +14,7 @@ import {WorkspaceConfig} from "../+model/workspace";
 })
 export class WorkspaceSideComponent implements OnDestroy {
 
-    workspaceList: Signal<WorkspaceConfig[]> = this.workspaceService.workspaceList;
+    workspaceList: Signal<WorkspaceConfigUi[]> = this.workspaceService.workspaceList;
 
     constructor(private workspaceService: WorkspaceService, private keybindService: KeybindService) {
         keybindService.registerListener('workspace', ['ArrowUp', 'ArrowDown'], (event) => {

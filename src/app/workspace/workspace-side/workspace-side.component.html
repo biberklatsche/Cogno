@@ -1,8 +1,7 @@
 <section class="workspace-side">
-  <ul class="workspace-grid" role="list">
+  <ul class="workspace-grid">
     @for (workspace of workspaceList(); track workspace.name) {
-      <li class="workspace-tile" role="listitem"
-          [style.background-color]="workspace.color ? `var(--color-${workspace.color}-10t)` : undefined">
+      <li class="workspace-tile" [class.selected]="workspace.isSelected">
         <div class="workspace-tile__content">
           <div class="workspace-badge"
                [style.background-color]="workspace.color ? `var(--color-${workspace.color})` : undefined">

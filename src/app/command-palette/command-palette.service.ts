@@ -9,6 +9,7 @@ import {
 import { KeybindService } from '../keybinding/keybind.service';
 import {Subscription} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {Grid} from "../common/grid/grid-calculations";
 
 export type CommandEntry = {
     isSelected: boolean;
@@ -134,22 +135,20 @@ export class CommandPaletteService {
                 this.close();
                 break;
             case 'ArrowDown':
-                this.selectNext(1);
+                this.selectNext('d');
                 break;
             case 'ArrowUp':
-                this.selectNext(-1);
+                this.selectNext('u');
                 break;
         }
     }
 
-    private selectNext(step: number): void {
+    private selectNext(direction: 'u' | 'd'): void {
         const commands = [...this._filteredCommandList()];
         if (commands.length === 0) return;
 
         const current = commands.findIndex(c => c.isSelected);
-        const next =
-            (current + step + commands.length) % commands.length;
-
+        const next = Grid.nextIndex(current, direction, 1, commands.length);
         commands.forEach(c => (c.isSelected = false));
         commands[next].isSelected = true;
 

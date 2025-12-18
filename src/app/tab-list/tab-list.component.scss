@@ -49,17 +49,18 @@
   container-type: inline-size;
   &.is-active {
     color: var(--foreground-color);
-    border-color: var(--background-color-10l);
-    background: var(--background-color-20l-ct);
+    border-color: var(--background-color-30l);
+    background: var(--background-color-20l);
     &:hover {
       color: var(--foreground-color);
-      border-color: var(--background-color);
-      background: var(--background-color-10l-ct);
+      border-color: var(--background-color-40l);
+      background: var(--background-color-30l);
     }
   }
   &:hover {
     color: var(--foreground-color);
-    background: var(--background-color-10l-ct);
+    border-color: var(--background-color-40l);
+    background: var(--background-color-30l);
   }
 }
 

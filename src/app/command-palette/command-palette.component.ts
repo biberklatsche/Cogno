@@ -95,14 +95,17 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 padding: 8px 10px;
                 gap: 1rem;
                 cursor: default;
-                
+                opacity: 0.7;
+
                 &:hover {
                     background: var(--background-color-30l);
+                    opacity: 1;
                     outline: none;
                 }
-                
+
                 &.selected {
                     background: var(--background-color-20l);
+                    opacity: 1;
                     outline: none;
                 }
             }

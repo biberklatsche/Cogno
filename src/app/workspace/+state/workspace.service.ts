@@ -10,10 +10,12 @@ import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.se
 import {ConfigTypes} from "../../config/+models/config.types";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 
+export type WorkspaceConfigUi = WorkspaceConfig & {isSelected?: boolean};
+
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
 
-    _workspaceList: WritableSignal<WorkspaceConfig[]> = signal([]);
+    _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
 
     constructor(bus: AppBus, config: ConfigService, sideMenuService: SideMenuService, gridListService: GridListService, tabListService: TabListService, ref: DestroyRef) {
@@ -32,9 +34,9 @@ export class WorkspaceService extends SideMenuItemService {
             const tabId = IdCreator.newTabId();
             const pane: GridConfig = {tabId: tabId, pane: {}};
             const tab: TabConfig = {tabId: tabId}
-            const defaultWorkspace: WorkspaceConfig = {name: 'Default Workspace', color: 'grey', grids: [pane], tabs: [tab]}
-            const testWorkspace: WorkspaceConfig = {name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}
-            const workspaces: WorkspaceConfig[] = [defaultWorkspace, testWorkspace];
+            const defaultWorkspace: WorkspaceConfigUi = {name: 'Default Workspace', color: 'grey', grids: [pane], tabs: [tab], isSelected: true}
+            const testWorkspace: WorkspaceConfigUi = {name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}
+            const workspaces: WorkspaceConfigUi[] = [defaultWorkspace, testWorkspace];
 
             this._workspaceList.set(workspaces);
 
