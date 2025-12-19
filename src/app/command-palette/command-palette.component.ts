@@ -45,7 +45,6 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
     styles: [
         `
             :host {
-                height: fit-content;
                 margin: 0;
                 padding: 0;
                 font-size: 0.9rem;
@@ -53,6 +52,7 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
+                height: 100%;
             }
             .search-input {
                 padding: 6px 8px;

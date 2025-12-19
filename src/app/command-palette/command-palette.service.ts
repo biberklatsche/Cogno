@@ -54,6 +54,16 @@ export class CommandPaletteService extends SideMenuItemService {
                 isSelected: false
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
+        commands.push({label: 'test1', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test2', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test3', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test4', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test5', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test6', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test7', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test8', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test10', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
+        commands.push({label: 'test9', keybinding: '', action: {actionName: 'clear_buffer'}, isSelected: false});
         this._commandList.set(this.selectFirst(commands));
         this._filteredCommandList.set(this.selectFirst(commands));
     }
