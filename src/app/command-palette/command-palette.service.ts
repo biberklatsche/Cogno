@@ -10,6 +10,11 @@ import { KeybindService } from '../keybinding/keybind.service';
 import {Subscription} from "rxjs";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Grid} from "../common/grid/grid-calculations";
+import {SideMenuItemService} from "../menu/side-menu/+state/side-menu-item.service";
+import {InspectorSideComponent} from "../inspector/inspector-side/inspector-side.component";
+import {ConfigTypes, FeatureMode} from "../config/+models/config.types";
+import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
+import {CommandPaletteComponent} from "./command-palette.component";
 
 export type CommandEntry = {
     isSelected: boolean;
@@ -18,10 +23,8 @@ export type CommandEntry = {
     action: ActionDefinition;
 };
 
-@Injectable({ providedIn: 'root' })
-export class CommandPaletteService {
-    private readonly _isVisible = signal(false);
-    readonly isVisible = this._isVisible.asReadonly();
+@Injectable({providedIn: 'root'})
+export class CommandPaletteService extends SideMenuItemService {
     private _subscription: Subscription | undefined;
 
     private readonly _commandList = signal<CommandEntry[]>([]);
@@ -29,16 +32,17 @@ export class CommandPaletteService {
     readonly filteredCommandList = this._filteredCommandList.asReadonly();
 
     constructor(
-        private readonly bus: AppBus,
-        private readonly keybinds: KeybindService,
-        private readonly config: ConfigService,
-        readonly destroyRef: DestroyRef
+        protected override sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, ref: DestroyRef, private keybinds: KeybindService
     ) {
-        this.bus.on$(ActionFired.listener()).pipe(takeUntilDestroyed(destroyRef)).subscribe(evt => {
-            if (evt.payload === 'open_command_palette') {
-                this.open();
-            }
-        });
+        super(sideMenuService, bus, config, ref, {
+                label: 'Command Palette',
+                hidden: false,
+                icon: 'mdiPaletteSwatch',
+                component: CommandPaletteComponent,
+                actionName: 'open_command_palette'
+            },
+            (config: ConfigTypes) => config.command_palette?.mode
+        );
     }
 
     private initCommands(): void {
@@ -91,20 +95,30 @@ export class CommandPaletteService {
     open(): void {
         this.initCommands();
         this.initConfigListener();
+        this.filterCommands('');
         this.keybinds.registerListener(
             'command-palette',
-            ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'],
+            ['Enter', 'ArrowDown', 'ArrowUp'],
             evt => this.handleKey(evt.key)
         );
-        this._isVisible.set(true);
     }
 
     close(): void {
         this._commandList.set([]);
         this._subscription?.unsubscribe();
         this.keybinds.unregisterListener('command-palette');
-        this._isVisible.set(false);
     }
+
+    protected override onConfigChanged(featureMode: FeatureMode): void {
+        if(featureMode == 'off') close();
+    }
+
+    protected override onViewChanged(visible: boolean): void {
+        console.log('### open!!!!')
+        if(visible) this.open();
+        else this.close();
+    }
+
 
     fireAction(command?: CommandEntry): void {
         const selected =
@@ -132,7 +146,7 @@ export class CommandPaletteService {
                 break;
             case 'Enter':
                 this.fireAction();
-                this.close();
+                this.sideMenuService.close();
                 break;
             case 'ArrowDown':
                 this.selectNext('d');

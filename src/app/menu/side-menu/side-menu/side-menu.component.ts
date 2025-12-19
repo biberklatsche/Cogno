@@ -2,9 +2,8 @@ import {ChangeDetectionStrategy, Component, computed, ElementRef, Signal, ViewCh
 import {IconComponent} from "../../../icons/icon/icon.component";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
-import {KeybindService} from "../../../keybinding/keybind.service";
 import {TooltipDirective} from "../../../common/tooltip/tooltip.directive";
-import {ActionKeybindingPipe, KeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
+import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 
 @Component({
     selector: 'app-side-menu',
@@ -69,7 +68,6 @@ import {ActionKeybindingPipe, KeybindingPipe} from "../../../keybinding/pipe/key
         }
 
         aside {
-            width: max(33vw, 300px);
             margin-bottom: 4px;
             z-index: 2;
 

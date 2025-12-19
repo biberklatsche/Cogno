@@ -75,20 +75,24 @@ export class KeybindService {
     ): void {
         for (const key of keys) {
             const stack = this.getStack(key);
-
             // remove existing registration
             const index = stack.findIndex(l => l.id === id);
             if (index !== -1) stack.splice(index, 1);
-
             stack.push({ id, handler });
         }
     }
 
     /** Remove a previously registered listener. */
     unregisterListener(id: string): void {
-        for (const stack of this.listeners.values()) {
+        let deleteKeys: string[] = [];
+        for (const key of this.listeners.keys()) {
+            const stack = this.listeners.get(key)!;
             const index = stack.findIndex(l => l.id === id);
             if (index !== -1) stack.splice(index, 1);
+            if(stack.length === 0) deleteKeys.push(key);
+        }
+        for (const key of deleteKeys) {
+            this.listeners.delete(key);
         }
     }
 }

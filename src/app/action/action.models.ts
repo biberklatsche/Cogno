@@ -15,16 +15,16 @@ export const ACTION_NAMES = [
     'clear_buffer',
     'close_other_tabs',
     'close_all_tabs',
-    'toggle_inspector',
-    'toggle_workspace',
+    'open_inspector',
+    'open_workspace',
     'open_command_palette',
+    'open_notification',
     'quit',
     'new_window',
     'close_window',
     'minimize_window',
     'open_config',
-    'load_config',
-    'toggle_notification',
+    'load_config'
 ] as const;
 
 export type ActionName = typeof ACTION_NAMES[number];

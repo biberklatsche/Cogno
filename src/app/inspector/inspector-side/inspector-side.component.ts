@@ -15,7 +15,7 @@ import {Keybinding} from "../../config/+models/config.types";
   templateUrl: './inspector-side.component.html',
   styleUrl: './inspector-side.component.scss'
 })
-export class InspectorSideComponent implements OnInit, OnDestroy {
+export class InspectorSideComponent {
 
     firedKeybinding: Signal<Keybinding | undefined>;
     mousePosition: Signal<MousePosition | undefined>;
@@ -25,7 +25,7 @@ export class InspectorSideComponent implements OnInit, OnDestroy {
     terminalCursorById: Signal<Record<TerminalId, TerminalCursorPosition>>;
     terminalDimsById: Signal<Record<TerminalId, TerminalDimensions>>;
 
-    constructor(private inspectorService: InspectorService) {
+    constructor(inspectorService: InspectorService) {
         this.firedKeybinding = inspectorService.firedKeybinding;
         this.mousePosition = inspectorService.mousePosition;
 
@@ -33,13 +33,5 @@ export class InspectorSideComponent implements OnInit, OnDestroy {
         this.terminalMouseById = inspectorService.terminalMouseById;
         this.terminalCursorById = inspectorService.terminalCursorById;
         this.terminalDimsById = inspectorService.terminalDimsById;
-    }
-
-    ngOnDestroy(): void {
-        this.inspectorService.onDisable();
-    }
-
-    ngOnInit(): void {
-        this.inspectorService.initView();
     }
 }

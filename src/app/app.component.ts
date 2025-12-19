@@ -9,7 +9,7 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent, CommandPaletteComponent],
+    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent],
     template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>
@@ -18,7 +18,6 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
     <main>
         <app-grid-list></app-grid-list>
     </main>
-    <app-command-palette></app-command-palette>
     `,
     styles: [
         `

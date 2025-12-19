@@ -74,5 +74,6 @@ export type Icon =
     | 'mdiDotsSquare'
     | 'mdiCropSquare'
     | 'mdiAlphaIBox'
+    | 'mdiPaletteSwatch'
     | 'mdiBell'
     | 'mdiBellBadge';

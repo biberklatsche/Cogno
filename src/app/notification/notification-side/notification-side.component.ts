@@ -18,16 +18,12 @@ import {remove} from '@tauri-apps/plugin-fs';
     ],
   templateUrl: './notification-side.component.html',
   styleUrl: './notification-side.component.scss'})
-export class NotificationSideComponent implements OnInit {
+export class NotificationSideComponent {
 
     notifications: Signal<Notification[]>;
 
     constructor(private notificationService: NotificationService) {
         this.notifications = notificationService.notifications;
-    }
-
-    ngOnInit(): void {
-        this.notificationService.initView();
     }
 
     getIcon(type?: Notification['type']): Icon {

@@ -72,6 +72,7 @@ export class SideMenuService {
         const current = this._selectedItem();
         if(current?.label === label) return;
         const item = this._menuItems().find(s => s.label === label);
+        this.keybindService.unregisterListener(this.listenerId);
         this.keybindService.registerListener(this.listenerId, ['Escape'], (event: KeyboardEvent) => this.close());
         this._selectedItem.set(item);
     }

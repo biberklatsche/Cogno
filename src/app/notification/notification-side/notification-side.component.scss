@@ -1,11 +1,11 @@
 :host {
   display: block;
-  width: 100%;
   height: fit-content;
   margin: 0;
   padding: 0.25rem 0;
   font-size: 0.9rem;
   overflow: auto;
+  width: min(500px, max(33vw, 300px));
 }
 
 .notification {

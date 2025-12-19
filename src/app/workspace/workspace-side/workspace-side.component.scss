@@ -11,6 +11,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  width: min(500px, max(33vw, 300px));
 }
 
 .workspace-tile {
@@ -43,6 +44,7 @@
 
 .workspace-badge {
   width: 24px;
+  min-width: 24px;
   height: 24px;
   border-radius: 50%;
   display: grid;

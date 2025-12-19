@@ -7,7 +7,7 @@ import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes, Keybinding} from "../../config/+models/config.types";
+import {ConfigTypes, FeatureMode, Keybinding} from "../../config/+models/config.types";
 
 export type TerminalIdentifier = { terminalId: string };
 export type MousePosition = { x: number; y: number };
@@ -28,7 +28,6 @@ export type TerminalCursorPosition = {
 
 @Injectable({providedIn: 'root'})
 export class InspectorService extends SideMenuItemService {
-
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
     private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
 
@@ -76,14 +75,14 @@ export class InspectorService extends SideMenuItemService {
                 hidden: false,
                 icon: 'mdiAlphaIBox',
                 component: InspectorSideComponent,
-                actionName: 'toggle_inspector'
+                actionName: 'open_inspector'
             },
             (config: ConfigTypes) => config.inspector?.mode
         );
     }
 
     initView() {
-        this.onDisable();
+        this.unsubscribe();
         this._subscription = new Subscription();
         this._subscription.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
             switch (event.payload?.type) {
@@ -140,8 +139,19 @@ export class InspectorService extends SideMenuItemService {
             }));
     }
 
-    onDisable() {
+    private unsubscribe() {
         this._subscription?.unsubscribe();
         this._subscription = undefined;
+    }
+
+    onConfigChanged(featureMode:FeatureMode) {
+        if(featureMode === 'off') {
+            this.unsubscribe();
+        }
+    }
+
+    protected override onViewChanged(visible: boolean): void {
+        if(visible) this.initView();
+        else this.unsubscribe();
     }
 }

@@ -42,7 +42,7 @@ import {
     mdiMonitor,
     mdiNuke,
     mdiOpenInNew,
-    mdiPalette,
+    mdiPalette, mdiPaletteSwatch,
     mdiPercentBoxOutline, mdiPin, mdiPinOff,
     mdiPlus,
     mdiPowershell,
@@ -331,6 +331,9 @@ export class IconComponent {
             break;
         case('mdiBellBadge'):
             this.icon = mdiBellBadge;
+            break;
+        case('mdiPaletteSwatch'):
+            this.icon = mdiPaletteSwatch;
             break;
       default:
         this.icon = mdiAbTesting;

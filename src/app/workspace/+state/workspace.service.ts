@@ -7,13 +7,14 @@ import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes} from "../../config/+models/config.types";
+import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 
-export type WorkspaceConfigUi = WorkspaceConfig & {isSelected?: boolean};
+export type WorkspaceConfigUi = WorkspaceConfig & { isSelected?: boolean };
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
+
 
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
@@ -24,7 +25,7 @@ export class WorkspaceService extends SideMenuItemService {
             hidden: false,
             icon: 'mdiViewDashboard',
             component: WorkspaceSideComponent,
-            actionName: 'toggle_workspace',
+            actionName: 'open_workspace',
         }, (config: ConfigTypes) => config.workspace?.mode
         );
 
@@ -54,5 +55,11 @@ export class WorkspaceService extends SideMenuItemService {
         });
     }
 
-    onDisable() {}
+    protected override onConfigChanged(featureMode: FeatureMode): void {
+
+    }
+    protected override onViewChanged(visible: boolean): void {
+
+    }
+
 }

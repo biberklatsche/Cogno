@@ -15,6 +15,7 @@ import {WindowService} from "./window/window.service";
 import {ScrollbarService} from "./style/scrollbar.service";
 import {InspectorService} from "./inspector/+state/inspector.service";
 import {NotificationService} from "./notification/+state/notification.service";
+import {CommandPaletteService} from "./command-palette/command-palette.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
           inject(StyleService);
           inject(NotificationService);
           inject(WorkspaceService);
+          inject(CommandPaletteService);
           inject(InspectorService);
           inject(KeybindService);
           inject(CliActionService);

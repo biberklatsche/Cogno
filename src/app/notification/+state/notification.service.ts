@@ -4,7 +4,7 @@ import {AppBus} from "../../app-bus/app-bus";
 import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes} from "../../config/+models/config.types";
+import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
 import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
 
@@ -23,6 +23,7 @@ export type Notification = {
 @Injectable({providedIn: 'root'})
 export class NotificationService extends SideMenuItemService {
 
+
     private _subscription = new Subscription();
 
     private _notifications: WritableSignal<Record<NotificationId, Notification>> = signal({});
@@ -37,7 +38,7 @@ export class NotificationService extends SideMenuItemService {
                 hidden: false,
                 icon: 'mdiBell',
                 component: NotificationSideComponent,
-                actionName: 'toggle_notification'
+                actionName: 'open_notification'
             },
             (config: ConfigTypes) => config.notification?.mode
         );
@@ -72,8 +73,13 @@ export class NotificationService extends SideMenuItemService {
         this.updateIcon('mdiBell');
     }
 
-    onDisable() {
-        this._subscription.unsubscribe();
+    protected override onConfigChanged(featureMode: FeatureMode): void {
+        if (featureMode === 'off') {
+            this._subscription.unsubscribe();
+        }
+    }
+    protected override onViewChanged(visible: boolean): void {
+        if(visible) this.initView();
     }
 
     remove(notificationId: NotificationId) {

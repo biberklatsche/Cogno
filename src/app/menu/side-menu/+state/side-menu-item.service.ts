@@ -1,6 +1,6 @@
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ConfigService} from "../../../config/+state/config.service";
-import {DestroyRef} from "@angular/core";
+import {computed, DestroyRef, effect} from "@angular/core";
 import {Subscription} from "rxjs";
 import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
@@ -9,7 +9,8 @@ import {Icon} from "../../../icons/+model/icon";
 
 export abstract class SideMenuItemService {
 
-    protected _keybindSubscription?: Subscription;
+    private _keybindSubscription?: Subscription;
+    private _isOpened = false;
 
     constructor(
         protected readonly sideMenuService: SideMenuService,
@@ -21,15 +22,24 @@ export abstract class SideMenuItemService {
     ) {
         config.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
             switch (configSelector(config)) {
-                case 'off': this.onDisable(); this.removeKeybindHandler(); this.removeMenuItem(); break;
-                case 'hidden': this.addMenuItem(true); this.addKeybindHandler(); break;
+                case 'off': this.onConfigChanged('off'); this.removeKeybindHandler(); this.removeMenuItem(); break;
+                case 'hidden': this.onConfigChanged('hidden'); this.addMenuItem(true); this.addKeybindHandler(); break;
                 case 'visible': {
+                    this.onConfigChanged('visible');
                     this.addMenuItem(false);
                     this.addKeybindHandler()
                     break;
                 }
             }
         });
+        effect(() => {
+            const selectedItem = sideMenuService.selectedItem();
+            const newIsOpened = selectedItem?.label === menuItem.label;
+            if(newIsOpened != this._isOpened) {
+                this.onViewChanged(newIsOpened);
+            }
+            this._isOpened = newIsOpened;
+        })
     }
 
     private addMenuItem(hidden: boolean) {
@@ -62,5 +72,6 @@ export abstract class SideMenuItemService {
         this.sideMenuService.addMenuItem({...this.menuItem, icon: icon});
     }
 
-    protected abstract onDisable(): void;
+    protected abstract onConfigChanged(featureMode: FeatureMode): void;
+    protected abstract onViewChanged(visible: boolean): void;
 }

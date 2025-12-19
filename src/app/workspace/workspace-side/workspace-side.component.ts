@@ -12,18 +12,13 @@ import {WorkspaceConfig} from "../+model/workspace";
   templateUrl: "workspace-side.component.html",
   styleUrl: "workspace-side.component.scss"
 })
-export class WorkspaceSideComponent implements OnDestroy {
+export class WorkspaceSideComponent {
 
     workspaceList: Signal<WorkspaceConfigUi[]> = this.workspaceService.workspaceList;
 
     constructor(private workspaceService: WorkspaceService, private keybindService: KeybindService) {
-        keybindService.registerListener('workspace', ['ArrowUp', 'ArrowDown'], (event) => {
+        /*keybindService.registerListener('workspace', ['ArrowUp', 'ArrowDown'], (event) => {
             console.log('#####', event);
-        });
-    }
-
-    ngOnDestroy(): void {
-        this.keybindService.unregisterListener('workspace')
-        this.workspaceService.onDisable();
+        });*/
     }
 }
