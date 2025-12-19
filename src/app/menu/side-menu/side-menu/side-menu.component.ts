@@ -53,6 +53,8 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             display: flex;
             flex-direction: row;
             position: relative;
+            /* wichtig, damit Kinder in Flex-Layouts korrekt schrumpfen können */
+            min-height: 0;
         }
 
         menu {
@@ -70,6 +72,10 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         aside {
             margin-bottom: 4px;
             z-index: 2;
+            /* Layout: Header fixieren, Content füllt Rest */
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
 
             &.hidden {
                 display: none;
@@ -82,7 +88,8 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 bottom: 0;
 
                 max-height: 100%;
-                overflow: auto;
+                /* der Aside-Container selbst soll nicht scrollen */
+                overflow: hidden;
             }
             
             &.shift-left {
@@ -94,6 +101,10 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 flex-direction: row;
                 gap: 1rem;
                 align-items: center;
+                /* Header bleibt stets sichtbar */
+                position: sticky;
+                top: 0;
+                z-index: 1;
 
                 .btn-list {
                     display: flex;
@@ -104,6 +115,23 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             
             main {
                 padding: 0.5rem;
+                /* Main nimmt den verfügbaren Platz ein, scrollt selbst nicht */
+                flex: 1 1 auto;
+                overflow: hidden;
+                min-height: 0;
+            }
+
+            /* Direkte Kinder im Main sollen schrumpfen dürfen und eigenen Scroll übernehmen */
+            main > * {
+                min-height: 0;
+                max-height: 100%;
+            }
+
+            /* Command-Palette: ul innerhalb des Mains scrollt bei Overflow */
+            main :where(ul) {
+                overflow: auto;
+                max-height: 100%;
+                min-height: 0;
             }
         }
     `]
