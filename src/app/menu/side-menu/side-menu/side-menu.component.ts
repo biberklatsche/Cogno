@@ -46,7 +46,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         <menu #menuCol [class.hidden]="visibleItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem) {
                 <button class="tab-list-btn" (click)="open(menuItem)"
-                        [class.active]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
+                        [class.selected]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                 </button>
             }
@@ -69,6 +69,10 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             z-index: 3;
             &.hidden {
                 margin: 0;
+            }
+
+            .tab-list-btn.selected {
+                background-color: var(--background-color-30l-ct2);
             }
         }
 

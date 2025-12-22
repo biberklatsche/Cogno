@@ -9,6 +9,8 @@ import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
 import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
+import {KeybindService} from "../../keybinding/keybind.service";
+import {Grid} from "../../common/grid/grid-calculations";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected?: boolean };
 
@@ -19,7 +21,7 @@ export class WorkspaceService extends SideMenuItemService {
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
 
-    constructor(bus: AppBus, config: ConfigService, sideMenuService: SideMenuService, gridListService: GridListService, tabListService: TabListService, ref: DestroyRef) {
+    constructor(bus: AppBus, config: ConfigService, sideMenuService: SideMenuService, gridListService: GridListService, tabListService: TabListService, ref: DestroyRef, private keybinds: KeybindService) {
         super(sideMenuService, bus, config, ref, {
             label: 'Workspace',
             hidden: false,
@@ -59,8 +61,58 @@ export class WorkspaceService extends SideMenuItemService {
     protected override onConfigChanged(featureMode: FeatureMode): void {
 
     }
-    protected override onViewChanged(visible: boolean): void {
 
+    protected override onViewChanged(visible: boolean): void {
+        if(visible) {
+            this.open()
+        } else {
+            this.close();
+        }
     }
 
+    private open(): void {
+        this.keybinds.registerListener(
+            'command-palette',
+            ['Enter', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
+            evt => this.handleKey(evt.key)
+        );
+    }
+
+    private close(): void {
+        this.keybinds.unregisterListener('command-palette');
+    }
+
+    private handleKey(key: string): void {
+        switch (key) {
+            case 'Escape':
+                this.close();
+                break;
+            case 'Enter':
+                this.sideMenuService.close();
+                break;
+            case 'ArrowDown':
+                this.selectNext('d');
+                break;
+            case 'ArrowUp':
+                this.selectNext('u');
+                break;
+            case 'ArrowLeft':
+                this.selectNext('l');
+                break;
+            case 'ArrowRight':
+                this.selectNext('r');
+                break;
+        }
+    }
+
+    private selectNext(direction: 'l' | 'r' | 'u' | 'd'): void {
+        const workspaceList = [...this._workspaceList()];
+        if (workspaceList.length === 0) return;
+
+        const current = workspaceList.findIndex(c => c.isSelected);
+        const next = Grid.nextIndex(current, direction, 2, workspaceList.length);
+        workspaceList.forEach(c => (c.isSelected = false));
+        workspaceList[next].isSelected = true;
+        this._workspaceList.set(workspaceList);
+    }
 }

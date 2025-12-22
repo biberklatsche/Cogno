@@ -86,7 +86,7 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 opacity: 0.7;
 
                 &:hover {
-                    background: var(--background-color-30l);
+                    background: var(--background-color-20l);
                     opacity: 1;
                     outline: none;
                 }

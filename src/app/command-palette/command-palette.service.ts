@@ -93,7 +93,7 @@ export class CommandPaletteService extends SideMenuItemService {
         );
     }
 
-    open(): void {
+    private open(): void {
         this.initCommands();
         this.initConfigListener();
         this.filterCommands('');
@@ -104,7 +104,7 @@ export class CommandPaletteService extends SideMenuItemService {
         );
     }
 
-    close(): void {
+    private close(): void {
         this._commandList.set([]);
         this._subscription?.unsubscribe();
         this.keybinds.unregisterListener('command-palette');

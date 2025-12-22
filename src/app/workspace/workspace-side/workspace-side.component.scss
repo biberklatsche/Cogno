@@ -16,11 +16,13 @@
 
 .workspace-tile {
   border-radius: var(--button-border-radius);
+  border: 1px solid var(--background-color-20l-ct);
   background-color: var(--background-color-20l-ct);
   opacity: 0.7;
+  cursor: default;
 
   &:hover {
-    background: var(--background-color-30l) !important;
+    background: var(--background-color-20l) !important;
     opacity: 1;
     outline: none;
   }
