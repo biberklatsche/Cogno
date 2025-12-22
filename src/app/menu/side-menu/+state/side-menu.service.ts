@@ -2,6 +2,7 @@ import {Injectable, Signal, signal, Type, WritableSignal} from "@angular/core";
 import {ActionName} from "../../../action/action.models";
 import {Icon} from "../../../icons/+model/icon";
 import {KeybindService} from "../../../keybinding/keybind.service";
+import {AppBus} from "../../../app-bus/app-bus";
 
 export type SideMenuItem = {
     // Regular action item
@@ -36,7 +37,7 @@ export class SideMenuService {
         return this._displacement.asReadonly();
     }
 
-    constructor(private keybindService: KeybindService) {
+    constructor(private keybindService: KeybindService, private bus: AppBus) {
     }
 
     addMenuItem(item: SideMenuItem): void {
@@ -87,6 +88,7 @@ export class SideMenuService {
             const pinnedItemLabel = this._pinnedStack[this._pinnedStack.length - 1];
             this.open(pinnedItemLabel);
         }
+        this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
     }
 
     toggleDisplacement() {

@@ -5,7 +5,7 @@ import {
     signal,
     viewChild,
     DestroyRef,
-    ElementRef, Signal, WritableSignal, AfterViewInit
+    ElementRef, Signal, WritableSignal, AfterViewInit, OnDestroy
 } from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CommandEntry, CommandPaletteService} from './command-palette.service';
@@ -130,7 +130,6 @@ export class CommandPaletteComponent implements AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-
         setTimeout(() => {
             this.inputElement()!.nativeElement.value = '';
             this.inputElement()!.nativeElement.focus();
@@ -140,12 +139,6 @@ export class CommandPaletteComponent implements AfterViewInit {
     onQuery(event: Event) {
         const value = (event.target as HTMLInputElement).value;
         this.service.filterCommands(value);
-    }
-
-    close(event: Event): void {
-        event.stopPropagation();
-        event.preventDefault();
-        this.service.close();
     }
 
     fireAction(command: CommandEntry | undefined = undefined) {
