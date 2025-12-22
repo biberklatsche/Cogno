@@ -36,6 +36,7 @@ export class NotificationService extends SideMenuItemService {
         super(sideMenuService, bus, config, ref, {
                 label: 'Notification',
                 hidden: false,
+                pinned: false,
                 icon: 'mdiBell',
                 component: NotificationSideComponent,
                 actionName: 'open_notification'

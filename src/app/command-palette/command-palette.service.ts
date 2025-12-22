@@ -37,6 +37,7 @@ export class CommandPaletteService extends SideMenuItemService {
         super(sideMenuService, bus, config, ref, {
                 label: 'Command Palette',
                 hidden: false,
+                pinned: false,
                 icon: 'mdiPaletteSwatch',
                 component: CommandPaletteComponent,
                 actionName: 'open_command_palette'

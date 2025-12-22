@@ -73,6 +73,7 @@ export class InspectorService extends SideMenuItemService {
         super(sideMenuService, bus, config, ref, {
                 label: 'Inspector',
                 hidden: false,
+                pinned: true,
                 icon: 'mdiAlphaIBox',
                 component: InspectorSideComponent,
                 actionName: 'open_inspector'

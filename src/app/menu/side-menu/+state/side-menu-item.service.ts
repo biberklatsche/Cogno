@@ -52,7 +52,7 @@ export abstract class SideMenuItemService {
         this._keybindSubscription.add(this.bus.on$({type: 'ActionFired', path: ['app', 'action']}).subscribe(event => {
             switch (event.payload) {
                 case this.menuItem.actionName: {
-                    this.sideMenuService.toggle(this.menuItem.label);
+                    this.sideMenuService.open(this.menuItem.label);
                     event.performed = true;
                     break;
                 }

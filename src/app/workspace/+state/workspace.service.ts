@@ -23,6 +23,7 @@ export class WorkspaceService extends SideMenuItemService {
         super(sideMenuService, bus, config, ref, {
             label: 'Workspace',
             hidden: false,
+            pinned: false,
             icon: 'mdiViewDashboard',
             component: WorkspaceSideComponent,
             actionName: 'open_workspace',

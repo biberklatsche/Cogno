@@ -28,6 +28,9 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                     <button class="tab-list-btn" (click)="close()">
                         <app-icon [name]="'mdiClose'"></app-icon>
                     </button>
+                    <button class="tab-list-btn" (click)="togglePin()">
+                        <app-icon [name]="selectedItem()?.pinned ? 'mdiPinOff' : 'mdiPin'"></app-icon>
+                    </button>
                     <button class="tab-list-btn" (click)="toggleDisplacement()">
                         <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
                     </button>
@@ -42,7 +45,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         </aside>
         <menu #menuCol [class.hidden]="visibleItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem) {
-                <button class="tab-list-btn" (click)="toggle(menuItem)"
+                <button class="tab-list-btn" (click)="open(menuItem)"
                         [class.active]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                 </button>
@@ -148,8 +151,8 @@ export class SideMenuComponent {
     constructor(private menuItemService: SideMenuService) {
     }
 
-    toggle(menuItem: SideMenuItem) {
-        this.menuItemService.toggle(menuItem.label);
+    open(menuItem: SideMenuItem) {
+        this.menuItemService.open(menuItem.label);
     }
 
     close() {
@@ -158,5 +161,9 @@ export class SideMenuComponent {
 
     toggleDisplacement() {
         this.menuItemService.toggleDisplacement();
+    }
+
+    togglePin() {
+        this.menuItemService.togglePin();
     }
 }
