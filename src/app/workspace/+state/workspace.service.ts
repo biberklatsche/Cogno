@@ -17,7 +17,6 @@ export type WorkspaceConfigUi = WorkspaceConfig & { isSelected?: boolean };
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
 
-
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
 
@@ -59,7 +58,9 @@ export class WorkspaceService extends SideMenuItemService {
     }
 
     protected override onConfigChanged(featureMode: FeatureMode): void {
-
+        if(featureMode === 'off') {
+            this.close();
+        }
     }
 
     protected override onViewChanged(visible: boolean): void {
