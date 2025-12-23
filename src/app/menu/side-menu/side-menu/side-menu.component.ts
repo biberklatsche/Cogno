@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, computed, ElementRef, Signal, ViewChild, effect, OnDestroy} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, ElementRef, Signal, ViewChild} from '@angular/core';
 import {IconComponent} from "../../../icons/icon/icon.component";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
@@ -56,7 +56,6 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             display: flex;
             flex-direction: row;
             position: relative;
-            /* wichtig, damit Kinder in Flex-Layouts korrekt schrumpfen können */
             min-height: 0;
         }
 
@@ -79,7 +78,6 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         aside {
             margin-bottom: 4px;
             z-index: 2;
-            /* Layout: Header fixieren, Content füllt Rest */
             display: flex;
             flex-direction: column;
             max-height: 100%;
@@ -90,12 +88,11 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 
             &.overlay {
                 position: absolute;
-                right: 4px; /* leave room for the vertical menu buttons */
+                right: 4px; 
                 top: 2px;
                 bottom: 0;
 
                 max-height: 100%;
-                /* der Aside-Container selbst soll nicht scrollen */
                 overflow: hidden;
             }
             
@@ -108,7 +105,6 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 flex-direction: row;
                 gap: 1rem;
                 align-items: center;
-                /* Header bleibt stets sichtbar */
                 position: sticky;
                 top: 0;
                 z-index: 1;
@@ -122,19 +118,16 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             
             main {
                 padding: 0.5rem;
-                /* Main nimmt den verfügbaren Platz ein, scrollt selbst nicht */
                 flex: 1 1 auto;
                 overflow: hidden;
                 min-height: 0;
             }
 
-            /* Direkte Kinder im Main sollen schrumpfen dürfen und eigenen Scroll übernehmen */
             main > * {
                 min-height: 0;
                 max-height: 100%;
             }
 
-            /* Command-Palette: ul innerhalb des Mains scrollt bei Overflow */
             main :where(ul) {
                 overflow: auto;
                 max-height: 100%;

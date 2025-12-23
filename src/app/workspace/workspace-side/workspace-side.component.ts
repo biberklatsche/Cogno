@@ -16,7 +16,7 @@ import {WorkspaceConfig} from "../+model/workspace";
                   <li class="workspace-tile" [class.selected]="workspace.isSelected">
                       <div class="workspace-tile__content">
                           <div class="workspace-badge"
-                               [style.background-color]="workspace.color ? \`var(--color-${workspace.color})\` : undefined">
+                               [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
                               {{ (workspace.name || '')[0] || '?' }}
                           </div>
                           <div class="workspace-name">{{ workspace.name }}</div>
@@ -95,9 +95,6 @@ export class WorkspaceSideComponent {
 
     workspaceList: Signal<WorkspaceConfigUi[]> = this.workspaceService.workspaceList;
 
-    constructor(private workspaceService: WorkspaceService, private keybindService: KeybindService) {
-        /*keybindService.registerListener('workspace', ['ArrowUp', 'ArrowDown'], (event) => {
-            console.log('#####', event);
-        });*/
+    constructor(private workspaceService: WorkspaceService) {
     }
 }
