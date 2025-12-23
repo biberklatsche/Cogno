@@ -11,16 +11,26 @@ import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {Grid} from "../../common/grid/grid-calculations";
+import {WorkspaceRepository} from "./workspace.repository";
 
-export type WorkspaceConfigUi = WorkspaceConfig & { isSelected?: boolean };
+export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
 
+    private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: "WS_DEFAULT", name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
 
-    constructor(bus: AppBus, config: ConfigService, sideMenuService: SideMenuService, gridListService: GridListService, tabListService: TabListService, ref: DestroyRef, private keybinds: KeybindService) {
+    constructor(
+        bus: AppBus,
+        config: ConfigService,
+        sideMenuService: SideMenuService,
+        ref: DestroyRef,
+        private keybinds: KeybindService,
+        private workspaceRepository: WorkspaceRepository,
+        private gridListService: GridListService,
+        private tabListService: TabListService) {
         super(sideMenuService, bus, config, ref, {
             label: 'Workspace',
             hidden: false,
@@ -31,28 +41,27 @@ export class WorkspaceService extends SideMenuItemService {
         }, (config: ConfigTypes) => config.workspace?.mode
         );
 
-        this.bus.onceType$('ConfigLoaded').subscribe(e => {
+        this.bus.onceType$('DBInitialized').subscribe(async e => {
             //load workspaces here
+            const workspaces = await workspaceRepository.getAllWorkspaces();
 
-            const tabId = IdCreator.newTabId();
+
+            /*const tabId = IdCreator.newTabId();
+            const workspaceId = IdCreator.newWorkspaceId();
             const pane: GridConfig = {tabId: tabId, pane: {}};
             const tab: TabConfig = {tabId: tabId}
-            const defaultWorkspace: WorkspaceConfigUi = {name: 'Default Workspace', color: 'grey', grids: [pane], tabs: [tab], isSelected: true}
-            const testWorkspace: WorkspaceConfigUi = {name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}
-            const workspaces: WorkspaceConfigUi[] = [defaultWorkspace, testWorkspace];
+            const testWorkspace: WorkspaceConfigUi = {id: workspaceId, name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}*/
 
-            this._workspaceList.set(workspaces);
+            const workspacesUi: WorkspaceConfigUi[] = [this.DEFAULT_WORKSPACE, ...workspaces].map(w => ({...w, isSelected: w.isActive ?? false}));
+            if(!workspacesUi.find(s => s.isSelected)) {
+                workspacesUi[0].isSelected = true;
+                workspacesUi[0].isActive = true;
+            }
+            this._workspaceList.set(workspacesUi);
 
-            const restoreWorkspace = workspaces[0];
+            let defaultWorkspace = workspacesUi.find(w => w.isActive)!;
 
-            gridListService.restoreGrids(restoreWorkspace.grids);
-            tabListService.restoreTabs(restoreWorkspace.tabs);
-            const activeTab = restoreWorkspace!.tabs.find(s => s.isActive);
-            if (activeTab) {
-                tabListService.selectTab(activeTab.tabId);
-            } else {
-                tabListService.selectTab(restoreWorkspace!.tabs[0].tabId);
-           }
+            this.restoreWorkspace(defaultWorkspace);
 
         });
     }
@@ -89,31 +98,53 @@ export class WorkspaceService extends SideMenuItemService {
                 this.close();
                 break;
             case 'Enter':
+                this.restoreSelectedWorkspace();
                 this.sideMenuService.close();
                 break;
             case 'ArrowDown':
-                this.selectNext('d');
+                this.selectNextWorkspace('d');
                 break;
             case 'ArrowUp':
-                this.selectNext('u');
+                this.selectNextWorkspace('u');
                 break;
             case 'ArrowLeft':
-                this.selectNext('l');
+                this.selectNextWorkspace('l');
                 break;
             case 'ArrowRight':
-                this.selectNext('r');
+                this.selectNextWorkspace('r');
                 break;
         }
     }
 
-    private selectNext(direction: 'l' | 'r' | 'u' | 'd'): void {
+    private selectNextWorkspace(direction: 'l' | 'r' | 'u' | 'd'): void {
         const workspaceList = [...this._workspaceList()];
         if (workspaceList.length === 0) return;
-
         const current = workspaceList.findIndex(c => c.isSelected);
         const next = Grid.nextIndex(current, direction, 2, workspaceList.length);
         workspaceList.forEach(c => (c.isSelected = false));
         workspaceList[next].isSelected = true;
         this._workspaceList.set(workspaceList);
+    }
+
+    private restoreSelectedWorkspace() {
+        const workspaceList = [...this._workspaceList()];
+        for(const workspace of workspaceList) workspace.isActive = false;
+        const selectedWorkspace = workspaceList.find(s => s.isSelected);
+        if(!selectedWorkspace) throw new Error('No workspace selected');
+        selectedWorkspace.isActive = true;
+        this.restoreWorkspace(selectedWorkspace);
+        this._workspaceList.set(workspaceList);
+    }
+
+    private restoreWorkspace(workspace: WorkspaceConfigUi) {
+        if(!workspace.isActive) throw new Error('Cannot restore inactive workspace');
+        this.gridListService.restoreGrids(workspace.grids);
+        this.tabListService.restoreTabs(workspace.tabs);
+        const activeTab = workspace!.tabs.find(s => s.isActive);
+        if (activeTab) {
+            this.tabListService.selectTab(activeTab.tabId);
+        } else {
+            this.tabListService.selectTab(workspace!.tabs[0].tabId);
+        }
     }
 }

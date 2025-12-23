@@ -4,12 +4,15 @@ import {TerminalId} from "../../grid-list/+model/model";
 
 
 export type TabId = string;
+export type WorkspaceId = string;
 
 export type WorkspaceConfig = {
+    id: WorkspaceId;
     name?: string;
     color?: ColorName;
     grids: GridConfig[];
     tabs: TabConfig[];
+    isActive?: boolean;
 }
 
 export type TabConfig = {
@@ -47,4 +50,10 @@ export interface TerminalConfig {
 }
 
 export type SplitDirection = 'horizontal' | 'vertical';
+    
+export type TerminalSession = {
+    terminalId: TerminalId;
+    sessionData: string;
+    updatedAt?: string;
+}
 

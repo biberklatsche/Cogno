@@ -64,6 +64,7 @@ export class AppComponent {
             console.log('Config loaded, loading DB', Environment.dbFilePath());
             await DB.load(`sqlite:${Environment.dbFilePath()}`);
             await migrate();
+            bus.publish({type: 'DBInitialized'});
         });
     }
 }

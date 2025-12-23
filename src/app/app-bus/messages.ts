@@ -1,5 +1,5 @@
 // Deine fachlichen Typen in einem Union:
-import {ConfigLoadedEvent, ThemeChangedEvent} from "../config/+bus/events";
+import {ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent} from "../config/+bus/events";
 import {InitConfigAction} from "../config/+bus/actions";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
@@ -34,6 +34,7 @@ export type AppMessage =
     | TabSelectedEvent
     | SelectTabAction
     | ConfigLoadedEvent
+    | DBInitializedEvent
     | ThemeChangedEvent
     | InitConfigAction
     | PtyInitializedEvent
