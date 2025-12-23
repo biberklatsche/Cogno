@@ -4,8 +4,6 @@ import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
 import {GridListComponent} from "./grid-list/grid-list.component";
-import {CommandPaletteComponent} from "./command-palette/command-palette.component";
-import {CommandPaletteService} from "./command-palette/command-palette.service";
 
 @Component({
     selector: 'app-root',
@@ -34,7 +32,6 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
                 height: var(--header-height);
                 display: flex;
                 flex-direction: row;
-                /* Keep items in a single row and let flex growth handle spacing */
                 justify-content: flex-start;
                 align-items: center;
                 overflow: hidden;
@@ -50,34 +47,12 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
                 display: flex;
                 flex-direction: column;
             }
-
-            /* Command Palette Overlay styles */
-            .cp-overlay {
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.2);
-                z-index: 1000;
-                pointer-events: auto;
-            }
-            .cp-shell {
-                position: absolute;
-                left: 50%;
-                top: 20%; /* upper third-ish */
-                transform: translateX(-50%);
-                width: min(720px, 90vw);
-                padding: 12px;
-                border-radius: 10px;
-                backdrop-filter: blur(8px);
-                background: rgba(20,20,20,0.85);
-                box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-            }
-
         `
     ],
     standalone: true
 })
 export class AppComponent {
     os = OS.platform();
-    constructor() {}
-    async initAsync(): Promise<void> {}
+    constructor() {
+    }
 }

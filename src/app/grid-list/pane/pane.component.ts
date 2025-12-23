@@ -5,8 +5,22 @@ import {TerminalId} from "../+model/model";
 @Component({
   selector: 'app-pane',
   imports: [],
-  templateUrl: './pane.component.html',
-  styleUrl: './pane.component.scss'
+  template: `
+      <div #dock class="dock"></div>
+  `,
+  styles: [`:host{
+      display:block;
+      height:100%;
+      width:100%;
+  }
+
+  .dock {
+      height:100%;
+      width:100%;
+      min-height: 0;
+      min-width: 0;
+  }
+  `]
 })
 export class PaneComponent implements AfterViewInit {
     terminalId = input.required<TerminalId>();

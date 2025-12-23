@@ -1,5 +1,6 @@
 import {ShellConfigPosition} from "../../config/+models/config.types";
 import {ColorName} from "../../common/color/color";
+import {TerminalId} from "../../grid-list/+model/model";
 
 
 export type TabId = string;
@@ -36,6 +37,7 @@ export interface SplitNode {
 }
 
 export interface TerminalConfig {
+    TerminalId?: TerminalId;
     splitDirection?: never;
     ratio?: never;
     child1?: never;

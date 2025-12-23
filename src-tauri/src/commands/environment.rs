@@ -38,7 +38,7 @@ pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
 #[tauri::command]
 pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let dir_name = if dev_mode { ".cogno-dev" } else { ".cogno" };
+    let dir_name = if dev_mode { ".cogno2-dev" } else { ".cogno2" };
     let cogno_home = home.join(dir_name);
     Ok(cogno_home.display().to_string())
 }
@@ -55,6 +55,6 @@ pub fn get_cogno_config_file_path(dev_mode: bool) -> Result<String, String> {
 #[tauri::command]
 pub fn get_cogno_db_file_path(dev_mode: bool) -> Result<String, String> {
     let cogno_home = get_cogno_home_dir(dev_mode)?;
-    let db_path = PathBuf::from(cogno_home).join("cogno.db");
+    let db_path = PathBuf::from(cogno_home).join("db").join("cogno.db");
     Ok(db_path.display().to_string())
 }
