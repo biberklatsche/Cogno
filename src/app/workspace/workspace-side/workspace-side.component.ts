@@ -38,7 +38,7 @@ import {WorkspaceConfig} from "../+model/workspace";
           list-style: none;
           margin: 0;
           padding: 0;
-          width: min(500px, max(33vw, 300px));
+          width: 100%;
       }
 
       .workspace-tile {

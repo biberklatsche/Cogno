@@ -81,6 +81,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             display: flex;
             flex-direction: column;
             max-height: 100%;
+            width: min(500px, max(33vw, 300px));
 
             &.hidden {
                 display: none;

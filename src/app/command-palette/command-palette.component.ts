@@ -48,7 +48,7 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 margin: 0;
                 padding: 0;
                 font-size: 0.9rem;
-                width: min(500px, max(33vw, 300px));
+                width: 100%;
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
