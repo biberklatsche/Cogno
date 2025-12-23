@@ -20,6 +20,9 @@
             "browser": "src/main.ts",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
+            "loader": {
+              ".sql": "text"
+            },
             "assets": ["src/assets"],
             "styles": [
               "src/assets/styles/styles.css",

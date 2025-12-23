@@ -58,13 +58,17 @@ export class ConfigService {
 
     private async loadConfig() {
         this._unwatch?.unsubscribe();
+        const configDir = Environment.configDir();
+        if(!await Fs.exists(configDir)) {
+            await Fs.mkdir(configDir);
+        }
         const path = Environment.configFilePath();
-        const defaultConfigString = await DefaultConfig.read();
         if(!await Fs.exists(path)) {
             const userConfig: ConfigTypes = {shell: {}};
             await this.shells.apply(userConfig);
             await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }
+        const defaultConfigString = await DefaultConfig.read();
         const userConfigString = await Fs.readTextFile(path);
         const config = ConfigReader.fromStringToConfig(defaultConfigString, userConfigString);
         if(config.enable_watch_config) {
