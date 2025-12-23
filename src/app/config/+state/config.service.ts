@@ -60,6 +60,7 @@ export class ConfigService {
         this._unwatch?.unsubscribe();
         const configDir = Environment.configDir();
         if(!await Fs.exists(configDir)) {
+            console.log('create config dir' + configDir);
             await Fs.mkdir(configDir);
         }
         const path = Environment.configFilePath();
