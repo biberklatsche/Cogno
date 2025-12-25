@@ -147,4 +147,16 @@ export class WorkspaceService extends SideMenuItemService {
             this.tabListService.selectTab(workspace!.tabs[0].tabId);
         }
     }
+
+    addWorkspace() {
+        const tabId = IdCreator.newTabId();
+        const workspaceId = IdCreator.newWorkspaceId();
+        const pane: GridConfig = {tabId: tabId, pane: {}};
+        const tab: TabConfig = {tabId: tabId}
+        const testWorkspace: WorkspaceConfigUi = {id: workspaceId, name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab], isSelected: true, isActive: true};
+        const workspaceList = [...this._workspaceList()];
+        for(const workspace of workspaceList) workspace.isActive = false;
+        workspaceList.push(testWorkspace);
+        this._workspaceList.set(workspaceList);
+    }
 }

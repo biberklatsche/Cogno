@@ -34,7 +34,7 @@
         </button>
     }
     <div class="tab-list-btns">
-        <button class="tab-list-btn" (click)="$event.stopPropagation(); addTab()" appTooltip="New Tab" [appTooltipSecondary]="'new_tab' | actionkeybinding"><app-icon name="mdiPlus"></app-icon></button>
+        <button class="button-borderless" (click)="$event.stopPropagation(); addTab()" appTooltip="New Tab" [appTooltipSecondary]="'new_tab' | actionkeybinding"><app-icon name="mdiPlus"></app-icon></button>
         <app-menu-button></app-menu-button>
     </div>
 </nav>

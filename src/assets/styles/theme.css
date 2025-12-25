@@ -2,7 +2,7 @@ html {
     --button-border-radius:6px;
 }
 
-.tab-list-btn {
+.button-borderless {
     border: none;
     cursor: default;
     border-radius: var(--button-border-radius);

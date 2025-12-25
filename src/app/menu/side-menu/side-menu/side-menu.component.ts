@@ -25,13 +25,13 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         >
             <header>
                 <div class="btn-list">
-                    <button class="tab-list-btn" (click)="close()">
+                    <button class="button-borderless" (click)="close()">
                         <app-icon [name]="'mdiClose'"></app-icon>
                     </button>
-                    <button class="tab-list-btn" (click)="togglePin()">
+                    <button class="button-borderless" (click)="togglePin()">
                         <app-icon [name]="selectedItem()?.pinned ? 'mdiPinOff' : 'mdiPin'"></app-icon>
                     </button>
-                    <button class="tab-list-btn" (click)="toggleDisplacement()">
+                    <button class="button-borderless" (click)="toggleDisplacement()">
                         <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
                     </button>
                 </div>
@@ -45,7 +45,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         </aside>
         <menu #menuCol [class.hidden]="visibleItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem) {
-                <button class="tab-list-btn" (click)="open(menuItem)"
+                <button class="button-borderless" (click)="open(menuItem)"
                         [class.selected]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                 </button>
@@ -70,7 +70,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 margin: 0;
             }
 
-            .tab-list-btn.selected {
+            .button-borderless.selected {
                 background-color: var(--background-color-30l-ct2);
             }
         }

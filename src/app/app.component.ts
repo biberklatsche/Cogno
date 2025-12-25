@@ -7,8 +7,6 @@ import {GridListComponent} from "./grid-list/grid-list.component";
 import {AppBus} from "./app-bus/app-bus";
 import {DB} from "./_tauri/db";
 import {Environment} from "./common/environment/environment";
-import {bootstrapApplication} from "@angular/platform-browser";
-import {appConfig} from "./app.config";
 import {migrate} from "./migrations/migrate";
 
 @Component({
