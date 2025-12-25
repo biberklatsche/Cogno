@@ -159,4 +159,44 @@ export class WorkspaceService extends SideMenuItemService {
         workspaceList.push(testWorkspace);
         this._workspaceList.set(workspaceList);
     }
+
+    async renameWorkspace(id: string, newName: string): Promise<void> {
+        const list = [...this._workspaceList()];
+        const idx = list.findIndex(w => w.id === id);
+        if (idx === -1) return;
+        const current = list[idx];
+        // persist
+        const cfg = {
+            id: current.id,
+            name: newName,
+            color: current.color,
+            tabs: current.tabs,
+            grids: current.grids,
+        } as const satisfies WorkspaceConfig;
+        await this.workspaceRepository.updateWorkspace(cfg);
+        // update UI state
+        list[idx] = { ...current, name: newName };
+        this._workspaceList.set(list);
+    }
+
+    async deleteWorkspace(id: string): Promise<void> {
+        const list = [...this._workspaceList()];
+        const idx = list.findIndex(w => w.id === id);
+        if (idx === -1) return;
+        const wasActive = !!list[idx].isActive;
+        await this.workspaceRepository.deleteWorkspace(id);
+        list.splice(idx, 1);
+        // adjust selection/active
+        if (list.length > 0) {
+            if (!list.find(w => w.isSelected)) {
+                list[0].isSelected = true;
+            }
+            if (wasActive && !list.find(w => w.isActive)) {
+                list[0].isActive = true;
+                // restore the newly active workspace
+                this.restoreWorkspace(list[0]);
+            }
+        }
+        this._workspaceList.set(list);
+    }
 }
