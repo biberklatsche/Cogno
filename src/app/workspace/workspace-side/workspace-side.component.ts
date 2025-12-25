@@ -2,6 +2,7 @@ import {Component, Signal} from '@angular/core';
 import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";
+import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
 
 @Component({
     selector: 'app-workspace-side',
@@ -20,14 +21,16 @@ import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-d
                                        (input)="workspaceService.setWorkspaceName($event)"
                                        (keydown.enter)="workspaceService.confirmRename()"
                                        (keydown.escape)="workspaceService.closeRename()"
-                                       autofocus/>
+                                       [appAutofocus]="workspaceService.editWorkspaceId() === workspace.id"/>
                             } @else {
                                 <div class="workspace-badge"
                                      [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
                                     {{ (workspace.name || '')[0] || '?' }}
                                 </div>
                                 <div class="workspace-name">{{ workspace.name }}</div>
-                                <app-copy-edit-delete (onEvent)="editDelete($event, workspace)"></app-copy-edit-delete>
+                                @if (workspace.id !== 'WS_DEFAULT') {
+                                    <app-copy-edit-delete (onEvent)="editDelete($event, workspace)"></app-copy-edit-delete>
+                                }
                             }
                         </div>
                     </li>
@@ -42,7 +45,8 @@ import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-d
     `,
     imports: [
         IconComponent,
-        CopyEditDeleteComponent
+        CopyEditDeleteComponent,
+        AutofocusDirective
     ],
     styles: [`
         :host, .workspace-side {

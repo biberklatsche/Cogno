@@ -77,49 +77,59 @@ export class WorkspaceService extends SideMenuItemService {
     }
 
     protected override onOpen(): void {
-        this.keybinds.registerListener(
-            'command-palette',
-            ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
-            evt => this.handleKey(evt.key)
-        );
+        this.registerKeybindListener();
     }
 
     protected override onClose(): void {
-        this.keybinds.unregisterListener('command-palette');
+        this.unregisterKeybindListener();
     }
 
-    private handleKey(key: string): void {
+    private registerKeybindListener(): void {
+        this.keybinds.registerListener(
+            'workspace',
+            ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
+            evt => this.handleKey(evt)
+        );
+    }
+
+    private unregisterKeybindListener(): void {
+        this.keybinds.unregisterListener('workspace');
+    }
+
+    private handleKey(event: KeyboardEvent): void {
         // When inline rename is active, handle Enter/Escape for rename only
+        const key = event.key;
         if (this.editWorkspaceId()) {
             switch (key) {
                 case 'Escape':
                     this.closeRename();
-                    return;
+                    break;
                 case 'Enter':
                     this.confirmRename();
-                    return;
+                    break;
             }
-        }
-        switch (key) {
-            case 'Escape':
-                this.sideMenuService.close();
-                break;
-            case 'Enter':
-                this.restoreSelectedWorkspace();
-                this.sideMenuService.close();
-                break;
-            case 'ArrowDown':
-                this.selectNextWorkspace('d');
-                break;
-            case 'ArrowUp':
-                this.selectNextWorkspace('u');
-                break;
-            case 'ArrowLeft':
-                this.selectNextWorkspace('l');
-                break;
-            case 'ArrowRight':
-                this.selectNextWorkspace('r');
-                break;
+        } else {
+            switch (key) {
+                case 'Escape':
+                    this.sideMenuService.close();
+                    break;
+                case 'Enter':
+                    this.restoreSelectedWorkspace();
+                    this.sideMenuService.close();
+                    break;
+                case 'ArrowDown':
+                    this.selectNextWorkspace('d');
+                    break;
+                case 'ArrowUp':
+                    this.selectNextWorkspace('u');
+                    break;
+                case 'ArrowLeft':
+                    this.selectNextWorkspace('l');
+                    break;
+                case 'ArrowRight':
+                    this.selectNextWorkspace('r');
+                    break;
+            }
         }
     }
 
@@ -195,8 +205,7 @@ export class WorkspaceService extends SideMenuItemService {
         list.splice(idx, 1);
         // clear inline edit state if deleted item was being edited
         if (this.editWorkspaceId() === id) {
-            this.editWorkspaceId.set(null);
-            this.editWorkspaceName.set('');
+            this.closeRename();
         }
         // adjust selection/active
         if (list.length > 0) {
@@ -216,6 +225,7 @@ export class WorkspaceService extends SideMenuItemService {
     startRename(id: string, currentName: string | undefined | null): void {
         this.editWorkspaceId.set(id);
         this.editWorkspaceName.set((currentName ?? ''));
+        this.keybinds.unregisterListener('workspace')
     }
 
     setWorkspaceName(event: Event): void {
@@ -232,10 +242,12 @@ export class WorkspaceService extends SideMenuItemService {
             // Fire and forget async rename; UI state will be updated when promise resolves
             void this.renameWorkspace(id, newName);
         }
-        this.editWorkspaceId.set(null);
+        this.closeRename();
     }
 
     closeRename(): void {
         this.editWorkspaceId.set(null);
+        this.editWorkspaceName.set('');
+        this.registerKeybindListener();
     }
 }

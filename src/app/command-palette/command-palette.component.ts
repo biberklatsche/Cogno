@@ -10,11 +10,12 @@ import {
 import {CommonModule} from '@angular/common';
 import {CommandEntry, CommandPaletteService} from './command-palette.service';
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
+import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
 
 @Component({
     selector: 'app-command-palette',
     standalone: true,
-    imports: [CommonModule, ActionKeybindingPipe],
+    imports: [CommonModule, ActionKeybindingPipe, AutofocusDirective],
     template: `
         <input
                 autocomplete="off"
@@ -27,6 +28,7 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
                 (click)="$event.stopPropagation()"
                 placeholder="Type a command…"
                 class="search-input"
+                [appAutofocus]="true" [clearOnFocus]="true"
         />
         @if (commandList().length > 0) {
             <ul #commandListElement class="command-list">
@@ -106,9 +108,8 @@ import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
         `,
     ],
 })
-export class CommandPaletteComponent implements AfterViewInit {
+export class CommandPaletteComponent {
     commandList: Signal<CommandEntry[]>;
-    private inputElement = viewChild<ElementRef<HTMLInputElement>>('inputElement');
     private commandListElement = viewChild<ElementRef<HTMLUListElement>>('commandListElement');
 
     constructor(private service: CommandPaletteService) {
@@ -127,13 +128,6 @@ export class CommandPaletteComponent implements AfterViewInit {
             // Scroll the selected item into view without jumping the whole list
             li.scrollIntoView({block: 'nearest'});
         });
-    }
-
-    ngAfterViewInit(): void {
-        setTimeout(() => {
-            this.inputElement()!.nativeElement.value = '';
-            this.inputElement()!.nativeElement.focus();
-        }, 10);
     }
 
     onQuery(event: Event) {
