@@ -22,6 +22,10 @@ export class WorkspaceService extends SideMenuItemService {
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
 
+    // inline edit state moved to service
+    editWorkspaceId: WritableSignal<string | null> = signal<string | null>(null);
+    editWorkspaceName: WritableSignal<string> = signal('');
+
     constructor(
         bus: AppBus,
         config: ConfigService,
@@ -66,36 +70,39 @@ export class WorkspaceService extends SideMenuItemService {
         });
     }
 
-    protected override onConfigChanged(featureMode: FeatureMode): void {
+    protected override onConfigChange(featureMode: FeatureMode): void {
         if(featureMode === 'off') {
-            this.close();
+            this.onClose();
         }
     }
 
-    protected override onViewChanged(visible: boolean): void {
-        if(visible) {
-            this.open()
-        } else {
-            this.close();
-        }
-    }
-
-    private open(): void {
+    protected override onOpen(): void {
         this.keybinds.registerListener(
             'command-palette',
-            ['Enter', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
+            ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
             evt => this.handleKey(evt.key)
         );
     }
 
-    private close(): void {
+    protected override onClose(): void {
         this.keybinds.unregisterListener('command-palette');
     }
 
     private handleKey(key: string): void {
+        // When inline rename is active, handle Enter/Escape for rename only
+        if (this.editWorkspaceId()) {
+            switch (key) {
+                case 'Escape':
+                    this.closeRename();
+                    return;
+                case 'Enter':
+                    this.confirmRename();
+                    return;
+            }
+        }
         switch (key) {
             case 'Escape':
-                this.close();
+                this.sideMenuService.close();
                 break;
             case 'Enter':
                 this.restoreSelectedWorkspace();
@@ -186,6 +193,11 @@ export class WorkspaceService extends SideMenuItemService {
         const wasActive = !!list[idx].isActive;
         await this.workspaceRepository.deleteWorkspace(id);
         list.splice(idx, 1);
+        // clear inline edit state if deleted item was being edited
+        if (this.editWorkspaceId() === id) {
+            this.editWorkspaceId.set(null);
+            this.editWorkspaceName.set('');
+        }
         // adjust selection/active
         if (list.length > 0) {
             if (!list.find(w => w.isSelected)) {
@@ -198,5 +210,32 @@ export class WorkspaceService extends SideMenuItemService {
             }
         }
         this._workspaceList.set(list);
+    }
+
+    // Inline rename API
+    startRename(id: string, currentName: string | undefined | null): void {
+        this.editWorkspaceId.set(id);
+        this.editWorkspaceName.set((currentName ?? ''));
+    }
+
+    setWorkspaceName(event: Event): void {
+        const value = (event.target as HTMLInputElement).value
+        this.editWorkspaceName.set(value ?? '');
+    }
+
+    confirmRename(): void {
+        const id = this.editWorkspaceId();
+        if (!id) return;
+        const newName = this.editWorkspaceName().trim();
+        const ws = this._workspaceList().find(w => w.id === id);
+        if (ws && newName && newName !== ws.name) {
+            // Fire and forget async rename; UI state will be updated when promise resolves
+            void this.renameWorkspace(id, newName);
+        }
+        this.editWorkspaceId.set(null);
+    }
+
+    closeRename(): void {
+        this.editWorkspaceId.set(null);
     }
 }

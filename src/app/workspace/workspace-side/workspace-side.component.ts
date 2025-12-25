@@ -1,4 +1,4 @@
-import {Component, Signal, signal, WritableSignal, effect} from '@angular/core';
+import {Component, Signal} from '@angular/core';
 import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";
@@ -12,15 +12,15 @@ import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-d
                 @for (workspace of workspaceList(); track workspace.name) {
                     <li class="workspace-tile center" [class.selected]="workspace.isSelected">
                         <div class="workspace-tile__content">
-                            @if (editingId() === workspace.id) {
+                            @if (workspaceService.editWorkspaceId() === workspace.id) {
                                 <input class="workspace-input"
                                        #wsInput
                                        type="text"
-                                       [value]="editName()"
-                                       (input)="onNameInput($event)"
-                                       (keydown.enter)="confirmRename(workspace)"
-                                       (keydown.escape)="closeRename()"
-                                       autofocus />
+                                       [value]="workspaceService.editWorkspaceName()"
+                                       (input)="workspaceService.setWorkspaceName($event)"
+                                       (keydown.enter)="workspaceService.confirmRename()"
+                                       (keydown.escape)="workspaceService.closeRename()"
+                                       autofocus/>
                             } @else {
                                 <div class="workspace-badge"
                                      [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
@@ -121,11 +121,7 @@ export class WorkspaceSideComponent {
 
     workspaceList: Signal<WorkspaceConfigUi[]> = this.workspaceService.workspaceList;
 
-    // inline edit state
-    editingId: WritableSignal<string | null> = signal<string | null>(null);
-    editName: WritableSignal<string> = signal('');
-
-    constructor(private workspaceService: WorkspaceService) {
+    constructor(public workspaceService: WorkspaceService) {
     }
 
     addWorkspace() {
@@ -134,28 +130,9 @@ export class WorkspaceSideComponent {
 
     editDelete(event: "copy" | "edit" | "delete", workspace: WorkspaceConfigUi) {
         if (event === 'edit') {
-            this.editingId.set(workspace.id);
-            this.editName.set(workspace.name ?? '');
+            this.workspaceService.startRename(workspace.id, workspace.name);
         } else if (event === 'delete') {
             this.workspaceService.deleteWorkspace(workspace.id);
-            if (this.editingId() === workspace.id) this.editingId.set(null);
         }
-    }
-
-    onNameInput(evt: Event) {
-        const value = (evt.target as HTMLInputElement).value;
-        this.editName.set(value);
-    }
-
-    confirmRename(workspace: WorkspaceConfigUi) {
-        const newName = this.editName().trim();
-        if (newName && newName !== workspace.name) {
-            this.workspaceService.renameWorkspace(workspace.id, newName);
-        }
-        this.editingId.set(null);
-    }
-
-    closeRename() {
-        this.editingId.set(null);
     }
 }

@@ -22,10 +22,10 @@ export abstract class SideMenuItemService {
     ) {
         config.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
             switch (configSelector(config)) {
-                case 'off': this.onConfigChanged('off'); this.removeKeybindHandler(); this.removeMenuItem(); break;
-                case 'hidden': this.onConfigChanged('hidden'); this.addMenuItem(true); this.addKeybindHandler(); break;
+                case 'off': this.onConfigChange('off'); this.removeKeybindHandler(); this.removeMenuItem(); break;
+                case 'hidden': this.onConfigChange('hidden'); this.addMenuItem(true); this.addKeybindHandler(); break;
                 case 'visible': {
-                    this.onConfigChanged('visible');
+                    this.onConfigChange('visible');
                     this.addMenuItem(false);
                     this.addKeybindHandler()
                     break;
@@ -36,7 +36,11 @@ export abstract class SideMenuItemService {
             const selectedItem = sideMenuService.selectedItem();
             const newIsOpened = selectedItem?.label === menuItem.label;
             if(newIsOpened != this._isOpened) {
-                this.onViewChanged(newIsOpened);
+                if(newIsOpened) {
+                    this.onOpen();
+                } else {
+                    this.onClose();
+                }
             }
             this._isOpened = newIsOpened;
         })
@@ -72,6 +76,7 @@ export abstract class SideMenuItemService {
         this.sideMenuService.addMenuItem({...this.menuItem, icon: icon});
     }
 
-    protected abstract onConfigChanged(featureMode: FeatureMode): void;
-    protected abstract onViewChanged(visible: boolean): void;
+    protected abstract onConfigChange(featureMode: FeatureMode): void;
+    protected abstract onOpen(): void;
+    protected abstract onClose(): void;
 }

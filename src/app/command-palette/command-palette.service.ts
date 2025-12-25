@@ -93,30 +93,25 @@ export class CommandPaletteService extends SideMenuItemService {
         );
     }
 
-    private open(): void {
+    protected override onConfigChange(featureMode: FeatureMode): void {
+        if(featureMode == 'off') this.onClose();
+    }
+
+    protected override onOpen(): void {
         this.initCommands();
         this.initConfigListener();
         this.filterCommands('');
         this.keybinds.registerListener(
             'command-palette',
-            ['Enter', 'ArrowDown', 'ArrowUp'],
+            ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'],
             evt => this.handleKey(evt.key)
         );
     }
 
-    private close(): void {
+    protected override onClose(): void {
         this._commandList.set([]);
         this._subscription?.unsubscribe();
         this.keybinds.unregisterListener('command-palette');
-    }
-
-    protected override onConfigChanged(featureMode: FeatureMode): void {
-        if(featureMode == 'off') close();
-    }
-
-    protected override onViewChanged(visible: boolean): void {
-        if(visible) this.open();
-        else this.close();
     }
 
 
@@ -142,7 +137,7 @@ export class CommandPaletteService extends SideMenuItemService {
     private handleKey(key: string): void {
         switch (key) {
             case 'Escape':
-                this.close();
+                this.sideMenuService.close();
                 break;
             case 'Enter':
                 this.fireAction();

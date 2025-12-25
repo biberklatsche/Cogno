@@ -18,8 +18,6 @@ export type SideMenuItem = {
 
 @Injectable({providedIn: 'root'})
 export class SideMenuService {
-
-    private readonly listenerId = 'SideMenuEscListener';
     private _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
     private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<SideMenuItem | undefined>(undefined);
     private _displacement: WritableSignal<boolean> = signal<boolean>(false);
@@ -37,7 +35,7 @@ export class SideMenuService {
         return this._displacement.asReadonly();
     }
 
-    constructor(private keybindService: KeybindService, private bus: AppBus) {
+    constructor(private bus: AppBus) {
     }
 
     addMenuItem(item: SideMenuItem): void {
@@ -68,8 +66,6 @@ export class SideMenuService {
         const current = this._selectedItem();
         if (current?.label === label) return;
         const item = this._menuItems().find(s => s.label === label);
-        this.keybindService.unregisterListener(this.listenerId);
-        this.keybindService.registerListener(this.listenerId, ['Escape'], (event: KeyboardEvent) => this.close());
         this._selectedItem.set(item);
     }
 
@@ -77,7 +73,6 @@ export class SideMenuService {
         const current = this._selectedItem();
         if(!current) return;
         this._selectedItem.set(undefined);
-        this.keybindService.unregisterListener(this.listenerId);
         const item = this._menuItems().find(s => s.label === current.label);
         item!.pinned = false;
         const index = this._pinnedStack.findIndex(label => label === current.label);

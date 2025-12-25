@@ -8,6 +8,7 @@ import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
 import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
 import {ConfigTypes, FeatureMode, Keybinding} from "../../config/+models/config.types";
+import {KeybindService} from "../../keybinding/keybind.service";
 
 export type TerminalIdentifier = { terminalId: string };
 export type MousePosition = { x: number; y: number };
@@ -69,7 +70,7 @@ export class InspectorService extends SideMenuItemService {
     private _subscription: Subscription | undefined;
 
 
-    constructor(sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, ref: DestroyRef) {
+    constructor(sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, private keybinds: KeybindService, ref: DestroyRef) {
         super(sideMenuService, bus, config, ref, {
                 label: 'Inspector',
                 hidden: false,
@@ -82,8 +83,14 @@ export class InspectorService extends SideMenuItemService {
         );
     }
 
-    initView() {
-        this.unsubscribe();
+    onConfigChange(featureMode:FeatureMode) {
+        if(featureMode === 'off') {
+            this.onClose();
+        }
+    }
+
+    protected override onOpen(): void {
+        this._subscription?.unsubscribe();
         this._subscription = new Subscription();
         this._subscription.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
             switch (event.payload?.type) {
@@ -138,21 +145,17 @@ export class InspectorService extends SideMenuItemService {
             .subscribe(evt => {
                 this._mousePosition.set({x: evt.clientX, y: evt.clientY});
             }));
+
+        this.keybinds.registerListener(
+            'inspector',
+            ['Escape'],
+            evt => this.sideMenuService.close()
+        );
     }
 
-    private unsubscribe() {
+    protected override onClose(): void {
         this._subscription?.unsubscribe();
         this._subscription = undefined;
-    }
-
-    onConfigChanged(featureMode:FeatureMode) {
-        if(featureMode === 'off') {
-            this.unsubscribe();
-        }
-    }
-
-    protected override onViewChanged(visible: boolean): void {
-        if(visible) this.initView();
-        else this.unsubscribe();
+        this.keybinds.unregisterListener('inspector');
     }
 }

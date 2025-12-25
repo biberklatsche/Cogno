@@ -7,6 +7,7 @@ import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.se
 import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
 import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
+import {KeybindService} from "../../keybinding/keybind.service";
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
@@ -32,7 +33,7 @@ export class NotificationService extends SideMenuItemService {
         return Object.values(this._notifications());
     });
 
-    constructor(sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, ref: DestroyRef) {
+    constructor(sideMenuService: SideMenuService, override bus: AppBus, private keybinds: KeybindService, config: ConfigService, ref: DestroyRef) {
         super(sideMenuService, bus, config, ref, {
                 label: 'Notification',
                 hidden: false,
@@ -70,17 +71,23 @@ export class NotificationService extends SideMenuItemService {
         }));
     }
 
-    initView() {
-        this.updateIcon('mdiBell');
-    }
-
-    protected override onConfigChanged(featureMode: FeatureMode): void {
+    protected override onConfigChange(featureMode: FeatureMode): void {
         if (featureMode === 'off') {
             this._subscription.unsubscribe();
         }
     }
-    protected override onViewChanged(visible: boolean): void {
-        if(visible) this.initView();
+    protected override onOpen(): void {
+        this.updateIcon('mdiBell');
+        this.keybinds.registerListener(
+            'inspector',
+            ['Escape'],
+            evt => this.sideMenuService.close()
+        );
+    }
+
+    protected override onClose(): void {
+        this._subscription.unsubscribe();
+        this.keybinds.unregisterListener('inspector');
     }
 
     remove(notificationId: NotificationId) {
