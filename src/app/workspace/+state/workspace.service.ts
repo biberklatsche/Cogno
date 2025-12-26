@@ -23,7 +23,7 @@ export class WorkspaceService extends SideMenuItemService {
     readonly workspaceList = this._workspaceList.asReadonly();
 
     // inline edit state moved to service
-    editWorkspaceId: WritableSignal<string | null> = signal<string | null>(null);
+    editWorkspaceId: WritableSignal<string | undefined> = signal<string | undefined>(undefined);
     editWorkspaceName: WritableSignal<string> = signal('');
 
     constructor(
@@ -99,7 +99,7 @@ export class WorkspaceService extends SideMenuItemService {
     private handleKey(event: KeyboardEvent): void {
         // When inline rename is active, handle Enter/Escape for rename only
         const key = event.key;
-        if (this.editWorkspaceId()) {
+        if (this.editWorkspaceId() !== undefined) {
             switch (key) {
                 case 'Escape':
                     this.closeRename();
@@ -167,13 +167,17 @@ export class WorkspaceService extends SideMenuItemService {
 
     addWorkspace() {
         const tabId = IdCreator.newTabId();
-        const workspaceId = IdCreator.newWorkspaceId();
         const pane: GridConfig = {tabId: tabId, pane: {}};
         const tab: TabConfig = {tabId: tabId}
-        const testWorkspace: WorkspaceConfigUi = {id: workspaceId, name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab], isSelected: true, isActive: true};
+        const testWorkspace: WorkspaceConfigUi = {id: '', name: '', color: 'green', grids: [pane], tabs: [tab], isSelected: true, isActive: true};
         const workspaceList = [...this._workspaceList()];
-        for(const workspace of workspaceList) workspace.isActive = false;
+        for(const workspace of workspaceList) {
+            workspace.isActive = false;
+            workspace.isSelected = false;
+        }
         workspaceList.push(testWorkspace);
+        this.editWorkspaceId.set(testWorkspace.id);
+        this.editWorkspaceName.set('');
         this._workspaceList.set(workspaceList);
     }
 
@@ -182,18 +186,23 @@ export class WorkspaceService extends SideMenuItemService {
         const idx = list.findIndex(w => w.id === id);
         if (idx === -1) return;
         const current = list[idx];
-        // persist
-        const cfg = {
-            id: current.id,
-            name: newName,
-            color: current.color,
-            tabs: current.tabs,
-            grids: current.grids,
-        } as const satisfies WorkspaceConfig;
-        await this.workspaceRepository.updateWorkspace(cfg);
+        current.id = await this.saveWorkspace(current);
         // update UI state
         list[idx] = { ...current, name: newName };
         this._workspaceList.set(list);
+    }
+
+    private async saveWorkspace(workspace: WorkspaceConfig): Promise<string> {
+        const isNew = workspace.id === '';
+        if (isNew) {
+            workspace.id = IdCreator.newWorkspaceId();
+        }
+        if (isNew) {
+            await this.workspaceRepository.createWorkspace(workspace);
+        } else {
+            await this.workspaceRepository.updateWorkspace(workspace);
+        }
+        return workspace.id;
     }
 
     async deleteWorkspace(id: string): Promise<void> {
@@ -234,9 +243,12 @@ export class WorkspaceService extends SideMenuItemService {
     }
 
     confirmRename(): void {
-        const id = this.editWorkspaceId();
-        if (!id) return;
+        let id = this.editWorkspaceId();
         const newName = this.editWorkspaceName().trim();
+        if (id === undefined || newName.length === 0) {
+            this.closeRename();
+            return;
+        }
         const ws = this._workspaceList().find(w => w.id === id);
         if (ws && newName && newName !== ws.name) {
             // Fire and forget async rename; UI state will be updated when promise resolves
@@ -246,7 +258,7 @@ export class WorkspaceService extends SideMenuItemService {
     }
 
     closeRename(): void {
-        this.editWorkspaceId.set(null);
+        this.editWorkspaceId.set(undefined);
         this.editWorkspaceName.set('');
         this.registerKeybindListener();
     }

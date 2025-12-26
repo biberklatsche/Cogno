@@ -136,7 +136,7 @@ export class WorkspaceSideComponent {
         if (event === 'edit') {
             this.workspaceService.startRename(workspace.id, workspace.name);
         } else if (event === 'delete') {
-            this.workspaceService.deleteWorkspace(workspace.id);
+            void this.workspaceService.deleteWorkspace(workspace.id);
         }
     }
 }
