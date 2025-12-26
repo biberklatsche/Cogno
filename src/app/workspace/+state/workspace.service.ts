@@ -153,6 +153,7 @@ export class WorkspaceService extends SideMenuItemService {
     }
 
     public restoreWorkspace(workspace: WorkspaceConfigUi) {
+        if(this.editWorkspaceId() !== undefined) return;
         const workspaceList = [...this._workspaceList()];
         for(const ws of workspaceList) {
             ws.isActive = false;
