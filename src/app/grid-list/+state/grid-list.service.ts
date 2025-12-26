@@ -129,6 +129,18 @@ export class GridListService {
         }
     }
 
+    getGridConfigs(): GridConfig[] {
+        const result: GridConfig[] = [];
+        const gridList = this._gridList.value;
+        for (const grid of Object.values(gridList)) {
+            result.push({
+                tabId: grid.tabId,
+                pane: this.serializeNode(grid.tree.root)
+            });
+        }
+        return result;
+    }
+
     restoreGrid(gridConfig: GridConfig) {
         const gridList = this._gridList.value;
         if(gridList[gridConfig.tabId]) return;
@@ -154,6 +166,23 @@ export class GridListService {
         } else {
             parent.data = {shellConfigPosition: nodeConfig.shellConfigPosition ?? 1, workingDir: nodeConfig.workingDir, terminalId: IdCreator.newTerminalId()};
         }
+    }
+
+    private serializeNode(node: BinaryNode<Pane>): PaneConfig {
+        // Leaf node -> TerminalConfig
+        if (node.isLeaf) {
+            return {
+                shellConfigPosition: node.data?.shellConfigPosition,
+                workingDir: node.data?.workingDir
+            };
+        }
+        // Split node
+        return {
+            splitDirection: node.data?.splitDirection!,
+            ratio: node.data?.ratio!,
+            leftChild: this.serializeNode(node.left!),
+            rightChild: this.serializeNode(node.right!)
+        };
     }
 
     removeGrid(tab?: TabId) {

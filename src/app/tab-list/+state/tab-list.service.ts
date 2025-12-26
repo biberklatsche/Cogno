@@ -193,4 +193,13 @@ export class TabListService {
         });
         this._tabList.next(tabs);
     }
+
+    getTabConfigs(): TabConfig[] {
+        return this._tabList.value.map<TabConfig>(tab => ({
+            tabId: tab.id,
+            isActive: tab.isActive,
+            color: tab.color,
+            title: tab.title
+        }));
+    }
 }

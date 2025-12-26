@@ -12,7 +12,8 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
         <section class="workspace-side">
             <ul class="workspace-grid">
                 @for (workspace of workspaceList(); track workspace.name) {
-                    <li class="workspace-tile center" [class.selected]="workspace.isSelected">
+                    <li class="workspace-tile center" [class.selected]="workspace.isSelected"
+                        (click)="restoreWorkspace(workspace)">
                         <div class="workspace-tile__content">
                             @if (workspaceService.editWorkspaceId() === workspace.id) {
                                 <input class="workspace-input"
@@ -147,5 +148,9 @@ export class WorkspaceSideComponent {
         } else if (event === 'delete') {
             void this.workspaceService.deleteWorkspace(workspace.id);
         }
+    }
+
+    restoreWorkspace(workspace: WorkspaceConfigUi) {
+        this.workspaceService.restoreWorkspace(workspace);
     }
 }
