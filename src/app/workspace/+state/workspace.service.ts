@@ -102,10 +102,10 @@ export class WorkspaceService extends SideMenuItemService {
         if (this.editWorkspaceId() !== undefined) {
             switch (key) {
                 case 'Escape':
-                    this.closeRename();
+                    this.closeEdit();
                     break;
                 case 'Enter':
-                    this.confirmRename();
+                    this.confirmEdit();
                     break;
             }
         } else {
@@ -215,7 +215,7 @@ export class WorkspaceService extends SideMenuItemService {
         list.splice(idx, 1);
         // clear inline edit state if deleted item was being edited
         if (this.editWorkspaceId() === id) {
-            this.closeRename();
+            this.closeEdit();
         }
         // adjust selection/active
         if (list.length > 0) {
@@ -232,7 +232,7 @@ export class WorkspaceService extends SideMenuItemService {
     }
 
     // Inline rename API
-    startRename(id: string, currentName: string | undefined | null): void {
+    startEdit(id: string, currentName: string | undefined | null): void {
         this.editWorkspaceId.set(id);
         this.editWorkspaceName.set((currentName ?? ''));
         this.keybinds.unregisterListener('workspace')
@@ -243,11 +243,11 @@ export class WorkspaceService extends SideMenuItemService {
         this.editWorkspaceName.set(value ?? '');
     }
 
-    confirmRename(): void {
+    confirmEdit(): void {
         let id = this.editWorkspaceId();
         const newName = this.editWorkspaceName().trim();
         if (id === undefined || newName.length === 0) {
-            this.closeRename();
+            this.closeEdit();
             return;
         }
         const workspace = this._workspaceList().find(w => w.id === id);
@@ -255,10 +255,10 @@ export class WorkspaceService extends SideMenuItemService {
             // Fire and forget async rename; UI state will be updated when promise resolves
             void this.renameWorkspace(id, newName);
         }
-        this.closeRename();
+        this.closeEdit();
     }
 
-    closeRename(): void {
+    closeEdit(): void {
         this.editWorkspaceId.set(undefined);
         this.editWorkspaceName.set('');
         this.registerKeybindListener();

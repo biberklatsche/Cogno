@@ -20,18 +20,20 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
                                        type="text"
                                        [value]="workspaceService.editWorkspaceName()"
                                        (input)="workspaceService.setWorkspaceName($event)"
-                                       (keydown.enter)="workspaceService.confirmRename()"
-                                       (keydown.escape)="workspaceService.closeRename()"
+                                       (keydown.enter)="workspaceService.confirmEdit()"
+                                       (keydown.escape)="workspaceService.closeEdit()"
                                        [appAutofocus]="workspaceService.editWorkspaceId() === workspace.id"/>
                             } @else {
                                 <div class="workspace-badge"
                                      [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
                                     {{ (workspace.name || '')[0] || '?' }}
                                 </div>
-                                <div class="workspace-name" [appTooltip]="workspace.name ?? ''">{{ workspace.name }}</div>
+                                <div class="workspace-name" [appTooltip]="workspace.name ?? ''">{{ workspace.name }}
+                                </div>
                                 @if (workspace.id !== 'WS_DEFAULT') {
                                     <div class="space"></div>
-                                    <app-copy-edit-delete (onEvent)="editDelete($event, workspace)"></app-copy-edit-delete>
+                                    <app-copy-edit-delete
+                                            (onEvent)="editDelete($event, workspace)"></app-copy-edit-delete>
                                 }
                             }
                         </div>
@@ -141,7 +143,7 @@ export class WorkspaceSideComponent {
 
     editDelete(event: "copy" | "edit" | "delete", workspace: WorkspaceConfigUi) {
         if (event === 'edit') {
-            this.workspaceService.startRename(workspace.id, workspace.name);
+            this.workspaceService.startEdit(workspace.id, workspace.name);
         } else if (event === 'delete') {
             void this.workspaceService.deleteWorkspace(workspace.id);
         }
