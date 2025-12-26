@@ -181,14 +181,14 @@ export class WorkspaceService extends SideMenuItemService {
         this._workspaceList.set(workspaceList);
     }
 
-    async renameWorkspace(id: string, newName: string): Promise<void> {
+    private async renameWorkspace(id: string, newName: string): Promise<void> {
         const list = [...this._workspaceList()];
         const idx = list.findIndex(w => w.id === id);
-        if (idx === -1) return;
-        const current = list[idx];
+        if (idx === -1) throw new Error('Workspace id not found');
+        const current = { ...list[idx], name: newName };
         current.id = await this.saveWorkspace(current);
         // update UI state
-        list[idx] = { ...current, name: newName };
+        list[idx] = current;
         this._workspaceList.set(list);
     }
 
@@ -197,6 +197,7 @@ export class WorkspaceService extends SideMenuItemService {
         if (isNew) {
             workspace.id = IdCreator.newWorkspaceId();
         }
+        console.log('######', workspace);
         if (isNew) {
             await this.workspaceRepository.createWorkspace(workspace);
         } else {
@@ -208,8 +209,8 @@ export class WorkspaceService extends SideMenuItemService {
     async deleteWorkspace(id: string): Promise<void> {
         const list = [...this._workspaceList()];
         const idx = list.findIndex(w => w.id === id);
-        if (idx === -1) return;
-        const wasActive = !!list[idx].isActive;
+        if (idx === -1) throw new Error('Workspace id not found');
+        const wasActive = list[idx].isActive;
         await this.workspaceRepository.deleteWorkspace(id);
         list.splice(idx, 1);
         // clear inline edit state if deleted item was being edited
@@ -249,8 +250,8 @@ export class WorkspaceService extends SideMenuItemService {
             this.closeRename();
             return;
         }
-        const ws = this._workspaceList().find(w => w.id === id);
-        if (ws && newName && newName !== ws.name) {
+        const workspace = this._workspaceList().find(w => w.id === id);
+        if (workspace && newName && newName !== workspace.name) {
             // Fire and forget async rename; UI state will be updated when promise resolves
             void this.renameWorkspace(id, newName);
         }

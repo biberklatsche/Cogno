@@ -3,6 +3,7 @@ import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";
 import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
+import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 
 @Component({
     selector: 'app-workspace-side',
@@ -27,8 +28,9 @@ import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
                                      [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
                                     {{ (workspace.name || '')[0] || '?' }}
                                 </div>
-                                <div class="workspace-name">{{ workspace.name }}</div>
+                                <div class="workspace-name" [appTooltip]="workspace.name ?? ''">{{ workspace.name }}</div>
                                 @if (workspace.id !== 'WS_DEFAULT') {
+                                    <div class="space"></div>
                                     <app-copy-edit-delete (onEvent)="editDelete($event, workspace)"></app-copy-edit-delete>
                                 }
                             }
@@ -46,7 +48,8 @@ import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
     imports: [
         IconComponent,
         CopyEditDeleteComponent,
-        AutofocusDirective
+        AutofocusDirective,
+        TooltipDirective
     ],
     styles: [`
         :host, .workspace-side {
@@ -119,6 +122,10 @@ import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        .space {
+            flex: 1;
+        }
+        
     `]
 })
 export class WorkspaceSideComponent {
