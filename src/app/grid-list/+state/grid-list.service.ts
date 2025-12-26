@@ -54,7 +54,7 @@ export class GridListService {
                if(currentFocusedTab && currentFocusedTab.data) currentFocusedTab.data.isFocused = false;
             });
             const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
-            if(!paneConfig) throw new Error(`No pane with id ${event.payload} found.`);
+            if(!paneConfig) return;
             paneConfig.isFocused = true;
             this._gridList.next(gridList);
         });

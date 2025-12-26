@@ -12,6 +12,7 @@ import {TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabRemovedEvent} from "../../tab-list/+bus/events";
+import {ShellConfig, ShellConfigPosition} from "../../config/+models/config.types";
 
 @Injectable({ providedIn: 'root' })
 export class TerminalComponentFactory {
@@ -22,7 +23,7 @@ export class TerminalComponentFactory {
     }
 
     /** Liefert den bestehenden Portal für paneId – oder erstellt Komponente + Portal genau 1x */
-    getOrCreate(terminalId: TerminalId): ComponentRef<TerminalComponent> {
+    private getOrCreate(terminalId: TerminalId, shellConfig: ShellConfig): ComponentRef<TerminalComponent> {
         let ref = this.map.get(terminalId);
         if (!ref) {
             ref = createComponent(TerminalComponent as Type<TerminalComponent>, {
@@ -30,6 +31,7 @@ export class TerminalComponentFactory {
                 elementInjector: this.injector,
             });
             ref.setInput('terminalId', terminalId);
+            ref.setInput('shellConfig', shellConfig);
             // einmalige Change Detection zum Rendern
             ref.changeDetectorRef.detectChanges();
             this.map.set(terminalId, ref);
@@ -42,8 +44,8 @@ export class TerminalComponentFactory {
         return ref?.instance.getTerminalSnapshot() ?? "";
     }
 
-    attach(terminalId: TerminalId, host: HTMLElement) {
-        const ref = this.getOrCreate(terminalId);
+    attach(terminalId: TerminalId, shellConfig: ShellConfig, host: HTMLElement) {
+        const ref = this.getOrCreate(terminalId, shellConfig);
         host.appendChild(ref.location.nativeElement); // reparent – kein Destroy/Neuaufbau
         ref.changeDetectorRef.detectChanges();
 

@@ -1,8 +1,10 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, Renderer2} from '@angular/core';
 import {BinaryNode} from "../../common/tree/binary-tree";
 import {Pane, SplitDirection} from "../+model/model";
-import {JsonPipe, NgStyle} from "@angular/common";
+import {NgStyle} from "@angular/common";
 import {PaneComponent} from "../pane/pane.component";
+import {ConfigService} from "../../config/+state/config.service";
+import {ShellConfig} from "../../config/+models/config.types";
 
 @Component({
   selector: 'app-grid',
@@ -15,6 +17,7 @@ import {PaneComponent} from "../pane/pane.component";
 })
 export class GridComponent {
     @Input({ required: true }) node!: BinaryNode<Pane>;
+
 
     styleForSplit(direction: SplitDirection, ratio: number = 0.5) {
         ratio = Math.max(0.05, Math.min(0.95, ratio));
@@ -52,5 +55,4 @@ export class GridComponent {
     }
 
     stopDragDivider() { this.drag = undefined; }
-
 }

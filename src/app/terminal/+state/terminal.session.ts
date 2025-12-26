@@ -18,6 +18,7 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
+import {ShellConfig, ShellConfigPosition} from "../../config/+models/config.types";
 
 export class TerminalSession {
 
@@ -34,7 +35,12 @@ export class TerminalSession {
     ];
     private disposed: boolean = false;
 
-    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
+    constructor(
+        private configService: ConfigService,
+        private bus: AppBus,
+        private terminalId: TerminalId,
+        private shellConfig: ShellConfig
+    ) {
         this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
             if (config.enable_webgl) {
                 this.renderer.useWebGl();
@@ -48,7 +54,7 @@ export class TerminalSession {
         this.renderer.open(terminalContainer);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
-        this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.configService, this.bus)));
+        this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellConfig, this.bus)));
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TabTitleHandler(this.terminalId, this.bus)));

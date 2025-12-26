@@ -1,6 +1,8 @@
 import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal} from '@angular/core';
 import {TerminalComponentFactory} from "../+state/terminal-component.factory";
-import {TerminalId} from "../+model/model";
+import {Pane, TerminalId} from "../+model/model";
+import {ShellConfig, ShellConfigPosition} from "../../config/+models/config.types";
+import {ConfigService} from "../../config/+state/config.service";
 
 @Component({
   selector: 'app-pane',
@@ -23,27 +25,38 @@ import {TerminalId} from "../+model/model";
   `]
 })
 export class PaneComponent implements AfterViewInit {
-    terminalId = input.required<TerminalId>();
+    pane = input.required<Pane>();
     @ViewChild('dock', { static: true }) hostRef!: ElementRef<HTMLDivElement>;
 
     private _attachedTerminalId?: TerminalId;
     private _viewReady = signal(false);
 
-    constructor(private terminalComponents: TerminalComponentFactory) {
+    constructor(private _terminalComponents: TerminalComponentFactory, private _configService: ConfigService) {
         // Create the effect within an injection context (constructor)
         effect(() => {
             // wait until view is ready so hostRef is available
             if (!this._viewReady()) return;
-            const id = this.terminalId();
+            const pane = this.pane();
+            const id = pane.terminalId;
+            const shellConfig = this.getShellConfig(pane);
             const host = this.hostRef?.nativeElement;
             if (!id || !host) return;
             if (this._attachedTerminalId !== id) {
                 // Clear previous content to avoid multiple components in the dock
                 while (host.firstChild) host.removeChild(host.firstChild);
-                this.terminalComponents.attach(id, host);
+                this._terminalComponents.attach(id, shellConfig, host);
                 this._attachedTerminalId= id;
             }
         });
+    }
+
+    getShellConfig(pane: Pane): ShellConfig {
+        if(!pane.shellConfigPosition) throw new Error('Invalid shell config position');
+        const shellConfig = this._configService.getShellConfigOrDefault(pane.shellConfigPosition);
+        if(pane.workingDir) {
+            shellConfig.working_dir = pane.workingDir;
+        }
+        return shellConfig;
     }
 
     ngAfterViewInit() {

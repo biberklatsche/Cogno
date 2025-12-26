@@ -154,14 +154,14 @@ export class WorkspaceService extends SideMenuItemService {
 
     public restoreWorkspace(workspace: WorkspaceConfigUi) {
         const workspaceList = [...this._workspaceList()];
-        for(const workspace of workspaceList) {
-            workspace.isActive = false;
-            workspace.isSelected = false;
+        for(const ws of workspaceList) {
+            ws.isActive = false;
+            ws.isSelected = false;
         }
         workspace.isActive = true;
         workspace.isSelected = true;
-        this.gridListService.restoreGrids(workspace.grids);
         this.tabListService.restoreTabs(workspace.tabs);
+        this.gridListService.restoreGrids(workspace.grids);
         const activeTab = workspace!.tabs.find(s => s.isActive);
         if (activeTab) {
             this.tabListService.selectTab(activeTab.tabId);
@@ -206,7 +206,6 @@ export class WorkspaceService extends SideMenuItemService {
         // Load current configurations from services
         workspace.grids = this.gridListService.getGridConfigs();
         workspace.tabs = this.tabListService.getTabConfigs();
-        console.log('###### saving workspace', workspace);
         if (isNew) {
             await this.workspaceRepository.createWorkspace(workspace);
         } else {

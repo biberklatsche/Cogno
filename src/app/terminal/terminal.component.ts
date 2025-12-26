@@ -5,7 +5,7 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-    Input
+    Input, input
 } from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
@@ -13,6 +13,7 @@ import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
+import {ShellConfig, ShellConfigPosition} from "../config/+models/config.types";
 
 @Component({
     selector: 'app-terminal',
@@ -23,22 +24,14 @@ import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overl
 export class TerminalComponent implements OnInit, AfterViewInit {
     @ViewChild('terminalContainer', {static: true}) terminalContainer!: ElementRef<HTMLDivElement>;
     private terminalSession?: TerminalSession;
-    private _terminalId!: TerminalId;
-
-    @Input({ required: true })
-    set terminalId(value: TerminalId) {
-        if(!this._terminalId) this._terminalId = value;
-    }
-
-    get terminalId(): TerminalId {
-        return this._terminalId;
-    }
+    terminalId = input.required<TerminalId>();
+    shellConfig = input.required<ShellConfig>();
 
     constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: ContextMenuOverlayService) {
     }
 
     ngOnInit(): void {
-        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId);
+        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId(), this.shellConfig());
         this.destroyRef.onDestroy(() => {
             this.terminalSession?.dispose();
         });

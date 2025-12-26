@@ -82,6 +82,10 @@ export class StyleService {
         document.documentElement.style.setProperty('--color-yellow', `#${config.color!.yellow}`);
         document.documentElement.style.setProperty('--color-yellow-ct2', `#${config.color!.yellow}${opacityDouble}`);
         document.documentElement.style.setProperty('--color-yellow-10t', `#${config.color!.yellow}66`);
+        document.documentElement.style.setProperty('--color-magenta', `#${config.color!.magenta}`);
+        document.documentElement.style.setProperty('--color-magenta-ct2', `#${config.color!.magenta}${opacityDouble}`);
+        document.documentElement.style.setProperty('--color-magenta-10t', `#${config.color!.magenta}66`);
+
         document.documentElement.style.setProperty('--color-white', `#${config.color!.white}`);
         document.documentElement.style.setProperty('--color-white-ct2', `#${config.color!.white}${opacityDouble}`);
         document.documentElement.style.setProperty('--color-white-10t', `#${config.color!.white}66`);

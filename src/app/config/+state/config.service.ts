@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, debounceTime, filter, Observable, Subject, Subscription} from 'rxjs';
-import {ConfigTypes} from "../+models/config.types";
+import {ConfigTypes, ShellConfig, ShellConfigPosition} from "../+models/config.types";
 import {ConfigReader} from "./config.reader";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
@@ -82,5 +82,14 @@ export class ConfigService {
         Logger.info('Config loaded...');
     }
 
-
+    getShellConfigOrDefault(shellConfigPosition: ShellConfigPosition): ShellConfig {
+        const config = this._config.value;
+        if(!config) throw new Error('Config is not loaded!');
+        let shellConfig = config.shell![shellConfigPosition];
+        if (!shellConfig) {
+            shellConfig = config.shell![1];
+        }
+        if(!shellConfig) throw new Error('No shell config defined!');
+        return {...shellConfig};
+    }
 }

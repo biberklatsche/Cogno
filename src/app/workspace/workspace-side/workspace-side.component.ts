@@ -28,7 +28,7 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
                             } @else {
                                 <div class="workspace-badge"
                                      [style.color]="workspace.id === DEFAULT_WORKSPACE_ID ? 'var(--foreground-color)' : 'var(--background-color)' "
-                                     [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
+                                     [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : 'var(--color-green)'">
                                     {{ (workspace.name || '')[0] || '?' }}
                                 </div>
                                 <div class="workspace-name" [appTooltip]="workspace.name ?? ''">{{ workspace.name }}

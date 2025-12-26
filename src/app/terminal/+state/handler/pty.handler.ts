@@ -5,6 +5,7 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {IPty} from "../pty/pty";
 import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
+import {ShellConfig, ShellConfigPosition} from "../../../config/+models/config.types";
 
 export class PtyHandler implements ITerminalHandler {
 
@@ -16,7 +17,7 @@ export class PtyHandler implements ITerminalHandler {
     constructor(
         private _terminalId: TerminalId,
         private _pty: IPty,
-        private _configService: ConfigService,
+        private _shellConfig: ShellConfig,
         private _bus: AppBus
     ) {}
 
@@ -48,8 +49,7 @@ export class PtyHandler implements ITerminalHandler {
     }
 
     private spawnPty(terminalId: TerminalId, terminal: Terminal) {
-        const shellConfig = this._configService.config.shell![1]!;
-        return this._pty.spawn(terminalId, shellConfig, {cols: terminal.cols, rows: terminal.rows});
+        return this._pty.spawn(terminalId, this._shellConfig, {cols: terminal.cols, rows: terminal.rows});
     }
 
 }
