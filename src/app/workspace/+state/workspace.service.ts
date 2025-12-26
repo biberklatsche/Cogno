@@ -12,13 +12,16 @@ import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component
 import {KeybindService} from "../../keybinding/keybind.service";
 import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
+import {Color} from "../../common/color/color";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
+
+export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT"
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceService extends SideMenuItemService {
 
-    private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: "WS_DEFAULT", name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
+    private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
 
@@ -151,8 +154,12 @@ export class WorkspaceService extends SideMenuItemService {
 
     public restoreWorkspace(workspace: WorkspaceConfigUi) {
         const workspaceList = [...this._workspaceList()];
-        for(const workspace of workspaceList) workspace.isActive = false;
+        for(const workspace of workspaceList) {
+            workspace.isActive = false;
+            workspace.isSelected = false;
+        }
         workspace.isActive = true;
+        workspace.isSelected = true;
         this.gridListService.restoreGrids(workspace.grids);
         this.tabListService.restoreTabs(workspace.tabs);
         const activeTab = workspace!.tabs.find(s => s.isActive);
@@ -184,7 +191,7 @@ export class WorkspaceService extends SideMenuItemService {
         const list = [...this._workspaceList()];
         const idx = list.findIndex(w => w.id === id);
         if (idx === -1) throw new Error('Workspace id not found');
-        const current = { ...list[idx], name: newName };
+        const current = { ...list[idx], name: newName, color: Color.fromText(newName) };
         current.id = await this.saveWorkspace(current);
         // update UI state
         list[idx] = current;
@@ -263,6 +270,8 @@ export class WorkspaceService extends SideMenuItemService {
     closeEdit(): void {
         this.editWorkspaceId.set(undefined);
         this.editWorkspaceName.set('');
+        const workspaceList = this._workspaceList().filter(item => !!item.id);
+        this._workspaceList.set(workspaceList);
         this.registerKeybindListener();
     }
 }

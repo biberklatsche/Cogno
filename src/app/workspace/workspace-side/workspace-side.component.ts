@@ -1,5 +1,5 @@
 import {Component, Signal} from '@angular/core';
-import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
+import {DEFAULT_WORKSPACE_ID, WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";
 import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
@@ -19,6 +19,7 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
                                 <input class="workspace-input"
                                        #wsInput
                                        type="text"
+                                       placeholder="Enter a workspace name"
                                        [value]="workspaceService.editWorkspaceName()"
                                        (input)="workspaceService.setWorkspaceName($event)"
                                        (keydown.enter)="workspaceService.confirmEdit()"
@@ -26,12 +27,13 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
                                        [appAutofocus]="workspaceService.editWorkspaceId() === workspace.id"/>
                             } @else {
                                 <div class="workspace-badge"
+                                     [style.color]="workspace.id === DEFAULT_WORKSPACE_ID ? 'var(--foreground-color)' : 'var(--background-color)' "
                                      [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : undefined">
                                     {{ (workspace.name || '')[0] || '?' }}
                                 </div>
                                 <div class="workspace-name" [appTooltip]="workspace.name ?? ''">{{ workspace.name }}
                                 </div>
-                                @if (workspace.id !== 'WS_DEFAULT') {
+                                @if (workspace.id !== DEFAULT_WORKSPACE_ID) {
                                     <div class="space"></div>
                                     <app-copy-edit-delete
                                             (onEvent)="editDelete($event, workspace)"></app-copy-edit-delete>
@@ -101,7 +103,6 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
         .workspace-tile__content {
             display: flex;
             align-items: center;
-            gap: 10px;
             padding: 10px;
             box-sizing: border-box;
             width: 100%;
@@ -112,10 +113,12 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
             min-width: 24px;
             height: 24px;
             border-radius: 50%;
+            margin-right: 0.5rem;
             display: grid;
             place-items: center;
             line-height: 0;
             color: var(--forground-color);
+            text-transform: capitalize;
         }
 
         .workspace-name {
@@ -153,4 +156,6 @@ export class WorkspaceSideComponent {
     restoreWorkspace(workspace: WorkspaceConfigUi) {
         this.workspaceService.restoreWorkspace(workspace);
     }
+
+    DEFAULT_WORKSPACE_ID = DEFAULT_WORKSPACE_ID;
 }
