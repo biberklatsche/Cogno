@@ -130,21 +130,22 @@ export class WorkspaceSideComponent {
     }
 
     addWorkspace() {
-        this.workspaceService.addWorkspace();
+        const draft = this.workspaceService.createWorkspaceDraft();
         this.dialog.open(WorkspaceEditDialogComponent, {
             title: 'Create workspace',
             width: '420px',
             showCloseButton: true,
+            data: draft,
         });
     }
 
     editDelete(event: "copy" | "edit" | "delete", workspace: WorkspaceConfigUi) {
         if (event === 'edit') {
-            this.workspaceService.startEdit(workspace.id, workspace.name);
             this.dialog.open(WorkspaceEditDialogComponent, {
                 title: 'Rename workspace',
                 width: '420px',
                 showCloseButton: true,
+                data: workspace,
             });
         } else if (event === 'delete') {
             void this.workspaceService.deleteWorkspace(workspace.id);

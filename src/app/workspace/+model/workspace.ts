@@ -8,7 +8,7 @@ export type WorkspaceId = string;
 
 export type WorkspaceConfig = {
     id: WorkspaceId;
-    name?: string;
+    name: string;
     color?: ColorName;
     grids: GridConfig[];
     tabs: TabConfig[];

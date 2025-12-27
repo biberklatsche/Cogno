@@ -1,7 +1,7 @@
-import {Component} from '@angular/core';
-import {WorkspaceService} from "../+state/workspace.service";
+import {Component, inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
-import {DialogRef} from "../../common/dialog";
+import {DialogRef, DIALOG_DATA} from "../../common/dialog";
 
 @Component({
   selector: 'app-workspace-edit-dialog',
@@ -35,8 +35,8 @@ import {DialogRef} from "../../common/dialog";
       <input class="workspace-input"
              type="text"
              placeholder="Enter a workspace name"
-             [value]="workspaceService.editWorkspaceName()"
-             (input)="workspaceService.setWorkspaceName($event)"
+             [value]="name()"
+             (input)="onNameInput($event)"
              (keydown.enter)="onSave()"
              (keydown.escape)="onCancel()"
              [appAutofocus]="true"/>
@@ -48,16 +48,39 @@ import {DialogRef} from "../../common/dialog";
     </div>
   `
 })
-export class WorkspaceEditDialogComponent {
+export class WorkspaceEditDialogComponent implements OnInit, OnDestroy {
   constructor(public workspaceService: WorkspaceService, private readonly dialogRef: DialogRef<void>) {}
 
+    ngOnDestroy(): void {
+        this.workspaceService.registerKeybindListener();
+    }
+
+    ngOnInit(): void {
+        this.workspaceService.unregisterKeybindListener();
+    }
+
+  // Workspace to edit is passed via dialog data
+  readonly workspace = inject<WorkspaceConfigUi>(DIALOG_DATA as any);
+  readonly name = signal<string>(this.workspace?.name ?? '');
+
+  onNameInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value ?? '';
+    this.name.set(value);
+  }
+
   onSave() {
-    this.workspaceService.confirmEdit();
+    const newName = this.name().trim();
+    if (!this.workspace || newName.length === 0) {
+      this.dialogRef.close();
+      return;
+    }
+    this.workspace.name = newName;
+    // Persist via service
+    void this.workspaceService.save(this.workspace);
     this.dialogRef.close();
   }
 
   onCancel() {
-    this.workspaceService.closeEdit();
     this.dialogRef.close();
   }
 }
