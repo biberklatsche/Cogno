@@ -9,7 +9,7 @@
     @if (notification.count > 1) {
       <div class="count" title="Occurrences">{{ notification.count }}</div>
     }
-      <button class="button-borderless" (click)="remove(notification.id)">
+      <button class="button icon-button" (click)="remove(notification.id)">
           <app-icon [name]="'mdiClose'"></app-icon>
       </button>
   </section>

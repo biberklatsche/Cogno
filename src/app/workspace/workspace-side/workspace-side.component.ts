@@ -32,7 +32,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
                     </li>
                 }
                 <li class="center">
-                    <button class="button-borderless" (click)="addWorkspace()">
+                    <button class="button icon-button" (click)="addWorkspace()">
                         <app-icon name="mdiPlus"></app-icon>
                     </button>
                 </li>

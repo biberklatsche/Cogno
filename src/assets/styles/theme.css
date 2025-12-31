@@ -2,23 +2,40 @@ html {
     --button-border-radius:6px;
 }
 
-.button-borderless {
-    border: none;
+.button {
+    padding: 6px 10px;
+    border-radius: var(--button-border-radius, 6px);
+    border: 1px solid var(--background-color-20l);
+    background: var(--background-color-10l);
+    color: var(--foreground-color);
     cursor: default;
-    border-radius: var(--button-border-radius);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 4px;
-    background: none;
-    color: var(--foreground-color-10t);
-    &:hover {
-        color: var(--foreground-color);
+
+    &.icon-button {
+        border: none;
+        border-radius: var(--button-border-radius);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        padding: 4px;
+        background: none;
+        color: var(--foreground-color-10t);
+        &:hover {
+            color: var(--foreground-color);
+            background: var(--background-color-20l);
+        }
+    }
+
+    &.primary {
         background: var(--background-color-20l);
     }
+
+    &:hover {
+        background: var(--background-color-30l);
+    }
 }
+
 .base-overlay {
     background-color: var(--background-color-10l-ct);
     border: 1px solid var(--background-color-20l);

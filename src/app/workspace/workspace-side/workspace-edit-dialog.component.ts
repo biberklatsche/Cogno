@@ -18,17 +18,6 @@ import {DialogRef, DIALOG_DATA} from "../../common/dialog";
       width: 100%;
       box-sizing: border-box;
     }
-    .button {
-      padding: 6px 10px;
-      border-radius: var(--button-border-radius, 6px);
-      border: 1px solid var(--background-color-20l);
-      background: var(--background-color-10l);
-      color: var(--foreground-color);
-      cursor: pointer;
-    }
-    .button.primary {
-      background: var(--background-color-20l);
-    }
   `],
   template: `
     <div>

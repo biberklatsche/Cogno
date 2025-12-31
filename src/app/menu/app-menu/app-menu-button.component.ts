@@ -10,7 +10,7 @@ import {ContextMenuItem} from "../context-menu-overlay/context-menu-overlay.type
         IconComponent
     ],
   template: `
-      <button class="button-borderless" (click)="openMenu($event)"><app-icon name="mdiChevronDown"></app-icon></button>
+      <button class="button icon-button" (click)="openMenu($event)"><app-icon name="mdiChevronDown"></app-icon></button>
   `,
   styles: [`
       :host {margin-right: 1rem;}

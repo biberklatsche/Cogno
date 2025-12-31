@@ -26,11 +26,12 @@ import {NgComponentOutlet, NgTemplateOutlet} from '@angular/common';
 import {DialogConfig} from './dialog-config';
 import {DialogRef} from './dialog-ref';
 import {DIALOG_DATA} from './dialog.tokens';
+import {IconComponent} from "../../icons/icon/icon.component";
 
 @Component({
   selector: 'app-dialog',
   standalone: true,
-  imports: [CommonModule, NgComponentOutlet],
+    imports: [CommonModule, NgComponentOutlet, IconComponent],
   styles: [
     `
       :host {
@@ -107,7 +108,7 @@ import {DIALOG_DATA} from './dialog.tokens';
         <div class="header">
           <div class="title">{{ config().title }}</div>
             @if (config().showCloseButton) {
-          <button class="close-btn" (click)="close()" aria-label="Close">✕</button>
+          <button class="button icon-button" (click)="close()"><app-icon name="mdiClose"></app-icon></button>
             }
         </div>
      
