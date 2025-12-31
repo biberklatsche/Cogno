@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ConfigTypes, ShellConfig, ShellType } from './+models/config.types';
+import {ConfigTypes, ShellConfig, ShellConfigPosition, ShellType} from './+models/config.types';
 import { Shells } from '../_tauri/shells';
 import { Environment } from '../common/environment/environment';
 
@@ -20,23 +20,23 @@ export class ShellConfigurator {
     };
 
     const sorted = [...shells].sort((a, b) => {
-      const wa = weight[a.shell_type as ShellType] ?? 99;
-      const wb = weight[b.shell_type as ShellType] ?? 99;
+      const wa = weight[a.shell_type] ?? 99;
+      const wb = weight[b.shell_type] ?? 99;
       return wa - wb;
     });
 
-    let pos = 1 as keyof typeof config.shell;
+    let pos: ShellConfigPosition = 1 as keyof typeof config.shell;
 
     for (const sh of sorted) {
       const base: ShellConfig = {
-        shell_type: sh.shell_type as ShellType,
+        shell_type: sh.shell_type,
         path: sh.path,
         args: [],
         working_dir: '/~',
-      } as any;
+      };
 
       const args: string[] = [];
-
+      //TODO: Add cogno to path during installation
       switch (sh.shell_type) {
         case 'GitBash': {
           args.push('--login', '-i', '-lc');

@@ -106,13 +106,13 @@ export class ContextMenuOverlayService {
 
   // Convenience: fixed context menu openers
   openContextAt(pointOrEvent: Point | MouseEvent, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
-    return this.openAt(pointOrEvent, ContextMenuComponent, inputs as any);
+    return this.openAt(pointOrEvent, ContextMenuComponent, inputs);
   }
 
   openContextForElement(el: HTMLElement, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
     const rect = el.getBoundingClientRect();
     const point: Point = { x: rect.left, y: rect.bottom };
-    return this.openAt(point, ContextMenuComponent, inputs as any);
+    return this.openAt(point, ContextMenuComponent, inputs);
   }
 
   close() {

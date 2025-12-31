@@ -60,7 +60,7 @@ export class WorkspaceEditDialogComponent implements OnInit, OnDestroy {
     }
 
   // Workspace to edit is passed via dialog data
-  readonly workspace = inject<WorkspaceConfigUi>(DIALOG_DATA as any);
+  readonly workspace = inject<WorkspaceConfigUi>(DIALOG_DATA);
   readonly name = signal<string>(this.workspace?.name ?? '');
 
   onNameInput(event: Event) {

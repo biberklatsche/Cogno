@@ -98,7 +98,7 @@ export class AppBus {
         if (opts.signal) {
             const abort$ = fromEvent(opts.signal, "abort").pipe(take(1));
             // @ts-ignore rxjs race array
-            one = race(one, abort$) as any;
+            one = race(one, abort$);
         }
         return one;
     }

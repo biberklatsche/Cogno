@@ -1,3 +1,4 @@
 import {InjectionToken} from '@angular/core';
+import {WorkspaceConfigUi} from "../../workspace/+state/workspace.service";
 
-export const DIALOG_DATA = new InjectionToken<any>('DIALOG_DATA');
+export const DIALOG_DATA = new InjectionToken<WorkspaceConfigUi>('DIALOG_DATA');

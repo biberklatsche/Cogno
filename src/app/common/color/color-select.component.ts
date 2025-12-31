@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {map, Observable} from 'rxjs';
 import {ConfigService} from '../../config/+state/config.service';
 import {ColorName} from "./color";
+import {Color} from "../../config/+models/config.types";
 
 interface ColorItem {
   name: ColorName;
@@ -59,7 +60,7 @@ export class ColorSelectComponent {
 
   readonly colors$: Observable<ColorItem[]> = this.config.config$.pipe(
     map(cfg => {
-      const color = cfg.color ?? {} as any;
+      const color: Color = cfg.color!;
       const items: { name: ColorName; hex?: string }[] = [
         { name: 'red', hex: this.selectedColorName !== 'red' ? `#${color.red}` : '#00000000' },
         { name: 'green', hex: this.selectedColorName !== 'green' ? `#${color.green}` : '#00000000' },

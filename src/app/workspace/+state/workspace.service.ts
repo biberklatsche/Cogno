@@ -189,11 +189,11 @@ export class WorkspaceService extends SideMenuItemService {
         const list = [...this._workspaceList()];
         const idx = list.findIndex(w => w.id === workspace.id || (workspace.id === '' && w.name === workspace.name));
         if (idx >= 0) {
-            list[idx] = { ...(workspace as any), isSelected: list[idx].isSelected, isActive: list[idx].isActive } as WorkspaceConfigUi;
+            list[idx] = { ...workspace, isSelected: list[idx].isSelected, isActive: list[idx].isActive } as WorkspaceConfigUi;
         } else {
             // For new workspace, deactivate others and select this one
             for (const ws of list) { ws.isActive = false; ws.isSelected = false; }
-            const ui: WorkspaceConfigUi = { ...(workspace as any), id, isSelected: true, isActive: true };
+            const ui: WorkspaceConfigUi = { ...workspace, id, isSelected: true, isActive: true };
             list.push(ui);
         }
         this._workspaceList.set(list);
