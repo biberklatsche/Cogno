@@ -141,28 +141,22 @@ const ShellSchema = z.object({
     working_dir: z.string().optional(),
 }).describe("The shell configuration");
 
-const ShellListSchema = z.object({
-    1: ShellSchema.optional(),
-    2: ShellSchema.optional(),
-    3: ShellSchema.optional(),
-    4: ShellSchema.optional(),
-    5: ShellSchema.optional(),
-    6: ShellSchema.optional(),
-    7: ShellSchema.optional(),
-    8: ShellSchema.optional(),
-    9: ShellSchema.optional(),
-    10: ShellSchema.optional(),
-    11: ShellSchema.optional(),
-    12: ShellSchema.optional(),
-    13: ShellSchema.optional(),
-    14: ShellSchema.optional(),
-    15: ShellSchema.optional(),
-    16: ShellSchema.optional(),
-    17: ShellSchema.optional(),
-    18: ShellSchema.optional(),
-    19: ShellSchema.optional(),
-    20: ShellSchema.optional()
-});
+export const SHELL_CONFIG_POSITIONS = [
+    1, 2, 3, 4, 5,
+    6, 7, 8, 9, 10,
+    11, 12, 13, 14, 15,
+    16, 17, 18, 19, 20,
+] as const;
+export const MAX_SHELL_POSITION = SHELL_CONFIG_POSITIONS[SHELL_CONFIG_POSITIONS.length - 1];
+
+export type ShellConfigPosition = typeof SHELL_CONFIG_POSITIONS[number];
+type ShellConfigPosKey = `${ShellConfigPosition}`; // "1" | "2" | ... | "20"
+
+const ShellListSchema = z.object(
+    Object.fromEntries(
+        SHELL_CONFIG_POSITIONS.map((n) => [String(n), ShellSchema.optional()])
+    ) as Record<ShellConfigPosKey, ReturnType<typeof ShellSchema.optional>>
+);
 
 const MenuSchema = z.object({
     opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
@@ -201,7 +195,6 @@ export type Selection = z.infer<typeof SelectionSchema>;
 export type Keybinding = z.infer<typeof KeybindsSchema>;
 export type HexColor = z.infer<typeof HexColorSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
-export type ShellConfigPosition = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 export type FeatureMode = z.infer<typeof FeatureModeEnum>;
 export type ScrollbarVisibility = z.infer<typeof ScrollbarVisibilityEnum>;
