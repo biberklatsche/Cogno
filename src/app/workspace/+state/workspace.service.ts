@@ -161,7 +161,7 @@ export class WorkspaceService extends SideMenuItemService {
         const tabId = IdCreator.newTabId();
         const pane: GridConfig = {tabId: tabId, pane: {}};
         const tab: TabConfig = {tabId: tabId}
-        return {id: '', name: '', color: 'green', grids: [pane], tabs: [tab], isSelected: true, isActive: true};
+        return {id: '', name: '', color: undefined, grids: [pane], tabs: [tab], isSelected: true, isActive: true};
     }
 
     private async saveWorkspace(workspace: WorkspaceConfig): Promise<string> {
@@ -183,7 +183,7 @@ export class WorkspaceService extends SideMenuItemService {
     // Public API to save a workspace coming from the dialog
     public async save(workspace: WorkspaceConfig): Promise<string> {
         // derive color from name if applicable
-        workspace.color = Color.fromText(workspace.name);
+        if(!workspace.color) workspace.color = Color.fromText(workspace.name);
         const id = await this.saveWorkspace(workspace);
         // update list in memory
         const list = [...this._workspaceList()];

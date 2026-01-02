@@ -3,6 +3,7 @@ import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
 import {DialogRef, DIALOG_DATA} from "../../common/dialog";
 import {ColorSelectComponent} from "../../common/color/color-select.component";
+import {ColorName} from "../../common/color/color";
 
 @Component({
   selector: 'app-workspace-edit-dialog',
@@ -35,7 +36,7 @@ import {ColorSelectComponent} from "../../common/color/color-select.component";
              (keydown.enter)="onSave()"
              (keydown.escape)="onCancel()"
              [appAutofocus]="true"/>
-       <app-color-select [selectedColorName]="workspace.color"></app-color-select> 
+       <app-color-select [selectedColorName]="color()" [showDefault]="false" (colorSelected)="selectColor($event)"></app-color-select> 
       <div class="actions">
         <button type="button" class="button" (click)="onCancel()">Cancel</button>
         <button type="button" class="button primary" (click)="onSave()">Save</button>
@@ -57,6 +58,7 @@ export class WorkspaceEditDialogComponent implements OnInit, OnDestroy {
   // Workspace to edit is passed via dialog data
   readonly workspace = inject<WorkspaceConfigUi>(DIALOG_DATA);
   readonly name = signal<string>(this.workspace?.name ?? '');
+  readonly color = signal<ColorName | undefined>(this.workspace?.color);
 
   onNameInput(event: Event) {
     const value = (event.target as HTMLInputElement).value ?? '';
@@ -65,11 +67,13 @@ export class WorkspaceEditDialogComponent implements OnInit, OnDestroy {
 
   onSave() {
     const newName = this.name().trim();
+    const newColor = this.color();
     if (!this.workspace || newName.length === 0) {
       this.dialogRef.close();
       return;
     }
     this.workspace.name = newName;
+    this.workspace.color = newColor;
     // Persist via service
     void this.workspaceService.save(this.workspace);
     this.dialogRef.close();
@@ -78,4 +82,8 @@ export class WorkspaceEditDialogComponent implements OnInit, OnDestroy {
   onCancel() {
     this.dialogRef.close();
   }
+
+    selectColor(color: ColorName) {
+        this.color.set(color);
+    }
 }
