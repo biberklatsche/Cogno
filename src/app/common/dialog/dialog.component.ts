@@ -68,26 +68,13 @@ import {IconComponent} from "../../icons/icon/icon.component";
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 12px;
+        padding: 6px;
         border-bottom: 1px solid var(--background-color-20l);
       }
 
       .content {
-        padding: 12px;
+        padding: 12px 6px;
         overflow: auto;
-      }
-
-      .close-btn {
-        background: transparent;
-        border: none;
-        color: inherit;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-      }
-      .close-btn:hover, .close-btn:focus-visible {
-        background: var(--background-color-20l);
-        outline: none;
       }
     `
   ],
@@ -104,7 +91,6 @@ import {IconComponent} from "../../icons/icon/icon.component";
         maxHeight: config().maxHeight ?? '90vh'
       }"
       [ngClass]="config().panelClass">
-      
         <div class="header">
           <div class="title">{{ config().title }}</div>
             @if (config().showCloseButton) {

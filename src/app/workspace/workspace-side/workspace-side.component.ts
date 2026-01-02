@@ -142,7 +142,7 @@ export class WorkspaceSideComponent {
     editDelete(event: "copy" | "edit" | "delete", workspace: WorkspaceConfigUi) {
         if (event === 'edit') {
             this.dialog.open(WorkspaceEditDialogComponent, {
-                title: 'Rename workspace',
+                title: `Edit ${workspace.name}`,
                 width: '420px',
                 showCloseButton: true,
                 data: workspace,

@@ -8,6 +8,7 @@ import {Color} from "../../config/+models/config.types";
 interface ColorItem {
   name: ColorName;
   value: string; // hex with leading '#'
+    isSelected: boolean;
 }
 
 @Component({
@@ -22,11 +23,12 @@ interface ColorItem {
                           type="button"
                           class="color-btn"
                           [style.background]="c.value"
-                          [style.border]="'1px solid var(--background-color-30l)'"
                           (click)="onPick(c.name)"
-                          [attr.aria-label]="c.name"
                           [title]="c.name"
                   >
+                      @if (c.isSelected) {
+                          <div class="selector" [style.border-color]="c.value"></div>
+                      }
                   </button>
               }
           </div>
@@ -36,18 +38,31 @@ interface ColorItem {
     `
     :host { display: block; }
     .color-grid {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: .5rem;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
     }
     .color-btn {
-      width: 15px;
-      height: 15px;
-      border: none;  
+      width: 14px;
+      height: 14px;
+      border: none;
+        padding: 4px;
+        box-sizing: border-box;
       border-radius: 50%;
-      opacity: 0.7;  
+        position: relative;
+      opacity: 0.7;
+        &:hover {opacity: 1;}
     }
-    .color-btn:hover {opacity: 1;} 
+    .selector {
+        position: absolute;
+        top: -3px;
+        bottom: -3px;
+        left: -3px;
+        right: -3px;
+        border-radius: 50%;
+        border: 1px solid;
+    }
     `
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -61,17 +76,18 @@ export class ColorSelectComponent {
   readonly colors$: Observable<ColorItem[]> = this.config.config$.pipe(
     map(cfg => {
       const color: Color = cfg.color!;
-      const items: { name: ColorName; hex?: string }[] = [
-        { name: 'red', hex: this.selectedColorName !== 'red' ? `#${color.red}` : '#00000000' },
-        { name: 'green', hex: this.selectedColorName !== 'green' ? `#${color.green}` : '#00000000' },
-        { name: 'yellow', hex: this.selectedColorName !== 'yellow' ? `#${color.yellow}` : '#00000000' },
-        { name: 'blue', hex: this.selectedColorName !== 'blue' ? `#${color.blue}` : '#00000000' },
-        { name: 'magenta', hex: this.selectedColorName !== 'magenta' ? `#${color.magenta}` : '#00000000' },
-        { name: 'cyan', hex: this.selectedColorName !== 'cyan' ? `#${color.cyan}` : '#00000000' },
+      const items: { name: ColorName; hex?: string; isSelected: boolean }[] = [
+        { name: 'red', hex: `#${color.red}`, isSelected: this.selectedColorName === 'red'},
+        { name: 'green', hex: `#${color.green}`, isSelected: this.selectedColorName === 'green' },
+        { name: 'yellow', hex: `#${color.yellow}` , isSelected: this.selectedColorName === 'yellow' },
+        { name: 'blue', hex: `#${color.blue}` , isSelected: this.selectedColorName === 'blue' },
+        { name: 'magenta', hex: `#${color.magenta}` , isSelected: this.selectedColorName === 'magenta' },
+        { name: 'cyan', hex: `#${color.cyan}` , isSelected: this.selectedColorName === 'cyan' },
       ];
       return items.map(i => ({
         name: i.name,
         value: i.hex!,
+          isSelected: i.isSelected,
       }));
     })
   );

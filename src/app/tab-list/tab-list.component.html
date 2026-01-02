@@ -15,12 +15,13 @@
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
             @if (showRename()===tab.id) {
-                <input
+                <input class="inline-input"
                     #renameInput
                     autocomplete="off"
                     spellcheck="false"
                     data-private="off"
                     autocorrect="off"
+                    [value]="tab.title"
                     (keyup.esc)="$event.stopPropagation(); closeRename()"
                     (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
                     (blur)="commitRename(renameInput.value);">

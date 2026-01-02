@@ -3,7 +3,6 @@
 @import './xterm.css';
 @import './scrollbar.css';
 @import './theme.css';
-@import './default.css';
 
 html, body {
     margin: 0;

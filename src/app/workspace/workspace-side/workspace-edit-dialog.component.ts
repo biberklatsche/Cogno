@@ -2,12 +2,18 @@ import {Component, inject, OnDestroy, OnInit, signal} from '@angular/core';
 import {WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {AutofocusDirective} from "../../common/autofocus/autofocus.directive";
 import {DialogRef, DIALOG_DATA} from "../../common/dialog";
+import {ColorSelectComponent} from "../../common/color/color-select.component";
 
 @Component({
   selector: 'app-workspace-edit-dialog',
   standalone: true,
-  imports: [AutofocusDirective],
+    imports: [AutofocusDirective, ColorSelectComponent],
   styles: [`
+    .container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }  
     .actions {
       display: flex;
       justify-content: flex-end;
@@ -20,7 +26,7 @@ import {DialogRef, DIALOG_DATA} from "../../common/dialog";
     }
   `],
   template: `
-    <div>
+    <div class="container">
       <input class="workspace-input"
              type="text"
              placeholder="Enter a workspace name"
@@ -29,7 +35,7 @@ import {DialogRef, DIALOG_DATA} from "../../common/dialog";
              (keydown.enter)="onSave()"
              (keydown.escape)="onCancel()"
              [appAutofocus]="true"/>
-
+       <app-color-select [selectedColorName]="workspace.color"></app-color-select> 
       <div class="actions">
         <button type="button" class="button" (click)="onCancel()">Cancel</button>
         <button type="button" class="button primary" (click)="onSave()">Save</button>

@@ -2,13 +2,21 @@ html {
     --button-border-radius:6px;
 }
 
+h1, h2, h3, h4, h5, h6, p {
+    margin: 0;
+    padding: 0;
+}
+
+button, a {
+    cursor: default;
+}
+
 .button {
     padding: 6px 10px;
     border-radius: var(--button-border-radius, 6px);
     border: 1px solid var(--background-color-20l);
     background: var(--background-color-10l);
     color: var(--foreground-color);
-    cursor: default;
 
     &.icon-button {
         border: none;
@@ -45,6 +53,27 @@ html {
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     padding: 6px;
 }
+
 .keybinding {
     opacity: 0.5;
+}
+
+
+input {
+    border: none;
+    outline: none;
+    color: var(--color-foreground);
+    font-size: 1rem;
+    padding: 0.5rem;
+    border-radius: var(--button-border-radius);
+    box-sizing: border-box;
+    width: 100%;
+    background-color: var(--background-color-20l);
+
+    &.inline-input {
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+        padding: 0;
+    }
 }
