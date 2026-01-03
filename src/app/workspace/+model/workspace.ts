@@ -13,6 +13,7 @@ export type WorkspaceConfig = {
     grids: GridConfig[];
     tabs: TabConfig[];
     isActive?: boolean;
+    autosave?: boolean;
 }
 
 export type TabConfig = {

@@ -21,8 +21,13 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
                                  [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : 'var(--color-green)'">
                                 {{ (workspace.name || '')[0] || '?' }}
                             </div>
-                            <div class="workspace-name" [appTooltip]="workspace.name">{{ workspace.name }}
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center">
+                                <div class="workspace-name" [appTooltip]="workspace.name">{{ workspace.name }}</div>
+                                @if(workspace.autosave) {
+                                    <small class="workspace-autosave" >Auto Save Enabled</small>
+                                }
                             </div>
+                            
                             @if (workspace.id !== DEFAULT_WORKSPACE_ID) {
                                 <div class="space"></div>
                                 <app-copy-edit-delete
@@ -65,6 +70,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
             background-color: var(--background-color-20l-ct);
             opacity: 0.7;
             cursor: default;
+            height: 3.5rem;
 
             &:hover {
                 background: var(--background-color-20l) !important;
@@ -91,7 +97,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
         .workspace-tile__content {
             display: flex;
             align-items: center;
-            padding: 10px;
+            padding: 0.5rem 0.8rem;
             box-sizing: border-box;
             width: 100%;
         }
@@ -100,6 +106,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
             width: 24px;
             min-width: 24px;
             height: 24px;
+            font-size: 16px;
             border-radius: 50%;
             margin-right: 0.5rem;
             display: grid;
@@ -110,12 +117,17 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
         }
 
         .workspace-name {
-            font-size: 0.95rem;
+            font-size: 1rem;
             color: var(--color-text, inherit);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        
+        .workspace-autosave {
+            font-size: 0.8rem;
+        }
+        
         .space {
             flex: 1;
         }

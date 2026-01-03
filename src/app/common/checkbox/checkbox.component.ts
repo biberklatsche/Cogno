@@ -1,4 +1,4 @@
-import {Component, ViewEncapsulation, signal, input, output} from '@angular/core';
+import {Component, input, model} from '@angular/core';
 
 
 @Component({
@@ -6,10 +6,14 @@ import {Component, ViewEncapsulation, signal, input, output} from '@angular/core
   imports: [],
   template: `
       <div class="checkbox-container" (click)="toggle()">
-          <label>Open Tab in Same Directory</label>
-          <input type="checkbox" [checked]="openTabInSameDirectory | async">
+          @if(label()) {
+              <label>{{label()}}</label>    
+          }
+          <input type="checkbox" [checked]="checked()">
           <span class="checkmark checkbox"></span>
-          <small>Determines whether a new tab is opened in the same directory as the previously active tab.</small>
+          @if(description()){
+            <small>{{description()}}</small>  
+          } 
       </div>
   `,
   styles: [`
@@ -76,9 +80,11 @@ import {Component, ViewEncapsulation, signal, input, output} from '@angular/core
 })
 export class CheckboxComponent {
 
-    checked = input<boolean>(false);
+    checked = model<boolean>(false);
+    label = input<string | undefined>();
+    description = input<string | undefined>();
 
     toggle() {
-
+        this.checked.update(s => !s);
     }
 }
