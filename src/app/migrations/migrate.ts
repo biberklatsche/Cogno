@@ -1,12 +1,14 @@
 // src/db/migrate.ts
 // Migrationen als raw strings bundlen:
 import m001 from "./001_init_workspace.sql?raw";
+import m002 from "./002_add_workspace_autosave.sql?raw";
 import {DB} from "../_tauri/db";
 
 type Migration = { id: string; sql: string };
 
 const MIGRATIONS: Migration[] = [
     {id: "001_init_workspace", sql: m001},
+    {id: "002_add_workspace_autosave", sql: m002},
 ].sort((a, b) => a.id.localeCompare(b.id));
 
 async function sha256(text: string): Promise<string> {

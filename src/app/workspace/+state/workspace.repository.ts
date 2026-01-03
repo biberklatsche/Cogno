@@ -10,6 +10,7 @@ export type WorkspaceEntity = {
     id: string;
     name: string;
     color: string;
+    autosave: number; // stored as INTEGER (0/1)
     created_at?: string;
     updated_at?: string;
 }
@@ -51,6 +52,7 @@ export class WorkspaceRepository {
                 id: workspace.id,
                 name: workspace.name,
                 color: workspace.color as any,
+                autosave: workspace.autosave === 1,
                 tabs: tabs.map(t => ({
                     tabId: t.tab_id,
                     isActive: t.is_active === 1,
@@ -70,8 +72,8 @@ export class WorkspaceRepository {
         await DB.execute("BEGIN;");
         try {
             await DB.execute(
-                "INSERT INTO workspaces (id, name, color) VALUES (?, ?, ?)",
-                [config.id, config.name, config.color]
+                "INSERT INTO workspaces (id, name, color, autosave) VALUES (?, ?, ?, ?)",
+                [config.id, config.name, config.color, config.autosave ? 1 : 0]
             );
 
             let pos = 0;
@@ -94,8 +96,8 @@ export class WorkspaceRepository {
         await DB.execute("BEGIN;");
         try {
             await DB.execute(
-                "UPDATE workspaces SET name = ?, color = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                [config.name, config.color, config.id]
+                "UPDATE workspaces SET name = ?, color = ?, autosave = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [config.name, config.color, config.autosave ? 1 : 0, config.id]
             );
 
             await DB.execute("DELETE FROM workspace_tabs WHERE workspace_id = ?", [config.id]);

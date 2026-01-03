@@ -24,7 +24,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
                             <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center">
                                 <div class="workspace-name" [appTooltip]="workspace.name">{{ workspace.name }}</div>
                                 @if(workspace.autosave) {
-                                    <small class="workspace-autosave" >Auto Save Enabled</small>
+                                    <small class="workspace-autosave" >Auto Save</small>
                                 }
                             </div>
                             

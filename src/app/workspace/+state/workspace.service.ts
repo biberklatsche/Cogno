@@ -13,6 +13,7 @@ import {KeybindService} from "../../keybinding/keybind.service";
 import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
+import {ActionFired} from "../../action/action.models";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
@@ -49,14 +50,6 @@ export class WorkspaceService extends SideMenuItemService {
         this.bus.onceType$('DBInitialized').subscribe(async e => {
             //load workspaces here
             const workspaces = await workspaceRepository.getAllWorkspaces();
-
-
-            /*const tabId = IdCreator.newTabId();
-            const workspaceId = IdCreator.newWorkspaceId();
-            const pane: GridConfig = {tabId: tabId, pane: {}};
-            const tab: TabConfig = {tabId: tabId}
-            const testWorkspace: WorkspaceConfigUi = {id: workspaceId, name: 'Test Workspace', color: 'green', grids: [pane], tabs: [tab]}*/
-
             const workspacesUi: WorkspaceConfigUi[] = [this.DEFAULT_WORKSPACE, ...workspaces].map(w => ({...w, isSelected: w.isActive ?? false}));
             if(!workspacesUi.find(s => s.isSelected)) {
                 workspacesUi[0].isSelected = true;
@@ -66,9 +59,26 @@ export class WorkspaceService extends SideMenuItemService {
 
             let defaultWorkspace = workspacesUi.find(w => w.isActive)!;
 
-            this.restoreWorkspace(defaultWorkspace);
+            await this.restoreWorkspace(defaultWorkspace);
 
         });
+
+        // Capture-phase interceptor for close_window and quit to handle autosave without coupling WindowService
+        this.bus.on$({ path: ['app'], type: 'ActionFired', phase: 'capture' })
+            .subscribe(async (msg) => {
+                if (msg.payload !== 'close_window' && msg.payload !== 'quit') return;
+                const args = msg.args ?? [];
+                // Guard to avoid endless loop when we re-publish
+                if (args.includes('autosave_done')) return;
+
+                const active = this.getActiveWorkspace();
+                if (!active?.autosave) return;
+
+                // Stop current propagation, perform autosave, then re-publish action
+                msg.propagationStopped = true;
+                await this.saveWorkspace(active);
+                this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'autosave_done']));
+            });
     }
 
     protected override onConfigChange(featureMode: FeatureMode): void {
@@ -104,8 +114,8 @@ export class WorkspaceService extends SideMenuItemService {
                 this.sideMenuService.close();
                 break;
             case 'Enter':
-                this.restoreSelectedWorkspace();
-                this.sideMenuService.close();
+                this.restoreSelectedWorkspace()
+                    .then(() => this.sideMenuService.close());
                 break;
             case 'ArrowDown':
                 this.selectNextWorkspace('d');
@@ -132,14 +142,21 @@ export class WorkspaceService extends SideMenuItemService {
         this._workspaceList.set(workspaceList);
     }
 
-    private restoreSelectedWorkspace() {
+    private async restoreSelectedWorkspace() {
         const selectedWorkspace = this._workspaceList().find(s => s.isSelected);
         if(!selectedWorkspace) throw new Error('No workspace selected');
-        this.restoreWorkspace(selectedWorkspace);
+        await this.restoreWorkspace(selectedWorkspace);
     }
 
-    public restoreWorkspace(workspace: WorkspaceConfigUi) {
+    public async restoreWorkspace(workspace: WorkspaceConfigUi) {
         const workspaceList = [...this._workspaceList()];
+
+        // Detect previous active workspace and autosave if needed
+        const prevActive = workspaceList.find(w => w.isActive);
+        if (prevActive && prevActive.id !== workspace.id && prevActive.autosave) {
+            await this.saveWorkspace(prevActive);
+        }
+
         for(const ws of workspaceList) {
             ws.isActive = false;
             ws.isSelected = false;
@@ -180,6 +197,18 @@ export class WorkspaceService extends SideMenuItemService {
         return workspace.id;
     }
 
+    // Helpers for autosave scenarios
+    private getActiveWorkspace(): WorkspaceConfigUi | undefined {
+        return this._workspaceList().find(w => w.isActive);
+    }
+
+    public async saveActiveIfAutosave(): Promise<void> {
+        const active = this.getActiveWorkspace();
+        if (active?.autosave) {
+            await this.saveWorkspace(active);
+        }
+    }
+
     // Public API to save a workspace coming from the dialog
     public async save(workspace: WorkspaceConfig): Promise<string> {
         // derive color from name if applicable
@@ -215,7 +244,7 @@ export class WorkspaceService extends SideMenuItemService {
             if (wasActive && !list.find(w => w.isActive)) {
                 list[0].isActive = true;
                 // restore the newly active workspace
-                this.restoreWorkspace(list[0]);
+                await this.restoreWorkspace(list[0]);
             }
         }
         this._workspaceList.set(list);
