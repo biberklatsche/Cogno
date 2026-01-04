@@ -15,8 +15,8 @@ import {ScrollbarVisibility} from "../config/+models/config.types";
 @Injectable({ providedIn: 'root' })
 export class ScrollbarService implements OnDestroy {
   private visibility: ScrollbarVisibility = 'hidden';
-  private scrollingTimeoutId: any = null;
-  private onWheelHandler = () => this.handleUserScroll();
+  private scrollingTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private onWheelHandler: EventListener = () => this.handleUserScroll();
 
   constructor(configService: ConfigService, destroyRef: DestroyRef) {
       this.init();
@@ -57,7 +57,7 @@ export class ScrollbarService implements OnDestroy {
     }
 
     // auto: listen to wheel events
-    window.addEventListener('wheel', this.onWheelHandler as any, { passive: true } as any);
+    window.addEventListener('wheel', this.onWheelHandler, { passive: true });
   }
 
   private handleUserScroll(): void {
@@ -78,7 +78,7 @@ export class ScrollbarService implements OnDestroy {
 
   private dispose(): void {
     // remove with matching capture option (false)
-    window.removeEventListener('wheel', this.onWheelHandler as any, false as any);
+    window.removeEventListener('wheel', this.onWheelHandler, false);
     if (this.scrollingTimeoutId) {
       clearTimeout(this.scrollingTimeoutId);
       this.scrollingTimeoutId = null;

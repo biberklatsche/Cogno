@@ -3,8 +3,9 @@
 
 import {Injectable} from "@angular/core";
 import {DB} from "../../_tauri/db";
-import {WorkspaceConfig, TabConfig, GridConfig, TerminalSession, WorkspaceId} from "../+model/workspace";
+import {WorkspaceConfig, TabConfig, GridConfig, TerminalSession, WorkspaceId, PaneConfig} from "../+model/workspace";
 import {TerminalId} from "../../grid-list/+model/model";
+import { ColorName } from "../../common/color/color";
 
 export type WorkspaceEntity = {
     id: string;
@@ -51,21 +52,37 @@ export class WorkspaceRepository {
             result.push({
                 id: workspace.id,
                 name: workspace.name,
-                color: workspace.color as any,
+                color: this.toColorName(workspace.color),
                 autosave: workspace.autosave === 1,
                 tabs: tabs.map(t => ({
                     tabId: t.tab_id,
                     isActive: t.is_active === 1,
-                    color: t.color as any,
+                    color: this.toColorName(t.color),
                     title: t.title
                 })),
                 grids: grids.map(g => ({
                     tabId: g.tab_id,
-                    pane: JSON.parse(g.pane_json)
+                    pane: this.parsePaneJson(g.pane_json)
                 }))
             });
         }
         return result;
+    }
+
+    private toColorName(value: string | undefined): ColorName | undefined {
+        if (!value) return undefined;
+        const allowed: ColorName[] = ['red','green','yellow','blue','magenta','cyan','grey'];
+        return (allowed as readonly string[]).includes(value) ? (value as ColorName) : undefined;
+    }
+
+    private parsePaneJson(json: string): PaneConfig {
+        try {
+            const obj = JSON.parse(json) as unknown;
+            return obj as PaneConfig;
+        } catch {
+            // fallback to empty terminal pane
+            return { pane: undefined } as unknown as PaneConfig;
+        }
     }
 
     async createWorkspace(config: WorkspaceConfig): Promise<void> {

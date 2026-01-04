@@ -1,13 +1,12 @@
-import {computed, DestroyRef, Injectable, OnDestroy, Signal, signal, WritableSignal} from '@angular/core';
+import {computed, Injectable, Signal, signal, WritableSignal} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
-import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
+import {FeatureMode} from "../../config/+models/config.types";
 import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";
+import {useSideMenuRegistration} from "../../menu/side-menu/+state/use-side-menu-registration";
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
@@ -22,7 +21,7 @@ export type Notification = {
 }
 
 @Injectable({providedIn: 'root'})
-export class NotificationService extends SideMenuItemService {
+export class NotificationService {
 
 
     private _subscription = new Subscription();
@@ -33,8 +32,11 @@ export class NotificationService extends SideMenuItemService {
         return Object.values(this._notifications());
     });
 
-    constructor(sideMenuService: SideMenuService, override bus: AppBus, private keybinds: KeybindService, config: ConfigService, ref: DestroyRef) {
-        super(sideMenuService, bus, config, ref, {
+    private updateIconFn: ((icon: any) => void) | undefined;
+
+    constructor(private sideMenuService: SideMenuService, private bus: AppBus, private keybinds: KeybindService) {
+        const helper = useSideMenuRegistration({
+            menuItem: {
                 label: 'Notification',
                 hidden: false,
                 pinned: false,
@@ -42,12 +44,16 @@ export class NotificationService extends SideMenuItemService {
                 component: NotificationSideComponent,
                 actionName: 'open_notification'
             },
-            (config: ConfigTypes) => config.notification?.mode
-        );
+            configSelector: (config) => config.notification?.mode,
+            onOpen: () => this.onOpen(),
+            onClose: () => this.onClose(),
+            onConfigChange: (mode) => this.onConfigChange(mode)
+        });
+        this.updateIconFn = helper.updateIcon;
         this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
             if (!event.payload) return;
             const id = Hash.create(event.payload.header + event.payload.body);
-            this.updateIcon('mdiBellBadge');
+            this.updateIconFn?.('mdiBellBadge');
             this._notifications.update(notifications => {
                 if (!notifications[id]) {
                     notifications[id] = {
@@ -71,13 +77,13 @@ export class NotificationService extends SideMenuItemService {
         }));
     }
 
-    protected override onConfigChange(featureMode: FeatureMode): void {
+    protected onConfigChange(featureMode: FeatureMode): void {
         if (featureMode === 'off') {
             this._subscription.unsubscribe();
         }
     }
-    protected override onOpen(): void {
-        this.updateIcon('mdiBell');
+    protected onOpen(): void {
+        this.updateIconFn?.('mdiBell');
         this.keybinds.registerListener(
             'inspector',
             ['Escape'],
@@ -85,7 +91,7 @@ export class NotificationService extends SideMenuItemService {
         );
     }
 
-    protected override onClose(): void {
+    protected onClose(): void {
         this._subscription.unsubscribe();
         this.keybinds.unregisterListener('inspector');
     }

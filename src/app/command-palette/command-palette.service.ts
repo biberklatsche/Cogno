@@ -1,4 +1,4 @@
-import {DestroyRef, Injectable, signal} from '@angular/core';
+import {Injectable, signal} from '@angular/core';
 import { AppBus } from '../app-bus/app-bus';
 import { ACTION_NAMES, ActionFired } from '../action/action.models';
 import { ConfigService } from '../config/+state/config.service';
@@ -8,13 +8,11 @@ import {
 } from '../keybinding/keybind-action.interpreter';
 import { KeybindService } from '../keybinding/keybind.service';
 import {Subscription} from "rxjs";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Grid} from "../common/grid/grid-calculations";
-import {SideMenuItemService} from "../menu/side-menu/+state/side-menu-item.service";
-import {InspectorSideComponent} from "../inspector/inspector-side/inspector-side.component";
-import {ConfigTypes, FeatureMode} from "../config/+models/config.types";
+import {FeatureMode} from "../config/+models/config.types";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
 import {CommandPaletteComponent} from "./command-palette.component";
+import {useSideMenuRegistration} from "../menu/side-menu/+state/use-side-menu-registration";
 
 export type CommandEntry = {
     isSelected: boolean;
@@ -24,7 +22,7 @@ export type CommandEntry = {
 };
 
 @Injectable({providedIn: 'root'})
-export class CommandPaletteService extends SideMenuItemService {
+export class CommandPaletteService {
     private _subscription: Subscription | undefined;
 
     private readonly _commandList = signal<CommandEntry[]>([]);
@@ -32,9 +30,10 @@ export class CommandPaletteService extends SideMenuItemService {
     readonly filteredCommandList = this._filteredCommandList.asReadonly();
 
     constructor(
-        protected override sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, ref: DestroyRef, private keybinds: KeybindService
+        private sideMenuService: SideMenuService, private bus: AppBus, private config: ConfigService, private keybinds: KeybindService
     ) {
-        super(sideMenuService, bus, config, ref, {
+        useSideMenuRegistration({
+            menuItem: {
                 label: 'Command Palette',
                 hidden: false,
                 pinned: false,
@@ -42,8 +41,11 @@ export class CommandPaletteService extends SideMenuItemService {
                 component: CommandPaletteComponent,
                 actionName: 'open_command_palette'
             },
-            (config: ConfigTypes) => config.command_palette?.mode
-        );
+            configSelector: (config) => config.command_palette?.mode,
+            onOpen: () => this.onOpen(),
+            onClose: () => this.onClose(),
+            onConfigChange: (mode) => this.onConfigChange(mode)
+        });
     }
 
     private initCommands(): void {
@@ -93,11 +95,11 @@ export class CommandPaletteService extends SideMenuItemService {
         );
     }
 
-    protected override onConfigChange(featureMode: FeatureMode): void {
+    protected onConfigChange(featureMode: FeatureMode): void {
         if(featureMode == 'off') this.onClose();
     }
 
-    protected override onOpen(): void {
+    protected onOpen(): void {
         this.initCommands();
         this.initConfigListener();
         this.filterCommands('');
@@ -108,7 +110,7 @@ export class CommandPaletteService extends SideMenuItemService {
         );
     }
 
-    protected override onClose(): void {
+    protected onClose(): void {
         this._commandList.set([]);
         this._subscription?.unsubscribe();
         this.keybinds.unregisterListener('command-palette');

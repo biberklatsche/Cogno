@@ -1,26 +1,25 @@
-import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
+import {Injectable, signal, WritableSignal} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
-import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
-import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes, FeatureMode} from "../../config/+models/config.types";
+import {FeatureMode} from "../../config/+models/config.types";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
 import {ActionFired} from "../../action/action.models";
+import {useSideMenuRegistration} from "../../menu/side-menu/+state/use-side-menu-registration";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
 export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT"
 
 @Injectable({providedIn: 'root'})
-export class WorkspaceService extends SideMenuItemService {
+export class WorkspaceService {
 
     private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
@@ -29,23 +28,26 @@ export class WorkspaceService extends SideMenuItemService {
     // inline edit state removed – dialog receives the workspace directly
 
     constructor(
-        bus: AppBus,
-        config: ConfigService,
-        sideMenuService: SideMenuService,
-        ref: DestroyRef,
+        private bus: AppBus,
+        private sideMenuService: SideMenuService,
         private keybinds: KeybindService,
         private workspaceRepository: WorkspaceRepository,
         private gridListService: GridListService,
         private tabListService: TabListService) {
-        super(sideMenuService, bus, config, ref, {
-            label: 'Workspace',
-            hidden: false,
-            pinned: false,
-            icon: 'mdiViewDashboard',
-            component: WorkspaceSideComponent,
-            actionName: 'open_workspace',
-        }, (config: ConfigTypes) => config.workspace?.mode
-        );
+        useSideMenuRegistration({
+            menuItem: {
+                label: 'Workspace',
+                hidden: false,
+                pinned: false,
+                icon: 'mdiViewDashboard',
+                component: WorkspaceSideComponent,
+                actionName: 'open_workspace',
+            },
+            configSelector: (config) => config.workspace?.mode,
+            onOpen: () => this.registerKeybindListener(),
+            onClose: () => this.unregisterKeybindListener(),
+            onConfigChange: (mode) => this.onConfigChange(mode)
+        });
 
         this.bus.onceType$('DBInitialized').subscribe(async e => {
             //load workspaces here
@@ -81,17 +83,17 @@ export class WorkspaceService extends SideMenuItemService {
             });
     }
 
-    protected override onConfigChange(featureMode: FeatureMode): void {
+    protected onConfigChange(featureMode: FeatureMode): void {
         if(featureMode === 'off') {
             this.onClose();
         }
     }
 
-    protected override onOpen(): void {
+    protected onOpen(): void {
         this.registerKeybindListener();
     }
 
-    protected override onClose(): void {
+    protected onClose(): void {
         this.unregisterKeybindListener();
     }
 

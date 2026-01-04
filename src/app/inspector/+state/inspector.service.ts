@@ -1,14 +1,13 @@
-import {DestroyRef, Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
+import {Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
 import {fromEvent, Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
-import {ConfigService} from "../../config/+state/config.service";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
-import {SideMenuItemService} from "../../menu/side-menu/+state/side-menu-item.service";
-import {ConfigTypes, FeatureMode, Keybinding} from "../../config/+models/config.types";
+import {FeatureMode, Keybinding} from "../../config/+models/config.types";
 import {KeybindService} from "../../keybinding/keybind.service";
+import {useSideMenuRegistration} from "../../menu/side-menu/+state/use-side-menu-registration";
 
 export type TerminalIdentifier = { terminalId: string };
 export type MousePosition = { x: number; y: number };
@@ -28,7 +27,7 @@ export type TerminalCursorPosition = {
 };
 
 @Injectable({providedIn: 'root'})
-export class InspectorService extends SideMenuItemService {
+export class InspectorService {
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
     private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
 
@@ -70,8 +69,9 @@ export class InspectorService extends SideMenuItemService {
     private _subscription: Subscription | undefined;
 
 
-    constructor(sideMenuService: SideMenuService, override bus: AppBus, config: ConfigService, private keybinds: KeybindService, ref: DestroyRef) {
-        super(sideMenuService, bus, config, ref, {
+    constructor(private sideMenuService: SideMenuService, private bus: AppBus, private keybinds: KeybindService) {
+        useSideMenuRegistration({
+            menuItem: {
                 label: 'Inspector',
                 hidden: false,
                 pinned: true,
@@ -79,8 +79,11 @@ export class InspectorService extends SideMenuItemService {
                 component: InspectorSideComponent,
                 actionName: 'open_inspector'
             },
-            (config: ConfigTypes) => config.inspector?.mode
-        );
+            configSelector: (config) => config.inspector?.mode,
+            onOpen: () => this.onOpen(),
+            onClose: () => this.onClose(),
+            onConfigChange: (mode) => this.onConfigChange(mode)
+        });
     }
 
     onConfigChange(featureMode:FeatureMode) {
@@ -89,7 +92,7 @@ export class InspectorService extends SideMenuItemService {
         }
     }
 
-    protected override onOpen(): void {
+    protected onOpen(): void {
         this._subscription?.unsubscribe();
         this._subscription = new Subscription();
         this._subscription.add(this.bus.on$({type: 'Inspector', path: ['inspector']}).subscribe(event => {
@@ -153,7 +156,7 @@ export class InspectorService extends SideMenuItemService {
         );
     }
 
-    protected override onClose(): void {
+    protected onClose(): void {
         this._subscription?.unsubscribe();
         this._subscription = undefined;
         this.keybinds.unregisterListener('inspector');
