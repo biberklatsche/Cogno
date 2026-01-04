@@ -29,8 +29,8 @@ describe('ConfigWriter', () => {
     expect(lines.some(l => l.startsWith('#'))).toBe(false);
 
     // Contains some expected values
-    expect(lines).toContain('enable_webgl=true');
-    expect(lines).toContain('scrollback_lines=1234');
+    expect(lines).toContain('enable_webgl = true');
+    expect(lines).toContain('scrollback_lines = 1234');
 
     // trailing newline is present according to implementation
     expect(text.endsWith('\n')).toBe(true);
@@ -48,10 +48,10 @@ describe('ConfigWriter', () => {
     const lines = text.trimEnd().split('\n');
 
     // Non-keybind array should be single line comma separated without quotes
-    expect(lines).toContain('shell.1.args=[--login,-i]');
+    expect(lines).toContain('shell.1.args = [--login,-i]');
 
     // Keybind should be emitted as multiple lines (two separate entries)
-    expect(lines).toContain('keybind=Ctrl+A=doA');
-    expect(lines).toContain('keybind=Shift+End=doB');
+    expect(lines).toContain('keybind = Ctrl+A=doA');
+    expect(lines).toContain('keybind = Shift+End=doB');
   });
 });

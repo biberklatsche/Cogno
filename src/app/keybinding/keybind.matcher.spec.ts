@@ -234,12 +234,11 @@ describe('KeybindingMatcher (macos)', () => {
     });
 
     it('should override same action names', () => {
-        matcher.initBindings(['Meta+A=action', 'Meta+B=action']);
-        const eventA = makeEvent({key: 'a', code: 'KeyA', metaKey: true});
+        matcher.initBindings(['Meta+B=doA', 'Meta+A=doA']);
         const eventB = makeEvent({key: 'b', code: 'KeyB', metaKey: true});
-
-        expect(matcher.match(eventA)).toBeUndefined();
-        expect(matcher.match(eventB)?.event.payload).toBe('action');
+        const eventA = makeEvent({key: 'a', code: 'KeyA', metaKey: true});
+        expect(matcher.match(eventA)?.event.payload).toEqual('doA');
+        expect(matcher.match(eventB)?.event.payload).toBeUndefined();
     });
 
 });
