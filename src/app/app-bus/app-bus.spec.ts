@@ -1,18 +1,16 @@
-import { MockBuilder, ngMocks } from 'ng-mocks';
 import { AppBus } from './app-bus';
-import { provideZonelessChangeDetection } from '@angular/core';
 import { firstValueFrom} from 'rxjs';
 import { describe, it, expect, beforeEach } from 'vitest';
 import {AppMessage} from "./messages";
 
 describe('AppBus', () => {
+  let bus: AppBus;
+
   beforeEach(() => {
-    return MockBuilder(AppBus)
-      .provide(provideZonelessChangeDetection());
+    bus = new AppBus();
   });
 
   it('should publish and receive a message on the default path ["app"]', async () => {
-    const bus = ngMocks.findInstance(AppBus);
     const message: AppMessage = { type: 'CONFIG_LOADED', payload: {} } as any;
 
     const promise = firstValueFrom(bus.onType$('CONFIG_LOADED' as any));
@@ -24,7 +22,6 @@ describe('AppBus', () => {
   });
 
   it('should go through Capture, Target and Bubble phases', async () => {
-    const bus = ngMocks.findInstance(AppBus);
     const path = ['app', 'workspace', 'terminal'];
     const message: AppMessage = { type: 'TERMINAL_FOCUSED' as any, path } as any;
 
@@ -47,7 +44,6 @@ describe('AppBus', () => {
   });
 
   it('should stop propagation when propagationStopped is set', async () => {
-    const bus = ngMocks.findInstance(AppBus);
     const path = ['app', 'child'];
     const message: AppMessage = { type: 'ANY' as any, path } as any;
 
@@ -65,7 +61,6 @@ describe('AppBus', () => {
   });
 
   it('onceType$ should only deliver the first matching message', async () => {
-    const bus = ngMocks.findInstance(AppBus);
     const type = 'TAB_ADDED' as any;
 
     const promise = firstValueFrom(bus.onceType$(type));
@@ -80,8 +75,6 @@ describe('AppBus', () => {
   });
 
   it('once$ should fail with a timeout if no message arrives', async () => {
-    const bus = ngMocks.findInstance(AppBus);
-
     const promise = firstValueFrom(bus.once$({
       path: ['app'],
       type: 'NON_EXISTENT' as any,
@@ -92,7 +85,6 @@ describe('AppBus', () => {
   });
 
   it('should be able to filter by types (Array)', async () => {
-      const bus = ngMocks.findInstance(AppBus);
       const events: string[] = [];
 
       bus.on$({
@@ -108,7 +100,6 @@ describe('AppBus', () => {
   });
 
   it('should return defaultPrevented correctly', () => {
-    const bus = ngMocks.findInstance(AppBus);
     const message: AppMessage = { type: 'ANY' as any } as any;
 
     bus.onType$('ANY' as any).subscribe(m => {
@@ -120,7 +111,6 @@ describe('AppBus', () => {
   });
 
   it('should return performed correctly', () => {
-    const bus = ngMocks.findInstance(AppBus);
     const message: AppMessage = { type: 'ANY' as any } as any;
 
     bus.onType$('ANY' as any).subscribe(m => {
