@@ -1,4 +1,4 @@
-import {computed, Injectable, Signal, signal, WritableSignal} from '@angular/core';
+import {DestroyRef, computed, Injectable, Signal, signal, WritableSignal} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
@@ -6,7 +6,7 @@ import {FeatureMode} from "../../config/+models/config.types";
 import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";
-import {useSideMenuRegistration} from "../../menu/side-menu/+state/use-side-menu-registration";
+import {SideMenuRegistrationTool} from "../../menu/side-menu/+state/side-menu-registration.tool";
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
@@ -34,8 +34,14 @@ export class NotificationService {
 
     private updateIconFn: ((icon: any) => void) | undefined;
 
-    constructor(private sideMenuService: SideMenuService, private bus: AppBus, private keybinds: KeybindService) {
-        const helper = useSideMenuRegistration({
+    constructor(
+        private sideMenuService: SideMenuService,
+        private bus: AppBus,
+        private keybinds: KeybindService,
+        private menuTool: SideMenuRegistrationTool,
+        destroyRef: DestroyRef,
+    ) {
+        const helper = this.menuTool.setup({
             menuItem: {
                 label: 'Notification',
                 hidden: false,
@@ -48,7 +54,7 @@ export class NotificationService {
             onOpen: () => this.onOpen(),
             onClose: () => this.onClose(),
             onConfigChange: (mode) => this.onConfigChange(mode)
-        });
+        }, destroyRef);
         this.updateIconFn = helper.updateIcon;
         this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
             if (!event.payload) return;

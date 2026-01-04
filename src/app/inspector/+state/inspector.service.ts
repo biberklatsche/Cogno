@@ -1,4 +1,4 @@
-import {Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
+import {DestroyRef, Injectable, Signal, signal, WritableSignal, computed} from '@angular/core';
 import {fromEvent, Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
@@ -7,7 +7,7 @@ import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
 import {FeatureMode, Keybinding} from "../../config/+models/config.types";
 import {KeybindService} from "../../keybinding/keybind.service";
-import {useSideMenuRegistration} from "../../menu/side-menu/+state/use-side-menu-registration";
+import {SideMenuRegistrationTool} from "../../menu/side-menu/+state/side-menu-registration.tool";
 
 export type TerminalIdentifier = { terminalId: string };
 export type MousePosition = { x: number; y: number };
@@ -69,8 +69,14 @@ export class InspectorService {
     private _subscription: Subscription | undefined;
 
 
-    constructor(private sideMenuService: SideMenuService, private bus: AppBus, private keybinds: KeybindService) {
-        useSideMenuRegistration({
+    constructor(
+        private sideMenuService: SideMenuService,
+        private bus: AppBus,
+        private keybinds: KeybindService,
+        private menuTool: SideMenuRegistrationTool,
+        destroyRef: DestroyRef,
+    ) {
+        this.menuTool.setup({
             menuItem: {
                 label: 'Inspector',
                 hidden: false,
@@ -83,7 +89,7 @@ export class InspectorService {
             onOpen: () => this.onOpen(),
             onClose: () => this.onClose(),
             onConfigChange: (mode) => this.onConfigChange(mode)
-        });
+        }, destroyRef);
     }
 
     onConfigChange(featureMode:FeatureMode) {

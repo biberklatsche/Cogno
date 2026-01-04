@@ -1,4 +1,4 @@
-import {Injectable, signal, WritableSignal} from "@angular/core";
+import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
@@ -12,7 +12,7 @@ import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
 import {ActionFired} from "../../action/action.models";
-import {useSideMenuRegistration} from "../../menu/side-menu/+state/use-side-menu-registration";
+import {SideMenuRegistrationTool} from "../../menu/side-menu/+state/side-menu-registration.tool";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
@@ -33,8 +33,11 @@ export class WorkspaceService {
         private keybinds: KeybindService,
         private workspaceRepository: WorkspaceRepository,
         private gridListService: GridListService,
-        private tabListService: TabListService) {
-        useSideMenuRegistration({
+        private tabListService: TabListService,
+        private menuTool: SideMenuRegistrationTool,
+        destroyRef: DestroyRef,
+    ) {
+        this.menuTool.setup({
             menuItem: {
                 label: 'Workspace',
                 hidden: false,
@@ -47,7 +50,7 @@ export class WorkspaceService {
             onOpen: () => this.registerKeybindListener(),
             onClose: () => this.unregisterKeybindListener(),
             onConfigChange: (mode) => this.onConfigChange(mode)
-        });
+        }, destroyRef);
 
         this.bus.onceType$('DBInitialized').subscribe(async e => {
             //load workspaces here

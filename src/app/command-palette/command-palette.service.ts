@@ -1,4 +1,4 @@
-import {Injectable, signal} from '@angular/core';
+import {DestroyRef, Injectable, signal} from '@angular/core';
 import { AppBus } from '../app-bus/app-bus';
 import { ACTION_NAMES, ActionFired } from '../action/action.models';
 import { ConfigService } from '../config/+state/config.service';
@@ -12,7 +12,7 @@ import {Grid} from "../common/grid/grid-calculations";
 import {FeatureMode} from "../config/+models/config.types";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
 import {CommandPaletteComponent} from "./command-palette.component";
-import {useSideMenuRegistration} from "../menu/side-menu/+state/use-side-menu-registration";
+import {SideMenuRegistrationTool} from "../menu/side-menu/+state/side-menu-registration.tool";
 
 export type CommandEntry = {
     isSelected: boolean;
@@ -30,9 +30,14 @@ export class CommandPaletteService {
     readonly filteredCommandList = this._filteredCommandList.asReadonly();
 
     constructor(
-        private sideMenuService: SideMenuService, private bus: AppBus, private config: ConfigService, private keybinds: KeybindService
+        private sideMenuService: SideMenuService,
+        private bus: AppBus,
+        private config: ConfigService,
+        private keybinds: KeybindService,
+        private menuTool: SideMenuRegistrationTool,
+        destroyRef: DestroyRef,
     ) {
-        useSideMenuRegistration({
+        this.menuTool.setup({
             menuItem: {
                 label: 'Command Palette',
                 hidden: false,
@@ -45,7 +50,7 @@ export class CommandPaletteService {
             onOpen: () => this.onOpen(),
             onClose: () => this.onClose(),
             onConfigChange: (mode) => this.onConfigChange(mode)
-        });
+        }, destroyRef);
     }
 
     private initCommands(): void {
