@@ -1,8 +1,8 @@
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 
 /**
- * Registriert einen Listener auf das Tauri-Event "cli-command" und loggt den Befehl.
- * Gibt eine Funktion zurück, mit der der Listener wieder entfernt werden kann.
+ * Registers a listener for the Tauri event "cli-command" and logs the command.
+ * Returns a function that can be used to remove the listener.
  */
 export const CliActionListener = {
     register(listener: (command: string) => void): Promise<UnlistenFn> {

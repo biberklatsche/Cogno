@@ -22,7 +22,7 @@ export class TerminalComponentFactory {
 
     }
 
-    /** Liefert den bestehenden Portal für paneId – oder erstellt Komponente + Portal genau 1x */
+    /** Returns the existing component for terminalId – or creates component exactly once */
     private getOrCreate(terminalId: TerminalId, shellConfig: ShellConfig): ComponentRef<TerminalComponent> {
         let ref = this.map.get(terminalId);
         if (!ref) {
@@ -32,7 +32,7 @@ export class TerminalComponentFactory {
             });
             ref.setInput('terminalId', terminalId);
             ref.setInput('shellConfig', shellConfig);
-            // einmalige Change Detection zum Rendern
+            // one-time change detection for rendering
             ref.changeDetectorRef.detectChanges();
             this.map.set(terminalId, ref);
         }
@@ -46,12 +46,12 @@ export class TerminalComponentFactory {
 
     attach(terminalId: TerminalId, shellConfig: ShellConfig, host: HTMLElement) {
         const ref = this.getOrCreate(terminalId, shellConfig);
-        host.appendChild(ref.location.nativeElement); // reparent – kein Destroy/Neuaufbau
+        host.appendChild(ref.location.nativeElement); // reparent – no destroy/rebuild
         ref.changeDetectorRef.detectChanges();
 
     }
 
-    /** Endgültig schließen (Pane entfernt) */
+    /** Final close (Pane removed) */
     destroy(terminalId?: TerminalId) {
         if (!terminalId) return;
         const ref = this.map.get(terminalId);

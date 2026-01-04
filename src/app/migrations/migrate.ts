@@ -18,7 +18,7 @@ async function sha256(text: string): Promise<string> {
 }
 
 export async function migrate() {
-    // Runtime PRAGMAs (bei jedem Öffnen)
+    // Runtime PRAGMAs (on every open)
     await DB.execute(`PRAGMA foreign_keys = ON;`);
     await DB.execute(`PRAGMA journal_mode = WAL;`);
     await DB.execute(`PRAGMA synchronous = NORMAL;`);

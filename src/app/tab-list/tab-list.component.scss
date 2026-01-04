@@ -12,7 +12,7 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  overflow-x: auto;   /* ← horizontal scrollen, wenn’s nicht mehr passt */
+  overflow-x: auto;   /* ← horizontal scroll if it doesn't fit anymore */
   overflow-y: hidden;
   white-space: nowrap;
   flex-wrap: nowrap;
@@ -41,11 +41,11 @@
   color: var(--foreground-color-10t);
   /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
   min-height: 26px;
-  /* Größenlogik */
+  /* size logic */
   flex: 0 1 240px;
   max-width: 240px;
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
-  /* wichtig für Container Queries */
+  /* important for container queries */
   container-type: inline-size;
   &.is-active {
     color: var(--foreground-color);
@@ -101,13 +101,13 @@
 }
 
 .icon  { flex: 0 1 auto;  flex-shrink: 1; }
-.close { flex: 0 0 16px;   flex-shrink: 0; } /* bleibt immer sichtbar */
+.close { flex: 0 0 16px;   flex-shrink: 0; } /* remains always visible */
 
 @container (max-width: 20px) {
   .title { display: none; }
 }
 
-/* 2) Noch schmaler: Icon ausblenden, Close bleibt */
+/* 2) Even narrower: hide icon, close remains */
 @container (max-width: 50px) {
   .icon { display: none; }
 }

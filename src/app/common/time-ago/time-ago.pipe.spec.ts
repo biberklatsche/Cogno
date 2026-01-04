@@ -4,36 +4,36 @@ import { NgZone, ChangeDetectorRef } from '@angular/core';
 
 // --- Mocks ---
 
-// Mock für NgZone: Führt run/runOutsideAngular sofort aus, um die Logik zu testen
+// Mock for NgZone: Executes run/runOutsideAngular immediately to test the logic
 const mockNgZone = {
   run: vi.fn(fn => fn()),
   runOutsideAngular: vi.fn(fn => fn()),
 };
 
-// Mock für ChangeDetectorRef: Überwacht, ob die Pipe das Update triggert
+// Mock for ChangeDetectorRef: Monitors if the pipe triggers the update
 const mockCdRef = {
   markForCheck: vi.fn(),
 };
 
-// --- Test-Suite ---
+// --- Test Suite ---
 
 describe('TimeAgoPipe (Simplified Unit Test)', () => {
   let pipe: TimeAgoPipe;
   let clock: ReturnType<typeof vi.useFakeTimers>;
 
-  // Wir verwenden Date.now() als Basis für alle Zeitberechnungen
+  // We use Date.now() as the base for all time calculations
   const NOW = Date.now();
 
   beforeEach(() => {
-    // Manuelle Instanziierung der Pipe mit den Mocks
+    // Manual instantiation of the pipe with mocks
     pipe = new TimeAgoPipe(
-        mockCdRef as unknown as ChangeDetectorRef, // Mocks als die erwarteten Typen übergeben
+        mockCdRef as unknown as ChangeDetectorRef, // Pass mocks as expected types
         mockNgZone as unknown as NgZone
     );
 
-    // Fake-Timer für die Zeitsteuerung aktivieren
+    // Activate fake timers for time control
     clock = vi.useFakeTimers();
-    vi.setSystemTime(NOW); // Setzt die aktuelle Zeit auf einen festen Wert
+    vi.setSystemTime(NOW); // Sets current time to a fixed value
   });
 
   afterEach(() => {
@@ -42,20 +42,20 @@ describe('TimeAgoPipe (Simplified Unit Test)', () => {
     vi.restoreAllMocks();
   });
 
-  // --- Test-Suite für die "Time Ago"-Berechnung ---
+  // --- Test Suite for "Time Ago" calculation ---
 
   it('should return "now" for times less than 60 seconds ago', () => {
-    const time = new Date(NOW - 30 * 1000); // 30 Sekunden her
+    const time = new Date(NOW - 30 * 1000); // 30 seconds ago
     expect(pipe.transform(time)).toBe('now');
   });
 
   it('should return "1 minute ago" for times between 60 and 90 seconds ago', () => {
-    const time = new Date(NOW - 75 * 1000); // 1 Minute 15 Sekunden her
+    const time = new Date(NOW - 75 * 1000); // 1 minute 15 seconds ago
     expect(pipe.transform(time)).toBe('1 minute ago');
   });
 
   it('should return correct rounded hours (e.g., 10 hours ago)', () => {
-    const time = new Date(NOW - 10 * 3600 * 1000 - 1000); // 10 Stunden her
+    const time = new Date(NOW - 10 * 3600 * 1000 - 1000); // 10 hours ago
     expect(pipe.transform(time)).toBe('10 hours ago');
   });
 
@@ -64,50 +64,50 @@ describe('TimeAgoPipe (Simplified Unit Test)', () => {
     expect(pipe.transform(time)).toBe('2 years ago');
   });
 
-  // --- Test-Suite für die Timer-Logik ---
+  // --- Test Suite for timer logic ---
 
   it('should set up a timer and mark for check after appropriate delay (e.g., 1 minute)', () => {
-    const time = new Date(NOW - 5 * 60 * 1000); // 5 Minuten alt
+    const time = new Date(NOW - 5 * 60 * 1000); // 5 minutes old
     pipe.transform(time);
 
-    // Nach 5 Minuten wird das Update-Intervall auf 60000ms gesetzt.
+    // After 5 minutes, the update interval is set to 60000ms.
 
-    // 1. Initial sollte noch nicht markiert sein
+    // 1. Initial should not be marked yet
     expect(mockCdRef.markForCheck).not.toHaveBeenCalled();
 
-    // 2. Simuliere das Warten auf den Timer
+    // 2. Simulate waiting for the timer
     clock.advanceTimersByTime(60001);
 
-    // 3. Nach dem Timer sollte die Change Detection getriggert werden
+    // 3. After the timer, change detection should be triggered
     expect(mockCdRef.markForCheck).toHaveBeenCalled();
 
-    // 4. Prüfe, ob der Timer außerhalb der Angular Zone gestartet wurde
+    // 4. Check if the timer was started outside the Angular Zone
     expect(mockNgZone.runOutsideAngular).toHaveBeenCalled();
   });
 
   it('should restart the timer and update interval if the input value changes', () => {
-    // 1. Erster Aufruf: 'now', Timer auf 10s
+    // 1. First call: 'now', timer at 10s
     const time1 = new Date(NOW - 5 * 1000);
     expect(pipe.transform(time1)).toBe('now');
 
-    // 2. Timer um 5s vorspulen (Timer ist noch nicht abgelaufen)
+    // 2. Fast forward timer by 5s (timer has not expired yet)
     clock.advanceTimersByTime(5000);
 
-    // 3. Zweiter Aufruf mit neuem, altem Zeitstempel: '1 minute ago', Timer auf 60s
+    // 3. Second call with new, old timestamp: '1 minute ago', timer at 60s
     const time2 = new Date(NOW - 70 * 1000);
     expect(pipe.transform(time2)).toBe('1 minute ago');
 
-    // Der alte Timer (10s) sollte gelöscht und ein neuer (60s) gestartet sein.
-    // Wir spulen 5s vor (gesamte verstrichene Zeit seit time1: 10s)
+    // The old timer (10s) should be cleared and a new one (60s) started.
+    // We fast forward 5s (total elapsed time since time1: 10s)
     clock.advanceTimersByTime(5000);
 
-    // Die CD sollte NOCH NICHT getriggert werden, da der neue 60s-Timer noch läuft
+    // CD should NOT be triggered yet, as the new 60s timer is still running
     expect(mockCdRef.markForCheck).not.toHaveBeenCalled();
 
-    // Spulen wir 55s weiter (gesamt 60s, neuer Timer ist abgelaufen)
+    // Fast forward another 55s (total 60s, new timer has expired)
     clock.advanceTimersByTime(55001);
 
-    // Jetzt sollte die CD getriggert werden
+    // Now CD should be triggered
     expect(mockCdRef.markForCheck).toHaveBeenCalled();
   });
 });

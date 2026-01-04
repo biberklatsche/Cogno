@@ -22,7 +22,6 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
       provideZonelessChangeDetection(),
       provideEnvironmentInitializer(() => {
-          // erzwingt Instanziierung des StyleService
           inject(StyleService);
           inject(NotificationService);
           inject(WorkspaceService);
@@ -32,7 +31,6 @@ export const appConfig: ApplicationConfig = {
           inject(CliActionService);
           inject(NativeMenuService);
           inject(WindowService);
-          // initialize ScrollbarService at app startup
           inject(ScrollbarService);
       }),
   ],

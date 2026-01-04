@@ -15,16 +15,16 @@ import {
 export class AutofocusDirective {
     private el = inject(ElementRef<HTMLInputElement>);
 
-    /** aktiviert den Fokus */
+    /** activates the focus */
     appAutofocus = input<boolean>(false);
 
     /**
-     * wenn true: nach dem Fokus wird das Input value auf '' gesetzt
-     * und ein input-event gefeuert (damit Angular / dein Handler es mitbekommt)
+     * if true: after focus, the input value is set to ''
+     * and an input event is fired (so Angular / your handler notices it)
      */
     clearOnFocus = input<boolean>(false);
 
-    // verhindert dauerndes Refocusen (nur bei false -> true)
+    // prevents constant refocusing (only on false -> true)
     private wasEnabled = signal(false);
 
     constructor() {
@@ -40,11 +40,11 @@ export class AutofocusDirective {
                 const inputEl = this.el.nativeElement;
 
                 inputEl.focus();
-                inputEl.select(); // optional, kannst du entfernen
+                inputEl.select(); // optional, can be removed
 
                 if (this.clearOnFocus()) {
                     inputEl.value = '';
-                    // wichtig: damit (input)="..." getriggert wird und dein Service updatet
+                    // important: so that (input)="..." is triggered and your service updates
                     inputEl.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             },20);

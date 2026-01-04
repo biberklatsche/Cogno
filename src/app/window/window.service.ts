@@ -18,7 +18,7 @@ export class WindowService {
           .subscribe(async(event)=> {
               switch (event.payload) {
                   case 'quit':
-                      //Schließt alle Windows
+                      // Closes all windows
                       await Process.exit();
                       event.performed = true;
                       break;

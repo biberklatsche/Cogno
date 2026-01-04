@@ -109,20 +109,20 @@ export class StyleService {
             const url = Fs.convertFileSrc(config.background_image.path);
             const color = `#${config.color!.background}` + Color.getHexOpacity(config.background_image.opacity);
 
-            // getrennte Variablen, keine Shorthand-„fixed“-Tokens in der CSS-Variable
+            // separate variables, no shorthand "fixed" tokens in the CSS variable
             document.body.style.setProperty("--background-image", `url("${url}")`);
             document.body.style.setProperty("--background-gradient", `linear-gradient(to bottom, ${color}, ${color})`);
             document.body.style.setProperty("--background-blur", `${config.background_image.blur}px`);
 
-            // Schalter setzen -> aktiviert das ::before
+            // set switch -> activates the ::before
             document.body.classList.add("has-background");
         } else {
-            // zurück auf Standard
+            // back to default
             document.body.classList.remove("has-background");
             document.body.style.removeProperty("--background-image");
             document.body.style.removeProperty("--background-gradient");
             document.body.style.removeProperty("--background-blur");
-            // falls du eine reine Farbfläche willst:
+            // if you want a plain color surface:
             document.body.style.setProperty("--background-color", `#${config.color!.background!}`);
         }
     }

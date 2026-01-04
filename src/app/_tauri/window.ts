@@ -53,22 +53,22 @@ export const AppWindow = {
             let unlisten: UnlistenFn | null = null;
             let unsubscribed = false;
 
-            // 1) Initialgröße einmalig senden
+            // 1) Send initial size once
             win
                 .innerSize()
                 .then(({width, height}) => subscriber.next({width, height}))
                 .catch((err) => subscriber.error(err));
 
-            // 2) Resize-Events hören
+            // 2) Listen for resize events
             win
                 .onResized(({payload}) => {
                     // payload: { width: number; height: number }
                     subscriber.next({width: payload.width, height: payload.height});
                 })
                 .then((fn) => {
-                    // UnlistenFn angekommen
+                    // UnlistenFn received
                     if (unsubscribed) {
-                        // Falls währenddessen schon unsubscribed wurde -> sofort aufräumen
+                        // If unsubscribed in the meantime -> clean up immediately
                         try {
                             fn();
                         } catch {

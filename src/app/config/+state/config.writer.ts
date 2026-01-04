@@ -1,7 +1,7 @@
 import {ConfigTypes, ConfigSchema} from "../+models/config.types";
 
 /**
- * Writer-Klasse für das Generieren von Konfigurationsdatei-Inhalten.
+ * Writer class for generating configuration file content.
  */
 export class ConfigWriter {
 
@@ -14,14 +14,14 @@ export class ConfigWriter {
         return typeof v === "object" && v !== null && !Array.isArray(v);
     }
 
-    /** Rendert einen Wert als String (ohne Quotes für strings, primitives direkt). */
+    /** Renders a value as string (no quotes for strings, primitives directly). */
     private static renderValue(value: unknown): string {
         if (typeof value === 'string') return value;
         if (typeof value === 'number' || typeof value === 'boolean') return String(value);
         return JSON.stringify(value);
     }
 
-    /** Fügt Schema-Beschreibung als Kommentarzeilen hinzu, falls vorhanden. */
+    /** Adds schema description as comment lines if present. */
     private static addSchemaDescription(lines: string[], schema: any): void {
         const desc = this.getSchemaDescription(schema);
         if (desc) {
@@ -31,7 +31,7 @@ export class ConfigWriter {
         }
     }
 
-    /** Wandelt ein verschachteltes Objekt in dot-properties-Zeilen um und schreibt Zod-Descriptions als Kommentare (#). */
+    /** Converts a nested object into dot-properties lines and writes Zod descriptions as comments (#). */
     private static toDotProperties(obj: any, prefix = "", schema?: any, asComment: boolean = true): string[] {
         const lines: string[] = [];
 
@@ -50,12 +50,12 @@ export class ConfigWriter {
                 }
 
                 if (key === 'keybind') {
-                    // Keybinds werden mehrzeilig ausgegeben
+                    // Keybinds are output on multiple lines
                     for (const item of v) {
                         lines.push(`${commentPrefix}${key} = ${this.renderValue(item)}`);
                     }
                 } else {
-                    // Andere Arrays als kommagetrennte Liste
+                    // Other arrays as comma-separated list
                     const items = v.map(item => this.renderValue(item));
                     lines.push(`${commentPrefix}${key} = [${items.join(',')}]`);
                 }
@@ -106,12 +106,12 @@ export class ConfigWriter {
     }
 
     private static extractShape(schemaInstance: any, def: any): any {
-        // Versuche zuerst die Instanz-shape
+        // Try instance shape first
         const instShape = schemaInstance?.out?.shape;
         if (typeof instShape === 'function') return instShape.call(schemaInstance);
         if (instShape) return instShape;
 
-        // Fallback auf _def.shape
+        // Fallback to _def.shape
         if (typeof def.shape === 'function') return def.shape();
         if (def.shape) return def.shape;
 

@@ -16,7 +16,7 @@ export type SideMenuRegistrationParams = {
 
 @Injectable({ providedIn: 'root' })
 export class SideMenuRegistrationTool {
-    // Wir injizieren den globalen Injector, falls wir ihn für Effekte brauchen
+    // We inject the global injector if we need it for effects
     private readonly injector = inject(Injector);
 
     constructor(
@@ -26,8 +26,8 @@ export class SideMenuRegistrationTool {
     ) {}
 
     /**
-     * Setup für die SideMenu-Registrierung.
-     * Muss im Injection-Context (Konstruktor) aufgerufen werden.
+     * Setup for SideMenu registration.
+     * Must be called in the injection context (constructor).
      */
     setup(params: SideMenuRegistrationParams, destroyRef: DestroyRef) {
         let keybindSubscription: Subscription | undefined;
@@ -42,7 +42,7 @@ export class SideMenuRegistrationTool {
         };
 
         const addKeybindHandler = () => {
-            if (keybindSubscription) return; // Doppelte Registrierung vermeiden
+            if (keybindSubscription) return; // Avoid double registration
             keybindSubscription = this.bus
                 .on$({ type: 'ActionFired', path: ['app', 'action'] })
                 .subscribe((event) => {
@@ -80,9 +80,9 @@ export class SideMenuRegistrationTool {
             }
         });
 
-        // 2. Effect für die UI-Synchronisation (Zoneless freundlich)
-        // Wir nutzen den injector, um sicherzustellen, dass der Effekt an den
-        // Lebenszyklus des aufrufenden Services gebunden werden kann.
+        // 2. Effect for UI synchronization (Zoneless friendly)
+        // We use the injector to ensure that the effect can be bound to the
+        // lifecycle of the calling service.
         const sideMenuEffect = effect(
             () => {
                 const selectedItem = this.sideMenuService.selectedItem();
@@ -97,15 +97,15 @@ export class SideMenuRegistrationTool {
                     isOpened = newIsOpened;
                 }
             },
-            { injector: this.injector } // Nutzt den Kontext des aufrufenden Services
+            { injector: this.injector } // Uses the context of the calling service
         );
 
         // 3. Cleanup
         destroyRef.onDestroy(() => {
             cfgSub.unsubscribe();
             removeKeybindHandler();
-            // Effekte im Injection Context werden automatisch zerstört,
-            // aber wir könnten hier noch manuelles Cleanup forcieren falls nötig.
+            // Effects in the injection context are automatically destroyed,
+            // but we could still force manual cleanup here if necessary.
         });
 
         return {

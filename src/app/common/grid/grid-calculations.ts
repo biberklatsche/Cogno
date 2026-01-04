@@ -1,45 +1,45 @@
 export const Grid = {
     nextIndex(currentIndex: number, direction: 'l' | 'r' | 'u' | 'd', gridWidth: number, length: number): number {
-    // 1. Berechne aktuelle 2D-Koordinaten
-    // x = Spalte, y = Zeile
+    // 1. Calculate current 2D coordinates
+    // x = column, y = row
     let x = currentIndex % gridWidth;
     let y = Math.floor(currentIndex / gridWidth);
 
-    // Bestimme die Anzahl der (potenziellen) Zeilen
+    // Determine the number of (potential) rows
     const gridHeight = Math.ceil(length / gridWidth);
 
-    // 2. Navigation mit Wrap-Around Logik
+    // 2. Navigation with wrap-around logic
     switch (direction) {
-        case 'l': // Links
+        case 'l': // Left
             x = (x - 1 + gridWidth) % gridWidth;
             break;
-        case 'r': // Rechts
+        case 'r': // Right
             x = (x + 1) % gridWidth;
             break;
-        case 'u': // Oben
+        case 'u': // Up
             y = (y - 1 + gridHeight) % gridHeight;
             break;
-        case 'd': // Unten
+        case 'd': // Down
             y = (y + 1) % gridHeight;
             break;
     }
 
-    // 3. Zurückrechnen in 1D-Index
+    // 3. Convert back to 1D index
     let newIndex = y * gridWidth + x;
 
-    // 4. Sonderfall-Behandlung:
-    // Falls das Grid nicht perfekt gefüllt ist (letzte Zeile ist kürzer),
-    // und wir auf einem leeren Feld landen würden:
+    // 4. Edge case handling:
+    // If the grid is not perfectly filled (last row is shorter),
+    // and we would land on an empty cell:
     if (newIndex >= length) {
         if (direction === 'd') {
-            // Wenn wir nach unten auf ein leeres Feld springen, nehmen wir das erste Element der Spalte (Oben)
+            // If we jump down to an empty cell, we take the first element of the column (top)
             newIndex = x;
         } else if (direction === 'u') {
-            // Wenn wir nach oben springen und dort leer wäre (theoretisch nur bei sehr unebenen Grids),
-            // nehmen wir das letzte verfügbare Element der Spalte
+            // If we jump up and it would be empty (theoretically only with very uneven grids),
+            // we take the last available element of the column
             newIndex = (y - 1) * gridWidth + x;
         } else {
-            // Bei Seitwärtsbewegungen einfach das letzte Element des Arrays
+            // For lateral movements, just take the last element of the array
             newIndex = length - 1;
         }
     }
