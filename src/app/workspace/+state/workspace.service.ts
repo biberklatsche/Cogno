@@ -1,4 +1,4 @@
-import {DestroyRef, Injectable, signal, WritableSignal, inject, Injector} from "@angular/core";
+import {DestroyRef, Injectable, signal, WritableSignal, inject, Injector, Signal, computed} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
@@ -14,6 +14,7 @@ import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
 import {ActionFired} from "../../action/action.models";
 import {Subscription} from "rxjs";
+import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
@@ -23,11 +24,10 @@ export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT"
 export class WorkspaceService {
 
     private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
+    private readonly feature: SideMenuFeature;
+
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
-    private _keybindSubscription: Subscription | undefined;
-
-    // inline edit state removed – dialog receives the workspace directly
 
     constructor(
         private bus: AppBus,
@@ -39,54 +39,21 @@ export class WorkspaceService {
         private tabListService: TabListService,
         destroyRef: DestroyRef,
     ) {
-        const menuItem: SideMenuItem = {
-            label: 'Workspace',
-            hidden: false,
-            pinned: false,
-            icon: 'mdiViewDashboard',
-            component: WorkspaceSideComponent,
-            actionName: 'open_workspace',
-        };
-
-        const configSub = this.config.config$.subscribe((cfg) => {
-            const mode = cfg.workspace?.mode;
-            switch (mode) {
-                case 'off':
-                    this.onConfigChange('off');
-                    this.removeSideMenuKeybindHandler();
-                    this.sideMenuService.removeMenuItem(menuItem.label);
-                    break;
-                case 'hidden':
-                    this.onConfigChange('hidden');
-                    this.sideMenuService.addMenuItem({ ...menuItem, hidden: true });
-                    this.addSideMenuKeybindHandler(menuItem.actionName, menuItem.label);
-                    break;
-                case 'visible':
-                    this.onConfigChange('visible');
-                    this.sideMenuService.addMenuItem({ ...menuItem, hidden: false });
-                    this.addSideMenuKeybindHandler(menuItem.actionName, menuItem.label);
-                    break;
-            }
-        });
-
-        const openSub = this.bus.onType$('SideMenuViewOpened').subscribe(event => {
-            if (event.payload?.label === menuItem.label) {
-                this.onOpen();
-            }
-        });
-
-        const closeSub = this.bus.onType$('SideMenuViewClosed').subscribe(event => {
-            if (event.payload?.label === menuItem.label) {
-                this.onClose();
-            }
-        });
-
-        destroyRef.onDestroy(() => {
-            configSub.unsubscribe();
-            openSub.unsubscribe();
-            closeSub.unsubscribe();
-            this.removeSideMenuKeybindHandler();
-        });
+        this.feature = createSideMenuFeature(
+            {
+                label: 'Workspace',
+                icon: 'mdiViewDashboard',
+                actionName: 'open_workspace',
+                component: WorkspaceSideComponent,
+                configPath: 'workspace',
+            },
+            {
+                onModeChange: (mode) => this.onModeChange(mode),
+                onOpen: () => this.onOpen(),
+                onClose: () => this.onClose(),
+            },
+            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+        );
 
         this.bus.onceType$('DBInitialized').subscribe(async e => {
             //load workspaces here
@@ -122,58 +89,40 @@ export class WorkspaceService {
             });
     }
 
-    private addSideMenuKeybindHandler(actionName: string, label: string): void {
-        if (this._keybindSubscription) return;
-        this._keybindSubscription = this.bus
-            .on$({ type: 'ActionFired', path: ['app', 'action'] })
-            .subscribe((event) => {
-                if (event.payload === actionName) {
-                    this.sideMenuService.open(label);
-                    (event as any).performed = true;
-                }
-            });
-    }
-
-    private removeSideMenuKeybindHandler(): void {
-        this._keybindSubscription?.unsubscribe();
-        this._keybindSubscription = undefined;
-    }
-
-    protected onConfigChange(featureMode: FeatureMode): void {
-        if(featureMode === 'off') {
+    private onModeChange(mode: FeatureMode): void {
+        if (mode === 'off') {
             this.onClose();
         }
     }
 
-    protected onOpen(): void {
-        this.registerKeybindListener();
-    }
-
-    protected onClose(): void {
-        this.unregisterKeybindListener();
-    }
-
-    public registerKeybindListener(): void {
-        this.keybinds.registerListener(
-            'workspace',
+    private onOpen(): void {
+        this.feature.registerKeybindListener(
             ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
             evt => this.handleKey(evt)
         );
     }
 
+    private onClose(): void {
+        this.feature.unregisterKeybindListener();
+    }
+
+    public registerKeybindListener(): void {
+        this.onOpen();
+    }
+
     public unregisterKeybindListener(): void {
-        this.keybinds.unregisterListener('workspace');
+        this.onClose();
     }
 
     private handleKey(event: KeyboardEvent): void {
         const key = event.key;
         switch (key) {
             case 'Escape':
-                this.sideMenuService.close();
+                this.feature.close();
                 break;
             case 'Enter':
                 this.restoreSelectedWorkspace()
-                    .then(() => this.sideMenuService.close());
+                    .then(() => this.feature.close());
                 break;
             case 'ArrowDown':
                 this.selectNextWorkspace('d');
