@@ -13,10 +13,14 @@ import {ConfigWriter} from "./config.writer";
 import {ActionFired} from "../../action/action.models";
 import {Opener} from "../../_tauri/opener";
 
-@Injectable({
-    providedIn: 'root'
-})
-export class ConfigService {
+export abstract class ConfigService {
+    abstract get config(): Config;
+    abstract get config$(): Observable<Config>;
+    abstract getShellConfigOrDefault(pos: ShellConfigPosition): ShellConfig;
+}
+
+@Injectable()
+export class RealConfigService extends ConfigService{
     private _config: BehaviorSubject<Config | undefined> = new BehaviorSubject<Config | undefined>(undefined);
 
     private _unwatch: Subscription | undefined;
@@ -30,7 +34,19 @@ export class ConfigService {
         return this._config.pipe(filter(s => !!s));
     }
 
+    getShellConfigOrDefault(shellConfigPosition: ShellConfigPosition): ShellConfig {
+        const config = this._config.value;
+        if(!config) throw new Error('Config is not loaded!');
+        let shellConfig = config.shell![shellConfigPosition];
+        if (!shellConfig) {
+            shellConfig = config.shell![1];
+        }
+        if(!shellConfig) throw new Error('No shell config defined!');
+        return {...shellConfig};
+    }
+
     constructor(private appBus: AppBus, private destroy: DestroyRef, private shells: ShellConfigurator) {
+        super();
         appBus.onceType$('InitConfigCommand').pipe(takeUntilDestroyed(destroy)).subscribe(async () => {
             await this.loadConfig();
         });
@@ -80,16 +96,5 @@ export class ConfigService {
         this._config.next(config);
         this.appBus.publish({type: 'ConfigLoaded', path: ['app', 'settings']});
         Logger.info('Config loaded...');
-    }
-
-    getShellConfigOrDefault(shellConfigPosition: ShellConfigPosition): ShellConfig {
-        const config = this._config.value;
-        if(!config) throw new Error('Config is not loaded!');
-        let shellConfig = config.shell![shellConfigPosition];
-        if (!shellConfig) {
-            shellConfig = config.shell![1];
-        }
-        if(!shellConfig) throw new Error('No shell config defined!');
-        return {...shellConfig};
     }
 }

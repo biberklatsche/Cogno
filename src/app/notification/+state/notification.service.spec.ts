@@ -5,32 +5,22 @@ import { ConfigService } from '../../config/+state/config.service';
 import { KeybindService } from '../../keybinding/keybind.service';
 import { SideMenuService } from '../../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import { Hash } from '../../common/hash/hash';
 import {Config} from "../../config/+models/config";
-
-type MockConfigService = Partial<ConfigService> & {
-    config$: BehaviorSubject<Partial<Config>>;
-    readonly config: Partial<Config>;
-};
-
-type MockKeybindService = {
-    registerListener: Mock;
-    unregisterListener: Mock;
-};
-
-type MockDestroyRef = {
-    onDestroy: Mock;
-};
+import {
+    createConfigServiceMock,
+    createDestroyRefMock,
+    createKeybindServiceMock
+} from "../../../__test__/test-factory";
 
 describe('NotificationService', () => {
     let service: NotificationService;
     let appBus: AppBus;
     let sideMenuService: SideMenuService;
 
-    let configService: MockConfigService;
-    let keybindService: MockKeybindService;
-    let destroyRef: MockDestroyRef;
+    let configService: Mocked<ConfigService>;
+    let keybindService: Mocked<KeybindService>;
+    let destroyRef: Mocked<DestroyRef>;
 
     const mockConfig: Partial<Config> = {
         notification: { mode: 'visible' }
@@ -40,19 +30,9 @@ describe('NotificationService', () => {
         appBus = new AppBus();
         sideMenuService = new SideMenuService(appBus);
 
-        configService = {
-            config$: new BehaviorSubject<Partial<Config>>(mockConfig),
-            get config() { return this.config$.value; }
-        };
-
-        keybindService = {
-            registerListener: vi.fn(),
-            unregisterListener: vi.fn(),
-        };
-
-        destroyRef = {
-            onDestroy: vi.fn()
-        };
+        configService = createConfigServiceMock(mockConfig);
+        keybindService = createKeybindServiceMock();
+        destroyRef = createDestroyRefMock();
 
         // Spy on sideMenuService.updateIcon via the bus or directly if possible
         // Note: SideMenuService uses signals, so we might need to check the signals if they were accessible
@@ -63,9 +43,9 @@ describe('NotificationService', () => {
         service = new NotificationService(
             sideMenuService,
             appBus,
-            configService as unknown as ConfigService,
-            keybindService as unknown as KeybindService,
-            destroyRef as unknown as DestroyRef
+            configService,
+            keybindService,
+            destroyRef
         );
     });
 

@@ -1,21 +1,25 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
 import { CommandPaletteService } from './command-palette.service';
 import { AppBus } from '../app-bus/app-bus';
 import { ConfigService } from '../config/+state/config.service';
 import { KeybindService } from '../keybinding/keybind.service';
 import { SideMenuService } from '../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import { ACTION_NAMES } from '../action/action.models';
 import {Config} from "../config/+models/config";
+import {
+    createConfigServiceMock,
+    createDestroyRefMock,
+    createKeybindServiceMock
+} from "../../__test__/test-factory";
 
 describe('CommandPaletteService', () => {
     let service: CommandPaletteService;
     let appBus: AppBus;
-    let configService: any;
-    let keybindService: any;
+    let configService: Mocked<ConfigService>;
+    let keybindService: Mocked<KeybindService>;
     let sideMenuService: SideMenuService;
-    let destroyRef: any;
+    let destroyRef: Mocked<DestroyRef>;
 
     const mockConfig: Partial<Config> = {
         keybind: [
@@ -29,28 +33,16 @@ describe('CommandPaletteService', () => {
         appBus = new AppBus();
         sideMenuService = new SideMenuService(appBus);
         
-        configService = {
-            config$: new BehaviorSubject(mockConfig),
-            get config() { return this.config$.value; }
-        };
-
-        keybindService = {
-            registerListener: vi.fn(),
-            unregisterListener: vi.fn(),
-            getKeybinding: vi.fn(),
-            getActionDefinition: vi.fn()
-        };
-
-        destroyRef = {
-            onDestroy: vi.fn()
-        };
+        configService = createConfigServiceMock(mockConfig);
+        keybindService = createKeybindServiceMock();
+        destroyRef = createDestroyRefMock();
 
         service = new CommandPaletteService(
             sideMenuService,
             appBus,
-            configService as unknown as ConfigService,
-            keybindService as unknown as KeybindService,
-            destroyRef as unknown as DestroyRef
+            configService,
+            keybindService,
+            destroyRef
         );
     });
 

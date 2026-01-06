@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WorkspaceService, DEFAULT_WORKSPACE_ID, WorkspaceConfigUi } from './workspace.service';
+import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
+import { WorkspaceService, DEFAULT_WORKSPACE_ID } from './workspace.service';
 import { AppBus } from '../../app-bus/app-bus';
 import { ConfigService } from '../../config/+state/config.service';
 import { KeybindService } from '../../keybinding/keybind.service';
@@ -9,19 +9,24 @@ import { GridListService } from '../../grid-list/+state/grid-list.service';
 import { TabListService } from '../../tab-list/+state/tab-list.service';
 import { IdCreator } from '../../common/id-creator/id-creator';
 import { DestroyRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import {Config} from "../../config/+models/config";
+import {
+    createConfigServiceMock,
+    createDestroyRefMock,
+    createKeybindServiceMock,
+    createSideMenuServiceMock
+} from "../../../__test__/test-factory";
 
 describe('WorkspaceService', () => {
     let service: WorkspaceService;
     let appBus: AppBus;
-    let configService: any;
-    let keybindService: any;
-    let sideMenuService: any;
-    let workspaceRepository: any;
-    let gridListService: any;
-    let tabListService: any;
-    let destroyRef: any;
+    let configService: Mocked<ConfigService>;
+    let keybindService: Mocked<KeybindService>;
+    let sideMenuService: Mocked<SideMenuService>;
+    let workspaceRepository: Mocked<WorkspaceRepository>;
+    let gridListService: Mocked<GridListService>;
+    let tabListService: Mocked<TabListService>;
+    let destroyRef: Mocked<DestroyRef>;
 
     const mockConfig: Partial<Config> = {
         workspace: { mode: 'visible' }
@@ -36,55 +41,39 @@ describe('WorkspaceService', () => {
     beforeEach(() => {
         appBus = new AppBus();
         
-        configService = {
-            config$: new BehaviorSubject(mockConfig),
-            get config() { return this.config$.value; }
-        };
-
-        keybindService = {
-            registerListener: vi.fn(),
-            unregisterListener: vi.fn(),
-        };
-
-        sideMenuService = {
-            addMenuItem: vi.fn(),
-            removeMenuItem: vi.fn(),
-            open: vi.fn(),
-            close: vi.fn(),
-            updateIcon: vi.fn(),
-        };
+        configService = createConfigServiceMock(mockConfig);
+        keybindService = createKeybindServiceMock();
+        sideMenuService = createSideMenuServiceMock();
 
         workspaceRepository = {
             getAllWorkspaces: vi.fn().mockResolvedValue(JSON.parse(JSON.stringify(mockWorkspaces))),
             createWorkspace: vi.fn().mockResolvedValue('new-id'),
             updateWorkspace: vi.fn().mockResolvedValue('ws1'),
             deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-        };
+        } as Mocked<WorkspaceRepository>;
 
         gridListService = {
             restoreGrids: vi.fn(),
             getGridConfigs: vi.fn().mockReturnValue([]),
-        };
+        } as Mocked<GridListService>;
 
         tabListService = {
             restoreTabs: vi.fn(),
             selectTab: vi.fn(),
             getTabConfigs: vi.fn().mockReturnValue([]),
-        };
+        } as Mocked<TabListService>;
 
-        destroyRef = {
-            onDestroy: vi.fn()
-        };
+        destroyRef = createDestroyRefMock();
 
         service = new WorkspaceService(
             appBus,
-            sideMenuService as unknown as SideMenuService,
-            configService as unknown as ConfigService,
-            keybindService as unknown as KeybindService,
-            workspaceRepository as unknown as WorkspaceRepository,
-            gridListService as unknown as GridListService,
-            tabListService as unknown as TabListService,
-            destroyRef as unknown as DestroyRef
+            sideMenuService,
+            configService,
+            keybindService,
+            workspaceRepository,
+            gridListService,
+            tabListService,
+            destroyRef
         );
     });
 

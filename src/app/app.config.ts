@@ -16,10 +16,12 @@ import {ScrollbarService} from "./style/scrollbar.service";
 import {InspectorService} from "./inspector/+state/inspector.service";
 import {NotificationService} from "./notification/+state/notification.service";
 import {CommandPaletteService} from "./command-palette/command-palette.service";
+import {ConfigService, RealConfigService} from "./config/+state/config.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    { provide: ConfigService, useClass: RealConfigService },
       provideZonelessChangeDetection(),
       provideEnvironmentInitializer(() => {
           inject(StyleService);

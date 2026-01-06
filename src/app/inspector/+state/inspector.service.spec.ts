@@ -1,20 +1,24 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
 import { InspectorService } from './inspector.service';
 import { AppBus } from '../../app-bus/app-bus';
 import { ConfigService } from '../../config/+state/config.service';
 import { KeybindService } from '../../keybinding/keybind.service';
 import { SideMenuService } from '../../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import {Config} from "../../config/+models/config";
+import {
+    createConfigServiceMock,
+    createDestroyRefMock,
+    createKeybindServiceMock
+} from "../../../__test__/test-factory";
 
 describe('InspectorService', () => {
     let service: InspectorService;
     let appBus: AppBus;
-    let configService: any;
-    let keybindService: any;
+    let configService: Mocked<ConfigService>;
+    let keybindService: Mocked<KeybindService>;
     let sideMenuService: SideMenuService;
-    let destroyRef: any;
+    let destroyRef: Mocked<DestroyRef>;
 
     const mockConfig: Partial<Config> = {
         inspector: { mode: 'visible' }
@@ -24,19 +28,9 @@ describe('InspectorService', () => {
         appBus = new AppBus();
         sideMenuService = new SideMenuService(appBus);
 
-        configService = {
-            config$: new BehaviorSubject(mockConfig),
-            get config() { return this.config$.value; }
-        };
-
-        keybindService = {
-            registerListener: vi.fn(),
-            unregisterListener: vi.fn(),
-        };
-
-        destroyRef = {
-            onDestroy: vi.fn()
-        };
+        configService = createConfigServiceMock(mockConfig);
+        keybindService = createKeybindServiceMock();
+        destroyRef = createDestroyRefMock();
 
         // Spy on methods called by SideMenuFeature
         vi.spyOn(sideMenuService, 'addMenuItem');
@@ -46,9 +40,9 @@ describe('InspectorService', () => {
         service = new InspectorService(
             sideMenuService,
             appBus,
-            configService as unknown as ConfigService,
-            keybindService as unknown as KeybindService,
-            destroyRef as unknown as DestroyRef
+            configService,
+            keybindService,
+            destroyRef
         );
     });
 
