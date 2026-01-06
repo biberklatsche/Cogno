@@ -18,7 +18,7 @@ export default defineConfig({
         'src/app/_tauri/**',
         '**/*.spec.ts',
         '**/*.test.ts',
-        '**/__mocks__/**',
+        '**/__test__/tauri_mocks/**',
         '**/*.d.ts'
       ]
     }
