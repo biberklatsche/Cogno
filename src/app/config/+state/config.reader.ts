@@ -1,4 +1,4 @@
-import {ConfigTypes, ConfigSchema} from "../+models/config.types";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
  * Reader class for reading/validating the configuration.
@@ -8,10 +8,10 @@ import {ConfigTypes, ConfigSchema} from "../+models/config.types";
  */
 export class ConfigReader {
   /** Parses two configuration strings (defaults and user) and returns a validated, merged config. */
-  static fromStringToConfig(defaultConfigString: string, userConfigString: string): ConfigTypes;
+  static fromStringToConfig(defaultConfigString: string, userConfigString: string): Config;
   /** Backward compatible: If only one string is passed, it is interpreted as user config (without defaults). */
-  static fromStringToConfig(userConfigStringOnly: string): ConfigTypes;
-  static fromStringToConfig(a: string, b?: string): ConfigTypes {
+  static fromStringToConfig(userConfigStringOnly: string): Config;
+  static fromStringToConfig(a: string, b?: string): Config {
       const defaultConfigString = b === undefined ? "" : a;
       const userConfigString = b === undefined ? a : b;
       const userConfig = this.parseConfigString(userConfigString || "");
@@ -23,7 +23,7 @@ export class ConfigReader {
      *  Rule: All keys are replaced (user overrides default), except for 'keybind': there arrays
      *  are merged: first default entries, then user entries. Other arrays are replaced.
      */
-    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): ConfigTypes {
+    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): Config {
         const merge = (defs: any, usr: any): any => {
             // If user is not set: take defaults completely
             if (usr === undefined) return this.clone(defs);

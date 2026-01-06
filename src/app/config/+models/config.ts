@@ -186,7 +186,7 @@ export const ConfigSchema = z.object({
     command_palette: FeatureCommandPaletteSchema.optional(),
 }).strict();
 
-export type ConfigTypes = z.infer<typeof ConfigSchema>;
+export type Config = z.infer<typeof ConfigSchema>;
 export type Font = z.infer<typeof FontSchema>;
 export type Color = z.infer<typeof ColorSchema>;
 export type Cursor = z.infer<typeof CursorSchema>;

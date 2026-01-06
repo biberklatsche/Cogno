@@ -4,7 +4,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Color} from "../common/color/color";
 import {Fs} from "../_tauri/fs";
 import {Logger} from "../_tauri/logger";
-import {ConfigTypes} from "../config/+models/config.types";
+import {Config} from "../config/+models/config";
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +18,7 @@ export class StyleService {
           .subscribe(config => this.setStyle(config));
   }
 
-    private setStyle(config: ConfigTypes): void {
+    private setStyle(config: Config): void {
         Logger.info('Set Css-Variables...');
         const isLightTheme = Color.isLight(`#${config.color!.background!}`);
         const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
@@ -134,7 +134,7 @@ export class StyleService {
         return 0.5;
     }
 
-    private getBackgroundFactor(config: ConfigTypes, isLightTheme: boolean) {
+    private getBackgroundFactor(config: Config, isLightTheme: boolean) {
         const brightness = Color.getBrightness(`#${config.color!.background!}`);
         const factor = 1.8 - brightness;
         return isLightTheme ? -factor : factor;

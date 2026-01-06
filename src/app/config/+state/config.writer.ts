@@ -1,11 +1,11 @@
-import {ConfigTypes, ConfigSchema} from "../+models/config.types";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
  * Writer class for generating configuration file content.
  */
 export class ConfigWriter {
 
-    public static toDotString(settings: ConfigTypes, asComments: boolean = false): string {
+    public static toDotString(settings: Config, asComments: boolean = false): string {
         const lines = this.toDotProperties(settings, "", ConfigSchema, asComments);
         return lines.join("\n") + (lines.length ? "\n" : "");
     }

@@ -3,7 +3,7 @@ import {Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {ConfigService} from "../../config/+state/config.service";
-import {FeatureMode} from "../../config/+models/config.types";
+import {FeatureMode} from "../../config/+models/config";
 import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";

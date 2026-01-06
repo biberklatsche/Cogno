@@ -7,7 +7,7 @@ import {
 } from "../+state/inspector.service";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
-import {Keybinding} from "../../config/+models/config.types";
+import {Keybinding} from "../../config/+models/config";
 
 @Component({
   selector: 'app-inspector-side',

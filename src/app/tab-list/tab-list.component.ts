@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";
 import {IconComponent} from "../icons/icon/icon.component";
-import {ShellType} from "../config/+models/config.types";
+import {ShellType} from "../config/+models/config";
 import {Icon} from "../icons/+model/icon";
 import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';

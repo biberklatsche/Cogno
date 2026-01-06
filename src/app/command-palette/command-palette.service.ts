@@ -9,7 +9,7 @@ import {
 import { KeybindService } from '../keybinding/keybind.service';
 import {Subscription} from "rxjs";
 import {Grid} from "../common/grid/grid-calculations";
-import {FeatureMode} from "../config/+models/config.types";
+import {FeatureMode} from "../config/+models/config";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
 import {CommandPaletteComponent} from "./command-palette.component";
 import {createSideMenuFeature, SideMenuFeature} from "../menu/side-menu/+state/side-menu-feature";

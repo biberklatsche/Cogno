@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, OnDestroy } from '@angular/core';
 import { ConfigService } from '../config/+state/config.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {ScrollbarVisibility} from "../config/+models/config.types";
+import {ScrollbarVisibility} from "../config/+models/config";
 
 /**
  * Controls the visibility/animation state of the custom scrollbar by toggling

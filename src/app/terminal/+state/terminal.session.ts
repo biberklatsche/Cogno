@@ -18,7 +18,7 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
-import {ShellConfig, ShellConfigPosition} from "../../config/+models/config.types";
+import {ShellConfig, ShellConfigPosition} from "../../config/+models/config";
 
 export class TerminalSession {
 

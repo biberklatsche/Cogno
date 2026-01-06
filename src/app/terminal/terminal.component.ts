@@ -13,7 +13,7 @@ import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
-import {ShellConfig, ShellConfigPosition} from "../config/+models/config.types";
+import {ShellConfig, ShellConfigPosition} from "../config/+models/config";
 
 @Component({
     selector: 'app-terminal',

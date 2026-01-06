@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal} from '@angular/core';
 import {TerminalComponentFactory} from "../+state/terminal-component.factory";
 import {Pane, TerminalId} from "../+model/model";
-import {ShellConfig, ShellConfigPosition} from "../../config/+models/config.types";
+import {ShellConfig, ShellConfigPosition} from "../../config/+models/config";
 import {ConfigService} from "../../config/+state/config.service";
 
 @Component({

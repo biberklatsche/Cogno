@@ -1,4 +1,4 @@
-import {ShellConfigPosition} from "../../config/+models/config.types";
+import {ShellConfigPosition} from "../../config/+models/config";
 import {ColorName} from "../../common/color/color";
 import {TerminalId} from "../../grid-list/+model/model";
 

@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, debounceTime, filter, Observable, Subject, Subscription} from 'rxjs';
-import {ConfigTypes, ShellConfig, ShellConfigPosition} from "../+models/config.types";
+import {Config, ShellConfig, ShellConfigPosition} from "../+models/config";
 import {ConfigReader} from "./config.reader";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
@@ -17,16 +17,16 @@ import {Opener} from "../../_tauri/opener";
     providedIn: 'root'
 })
 export class ConfigService {
-    private _config: BehaviorSubject<ConfigTypes | undefined> = new BehaviorSubject<ConfigTypes | undefined>(undefined);
+    private _config: BehaviorSubject<Config | undefined> = new BehaviorSubject<Config | undefined>(undefined);
 
     private _unwatch: Subscription | undefined;
 
-    get config(): ConfigTypes {
+    get config(): Config {
         if(this._config === undefined) throw new Error('Config is not loaded!');
         return this._config.value!;
     }
 
-    get config$(): Observable<ConfigTypes> {
+    get config$(): Observable<Config> {
         return this._config.pipe(filter(s => !!s));
     }
 
@@ -65,7 +65,7 @@ export class ConfigService {
         }
         const path = Environment.configFilePath();
         if(!await Fs.exists(path)) {
-            const userConfig: ConfigTypes = {shell: {}};
+            const userConfig: Config = {shell: {}};
             await this.shells.apply(userConfig);
             await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }

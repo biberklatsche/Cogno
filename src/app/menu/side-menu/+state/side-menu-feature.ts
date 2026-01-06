@@ -1,6 +1,6 @@
 import { DestroyRef} from '@angular/core';
 import { Subscription } from 'rxjs';
-import {FeatureMode} from "../../../config/+models/config.types";
+import {FeatureMode} from "../../../config/+models/config";
 import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
 import {ConfigService} from "../../../config/+state/config.service";

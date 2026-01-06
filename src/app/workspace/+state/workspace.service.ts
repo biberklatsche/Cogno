@@ -6,7 +6,7 @@ import {SideMenuItem, SideMenuService} from "../../menu/side-menu/+state/side-me
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {ConfigService} from "../../config/+state/config.service";
-import {FeatureMode} from "../../config/+models/config.types";
+import {FeatureMode} from "../../config/+models/config";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {Grid} from "../../common/grid/grid-calculations";

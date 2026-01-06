@@ -3,10 +3,10 @@ import { ConfigWriter } from './config.writer';
 import { ConfigReader } from './config.reader';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import {ConfigTypes} from "../+models/config.types";
+import {Config} from "../+models/config";
 
 let defaultText = '';
-let DEFAULTS: ConfigTypes;
+let DEFAULTS: Config;
 
 beforeAll(() => {
   const p = join(process.cwd(), 'src-tauri', 'src', 'default_windows.config');
@@ -18,7 +18,7 @@ beforeAll(() => {
 describe('ConfigWriter', () => {
 
   it('toDotString can render without comments when asComments=false', () => {
-    const curr: ConfigTypes = JSON.parse(JSON.stringify(DEFAULTS));
+    const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
     curr.enable_webgl = true;
     curr.scrollback_lines = 1234;
 

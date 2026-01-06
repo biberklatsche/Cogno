@@ -4,7 +4,7 @@ import {Pane, SplitDirection} from "../+model/model";
 import {NgStyle} from "@angular/common";
 import {PaneComponent} from "../pane/pane.component";
 import {ConfigService} from "../../config/+state/config.service";
-import {ShellConfig} from "../../config/+models/config.types";
+import {ShellConfig} from "../../config/+models/config";
 
 @Component({
   selector: 'app-grid',

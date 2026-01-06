@@ -6,7 +6,7 @@ import {TerminalDimensions} from "../../terminal/+state/handler/resize.handler";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {InspectorSideComponent} from "../inspector-side/inspector-side.component";
 import {ConfigService} from "../../config/+state/config.service";
-import {FeatureMode, Keybinding} from "../../config/+models/config.types";
+import {FeatureMode, Keybinding} from "../../config/+models/config";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 
