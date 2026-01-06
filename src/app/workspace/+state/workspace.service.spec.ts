@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from 'vitest';
 import { WorkspaceService, DEFAULT_WORKSPACE_ID } from './workspace.service';
 import { AppBus } from '../../app-bus/app-bus';
-import { ConfigService } from '../../config/+state/config.service';
 import { KeybindService } from '../../keybinding/keybind.service';
 import { SideMenuService } from '../../menu/side-menu/+state/side-menu.service';
 import { WorkspaceRepository } from './workspace.repository';
@@ -9,28 +8,27 @@ import { GridListService } from '../../grid-list/+state/grid-list.service';
 import { TabListService } from '../../tab-list/+state/tab-list.service';
 import { IdCreator } from '../../common/id-creator/id-creator';
 import { DestroyRef } from '@angular/core';
-import {Config} from "../../config/+models/config";
 import {
-    createConfigServiceMock,
-    createDestroyRefMock,
-    createKeybindServiceMock,
-    createSideMenuServiceMock
+    clear,
+    getAppBus,
+    getConfigService,
+    getDestroyRef, getGridListService,
+    getKeybindService,
+    getSideMenuService, getTabListService, getWorkspaceRepository
 } from "../../../__test__/test-factory";
+import {ConfigServiceMock} from "../../../__test__/mocks/config-service.mock";
 
 describe('WorkspaceService', () => {
     let service: WorkspaceService;
     let appBus: AppBus;
-    let configService: Mocked<ConfigService>;
-    let keybindService: Mocked<KeybindService>;
-    let sideMenuService: Mocked<SideMenuService>;
-    let workspaceRepository: Mocked<WorkspaceRepository>;
-    let gridListService: Mocked<GridListService>;
-    let tabListService: Mocked<TabListService>;
-    let destroyRef: Mocked<DestroyRef>;
+    let configService: ConfigServiceMock;
+    let keybindService: KeybindService;
+    let sideMenuService: SideMenuService;
+    let workspaceRepository: WorkspaceRepository;
+    let gridListService: GridListService;
+    let tabListService: TabListService;
+    let destroyRef: DestroyRef;
 
-    const mockConfig: Partial<Config> = {
-        workspace: { mode: 'visible' }
-    };
 
     const mockWorkspaces = [
         { id: 'ws1', name: 'Workspace 1', color: 'blue', grids: [], tabs: [{ tabId: 't1', isActive: true }], isActive: true },
@@ -39,31 +37,32 @@ describe('WorkspaceService', () => {
     ];
 
     beforeEach(() => {
-        appBus = new AppBus();
-        
-        configService = createConfigServiceMock(mockConfig);
-        keybindService = createKeybindServiceMock();
-        sideMenuService = createSideMenuServiceMock();
+        appBus = getAppBus();
+        sideMenuService = getSideMenuService();
+        configService = getConfigService();
+        configService.setConfig({
+            workspace: { mode: 'visible' }
+        });
 
-        workspaceRepository = {
-            getAllWorkspaces: vi.fn().mockResolvedValue(JSON.parse(JSON.stringify(mockWorkspaces))),
-            createWorkspace: vi.fn().mockResolvedValue('new-id'),
-            updateWorkspace: vi.fn().mockResolvedValue('ws1'),
-            deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-        } as Mocked<WorkspaceRepository>;
+        keybindService = getKeybindService();
+        vi.spyOn(keybindService, 'registerListener');
+        vi.spyOn(keybindService, 'unregisterListener');
 
-        gridListService = {
-            restoreGrids: vi.fn(),
-            getGridConfigs: vi.fn().mockReturnValue([]),
-        } as Mocked<GridListService>;
+        workspaceRepository = getWorkspaceRepository();
+        vi.mocked(workspaceRepository.getAllWorkspaces).mockResolvedValue(JSON.parse(JSON.stringify(mockWorkspaces)));
+        vi.mocked(workspaceRepository.createWorkspace).mockResolvedValue('new-id' as any);
+        vi.mocked(workspaceRepository.updateWorkspace).mockResolvedValue('ws1' as any);
+        vi.mocked(workspaceRepository.deleteWorkspace).mockResolvedValue(undefined);
 
-        tabListService = {
-            restoreTabs: vi.fn(),
-            selectTab: vi.fn(),
-            getTabConfigs: vi.fn().mockReturnValue([]),
-        } as Mocked<TabListService>;
+        gridListService = getGridListService();
+        vi.mocked(gridListService.getGridConfigs).mockReturnValue([]);
 
-        destroyRef = createDestroyRefMock();
+        tabListService = getTabListService();
+        vi.mocked(tabListService.getTabConfigs).mockReturnValue([]);
+
+        destroyRef = getDestroyRef();
+
+        vi.spyOn(sideMenuService, 'close');
 
         service = new WorkspaceService(
             appBus,
@@ -75,6 +74,10 @@ describe('WorkspaceService', () => {
             tabListService,
             destroyRef
         );
+    });
+
+    afterEach(() => {
+        clear();
     });
 
     it('should be created', () => {

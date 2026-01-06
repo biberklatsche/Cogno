@@ -1,36 +1,40 @@
-import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from 'vitest';
 import { InspectorService } from './inspector.service';
 import { AppBus } from '../../app-bus/app-bus';
-import { ConfigService } from '../../config/+state/config.service';
 import { KeybindService } from '../../keybinding/keybind.service';
 import { SideMenuService } from '../../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
-import {Config} from "../../config/+models/config";
 import {
-    createConfigServiceMock,
-    createDestroyRefMock,
-    createKeybindServiceMock
+    clear,
+    getAppBus,
+    getConfigService,
+    getDestroyRef,
+    getKeybindService, getSideMenuService
 } from "../../../__test__/test-factory";
+import {ConfigServiceMock} from "../../../__test__/mocks/config-service.mock";
 
 describe('InspectorService', () => {
     let service: InspectorService;
     let appBus: AppBus;
-    let configService: Mocked<ConfigService>;
-    let keybindService: Mocked<KeybindService>;
+    let configService: ConfigServiceMock;
+    let keybindService: KeybindService;
     let sideMenuService: SideMenuService;
-    let destroyRef: Mocked<DestroyRef>;
+    let destroyRef: DestroyRef;
 
-    const mockConfig: Partial<Config> = {
-        inspector: { mode: 'visible' }
-    };
 
     beforeEach(() => {
-        appBus = new AppBus();
-        sideMenuService = new SideMenuService(appBus);
+        appBus = getAppBus();
+        sideMenuService = getSideMenuService();
+        configService = getConfigService();
+        configService.setConfig({
+            inspector: { mode: 'visible' }
+        });
 
-        configService = createConfigServiceMock(mockConfig);
-        keybindService = createKeybindServiceMock();
-        destroyRef = createDestroyRefMock();
+        keybindService = getKeybindService();
+        vi.spyOn(keybindService, 'registerListener');
+        vi.spyOn(keybindService, 'unregisterListener');
+
+        destroyRef = getDestroyRef();
 
         // Spy on methods called by SideMenuFeature
         vi.spyOn(sideMenuService, 'addMenuItem');
@@ -44,6 +48,10 @@ describe('InspectorService', () => {
             keybindService,
             destroyRef
         );
+    });
+
+    afterEach(() => {
+        clear();
     });
 
     it('should be created', () => {
@@ -164,7 +172,7 @@ describe('InspectorService', () => {
         it('should handle mode off by closing', () => {
             appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Inspector' } });
             
-            configService.config$.next({ inspector: { mode: 'off' } });
+            configService.setConfig({ inspector: { mode: 'off' } } as any);
 
             expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith('Inspector');
             // Check if keybind listener was unregistered via handleClose

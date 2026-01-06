@@ -1,42 +1,42 @@
 import {describe, it, expect, vi, beforeEach, afterEach, Mocked, Mock} from 'vitest';
 import { NotificationService } from './notification.service';
 import { AppBus } from '../../app-bus/app-bus';
-import { ConfigService } from '../../config/+state/config.service';
 import { KeybindService } from '../../keybinding/keybind.service';
 import { SideMenuService } from '../../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
-import { Hash } from '../../common/hash/hash';
-import {Config} from "../../config/+models/config";
 import {
-    createConfigServiceMock,
-    createDestroyRefMock,
-    createKeybindServiceMock
+    clear,
+    getAppBus,
+    getConfigService,
+    getDestroyRef,
+    getKeybindService, getSideMenuService
 } from "../../../__test__/test-factory";
+import {ConfigServiceMock} from "../../../__test__/mocks/config-service.mock";
 
 describe('NotificationService', () => {
     let service: NotificationService;
     let appBus: AppBus;
     let sideMenuService: SideMenuService;
+    let configService: ConfigServiceMock;
+    let keybindService: KeybindService;
+    let destroyRef: DestroyRef;
 
-    let configService: Mocked<ConfigService>;
-    let keybindService: Mocked<KeybindService>;
-    let destroyRef: Mocked<DestroyRef>;
-
-    const mockConfig: Partial<Config> = {
-        notification: { mode: 'visible' }
-    };
 
     beforeEach(() => {
-        appBus = new AppBus();
-        sideMenuService = new SideMenuService(appBus);
+        appBus = getAppBus();
+        sideMenuService = getSideMenuService();
+        configService = getConfigService();
+        configService.setConfig({
+            notification: { mode: 'visible' }
+        });
 
-        configService = createConfigServiceMock(mockConfig);
-        keybindService = createKeybindServiceMock();
-        destroyRef = createDestroyRefMock();
+        keybindService = getKeybindService();
+        vi.spyOn(keybindService, 'registerListener');
+        vi.spyOn(keybindService, 'unregisterListener');
+
+        destroyRef = getDestroyRef();
 
         // Spy on sideMenuService.updateIcon via the bus or directly if possible
-        // Note: SideMenuService uses signals, so we might need to check the signals if they were accessible
-        // but here we check the interaction through SideMenuFeature which calls sideMenuService.
         vi.spyOn(sideMenuService, 'updateIcon');
         vi.spyOn(sideMenuService, 'close');
 
@@ -47,6 +47,10 @@ describe('NotificationService', () => {
             keybindService,
             destroyRef
         );
+    });
+
+    afterEach(() => {
+        clear();
     });
 
     it('should be created and start listening', () => {
@@ -116,7 +120,7 @@ describe('NotificationService', () => {
         it('should stop listener when mode is set to off', () => {
             // Initially it is on (from mockConfig)
             // Change mode to off
-            configService.config$.next({ notification: { mode: 'off' } });
+            configService.setConfig({ notification: { mode: 'off' } } as any);
             
             // Now publishing a notification should NOT add it
             const payload = { header: 'Ghost', body: 'Should not see me' };
@@ -126,8 +130,8 @@ describe('NotificationService', () => {
         });
 
         it('should restart listener when mode is changed back from off', () => {
-            configService.config$.next({ notification: { mode: 'off' } });
-            configService.config$.next({ notification: { mode: 'visible' } });
+            configService.setConfig({ notification: { mode: 'off' } } as any);
+            configService.setConfig({ notification: { mode: 'visible' } } as any);
 
             const payload = { header: 'I am back', body: 'Hello' };
             appBus.publish({ type: 'Notification', path: ['notification'], payload });

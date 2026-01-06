@@ -28,7 +28,7 @@ export class KeybindService {
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, bus: AppBus, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
-        configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind!));
+        configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind || []));
         window.addEventListener("keydown", (e) => {
             // 1) Check registered listeners first (e.g., side menu overlays)
             const stack = this.listeners.get(e.key);
