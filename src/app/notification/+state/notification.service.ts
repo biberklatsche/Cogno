@@ -2,11 +2,12 @@ import {DestroyRef, computed, Injectable, Signal, signal, WritableSignal} from '
 import {Subscription} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
+import {ConfigService} from "../../config/+state/config.service";
 import {FeatureMode} from "../../config/+models/config.types";
 import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";
-import {SideMenuRegistrationTool} from "../../menu/side-menu/+state/side-menu-registration.tool";
+import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
@@ -22,9 +23,8 @@ export type Notification = {
 
 @Injectable({providedIn: 'root'})
 export class NotificationService {
-
-
-    private _subscription = new Subscription();
+    private readonly feature: SideMenuFeature;
+    private notificationSubscription?: Subscription;
 
     private _notifications: WritableSignal<Record<NotificationId, Notification>> = signal({});
 
@@ -32,80 +32,119 @@ export class NotificationService {
         return Object.values(this._notifications());
     });
 
-    private updateIconFn: ((icon: any) => void) | undefined;
-
     constructor(
         private sideMenuService: SideMenuService,
         private bus: AppBus,
-        private keybinds: KeybindService,
-        private menuTool: SideMenuRegistrationTool,
+        config: ConfigService,
+        keybinds: KeybindService,
         destroyRef: DestroyRef,
     ) {
-        const helper = this.menuTool.setup({
-            menuItem: {
+        this.feature = createSideMenuFeature(
+            {
                 label: 'Notification',
-                hidden: false,
-                pinned: false,
                 icon: 'mdiBell',
+                actionName: 'open_notification',
                 component: NotificationSideComponent,
-                actionName: 'open_notification'
+                configPath: 'notification',
             },
-            configSelector: (config) => config.notification?.mode,
-            onOpen: () => this.onOpen(),
-            onClose: () => this.onClose(),
-            onConfigChange: (mode) => this.onConfigChange(mode)
-        }, destroyRef);
-        this.updateIconFn = helper.updateIcon;
-        this._subscription.add(this.bus.on$({type: 'Notification', path: ['notification']}).subscribe(event => {
-            if (!event.payload) return;
-            const id = Hash.create(event.payload.header + event.payload.body);
-            this.updateIconFn?.('mdiBellBadge');
-            this._notifications.update(notifications => {
-                if (!notifications[id]) {
-                    notifications[id] = {
-                        id: id,
-                        body: event.payload!.body,
-                        header: event.payload!.header,
-                        type: (event.payload as any).type ?? 'info',
-                        count: 1,
-                        timestamp: event.payload!.timestamp ?? new Date()
-                    };
-                } else {
-                    const notification = notifications[id];
-                    notification.count++;
-                    notification.timestamp = event.payload!.timestamp ?? new Date();
-                    notifications[id] = notification;
+            {
+                onModeChange: (mode) => this.handleModeChange(mode),
+                onOpen: () => this.handleOpen(),
+                onClose: () => this.handleClose(),
+            },
+            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+        );
 
-                }
-                return {...notifications};
-            });
-
-        }));
+        // Start listening to notifications immediately (even when side menu is closed)
+        this.initNotificationListener();
     }
 
-    protected onConfigChange(featureMode: FeatureMode): void {
-        if (featureMode === 'off') {
-            this._subscription.unsubscribe();
+    private handleModeChange(mode: FeatureMode): void {
+        if (mode === 'off') {
+            this.stopNotificationListener();
+        } else {
+            // Ensure listener is active when feature is enabled
+            this.initNotificationListener();
         }
     }
-    protected onOpen(): void {
-        this.updateIconFn?.('mdiBell');
-        this.keybinds.registerListener(
-            'inspector',
+
+    private handleOpen(): void {
+        // Reset icon to normal bell (clear badge indicator)
+        this.feature.updateIcon('mdiBell');
+
+        // Register Escape key to close
+        this.feature.registerKeybindListener(
             ['Escape'],
-            evt => this.sideMenuService.close()
+            () => this.feature.close()
         );
     }
 
-    protected onClose(): void {
-        this._subscription.unsubscribe();
-        this.keybinds.unregisterListener('inspector');
+    private handleClose(): void {
+        this.feature.unregisterKeybindListener();
     }
 
-    remove(notificationId: NotificationId) {
+    private initNotificationListener(): void {
+        // Don't create duplicate subscriptions
+        if (this.notificationSubscription) return;
+
+        this.notificationSubscription = this.bus
+            .on$({type: 'Notification', path: ['notification']})
+            .subscribe(event => {
+                this.handleNotificationEvent(event);
+            });
+    }
+
+    private stopNotificationListener(): void {
+        this.notificationSubscription?.unsubscribe();
+        this.notificationSubscription = undefined;
+    }
+
+    private handleNotificationEvent(event: any): void {
+        if (!event.payload) return;
+
+        const id = Hash.create(event.payload.header + event.payload.body);
+
+        // Update icon to show badge
+        this.feature.updateIcon('mdiBellBadge');
+
         this._notifications.update(notifications => {
-            delete notifications[notificationId];
+            if (!notifications[id]) {
+                // New notification
+                notifications[id] = {
+                    id: id,
+                    body: event.payload!.body,
+                    header: event.payload!.header,
+                    type: (event.payload as any).type ?? 'info',
+                    count: 1,
+                    timestamp: event.payload!.timestamp ?? new Date()
+                };
+            } else {
+                // Duplicate notification - increment count
+                const notification = notifications[id];
+                notification.count++;
+                notification.timestamp = event.payload!.timestamp ?? new Date();
+                notifications[id] = notification;
+            }
             return {...notifications};
         });
+    }
+
+    // Public API
+
+    public remove(notificationId: NotificationId): void {
+        this._notifications.update(notifications => {
+            const next = {...notifications};
+            delete next[notificationId];
+            return next;
+        });
+    }
+
+    public clear(): void {
+        this._notifications.set({});
+        this.feature.updateIcon('mdiBell');
+    }
+
+    public getNotificationCount(): number {
+        return Object.keys(this._notifications()).length;
     }
 }

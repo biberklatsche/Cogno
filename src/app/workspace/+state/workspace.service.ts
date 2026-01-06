@@ -1,10 +1,11 @@
-import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
+import {DestroyRef, Injectable, signal, WritableSignal, inject, Injector} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
-import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
+import {SideMenuItem, SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
+import {ConfigService} from "../../config/+state/config.service";
 import {FeatureMode} from "../../config/+models/config.types";
 import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 import {KeybindService} from "../../keybinding/keybind.service";
@@ -12,7 +13,7 @@ import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
 import {ActionFired} from "../../action/action.models";
-import {SideMenuRegistrationTool} from "../../menu/side-menu/+state/side-menu-registration.tool";
+import {Subscription} from "rxjs";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
@@ -24,33 +25,68 @@ export class WorkspaceService {
     private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
+    private _keybindSubscription: Subscription | undefined;
 
     // inline edit state removed – dialog receives the workspace directly
 
     constructor(
         private bus: AppBus,
         private sideMenuService: SideMenuService,
+        private config: ConfigService,
         private keybinds: KeybindService,
         private workspaceRepository: WorkspaceRepository,
         private gridListService: GridListService,
         private tabListService: TabListService,
-        private menuTool: SideMenuRegistrationTool,
         destroyRef: DestroyRef,
     ) {
-        this.menuTool.setup({
-            menuItem: {
-                label: 'Workspace',
-                hidden: false,
-                pinned: false,
-                icon: 'mdiViewDashboard',
-                component: WorkspaceSideComponent,
-                actionName: 'open_workspace',
-            },
-            configSelector: (config) => config.workspace?.mode,
-            onOpen: () => this.registerKeybindListener(),
-            onClose: () => this.unregisterKeybindListener(),
-            onConfigChange: (mode) => this.onConfigChange(mode)
-        }, destroyRef);
+        const menuItem: SideMenuItem = {
+            label: 'Workspace',
+            hidden: false,
+            pinned: false,
+            icon: 'mdiViewDashboard',
+            component: WorkspaceSideComponent,
+            actionName: 'open_workspace',
+        };
+
+        const configSub = this.config.config$.subscribe((cfg) => {
+            const mode = cfg.workspace?.mode;
+            switch (mode) {
+                case 'off':
+                    this.onConfigChange('off');
+                    this.removeSideMenuKeybindHandler();
+                    this.sideMenuService.removeMenuItem(menuItem.label);
+                    break;
+                case 'hidden':
+                    this.onConfigChange('hidden');
+                    this.sideMenuService.addMenuItem({ ...menuItem, hidden: true });
+                    this.addSideMenuKeybindHandler(menuItem.actionName, menuItem.label);
+                    break;
+                case 'visible':
+                    this.onConfigChange('visible');
+                    this.sideMenuService.addMenuItem({ ...menuItem, hidden: false });
+                    this.addSideMenuKeybindHandler(menuItem.actionName, menuItem.label);
+                    break;
+            }
+        });
+
+        const openSub = this.bus.onType$('SideMenuViewOpened').subscribe(event => {
+            if (event.payload?.label === menuItem.label) {
+                this.onOpen();
+            }
+        });
+
+        const closeSub = this.bus.onType$('SideMenuViewClosed').subscribe(event => {
+            if (event.payload?.label === menuItem.label) {
+                this.onClose();
+            }
+        });
+
+        destroyRef.onDestroy(() => {
+            configSub.unsubscribe();
+            openSub.unsubscribe();
+            closeSub.unsubscribe();
+            this.removeSideMenuKeybindHandler();
+        });
 
         this.bus.onceType$('DBInitialized').subscribe(async e => {
             //load workspaces here
@@ -84,6 +120,23 @@ export class WorkspaceService {
                 await this.saveWorkspace(active);
                 this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'autosave_done']));
             });
+    }
+
+    private addSideMenuKeybindHandler(actionName: string, label: string): void {
+        if (this._keybindSubscription) return;
+        this._keybindSubscription = this.bus
+            .on$({ type: 'ActionFired', path: ['app', 'action'] })
+            .subscribe((event) => {
+                if (event.payload === actionName) {
+                    this.sideMenuService.open(label);
+                    (event as any).performed = true;
+                }
+            });
+    }
+
+    private removeSideMenuKeybindHandler(): void {
+        this._keybindSubscription?.unsubscribe();
+        this._keybindSubscription = undefined;
     }
 
     protected onConfigChange(featureMode: FeatureMode): void {

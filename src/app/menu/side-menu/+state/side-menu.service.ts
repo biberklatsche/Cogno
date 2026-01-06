@@ -1,7 +1,6 @@
 import {Injectable, Signal, signal, Type, WritableSignal} from "@angular/core";
 import {ActionName} from "../../../action/action.models";
 import {Icon} from "../../../icons/+model/icon";
-import {KeybindService} from "../../../keybinding/keybind.service";
 import {AppBus} from "../../../app-bus/app-bus";
 
 export type SideMenuItem = {
@@ -65,13 +64,25 @@ export class SideMenuService {
     open(label: string): void {
         const current = this._selectedItem();
         if (current?.label === label) return;
+
+        if (current) {
+            this.bus.publish({type: 'SideMenuViewClosed', payload: {label: current.label}});
+        }
+
         const item = this._menuItems().find(s => s.label === label);
         this._selectedItem.set(item);
+
+        if (item) {
+            this.bus.publish({type: 'SideMenuViewOpened', payload: {label: item.label}});
+        }
     }
 
     close() {
         const current = this._selectedItem();
         if(!current) return;
+
+        this.bus.publish({type: 'SideMenuViewClosed', payload: {label: current.label}});
+
         this._selectedItem.set(undefined);
         const item = this._menuItems().find(s => s.label === current.label);
         item!.pinned = false;
@@ -112,5 +123,10 @@ export class SideMenuService {
         if(!current.pinned && index <= -1) {
             return;
         }
+    }
+
+    updateIcon(label: string, icon: Icon) {
+        this._menuItems.update(s => s.map(i => i.label === label ? {...i, icon} : i));
+        this._selectedItem.update(s => s?.label === label ? {...s, icon} : s);
     }
 }

@@ -25,6 +25,7 @@ import {
 import {InspectorEvent} from "../inspector/+bus/events";
 import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
+import {SideMenuEvent} from "../menu/side-menu/+bus/events";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -60,4 +61,5 @@ export type AppMessage =
     | FocusActiveTerminalAction
     | InspectorEvent
     | NotificationEvent
+    | SideMenuEvent
     ;

@@ -12,7 +12,7 @@ import {Grid} from "../common/grid/grid-calculations";
 import {FeatureMode} from "../config/+models/config.types";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
 import {CommandPaletteComponent} from "./command-palette.component";
-import {SideMenuRegistrationTool} from "../menu/side-menu/+state/side-menu-registration.tool";
+import {createSideMenuFeature, SideMenuFeature} from "../menu/side-menu/+state/side-menu-feature";
 
 export type CommandEntry = {
     isSelected: boolean;
@@ -23,34 +23,61 @@ export type CommandEntry = {
 
 @Injectable({providedIn: 'root'})
 export class CommandPaletteService {
-    private _subscription: Subscription | undefined;
+    private readonly feature: SideMenuFeature;
+    private configSubscription?: Subscription;
 
     private readonly _commandList = signal<CommandEntry[]>([]);
     private readonly _filteredCommandList = signal<CommandEntry[]>([]);
+
     readonly filteredCommandList = this._filteredCommandList.asReadonly();
 
     constructor(
-        private sideMenuService: SideMenuService,
+        sideMenuService: SideMenuService,
         private bus: AppBus,
         private config: ConfigService,
-        private keybinds: KeybindService,
-        private menuTool: SideMenuRegistrationTool,
+        keybinds: KeybindService,
         destroyRef: DestroyRef,
     ) {
-        this.menuTool.setup({
-            menuItem: {
+        this.feature = createSideMenuFeature(
+            {
                 label: 'Command Palette',
-                hidden: false,
-                pinned: false,
                 icon: 'mdiPaletteSwatch',
+                actionName: 'open_command_palette',
                 component: CommandPaletteComponent,
-                actionName: 'open_command_palette'
+                configPath: 'command_palette',
             },
-            configSelector: (config) => config.command_palette?.mode,
-            onOpen: () => this.onOpen(),
-            onClose: () => this.onClose(),
-            onConfigChange: (mode) => this.onConfigChange(mode)
-        }, destroyRef);
+            {
+                onModeChange: (mode) => this.handleModeChange(mode),
+                onOpen: () => this.handleOpen(),
+                onClose: () => this.handleClose(),
+            },
+            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+        );
+    }
+
+    private handleModeChange(mode: FeatureMode): void {
+        if (mode === 'off') {
+            this.handleClose();
+        }
+    }
+
+    private handleOpen(): void {
+        this.initCommands();
+        this.initConfigListener();
+        this.filterCommands('');
+
+        this.feature.registerKeybindListener(
+            ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'],
+            (evt) => this.handleKey(evt.key)
+        );
+    }
+
+    private handleClose(): void {
+        this._commandList.set([]);
+        this._filteredCommandList.set([]);
+        this.configSubscription?.unsubscribe();
+        this.configSubscription = undefined;
+        this.feature.unregisterKeybindListener();
     }
 
     private initCommands(): void {
@@ -62,12 +89,13 @@ export class CommandPaletteService {
                 isSelected: false
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
+
         this._commandList.set(this.selectFirst(commands));
         this._filteredCommandList.set(this.selectFirst(commands));
     }
 
     private initConfigListener(): void {
-        this._subscription = this.config.config$.subscribe(c => {
+        this.configSubscription = this.config.config$.subscribe(c => {
             const updated = this.applyKeybindConfig(
                 this._commandList(),
                 c.keybind ?? []
@@ -100,55 +128,14 @@ export class CommandPaletteService {
         );
     }
 
-    protected onConfigChange(featureMode: FeatureMode): void {
-        if(featureMode == 'off') this.onClose();
-    }
-
-    protected onOpen(): void {
-        this.initCommands();
-        this.initConfigListener();
-        this.filterCommands('');
-        this.keybinds.registerListener(
-            'command-palette',
-            ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'],
-            evt => this.handleKey(evt.key)
-        );
-    }
-
-    protected onClose(): void {
-        this._commandList.set([]);
-        this._subscription?.unsubscribe();
-        this.keybinds.unregisterListener('command-palette');
-    }
-
-
-    fireAction(command?: CommandEntry): void {
-        const selected =
-            command ?? this._filteredCommandList().find(c => c.isSelected);
-        if (!selected) return;
-        setTimeout(() => this.bus.publish(
-            ActionFired.createFromDefinition(selected.action)
-        ));
-    }
-
-    filterCommands(filter: string): void {
-        const normalized = filter.toLowerCase();
-
-        const filtered = this._commandList()
-            .map(c => ({ ...c, isSelected: false }))
-            .filter(c => c.label.toLowerCase().includes(normalized));
-
-        this._filteredCommandList.set(this.selectFirst(filtered));
-    }
-
     private handleKey(key: string): void {
         switch (key) {
             case 'Escape':
-                this.sideMenuService.close();
+                this.feature.close();
                 break;
             case 'Enter':
                 this.fireAction();
-                this.sideMenuService.close();
+                this.feature.close();
                 break;
             case 'ArrowDown':
                 this.selectNext('d');
@@ -165,6 +152,7 @@ export class CommandPaletteService {
 
         const current = commands.findIndex(c => c.isSelected);
         const next = Grid.nextIndex(current, direction, 1, commands.length);
+
         commands.forEach(c => (c.isSelected = false));
         commands[next].isSelected = true;
 
@@ -176,5 +164,26 @@ export class CommandPaletteService {
         commands.forEach(c => (c.isSelected = false));
         commands[0].isSelected = true;
         return commands;
+    }
+
+    // Public API
+
+    public fireAction(command?: CommandEntry): void {
+        const selected = command ?? this._filteredCommandList().find(c => c.isSelected);
+        if (!selected) return;
+
+        setTimeout(() => this.bus.publish(
+            ActionFired.createFromDefinition(selected.action)
+        ));
+    }
+
+    public filterCommands(filter: string): void {
+        const normalized = filter.toLowerCase();
+
+        const filtered = this._commandList()
+            .map(c => ({ ...c, isSelected: false }))
+            .filter(c => c.label.toLowerCase().includes(normalized));
+
+        this._filteredCommandList.set(this.selectFirst(filtered));
     }
 }
