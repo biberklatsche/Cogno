@@ -9,6 +9,7 @@ import {vi} from "vitest";
 import {GridListService} from "../app/grid-list/+state/grid-list.service";
 import {TabListService} from "../app/tab-list/+state/tab-list.service";
 import {TerminalComponentFactory} from "../app/grid-list/+state/terminal-component.factory";
+import {WindowService} from "../app/window/window.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -19,6 +20,7 @@ let workspaceRepository: WorkspaceRepository | undefined;
 let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
 let terminalComponentFactory: TerminalComponentFactory | undefined;
+let windowService: WindowService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -99,6 +101,16 @@ export function getDestroyRef(): DestroyRef {
     };
 }
 
+export function getWindowService(): WindowService {
+    if(!windowService) {
+        windowService = new WindowService(
+            getAppBus(),
+            getDestroyRef()
+        );
+    }
+    return windowService;
+}
+
 
 export function clear() {
     appBus = undefined;
@@ -110,4 +122,5 @@ export function clear() {
     gridListService = undefined;
     tabListService = undefined;
     terminalComponentFactory = undefined;
+    windowService = undefined;
 }

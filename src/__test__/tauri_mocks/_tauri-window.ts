@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 // Default mock for src/app/_tauri/window.ts
 export const AppWindow = {
@@ -15,6 +15,11 @@ export const AppWindow = {
   windowSize$: new Observable<{ width: number; height: number }>((subscriber) => {
     subscriber.next({ width: 800, height: 600 });
     // keep open; tests can unsubscribe; no teardown needed
+    return () => {};
+  }),
+  onCloseRequested$: new Subject<any>(),
+  onFocusChanged$: new Observable<boolean>((subscriber) => {
+    subscriber.next(true);
     return () => {};
   }),
 };

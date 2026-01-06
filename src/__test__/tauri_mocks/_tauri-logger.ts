@@ -1,6 +1,8 @@
+import { vi } from 'vitest';
+
 export const Logger = {
-  debug: async (_msg?: any) => {},
-  info: async (_msg?: any) => {},
-  warn: async (_msg?: any) => {},
-  error: async (_msg?: any) => {},
+  debug: vi.fn().mockResolvedValue(undefined),
+  info: vi.fn().mockResolvedValue(undefined),
+  warn: vi.fn().mockResolvedValue(undefined),
+  error: vi.fn().mockResolvedValue(undefined),
 };
