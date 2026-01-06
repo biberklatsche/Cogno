@@ -1,41 +1,40 @@
-import { describe, it, expect, vi, beforeEach, Mocked } from 'vitest';
+import {describe, it, expect, vi, beforeEach, afterEach, Mocked} from 'vitest';
 import { CommandPaletteService } from './command-palette.service';
 import { AppBus } from '../app-bus/app-bus';
-import { ConfigService } from '../config/+state/config.service';
 import { KeybindService } from '../keybinding/keybind.service';
 import { SideMenuService } from '../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
 import { ACTION_NAMES } from '../action/action.models';
 import {Config} from "../config/+models/config";
 import {
-    createConfigServiceMock,
-    createDestroyRefMock,
-    createKeybindServiceMock
+    clear,
+    getAppBus, getConfigService, getDestroyRef, getKeybindService, getSideMenuService
 } from "../../__test__/test-factory";
+import {ConfigServiceMock} from "../../__test__/mocks/config-service.mock";
 
 describe('CommandPaletteService', () => {
     let service: CommandPaletteService;
     let appBus: AppBus;
-    let configService: Mocked<ConfigService>;
-    let keybindService: Mocked<KeybindService>;
+    let configService: ConfigServiceMock;
+    let keybindService: KeybindService;
     let sideMenuService: SideMenuService;
-    let destroyRef: Mocked<DestroyRef>;
-
-    const mockConfig: Partial<Config> = {
-        keybind: [
-            'ctrl+p=open_command_palette',
-            'ctrl+f=copy'
-        ],
-        command_palette: { mode: 'visible' }
-    };
+    let destroyRef: DestroyRef;
 
     beforeEach(() => {
-        appBus = new AppBus();
-        sideMenuService = new SideMenuService(appBus);
-        
-        configService = createConfigServiceMock(mockConfig);
-        keybindService = createKeybindServiceMock();
-        destroyRef = createDestroyRefMock();
+        sideMenuService = getSideMenuService();
+        configService = getConfigService();
+        configService.setConfig({
+            keybind: [
+                'ctrl+p=open_command_palette',
+                'ctrl+f=copy'
+            ],
+            command_palette: { mode: 'visible' }
+        })
+        keybindService = getKeybindService();
+        vi.spyOn(keybindService, 'registerListener');
+        vi.spyOn(keybindService, 'unregisterListener');
+        appBus = getAppBus();
+        destroyRef = getDestroyRef();
 
         service = new CommandPaletteService(
             sideMenuService,
@@ -46,17 +45,18 @@ describe('CommandPaletteService', () => {
         );
     });
 
+    afterEach(() => {
+        clear();
+    });
+
     it('should be created', () => {
         expect(service).toBeTruthy();
     });
 
     describe('handleOpen', () => {
-        beforeEach(() => {
-            // Simulate opening the side menu for Command Palette
-            appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Command Palette' } });
-        });
 
         it('should initialize commands and filter them', () => {
+            sideMenuService.open('Command Palette' );
             const list = service.filteredCommandList();
             expect(list.length).toBe(ACTION_NAMES.length);
             expect(list.some(c => c.isSelected)).toBe(true);
@@ -64,6 +64,7 @@ describe('CommandPaletteService', () => {
         });
 
         it('should apply keybindings from config', () => {
+            sideMenuService.open('Command Palette' );
             const list = service.filteredCommandList();
             const copyCmd = list.find(c => c.label === 'copy');
             expect(copyCmd?.keybinding).toBe('ctrl+f');
@@ -73,6 +74,8 @@ describe('CommandPaletteService', () => {
         });
 
         it('should register keybind listeners', () => {
+            vi.spyOn(keybindService, 'registerListener');
+            sideMenuService.open('Command Palette' );
             expect(keybindService.registerListener).toHaveBeenCalledWith(
                 'command_palette',
                 ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'],
@@ -83,7 +86,7 @@ describe('CommandPaletteService', () => {
 
     describe('filterCommands', () => {
         beforeEach(() => {
-            appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Command Palette' } });
+            sideMenuService.open('Command Palette' );
         });
 
         it('should filter commands by label', () => {
@@ -114,10 +117,10 @@ describe('CommandPaletteService', () => {
         let keyHandler: (evt: any) => void;
 
         beforeEach(() => {
-            appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Command Palette' } });
-            keyHandler = keybindService.registerListener.mock.calls.find(
+            sideMenuService.open('Command Palette' );
+            keyHandler = vi.mocked(keybindService.registerListener).mock.calls.find(
                 (call: any) => call[0] === 'command_palette'
-            )[2];
+            )![2];
         });
 
         it('should navigate down with ArrowDown', () => {
@@ -157,9 +160,9 @@ describe('CommandPaletteService', () => {
         beforeEach(() => {
             vi.useFakeTimers();
             appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Command Palette' } });
-            keyHandler = keybindService.registerListener.mock.calls.find(
+            keyHandler = vi.mocked(keybindService.registerListener).mock.calls.find(
                 (call: any) => call[0] === 'command_palette'
-            )[2];
+            )![2];
         });
 
         afterEach(() => {
@@ -207,12 +210,12 @@ describe('CommandPaletteService', () => {
         it('should update command list when config changes', () => {
             appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Command Palette' } });
             
-            const newConfig = {
-                ...mockConfig,
-                keybind: ['ctrl+alt+t=new_tab']
-            };
+            const newConfig: Config = {
+                keybind: ['ctrl+alt+t=new_tab'],
+                command_palette: { mode: 'visible' }
+            } as Config;
             
-            configService.config$.next(newConfig);
+            configService.setConfig(newConfig);
             
             const list = service.filteredCommandList();
             const newTabCmd = list.find(c => c.label === 'new tab');
