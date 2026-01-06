@@ -8,6 +8,7 @@ import {WorkspaceRepository} from "../app/workspace/+state/workspace.repository"
 import {vi} from "vitest";
 import {GridListService} from "../app/grid-list/+state/grid-list.service";
 import {TabListService} from "../app/tab-list/+state/tab-list.service";
+import {TerminalComponentFactory} from "../app/grid-list/+state/terminal-component.factory";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -17,6 +18,7 @@ let keybindMappingService: KeyboardMappingService | undefined;
 let workspaceRepository: WorkspaceRepository | undefined;
 let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
+let terminalComponentFactory: TerminalComponentFactory | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -50,35 +52,42 @@ export function getKeyboardMappingService(): KeyboardMappingService {
 
 export function getWorkspaceRepository(): WorkspaceRepository {
     if(!workspaceRepository) {
-        workspaceRepository = {
-            getAllWorkspaces: vi.fn(),
-            createWorkspace: vi.fn(),
-            updateWorkspace: vi.fn(),
-            deleteWorkspace: vi.fn(),
-        } as unknown as WorkspaceRepository;
+        workspaceRepository = new WorkspaceRepository();
     }
     return workspaceRepository;
 }
 
 export function getGridListService(): GridListService {
     if(!gridListService) {
-        gridListService = {
-            restoreGrids: vi.fn(),
-            getGridConfigs: vi.fn(),
-        } as unknown as GridListService;
+        gridListService = new GridListService(
+            getAppBus(),
+            getTerminalComponentFactory(),
+            getDestroyRef()
+        );
     }
     return gridListService;
 }
 
 export function getTabListService(): TabListService {
     if(!tabListService) {
-        tabListService = {
-            restoreTabs: vi.fn(),
-            selectTab: vi.fn(),
-            getTabConfigs: vi.fn(),
-        } as unknown as TabListService;
+        tabListService = new TabListService(
+            getAppBus(),
+            getConfigService(),
+            getDestroyRef()
+        );
     }
     return tabListService;
+}
+
+export function getTerminalComponentFactory(): TerminalComponentFactory {
+    if(!terminalComponentFactory) {
+        terminalComponentFactory = {
+            destroy: vi.fn(),
+            getSnapshot: vi.fn(),
+            attach: vi.fn(),
+        } as unknown as TerminalComponentFactory;
+    }
+    return terminalComponentFactory;
 }
 
 export function getDestroyRef(): DestroyRef {
@@ -100,4 +109,5 @@ export function clear() {
     workspaceRepository = undefined;
     gridListService = undefined;
     tabListService = undefined;
+    terminalComponentFactory = undefined;
 }

@@ -49,16 +49,18 @@ describe('WorkspaceService', () => {
         vi.spyOn(keybindService, 'unregisterListener');
 
         workspaceRepository = getWorkspaceRepository();
-        vi.mocked(workspaceRepository.getAllWorkspaces).mockResolvedValue(JSON.parse(JSON.stringify(mockWorkspaces)));
-        vi.mocked(workspaceRepository.createWorkspace).mockResolvedValue('new-id' as any);
-        vi.mocked(workspaceRepository.updateWorkspace).mockResolvedValue('ws1' as any);
-        vi.mocked(workspaceRepository.deleteWorkspace).mockResolvedValue(undefined);
+        vi.spyOn(workspaceRepository, 'getAllWorkspaces').mockResolvedValue(JSON.parse(JSON.stringify(mockWorkspaces)));
+        vi.spyOn(workspaceRepository, 'createWorkspace').mockResolvedValue('new-id' as any);
+        vi.spyOn(workspaceRepository, 'updateWorkspace').mockResolvedValue('ws1' as any);
+        vi.spyOn(workspaceRepository, 'deleteWorkspace').mockResolvedValue(undefined);
 
         gridListService = getGridListService();
-        vi.mocked(gridListService.getGridConfigs).mockReturnValue([]);
+        vi.spyOn(gridListService, 'getGridConfigs').mockReturnValue([]);
+        vi.spyOn(gridListService, 'restoreGrids').mockImplementation(() => {});
 
         tabListService = getTabListService();
-        vi.mocked(tabListService.getTabConfigs).mockReturnValue([]);
+        vi.spyOn(tabListService, 'getTabConfigs').mockReturnValue([]);
+        vi.spyOn(tabListService, 'restoreTabs').mockImplementation(() => {});
 
         destroyRef = getDestroyRef();
 
