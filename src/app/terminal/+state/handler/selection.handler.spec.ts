@@ -5,6 +5,7 @@ import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { Clipboard } from '../../../_tauri/clipboard';
 import { ConfigServiceMock } from '../../../../__test__/mocks/config-service.mock';
+import { clear, getAppBus, getConfigService, getSelectionHandler } from '../../../../__test__/test-factory';
 
 vi.mock('../../../_tauri/clipboard', () => ({
   Clipboard: {
@@ -20,12 +21,13 @@ describe('SelectionHandler', () => {
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
-    mockBus = new AppBus();
-    mockConfig = new ConfigServiceMock();
+    clear();
+    mockBus = getAppBus();
+    mockConfig = getConfigService();
     mockConfig.setConfig({
       selection: { clear_on_copy: false }
     });
-    handler = new SelectionHandler(mockBus, mockConfig as any, terminalId);
+    handler = getSelectionHandler(terminalId);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 

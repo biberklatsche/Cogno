@@ -3,6 +3,7 @@ import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.fa
 import { FocusHandler } from './focus.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
+import { clear, getAppBus, getFocusHandler } from '../../../../__test__/test-factory';
 
 describe('FocusHandler', () => {
   let handler: FocusHandler;
@@ -11,8 +12,9 @@ describe('FocusHandler', () => {
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
-    mockBus = new AppBus();
-    handler = new FocusHandler(terminalId, mockBus);
+    clear();
+    mockBus = getAppBus();
+    handler = getFocusHandler(terminalId);
   });
 
   describe('registration', () => {

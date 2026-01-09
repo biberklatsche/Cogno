@@ -10,6 +10,9 @@ import {GridListService} from "../app/grid-list/+state/grid-list.service";
 import {TabListService} from "../app/tab-list/+state/tab-list.service";
 import {TerminalComponentFactory} from "../app/grid-list/+state/terminal-component.factory";
 import {WindowService} from "../app/window/window.service";
+import {FocusHandler} from "../app/terminal/+state/handler/focus.handler";
+import {SelectionHandler} from "../app/terminal/+state/handler/selection.handler";
+import {TerminalId} from "../app/grid-list/+model/model";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -21,6 +24,8 @@ let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
 let terminalComponentFactory: TerminalComponentFactory | undefined;
 let windowService: WindowService | undefined;
+let focusHandler: FocusHandler | undefined;
+let selectionHandler: SelectionHandler | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -111,6 +116,20 @@ export function getWindowService(): WindowService {
     return windowService;
 }
 
+export function getFocusHandler(terminalId: TerminalId): FocusHandler {
+    if(!focusHandler) {
+        focusHandler = new FocusHandler(terminalId, getAppBus());
+    }
+    return focusHandler;
+}
+
+export function getSelectionHandler(terminalId: TerminalId): SelectionHandler {
+    if(!selectionHandler) {
+        selectionHandler = new SelectionHandler(getAppBus(), getConfigService() as any, terminalId);
+    }
+    return selectionHandler;
+}
+
 
 export function clear() {
     appBus = undefined;
@@ -123,4 +142,6 @@ export function clear() {
     tabListService = undefined;
     terminalComponentFactory = undefined;
     windowService = undefined;
+    focusHandler = undefined;
+    selectionHandler = undefined;
 }
