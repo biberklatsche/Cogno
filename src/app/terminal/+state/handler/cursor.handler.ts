@@ -35,21 +35,21 @@ export class CursorHandler implements ITerminalHandler {
       let char = "";
 
       try {
-        const buffer: any = (this._terminal as any).buffer?.active ?? (this._terminal as any).buffer?.normal ?? (this._terminal as any).buffer;
+        const buffer = this._terminal.buffer.active;
         if (buffer) {
-          const cursorX: number = buffer.cursorX ?? 0; // 0-based column in viewport
-          const cursorYViewport: number = buffer.cursorY ?? 0; // 0-based row in viewport
-          const viewportY: number = buffer.viewportY ?? 0; // top of viewport absolute 0-based
-          const cursorYAbsolute: number = cursorYViewport + viewportY; // absolute row in buffer
+          const cursorX = buffer.cursorX; // 0-based column in viewport
+          const cursorYViewport = buffer.cursorY; // 0-based row in viewport
+          const viewportY = buffer.viewportY; // top of viewport absolute 0-based
+          const cursorYAbsolute = cursorYViewport + viewportY; // absolute row in buffer
 
-          col = (cursorX ?? 0) + 1; // 1-based for inspector
+          col = cursorX + 1; // 1-based for inspector
           viewportRow = cursorYViewport + 1; // 1-based within viewport
           row = cursorYAbsolute + 1; // 1-based within viewport
 
           // Get character under cursor if present (use absolute row)
-          const line = buffer.getLine?.(cursorYAbsolute);
-          const cell = line?.getCell?.(cursorX);
-          const ch = cell?.getChars?.();
+          const line = buffer.getLine(cursorYAbsolute);
+          const cell = line?.getCell(cursorX);
+          const ch = cell?.getChars();
           if (typeof ch === "string" && ch.length > 0) {
             char = ch;
           }
