@@ -1,44 +1,14 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CursorHandler } from './cursor.handler';
 import { AppBus } from '../../../app-bus/app-bus';
-import { Terminal, IBuffer, IBufferLine, IBufferCell } from '@xterm/xterm';
+import { Terminal } from '@xterm/xterm';
+import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 
 describe('CursorHandler', () => {
   let bus: AppBus;
   let handler: CursorHandler;
   let cursorMoveCallback: (() => void) | null = null;
   const terminalId = 'test-terminal-id';
-
-  // Helper function to create a mock cell
-  const createMockCell = (char: string): IBufferCell => ({
-    getChars: () => char,
-  } as IBufferCell);
-
-  // Helper function to create a mock line
-  const createMockLine = (char: string): IBufferLine => ({
-    getCell: vi.fn().mockReturnValue(createMockCell(char)),
-  } as unknown as IBufferLine);
-
-  // Helper function to create a mock buffer with cursor position
-  const createMockBuffer = (x: number, y: number, viewportY: number = 0): IBuffer => ({
-    cursorX: x,
-    cursorY: y,
-    viewportY: viewportY,
-    getLine: vi.fn(),
-  } as unknown as IBuffer);
-
-  // Helper function to create a terminal with specific buffer state
-  const createTerminal = (x: number = 5, y: number = 10, viewportY: number = 20): Terminal => {
-    return {
-      onCursorMove: vi.fn().mockImplementation((cb: () => void) => {
-        cursorMoveCallback = cb;
-        return { dispose: vi.fn() };
-      }),
-      buffer: {
-        active: createMockBuffer(x, y, viewportY),
-      },
-    } as unknown as Terminal;
-  };
 
   beforeEach(() => {
     cursorMoveCallback = null;
@@ -52,7 +22,12 @@ describe('CursorHandler', () => {
 
   describe('register', () => {
     it('should register onCursorMove listener', () => {
-      const terminal = createTerminal();
+      const terminal = TerminalMockFactory.createTerminal({
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
 
       expect(terminal.onCursorMove).toHaveBeenCalledTimes(1);
@@ -61,20 +36,31 @@ describe('CursorHandler', () => {
 
     it('should return disposable when registered', () => {
       const disposable = { dispose: vi.fn() };
-      const terminal = createTerminal();
-      vi.mocked(terminal.onCursorMove).mockReturnValue(disposable);
+      const terminal = TerminalMockFactory.createTerminal({
+        onCursorMove: () => disposable
+      });
 
-      handler.register(terminal);
+      const result = handler.register(terminal);
 
-      expect(disposable).toBeDefined();
+      expect(result).toBeDefined();
     });
   });
 
   describe('cursor position publishing', () => {
     it('should publish correct cursor position on move', () => {
-      const terminal = createTerminal(2, 3, 10);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 2,
+        cursorY: 3,
+        viewportY: 10,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
-      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(createMockLine('A'));
+
+      const mockLine = TerminalMockFactory.createLine('  A'); // A at index 2
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
 
@@ -96,9 +82,19 @@ describe('CursorHandler', () => {
     });
 
     it('should handle cursor at origin (0, 0)', () => {
-      const terminal = createTerminal(0, 0, 0);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 0,
+        cursorY: 0,
+        viewportY: 0,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
-      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(createMockLine('B'));
+
+      const mockLine = TerminalMockFactory.createLine('B');
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
 
@@ -118,9 +114,19 @@ describe('CursorHandler', () => {
     });
 
     it('should handle different viewport offsets', () => {
-      const terminal = createTerminal(5, 5, 100);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 5,
+        cursorY: 5,
+        viewportY: 100,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
-      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(createMockLine('X'));
+
+      const mockLine = TerminalMockFactory.createLine('X');
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
 
@@ -136,9 +142,19 @@ describe('CursorHandler', () => {
     });
 
     it('should handle multi-character cells', () => {
-      const terminal = createTerminal(2, 3, 10);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 2,
+        cursorY: 3,
+        viewportY: 10,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
-      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(createMockLine('€'));
+
+      const mockLine = TerminalMockFactory.createLine('  €'); // Euro at index 2
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
 
@@ -154,9 +170,19 @@ describe('CursorHandler', () => {
     });
 
     it('should handle empty cells', () => {
-      const terminal = createTerminal(2, 3, 10);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 2,
+        cursorY: 3,
+        viewportY: 10,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
-      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(createMockLine(''));
+
+      const mockLine = TerminalMockFactory.createLine('');
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
 
@@ -174,13 +200,14 @@ describe('CursorHandler', () => {
 
   describe('error handling', () => {
     it('should use default values when buffer is missing', () => {
-      const terminal = {
-        onCursorMove: vi.fn().mockImplementation((cb: () => void) => {
+      const terminal = TerminalMockFactory.createTerminal({
+        onCursorMove: (cb) => {
           cursorMoveCallback = cb;
           return { dispose: vi.fn() };
-        }),
-        buffer: undefined,
-      } as unknown as Terminal;
+        }
+      });
+      // @ts-ignore - manual override for error case
+      terminal.buffer = undefined;
 
       handler.register(terminal);
       cursorMoveCallback?.();
@@ -202,15 +229,14 @@ describe('CursorHandler', () => {
     });
 
     it('should use default values when active buffer is missing', () => {
-      const terminal = {
-        onCursorMove: vi.fn().mockImplementation((cb: () => void) => {
+      const terminal = TerminalMockFactory.createTerminal({
+        onCursorMove: (cb) => {
           cursorMoveCallback = cb;
           return { dispose: vi.fn() };
-        }),
-        buffer: {
-          active: undefined,
-        },
-      } as unknown as Terminal;
+        }
+      });
+      // @ts-ignore - manual override for error case
+      terminal.buffer.active = undefined;
 
       handler.register(terminal);
       cursorMoveCallback?.();
@@ -232,8 +258,17 @@ describe('CursorHandler', () => {
     });
 
     it('should handle getLine throwing an error', () => {
-      const terminal = createTerminal(2, 3, 10);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 2,
+        cursorY: 3,
+        viewportY: 10,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
+
       vi.mocked(terminal.buffer.active.getLine).mockImplementation(() => {
         throw new Error('Buffer access error');
       });
@@ -257,8 +292,17 @@ describe('CursorHandler', () => {
     });
 
     it('should handle getLine returning null', () => {
-      const terminal = createTerminal(2, 3, 10);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 2,
+        cursorY: 3,
+        viewportY: 10,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
+
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(null as any);
 
       cursorMoveCallback?.();
@@ -275,11 +319,19 @@ describe('CursorHandler', () => {
     });
 
     it('should handle getCell returning null', () => {
-      const terminal = createTerminal(2, 3, 10);
+      const terminal = TerminalMockFactory.createTerminal({
+        cursorX: 2,
+        cursorY: 3,
+        viewportY: 10,
+        onCursorMove: (cb) => {
+          cursorMoveCallback = cb;
+          return { dispose: vi.fn() };
+        }
+      });
       handler.register(terminal);
-      const mockLine = {
-        getCell: vi.fn().mockReturnValue(null),
-      } as unknown as IBufferLine;
+
+      const mockLine = TerminalMockFactory.createLine('ABC');
+      vi.mocked(mockLine.getCell).mockReturnValue(null);
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
@@ -299,8 +351,9 @@ describe('CursorHandler', () => {
   describe('dispose', () => {
     it('should dispose the listener when dispose is called', () => {
       const disposable = { dispose: vi.fn() };
-      const terminal = createTerminal();
-      vi.mocked(terminal.onCursorMove).mockReturnValue(disposable);
+      const terminal = TerminalMockFactory.createTerminal({
+        onCursorMove: () => disposable
+      });
 
       handler.register(terminal);
       handler.dispose();
@@ -310,8 +363,9 @@ describe('CursorHandler', () => {
 
     it('should handle dispose being called multiple times', () => {
       const disposable = { dispose: vi.fn() };
-      const terminal = createTerminal();
-      vi.mocked(terminal.onCursorMove).mockReturnValue(disposable);
+      const terminal = TerminalMockFactory.createTerminal({
+        onCursorMove: () => disposable
+      });
 
       handler.register(terminal);
       handler.dispose();
