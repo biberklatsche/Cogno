@@ -10,12 +10,15 @@ import {FocusHandler} from "./handler/focus.handler";
 import {ThemeHandler} from "./handler/theme.handler";
 import {IPty, Pty} from "./pty/pty";
 import {ResizeHandler} from "./handler/resize.handler";
-import {ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {SelectionHandler} from "./handler/selection.handler";
 
 import {InputHandler} from "./handler/input.handler";
 import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
+import {MouseHandler} from "./handler/mouse.handler";
+import {CursorHandler} from "./handler/cursor.handler";
+import {ShellConfig, ShellConfigPosition} from "../../config/+models/config";
 
 export class TerminalSession {
 
@@ -32,7 +35,12 @@ export class TerminalSession {
     ];
     private disposed: boolean = false;
 
-    constructor(private configService: ConfigService, private bus: AppBus, private terminalId: TerminalId) {
+    constructor(
+        private configService: ConfigService,
+        private bus: AppBus,
+        private terminalId: TerminalId,
+        private shellConfig: ShellConfig
+    ) {
         this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
             if (config.enable_webgl) {
                 this.renderer.useWebGl();
@@ -46,7 +54,7 @@ export class TerminalSession {
         this.renderer.open(terminalContainer);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
-        this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.configService, this.bus)));
+        this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellConfig, this.bus)));
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TabTitleHandler(this.terminalId, this.bus)));
@@ -54,6 +62,8 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
+        this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId)));
+        this.disposables.push(this.renderer.register(new CursorHandler(this.bus, this.terminalId)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
     }
 
@@ -83,12 +93,12 @@ export class TerminalSession {
                 }, actionName: "clear_buffer" },
             { label: 'Close', action: () => {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
-                }, actionName: "close_active_terminal"  },
+                }, actionName: "close_terminal"  },
         ];
         if(this.selectionHandler?.hasSelection()){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
-                    this.bus.publish({path: ['app', 'terminal'], type: 'KeybindFired', payload: 'copy'});
+                    this.bus.publish({path: ['app', 'action'], type: 'ActionFired', payload: 'copy'});
                 }, actionName: 'copy'
             })
         }
@@ -97,6 +107,7 @@ export class TerminalSession {
 
     dispose() {
         if (this.disposed) return;
+        this.bus.publish({type: 'TerminalRemoved', path: ['app', 'terminal'], payload: this.terminalId});
         this.disposed = true;
         this.renderer.dispose();
         this.pty.dispose();

@@ -3,11 +3,11 @@ import {
     mdiAbTesting,
     mdiAccount,
     mdiAccountHeart,
-    mdiAlert,
+    mdiAlert, mdiAlphaIBox,
     mdiArrowDown,
     mdiArrowSplitHorizontal,
     mdiArrowSplitVertical,
-    mdiArrowUp,
+    mdiArrowUp, mdiBell, mdiBellBadge,
     mdiBomb,
     mdiBookmark,
     mdiBug,
@@ -26,9 +26,9 @@ import {
     mdiCog,
     mdiCogs,
     mdiConsole,
-    mdiContentCopy,
-    mdiDesktopClassic,
-    mdiDotsVertical,
+    mdiContentCopy, mdiCropSquare,
+    mdiDesktopClassic, mdiDotsSquare,
+    mdiDotsVertical, mdiFitToPageOutline,
     mdiFolderMove,
     mdiFormatLetterCase,
     mdiFormatLetterMatches,
@@ -42,8 +42,8 @@ import {
     mdiMonitor,
     mdiNuke,
     mdiOpenInNew,
-    mdiPalette,
-    mdiPercentBoxOutline,
+    mdiPalette, mdiPaletteSwatch,
+    mdiPercentBoxOutline, mdiPin, mdiPinOff,
     mdiPlus,
     mdiPowershell,
     mdiReddit,
@@ -54,8 +54,8 @@ import {
     mdiRocketLaunch,
     mdiScanHelper,
     mdiSpeedometer,
-    mdiSpiderThread,
-    mdiSquareEditOutline,
+    mdiSpiderThread, mdiSquare,
+    mdiSquareEditOutline, mdiSquareOpacity,
     mdiStar,
     mdiStarOutline,
     mdiSwapHorizontal,
@@ -311,6 +311,30 @@ export class IconComponent {
       case('mdiAccountHeart'):
         this.icon = mdiAccountHeart;
         break;
+        case('mdiPin'):
+            this.icon = mdiPin;
+            break;
+        case('mdiPinOff'):
+            this.icon = mdiPinOff;
+            break;
+        case('mdiDotsSquare'):
+            this.icon = mdiDotsSquare;
+            break;
+        case('mdiCropSquare'):
+            this.icon = mdiCropSquare;
+            break;
+        case('mdiAlphaIBox'):
+            this.icon = mdiAlphaIBox;
+            break;
+        case('mdiBell'):
+            this.icon = mdiBell;
+            break;
+        case('mdiBellBadge'):
+            this.icon = mdiBellBadge;
+            break;
+        case('mdiPaletteSwatch'):
+            this.icon = mdiPaletteSwatch;
+            break;
       default:
         this.icon = mdiAbTesting;
         break;

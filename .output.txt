@@ -1,0 +1,855 @@
+
+ RUN  v3.2.4 /Users/larswolfram/projects/cogno2
+ ✓ src/app/inspector/+state/inspector.service.spec.ts (11 tests) 13ms
+ ✓ src/app/notification/+state/notification.service.spec.ts (13 tests) 12ms
+ ✓ src/app/command-palette/command-palette.service.spec.ts (15 tests) 27ms
+ ✓ src/app/workspace/+state/workspace.service.spec.ts (14 tests) 634ms
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Vitest caught 42 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
+ ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
+ ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
+This error originated in "src/app/inspector/+state/inspector.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
+ ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
+ ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/notification/+state/notification.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should load workspaces when DBInitialized is published". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should load workspaces when DBInitialized is published". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should restore the active workspace from the list". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should select the next workspace on ArrowRight". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should select the next workspace on ArrowRight". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should select the next workspace on ArrowRight". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should select the previous workspace on ArrowLeft". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should select workspace below on ArrowDown". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should wrap around when navigating". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should restore selected workspace on Enter". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should create a workspace draft". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should save a new workspace". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should delete a workspace". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: Cannot read properties of undefined (reading 'reverse')
+ ❯ KeybindingMatcher.initBindings src/app/keybinding/keybind.matcher.ts:31:40
+     29|         this.keybindings = {};
+     30|         this.actions = {};
+     31|         for (const binding of bindings.reverse()) {
+       |                                        ^
+     32|             const def = KeybindInterpreter.parse(binding);
+     33|             if (!def) return;
+ ❯ Object.next src/app/keybinding/keybind.service.ts:31:97
+ ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
+ ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
+ ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
+ ❯ BehaviorSubject._subscribe node_modules/rxjs/src/internal/BehaviorSubject.ts:21:40
+ ❯ BehaviorSubject.Observable._trySubscribe node_modules/rxjs/src/internal/Observable.ts:235:19
+This error originated in "src/app/workspace/+state/workspace.service.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should perform autosave when close_window is fired". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ Test Files  4 passed (4)
+      Tests  53 passed (53)
+     Errors  42 errors
+   Start at  18:03:15
+   Duration  1.65s (transform 463ms, setup 401ms, collect 1.53s, tests 686ms, environment 668ms, prepare 360ms)

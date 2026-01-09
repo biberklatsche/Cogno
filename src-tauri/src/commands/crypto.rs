@@ -8,13 +8,13 @@ use rand::{rngs::OsRng, RngCore};
 use ring::pbkdf2::{derive, PBKDF2_HMAC_SHA256};
 use std::num::NonZeroU32;
 
-// Konstanten
+// Constants
 const SALT_LEN: usize = 16;
 const IV_LEN: usize = 16;
 const KEY_LEN: usize = 32;
 const PBKDF2_ITERS: u32 = 100_000;
 
-/// Leitet einen AES-256 Key aus Passwort und Salt ab mithilfe von `ring` PBKDF2
+/// Derives an AES-256 key from password and salt using `ring` PBKDF2
 fn derive_key(password: &str, salt: &[u8]) -> [u8; KEY_LEN] {
     let mut key = [0u8; KEY_LEN];
     derive(
@@ -27,7 +27,7 @@ fn derive_key(password: &str, salt: &[u8]) -> [u8; KEY_LEN] {
     key
 }
 
-/// Verschlüsselt Text mit AES-256-CBC und gibt salt:iv:ciphertext im Hex-Format zurück
+/// Encrypts text with AES-256-CBC and returns salt:iv:ciphertext in hex format
 #[tauri::command]
 pub fn encrypt(text: Option<String>, password: Option<String>) -> Result<String, String> {
     let plaintext = text.filter(|t| !t.is_empty()).ok_or("No text provided")?;
@@ -36,7 +36,7 @@ pub fn encrypt(text: Option<String>, password: Option<String>) -> Result<String,
         .filter(|p| !p.is_empty())
         .ok_or("No password provided")?;
 
-    // Zufälliges Salt und IV
+    // Random salt and IV
     let mut salt = [0u8; SALT_LEN];
     let mut iv = [0u8; IV_LEN];
     OsRng.fill_bytes(&mut salt);

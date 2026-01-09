@@ -1,11 +1,9 @@
-// Deine fachlichen Typen in einem Union:
-import {ConfigLoadedEvent, ThemeChangedEvent} from "../config/+bus/events";
-import {LoadConfigAction, WatchConfigAction} from "../config/+bus/actions";
-import {WorkspaceLoadedEvent} from "../workspace/+bus/events";
+import {ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent} from "../config/+bus/events";
+import {InitConfigAction} from "../config/+bus/actions";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
     BlurTerminalAction, ClearBufferAction, CopyAction,
-    FocusTerminalAction, PasteAction,
+    FocusTerminalAction, PasteAction, TerminalRemovedAction,
 } from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
@@ -15,7 +13,6 @@ import {
     TerminalThemePaddingRemovedEvent
 } from "../terminal/+state/handler/theme.handler";
 import {RemoveTabAction, SelectTabAction} from "../tab-list/+bus/actions";
-import {KeybindFiredEvent} from "../keybinding/keybind.service";
 import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
 import {TerminalBlurredEvent, TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
 import {
@@ -25,6 +22,10 @@ import {
     SplitPaneRightAction,
     SplitPaneUpAction
 } from "../grid-list/+bus/actions";
+import {InspectorEvent} from "../inspector/+bus/events";
+import {ActionFiredEvent} from "../action/action.models";
+import {NotificationEvent} from "../notification/+bus/events";
+import {SideMenuEvent} from "../menu/side-menu/+bus/events";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -32,11 +33,10 @@ export type AppMessage =
     | TabAddedEvent
     | TabSelectedEvent
     | SelectTabAction
-    | WorkspaceLoadedEvent
     | ConfigLoadedEvent
+    | DBInitializedEvent
     | ThemeChangedEvent
-    | LoadConfigAction
-    | WatchConfigAction
+    | InitConfigAction
     | PtyInitializedEvent
     | TabTitleChangedEvent
     | TerminalThemeChangedEvent
@@ -46,16 +46,20 @@ export type AppMessage =
     | BlurTerminalAction
     | PasteAction
     | CopyAction
-    | KeybindFiredEvent
+    | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent
     | TerminalFocusedEvent
     | TerminalBlurredEvent
     | RemovePaneAction
+    | TerminalRemovedAction
     | SplitPaneRightAction
     | SplitPaneLeftAction
     | SplitPaneUpAction
     | SplitPaneDownAction
     | ClearBufferAction
     | FocusActiveTerminalAction
+    | InspectorEvent
+    | NotificationEvent
+    | SideMenuEvent
     ;

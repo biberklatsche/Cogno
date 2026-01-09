@@ -16,12 +16,12 @@
 }
 .divider.horizontal {
   align-self: center;
-  cursor:n-resize;
+  cursor:ns-resize;
   height:2px;
 }
 .divider.vertical {
   justify-self: center;
-  cursor:e-resize;
+  cursor:ew-resize;
   width:2px;
 }
 .cell{

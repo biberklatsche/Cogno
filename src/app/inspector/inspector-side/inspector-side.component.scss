@@ -1,0 +1,57 @@
+/* Inspector view container: blue background, no outer spacing */
+:host {
+  display: block;
+  height: fit-content;
+  margin: 0;
+  padding: 0;
+  font-size: 0.9rem;
+  overflow: auto;
+  width: 100%;
+}
+
+/* Table-style layout for label/value rows */
+.inspector-table {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.table {
+  display: grid;
+  gap: 0.5rem 1rem ;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,0.2);
+
+  &.c2 {
+    grid-template-columns: max-content max-content;
+
+  }
+
+  &.c3 {
+    grid-template-columns: max-content max-content max-content;
+  }
+
+  .span-full {
+    grid-column: 1 / -1;
+  }
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+.label {
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+.value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

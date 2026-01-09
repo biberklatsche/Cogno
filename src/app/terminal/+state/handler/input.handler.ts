@@ -17,19 +17,16 @@ export class InputHandler implements ITerminalHandler {
 
     dispose(): void {
         if(!this.subscription) return;
-        console.log("dispose");
         this.subscription.unsubscribe();
     }
 
     register(terminal: Terminal): IDisposable {
-        console.log("register");
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearBuffer'}).subscribe(event => {
             if(event.payload !== this._terminalId) return;
             this._terminal?.clear();
         }));
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Paste'}).subscribe(async event => {
-            console.log("paste");
             if(event.payload !== this._terminalId) return;
             this._terminal?.input(await Clipboard.readText());
         }));

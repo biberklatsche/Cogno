@@ -1,17 +1,17 @@
-import {ConfigTypes, ConfigSchema} from "../+models/config.types";
+import {Config, ConfigSchema} from "../+models/config";
 
 /**
- * Reader-Klasse für das Einlesen/Validieren der Konfiguration.
- * Derzeit delegiert sie an die bestehende ConfigCodec-Implementierung,
- * sodass bestehende Funktionalität erhalten bleibt, während eine klare
- * Aufteilung der Verantwortlichkeiten bereitgestellt wird.
+ * Reader class for reading/validating the configuration.
+ * Currently, it delegates to the existing ConfigCodec implementation,
+ * so that existing functionality is preserved while providing a clear
+ * separation of responsibilities.
  */
 export class ConfigReader {
-  /** Parst zwei Konfigurationsstrings (Defaults und User) und gibt eine validierte, gemergte Config zurück. */
-  static fromStringToConfig(defaultConfigString: string, userConfigString: string): ConfigTypes;
-  /** Rückwärtskompatibel: Wenn nur ein String übergeben wird, wird er als User-Config interpretiert (ohne Defaults). */
-  static fromStringToConfig(userConfigStringOnly: string): ConfigTypes;
-  static fromStringToConfig(a: string, b?: string): ConfigTypes {
+  /** Parses two configuration strings (defaults and user) and returns a validated, merged config. */
+  static fromStringToConfig(defaultConfigString: string, userConfigString: string): Config;
+  /** Backward compatible: If only one string is passed, it is interpreted as user config (without defaults). */
+  static fromStringToConfig(userConfigStringOnly: string): Config;
+  static fromStringToConfig(a: string, b?: string): Config {
       const defaultConfigString = b === undefined ? "" : a;
       const userConfigString = b === undefined ? a : b;
       const userConfig = this.parseConfigString(userConfigString || "");
@@ -19,26 +19,26 @@ export class ConfigReader {
       return this.toConfig(defaultConfig, userConfig);
   }
 
-    /** Führt die Default-Werte mit den User-Overrides zusammen und validiert.
-     *  Regel: Alle Keys werden ersetzt (User überschreibt Default), außer 'keybind': dort werden Arrays
-     *  zusammengeführt: zuerst Default-Einträge, dann User-Einträge. Andere Arrays werden ersetzt.
+    /** Merges default values with user overrides and validates.
+     *  Rule: All keys are replaced (user overrides default), except for 'keybind': there arrays
+     *  are merged: first default entries, then user entries. Other arrays are replaced.
      */
-    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): ConfigTypes {
+    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): Config {
         const merge = (defs: any, usr: any): any => {
-            // Wenn User nicht gesetzt: nimm Defaults komplett
+            // If user is not set: take defaults completely
             if (usr === undefined) return this.clone(defs);
-            // Wenn einer von beiden kein Plain-Object ist (oder Array), ersetze vollständig durch User
+            // If one of them is not a plain object (or array), replace completely by user
             if (Array.isArray(usr)) {
                 return usr;
             }
             if (Array.isArray(defs)) {
-                // Wenn User kein Array, ersetze ebenfalls mit User (Schema-Validierung kümmert sich später)
+                // If user is not an array, also replace with user (schema validation takes care later)
                 return usr;
             }
             if (!this.isPlainObject(usr) || !this.isPlainObject(defs)) {
                 return usr;
             }
-            // Beide sind Plain-Objects: tief mergen
+            // Both are plain objects: deep merge
             const out: any = {};
             const keys = new Set<string>([...Object.keys(defs || {}), ...Object.keys(usr || {})]);
             for (const key of keys) {

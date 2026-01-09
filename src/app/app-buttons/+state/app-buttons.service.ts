@@ -3,6 +3,8 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {AppWindow} from "../../_tauri/window";
 import {DestroyRef} from '@angular/core';
 import {Logger} from "../../_tauri/logger";
+import {AppBus} from "../../app-bus/app-bus";
+import {ActionFired} from "../../action/action.models";
 
 
 @Injectable({providedIn: 'root'})
@@ -12,14 +14,14 @@ export class AppButtonsService {
     readonly isMaximized = this._isMaximized.asReadonly();
 
 
-    constructor(destroyRef: DestroyRef) {
+    constructor(destroyRef: DestroyRef, private bus: AppBus) {
         AppWindow.windowSize$.pipe(takeUntilDestroyed(destroyRef)).subscribe(async size => {
             this._isMaximized.set(await AppWindow.isMaximized());
         });
     }
 
     closeWindow(): void {
-        AppWindow.close().then(() => Logger.debug('close window'));
+        this.bus.publish(ActionFired.create("close_window"));
     }
 
     minimizeWindow() {

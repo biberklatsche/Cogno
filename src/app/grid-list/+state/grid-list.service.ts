@@ -1,8 +1,7 @@
 import {DestroyRef, Injectable} from "@angular/core";
-import {BehaviorSubject, map, Observable, Subject} from "rxjs";
+import {BehaviorSubject, map, Observable} from "rxjs";
 import {Grid, GridList, Pane, SplitDirection, TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
-import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
 import {PaneConfig, GridConfig, TabId} from "../../workspace/+model/workspace";
 import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
@@ -26,16 +25,6 @@ export class GridListService {
     }
 
     constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
-        this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
-            for(const tapId in this._gridList.value) {
-                this.removeGrid(tapId);
-            }
-            for (let grid of event.payload!.grids) {
-                this.restoreGrid(grid);
-            }
-            this.bus.publish({type: "SelectTab", payload: event.payload!.grids[0].tabId})
-        });
-
         this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
         });
@@ -65,7 +54,7 @@ export class GridListService {
                if(currentFocusedTab && currentFocusedTab.data) currentFocusedTab.data.isFocused = false;
             });
             const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
-            if(!paneConfig) throw new Error("No pane with id found.");
+            if(!paneConfig) return;
             paneConfig.isFocused = true;
             this._gridList.next(gridList);
         });
@@ -110,6 +99,7 @@ export class GridListService {
                 setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: "FocusTerminal", payload: newChild?.data?.terminalId}), 250);
             }
         }
+        this.componentFactory.destroy(terminalId);
         this._gridList.next(gridList);
     }
 
@@ -128,6 +118,27 @@ export class GridListService {
         const paneChild: Pane = {shellConfigPosition: 1, terminalId: IdCreator.newTerminalId()};
         tree.add(node.key, side, paneParent, paneChild);
         this._gridList.next(gridList);
+    }
+
+    restoreGrids(gridConfigList: GridConfig[]) {
+        for(const tabId in this._gridList.value) {
+            this.removeGrid(tabId);
+        }
+        for (let grid of gridConfigList) {
+            this.restoreGrid(grid);
+        }
+    }
+
+    getGridConfigs(): GridConfig[] {
+        const result: GridConfig[] = [];
+        const gridList = this._gridList.value;
+        for (const grid of Object.values(gridList)) {
+            result.push({
+                tabId: grid.tabId,
+                pane: this.serializeNode(grid.tree.root)
+            });
+        }
+        return result;
     }
 
     restoreGrid(gridConfig: GridConfig) {
@@ -155,6 +166,23 @@ export class GridListService {
         } else {
             parent.data = {shellConfigPosition: nodeConfig.shellConfigPosition ?? 1, workingDir: nodeConfig.workingDir, terminalId: IdCreator.newTerminalId()};
         }
+    }
+
+    private serializeNode(node: BinaryNode<Pane>): PaneConfig {
+        // Leaf node -> TerminalConfig
+        if (node.isLeaf) {
+            return {
+                shellConfigPosition: node.data?.shellConfigPosition,
+                workingDir: node.data?.workingDir
+            };
+        }
+        // Split node
+        return {
+            splitDirection: node.data?.splitDirection!,
+            ratio: node.data?.ratio!,
+            leftChild: this.serializeNode(node.left!),
+            rightChild: this.serializeNode(node.right!)
+        };
     }
 
     removeGrid(tab?: TabId) {

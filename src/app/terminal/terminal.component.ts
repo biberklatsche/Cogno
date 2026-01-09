@@ -1,10 +1,19 @@
-import {AfterViewInit, Component, DestroyRef, ElementRef, input, OnInit, ViewChild} from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    DestroyRef,
+    ElementRef,
+    OnInit,
+    ViewChild,
+    Input, input
+} from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
 import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
-import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
-import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
+import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
+import {ShellConfig, ShellConfigPosition} from "../config/+models/config";
 
 @Component({
     selector: 'app-terminal',
@@ -15,13 +24,14 @@ import { ContextMenuItem } from "../common/menu-overlay/menu-overlay.types";
 export class TerminalComponent implements OnInit, AfterViewInit {
     @ViewChild('terminalContainer', {static: true}) terminalContainer!: ElementRef<HTMLDivElement>;
     private terminalSession?: TerminalSession;
-    terminalId= input.required<TerminalId>();
+    terminalId = input.required<TerminalId>();
+    shellConfig = input.required<ShellConfig>();
 
-    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: MenuOverlayService) {
+    constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: ContextMenuOverlayService) {
     }
 
     ngOnInit(): void {
-        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId());
+        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId(), this.shellConfig());
         this.destroyRef.onDestroy(() => {
             this.terminalSession?.dispose();
         });
@@ -43,6 +53,10 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         event.preventDefault();
         event.stopPropagation();
         this.terminalSession?.focus();
+    }
+
+    getTerminalSnapshot(): string {
+        return "";
     }
 
     protected readonly eval = eval;

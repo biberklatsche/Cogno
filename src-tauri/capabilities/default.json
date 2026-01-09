@@ -1,9 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for the main window",
+  "description": "Capability for the main and secondary windows",
   "windows": [
-    "main"
+    "main",
+    "win-*"
   ],
   "permissions": [
     "core:default",
@@ -11,16 +12,37 @@
     "opener:default",
     "fs:default",
     "fs:allow-watch",
+    "fs:allow-mkdir",
     "fs:allow-write-text-file",
+    "fs:allow-read-text-file",
+    "fs:allow-exists",
     "log:default",
     {
-      "identifier": "fs:scope-home-recursive",
+      "identifier": "fs:scope",
       "allow": [
+        {
+          "path": "$HOME/.cogno"
+        },
         {
           "path": "$HOME/.cogno/**"
         },
         {
+          "path": "$HOME/.cogno-dev"
+        },
+        {
           "path": "$HOME/.cogno-dev/**"
+        },
+        {
+          "path": "$HOME/.cogno2"
+        },
+        {
+          "path": "$HOME/.cogno2/**"
+        },
+        {
+          "path": "$HOME/.cogno2-dev"
+        },
+        {
+          "path": "$HOME/.cogno2-dev/**"
         }
       ]
     },
@@ -32,9 +54,50 @@
     "core:window:allow-minimize",
     "core:window:allow-unminimize",
     "core:window:allow-close",
+    "core:window:allow-destroy",
+    "core:window:allow-inner-size",
+    "core:event:allow-listen",
     "sql:default",
     "sql:allow-execute",
     "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-read-text"
+    "clipboard-manager:allow-read-text",
+    "process:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "https://*"
+        }
+      ]
+    },
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "$HOME/.cogno-dev"
+        },
+        {
+          "path": "$HOME/.cogno-dev/**"
+        },
+        {
+          "path": "$HOME/.cogno"
+        },
+        {
+          "path": "$HOME/.cogno/**"
+        },
+        {
+          "path": "$HOME/.cogno2-dev"
+        },
+        {
+          "path": "$HOME/.cogno2-dev/**"
+        },
+        {
+          "path": "$HOME/.cogno2"
+        },
+        {
+          "path": "$HOME/.cogno2/**"
+        }
+      ]
+    }
   ]
 }

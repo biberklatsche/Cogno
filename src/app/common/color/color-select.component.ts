@@ -1,9 +1,9 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, EventEmitter, input, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {map, Observable} from 'rxjs';
 import {ConfigService} from '../../config/+state/config.service';
-import {Color as ColorUtil} from './color';
-import { ColorName } from '../menu-overlay/menu-overlay.types';
+import {ColorName} from "./color";
+import {Color} from "../../config/+models/config";
 
 interface ColorItem {
   name: ColorName;
@@ -17,16 +17,25 @@ interface ColorItem {
   template: `
       @if (colors$ | async; as colors) {
           <div class="color-grid">
+              @if(showDefault()) {
+                  <button
+                          type="button"
+                          class="color-btn default-btn"
+                          (click)="onPick('default')"
+                          [title]="'default'">
+                  </button>
+              }
               @for (c of colors; track c.name) {
                   <button
                           type="button"
                           class="color-btn"
                           [style.background]="c.value"
-                          [style.border]="'1px solid var(--background-color-30l)'"
                           (click)="onPick(c.name)"
-                          [attr.aria-label]="c.name"
                           [title]="c.name"
                   >
+                      @if (c.name === selectedColorName()) {
+                          <div class="selector" [style.border-color]="c.value"></div>
+                      }
                   </button>
               }
           </div>
@@ -36,38 +45,55 @@ interface ColorItem {
     `
     :host { display: block; }
     .color-grid {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: .5rem;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
     }
     .color-btn {
-      width: 15px;
-      height: 15px;
-      border: none;  
+      width: 14px;
+      height: 14px;
+      border: none;
+        padding: 4px;
+        box-sizing: border-box;
       border-radius: 50%;
-      opacity: 0.7;  
+        position: relative;
+      opacity: 0.7;
+        &:hover {opacity: 1;}
+        &.default-btn {
+            border: 1px solid var(--background-color-40l);
+            background-color: transparent;
+        }
     }
-    .color-btn:hover {opacity: 1;} 
+    .selector {
+        position: absolute;
+        top: -3px;
+        bottom: -3px;
+        left: -3px;
+        right: -3px;
+        border-radius: 50%;
+        border: 1px solid;
+    }
     `
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  ]
 })
 export class ColorSelectComponent {
   @Output() colorSelected = new EventEmitter<ColorName>();
-  @Input() selectedColorName: ColorName | undefined;
+  selectedColorName = input<ColorName | undefined>();
+  showDefault= input<boolean>(true);
 
   constructor(private readonly config: ConfigService) {}
 
   readonly colors$: Observable<ColorItem[]> = this.config.config$.pipe(
     map(cfg => {
-      const color = cfg.color ?? {} as any;
-      const items: { name: ColorName; hex?: string }[] = [
-        { name: 'red', hex: this.selectedColorName !== 'red' ? `#${color.red}` : '#00000000' },
-        { name: 'green', hex: this.selectedColorName !== 'green' ? `#${color.green}` : '#00000000' },
-        { name: 'yellow', hex: this.selectedColorName !== 'yellow' ? `#${color.yellow}` : '#00000000' },
-        { name: 'blue', hex: this.selectedColorName !== 'blue' ? `#${color.blue}` : '#00000000' },
-        { name: 'magenta', hex: this.selectedColorName !== 'magenta' ? `#${color.magenta}` : '#00000000' },
-        { name: 'cyan', hex: this.selectedColorName !== 'cyan' ? `#${color.cyan}` : '#00000000' },
+      const color: Color = cfg.color!;
+      const items: { name: ColorName; hex?: string}[] = [
+        { name: 'red', hex: `#${color.red}`},
+        { name: 'green', hex: `#${color.green}` },
+        { name: 'yellow', hex: `#${color.yellow}` },
+        { name: 'blue', hex: `#${color.blue}`  },
+        { name: 'magenta', hex: `#${color.magenta}`  },
+        { name: 'cyan', hex: `#${color.cyan}`},
       ];
       return items.map(i => ({
         name: i.name,
@@ -76,7 +102,7 @@ export class ColorSelectComponent {
     })
   );
 
-  onPick(name: ColorName): void {
-    this.colorSelected.emit(name === this.selectedColorName ? undefined : name);
+  onPick(name: ColorName | 'default'): void {
+    this.colorSelected.emit(name === 'default' ? undefined : name);
   }
 }

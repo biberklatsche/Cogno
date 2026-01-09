@@ -2,10 +2,11 @@ import {
     writeTextFile as tauriWriteTextFile,
     readTextFile as tauriReadTextFile,
     watch as tauriWatch,
-    exists as tauriExists, WatchEvent
+    exists as tauriExists, WatchEvent,
+    mkdir as tauriMkdir,
 } from '@tauri-apps/plugin-fs';
 import { convertFileSrc as tauriConvertFileSrc } from "@tauri-apps/api/core";
-import {Observable} from "rxjs";
+import {debounceTime, Observable} from "rxjs";
 
 
 type UnwatchFn = () => void;
@@ -15,17 +16,20 @@ export const Fs = {
     readTextFile(path: string): Promise<string> {return tauriReadTextFile(path)},
     writeTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data)},
     appendTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data, {append: true})},
+    mkdir(path: string): Promise<void> {return tauriMkdir(path)},
 
-    /** 🆕 Observable-API – preferred */
-    watchChanges$(path: string, opts?: { recursive?: boolean }): Observable<void> {
+    watchChanges$(path: string, opts?: { recursive?: boolean, delayMs?: number }): Observable<void> {
         return new Observable<void>((subscriber) => {
             let unwatch: UnwatchFn | null = null;
 
             tauriWatch(
                 path,
                 (event: WatchEvent) => {
-                    // Optional: filtern/normalisieren könntest du hier
-                    subscriber.next();
+                    if(typeof event.type === "object" &&
+                        "modify" in event.type && (event.type.modify.kind === 'data' || event.type.modify.kind === 'any')
+                    ) {
+                        subscriber.next();
+                    }
                 },
                 opts
             )
@@ -36,7 +40,7 @@ export const Fs = {
             return () => {
                 try { unwatch?.(); } catch { /* ignore */ }
             };
-        });
+        }).pipe(debounceTime(500));
     },
     exists(path: string): Promise<boolean> {return tauriExists(path)},
 

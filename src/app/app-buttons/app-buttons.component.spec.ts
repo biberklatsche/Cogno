@@ -1,95 +1,89 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppButtonsComponent } from './app-buttons.component';
 import { AppButtonsService } from './+state/app-buttons.service';
+import { AppWindow } from '../_tauri/window';
 import { Subject } from 'rxjs';
-import {AppWindow} from "../../__mocks__/_tauri-window";
 
+describe('AppButtonsComponent', () => {
+  let component: AppButtonsComponent;
+  let service: AppButtonsService;
+  let windowSize$: Subject<{ width: number, height: number }>;
+  let busMock: any;
+  let destroyRefMock: any;
 
-describe('AppButtonsComponent (class only)', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    windowSize$ = new Subject();
+    // @ts-ignore
+    AppWindow.windowSize$ = windowSize$;
+    
+    // Default mock implementations for AppWindow methods used in service
+    vi.mocked(AppWindow.isMaximized).mockResolvedValue(false);
+    vi.mocked(AppWindow.minimize).mockResolvedValue();
+    vi.mocked(AppWindow.maximize).mockResolvedValue();
+    vi.mocked(AppWindow.unmaximize).mockResolvedValue();
 
-  function createServiceWithControlledMaximized(initialIsMaximized: boolean) {
-    // Prepare a controllable windowSize$ before creating the service so the subscription uses it
-    const size$ = new Subject<{ width: number; height: number }>();
-    AppWindow.windowSize$ = size$.asObservable();
-
-    // Control what isMaximized resolves to when subscription reacts to emissions
-    // Vitest mock
-    (AppWindow.isMaximized as any).mockResolvedValue(initialIsMaximized);
-
-    const destroyRef: any = { onDestroy: vi.fn() };
-    const service = new AppButtonsService(destroyRef);
-
-    // Trigger one emission so the service queries isMaximized and updates the signal
-    size$.next({ width: 800, height: 600 });
-
-    const flush = async () => {
-      // Allow the async subscription callback to run and set the signal
-      await Promise.resolve();
-      await Promise.resolve();
+    busMock = {
+      publish: vi.fn(),
+      on$: vi.fn()
+    };
+    
+    destroyRefMock = {
+      onDestroy: vi.fn()
     };
 
-    return { service, size$, flush };
-  }
+    // Instantiate real service with mocked dependencies
+    service = new AppButtonsService(destroyRefMock, busMock);
+    
+    // Instantiate component with the real service
+    component = new AppButtonsComponent(service);
+  });
 
-  it('calls AppWindow.close() when close() is invoked', async () => {
-    const { service, flush } = createServiceWithControlledMaximized(false);
-    await flush();
-    const component = new AppButtonsComponent(service);
-
+  it('should call service.closeWindow when close is called', () => {
+    const spy = vi.spyOn(service, 'closeWindow');
     component.close();
-
-    expect(AppWindow.close).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalled();
   });
 
-  it('calls AppWindow.minimize() when minimize() is invoked', async () => {
-    const { service, flush } = createServiceWithControlledMaximized(false);
-    await flush();
-    const component = new AppButtonsComponent(service);
-
+  it('should call service.minimizeWindow when minimize is called', () => {
+    const spy = vi.spyOn(service, 'minimizeWindow');
     component.minimize();
-
-    expect(AppWindow.minimize).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalled();
   });
 
-  it('toggleMaximize() maximizes when not maximized', async () => {
-    const { service, flush } = createServiceWithControlledMaximized(false);
-    await flush();
-    const component = new AppButtonsComponent(service);
+  describe('toggleMaximize', () => {
+    it('should call service.maximizeWindow when not maximized', async () => {
+      // Ensure initial state is not maximized
+      vi.mocked(AppWindow.isMaximized).mockResolvedValue(false);
+      
+      // We need to trigger a windowSize$ emission to update service state
+      windowSize$.next({ width: 100, height: 100 });
+      // Wait for async update in service
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      expect(service.isMaximized()).toBe(false);
 
-    expect(service.isMaximized()).toBe(false);
+      const spyMaximize = vi.spyOn(service, 'maximizeWindow');
+      
+      component.toggleMaximize();
+      
+      expect(spyMaximize).toHaveBeenCalled();
+    });
 
-    component.toggleMaximize();
+    it('should call service.unmaximizeWindow when maximized', async () => {
+      // Set maximized state
+      vi.mocked(AppWindow.isMaximized).mockResolvedValue(true);
+      
+      // Trigger update
+      windowSize$.next({ width: 100, height: 100 });
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      expect(service.isMaximized()).toBe(true);
 
-    expect(AppWindow.maximize).toHaveBeenCalledTimes(1);
-    expect(AppWindow.unmaximize).not.toHaveBeenCalled();
-  });
-
-  it('toggleMaximize() unmaximizes when currently maximized', async () => {
-    const { service, flush } = createServiceWithControlledMaximized(true);
-    await flush();
-    const component = new AppButtonsComponent(service);
-
-    expect(service.isMaximized()).toBe(true);
-
-    component.toggleMaximize();
-
-    expect(AppWindow.unmaximize).toHaveBeenCalledTimes(1);
-    expect(AppWindow.maximize).not.toHaveBeenCalled();
-  });
-
-  it('service updates isMaximized based on windowSize$ emissions', async () => {
-    const { service, size$, flush } = createServiceWithControlledMaximized(false);
-    await flush();
-    expect(service.isMaximized()).toBe(false);
-
-    // Next emission should update according to current AppWindow.isMaximized() value
-    (AppWindow.isMaximized as any).mockResolvedValueOnce(true);
-    size$.next({ width: 1024, height: 768 });
-    await flush();
-
-    expect(service.isMaximized()).toBe(true);
+      const spyUnmaximize = vi.spyOn(service, 'unmaximizeWindow');
+      
+      component.toggleMaximize();
+      
+      expect(spyUnmaximize).toHaveBeenCalled();
+    });
   });
 });

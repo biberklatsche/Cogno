@@ -2,15 +2,16 @@ import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/c
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {WorkspaceLoadedEvent} from "../../workspace/+bus/events";
-import {TabId} from "../../workspace/+model/workspace";
+import {TabConfig, TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
-import {KeybindFiredEvent} from "../../keybinding/keybind.service";
-import {ColorName, ContextMenuItem} from "../../common/menu-overlay/menu-overlay.types";
+import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
 import {IdCreator} from "../../common/id-creator/id-creator";
+import {ActionFired, ActionFiredEvent} from "../../action/action.models";
+import {ColorName} from "../../common/color/color";
+
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
@@ -27,12 +28,6 @@ export class TabListService {
     }
 
     constructor(private bus: AppBus, private configService: ConfigService, destroyRef: DestroyRef) {
-        this.bus.onType$('WorkspaceLoaded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: WorkspaceLoadedEvent) => {
-            this._tabList.next([]);
-            for (const [index, grid] of event.payload!.grids.entries()) {
-                this.addTab({id: grid.tabId, title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: false});
-            }
-        });
         this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
             this.selectTab(event.payload!);
             event.propagationStopped = true;
@@ -49,14 +44,16 @@ export class TabListService {
             this._tabList.next(tabList);
             event.propagationStopped = true;
         });
-        this.bus.on$({type: 'KeybindFired', path: ['app', 'terminal']}).pipe(takeUntilDestroyed(destroyRef)).subscribe((event: KeybindFiredEvent) => {
+        this.bus.on$(ActionFired.listener())
+            .pipe(takeUntilDestroyed(destroyRef))
+            .subscribe((event: ActionFiredEvent) => {
                 switch (event.payload) {
-                    case 'open_new_tab':
+                    case 'new_tab':
                         this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
-                    case 'close_active_tab':
+                    case 'close_tab':
                         const activeTabId = this._tabList.value.find(s => s.isActive)?.id;
                         this.removeTab(activeTabId);
                         event.performed = !event.trigger?.all;
@@ -64,12 +61,12 @@ export class TabListService {
                         break;
                     case 'close_other_tabs':
                         const activeTab = this._tabList.value.find(s => s.isActive);
-                        this.closeAllTabs(activeTab?.id);
+                        this.removeAllTabs(activeTab?.id);
                         event.performed = !(event.trigger?.all);
                         event.defaultPrevented = true;
                         break;
                     case 'close_all_tabs':
-                        this.closeAllTabs();
+                        this.removeAllTabs();
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
@@ -82,19 +79,20 @@ export class TabListService {
         const tab = this._tabList.value.find(tab => tab.id === tabId);
         if(!tab) throw new Error("No tab found for TabList");
         const items: (ContextMenuItem|undefined)[] = [
+            { label: 'Close tab', action: () => this.removeTab(tabId), actionName: "close_tab"  },
             this._tabList.value.length > 1 ?
-                { label: 'Close other tabs', action: () => this.closeAllTabs(tabId), actionName: "close_other_tabs" }
+                { label: 'Close other tabs', action: () => this.removeAllTabs(tabId), actionName: "close_other_tabs" }
                 : undefined,
-            { label: 'Close all tabs', action: () => this.closeAllTabs(), actionName: "split_down"  },
+            { label: 'Close all tabs', action: () => this.removeAllTabs(), actionName: "close_all_tabs"  },
             {separator: true},
             { label: 'Rename tab', action: () => this._showRename.set(tabId)},
             {separator: true},
-            { colorpicker: true, action: (color?: ColorName) => this.setColor(tabId, color), selectedColorName: tab.color?.name},
+            { colorpicker: true, action: (color?: ColorName) => this.setColor(tabId, color), selectedColorName: tab.color},
         ];
         return items.filter(s => !!s);
     }
 
-    closeAllTabs(except?: TabId) {
+    removeAllTabs(except?: TabId) {
         const tabsToClose = [...this._tabList.value];
         if(!except) {
             this._tabList.next([]);
@@ -108,7 +106,7 @@ export class TabListService {
         }
     }
 
-    addTab(tab: Tab) {
+    addTab(tab: Tab, silent: boolean = false) {
         const tabList = [...this._tabList.value];
         if(tabList.some(s => s.id === tab?.id)) return;
         if(tab.isActive){
@@ -118,6 +116,7 @@ export class TabListService {
         }
         tabList.push(tab);
         this._tabList.next(tabList);
+        if(silent) return;
         this.bus.publish({type: 'TabAdded', payload: {tabId: tab.id, isActive: tab.isActive}});
     }
 
@@ -176,11 +175,31 @@ export class TabListService {
         const tabList = [...this._tabList.value];
         const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
-        if(!name) {
-            tab.color = undefined;
-        } else {
-            tab.color = {hex: (this.configService.config.color as any)[name], name: name};
-        }
+        tab.color = name;
         this._tabList.next(tabList);
+    }
+
+    restoreTabs(tabConfigList: TabConfig[]) {
+        if(tabConfigList.length === 0) this._tabList.next([]);
+        const tabs: TabList = tabConfigList.map(config => {
+            const tab: Tab = {
+                id: config.tabId,
+                color: config.color,
+                title: config.title ?? 'Shell',
+                isActive: config.isActive ?? false,
+                activeShellType: 'unknown'
+            }
+            return tab
+        });
+        this._tabList.next(tabs);
+    }
+
+    getTabConfigs(): TabConfig[] {
+        return this._tabList.value.map<TabConfig>(tab => ({
+            tabId: tab.id,
+            isActive: tab.isActive,
+            color: tab.color,
+            title: tab.title
+        }));
     }
 }

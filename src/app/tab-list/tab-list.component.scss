@@ -12,7 +12,7 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  overflow-x: auto;   /* ← horizontal scrollen, wenn’s nicht mehr passt */
+  overflow-x: auto;   /* ← horizontal scroll if it doesn't fit anymore */
   overflow-y: hidden;
   white-space: nowrap;
   flex-wrap: nowrap;
@@ -34,27 +34,33 @@
   gap: 6px;
   height: 26px;
   padding: 0 8px;
-  border: 1px solid var(--background-color-10l);
+  border: 1px solid;
+  border-color: var(--background-color-10l-ct2);
   border-radius: var(--button-border-radius);
-  background: var(--background-color-10l);
-  color: var(--foreground-color);
+  background: var(--background-color-10l-ct2);
+  color: var(--foreground-color-10t);
   /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
   min-height: 26px;
-  /* Größenlogik */
+  /* size logic */
   flex: 0 1 240px;
   max-width: 240px;
   min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
-  /* wichtig für Container Queries */
+  /* important for container queries */
   container-type: inline-size;
-  opacity: 0.5;
   &.is-active {
-    opacity: 0.9;
-    border: 1px solid var(--background-color-30l);
-    background: var(--background-color-10l);
+    color: var(--foreground-color);
+    border-color: var(--background-color-30l);
+    background: var(--background-color-20l-ct);
+    &:hover {
+      color: var(--foreground-color);
+      border-color: var(--background-color-40l);
+      background: var(--background-color-30l);
+    }
   }
   &:hover {
-    opacity: 1;
-    background: var(--background-color-20l);
+    color: var(--foreground-color);
+    border-color: var(--background-color-40l);
+    background: var(--background-color-30l);
   }
 }
 
@@ -75,24 +81,11 @@
   cursor: default;
 }
 
-.close, .add {
+.close {
   opacity: 0.5;
   &:hover {
     opacity: 1;
   }
-}
-
-.add {
-  border: none;
-  cursor: default;
-  border-radius: var(--button-border-radius);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  background: var(--background-color-10l);
-  color: var(--foreground-color);
 }
 
 .title {
@@ -108,13 +101,13 @@
 }
 
 .icon  { flex: 0 1 auto;  flex-shrink: 1; }
-.close { flex: 0 0 16px;   flex-shrink: 0; } /* bleibt immer sichtbar */
+.close { flex: 0 0 16px;   flex-shrink: 0; } /* remains always visible */
 
 @container (max-width: 20px) {
   .title { display: none; }
 }
 
-/* 2) Noch schmaler: Icon ausblenden, Close bleibt */
+/* 2) Even narrower: hide icon, close remains */
 @container (max-width: 50px) {
   .icon { display: none; }
 }
@@ -145,4 +138,10 @@
     opacity: 0;
     transform: translateX(-20px);
   }
+}
+
+.tab-list-btns {
+  display: flex;
+  flex-direction: row;
+  gap: 1px;
 }

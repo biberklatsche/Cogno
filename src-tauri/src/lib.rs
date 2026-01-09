@@ -12,24 +12,28 @@ use commands::keyboard::get_keyboard_layout;
 use commands::shells::list_shells;
 use commands::pty::{pty_spawn, pty_write, pty_resize, pty_kill, PtyState};
 use commands::environment::{get_exe_path, get_exe_dir, get_macos_app_bundle, get_cogno_home_dir, get_cogno_config_file_path, get_cogno_db_file_path};
+use commands::window::new_window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
     Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(tauri_plugin_log::Builder::new()
+           .target(tauri_plugin_log::Target::new(
+               tauri_plugin_log::TargetKind::Webview,
+           )).build())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
             if let Ok(cli) = Cli::try_parse_from(argv) {
-                if let Some(cmd) = cli.command {
-                    // Reiche den Command direkt an den Renderer weiter
-                    eprintln!("command {:?}", cmd);
-                    let _ = app.emit("cli-command", &cmd);
+                if let Some(cmd) = cli.action {
+                   let _ = app.emit("cli-action", &cmd);
                 }
             }
         }))
@@ -50,14 +54,10 @@ pub fn run(cli: Cli) {
                     get_macos_app_bundle,
                     get_cogno_home_dir,
                     get_cogno_config_file_path,
-                    get_cogno_db_file_path
+                    get_cogno_db_file_path,
+                    new_window
                 ])
         .setup(move |app| {
-           // Beim ersten Start: ggf. gewünschten Command ausführen
-           if let Some(cmd) = cli.command.clone() {
-               // Reiche den Command direkt an den Renderer weiter
-               app.emit("cli-command", &cmd).ok();
-           }
 
            let webview_window_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                            .title("")
@@ -73,6 +73,11 @@ pub fn run(cli: Cli) {
 
            let window = win_builder.build().unwrap();
            window.show().unwrap();
+
+           // Beim ersten Start: ggf. gewünschten Command ausführen
+           if let Some(cmd) = cli.action.clone() {
+               let _ = app.emit("cli-action", &cmd);
+           }
 
            #[cfg(debug_assertions)] // only include this code on debug builds
            {

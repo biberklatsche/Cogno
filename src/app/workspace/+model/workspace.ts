@@ -1,12 +1,26 @@
-import {ShellConfigPosition} from "../../config/+models/config.types";
+import {ShellConfigPosition} from "../../config/+models/config";
+import {ColorName} from "../../common/color/color";
+import {TerminalId} from "../../grid-list/+model/model";
 
 
 export type TabId = string;
+export type WorkspaceId = string;
 
 export type WorkspaceConfig = {
-    name?: string;
-    color?: string;
+    id: WorkspaceId;
+    name: string;
+    color?: ColorName;
     grids: GridConfig[];
+    tabs: TabConfig[];
+    isActive?: boolean;
+    autosave?: boolean;
+}
+
+export type TabConfig = {
+    tabId: TabId;
+    isActive?: boolean;
+    color?: ColorName;
+    title?: string;
 }
 
 export type GridConfig = {
@@ -27,6 +41,7 @@ export interface SplitNode {
 }
 
 export interface TerminalConfig {
+    TerminalId?: TerminalId;
     splitDirection?: never;
     ratio?: never;
     child1?: never;
@@ -36,4 +51,10 @@ export interface TerminalConfig {
 }
 
 export type SplitDirection = 'horizontal' | 'vertical';
+    
+export type TerminalSession = {
+    terminalId: TerminalId;
+    sessionData: string;
+    updatedAt?: string;
+}
 

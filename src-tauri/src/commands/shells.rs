@@ -107,7 +107,5 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 }
             }
     }
-
-
     shells
 }

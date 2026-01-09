@@ -1,19 +1,22 @@
-import {Component, ElementRef, Signal, signal, ViewChild, WritableSignal, effect} from '@angular/core';
+import {Component, ElementRef, Signal, ViewChild, effect} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";
 import {IconComponent} from "../icons/icon/icon.component";
-import {ShellType} from "../config/+models/config.types";
+import {ShellType} from "../config/+models/config";
 import {Icon} from "../icons/+model/icon";
 import {TabId} from '../workspace/+model/workspace';
 import {IdCreator} from '../common/id-creator/id-creator';
-import {ContextMenuItem} from "../common/menu-overlay/menu-overlay.types";
-import {MenuOverlayService} from "../common/menu-overlay/menu-overlay.service";
+import {ContextMenuItem} from "../menu/context-menu-overlay/context-menu-overlay.types";
+import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import {Tab} from "./+model/tab";
+import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
+import {TooltipDirective} from "../common/tooltip/tooltip.directive";
+import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
 @Component({
   selector: 'app-tab-list',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+    imports: [CommonModule, IconComponent, AppMenuButtonComponent, TooltipDirective, ActionKeybindingPipe],
   templateUrl: './tab-list.component.html',
   styleUrl: './tab-list.component.scss'
 })
@@ -23,7 +26,7 @@ export class TabListComponent {
     showRename: Signal<TabId | undefined>;
     @ViewChild('renameInput') inputRef!: ElementRef<HTMLInputElement>;
 
-    constructor(private tabListService: TabListService, private menu: MenuOverlayService) {
+    constructor(private tabListService: TabListService, private menu: ContextMenuOverlayService) {
         this.tabs = this.tabListService.tabs$;
         this.showRename = this.tabListService.showRename$;
 

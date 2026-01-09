@@ -4,18 +4,27 @@
                 type="button"
                 class="tab"
                 [class.is-active] = tab.isActive
+                [style.background-color]="tab.color ? `var(--color-${tab.color}-ct2)` : undefined"
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
-                [style.background-color]="tab.color ? '#' + tab.color.hex + '66' : undefined"
                 [attr.data-tab-id]="tab.id"
-                title="{{tab.title}}"
+                appTooltip="{{tab.title}}"
                 (click)="selectTab(tab.id)"
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
             <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
             @if (showRename()===tab.id) {
-                <input #renameInput (keyup.esc)="$event.stopPropagation(); closeRename()" (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);" (blur)="commitRename(renameInput.value);">
+                <input class="inline-input"
+                    #renameInput
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-private="off"
+                    autocorrect="off"
+                    [value]="tab.title"
+                    (keyup.esc)="$event.stopPropagation(); closeRename()"
+                    (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
+                    (blur)="commitRename(renameInput.value);">
             } @else {
                 <span class="title">{{ tab.title }}</span>
             }
@@ -25,5 +34,8 @@
             </span>
         </button>
     }
-    <button class="add" (click)="$event.stopPropagation(); addTab()"><app-icon name="mdiPlus"></app-icon></button>
+    <div class="tab-list-btns">
+        <button class="button icon-button" (click)="$event.stopPropagation(); addTab()" appTooltip="New Tab" [appTooltipSecondary]="'new_tab' | actionkeybinding"><app-icon name="mdiPlus"></app-icon></button>
+        <app-menu-button></app-menu-button>
+    </div>
 </nav>

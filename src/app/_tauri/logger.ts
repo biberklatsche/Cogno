@@ -9,6 +9,8 @@ import {
     LogOptions as TauriLogOptions,
 } from '@tauri-apps/plugin-log';
 
+await tauriAttachConsole();
+
 export interface LogOptions extends TauriLogOptions{}
 
 export const Logger = {

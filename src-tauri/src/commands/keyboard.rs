@@ -13,8 +13,8 @@ pub enum KeyboardLayoutInfo {
 
 #[derive(Serialize)]
 pub struct WindowsKeyboardLayoutInfo {
-    pub id: String,   // KLID wie "00000407"
-    pub name: String, // Userfreundlicher Name (hier KLID als Fallback)
+    pub id: String,   // KLID like "00000407"
+    pub name: String, // User-friendly name (here KLID as fallback)
 }
 
 #[derive(Serialize)]
@@ -35,7 +35,7 @@ pub struct MacKeyboardLayoutInfo {
 
 #[tauri::command]
 pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
-    // Windows: klassisch über WinAPI (GetKeyboardLayoutNameW)
+    // Windows: classic via WinAPI (GetKeyboardLayoutNameW)
     #[cfg(target_os = "windows")]
     {
         use std::ffi::OsString;
@@ -52,14 +52,14 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
         let klid = OsString::from_wide(&buf[..len])
             .to_string_lossy()
             .to_string();
-        // Fallback: KLID als Name
+        // Fallback: KLID as name
         return Some(KeyboardLayoutInfo::Windows(WindowsKeyboardLayoutInfo {
             id: klid.clone(),
             name: klid,
         }));
     }
 
-    // Linux: über setxkbmap -query
+    // Linux: via setxkbmap -query
     #[cfg(target_os = "linux")]
     {
         use std::process::Command;
@@ -90,7 +90,7 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
         }));
     }
 
-    // macOS: hole aktuelle Eingabequelle aus com.apple.HIToolbox
+    // macOS: fetch current input source from com.apple.HIToolbox
     #[cfg(target_os = "macos")]
     {
         use std::process::Command;
@@ -153,7 +153,7 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
                     }
                 }
                 if line.starts_with('}') {
-                    // Fertiges Dict einsammeln
+                    // Collect completed dict
                     res.push(cur.clone());
                     in_dict = false;
                 }
@@ -161,7 +161,7 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
             res
         }
 
-        // 0) Direkter Schlüssel für aktives Layout (nur ID): AppleCurrentKeyboardLayoutInputSourceID
+        // 0) Direct key for active layout (ID only): AppleCurrentKeyboardLayoutInputSourceID
         let mut id: Option<String> = None;
         let mut name: Option<String> = None;
         let mut lang: Option<String> = None;
@@ -176,7 +176,7 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
             if let Some(txt) = direct_id_host { id = Some(trim_val(&txt)); }
         }
 
-        // 1) AppleSelectedInputSources: versuche, eine Keyboard Layout Quelle zu finden
+        // 1) AppleSelectedInputSources: try to find a Keyboard Layout source
         let sel_std = run_defaults(&["read", "com.apple.HIToolbox", "AppleSelectedInputSources"]);
         if let Some(txt) = sel_std.as_ref() { dbg_log("AppleSelectedInputSources", txt); }
         let mut selected_sources: Option<Vec<MacSource>> = sel_std.as_ref().map(|s| parse_dicts(s));
@@ -186,18 +186,18 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
             selected_sources = sel_host.map(|s| parse_dicts(&s));
         }
         if let Some(list) = &selected_sources {
-            // Bevorzugt Keyboard Layout
+            // Prefer Keyboard Layout
             if let Some(ms) = list.iter().find(|m| m.kind.as_deref() == Some("Keyboard Layout")) {
                 if id.is_none() { id = ms.id.clone(); }
                 if name.is_none() { name = ms.name.clone(); }
                 if lang.is_none() { lang = ms.lang.clone(); }
             } else if let Some(ms) = list.first() {
-                // Falls nur Input Method, nimm deren ID (Name/Lang später über Enabled auflösen)
+                // If only Input Method, take its ID (resolve Name/Lang later via Enabled)
                 if id.is_none() { id = ms.id.clone(); }
             }
         }
 
-        // 2) AppleEnabledInputSources: benutze, um Name/Lang zu bestimmen oder als Fallback-Quelle
+        // 2) AppleEnabledInputSources: use to determine Name/Lang or as a fallback source
         let en_std = run_defaults(&["read", "com.apple.HIToolbox", "AppleEnabledInputSources"]);
         if let Some(txt) = en_std.as_ref() { dbg_log("AppleEnabledInputSources", txt); }
         let mut enabled_sources: Option<Vec<MacSource>> = en_std.as_ref().map(|s| parse_dicts(s));
@@ -207,14 +207,14 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
             enabled_sources = en_host.map(|s| parse_dicts(&s));
         }
         if let Some(list) = &enabled_sources {
-            // Falls wir eine ID haben, versuche passenden Eintrag zu finden, um Name/Lang zu setzen
+            // If we have an ID, try to find a matching entry to set Name/Lang
             if let Some(ref cur_id) = id {
                 if let Some(ms) = list.iter().find(|m| m.id.as_deref() == Some(cur_id.as_str())) {
                     if name.is_none() { name = ms.name.clone(); }
                     if lang.is_none() { lang = ms.lang.clone(); }
                 }
             }
-            // Wenn immer noch keine ID, nimm erstes Keyboard Layout aus Enabled
+            // If still no ID, take the first Keyboard Layout from Enabled
             if id.is_none() {
                 if let Some(ms) = list.iter().find(|m| m.kind.as_deref() == Some("Keyboard Layout")) {
                     id = ms.id.clone();
@@ -224,7 +224,7 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
             }
         }
 
-        // Fallbacks, wenn weiterhin nichts gefunden
+        // Fallbacks if still nothing found
         let id = id.unwrap_or_else(|| "com.apple.keylayout.US".to_string());
         let localized_name = name.unwrap_or_else(|| "U.S.".to_string());
         let lang = lang.unwrap_or_else(|| "en".to_string());
@@ -232,7 +232,7 @@ pub fn get_keyboard_layout() -> Option<KeyboardLayoutInfo> {
         return Some(KeyboardLayoutInfo::Mac(MacKeyboardLayoutInfo { id, localized_name, lang }));
     }
 
-    // Nur kompiliert, wenn keines der oben greift
+    // Only compiled if none of the above applies
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     None
 }

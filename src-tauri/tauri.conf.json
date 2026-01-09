@@ -14,7 +14,7 @@
     "security": {
       "assetProtocol": {
         "enable": true,
-        "scope": ["**/*", "$HOME/.cogno-dev/**", "$HOME/.cogno/**"]
+        "scope": ["**/*", "$HOME/.cogno-dev/**", "$HOME/.cogno/**", "$HOME/.cogno2-dev/**", "$HOME/.cogno2/**"]
       },
       "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline'; img-src 'self' asset: file: data: blob: http://asset.localhost"
     }

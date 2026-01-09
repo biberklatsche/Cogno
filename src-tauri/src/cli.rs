@@ -3,19 +3,19 @@ use clap::{Parser};
 #[derive(Parser, Debug, Clone)]
 #[command(name = "cogno", version, about = "Cogno CLI")]
 pub struct Cli {
-    /// Ausgabe: "hello world"
+    /// Output: "hello world"
     #[arg(long)]
     pub hello_world: bool,
 
-    /// Zeige Konfig
+    /// Show config
     #[arg(long)]
     pub show_config: bool,
 
-    /// Zeige Default-Konfig (nur sinnvoll zusammen mit --show-config)
+    /// Show default config (only useful together with --show-config)
     #[arg(long, requires = "show_config")]
     pub default: bool,
 
-    /// Führt einen Befehl aus
+    /// Executes a action
     #[arg(long)]
-    pub command: Option<String>,
+    pub action: Option<String>,
 }

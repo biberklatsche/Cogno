@@ -38,7 +38,7 @@ pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
 #[tauri::command]
 pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let dir_name = if dev_mode { ".cogno-dev" } else { ".cogno" };
+    let dir_name = if dev_mode { ".cogno2-dev" } else { ".cogno2" };
     let cogno_home = home.join(dir_name);
     Ok(cogno_home.display().to_string())
 }

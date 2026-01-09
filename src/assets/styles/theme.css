@@ -1,3 +1,79 @@
 html {
     --button-border-radius:6px;
 }
+
+h1, h2, h3, h4, h5, h6, p {
+    margin: 0;
+    padding: 0;
+}
+
+button, a {
+    cursor: default;
+}
+
+.button {
+    padding: 6px 10px;
+    border-radius: var(--button-border-radius, 6px);
+    border: 1px solid var(--background-color-20l);
+    background: var(--background-color-10l);
+    color: var(--foreground-color);
+
+    &.icon-button {
+        border: none;
+        border-radius: var(--button-border-radius);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        padding: 4px;
+        background: none;
+        color: var(--foreground-color-10t);
+        &:hover {
+            color: var(--foreground-color);
+            background: var(--background-color-20l);
+        }
+    }
+
+    &.primary {
+        background: var(--background-color-20l);
+    }
+
+    &:hover {
+        background: var(--background-color-30l);
+    }
+}
+
+.base-overlay {
+    background-color: var(--background-color-10l-ct);
+    border: 1px solid var(--background-color-20l);
+    border-radius: 6px;
+    backdrop-filter: blur(5px);
+    color: var(--foreground-color);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    padding: 6px;
+}
+
+.keybinding {
+    opacity: 0.5;
+}
+
+
+input {
+    border: none;
+    outline: none;
+    color: var(--color-foreground);
+    font-size: 1rem;
+    padding: 0.5rem;
+    border-radius: var(--button-border-radius);
+    box-sizing: border-box;
+    width: 100%;
+    background-color: var(--background-color-20l);
+
+    &.inline-input {
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+        padding: 0;
+    }
+}

@@ -3,13 +3,11 @@ import { isDevMode } from '@angular/core';
 import {Logger} from "../../_tauri/logger";
 
 export const Environment = (() => {
-    // --- interne Variablen ---
     let homeDir = '';
     let configFilePath = '';
     let dbFilePath = '';
     let exeDirPath = ''
 
-    // --- interne Hilfsfunktionen ---
     async function determineCognoPaths() {
         const devMode = isDevMode();
         homeDir = await Path.cognoHomeDir(devMode);
@@ -19,29 +17,28 @@ export const Environment = (() => {
         Logger.info(`Loaded ${homeDir}`);
     }
 
-    // --- öffentliches API ---
     return {
-        /** Gibt das Konfigurationsverzeichnis zurück */
+        /** Returns the configuration directory */
         configDir(): string {
             return homeDir;
         },
 
-        /** Gibt den vollständigen Pfad zur Config-Datei zurück */
+        /** Returns the full path to the config file */
         configFilePath(): string {
             return configFilePath;
         },
 
-        /** Gibt den vollständigen Pfad zur Datenbankdatei zurück */
+        /** Returns the full path to the database file */
         dbFilePath(): string {
             return dbFilePath;
         },
 
-        /** Gibt den vollständigen Pfad zur eigenen Executable zurück */
+        /** Returns the full path to the executable */
         exeDirPath(): string {
             return exeDirPath;
         },
 
-        /** Initialisiert das Environment (ermittelt alle Pfade) */
+        /** Initializes the environment (determines all paths) */
         async init(): Promise<void> {
             Logger.info('Initializing environment');
             await determineCognoPaths();

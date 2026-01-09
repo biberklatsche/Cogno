@@ -5,12 +5,16 @@ import {Grid} from "./+model/model";
 import {AsyncPipe,} from "@angular/common";
 import {GridComponent} from "./grid/grid.component";
 import {TabId} from "../workspace/+model/workspace";
+import {EmtpyComponent} from "./emtpy/emtpy.component";
+import {SideMenuComponent} from "../menu/side-menu/side-menu/side-menu.component";
 
 @Component({
   selector: 'app-grid-list',
     imports: [
         AsyncPipe,
-        GridComponent
+        GridComponent,
+        EmtpyComponent,
+        SideMenuComponent
     ],
   templateUrl: './grid-list.component.html',
   styleUrl: './grid-list.component.scss'

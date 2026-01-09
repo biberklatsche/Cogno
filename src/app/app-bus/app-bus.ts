@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Observable, Subject, firstValueFrom, fromEvent, race } from "rxjs";
+import { Observable, Subject, fromEvent, race } from "rxjs";
 import { filter, take, timeout as rxTimeout } from "rxjs/operators";
 import {AppMessage} from "./messages";
 
@@ -13,7 +13,7 @@ function key(path: BusPath) { return path.join("/"); }
 function buildChain(path: BusPath) { return path.map((_, i) => path.slice(0, i + 1)); }
 
 // ---------------------------------------------------------
-// Gemeinsames Message-Modell (Events + Actions)
+// Common Message Model (Events + Actions)
 // ---------------------------------------------------------
 export type MessageBase<T extends string = string, P = unknown> = {
     type: T;
@@ -34,16 +34,16 @@ export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, 
     args?: string[];
 }
 
-// Einheitlicher Handler: kann kurzschließen (Command-Style)
+// Unified handler: can short-circuit (command-style)
 export type MessageHandler<M extends MessageBase = MessageBase> =
     (msg: M, ctx: { path: BusPath }) => "handled" | true | void;
 
 // ---------------------------------------------------------
-// Ein Bus für alles
+// One bus for everything
 // ---------------------------------------------------------
 @Injectable({ providedIn: "root" })
 export class AppBus {
-    // Subjects je Pfad
+    // Subjects per path
     private subjects: Map<string, Subject<AppMessage>> = new Map();
 
     private subjectFor(path: BusPath): Subject<AppMessage> {
@@ -56,7 +56,7 @@ export class AppBus {
         return s;
     }
 
-    // Reaktives Abo (optional nach Typ/Phase filtern)
+    // Reactive subscription (optionally filter by type/phase)
     public on$<K extends AppMessage["type"]>(opts: {
         path: BusPath;
         type?: K | K[];
@@ -98,7 +98,7 @@ export class AppBus {
         if (opts.signal) {
             const abort$ = fromEvent(opts.signal, "abort").pipe(take(1));
             // @ts-ignore rxjs race array
-            one = race(one, abort$) as any;
+            one = race(one, abort$);
         }
         return one;
     }
@@ -112,9 +112,9 @@ export class AppBus {
 
     /**
      * publish:
-     * - führt entlang Pfadkette (capture → target → bubble) aus
-     * - bricht ab, wenn:
-     *   * bei vorhandenen Event-Flags defaultPrevented oder propagationStopped gesetzt wird
+     * - executes along path chain (capture → target → bubble)
+     * - aborts if:
+     *   * defaultPrevented or propagationStopped is set in existing event flags
      */
     public publish(msg: AppMessage): {propagationStopped: boolean, defaultPrevented: boolean, performed?: boolean } {
         const path = msg.path ?? ["app"];

@@ -3,7 +3,6 @@
 @import './xterm.css';
 @import './scrollbar.css';
 @import './theme.css';
-@import './default.css';
 
 html, body {
     margin: 0;
@@ -14,6 +13,7 @@ html, body {
     background-position: center;
     background-repeat: no-repeat;
     overscroll-behavior: none;
+    font-size: var(--app-font-size);
 }
 
 
@@ -44,7 +44,6 @@ body.has-background::before {
 
 * {
     font-family: var(--app-font-family), Roboto, sans-serif;
-    font-size: var(--app-font-size);
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }

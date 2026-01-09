@@ -1,31 +1,24 @@
 import TauriDatabase from '@tauri-apps/plugin-sql';
 
 export interface IDatabase {
-  execute(query: string, params?: unknown[]): Promise<void>;
-  query<T = unknown>(query: string, params?: unknown[]): Promise<T[]>;
-  close(): Promise<void>;
+    load(path: string): Promise<void>
+
+    execute(query: string, params?: unknown[]): Promise<void>;
+
+    select<T = unknown>(query: string, params?: unknown[]): Promise<T>;
 }
 
-export class Database implements IDatabase {
-  private db!: TauriDatabase;
+let _db: TauriDatabase;
+export const DB: IDatabase = {
 
-  private constructor() {}
+    async load(path: string): Promise<void> {
+        _db = await TauriDatabase.load(path);
+    },
+    async execute(query: string, params?: unknown[]): Promise<void> {
+        await _db.execute(query, params);
+    },
+    async select<T = unknown>(query: string, params?: unknown[]): Promise<T> {
+        return _db.select<T>(query, params);
+    }
 
-  static async create(path: string): Promise<Database> {
-    const adapter = new Database();
-    adapter.db = await TauriDatabase.load(path);
-    return adapter;
-  }
-
-  async execute(query: string, bindValues: unknown[] = []): Promise<void> {
-    await this.db.execute(query, bindValues);
-  }
-
-  async query<T>(query: string, bindValues: unknown[] = []): Promise<T> {
-    return this.db.select<T>(query, bindValues);
-  }
-
-  async close(): Promise<void> {
-    await this.db.close();
-  }
 }
