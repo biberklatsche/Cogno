@@ -55,10 +55,11 @@ export class Renderer implements IRenderer, IDisposable {
     }
 
     register(handler: ITerminalHandler | IFitHandler): IDisposable {
+        if(isFitHandler(handler)) {
+            handler.registerFitAddon(this._fitAddon)
+        }
         if(isTerminalHandler(handler)) {
             return handler.registerTerminal(this._terminal);
-        } else if(isFitHandler(handler)) {
-            handler.registerFitAddon(this._fitAddon)
         }
         throw new Error('unknown handler type');
     }
