@@ -3,7 +3,7 @@ import {IRenderer, Renderer} from "./renderer/renderer";
 import {filter, first, Subscription} from "rxjs";
 import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
-import {TabTitleHandler} from "./handler/tab-title.handler";
+import {TerminalTitleHandler} from "./handler/terminal-title.handler";
 import {PtyHandler} from "./handler/pty.handler";
 import {IDisposable} from "../../common/models/models";
 import {FocusHandler} from "./handler/focus.handler";
@@ -57,7 +57,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellConfig, this.bus)));
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
-        this.disposables.push(this.renderer.register(new TabTitleHandler(this.terminalId, this.bus)));
+        this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));

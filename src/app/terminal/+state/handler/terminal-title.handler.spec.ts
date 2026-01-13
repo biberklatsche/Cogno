@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { TabTitleHandler } from './tab-title.handler';
+import { TerminalTitleHandler } from './terminal-title.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 
-describe('TabTitleHandler', () => {
-  let handler: TabTitleHandler;
+describe('TerminalTitleHandler', () => {
+  let handler: TerminalTitleHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
-    handler = new TabTitleHandler(terminalId, mockBus);
+    handler = new TerminalTitleHandler(terminalId, mockBus);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -32,7 +32,7 @@ describe('TabTitleHandler', () => {
       handler.registerTerminal(mockTerminal);
     });
 
-    it('should publish TabTitleChanged when OSC 0 is received', () => {
+    it('should publish TerminalTitleChanged when OSC 0 is received', () => {
       const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls.find(call => 
         call[0] === 0
       )![1];
@@ -41,12 +41,12 @@ describe('TabTitleHandler', () => {
 
       expect(result).toBe(true);
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'TabTitleChanged',
+        type: 'TerminalTitleChanged',
         payload: { terminalId, title: 'New Title 0' }
       }));
     });
 
-    it('should publish TabTitleChanged when OSC 2 is received', () => {
+    it('should publish TerminalTitleChanged when OSC 2 is received', () => {
       const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls.find(call => 
         call[0] === 2
       )![1];
@@ -55,7 +55,7 @@ describe('TabTitleHandler', () => {
 
       expect(result).toBe(true);
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'TabTitleChanged',
+        type: 'TerminalTitleChanged',
         payload: { terminalId, title: 'New Title 2' }
       }));
     });

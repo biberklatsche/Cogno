@@ -8,6 +8,7 @@ export type Tab = {
     color?: ColorName;
     id: TabId;
     title: string;
+    isTitleLocked?: boolean;
     isActive: boolean;
     activeShellType: ShellType | 'unknown';
 }

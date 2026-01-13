@@ -6,7 +6,7 @@ import {
     FocusTerminalAction, PasteAction, TerminalRemovedAction,
 } from "../terminal/+bus/actions";
 import {PtyInitializedEvent} from "../terminal/+bus/events";
-import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
+import {TerminalTitleChangedEvent} from "../terminal/+state/handler/terminal-title.handler";
 import {
     TerminalThemeChangedEvent,
     TerminalThemePaddingAddedEvent,
@@ -26,6 +26,7 @@ import {InspectorEvent} from "../inspector/+bus/events";
 import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
+import {TabTitleChangedEvent} from "../grid-list/+bus/events";
 
 export type AppMessage =
     | TabRemovedEvent
@@ -38,7 +39,7 @@ export type AppMessage =
     | ThemeChangedEvent
     | InitConfigAction
     | PtyInitializedEvent
-    | TabTitleChangedEvent
+    | TerminalTitleChangedEvent
     | TerminalThemeChangedEvent
     | TerminalThemePaddingAddedEvent
     | TerminalThemePaddingRemovedEvent
@@ -62,4 +63,5 @@ export type AppMessage =
     | InspectorEvent
     | NotificationEvent
     | SideMenuEvent
+    | TabTitleChangedEvent
     ;

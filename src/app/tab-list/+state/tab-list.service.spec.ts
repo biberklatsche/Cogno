@@ -61,8 +61,8 @@ describe('TabListService', () => {
             service.addTab(tab);
 
             const event = { 
-                type: 'TabTitleChanged', 
-                payload: { terminalId: 't1', title: 'New Title' } 
+                type: 'TabTitleChanged',
+                payload: { tabId: 't1', title: 'New Title' }
             } as any;
             bus.publish(event);
 
