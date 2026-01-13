@@ -17,7 +17,7 @@ export class FullScreenAppHandler implements ITerminalHandler {
         this._disposables.forEach((disposable) => disposable?.dispose());
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._disposables.push(terminal.parser.registerCsiHandler({final: 't'}, (n) => {
             if (n.length === 3 && n[0] === 22 && n[1] === 0 && n[2] === 0) { // Restore Window (Vim on Gitbash uses this)
                 this._bus.publish({type: "FullScreenAppEntered", path: ['app', 'terminal', this._terminalId], payload: this._terminalId});

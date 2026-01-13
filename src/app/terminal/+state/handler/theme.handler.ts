@@ -64,7 +64,7 @@ export class ThemeHandler implements ITerminalHandler {
         this.subscription?.unsubscribe();
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._configService.config$.subscribe(config => {
             this.configureTerminal(config);

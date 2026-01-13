@@ -3,9 +3,6 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
 import {FocusHandler} from "../handler/focus.handler";
 import {SelectionHandler} from "../handler/selection.handler";
-import {ConfigService} from "../../../config/+state/config.service";
-import {Clipboard} from "../../../_tauri/clipboard";
-import {InputHandler} from "../handler/input.handler";
 
 export class KeybindExecutor implements IDisposable  {
 

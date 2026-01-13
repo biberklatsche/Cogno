@@ -7,7 +7,7 @@ import {LigaturesAddon} from "@xterm/addon-ligatures";
 import {WebglAddon} from "@xterm/addon-webgl";
 import {CanvasAddon} from "@xterm/addon-canvas";
 import {IDisposable} from "../../../common/models/models";
-import {ITerminalHandler} from "../handler/handler";
+import {IFitHandler, isFitHandler, isTerminalHandler, ITerminalHandler} from "../handler/handler";
 
 export interface IRenderer {
     open(terminalContainer: HTMLDivElement): void;
@@ -54,8 +54,13 @@ export class Renderer implements IRenderer, IDisposable {
         this._terminal.unicode.activeVersion = '11';
     }
 
-    register(handler: ITerminalHandler): IDisposable {
-        return handler.register(this._terminal, this._fitAddon);
+    register(handler: ITerminalHandler | IFitHandler): IDisposable {
+        if(isTerminalHandler(handler)) {
+            return handler.registerTerminal(this._terminal);
+        } else if(isFitHandler(handler)) {
+            handler.registerFitAddon(this._fitAddon)
+        }
+        throw new Error('unknown handler type');
     }
 
     public open(terminalContainer: HTMLDivElement) {

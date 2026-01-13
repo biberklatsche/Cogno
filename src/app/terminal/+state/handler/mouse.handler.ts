@@ -25,7 +25,7 @@ export class MouseHandler implements ITerminalHandler {
     }
   }
 
-  register(terminal: Terminal, _fit?: FitAddon): IDisposable {
+  registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
     this._listener = (evt: MouseEvent) => {
       if (!this._terminal || !this._screenElement) return;

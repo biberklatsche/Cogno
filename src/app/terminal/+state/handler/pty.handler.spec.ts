@@ -30,7 +30,7 @@ describe('PtyHandler', () => {
 
   describe('registration', () => {
     it('should spawn PTY and register data handlers', async () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       // Wait for async spawn
       await vi.waitFor(() => {
@@ -45,7 +45,7 @@ describe('PtyHandler', () => {
 
   describe('data flow', () => {
     it('should write terminal data to PTY', async () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockTerminal.onData).toHaveBeenCalled());
 
       const onDataCallback = vi.mocked(mockTerminal.onData).mock.calls[0][0];
@@ -58,7 +58,7 @@ describe('PtyHandler', () => {
       const publishSpy = vi.spyOn(mockBus, 'publish');
       const writeSpy = vi.spyOn(mockTerminal, 'write');
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onData).toHaveBeenCalled());
 
       const onPtyDataCallback = vi.mocked(mockPty.onData).mock.calls[0][0];
@@ -83,7 +83,7 @@ describe('PtyHandler', () => {
     it('should publish RemovePane when PTY exits', async () => {
       const publishSpy = vi.spyOn(mockBus, 'publish');
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
 
       const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
@@ -106,7 +106,7 @@ describe('PtyHandler', () => {
       vi.mocked(mockPty.onData).mockReturnValue({ dispose: ptyDataDispose });
       vi.mocked(mockPty.onExit).mockReturnValue({ dispose: ptyExitDispose });
 
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
 
       handler.dispose();

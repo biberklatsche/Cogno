@@ -17,7 +17,7 @@ export class TabTitleHandler implements ITerminalHandler{
     constructor(private _terminalId: TerminalId, private _bus: AppBus) {
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._disposables = [];
         this._disposables.push(terminal.parser
             .registerOscHandler(0, (title: string) => {

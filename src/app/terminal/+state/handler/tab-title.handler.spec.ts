@@ -18,7 +18,7 @@ describe('TabTitleHandler', () => {
 
   describe('registration', () => {
     it('should register OSC handlers for 0 and 2', () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(0, expect.any(Function));
       expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(2, expect.any(Function));
     });
@@ -29,7 +29,7 @@ describe('TabTitleHandler', () => {
 
     beforeEach(() => {
       publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should publish TabTitleChanged when OSC 0 is received', () => {
@@ -66,7 +66,7 @@ describe('TabTitleHandler', () => {
       const disposeSpy = vi.fn();
       vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
 
       expect(disposeSpy).toHaveBeenCalledTimes(2);

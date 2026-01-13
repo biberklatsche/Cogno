@@ -21,7 +21,7 @@ export class CursorHandler implements ITerminalHandler {
     this._terminal = undefined;
   }
 
-  register(terminal: Terminal, _fit?: FitAddon): IDisposable {
+  registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
 
     // Listen for cursor moves from xterm

@@ -22,7 +22,7 @@ export class FocusHandler implements ITerminalHandler {
         this.subscription?.unsubscribe();
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({
             path: ['app', 'terminal'],

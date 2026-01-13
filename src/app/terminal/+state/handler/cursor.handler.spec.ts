@@ -28,7 +28,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       expect(terminal.onCursorMove).toHaveBeenCalledTimes(1);
       expect(terminal.onCursorMove).toHaveBeenCalledWith(expect.any(Function));
@@ -40,7 +40,7 @@ describe('CursorHandler', () => {
         onCursorMove: () => disposable
       });
 
-      const result = handler.register(terminal);
+      const result = handler.registerTerminal(terminal);
 
       expect(result).toBeDefined();
     });
@@ -57,7 +57,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine('  A'); // A at index 2
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
@@ -91,7 +91,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine('B');
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
@@ -123,7 +123,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine('X');
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
@@ -151,7 +151,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine('  €'); // Euro at index 2
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
@@ -179,7 +179,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine('');
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
@@ -206,10 +206,10 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      // @ts-ignore - manual override for error case
+      //@ts-ignore - manual override for error case
       terminal.buffer = undefined;
 
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
       cursorMoveCallback?.();
 
       expect(bus.publish).toHaveBeenCalledWith(
@@ -238,7 +238,7 @@ describe('CursorHandler', () => {
       // @ts-ignore - manual override for error case
       terminal.buffer.active = undefined;
 
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
       cursorMoveCallback?.();
 
       expect(bus.publish).toHaveBeenCalledWith(
@@ -267,7 +267,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       vi.mocked(terminal.buffer.active.getLine).mockImplementation(() => {
         throw new Error('Buffer access error');
@@ -301,7 +301,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(null as any);
 
@@ -328,7 +328,7 @@ describe('CursorHandler', () => {
           return { dispose: vi.fn() };
         }
       });
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine('ABC');
       vi.mocked(mockLine.getCell).mockReturnValue(null);
@@ -355,7 +355,7 @@ describe('CursorHandler', () => {
         onCursorMove: () => disposable
       });
 
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
       handler.dispose();
 
       expect(disposable.dispose).toHaveBeenCalledTimes(1);
@@ -367,7 +367,7 @@ describe('CursorHandler', () => {
         onCursorMove: () => disposable
       });
 
-      handler.register(terminal);
+      handler.registerTerminal(terminal);
       handler.dispose();
       handler.dispose();
 

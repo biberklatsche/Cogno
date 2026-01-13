@@ -28,7 +28,7 @@ export class PtyHandler implements ITerminalHandler {
         this._resizeObserver = undefined;
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this.spawnPty(this._terminalId, terminal).then(_ => {
             this._disposables.push(terminal.onData(data => this._pty?.write(data)));
             this._disposables.push(this._pty?.onData(data => {

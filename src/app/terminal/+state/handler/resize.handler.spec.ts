@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { ResizeHandler } from './resize.handler';
 import { AppBus } from '../../../app-bus/app-bus';
@@ -42,7 +42,8 @@ describe('ResizeHandler', () => {
       const observeSpy = vi.spyOn(ResizeObserver.prototype, 'observe');
       const subscribeSpy = vi.spyOn(mockBus, 'on$');
 
-      handler.register(mockTerminal, mockFitAddon);
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
 
       expect(observeSpy).toHaveBeenCalledWith(container, { box: 'content-box' });
       expect(subscribeSpy).toHaveBeenCalled();
@@ -52,8 +53,9 @@ describe('ResizeHandler', () => {
   describe('resize logic', () => {
     it('should not call fit if dimensions are equal', () => {
       vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols: 80, rows: 24 });
-      
-      handler.resize(mockTerminal, mockFitAddon);
+
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
 
       expect(mockFitAddon.fit).not.toHaveBeenCalled();
     });
@@ -67,10 +69,13 @@ describe('ResizeHandler', () => {
         (mockTerminal as any).rows = 30;
       });
 
-      handler.resize(mockTerminal, mockFitAddon);
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
+
+      handler.resize();
 
       expect(mockFitAddon.fit).toHaveBeenCalled();
-      
+
       // PTY resize is debounced with setTimeout
       vi.runAllTimers();
       expect(mockPty.resize).toHaveBeenCalledWith({ cols: 100, rows: 30 });
@@ -84,7 +89,10 @@ describe('ResizeHandler', () => {
         (mockTerminal as any).rows = 30;
       });
 
-      handler.resize(mockTerminal, mockFitAddon);
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
+
+      handler.resize();
 
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
         type: 'Inspector',
@@ -98,14 +106,16 @@ describe('ResizeHandler', () => {
     it('should throw error if terminal does not match proposed dimensions after fit', () => {
         vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols: 100, rows: 30 });
         // terminal remains 80x24
-        
-        expect(() => handler.resize(mockTerminal, mockFitAddon)).toThrow('dimensions are not equal!');
+       handler.registerFitAddon(mockFitAddon);
+       handler.registerTerminal(mockTerminal);
+        expect(() => handler.resize()).toThrow('dimensions are not equal!');
     });
   });
 
   describe('bus events', () => {
     it('should trigger resize on TerminalThemeChanged', () => {
-        handler.register(mockTerminal, mockFitAddon);
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
         const resizeSpy = vi.spyOn(handler, 'resize');
         
         mockBus.publish({ type: 'TerminalThemeChanged', path: ['app', 'terminal', terminalId] });
@@ -118,7 +128,8 @@ describe('ResizeHandler', () => {
   describe('Lifecycle', () => {
     it('should disconnect observer and unsubscribe on dispose', () => {
       const disconnectSpy = vi.spyOn(ResizeObserver.prototype, 'disconnect');
-      handler.register(mockTerminal, mockFitAddon);
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
       expect(disconnectSpy).toHaveBeenCalled();
     });

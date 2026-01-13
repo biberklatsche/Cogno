@@ -39,14 +39,14 @@ describe('MouseHandler', () => {
   describe('registration', () => {
     it('should add mousemove listener to screen element', () => {
       const addEventListenerSpy = vi.spyOn(screenElement, 'addEventListener');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function), { passive: true });
     });
   });
 
   describe('mouse movement', () => {
     beforeEach(() => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should publish inspector event with correct coordinates and character', () => {
@@ -91,7 +91,7 @@ describe('MouseHandler', () => {
         rows: 24,
         viewportY: 10 
       });
-      handler.register(mockTerminalWithOffset);
+      handler.registerTerminal(mockTerminalWithOffset);
 
       const mockLine = TerminalMockFactory.createLine('Viewport Line');
       vi.mocked(mockTerminalWithOffset.buffer.active.getLine).mockReturnValue(mockLine);
@@ -117,7 +117,7 @@ describe('MouseHandler', () => {
 
     it('should clamp coordinates to terminal bounds', () => {
       const publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       // Outside to the right and bottom
       const event = new MouseEvent('mousemove', {
@@ -139,7 +139,7 @@ describe('MouseHandler', () => {
 
     it('should handle missing buffer line or cell gracefully', () => {
       const publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(undefined as any);
 
@@ -159,7 +159,7 @@ describe('MouseHandler', () => {
   describe('Lifecycle', () => {
     it('should remove event listener on dispose', () => {
       const removeEventListenerSpy = vi.spyOn(screenElement, 'removeEventListener');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
       expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
     });

@@ -34,7 +34,7 @@ describe('ThemeHandler', () => {
     });
 
     it('should apply config options to terminal', () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       
       const config = { ...mockConfig.config };
       config.scrollback_lines = 5000;
@@ -50,7 +50,7 @@ describe('ThemeHandler', () => {
 
     it('should publish TerminalThemeChanged event', () => {
       const publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       publishSpy.mockClear(); // Clear initial publish from register/configureTerminal
       handler.configureTerminal(mockConfig.config);
 
@@ -63,7 +63,7 @@ describe('ThemeHandler', () => {
 
   describe('bus events', () => {
     beforeEach(() => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should remove padding when FullScreenAppEntered and configured', () => {
@@ -107,7 +107,7 @@ describe('ThemeHandler', () => {
 
   describe('Lifecycle', () => {
     it('should unsubscribe on dispose', () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       const configureSpy = vi.spyOn(handler, 'configureTerminal');
       
       handler.dispose();

@@ -22,7 +22,7 @@ describe('FocusHandler', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
       const addEventListenerSpy = vi.spyOn(mockTerminal.textarea!, 'addEventListener');
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       expect(addEventListenerSpy).toHaveBeenCalledWith('focus', expect.any(Function));
       expect(addEventListenerSpy).toHaveBeenCalledWith('blur', expect.any(Function));
@@ -30,7 +30,7 @@ describe('FocusHandler', () => {
 
     it('should update hasFocus when textarea focus event fires', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       const focusCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'focus')![1] as Function;
       focusCallback();
@@ -40,7 +40,7 @@ describe('FocusHandler', () => {
 
     it('should update hasFocus when textarea blur event fires', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       const focusCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'focus')![1] as Function;
       const blurCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'blur')![1] as Function;
@@ -56,7 +56,7 @@ describe('FocusHandler', () => {
   describe('bus events', () => {
     beforeEach(() => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should focus terminal when FocusTerminal event for this id is received', () => {
@@ -99,7 +99,7 @@ describe('FocusHandler', () => {
   describe('Lifecycle', () => {
     it('should unsubscribe on dispose', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       handler.dispose();
