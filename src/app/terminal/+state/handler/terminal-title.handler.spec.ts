@@ -42,7 +42,7 @@ describe('TerminalTitleHandler', () => {
       expect(result).toBe(true);
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
         type: 'TerminalTitleChanged',
-        payload: { terminalId, title: 'New Title 0' }
+        payload: { terminalId, title: 'New Title 0', oscCode: 0 }
       }));
     });
 
@@ -56,7 +56,7 @@ describe('TerminalTitleHandler', () => {
       expect(result).toBe(true);
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
         type: 'TerminalTitleChanged',
-        payload: { terminalId, title: 'New Title 2' }
+        payload: { terminalId, title: 'New Title 2', oscCode: 2 }
       }));
     });
   });
