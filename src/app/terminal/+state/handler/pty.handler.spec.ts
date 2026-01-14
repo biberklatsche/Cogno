@@ -54,7 +54,7 @@ describe('PtyHandler', () => {
       expect(mockPty.write).toHaveBeenCalledWith('user input');
     });
 
-    it('should write PTY data to terminal and publish TerminalInitialized on first data', async () => {
+    it('should write PTY data to terminal and publish PtyInitialized on first data', async () => {
       const publishSpy = vi.spyOn(mockBus, 'publish');
       const writeSpy = vi.spyOn(mockTerminal, 'write');
       
@@ -67,7 +67,7 @@ describe('PtyHandler', () => {
       onPtyDataCallback('pty output 1');
       expect(writeSpy).toHaveBeenCalledWith('pty output 1');
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'TerminalInitialized',
+        type: 'PtyInitialized',
         payload: terminalId
       }));
 

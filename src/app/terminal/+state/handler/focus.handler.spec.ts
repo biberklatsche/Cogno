@@ -79,10 +79,10 @@ describe('FocusHandler', () => {
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'TerminalBlurred', payload: terminalId }));
     });
 
-    it('should focus terminal when TerminalInitialized event is received', () => {
+    it('should focus terminal when PtyInitialized event is received', () => {
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       
-      mockBus.publish({ type: 'TerminalInitialized', payload: terminalId, path: ['app', 'terminal', terminalId] });
+      mockBus.publish({ type: 'PtyInitialized', payload: terminalId, path: ['app', 'terminal', terminalId] });
 
       expect(focusSpy).toHaveBeenCalled();
     });

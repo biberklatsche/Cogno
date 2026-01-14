@@ -19,6 +19,7 @@ import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
 import {ShellConfig} from "../../config/+models/config";
+import {ScriptInjector} from "./advanced/script.injector";
 
 export class TerminalSession {
 
@@ -27,6 +28,7 @@ export class TerminalSession {
 
     private focusHandler?: FocusHandler = undefined;
     private selectionHandler?: SelectionHandler = undefined;
+    private scriptInjector?: ScriptInjector = undefined;
 
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[] = [
@@ -65,7 +67,10 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.bus, this.terminalId)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
+        if(true) { //TODO: hier prüfen ob script injected werden soll
+            this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
 
+        }
 
     }
 
@@ -115,6 +120,7 @@ export class TerminalSession {
         this.pty.dispose();
         this.disposables.forEach(disposable => disposable.dispose());
         this.subscription.unsubscribe();
+        this.scriptInjector = undefined;
     }
 
     focus(): void{
