@@ -39,7 +39,7 @@ export class PtyHandler implements ITerminalHandler {
                 terminal.write(data);
                 if(isFirst) {
                     const disposable  = terminal.onWriteParsed(() => {
-                        this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "PtyInitialized", payload: this._terminalId});
+                        this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "PtyInitialized", payload: {terminalId: this._terminalId, shellType: this._shellConfig.shell_type!}});
                         disposable.dispose();
                     });
                                     }
