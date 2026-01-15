@@ -49,4 +49,4 @@ _cogno_precmd() {
 add-zsh-hook preexec _cogno_preexec
 add-zsh-hook precmd  _cogno_precmd
 
-PROMPT=$'\nCOGNO${COGNO_COUNT}@${HOST%%.*}\n\n'
+PROMPT=$'\nCOGNO${COGNO_COUNT}@${HOST%%.*}\n'
