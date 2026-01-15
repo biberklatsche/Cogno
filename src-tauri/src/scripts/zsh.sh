@@ -16,8 +16,7 @@ _cogno_precmd() {
   local last_ec=$?
   ((COGNO_COUNT++))
 
-  local ts
-  ts=$(date +%s)
+  local ts="$COGNO_COUNT"
 
   local host="${HOST%%.*}"
   local cwd="$PWD"
@@ -36,7 +35,7 @@ _cogno_precmd() {
   cmd="${cmd//|/\\|}"
 
   # OSC payload (c is empty if no command was entered)
-  local osc=$'\e]733;COGNO:PROMPT;'"r=${last_ec};u=${USER};h=${host};d=${cwd};c=${cmd};t=${ts}"$'\e\\'
+  local osc=$'\e]733;COGNO:PROMPT;'"r=${last_ec};u=${USER};m=${host};d=${cwd};t=${ts};c=${cmd};"$'\e\\'
 
   print -n -r -- "$osc"
 
