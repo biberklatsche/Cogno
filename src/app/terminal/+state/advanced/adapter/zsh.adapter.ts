@@ -23,7 +23,6 @@ export class ZshAdapter implements Adapter {
         return `source /dev/stdin <<'${delimiter}'
 ${cleanedBody}
 ${delimiter}
-clear
-`;
+[[ -t 1 ]] && clear`;
     }
 }
