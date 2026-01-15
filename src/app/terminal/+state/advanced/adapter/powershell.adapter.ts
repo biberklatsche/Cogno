@@ -3,24 +3,27 @@ import {Script} from '../../../../_tauri/script';
 
 export class PowerShellAdapter implements Adapter {
     async injectionScript(): Promise<string> {
-        const script = await Script.read('PowerShell');
-        // Split the script into lines
-        const lines = script.split(/\r?\n/);
+        const script = await Script.read("PowerShell");
 
-        // Process each line
-        const processedLines = lines
-            .map(line => {
-                // Remove comments (anything after '#')
-                const commentIndex = line.indexOf('#');
-                if (commentIndex !== -1) {
-                    line = line.substring(0, commentIndex);
-                }
-                // Trim whitespace
-                return line.trim();
-            })
-            .filter(line => line.length > 0); // Remove empty lines
+        // Normalize line endings
+        const body = script.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-        // Join the lines with semicolons
-        return processedLines.join('; ') + 'Clear-Host;';
+        // Encode as UTF-16LE Base64 (PowerShell "Unicode")
+        const b64 = this.toBase64Utf16LE(body);
+
+        // One-liner, runs in CURRENT PowerShell session
+        return `$__c='${b64}'; iex ([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($__c))); Clear-Host`;
+    }
+
+    private toBase64Utf16LE(input: string): string {
+        let binary = "";
+        for (let i = 0; i < input.length; i++) {
+            const code = input.charCodeAt(i);
+            // little endian: low byte first
+            binary += String.fromCharCode(code & 0xff, code >> 8);
+        }
+        // btoa ist in Browsern, Deno, Bun verfügbar
+        return btoa(binary);
     }
 }
+
