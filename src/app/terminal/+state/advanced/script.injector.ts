@@ -8,6 +8,7 @@ import {invoke} from "@tauri-apps/api/core";
 import {ShellType} from "../../../config/+models/config";
 import {Script} from '../../../_tauri/script';
 import { Logger } from "../../../_tauri/logger";
+import {AdapterFactory} from './adapter/adapter.factory';
 
 export class ScriptInjector implements IDisposable{
 
@@ -15,15 +16,13 @@ export class ScriptInjector implements IDisposable{
 
     constructor(bus: AppBus, pty: IPty, terminalId: TerminalId) {
         this.subscription.add(bus.on$({type: 'PtyInitialized', path: ['app', 'terminal', terminalId], phase: "target"}).subscribe(async (e) => {
-            const shellType = e.payload!.shellType;
-            console.log('#####', shellType);
+            const adapter = AdapterFactory.create(e.payload!.shellType);
             try {
-                const content = await Script.read(shellType);
-
+                const content = await adapter.injectionScript();
                 if (content && content.trim().length > 0) {
                     pty.write(content + Char.Enter);
                 } else {
-                    Logger.warn(`Failed to get script for ${shellType}: ${content}`);
+                    Logger.warn(`Failed to get script for ${e.payload!.shellType}: ${content}`);
                 }
             } catch (error) {
                 Logger.error('Could not load script: ' + error);
