@@ -1,50 +1,53 @@
-# Install only once per shell session
-if [[ -n ${COGNO_INJECTED:-} ]]; then
-  return 0 2>/dev/null || true
-fi
-COGNO_INJECTED=1
+setopt PROMPT_SUBST
+autoload -Uz add-zsh-hook
 
 # State
-COGNO_COUNT=${COGNO_COUNT:-0}
-COGNO_LAST_EC=0
-COGNO_TS=0
-COGNO_OSC=""
+typeset -g COGNO_COUNT=0
+typeset -g COGNO_LAST_CMD=""
+typeset -g COGNO_CMD_SEEN=0
 
-# Expand ${...} in PROMPT
-setopt PROMPT_SUBST
-
-# Hook: runs before each prompt
-_cogno_precmd() {
-  COGNO_LAST_EC=$?
-  ((COGNO_COUNT++))
-
-  # Robust ms timestamp (works on GNU date; fallback to seconds if needed)
-  local ts
-  ts=$(date +%s%3N 2>/dev/null) || ts=$(date +%s)
-  COGNO_TS="$ts"
-
-  # Short hostname
-  local host="${HOST%%.*}"
-
-  # Tilde-abbreviated cwd (like %~)
-  local cwd
-  cwd="$(print -P %~)"
-
-  # Build OSC with REAL ESC and BEL (not "\e" text)
-  # ESC = $'\e' , BEL = $'\a'
-  COGNO_OSC=$'\e]733;COGNO:PROMPT;'"${COGNO_LAST_EC}|${USER}|${host}|${cwd}|${COGNO_TS}|auto"$'\a'
-
-  return "$COGNO_LAST_EC"
+_cogno_preexec() {
+  # $1 = command line as entered
+  COGNO_LAST_CMD="$1"
+  COGNO_CMD_SEEN=1
 }
 
-# Register precmd hook (avoid duplicate)
-autoload -Uz add-zsh-hook
-if ! add-zsh-hook -L precmd 2>/dev/null | command grep -q "_cogno_precmd"; then
-  add-zsh-hook precmd _cogno_precmd
-fi
+_cogno_precmd() {
+  local last_ec=$?
+  ((COGNO_COUNT++))
 
-# Prompt: wrap OSC as non-printing, then "counter@host" + newline
-# Use ${HOST%%.*} again so it's consistent even before first hook run
-PROMPT="%{${COGNO_OSC}%}
-COGNO\${COGNO_COUNT}@${HOST%%.*}
-"
+  local ts
+  ts=$(date +%s)
+
+  local host="${HOST%%.*}"
+  local cwd="$PWD"
+
+  local cmd=""
+  if (( COGNO_CMD_SEEN )); then
+    cmd="$COGNO_LAST_CMD"
+  fi
+
+  # sanitize command for OSC payload
+  cmd="${cmd//$'\r'/}"
+  cmd="${cmd//$'\n'/\\n}"
+  cmd="${cmd//$'\e'/}"
+  cmd="${cmd//$'\a'/}"
+  cmd="${cmd//;/\\;}"
+  cmd="${cmd//|/\\|}"
+
+  # OSC payload (c is empty if no command was entered)
+  local osc=$'\e]733;COGNO:PROMPT;'"r=${last_ec};u=${USER};h=${host};d=${cwd};c=${cmd};t=${ts}"$'\e\\'
+
+  print -n -r -- "$osc"
+
+  # reset for next prompt
+  COGNO_CMD_SEEN=0
+  COGNO_LAST_CMD=""
+
+  return $last_ec
+}
+
+add-zsh-hook preexec _cogno_preexec
+add-zsh-hook precmd  _cogno_precmd
+
+PROMPT=$'\nCOGNO${COGNO_COUNT}@${HOST%%.*}\n\n'
