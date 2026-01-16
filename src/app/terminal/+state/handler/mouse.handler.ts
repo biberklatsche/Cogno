@@ -1,9 +1,9 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {FitAddon} from "@xterm/addon-fit";
 import {AppBus} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
+import {SessionState} from "../session.state";
 
 /**
  * Publishes inspector events with the current terminal cell (col,row)
@@ -14,7 +14,7 @@ export class MouseHandler implements ITerminalHandler {
   private readonly _screenElement?: HTMLElement;
   private _listener?: (e: MouseEvent) => void;
 
-  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement, private _terminalId: TerminalId) {
+  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement, private _terminalId: TerminalId, private _sessionState: SessionState) {
       this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
   }
 
@@ -62,11 +62,12 @@ export class MouseHandler implements ITerminalHandler {
         // ignore, keep empty char
       }
 
-      this._bus.publish({
-        path: ['inspector'],
-        type: 'Inspector',
-        payload: { type: 'terminal-mouse-position', data: { terminalId: this._terminalId, viewportCol: col, viewportRow: row, char: char, col: col, row: absRow + 1} }
-      });
+      this._sessionState.mousePosition = {
+        viewport: {col: col, row: row},
+        col: col,
+        row: absRow + 1,
+        char: char
+      };
     };
 
     this._screenElement?.addEventListener('mousemove', this._listener, { passive: true });

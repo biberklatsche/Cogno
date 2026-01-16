@@ -9,23 +9,10 @@ import {ConfigService} from "../../config/+state/config.service";
 import {FeatureMode, Keybinding} from "../../config/+models/config";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
+import {TerminalCursorPosition, InternalState, TerminalMousePosition} from "../../terminal/+state/session.state";
 
 export type TerminalIdentifier = { terminalId: string };
-export type MousePosition = { x: number; y: number };
-export type TerminalMousePosition = {
-    col: number;
-    row: number;
-    char: string,
-    viewportCol: number;
-    viewportRow: number;
-};
-export type TerminalCursorPosition = {
-    col: number;
-    row: number;
-    char: string,
-    viewportCol: number;
-    viewportRow: number;
-};
+export type GlobalMousePosition = { x: number; y: number };
 
 @Injectable({providedIn: 'root'})
 export class InspectorService {
@@ -34,17 +21,19 @@ export class InspectorService {
 
     // State signals
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
-    private _mousePosition: WritableSignal<MousePosition | undefined> = signal(undefined);
+    private _globalMousePosition: WritableSignal<GlobalMousePosition | undefined> = signal(undefined);
     private _terminalMouseById: WritableSignal<Record<TerminalId, TerminalMousePosition>> = signal({});
     private _terminalCursorById: WritableSignal<Record<TerminalId, TerminalCursorPosition>> = signal({});
     private _terminalDimsById: WritableSignal<Record<TerminalId, TerminalDimensions>> = signal({});
+    private _terminalInputById: WritableSignal<Record<TerminalId, string>> = signal({});
 
     // Derived signals
     private _terminalIds = computed<TerminalId[]>(() => {
         const ids = new Set<string>([
             ...Object.keys(this._terminalMouseById()),
             ...Object.keys(this._terminalDimsById()),
-            ...Object.keys(this._terminalCursorById())
+            ...Object.keys(this._terminalCursorById()),
+            ...Object.keys(this._terminalInputById())
         ]);
         return Array.from(ids) as TerminalId[];
     });
@@ -54,8 +43,8 @@ export class InspectorService {
         return this._firedKeybinding.asReadonly();
     }
 
-    public get mousePosition(): Signal<MousePosition | undefined> {
-        return this._mousePosition.asReadonly();
+    public get globalMousePosition(): Signal<GlobalMousePosition | undefined> {
+        return this._globalMousePosition.asReadonly();
     }
 
     public get terminalMouseById(): Signal<Record<TerminalId, TerminalMousePosition>> {
@@ -68,6 +57,10 @@ export class InspectorService {
 
     public get terminalDimsById(): Signal<Record<TerminalId, TerminalDimensions>> {
         return this._terminalDimsById.asReadonly();
+    }
+
+    public get terminalInputById(): Signal<Record<TerminalId, string>> {
+        return this._terminalInputById.asReadonly();
     }
 
     public get terminalIds(): Signal<TerminalId[]> {
@@ -125,7 +118,7 @@ export class InspectorService {
         // Track global mouse movement
         this.subscription.add(
             fromEvent<MouseEvent>(window, 'mousemove').subscribe(evt => {
-                this._mousePosition.set({x: evt.clientX, y: evt.clientY});
+                this._globalMousePosition.set({x: evt.clientX, y: evt.clientY});
             })
         );
 
@@ -143,46 +136,35 @@ export class InspectorService {
     }
 
     private handleInspectorEvent(event: any): void {
+        console.log(event);
         switch (event.payload?.type) {
             case 'keybind':
                 this._firedKeybinding.set(event.payload?.data);
                 break;
 
-            case 'terminal-mouse-position':
-                this.updateTerminalMouse(event.payload?.data);
-                break;
-
-            case 'terminal-cursor-position':
-                this.updateTerminalCursor(event.payload?.data);
-                break;
-
-            case 'terminal-dimensions':
-                this.updateTerminalDimensions(event.payload?.data);
+            case 'terminal-state':
+                this.updateTerminalData(event.payload?.data);
                 break;
         }
     }
 
-    private updateTerminalMouse(data: TerminalMousePosition & TerminalIdentifier): void {
+    private updateTerminalData(data: InternalState): void {
         if (!data) return;
         this._terminalMouseById.update(current => ({
             ...current,
-            [data.terminalId]: data
+            [data.terminalId]: data.mousePosition
         }));
-    }
-
-    private updateTerminalCursor(data: TerminalCursorPosition & TerminalIdentifier): void {
-        if (!data) return;
         this._terminalCursorById.update(current => ({
             ...current,
-            [data.terminalId]: data
+            [data.terminalId]: data.cursorPosition
         }));
-    }
-
-    private updateTerminalDimensions(data: TerminalDimensions & TerminalIdentifier): void {
-        if (!data) return;
         this._terminalDimsById.update(current => ({
             ...current,
-            [data.terminalId]: data
+            [data.terminalId]: data.dimensions
+        }));
+        this._terminalInputById.update(current => ({
+            ...current,
+            [data.terminalId]: data.input
         }));
     }
 

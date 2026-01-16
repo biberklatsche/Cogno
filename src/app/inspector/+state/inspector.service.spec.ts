@@ -75,38 +75,21 @@ describe('InspectorService', () => {
             expect(service.firedKeybinding()).toEqual(keybinding);
         });
 
-        it('should update terminal mouse position', () => {
-            const data = { terminalId: 'term1', col: 10, row: 5, char: 'A', viewportCol: 10, viewportRow: 5 };
+        it('should update terminal state on terminal-state event', () => {
+            const data = { 
+                terminalId: 'term1', 
+                mousePosition: { col: 10, row: 5, char: 'A', viewport: { col: 10, row: 5 } },
+                cursorPosition: { col: 2, row: 3, char: '_', viewport: { col: 2, row: 3 } },
+                dimensions: { cols: 80, rows: 24 }
+            };
             appBus.publish({
                 type: 'Inspector',
                 path: ['inspector'],
-                payload: { type: 'terminal-mouse-position', data }
+                payload: { type: 'terminal-state', data }
             });
 
             expect(service.terminalMouseById()['term1']).toEqual(data);
-            expect(service.terminalIds()).toContain('term1');
-        });
-
-        it('should update terminal cursor position', () => {
-            const data = { terminalId: 'term1', col: 2, row: 3, char: '_', viewportCol: 2, viewportRow: 3 };
-            appBus.publish({
-                type: 'Inspector',
-                path: ['inspector'],
-                payload: { type: 'terminal-cursor-position', data }
-            });
-
             expect(service.terminalCursorById()['term1']).toEqual(data);
-            expect(service.terminalIds()).toContain('term1');
-        });
-
-        it('should update terminal dimensions', () => {
-            const data = { terminalId: 'term1', cols: 80, rows: 24, width: 640, height: 480 };
-            appBus.publish({
-                type: 'Inspector',
-                path: ['inspector'],
-                payload: { type: 'terminal-dimensions', data }
-            });
-
             expect(service.terminalDimsById()['term1']).toEqual(data);
             expect(service.terminalIds()).toContain('term1');
         });
@@ -115,7 +98,7 @@ describe('InspectorService', () => {
             const mouseEvent = new MouseEvent('mousemove', { clientX: 100, clientY: 200 });
             window.dispatchEvent(mouseEvent);
 
-            expect(service.mousePosition()).toEqual({ x: 100, y: 200 });
+            expect(service.globalMousePosition()).toEqual({ x: 100, y: 200 });
         });
 
         it('should remove terminal data on TerminalRemoved event', () => {
@@ -123,7 +106,7 @@ describe('InspectorService', () => {
             appBus.publish({
                 type: 'Inspector',
                 path: ['inspector'],
-                payload: { type: 'terminal-mouse-position', data: { terminalId: 'term1', col: 1 } }
+                payload: { type: 'terminal-state', data: { terminalId: 'term1', mousePosition: { col: 1 } } }
             });
             expect(service.terminalIds()).toContain('term1');
 

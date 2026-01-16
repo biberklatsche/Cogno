@@ -32,8 +32,16 @@ export class CursorHandler implements ITerminalHandler {
             let char = "";
 
             try {
-                const buffer = terminal.buffer.active;
-                if (!buffer) return;
+                const buffer = terminal.buffer?.active;
+                if (!buffer) {
+                    this.sessionState.cursorPosition = {
+                        char: char,
+                        viewport: {row: viewportRow, col: col},
+                        row: row,
+                        col: col
+                    };
+                    return;
+                }
                 const cursorX = buffer.cursorX; // 0-based column in viewport
                 const cursorYViewport = buffer.cursorY; // 0-based row in viewport
                 const viewportY = buffer.viewportY; // top of viewport absolute 0-based
@@ -59,20 +67,6 @@ export class CursorHandler implements ITerminalHandler {
                 row: row,
                 col: col
             };
-            this._bus.publish({
-                path: ["inspector"],
-                type: "Inspector",
-                payload: {type: "terminal-cursor-position",
-                    data: {
-                        terminalId: this.sessionState.terminalId,
-                        viewportCol: col,
-                        viewportRow: viewportRow,
-                        char: char,
-                        col: col,
-                        row: row
-                    }
-                }
-            });
         });
 
         return this;

@@ -6,6 +6,7 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {IDisposable} from "../../../common/models/models";
+import {SessionState} from "../session.state";
 
 export type TerminalDimensions = { rows: number; cols: number };
 
@@ -22,7 +23,8 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         private _terminalId: TerminalId,
         private _pty: IPty,
         private _bus: AppBus,
-        private _terminalContainer: HTMLDivElement
+        private _terminalContainer: HTMLDivElement,
+        private _sessionState: SessionState
     ) {
     }
 
@@ -85,11 +87,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
                 throw new Error('dimensions are not equal!');
             }
 
-            this._bus.publish({
-                path: ["inspector"],
-                type: "Inspector",
-                payload: { type: "terminal-dimensions", data: { terminalId: this._terminalId, cols: newRendererDimensions.cols, rows: newRendererDimensions.rows } }
-            });
+            this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows };
 
             if (this._ptyResizeTimeout !== null) {
                 clearTimeout(this._ptyResizeTimeout);

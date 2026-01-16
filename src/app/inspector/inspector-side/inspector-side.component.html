@@ -12,8 +12,8 @@
         </div>
         <div class="label" role="rowheader">Mouse</div>
         <div class="value" role="cell">
-            @if (mousePosition()) {
-                {{ mousePosition()!.x }}, {{ mousePosition()!.y }}
+            @if (globalMousePosition()) {
+                {{ globalMousePosition()!.x }}, {{ globalMousePosition()!.y }}
             } @else {
                 —
             }
@@ -29,7 +29,7 @@
             <div class="label">Mouse</div>
             <div class="value">
                 @if (terminalMouseById()[id]) {
-                    {{ terminalMouseById()[id].viewportCol }}, {{ terminalMouseById()[id].viewportRow }}, '{{ terminalMouseById()[id].char || ' ' }}'
+                    {{ terminalMouseById()[id].viewport.col }}, {{ terminalMouseById()[id].viewport.row }}, '{{ terminalMouseById()[id].char || ' ' }}'
                 } @else {
                     —
                 }
@@ -44,7 +44,7 @@
             <div class="label">Cursor</div>
             <div class="value">
                 @if (terminalCursorById()[id]) {
-                    {{ terminalCursorById()[id].viewportCol }}, {{ terminalCursorById()[id].viewportRow }}, '{{ terminalCursorById()[id].char || ' ' }}'
+                    {{ terminalCursorById()[id].viewport.col }}, {{ terminalCursorById()[id].viewport.row }}, '{{ terminalCursorById()[id].char || ' ' }}'
                 } @else {
                     —
                 }
@@ -60,6 +60,15 @@
             <div class="value" role="cell">
                 @if (terminalDimsById()[id]) {
                     {{ terminalDimsById()[id].cols }} × {{ terminalDimsById()[id].rows }}
+                } @else {
+                    —
+                }
+            </div>
+            <div></div>
+            <div class="label">Input</div>
+            <div class="value">
+                @if (terminalInputById()[id]) {
+                    {{ terminalInputById()[id] }}
                 } @else {
                     —
                 }

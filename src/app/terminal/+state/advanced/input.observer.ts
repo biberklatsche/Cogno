@@ -21,6 +21,7 @@ export class InputObserver implements ITerminalHandler {
             const lastPromptLineIndex = this.findLastPromptLineIndex();
             const input = this.readCurrentInput(lastPromptLineIndex + 1);
             console.log('last prompt: ' + input);
+            this.sessionState.input = input;
         });
         this._keyListener = this._terminal.onKey((event) => {
             if(event.key === '\r' || event.key === '\n') {

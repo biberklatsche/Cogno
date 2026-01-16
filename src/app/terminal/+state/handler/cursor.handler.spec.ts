@@ -3,21 +3,23 @@ import { CursorHandler } from './cursor.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
+import { SessionState } from '../session.state';
 
 describe('CursorHandler', () => {
   let bus: AppBus;
   let handler: CursorHandler;
+  let sessionState: SessionState;
   let cursorMoveCallback: (() => void) | null = null;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     cursorMoveCallback = null;
 
-    bus = {
-      publish: vi.fn(),
-    } as unknown as AppBus;
+    bus = new AppBus();
+    vi.spyOn(bus, 'publish');
 
-    handler = new CursorHandler(bus, terminalId);
+    sessionState = new SessionState(terminalId, 'bash', bus);
+    handler = new CursorHandler(bus, sessionState);
   });
 
   describe('register', () => {
@@ -47,7 +49,7 @@ describe('CursorHandler', () => {
   });
 
   describe('cursor position publishing', () => {
-    it('should publish correct cursor position on move', () => {
+    it('should publish correct cursor position on move', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 2,
         cursorY: 3,
@@ -64,24 +66,29 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      expect(bus.publish).toHaveBeenCalledWith({
-        path: ['inspector'],
-        type: 'Inspector',
-        payload: {
-          type: 'terminal-cursor-position',
-          data: {
-            terminalId,
-            viewportCol: 3, // cursorX + 1
-            viewportRow: 4, // cursorY + 1
-            char: 'A',
-            col: 3,
-            row: 14, // cursorY + viewportY + 1
-          },
-        },
-      });
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      expect(bus.publish).toHaveBeenCalledWith(
+          expect.objectContaining({
+            path: ['inspector'],
+            type: 'Inspector',
+            payload: expect.objectContaining({
+              type: 'terminal-state',
+              data: expect.objectContaining({
+                terminalId,
+                cursorPosition: expect.objectContaining({
+                  char: 'A',
+                  viewport: { col: 3, row: 4 },
+                  col: 3,
+                  row: 14
+                })
+              }),
+            }),
+          })
+      );
     });
 
-    it('should handle cursor at origin (0, 0)', () => {
+    it('should handle cursor at origin (0, 0)', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 0,
         cursorY: 0,
@@ -98,22 +105,25 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
-                viewportCol: 1,
-                viewportRow: 1,
-                char: 'B',
-                col: 1,
-                row: 1,
+                cursorPosition: expect.objectContaining({
+                    viewport: { col: 1, row: 1 },
+                    char: 'B',
+                    col: 1,
+                    row: 1,
+                })
               }),
             }),
           })
       );
     });
 
-    it('should handle different viewport offsets', () => {
+    it('should handle different viewport offsets', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 5,
         cursorY: 5,
@@ -130,18 +140,22 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
-                row: 106, // 5 + 100 + 1
+                cursorPosition: expect.objectContaining({
+                  row: 106, // 5 + 100 + 1
+                })
               }),
             }),
           })
       );
     });
 
-    it('should handle multi-character cells', () => {
+    it('should handle multi-character cells', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 2,
         cursorY: 3,
@@ -158,18 +172,22 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
-                char: '€',
+                cursorPosition: expect.objectContaining({
+                  char: '€',
+                }),
               }),
             }),
           })
       );
     });
 
-    it('should handle empty cells', () => {
+    it('should handle empty cells', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 2,
         cursorY: 3,
@@ -186,11 +204,15 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
-                char: '',
+                cursorPosition: expect.objectContaining({
+                  char: '',
+                }),
               }),
             }),
           })
@@ -199,7 +221,7 @@ describe('CursorHandler', () => {
   });
 
   describe('error handling', () => {
-    it('should use default values when buffer is missing', () => {
+    it('should use default values when buffer is missing', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         onCursorMove: (cb) => {
           cursorMoveCallback = cb;
@@ -212,23 +234,25 @@ describe('CursorHandler', () => {
       handler.registerTerminal(terminal);
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
-              data: {
+              data: expect.objectContaining({
                 terminalId,
-                viewportCol: 1,
-                viewportRow: 1,
-                char: '',
-                col: 1,
-                row: 1,
-              },
+                cursorPosition: expect.objectContaining({
+                  char: '',
+                  col: 1,
+                  row: 1,
+                })
+              }),
             }),
           })
       );
     });
 
-    it('should use default values when active buffer is missing', () => {
+    it('should use default values when active buffer is missing', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         onCursorMove: (cb) => {
           cursorMoveCallback = cb;
@@ -241,23 +265,25 @@ describe('CursorHandler', () => {
       handler.registerTerminal(terminal);
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
-              data: {
+              data: expect.objectContaining({
                 terminalId,
-                viewportCol: 1,
-                viewportRow: 1,
-                char: '',
-                col: 1,
-                row: 1,
-              },
+                cursorPosition: expect.objectContaining({
+                  char: '',
+                  col: 1,
+                  row: 1,
+                })
+              }),
             }),
           })
       );
     });
 
-    it('should handle getLine throwing an error', () => {
+    it('should handle getLine throwing an error', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 2,
         cursorY: 3,
@@ -275,23 +301,26 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
                 terminalId,
-                viewportCol: 3,
-                viewportRow: 4,
-                char: '', // Falls back to empty string on error
-                col: 3,
-                row: 14,
+                cursorPosition: expect.objectContaining({
+                  char: '', // Falls back to empty string on error
+                  viewport: { col: 3, row: 4 },
+                  col: 3,
+                  row: 14,
+                })
               }),
             }),
           })
       );
     });
 
-    it('should handle getLine returning null', () => {
+    it('should handle getLine returning null', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 2,
         cursorY: 3,
@@ -307,18 +336,22 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
-                char: '',
+                cursorPosition: expect.objectContaining({
+                  char: '',
+                }),
               }),
             }),
           })
       );
     });
 
-    it('should handle getCell returning null', () => {
+    it('should handle getCell returning null', async () => {
       const terminal = TerminalMockFactory.createTerminal({
         cursorX: 2,
         cursorY: 3,
@@ -336,11 +369,15 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       expect(bus.publish).toHaveBeenCalledWith(
           expect.objectContaining({
             payload: expect.objectContaining({
               data: expect.objectContaining({
-                char: '',
+                cursorPosition: expect.objectContaining({
+                  char: '',
+                }),
               }),
             }),
           })

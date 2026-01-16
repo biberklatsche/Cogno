@@ -5,6 +5,7 @@ import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { IPty } from '../pty/pty';
 import { FitAddon } from '@xterm/addon-fit';
+import { SessionState } from '../session.state';
 
 describe('ResizeHandler', () => {
   let handler: ResizeHandler;
@@ -13,11 +14,13 @@ describe('ResizeHandler', () => {
   let mockPty: IPty;
   let mockFitAddon: FitAddon;
   let container: HTMLDivElement;
+  let sessionState: SessionState;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     vi.useFakeTimers();
     mockBus = new AppBus();
+    sessionState = new SessionState(terminalId, 'Bash', mockBus);
     mockPty = {
       resize: vi.fn().mockResolvedValue(undefined),
     } as unknown as IPty;
@@ -29,7 +32,7 @@ describe('ResizeHandler', () => {
       fit: vi.fn(),
     } as unknown as FitAddon;
 
-    handler = new ResizeHandler(terminalId, mockPty, mockBus, container);
+    handler = new ResizeHandler(terminalId, mockPty, mockBus, container, sessionState);
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
@@ -81,8 +84,7 @@ describe('ResizeHandler', () => {
       expect(mockPty.resize).toHaveBeenCalledWith({ cols: 100, rows: 30 });
     });
 
-    it('should publish inspector event on resize', () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
+    it('should update sessionState on resize', () => {
       vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols: 100, rows: 30 });
       vi.mocked(mockFitAddon.fit).mockImplementation(() => {
         (mockTerminal as any).cols = 100;
@@ -94,13 +96,7 @@ describe('ResizeHandler', () => {
 
       handler.resize();
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'Inspector',
-        payload: {
-          type: 'terminal-dimensions',
-          data: { terminalId, cols: 100, rows: 30 }
-        }
-      }));
+      expect(sessionState.dimensions).toEqual({ cols: 100, rows: 30 });
     });
 
     it('should throw error if terminal does not match proposed dimensions after fit', () => {
