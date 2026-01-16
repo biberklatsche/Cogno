@@ -21,6 +21,7 @@
     </div>
 
     @for (id of terminalIds(); track id; let i = $index; ) {
+        @if (terminalStateById()[id]) {
         <div class="table c3">
             <div class="span-full"><b>Terminal {{ i + 1 }}</b></div>
             <div></div>
@@ -28,54 +29,38 @@
             <div class="label">Absolute</div>
             <div class="label">Mouse</div>
             <div class="value">
-                @if (terminalMouseById()[id]) {
-                    {{ terminalMouseById()[id].viewport.col }}, {{ terminalMouseById()[id].viewport.row }}, '{{ terminalMouseById()[id].char || ' ' }}'
-                } @else {
-                    —
-                }
+                {{ terminalStateById()[id].mousePosition.viewport.col }}, {{ terminalStateById()[id].mousePosition.viewport.row }}, '{{ terminalStateById()[id].mousePosition.char || ' ' }}'
             </div>
             <div class="value">
-                @if (terminalMouseById()[id]) {
-                    {{ terminalMouseById()[id].col }}, {{ terminalMouseById()[id].row }}, '{{ terminalMouseById()[id].char || ' ' }}'
-                } @else {
-                    —
-                }
+                {{ terminalStateById()[id].mousePosition.col }}, {{ terminalStateById()[id].mousePosition.row }}, '{{ terminalStateById()[id].mousePosition.char || ' ' }}'
             </div>
             <div class="label">Cursor</div>
             <div class="value">
-                @if (terminalCursorById()[id]) {
-                    {{ terminalCursorById()[id].viewport.col }}, {{ terminalCursorById()[id].viewport.row }}, '{{ terminalCursorById()[id].char || ' ' }}'
-                } @else {
-                    —
-                }
+                {{ terminalStateById()[id].cursorPosition.viewport.col }}, {{ terminalStateById()[id].cursorPosition.viewport.row }}, '{{ terminalStateById()[id].cursorPosition.char || ' ' }}'
             </div>
             <div class="value">
-                @if (terminalCursorById()[id]) {
-                    {{ terminalCursorById()[id].col }}, {{ terminalCursorById()[id].row }}, '{{ terminalCursorById()[id].char || ' ' }}'
-                } @else {
-                    —
-                }
+                {{ terminalStateById()[id].cursorPosition.col }}, {{ terminalStateById()[id].cursorPosition.row }}, '{{ terminalStateById()[id].cursorPosition.char || ' ' }}'
+
             </div>
             <div class="label">Size</div>
             <div class="value" role="cell">
-                @if (terminalDimsById()[id]) {
-                    {{ terminalDimsById()[id].cols }} × {{ terminalDimsById()[id].rows }}
-                } @else {
-                    —
-                }
+                {{ terminalStateById()[id].dimensions.cols }} × {{ terminalStateById()[id].dimensions.rows }}
             </div>
             <div></div>
             <div class="label">Input</div>
             <div class="value">
-                @if (terminalInputById()[id]) {
-                    {{ terminalInputById()[id] }}
-                } @else {
-                    —
-                }
+                {{ terminalStateById()[id].input }}
             </div>
             <div></div>
+            <div class="label">State</div>
+            <div class="value">
+                <i>Busy:</i> {{ terminalStateById()[id].isCommandRunning }}
+            </div>
+            <div class="value">
+                <i>Focus:</i> {{ terminalStateById()[id].isFocused }}
+            </div>
         </div>
+        }
     }
-
 </div>
 

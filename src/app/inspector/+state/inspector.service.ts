@@ -22,20 +22,10 @@ export class InspectorService {
     // State signals
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
     private _globalMousePosition: WritableSignal<GlobalMousePosition | undefined> = signal(undefined);
-    private _terminalMouseById: WritableSignal<Record<TerminalId, TerminalMousePosition>> = signal({});
-    private _terminalCursorById: WritableSignal<Record<TerminalId, TerminalCursorPosition>> = signal({});
-    private _terminalDimsById: WritableSignal<Record<TerminalId, TerminalDimensions>> = signal({});
-    private _terminalInputById: WritableSignal<Record<TerminalId, string>> = signal({});
-
+    private _terminalStateById: WritableSignal<Record<TerminalId, InternalState>> = signal({});
     // Derived signals
     private _terminalIds = computed<TerminalId[]>(() => {
-        const ids = new Set<string>([
-            ...Object.keys(this._terminalMouseById()),
-            ...Object.keys(this._terminalDimsById()),
-            ...Object.keys(this._terminalCursorById()),
-            ...Object.keys(this._terminalInputById())
-        ]);
-        return Array.from(ids) as TerminalId[];
+        return Object.keys(this._terminalStateById()) as TerminalId[];
     });
 
     // Public readonly signals
@@ -47,20 +37,8 @@ export class InspectorService {
         return this._globalMousePosition.asReadonly();
     }
 
-    public get terminalMouseById(): Signal<Record<TerminalId, TerminalMousePosition>> {
-        return this._terminalMouseById.asReadonly();
-    }
-
-    public get terminalCursorById(): Signal<Record<TerminalId, TerminalCursorPosition>> {
-        return this._terminalCursorById.asReadonly();
-    }
-
-    public get terminalDimsById(): Signal<Record<TerminalId, TerminalDimensions>> {
-        return this._terminalDimsById.asReadonly();
-    }
-
-    public get terminalInputById(): Signal<Record<TerminalId, string>> {
-        return this._terminalInputById.asReadonly();
+    public get terminalStateById(): Signal<Record<TerminalId, InternalState>> {
+        return this._terminalStateById.asReadonly();
     }
 
     public get terminalIds(): Signal<TerminalId[]> {
@@ -150,40 +128,16 @@ export class InspectorService {
 
     private updateTerminalData(data: InternalState): void {
         if (!data) return;
-        this._terminalMouseById.update(current => ({
+        this._terminalStateById.update(current => ({
             ...current,
-            [data.terminalId]: data.mousePosition
-        }));
-        this._terminalCursorById.update(current => ({
-            ...current,
-            [data.terminalId]: data.cursorPosition
-        }));
-        this._terminalDimsById.update(current => ({
-            ...current,
-            [data.terminalId]: data.dimensions
-        }));
-        this._terminalInputById.update(current => ({
-            ...current,
-            [data.terminalId]: data.input
+            [data.terminalId]: data
         }));
     }
 
     private removeTerminalData(id?: TerminalId): void {
         if (!id) return;
 
-        this._terminalMouseById.update(current => {
-            const next = {...current};
-            delete next[id];
-            return next;
-        });
-
-        this._terminalCursorById.update(current => {
-            const next = {...current};
-            delete next[id];
-            return next;
-        });
-
-        this._terminalDimsById.update(current => {
+        this._terminalStateById.update(current => {
             const next = {...current};
             delete next[id];
             return next;
