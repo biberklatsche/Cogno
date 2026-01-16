@@ -4,9 +4,6 @@ import {TerminalId} from "../../../grid-list/+model/model";
 import {IPty} from "../pty/pty";
 import {Subscription} from "rxjs";
 import {Char} from "../../../common/chars/chars";
-import {invoke} from "@tauri-apps/api/core";
-import {ShellType} from "../../../config/+models/config";
-import {Script} from '../../../_tauri/script';
 import { Logger } from "../../../_tauri/logger";
 import {AdapterFactory} from './adapter/adapter.factory';
 

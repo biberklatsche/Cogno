@@ -20,7 +20,9 @@ import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
 import {ShellConfig} from "../../config/+models/config";
 import {ScriptInjector} from "./advanced/script.injector";
-import {CognoOscHandler} from "./advanced/osc.handler";
+import {CognoOscHandler} from "./advanced/cogno-osc.handler";
+import {InputObserver} from "./advanced/input.observer";
+import {SessionState} from "./session.state";
 
 export class TerminalSession {
 
@@ -55,6 +57,7 @@ export class TerminalSession {
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer);
+        const sessionState = new SessionState(this.terminalId, this.shellConfig.shell_type!);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellConfig, this.bus)));
@@ -66,11 +69,12 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
         this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId)));
-        this.disposables.push(this.renderer.register(new CursorHandler(this.bus, this.terminalId)));
+        this.disposables.push(this.renderer.register(new CursorHandler(this.bus, sessionState)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
         if(true) { //TODO: hier prüfen ob script injected werden soll
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
-            this.disposables.push(this.renderer.register(new CognoOscHandler(this.terminalId, this.bus)));
+            this.disposables.push(this.renderer.register(new CognoOscHandler(this.bus, sessionState)));
+            this.disposables.push(this.renderer.register(new InputObserver(this.bus, sessionState)));
 
         }
 
