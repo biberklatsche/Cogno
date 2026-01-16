@@ -76,7 +76,7 @@ describe('InspectorService', () => {
         });
 
         it('should update terminal state on terminal-state event', () => {
-            const data = { 
+            const data: any = { 
                 terminalId: 'term1', 
                 mousePosition: { col: 10, row: 5, char: 'A', viewport: { col: 10, row: 5 } },
                 cursorPosition: { col: 2, row: 3, char: '_', viewport: { col: 2, row: 3 } },
@@ -88,9 +88,7 @@ describe('InspectorService', () => {
                 payload: { type: 'terminal-state', data }
             });
 
-            expect(service.terminalMouseById()['term1']).toEqual(data);
-            expect(service.terminalCursorById()['term1']).toEqual(data);
-            expect(service.terminalDimsById()['term1']).toEqual(data);
+            expect(service.terminalStateById()['term1']).toEqual(data);
             expect(service.terminalIds()).toContain('term1');
         });
 
@@ -117,7 +115,7 @@ describe('InspectorService', () => {
                 payload: 'term1'
             });
 
-            expect(service.terminalMouseById()['term1']).toBeUndefined();
+            expect(service.terminalStateById()['term1']).toBeUndefined();
             expect(service.terminalIds()).not.toContain('term1');
         });
 
