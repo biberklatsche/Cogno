@@ -5,7 +5,7 @@ import {AppBus} from "../../app-bus/app-bus";
 export type Position = {col: number, row: number};
 export type TerminalCursorPosition = Position & {
     viewport: Position,
-    char: string,
+    char: string
 }
 
 export type TerminalMousePosition = Position & {

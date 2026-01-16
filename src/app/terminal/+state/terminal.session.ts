@@ -73,8 +73,8 @@ export class TerminalSession {
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
         if(true) { //TODO: hier prüfen ob script injected werden soll
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
-            this.disposables.push(this.renderer.register(new CognoOscHandler(this.bus, sessionState)));
-            this.disposables.push(this.renderer.register(new InputObserver(this.bus, sessionState)));
+            this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
+            this.disposables.push(this.renderer.register(new InputObserver(sessionState)));
 
         }
 

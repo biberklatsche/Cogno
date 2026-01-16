@@ -10,7 +10,7 @@ export class CognoOscHandler implements ITerminalHandler {
 
     private _disposables?: IDisposable[] = undefined;
 
-    constructor(private _bus: AppBus, private sessionState: SessionState) {
+    constructor(private sessionState: SessionState) {
     }
 
     registerTerminal(terminal: Terminal): IDisposable {

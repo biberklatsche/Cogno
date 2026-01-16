@@ -10,7 +10,7 @@ export class InputObserver implements ITerminalHandler {
     private _keyListener?: IDisposable;
     private _terminal?: Terminal;
 
-    constructor(private bus: AppBus, private sessionState: SessionState) {
+    constructor(private sessionState: SessionState) {
 
     }
 
@@ -20,22 +20,21 @@ export class InputObserver implements ITerminalHandler {
             if(this.sessionState.isCommandRunning) return;
             const lastPromptLineIndex = this.findLastPromptLineIndex();
             const input = this.readCurrentInput(lastPromptLineIndex + 1);
-            console.log('last prompt: ' + input);
             this.sessionState.input = input;
         });
         this._keyListener = this._terminal.onKey((event) => {
             if(event.key === '\r' || event.key === '\n') {
                 this.sessionState.isCommandRunning = true;
             }
-            console.log('key pressed: ' + JSON.stringify(event));
         });
         return this;
     }
 
     dispose(): void {
-        if(!this._parsedListener) return;
-        this._parsedListener.dispose();
+        this._parsedListener?.dispose();
+        this._keyListener?.dispose();
         this._parsedListener=undefined;
+        this._keyListener=undefined;
         this._terminal=undefined;
     }
 
