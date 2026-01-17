@@ -90,6 +90,7 @@ function indexOfUnescaped(s: string, needle: string): number {
  * Matches your zsh sanitization:
  * - "\\n" -> "\n"
  * - "\;"  -> ";"
+ * - "\="  -> "="
  * - "\|"  -> "|"
  * - "\\\\"-> "\\"
  */
@@ -97,6 +98,7 @@ function decodeValue(v: string): string {
     return v
         .replace(/\\n/g, "\n")
         .replace(/\\;/g, ";")
+        .replace(/\\=/g, "=")
         .replace(/\\\|/g, "|")
         .replace(/\\\\/g, "\\");
 }

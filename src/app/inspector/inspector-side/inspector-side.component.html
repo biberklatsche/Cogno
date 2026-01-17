@@ -59,6 +59,14 @@
             <div class="value">
                 <i>Focus:</i> {{ terminalStateById()[id].isFocused }}
             </div>
+            @if (getLastCommands(id).length > 0) {
+                <div class="span-full"><i>Commands:</i></div>
+                @for (cmd of getLastCommands(id); track cmd.id) {
+                    <div></div>
+                    <div class="label" title="{{cmd.directory}}">{{ cmd.command }}</div>
+                    <div class="value">Code: {{ cmd.returnCode ?? '—' }}</div>
+                }
+            }
         </div>
         }
     }
