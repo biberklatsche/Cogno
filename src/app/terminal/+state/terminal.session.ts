@@ -20,6 +20,7 @@ import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
 import {ShellConfig} from "../../config/+models/config";
 import {ScriptInjector} from "./advanced/script.injector";
+import {PathInjector} from "./advanced/path.injector";
 import {CognoOscHandler} from "./advanced/cogno-osc.handler";
 import {InputObserver} from "./advanced/input.observer";
 import {SessionState} from "./session.state";
@@ -72,6 +73,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new CursorHandler(this.bus, sessionState)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
         if(true) { //TODO: hier prüfen ob script injected werden soll
+            this.disposables.push(new PathInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
             this.disposables.push(this.renderer.register(new InputObserver(sessionState)));

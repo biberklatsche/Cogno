@@ -24,4 +24,8 @@ export class ZshAdapter implements Adapter {
 ${cleanedBody}
 ${delimiter}`;
     }
+
+    pathInjection(path: string): string {
+        return `export PATH="${path}:$PATH"`;
+    }
 }

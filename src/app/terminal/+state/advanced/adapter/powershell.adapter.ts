@@ -25,5 +25,9 @@ export class PowerShellAdapter implements Adapter {
         // btoa ist in Browsern, Deno, Bun verfügbar
         return btoa(binary);
     }
+
+    pathInjection(path: string): string {
+        return `$env:PATH = "${path};" + $env:PATH`;
+    }
 }
 

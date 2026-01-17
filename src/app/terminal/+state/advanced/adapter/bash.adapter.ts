@@ -19,4 +19,8 @@ ${cleanedBody}
 ${delimiter}
 [[ -t 1 ]] && clear`;
     }
+
+    pathInjection(path: string): string {
+        return `export PATH="${path}:$PATH"`;
+    }
 }
