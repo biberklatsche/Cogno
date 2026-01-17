@@ -1,9 +1,8 @@
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {AppBus} from "../../../app-bus/app-bus";
-import {TerminalId} from "../../../grid-list/+model/model";
 import {ITerminalHandler} from "../handler/handler";
-import {SessionState} from "../session.state";
+import {Command, SessionState} from "../session.state";
+import OscParser from "./cogno-osc.parser";
 
 
 export class CognoOscHandler implements ITerminalHandler {
@@ -16,9 +15,19 @@ export class CognoOscHandler implements ITerminalHandler {
     registerTerminal(terminal: Terminal): IDisposable {
         this._disposables = [];
         this._disposables.push(terminal.parser
-            .registerOscHandler(733, (title: string) => {
+            .registerOscHandler(733, (data: string) => {
                 this.sessionState.isCommandRunning = false;
-                console.log("OSC 733: " + title);
+                const kv = OscParser.parse(data);
+                console.log("OSC 733 parsed:", kv);
+                if(!kv) return true;
+                //'COGNO:PROMPT;r=0;u=larswolfram;m=Air-von-Lars;d=/Users/larswolfram;t=7;c=ls;'
+                const command: Command = {
+                    command: kv['c'],
+                    directory: kv['d'],
+                    returnCode: Number.parseInt(kv['r']),
+                    id: kv['t']
+                }
+                this.sessionState.addCommand(command);
                 return true;
             }));
         return this;

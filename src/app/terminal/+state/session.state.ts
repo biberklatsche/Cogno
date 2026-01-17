@@ -15,6 +15,14 @@ export type TerminalMousePosition = Position & {
 
 export type TerminalDimensions = { rows: number; cols: number };
 
+export type Command = {
+    command: string,
+    directory: string,
+    returnCode: number | null,
+    id: string,
+
+}
+
 export type InternalState = {
     terminalId: string;
     shellType: ShellType;
@@ -24,6 +32,7 @@ export type InternalState = {
     isFocused: boolean;
     isCommandRunning: boolean;
     input: string;
+    commands: Command[];
 }
 
 export class SessionState {
@@ -37,6 +46,7 @@ export class SessionState {
         this._stateSubject = new BehaviorSubject<InternalState>({
             terminalId,
             shellType,
+            commands: [],
             cursorPosition: {
                 viewport: {col: 1, row: 1},
                 col: 1, row: 1,
@@ -115,4 +125,12 @@ export class SessionState {
 
     get terminalId() { return this._stateSubject.value.terminalId; }
     get shellType() { return this._stateSubject.value.shellType; }
+
+    get commands() { return this._stateSubject.value.commands; }
+    addCommand(command: Command) {
+        this._stateSubject.next({
+            ...this._stateSubject.value,
+            commands: [...this._stateSubject.value.commands, command]
+        });
+    }
 }
