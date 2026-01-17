@@ -22,7 +22,6 @@ export class ZshAdapter implements Adapter {
         // - source /dev/stdin ensures variables/functions affect the current session
         return `source /dev/stdin <<'${delimiter}'
 ${cleanedBody}
-${delimiter}
-clear`;
+${delimiter}`;
     }
 }

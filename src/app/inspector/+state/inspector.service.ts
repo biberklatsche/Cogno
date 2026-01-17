@@ -114,7 +114,6 @@ export class InspectorService {
     }
 
     private handleInspectorEvent(event: any): void {
-        console.log(event);
         switch (event.payload?.type) {
             case 'keybind':
                 this._firedKeybinding.set(event.payload?.data);

@@ -18,7 +18,6 @@ export class CognoOscHandler implements ITerminalHandler {
             .registerOscHandler(733, (data: string) => {
                 this.sessionState.isCommandRunning = false;
                 const kv = OscParser.parse(data);
-                console.log("OSC 733 parsed:", kv);
                 if(!kv) return true;
                 //'COGNO:PROMPT;r=0;u=larswolfram;m=Air-von-Lars;d=/Users/larswolfram;t=7;c=ls;'
                 const command: Command = {

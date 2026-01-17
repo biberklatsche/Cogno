@@ -59,7 +59,6 @@ export class AppComponent {
     os = OS.platform();
     constructor(bus: AppBus) {
         bus.onceType$('ConfigLoaded').subscribe(async e => {
-            console.log('Config loaded, loading DB', Environment.dbFilePath());
             await DB.load(`sqlite:${Environment.dbFilePath()}`);
             await migrate();
             bus.publish({type: 'DBInitialized'});

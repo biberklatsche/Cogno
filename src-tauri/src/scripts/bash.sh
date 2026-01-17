@@ -65,3 +65,5 @@ PROMPT_COMMAND='_cogno_precmd'
 
 # Set prompt - Bash 3.2 doesn't expand variables in PS1 as easily
 PS1='\nCOGNO${COGNO_COUNT}@\h\n'
+
+clear
