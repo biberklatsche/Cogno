@@ -11,13 +11,11 @@ export class BashAdapter implements Adapter {
         const cleanedBody =
             lines.length > 0 && lines[0].startsWith("#!") ? lines.slice(1).join("\n") : body;
 
-        // delimiter that won't collide (simple + robust enough)
-        const delimiter = `COGNO_EOF_${Date.now().toString(36)}`;
+        // Encode as Base64
+        const b64 = btoa(cleanedBody);
 
-        return ` source /dev/stdin <<'${delimiter}'
-${cleanedBody}
-${delimiter}
-clear`;
+        // One-liner with leading space to avoid history
+        return ` eval "$(echo ${b64} | base64 -d)"; clear`;
     }
 
     pathInjection(path: string): string {
