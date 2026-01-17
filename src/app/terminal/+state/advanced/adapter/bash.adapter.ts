@@ -14,13 +14,13 @@ export class BashAdapter implements Adapter {
         // delimiter that won't collide (simple + robust enough)
         const delimiter = `COGNO_EOF_${Date.now().toString(36)}`;
 
-        return `source /dev/stdin <<'${delimiter}'
+        return ` source /dev/stdin <<'${delimiter}'
 ${cleanedBody}
 ${delimiter}
-[[ -t 1 ]] && clear`;
+clear`;
     }
 
     pathInjection(path: string): string {
-        return `export PATH="${path}:$PATH"`;
+        return ` export PATH="${path}:$PATH"; clear;`;
     }
 }

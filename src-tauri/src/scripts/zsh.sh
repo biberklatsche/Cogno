@@ -51,4 +51,3 @@ add-zsh-hook precmd  _cogno_precmd
 
 PROMPT=$'\nCOGNO${COGNO_COUNT}@${HOST%%.*}\n'
 
-clear

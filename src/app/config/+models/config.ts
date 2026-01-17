@@ -139,6 +139,8 @@ const ShellSchema = z.object({
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
+    inject_path: z.boolean().optional().default(true),
+    enable_shell_integration: z.boolean().optional().default(true),
 }).describe("The shell configuration");
 
 export const SHELL_CONFIG_POSITIONS = [

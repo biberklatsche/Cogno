@@ -13,6 +13,9 @@ export class ScriptInjector implements IDisposable{
 
     constructor(bus: AppBus, pty: IPty, terminalId: TerminalId) {
         this.subscription.add(bus.on$({type: 'PtyInitialized', path: ['app', 'terminal', terminalId], phase: "target"}).subscribe(async (e) => {
+            // Wait a bit to ensure the shell is ready for input and to reduce the chance of visible injection
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             const adapter = AdapterFactory.create(e.payload!.shellType);
             try {
                 const content = await adapter.injectionScript();
@@ -23,6 +26,8 @@ export class ScriptInjector implements IDisposable{
                 }
             } catch (error) {
                 Logger.error('Could not load script: ' + error);
+            } finally {
+                this.dispose();
             }
         }));
     }

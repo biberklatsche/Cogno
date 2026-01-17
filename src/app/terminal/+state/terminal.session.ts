@@ -72,8 +72,10 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId, sessionState)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.bus, sessionState)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
-        if(true) { //TODO: hier prüfen ob script injected werden soll
+        if(this.shellConfig.inject_path) {
             this.disposables.push(new PathInjector(this.bus, this.pty, this.terminalId));
+        }
+        if(this.shellConfig.enable_shell_integration) {
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
             this.disposables.push(this.renderer.register(new InputObserver(sessionState)));

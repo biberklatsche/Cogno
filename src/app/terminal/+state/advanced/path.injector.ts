@@ -13,10 +13,14 @@ export class PathInjector implements IDisposable {
 
     constructor(bus: AppBus, pty: IPty, terminalId: TerminalId) {
         this.subscription.add(bus.on$({type: 'PtyInitialized', path: ['app', 'terminal', terminalId], phase: "target"}).subscribe(async (e) => {
+            // Wait a bit to ensure the shell is ready for input
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             const adapter = AdapterFactory.create(e.payload!.shellType);
             const path = Environment.exeDirPath();
             const command = adapter.pathInjection(path);
             pty.write(command + Char.Enter);
+            this.dispose();
         }));
     }
 

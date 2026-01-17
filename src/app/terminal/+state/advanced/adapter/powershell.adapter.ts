@@ -27,7 +27,7 @@ export class PowerShellAdapter implements Adapter {
     }
 
     pathInjection(path: string): string {
-        return `$env:PATH = "${path};" + $env:PATH`;
+        return `$env:PATH = "${path};" + $env:PATH; Clear-Host`;
     }
 }
 

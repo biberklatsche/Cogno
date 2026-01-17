@@ -49,6 +49,8 @@ export class ShellConfigurator {
             path: sh.path,
             args: [],
             working_dir: '/~',
+            enable_shell_integration: true,
+            inject_path: true,
         };
 
         const args: string[] = [];
