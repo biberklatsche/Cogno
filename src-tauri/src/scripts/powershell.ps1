@@ -1,37 +1,67 @@
-# Install only once per session
-if ($global:COGNO_INJECTED) { return }
-$global:COGNO_INJECTED = $true
+# Variablen für Steuerzeichen definieren
+$esc = [char]27
+$bel = [char]7
 
-# State
-if ($null -eq $global:COGNO_COUNT) { $global:COGNO_COUNT = 0 }
-$global:COGNO_LAST_SUCCESS = $true
-$global:COGNO_LASTEXITCODE = 0
+# State Management
+$global:COGNO_COUNT = 0
+$global:COGNO_LAST_CMD = ""
+$global:COGNO_CMD_SEEN = $false
 
-function global:prompt {
-    # Capture last command status
-    $global:COGNO_LAST_SUCCESS = $?
-    $global:COGNO_LASTEXITCODE = $global:LASTEXITCODE
+# Pre-Execution Hook via PSReadLine
+if ($null -ne (Get-Module -ListAvailable PSReadLine)) {
+    Set-PSReadLineKeyHandler -Key Enter -ScriptBlock {
+        $line = ""
+        $cursor = 0
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
 
-    # Increment counter per prompt draw (≈ per command)
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            $global:COGNO_LAST_CMD = $line
+            $global:COGNO_CMD_SEEN = $true
+        }
+        [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+    }
+}
+
+function prompt {
+    # Letzten Status ermitteln
+    $last_ec = if ($global:?) { 0 } else { $LASTEXITCODE }
+    if ($null -eq $last_ec) { $last_ec = 0 }
+
     $global:COGNO_COUNT++
 
-    # Timestamp in ms
-    $ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+    # Metadaten sammeln
+    $ts = $global:COGNO_COUNT
+    $user = $env:USERNAME
+    $hostName = $env:COMPUTERNAME
+    $cwd = $ExecutionContext.SessionState.Path.CurrentLocation.Path
 
-    $user     = $env:USERNAME
-    $computer = $env:COMPUTERNAME
-    $pwdPath  = (Get-Location).Path
+    $cmd = ""
+    if ($global:COGNO_CMD_SEEN) {
+    $cmd = $global:COGNO_LAST_CMD
+    }
 
-    # OSC (ESC ... BEL)
-    $esc = [char]27
-    $bel = [char]7
+    # Bereinigung des Befehls (Sanitizing)
+    if ($cmd) {
+    $cmd = $cmd -replace "`r", ""
+    $cmd = $cmd -replace "`n", "\\n"
+    $cmd = $cmd -replace "[$esc]", ""
+    $cmd = $cmd -replace "[$bel]", ""
+    $cmd = $cmd -replace ";", "\\;"
+    $cmd = $cmd -replace "\|", "\\|"
+    }
 
-    # rc: 0/1 from PowerShell success; lec: native exit code
-    $rc  = if ($global:COGNO_LAST_SUCCESS) { 0 } else { 1 }
-    $lec = $global:COGNO_LASTEXITCODE
+    # OSC Payload zusammenbauen
+    # Format: ESC]733;...BEL
+    $osc = "${esc}]733;COGNO:PROMPT;r=$last_ec;u=$user;m=$hostName;d=$cwd;t=$ts;c=$cmd;${bel}"
 
-    $osc = "$esc]733;COGNO:PROMPT;rc=$rc|lec=$lec|$user|$computer|$pwdPath|$ts|auto$bel"
+    # Sequenz an das Terminal senden
+    Write-Host -NoNewline $osc
 
-    # Prefix with newline after "<count>@<computer>"
-    return "${osc}`nCOGNO$($global:COGNO_COUNT)@$computer`n"
+    # Reset für den nächsten Prompt
+    $global:COGNO_CMD_SEEN = $false
+    $global:COGNO_LAST_CMD = ""
+
+    # Sichtbarer Prompt
+    # `n ist das PowerShell-Kürzel für Newline
+    Write-Output "`nCOGNO$($global:COGNO_COUNT)@$hostName `n"
 }
