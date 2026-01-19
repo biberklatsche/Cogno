@@ -27,7 +27,7 @@ import {SessionState} from "./session.state";
 
 export class TerminalSession {
 
-    private renderer: IRenderer = new Renderer();
+    private renderer: IRenderer;
     private pty: IPty = new Pty();
 
     private focusHandler?: FocusHandler = undefined;
@@ -35,10 +35,7 @@ export class TerminalSession {
     private scriptInjector?: ScriptInjector = undefined;
 
     private subscription: Subscription = new Subscription();
-    private readonly disposables: IDisposable[] = [
-        this.renderer,
-        this.pty
-    ];
+    private readonly disposables: IDisposable[];
     private disposed: boolean = false;
 
     constructor(
@@ -47,6 +44,11 @@ export class TerminalSession {
         private terminalId: TerminalId,
         private shellConfig: ShellConfig
     ) {
+        this.renderer = new Renderer(this.configService.config);
+        this.disposables = [
+            this.renderer,
+            this.pty
+        ];
         this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
             if (config.enable_webgl) {
                 this.renderer.useWebGl();

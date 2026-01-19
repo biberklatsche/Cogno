@@ -8,6 +8,8 @@ import {WebglAddon} from "@xterm/addon-webgl";
 import {CanvasAddon} from "@xterm/addon-canvas";
 import {IDisposable} from "../../../common/models/models";
 import {IFitHandler, isFitHandler, isTerminalHandler, ITerminalHandler} from "../handler/handler";
+import {ConfigService} from "../../../config/+state/config.service";
+import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
     open(terminalContainer: HTMLDivElement): void;
@@ -32,14 +34,28 @@ export class Renderer implements IRenderer, IDisposable {
     private _webglAddon: WebglAddon | undefined = undefined;
     private _canvasAddon: CanvasAddon | undefined = undefined;
 
-    constructor() {
+    constructor(config: Config) {
+        console.log('renderer created', config);
         this._terminal = new Terminal({
-            overviewRulerWidth: 20,
-            cursorStyle: 'bar',
-            smoothScrollDuration: 0,
-            allowTransparency: true,
-            rightClickSelectsWord: false,
-            altClickMovesCursor: true,
+            overviewRulerWidth: config.overview_ruler_width,
+            scrollback: config.scrollback_lines,
+            tabStopWidth: config.tab_stop_width,
+            scrollSensitivity: config.scroll_sensitivity,
+            scrollOnUserInput: config.scroll_on_user_input,
+            smoothScrollDuration: config.smooth_scroll_duration,
+            allowTransparency: config.allow_transparency,
+            //altClickMovesCursor: config.alt_click_moves_cursor,
+            //convertEol: config.convert_eol ?? false,
+            //customGlyphs: config.custom_glyphs ?? false,
+            //drawBoldTextInBrightColors: config.draw_bold_text_in_bright_colors,
+            fastScrollModifier: config.fast_scroll_modifier,
+            fastScrollSensitivity: config.fast_scroll_sensitivity,
+            //ignoreBracketedPasteMode: config.ignore_bracketed_paste_mode,
+            //minimumContrastRatio: config.minimum_contrast_ratio,
+            //rescaleOverlappingGlyphs: config.rescale_overlapping_glyphs,
+            //rightClickSelectsWord: config.right_click_selects_word,
+            //screenReaderMode: config.screen_reader_mode,
+            //wordSeparator: config.word_separator,
             windowsPty: OS.platform() === 'windows' ? {backend: 'conpty'} : undefined,
             allowProposedApi: true,
             windowOptions: {

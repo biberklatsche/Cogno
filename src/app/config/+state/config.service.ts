@@ -80,7 +80,8 @@ export class RealConfigService extends ConfigService{
         }
         const path = Environment.configFilePath();
         if(!await Fs.exists(path)) {
-            const userConfig: Config = {shell: {}};
+            const userConfig: Config = {
+                shell: {}};
             await this.shells.apply(userConfig);
             await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }
