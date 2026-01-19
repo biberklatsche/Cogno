@@ -28,11 +28,10 @@ export class InspectorSideComponent {
         this.terminalStateById = inspectorService.terminalStateById;
     }
 
-    getLastCommands(id: TerminalId) {
-        const state = this.terminalStateById()[id];
-        if (!state || !state.commands) {
+    getLastCommands(terminalState: InternalState) {
+        if (!terminalState || !terminalState.commands) {
             return [];
         }
-        return state.commands.slice(-3).reverse();
+        return terminalState.commands.slice(-3).reverse();
     }
 }

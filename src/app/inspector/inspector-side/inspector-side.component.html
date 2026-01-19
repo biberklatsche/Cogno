@@ -21,51 +21,52 @@
     </div>
 
     @for (id of terminalIds(); track id; let i = $index; ) {
-        @if (terminalStateById()[id]) {
+        @if (terminalStateById()[id]; as terminalState) {
         <div class="table c3">
             <div class="span-full"><b>Terminal {{ i + 1 }}</b></div>
             <div></div>
-            <div class="label">Viewport</div>
-            <div class="label">Absolute</div>
-            <div class="label">Mouse</div>
-            <div class="value">
-                {{ terminalStateById()[id].mousePosition.viewport.col }}, {{ terminalStateById()[id].mousePosition.viewport.row }}, '{{ terminalStateById()[id].mousePosition.char || ' ' }}'
-            </div>
-            <div class="value">
-                {{ terminalStateById()[id].mousePosition.col }}, {{ terminalStateById()[id].mousePosition.row }}, '{{ terminalStateById()[id].mousePosition.char || ' ' }}'
-            </div>
-            <div class="label">Cursor</div>
-            <div class="value">
-                {{ terminalStateById()[id].cursorPosition.viewport.col }}, {{ terminalStateById()[id].cursorPosition.viewport.row }}, '{{ terminalStateById()[id].cursorPosition.char || ' ' }}'
-            </div>
-            <div class="value">
-                {{ terminalStateById()[id].cursorPosition.col }}, {{ terminalStateById()[id].cursorPosition.row }}, '{{ terminalStateById()[id].cursorPosition.char || ' ' }}'
+            @if (terminalState.isFocused) {
+                <div class="label">Viewport</div>
+                <div class="label">Absolute</div>
+                <div class="label">Mouse</div>
+                <div class="value">
+                    {{ terminalState.mousePosition.viewport.col }}, {{ terminalState.mousePosition.viewport.row }}, '{{ terminalState.mousePosition.char || ' ' }}'
+                </div>
+                <div class="value">
+                    {{ terminalState.mousePosition.col }}, {{ terminalState.mousePosition.row }}, '{{ terminalState.mousePosition.char || ' ' }}'
+                </div>
+                <div class="label">Cursor</div>
+                <div class="value">
+                    {{ terminalState.cursorPosition.viewport.col }}, {{ terminalState.cursorPosition.viewport.row }}, '{{ terminalState.cursorPosition.char || ' ' }}'
+                </div>
+                <div class="value">
+                    {{ terminalState.cursorPosition.col }}, {{ terminalState.cursorPosition.row }}, '{{ terminalState.cursorPosition.char || ' ' }}'
 
-            </div>
-            <div class="label">Size</div>
-            <div class="value" role="cell">
-                {{ terminalStateById()[id].dimensions.cols }} × {{ terminalStateById()[id].dimensions.rows }}
-            </div>
-            <div></div>
-            <div class="label">Input</div>
-            <div class="value">
-                {{ terminalStateById()[id].input }}
-            </div>
-            <div></div>
-            <div class="label">State</div>
-            <div class="value">
-                <i>Busy:</i> {{ terminalStateById()[id].isCommandRunning }}
-            </div>
-            <div class="value">
-                <i>Focus:</i> {{ terminalStateById()[id].isFocused }}
-            </div>
-            @if (getLastCommands(id).length > 0) {
-                <div class="span-full"><i>Commands:</i></div>
-                @for (cmd of getLastCommands(id); track cmd.id) {
-                    <div></div>
-                    <div class="label" title="{{cmd.directory}}">{{ cmd.command }}</div>
-                    <div class="value">Code: {{ cmd.returnCode ?? '—' }}</div>
-                }
+                </div>
+                <div class="label">Size</div>
+                <div class="value" role="cell">
+                    {{ terminalState.dimensions.cols }} × {{ terminalState.dimensions.rows }}
+                </div>
+                <div></div>
+                <div class="label">Input</div>
+                <div class="value">
+                    {{ terminalState.input }}
+                </div>
+                <div></div>
+                <div class="label">Busy</div>
+                <div class="value">
+                    {{ terminalState.isCommandRunning }}
+                </div>
+                <div></div>
+                <div class="label commands">Last Commands</div>
+                <div class="value">
+                    @for (cmd of getLastCommands(terminalState); track cmd.id) {
+                        <div class="command-line">
+                            <div class="command">{{ cmd.command }}</div>
+                            <div>Return Code: {{ cmd.returnCode ?? '—' }}</div>
+                        </div>
+                    }
+                </div>
             }
         </div>
         }
