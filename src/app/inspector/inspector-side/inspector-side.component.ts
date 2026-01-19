@@ -6,10 +6,13 @@ import {
 import {TerminalId} from "../../grid-list/+model/model";
 import {Keybinding} from "../../config/+models/config";
 import {InternalState} from "../../terminal/+state/session.state";
+import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 
 @Component({
   selector: 'app-inspector-side',
-  imports: [],
+    imports: [
+        TooltipDirective
+    ],
   templateUrl: './inspector-side.component.html',
   styleUrl: './inspector-side.component.scss'
 })

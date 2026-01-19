@@ -49,7 +49,7 @@
                 </div>
                 <div></div>
                 <div class="label">Input</div>
-                <div class="value">
+                <div class="value" [appTooltip]="terminalState.input">
                     {{ terminalState.input }}
                 </div>
                 <div></div>
@@ -59,12 +59,10 @@
                 </div>
                 <div></div>
                 <div class="label commands">Last Commands</div>
-                <div class="value">
+                <div class="value command-line">
                     @for (cmd of getLastCommands(terminalState); track cmd.id) {
-                        <div class="command-line">
-                            <div class="command">{{ cmd.command }}</div>
-                            <div>Return Code: {{ cmd.returnCode ?? '—' }}</div>
-                        </div>
+                        <div class="command"  [appTooltip]="cmd.command">{{ cmd.command }}</div>
+                        <div>Return Code: {{ cmd.returnCode ?? '—' }}</div>
                     }
                 </div>
             }

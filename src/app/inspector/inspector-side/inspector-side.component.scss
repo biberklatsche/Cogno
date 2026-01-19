@@ -47,6 +47,8 @@
 .label {
   font-weight: 600;
   opacity: 0.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .value {
@@ -55,12 +57,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
 
-  .command-line {
-    display: flex;
-    flex-direction: row;
+  &.command-line {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
     .command {
-
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }
