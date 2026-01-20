@@ -47,27 +47,30 @@ describe('CommandLineEditor', () => {
     mockBus.publish({ type: 'ClearLineToEnd', payload: terminalId, path: ['app', 'terminal'] });
     // text: 'hello world example' (len 19), cursor: 6 (at 'w')
     // to end: 13 chars
-    expect(mockPty.write).toHaveBeenCalledWith('\x1b[P'.repeat(13));
+    // Implementation: repeat(13) [C + repeat(13) backspace
+    const expected = '\x1b[C'.repeat(13) + '\x08'.repeat(13);
+    expect(mockPty.write).toHaveBeenCalledWith(expected);
   });
 
   it('should clear line to start', () => {
     mockBus.publish({ type: 'ClearLineToStart', payload: terminalId, path: ['app', 'terminal'] });
-    // cursor: 6. Move 6 left, delete 6.
-    expect(mockPty.write).toHaveBeenCalledWith('\x08'.repeat(6) + '\x1b[P'.repeat(6));
+    // cursor: 6. Implementation: repeat(6) backspace
+    expect(mockPty.write).toHaveBeenCalledWith('\x08'.repeat(6));
   });
 
   it('should delete previous word', () => {
     state.input = { text: 'hello world example', cursorIndex: 12, maxCursorIndex: 19 }; // after 'world '
     mockBus.publish({ type: 'DeletePreviousWord', payload: terminalId, path: ['app', 'terminal'] });
-    // 'world ' is 6 chars. 
-    expect(mockPty.write).toHaveBeenCalledWith('\x08'.repeat(6) + '\x1b[P'.repeat(6));
+    // 'world ' is 6 chars. Implementation: repeat(6) backspace
+    expect(mockPty.write).toHaveBeenCalledWith('\x08'.repeat(6));
   });
 
   it('should delete next word', () => {
     state.input = { text: 'hello world example', cursorIndex: 6, maxCursorIndex: 19 }; // at 'w'
     mockBus.publish({ type: 'DeleteNextWord', payload: terminalId, path: ['app', 'terminal'] });
-    // next word is 'world' (5 chars)
-    expect(mockPty.write).toHaveBeenCalledWith('\x1b[P'.repeat(5));
+    // next word is 'world' (5 chars). Implementation: repeat(5) [C + repeat(5) backspace
+    const expected = '\x1b[C'.repeat(5) + '\x08'.repeat(5);
+    expect(mockPty.write).toHaveBeenCalledWith(expected);
   });
 
   it('should go to next word', () => {
