@@ -2,8 +2,10 @@ import {ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent} from "../confi
 import {InitConfigAction} from "../config/+bus/actions";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
-    BlurTerminalAction, ClearBufferAction, ClearLineAction, CopyAction,
-    FocusTerminalAction, PasteAction, TerminalRemovedAction,
+    BlurTerminalAction, ClearBufferAction, ClearLineAction,
+    ClearLineToEndAction, ClearLineToStartAction, DeletePreviousWordAction,
+    DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
+    CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction,
 } from '../terminal/+bus/actions';
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TerminalTitleChangedEvent} from "../terminal/+state/handler/terminal-title.handler";
@@ -48,6 +50,12 @@ export type AppMessage =
     | PasteAction
     | CopyAction
     | ClearLineAction
+    | ClearLineToEndAction
+    | ClearLineToStartAction
+    | DeletePreviousWordAction
+    | DeleteNextWordAction
+    | GoToNextWordAction
+    | GoToPreviousWordAction
     | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent

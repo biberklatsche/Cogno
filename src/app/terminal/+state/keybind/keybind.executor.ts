@@ -69,6 +69,36 @@ export class KeybindExecutor implements IDisposable  {
                     event.performed = true;
                     break;
                 }
+                case 'clear_line_to_end': {
+                    this._bus.publish({type: 'ClearLineToEnd', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'clear_line_to_start': {
+                    this._bus.publish({type: 'ClearLineToStart', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'delete_previous_word': {
+                    this._bus.publish({type: 'DeletePreviousWord', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'delete_next_word': {
+                    this._bus.publish({type: 'DeleteNextWord', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'go_to_next_word': {
+                    this._bus.publish({type: 'GoToNextWord', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'go_to_previous_word': {
+                    this._bus.publish({type: 'GoToPreviousWord', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
             }
         }));
     }
