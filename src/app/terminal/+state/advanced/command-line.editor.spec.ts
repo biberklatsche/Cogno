@@ -97,4 +97,114 @@ describe('CommandLineEditor', () => {
     mockBus.publish({ type: 'ClearLineToEnd', payload: terminalId, path: ['app', 'terminal'] });
     expect(mockPty.write).not.toHaveBeenCalled();
   });
+
+  describe('Selection', () => {
+    beforeEach(() => {
+      mockTerminal.cols = 80;
+      mockTerminal.buffer.active.length = 2;
+      const promptLine = TerminalMockFactory.createLine('COGNO: / $ ');
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
+        if (index === 0) return promptLine;
+        return null;
+      });
+    });
+
+    it('should select text to the right and move cursor', () => {
+      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      // startCol: 0%80=0, startRow: 0+1=1, length: 1
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[C');
+    });
+
+    it('should select text to the left and move cursor', () => {
+      state.input = { text: 'hello world', cursorIndex: 5, maxCursorIndex: 11 };
+      mockBus.publish({ type: 'SelectTextLeft', payload: terminalId, path: ['app', 'terminal'] });
+      // newPos: 4, start: 4, length: 1. startCol: 4%80=4, startRow: 1, length: 1
+      expect(mockTerminal.select).toHaveBeenCalledWith(4, 1, 1);
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[D');
+    });
+
+    it('should select word to the right and move cursor', () => {
+      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      mockBus.publish({ type: 'SelectWordRight', payload: terminalId, path: ['app', 'terminal'] });
+      // next word 'hello' ends at 5. length: 5
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 5);
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[C'.repeat(5));
+    });
+
+    it('should select word to the left and move cursor', () => {
+      state.input = { text: 'hello world', cursorIndex: 11, maxCursorIndex: 11 };
+      mockBus.publish({ type: 'SelectWordLeft', payload: terminalId, path: ['app', 'terminal'] });
+      // previous word 'world' starts at 6. length: 11-6=5. start: 6
+      expect(mockTerminal.select).toHaveBeenCalledWith(6, 1, 5);
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[D'.repeat(5));
+    });
+
+    it('should select text to end of line and move cursor', () => {
+      state.input = { text: 'hello world', cursorIndex: 6, maxCursorIndex: 11 };
+      mockBus.publish({ type: 'SelectTextToEndOfLine', payload: terminalId, path: ['app', 'terminal'] });
+      // text length: 11. length: 11-6=5. start: 6
+      expect(mockTerminal.select).toHaveBeenCalledWith(6, 1, 5);
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[C'.repeat(5));
+    });
+
+    it('should select text to start of line and move cursor', () => {
+      state.input = { text: 'hello world', cursorIndex: 6, maxCursorIndex: 11 };
+      mockBus.publish({ type: 'SelectTextToStartOfLine', payload: terminalId, path: ['app', 'terminal'] });
+      // start: 0, length: 6
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 6);
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[D'.repeat(6));
+    });
+
+    it('should extend selection when selecting multiple times', () => {
+      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      
+      // First selection (1 char right)
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
+      
+      // Update state as if cursor moved
+      state.input.cursorIndex = 1;
+      
+      // Second selection (another char right)
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      // Should now select from 0 to 2
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 2);
+    });
+
+    it('should shrink selection when reversing direction', () => {
+      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      
+      // Select 2 chars right
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      state.input.cursorIndex = 1;
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      state.input.cursorIndex = 2;
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 2);
+      
+      // Select 1 char left
+      mockBus.publish({ type: 'SelectTextLeft', payload: terminalId, path: ['app', 'terminal'] });
+      // Should now select from 0 to 1
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 1);
+    });
+
+    it('should reset selection start when moving cursor without shift', () => {
+      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      
+      // Select 1 char right
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
+      state.input.cursorIndex = 1;
+
+      // Move cursor without shift
+      mockBus.publish({ type: 'GoToNextWord', payload: terminalId, path: ['app', 'terminal'] });
+      state.input.cursorIndex = 5; // 'hello'
+
+      // Select right again
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      // Should start new selection from 5 to 6
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(5, 1, 1);
+    });
+  });
 });

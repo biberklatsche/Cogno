@@ -5,6 +5,8 @@ import {
     BlurTerminalAction, ClearBufferAction, ClearLineAction,
     ClearLineToEndAction, ClearLineToStartAction, DeletePreviousWordAction,
     DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
+    SelectTextRightAction, SelectTextLeftAction, SelectWordRightAction,
+    SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
     CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction,
 } from '../terminal/+bus/actions';
 import {PtyInitializedEvent} from "../terminal/+bus/events";
@@ -56,6 +58,12 @@ export type AppMessage =
     | DeleteNextWordAction
     | GoToNextWordAction
     | GoToPreviousWordAction
+    | SelectTextRightAction
+    | SelectTextLeftAction
+    | SelectWordRightAction
+    | SelectWordLeftAction
+    | SelectTextToEndOfLineAction
+    | SelectTextToStartOfLineAction
     | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent

@@ -32,6 +32,12 @@ export const ACTION_NAMES = [
     'delete_next_word',
     'go_to_next_word',
     'go_to_previous_word',
+    'select_text_right',
+    'select_text_left',
+    'select_word_right',
+    'select_word_left',
+    'select_text_to_end_of_line',
+    'select_text_to_start_of_line',
 ] as const;
 
 export type ActionName = typeof ACTION_NAMES[number];

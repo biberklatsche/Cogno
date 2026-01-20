@@ -80,6 +80,7 @@ export class TerminalMockFactory {
       getSelection: vi.fn(),
       hasSelection: vi.fn(),
       clearSelection: vi.fn(),
+      select: vi.fn(),
       options: {},
       element: document.createElement('div'),
       textarea: {
