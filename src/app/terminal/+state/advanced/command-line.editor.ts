@@ -21,24 +21,10 @@ export class CommandLineEditor implements ITerminalHandler  {
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearLine'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId) return;
+            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
             this.clearCurrentInput();
         }));
         return this;
-    }
-
-    private findLastPromptLineIndex(): number {
-        let lastPromptLineIndex = -1;
-        if(!this._terminal) return lastPromptLineIndex;
-        if(!this._terminal.buffer.active) return lastPromptLineIndex;
-        for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
-            const line = this._terminal.buffer.active.getLine(i);
-            if (line && line.translateToString().startsWith('COGNO')) {
-                lastPromptLineIndex = i;
-                break;
-            }
-        }
-        return lastPromptLineIndex;
     }
 
     clearCurrentInput() {
