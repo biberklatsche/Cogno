@@ -5,21 +5,23 @@ import {AppBus} from '../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
 import {TerminalId} from '../../../grid-list/+model/model';
 import {IPty} from '../pty/pty';
+import {InternalState} from "../session.state";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;
     private subscription: Subscription = new Subscription();
 
-    constructor(private _bus: AppBus, private _pty: IPty, private _terminalId: TerminalId) {
+    constructor(private _bus: AppBus, private _pty: IPty, private sessionState: InternalState) {
     }
 
     dispose(): void {
+        this.subscription.unsubscribe();
     }
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearLine'}).subscribe(async event => {
-            if(event.payload !== this._terminalId) return;
+            if(event.payload !== this.sessionState.terminalId) return;
             this.clearCurrentInput();
         }));
         return this;
@@ -41,40 +43,9 @@ export class CommandLineEditor implements ITerminalHandler  {
 
     clearCurrentInput() {
         if(!this._terminal) return;
-        const buffer = this._terminal.buffer.active;
-        const cursorY = buffer.cursorY;
-        const cursorX = buffer.cursorX;
-
-        // Finde Start (COGNO-Zeile)
-        let startLine = -1;
-        for (let i = cursorY; i >= Math.max(0, cursorY - 50); i--) {
-            const line = buffer.getLine(i);
-            if (line) {
-                const text = line.translateToString(true);
-                if (text.startsWith('COGNO')) {
-                    startLine = i + 1;
-                    break;
-                }
-            }
-        }
-
-        if (startLine === -1) return; // Kein COGNO gefunden
-
-        // Berechne zu löschende Zeichen
-        let charsToDelete = 0;
-        for (let i = startLine; i <= cursorY; i++) {
-            const line = buffer.getLine(i);
-            if (line) {
-                const text = line.translateToString(true).trimEnd();
-                if (i === startLine) {
-                    charsToDelete += Math.max(0, text.length);
-                } else {
-                    charsToDelete += text.length;
-                }
-            }
-        }
-        console.log('##########', charsToDelete);
+        const countCharsToDelete = this.sessionState.input.text.length;
+        const countToEnd = countCharsToDelete - this.sessionState.input.cursorIndex;
         // Methode 1: Cursor ans Ende + Backspace (universell)
-        this._pty.write(`${String.fromCharCode(27)}[F`); // Nach rechts
+        this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToEnd) + String.fromCharCode(8).repeat(countCharsToDelete)); // Nach rechts
     }
 }

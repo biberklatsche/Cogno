@@ -2,12 +2,13 @@ import {ITerminalHandler} from "../handler/handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
-import {SessionState} from "../session.state";
+import {Position, SessionState} from "../session.state";
 
 export class CommandLineObserver implements ITerminalHandler {
 
     private _parsedListener?: IDisposable;
     private _keyListener?: IDisposable;
+    private _cursorListener?: IDisposable;
     private _terminal?: Terminal;
 
     constructor(private sessionState: SessionState) {
@@ -16,11 +17,28 @@ export class CommandLineObserver implements ITerminalHandler {
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
+        this._cursorListener = terminal.onCursorMove(() => {
+            if (!terminal?.buffer?.active) return;
+            try {
+                const buffer = terminal.buffer?.active;
+                const startInputY = this.findLastCognoMarkerY() + 1;
+                const cursorX = buffer.cursorX; // 0-based column in viewport
+                const cursorYViewport = buffer.cursorY; // 0-based row in viewport
+                const viewportY = buffer.viewportY; // top of viewport absolute 0-based
+                const cursorYAbsolute = cursorYViewport + viewportY; // absolute row in buffer
+                const promptHeight = cursorYAbsolute - startInputY;
+                const cursorIndex = cursorX + terminal.cols * promptHeight;
+                const maxCursorIndex =  cursorIndex > this.sessionState.input.maxCursorIndex ? cursorIndex : this.sessionState.input.maxCursorIndex;
+                this.sessionState.input = {...this.sessionState.input, cursorIndex: cursorIndex, maxCursorIndex: maxCursorIndex};
+            } catch {
+                console.log('error');
+                // ignore errors and keep defaults
+            }
+        });
         this._parsedListener = this._terminal.onWriteParsed(() => {
             if(this.sessionState.isCommandRunning) return;
-            const lastPromptLineIndex = this.findLastPromptLineIndex();
-            const input = this.readCurrentInput(lastPromptLineIndex + 1);
-            this.sessionState.input = input;
+            const text = this.readCurrentText();
+            this.sessionState.input = {...this.sessionState.input, text: text};
         });
         this._keyListener = this._terminal.onKey((event) => {
             if(event.key === '\r' || event.key === '\n') {
@@ -33,42 +51,41 @@ export class CommandLineObserver implements ITerminalHandler {
     dispose(): void {
         this._parsedListener?.dispose();
         this._keyListener?.dispose();
+        this._cursorListener?.dispose();
         this._parsedListener=undefined;
         this._keyListener=undefined;
+        this._cursorListener=undefined;
         this._terminal=undefined;
     }
 
-    private findLastPromptLineIndex(): number {
-        let lastPromptLineIndex = -1;
-        if(!this._terminal) return lastPromptLineIndex;
-        if(!this._terminal.buffer.active) return lastPromptLineIndex;
+    private findLastCognoMarkerY(): number {
+        let lastPromptRow = -1;
+        if(!this._terminal?.buffer?.active) return lastPromptRow;
         for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
             const line = this._terminal.buffer.active.getLine(i);
             if (line && line.translateToString().startsWith('COGNO')) {
-                lastPromptLineIndex = i;
+                lastPromptRow = i;
                 break;
             }
         }
-        return lastPromptLineIndex;
+        return lastPromptRow;
     }
 
-    private readCurrentInput(index: number): string {
-        let input = '';
+    private readCurrentText(): string {
         const buffer = this._terminal?.buffer?.active;
-        if(!buffer) return input;
-        if(index >= buffer.length) return input;
-        const cursorX = this.sessionState.cursorPosition.viewport.col - 1;
-        const cursorY = this.sessionState.cursorPosition.viewport.row - 1;
-        for (let i = index; i <= cursorY; i++) {
+        if(!buffer) return '';
+        const lastCognoMarkerY = this.findLastCognoMarkerY();
+        const heightOfPrompt = Math.ceil(this.sessionState.input.maxCursorIndex / this._terminal!.cols);
+        let text = ''
+        for (let i = lastCognoMarkerY + 1; i <= lastCognoMarkerY + heightOfPrompt; i++) {
             const line = buffer.getLine(i);
-            if (!line) return input;
-            if(i === cursorY) {
-                input += line.translateToString(true, 0, cursorX);
-            } else {
-                input += line.translateToString(true);
-            }
+            if (!line) continue;
+            text += line.translateToString(false);
         }
-        return input;
+        if(text.length > this.sessionState.input.maxCursorIndex) {
+            text = text.substring(0, this.sessionState.input.maxCursorIndex);
+        }
+        return text.trimEnd();
     }
 
 }

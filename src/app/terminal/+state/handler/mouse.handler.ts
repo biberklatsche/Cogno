@@ -14,7 +14,7 @@ export class MouseHandler implements ITerminalHandler {
   private readonly _screenElement?: HTMLElement;
   private _listener?: (e: MouseEvent) => void;
 
-  constructor(private _bus: AppBus, private _terminalContainer: HTMLDivElement, private _terminalId: TerminalId, private _sessionState: SessionState) {
+  constructor(private _terminalContainer: HTMLDivElement, private _sessionState: SessionState) {
       this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
   }
 

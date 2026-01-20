@@ -71,8 +71,8 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
-        this.disposables.push(this.renderer.register(new MouseHandler(this.bus, terminalContainer, this.terminalId, sessionState)));
-        this.disposables.push(this.renderer.register(new CursorHandler(this.bus, sessionState)));
+        this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, sessionState)));
+        this.disposables.push(this.renderer.register(new CursorHandler(sessionState)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
         if(this.shellConfig.inject_path) {
             this.disposables.push(new PathInjector(this.bus, this.pty, this.terminalId));
@@ -81,7 +81,7 @@ export class TerminalSession {
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
             this.disposables.push(this.renderer.register(new CommandLineObserver(sessionState)));
-            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.terminalId)));
+            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, sessionState)));
 
         }
 

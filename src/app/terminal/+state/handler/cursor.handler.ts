@@ -1,18 +1,12 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {AppBus} from "../../../app-bus/app-bus";
-import {TerminalId} from "../../../grid-list/+model/model";
 import {SessionState} from "../session.state";
 
-/**
- * Publishes inspector events with the current terminal cursor position (col,row)
- * whenever the cursor moves inside xterm.
- */
 export class CursorHandler implements ITerminalHandler {
     private _cursorListener?: IDisposable;
 
-    constructor(private _bus: AppBus, private sessionState: SessionState) {
+    constructor(private sessionState: SessionState) {
     }
 
     dispose(): void {
@@ -24,7 +18,6 @@ export class CursorHandler implements ITerminalHandler {
         // Listen for cursor moves from xterm
         this._cursorListener = terminal.onCursorMove(() => {
             if (!terminal) return;
-
             // Default values
             let col = 1;
             let viewportRow = 1;

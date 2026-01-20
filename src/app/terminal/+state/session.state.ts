@@ -20,7 +20,12 @@ export type Command = {
     directory: string,
     returnCode: number | null,
     id: string,
+}
 
+export type TerminalInput = {
+    cursorIndex: number,
+    maxCursorIndex: number,
+    text: string,
 }
 
 export type InternalState = {
@@ -31,7 +36,7 @@ export type InternalState = {
     dimensions: TerminalDimensions;
     isFocused: boolean;
     isCommandRunning: boolean;
-    input: string;
+    input: TerminalInput;
     commands: Command[];
 }
 
@@ -60,7 +65,7 @@ export class SessionState {
             dimensions: { rows: 0, cols: 0 },
             isFocused: false,
             isCommandRunning: false,
-            input: ''
+            input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
         });
 
         this._stateSubject.pipe(
@@ -115,8 +120,8 @@ export class SessionState {
         });
     }
 
-    get input() { return this._stateSubject.value.input; }
-    set input(value: string) {
+    get input(): TerminalInput { return this._stateSubject.value.input; }
+    set input(value: TerminalInput) {
         this._stateSubject.next({
             ...this._stateSubject.value,
             input: value
