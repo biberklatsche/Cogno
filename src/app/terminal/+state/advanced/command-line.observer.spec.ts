@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { InputObserver } from './input.observer';
+import { CommandLineObserver } from './command-line.observer';
 import { SessionState } from '../session.state';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 
 describe('InputObserver', () => {
-  let observer: InputObserver;
+  let observer: CommandLineObserver;
   let mockTerminal: any;
   let sessionState: SessionState;
   let mockBus: AppBus;
@@ -15,7 +15,7 @@ describe('InputObserver', () => {
   beforeEach(() => {
     mockBus = new AppBus();
     sessionState = new SessionState(terminalId, 'Bash' as any, mockBus);
-    observer = new InputObserver(sessionState);
+    observer = new CommandLineObserver(sessionState);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 

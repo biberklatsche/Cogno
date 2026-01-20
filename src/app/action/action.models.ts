@@ -24,7 +24,8 @@ export const ACTION_NAMES = [
     'close_window',
     'minimize_window',
     'open_config',
-    'load_config'
+    'load_config',
+    'clear_line'
 ] as const;
 
 export type ActionName = typeof ACTION_NAMES[number];

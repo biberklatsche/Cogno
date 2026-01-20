@@ -22,7 +22,7 @@ import {ShellConfig} from "../../config/+models/config";
 import {ScriptInjector} from "./advanced/script.injector";
 import {PathInjector} from "./advanced/path.injector";
 import {CognoOscHandler} from "./advanced/cogno-osc.handler";
-import {InputObserver} from "./advanced/input.observer";
+import {CommandLineObserver} from "./advanced/command-line.observer";
 import {SessionState} from "./session.state";
 
 export class TerminalSession {
@@ -32,7 +32,6 @@ export class TerminalSession {
 
     private focusHandler?: FocusHandler = undefined;
     private selectionHandler?: SelectionHandler = undefined;
-    private scriptInjector?: ScriptInjector = undefined;
 
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[];
@@ -80,7 +79,7 @@ export class TerminalSession {
         if(this.shellConfig.enable_shell_integration) {
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
-            this.disposables.push(this.renderer.register(new InputObserver(sessionState)));
+            this.disposables.push(this.renderer.register(new CommandLineObserver(sessionState)));
 
         }
 
@@ -132,7 +131,6 @@ export class TerminalSession {
         this.pty.dispose();
         this.disposables.forEach(disposable => disposable.dispose());
         this.subscription.unsubscribe();
-        this.scriptInjector = undefined;
     }
 
     focus(): void{

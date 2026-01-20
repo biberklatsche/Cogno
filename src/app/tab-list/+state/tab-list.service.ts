@@ -4,7 +4,6 @@ import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {TabConfig, TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {TerminalTitleChangedEvent} from "../../terminal/+state/handler/terminal-title.handler";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";

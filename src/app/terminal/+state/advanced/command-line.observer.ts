@@ -4,7 +4,7 @@ import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
 import {SessionState} from "../session.state";
 
-export class InputObserver implements ITerminalHandler {
+export class CommandLineObserver implements ITerminalHandler {
 
     private _parsedListener?: IDisposable;
     private _keyListener?: IDisposable;

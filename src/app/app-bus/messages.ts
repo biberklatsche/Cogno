@@ -2,9 +2,9 @@ import {ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent} from "../confi
 import {InitConfigAction} from "../config/+bus/actions";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
-    BlurTerminalAction, ClearBufferAction, CopyAction,
+    BlurTerminalAction, ClearBufferAction, ClearLineAction, CopyAction,
     FocusTerminalAction, PasteAction, TerminalRemovedAction,
-} from "../terminal/+bus/actions";
+} from '../terminal/+bus/actions';
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TerminalTitleChangedEvent} from "../terminal/+state/handler/terminal-title.handler";
 import {
@@ -47,6 +47,7 @@ export type AppMessage =
     | BlurTerminalAction
     | PasteAction
     | CopyAction
+    | ClearLineAction
     | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent
