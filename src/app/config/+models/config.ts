@@ -77,6 +77,9 @@ export const FontSchema = z.object({
     enable_ligatures: z.boolean().optional(),
     weight: FontWeightSchema.optional(),
     weight_bold: FontWeightSchema.optional(),
+    custom_glyphs: z.boolean().optional(),
+    draw_bold_text_in_bright_colors: z.boolean().optional(),
+    rescale_overlapping_glyphs: z.boolean().optional(),
     app: AppFontSchema.optional(),
 });
 
@@ -176,13 +179,10 @@ export const ConfigSchema = z.object({
     enable_watch_config: z.boolean().optional(),
     alt_click_moves_cursor: z.boolean().optional(),
     convert_eol: z.boolean().optional(),
-    custom_glyphs: z.boolean().optional(),
-    draw_bold_text_in_bright_colors: z.boolean().optional(),
     fast_scroll_modifier: z.enum(['none', 'alt', 'ctrl', 'shift']).optional(),
     fast_scroll_sensitivity: z.number().optional(),
     ignore_bracketed_paste_mode: z.boolean().optional(),
     minimum_contrast_ratio: z.number().optional(),
-    rescale_overlapping_glyphs: z.boolean().optional(),
     right_click_selects_word: z.boolean().optional(),
     screen_reader_mode: z.boolean().optional(),
     scroll_on_user_input: z.boolean().optional(),
