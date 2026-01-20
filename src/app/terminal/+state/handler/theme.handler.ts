@@ -25,6 +25,7 @@ export class ThemeHandler implements ITerminalHandler {
 
     public configureTerminal(config: Config) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
+        this._terminal.options.scrollback = config.scrollback_lines;
         this._terminal.options.fontSize = config.font!.size;
         this._terminal.options.fontFamily = `'${config.font!.family}', monospace`;
         this._terminal.options.fontWeight = config.font!.weight;

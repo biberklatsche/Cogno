@@ -53,13 +53,13 @@ describe('InputObserver', () => {
     });
     mockTerminal.buffer.active.length = 2;
     
-    // Set cursor position in session state
-    sessionState.cursorPosition = { col: 7, row: 2, viewport: { col: 7, row: 2 }, char: '' };
+    // Set cursor position and maxCursorIndex in session state
+    sessionState.input = { text: '', cursorIndex: 0, maxCursorIndex: 6 };
     sessionState.isCommandRunning = false;
 
     onWriteParsedCallback();
 
-    expect(sessionState.input).toBe('ls -la');
+    expect(sessionState.input.text).toBe('ls -la');
   });
 
   it('should NOT update sessionState.input when command is running', () => {
@@ -67,11 +67,11 @@ describe('InputObserver', () => {
     const onWriteParsedCallback = vi.mocked(mockTerminal.onWriteParsed).mock.calls[0][0];
 
     sessionState.isCommandRunning = true;
-    sessionState.input = 'old input';
+    sessionState.input = { text: 'old input', cursorIndex: 0, maxCursorIndex: 9 };
 
     onWriteParsedCallback();
 
-    expect(sessionState.input).toBe('old input');
+    expect(sessionState.input.text).toBe('old input');
   });
 
   it('should dispose listeners on dispose', () => {

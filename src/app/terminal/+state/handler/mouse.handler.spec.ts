@@ -35,7 +35,7 @@ describe('MouseHandler', () => {
       toJSON: () => {}
     });
 
-    handler = new MouseHandler(mockBus, container, terminalId, sessionState);
+    handler = new MouseHandler(container, sessionState);
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 

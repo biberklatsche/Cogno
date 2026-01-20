@@ -151,6 +151,7 @@ describe('StyleService', () => {
     it('should set background image properties when path is provided', () => {
       const configWithImage = {
         ...baseConfig,
+        allow_transparency: true,
         background_image: {
           path: '/path/to/image.png',
           opacity: 50,

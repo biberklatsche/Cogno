@@ -18,8 +18,8 @@ describe('CursorHandler', () => {
     bus = new AppBus();
     vi.spyOn(bus, 'publish');
 
-    sessionState = new SessionState(terminalId, 'bash', bus);
-    handler = new CursorHandler(bus, sessionState);
+    sessionState = new SessionState(terminalId, 'bash' as any, bus);
+    handler = new CursorHandler(sessionState);
   });
 
   describe('register', () => {

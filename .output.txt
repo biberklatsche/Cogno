@@ -1,323 +1,289 @@
 
 > cogno@0.1.0 test
-> vitest run --run
+> vitest run
  RUN  v3.2.4 /Users/larswolfram/projects/cogno2
- ✓ src/app/terminal/+state/handler/input.handler.spec.ts (6 tests) 71ms
- ❯ src/app/terminal/+state/handler/pty.handler.spec.ts (5 tests | 1 failed) 243ms
-   ✓ PtyHandler > registration > should spawn PTY and register data handlers 11ms
-   ✓ PtyHandler > data flow > should write terminal data to PTY 53ms
-   × PtyHandler > data flow > should write PTY data to terminal and publish PtyInitialized on first data 68ms
-     → terminal.onWriteParsed is not a function
-   ✓ PtyHandler > exit handling > should publish RemovePane when PTY exits 57ms
-   ✓ PtyHandler > Lifecycle > should dispose all registered handlers 52ms
- ✓ src/app/command-palette/command-palette.service.spec.ts (15 tests) 41ms
- ✓ src/app/terminal/+state/handler/selection.handler.spec.ts (9 tests) 74ms
- ✓ src/app/style/style.service.spec.ts (11 tests) 103ms
- ✓ src/app/window/window.service.spec.ts (6 tests) 114ms
- ✓ src/app/tab-list/+state/tab-list.service.spec.ts (21 tests) 11ms
- ✓ src/app/app-bus/app-bus.spec.ts (8 tests) 32ms
- ✓ src/app/workspace/+state/workspace.service.spec.ts (14 tests) 677ms
- ✓ src/app/terminal/+state/handler/terminal-title.handler.spec.ts (5 tests) 11ms
- ✓ src/app/terminal/+state/handler/cursor.handler.spec.ts (15 tests) 46ms
- ✓ src/app/terminal/+state/handler/theme.handler.spec.ts (7 tests) 17ms
- ✓ src/app/notification/+state/notification.service.spec.ts (13 tests) 16ms
- ✓ src/app/config/+state/config.reader.spec.ts (6 tests) 11ms
- ✓ src/app/style/scrollbar.service.spec.ts (8 tests) 48ms
- ✓ src/app/app-buttons/+state/app-buttons.service.spec.ts (5 tests) 16ms
- ✓ src/app/config/+state/config.writer.spec.ts (2 tests) 21ms
- ✓ src/app/terminal/+state/handler/full-screen-app.handler.spec.ts (7 tests) 19ms
- ✓ src/app/grid-list/+state/grid-list.service.spec.ts (13 tests) 20ms
- ✓ src/app/terminal/+state/handler/resize.handler.spec.ts (7 tests) 13ms
- ✓ src/app/terminal/+state/handler/mouse.handler.spec.ts (6 tests) 15ms
- ✓ src/app/keybinding/keybind.matcher.spec.ts (21 tests) 7ms
- ❯ src/app/terminal/+state/handler/focus.handler.spec.ts (8 tests | 4 failed) 23ms
-   ✓ FocusHandler > registration > should register event listeners on terminal textarea 3ms
-   × FocusHandler > registration > should update hasFocus when textarea focus event fires 4ms
-     → Cannot set properties of undefined (setting 'isFocused')
-   × FocusHandler > registration > should update hasFocus when textarea blur event fires 4ms
-     → Cannot set properties of undefined (setting 'isFocused')
-   × FocusHandler > bus events > should focus terminal when FocusTerminal event for this id is received 6ms
+ ✓ src/app/terminal/+state/handler/input.handler.spec.ts (6 tests) 73ms
+ ✓ src/app/terminal/+state/advanced/script.injector.spec.ts (3 tests) 211ms
+ ✓ src/app/terminal/+state/handler/pty.handler.spec.ts (5 tests) 222ms
+ ✓ src/app/terminal/+state/handler/selection.handler.spec.ts (9 tests) 85ms
+ ❯ src/app/style/style.service.spec.ts (11 tests | 1 failed) 116ms
+   ✓ StyleService > should initialize and subscribe to config changes 14ms
+   ✓ StyleService > CSS Variables > should set basic color variables 7ms
+   ✓ StyleService > CSS Variables > should handle light theme background factor 13ms
+   ✓ StyleService > CSS Variables > should set font variables correctly 7ms
+   ✓ StyleService > CSS Variables > should set padding variables correctly 8ms
+   ✓ StyleService > Menu Opacity > should calculate opacity for menu 17ms
+   ✓ StyleService > Menu Opacity > should handle 100% opacity special case 6ms
+   × StyleService > Background Image > should set background image properties when path is provided 12ms
+     → expected "spy" to be called with arguments: [ '/path/to/image.png' ]
+Number of calls: 0
+   ✓ StyleService > Background Image > should remove background image properties when path is missing 20ms
+   ✓ StyleService > Edge Cases > should handle missing menu config by defaulting to 100% opacity 6ms
+   ✓ StyleService > Edge Cases > should handle zero opacity correctly 6ms
+ ✓ src/app/window/window.service.spec.ts (6 tests) 126ms
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts (15 tests | 10 failed) 62ms
+   ✓ CursorHandler > register > should register onCursorMove listener 19ms
+   ✓ CursorHandler > register > should return disposable when registered 1ms
+   × CursorHandler > cursor position publishing > should publish correct cursor position on move 7ms
      → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
-Received:
-  1st publish call:
-  [
--   ObjectContaining {
-+   {
-+     "path": [
-+       "app",
-+       "terminal",
-+     ],
-      "payload": "test-terminal-id",
--     "type": "TerminalFocused",
-+     "phase": "bubble",
-+     "type": "FocusTerminal",
-    },
-  ]
-Number of calls: 1
-   × FocusHandler > bus events > should blur terminal when FocusTerminal event for other id is received 1ms
+Number of calls: 0
+   × CursorHandler > cursor position publishing > should handle cursor at origin (0, 0) 4ms
      → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
-Received:
-  1st publish call:
-  [
--   ObjectContaining {
--     "payload": "test-terminal-id",
--     "type": "TerminalBlurred",
-+   {
-+     "path": [
-+       "app",
-+       "terminal",
-+     ],
-+     "payload": "other-id",
-+     "phase": "bubble",
-+     "type": "FocusTerminal",
-    },
-  ]
-Number of calls: 1
-   ✓ FocusHandler > bus events > should focus terminal when PtyInitialized event is received 1ms
-   ✓ FocusHandler > bus events > should blur terminal when BlurTerminal event for this id is received 0ms
-   ✓ FocusHandler > Lifecycle > should unsubscribe on dispose 1ms
- ✓ src/app/terminal/+state/keybind/keybind.executor.spec.ts (12 tests) 20ms
-stdout | src/app/inspector/+state/inspector.service.spec.ts > InspectorService > Event Handling when Open > should update firedKeybinding on keybind event
+Number of calls: 0
+   × CursorHandler > cursor position publishing > should handle different viewport offsets 4ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > cursor position publishing > should handle multi-character cells 4ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > cursor position publishing > should handle empty cells 3ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > error handling > should use default values when buffer is missing 1ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > error handling > should use default values when active buffer is missing 4ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > error handling > should handle getLine throwing an error 3ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > error handling > should handle getLine returning null 4ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   × CursorHandler > error handling > should handle getCell returning null 3ms
+     → expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+   ✓ CursorHandler > dispose > should dispose the listener when dispose is called 3ms
+   ✓ CursorHandler > dispose > should handle dispose being called multiple times 1ms
+   ✓ CursorHandler > dispose > should handle dispose being called before register 1ms
+ ✓ src/app/workspace/+state/workspace.service.spec.ts (14 tests) 648ms
+ ✓ src/app/notification/+state/notification.service.spec.ts (13 tests) 35ms
+ ✓ src/app/tab-list/+state/tab-list.service.spec.ts (21 tests) 19ms
+ ✓ src/app/app-bus/app-bus.spec.ts (8 tests) 47ms
+ ✓ src/app/command-palette/command-palette.service.spec.ts (15 tests) 37ms
+ ✓ src/app/inspector/+state/inspector.service.spec.ts (9 tests) 17ms
+ ❯ src/app/terminal/+state/handler/mouse.handler.spec.ts (6 tests | 6 failed) 32ms
+   × MouseHandler > registration > should add mousemove listener to screen element 10ms
+     → this._terminalContainer.querySelector is not a function
+   × MouseHandler > mouse movement > should update sessionState with correct coordinates and character 6ms
+     → this._terminalContainer.querySelector is not a function
+   × MouseHandler > mouse movement > should handle viewport offset correctly 12ms
+     → this._terminalContainer.querySelector is not a function
+   × MouseHandler > mouse movement > should clamp coordinates to terminal bounds 1ms
+     → this._terminalContainer.querySelector is not a function
+   × MouseHandler > mouse movement > should handle missing buffer line or cell gracefully 1ms
+     → this._terminalContainer.querySelector is not a function
+   × MouseHandler > Lifecycle > should remove event listener on dispose 0ms
+     → this._terminalContainer.querySelector is not a function
+ ✓ src/app/terminal/+state/handler/focus.handler.spec.ts (8 tests) 14ms
+ ✓ src/app/terminal/+state/keybind/keybind.executor.spec.ts (12 tests) 27ms
+ ✓ src/app/style/scrollbar.service.spec.ts (8 tests) 13ms
+ ❯ src/app/terminal/+state/handler/theme.handler.spec.ts (7 tests | 1 failed) 25ms
+   ✓ ThemeHandler > configureTerminal > should throw error if terminal is not registered 3ms
+   × ThemeHandler > configureTerminal > should apply config options to terminal 6ms
+     → expected undefined to be 5000 // Object.is equality
+   ✓ ThemeHandler > configureTerminal > should publish TerminalThemeChanged event 2ms
+   ✓ ThemeHandler > bus events > should remove padding when FullScreenAppEntered and configured 3ms
+   ✓ ThemeHandler > bus events > should restore padding when FullScreenAppLeaved and configured 1ms
+   ✓ ThemeHandler > bus events > should not change padding if not configured 1ms
+   ✓ ThemeHandler > Lifecycle > should unsubscribe on dispose 7ms
+ ✓ src/app/config/+state/config.writer.spec.ts (2 tests) 9ms
+ ✓ src/app/grid-list/+state/grid-list.service.spec.ts (13 tests) 17ms
+ ✓ src/app/terminal/+state/handler/full-screen-app.handler.spec.ts (7 tests) 10ms
+ ✓ src/app/terminal/+state/handler/resize.handler.spec.ts (7 tests) 17ms
+ ✓ src/app/config/+state/config.reader.spec.ts (6 tests) 30ms
+ ✓ src/app/terminal/+state/advanced/cogno-osc.handler.spec.ts (3 tests) 25ms
+ ✓ src/app/common/dialog/dialog.service.spec.ts (5 tests) 13ms
+ ✓ src/app/common/color/color.spec.ts (18 tests) 11ms
+ ✓ src/app/keybinding/keybind.matcher.spec.ts (21 tests) 5ms
+ ✓ src/app/app-buttons/app-buttons.component.spec.ts (4 tests) 21ms
+ ❯ src/app/terminal/+state/advanced/command-line.observer.spec.ts (5 tests | 1 failed) 24ms
+   ✓ InputObserver > should register onWriteParsed and onKey listeners 6ms
+   ✓ InputObserver > should set isCommandRunning to true on Enter key 8ms
+   × InputObserver > should update sessionState.input when terminal is parsed and command is not running 8ms
+     → expected { cursorIndex: +0, …(2) } to be 'ls -la' // Object.is equality
+   ✓ InputObserver > should NOT update sessionState.input when command is running 1ms
+   ✓ InputObserver > should dispose listeners on dispose 1ms
+ ✓ src/app/app-buttons/+state/app-buttons.service.spec.ts (5 tests) 20ms
+ ✓ src/app/terminal/+state/handler/terminal-title.handler.spec.ts (5 tests) 8ms
+ ✓ src/app/terminal/+state/advanced/cogno-osc.parser.spec.ts (10 tests) 21ms
+ ✓ src/app/common/tree/binary-tree.spec.ts (25 tests) 24ms
+ ✓ src/app/cli-command/cli-action.service.spec.ts (3 tests) 7ms
+ ✓ src/app/keybinding/pipe/keybinding.pipe.spec.ts (7 tests) 8ms
+ ✓ src/app/common/time-ago/time-ago.pipe.spec.ts (6 tests) 6ms
+ ✓ src/app/icons/icon/icon.component.spec.ts (3 tests) 2ms
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app/style/style.service.spec.ts > StyleService > Background Image > should set background image properties when path is provided
+AssertionError: expected "spy" to be called with arguments: [ '/path/to/image.png' ]
+Number of calls: 0
+ ❯ src/app/style/style.service.spec.ts:163:33
+    161|       configService.setConfig(configWithImage);
+    162|
+    163|       expect(Fs.convertFileSrc).toHaveBeenCalledWith('/path/to/image.p…
+       |                                 ^
+    164|       expect(document.body.style.setProperty).toHaveBeenCalledWith('--…
+    165|       expect(document.body.style.setProperty).toHaveBeenCalledWith('--…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+ FAIL  src/app/terminal/+state/advanced/command-line.observer.spec.ts > InputObserver > should update sessionState.input when terminal is parsed and command is not running
+AssertionError: expected { cursorIndex: +0, …(2) } to be 'ls -la' // Object.is equality
+- Expected:
+"ls -la"
++ Received:
 {
-  type: 'Inspector',
-  path: [ 'inspector' ],
-  payload: { type: 'keybind', data: { shortcut: 'Ctrl+C', action: 'copy' } },
-  phase: 'target'
+  "cursorIndex": 0,
+  "maxCursorIndex": 0,
+  "text": "",
 }
-stdout | src/app/inspector/+state/inspector.service.spec.ts > InspectorService > Event Handling when Open > should update terminal state on terminal-state event
-{
-  type: 'Inspector',
-  path: [ 'inspector' ],
-  payload: {
-    type: 'terminal-state',
-    data: {
-      terminalId: 'term1',
-      mousePosition: [Object],
-      cursorPosition: [Object],
-      dimensions: [Object]
-    }
-  },
-  phase: 'target'
-}
-stdout | src/app/inspector/+state/inspector.service.spec.ts > InspectorService > Event Handling when Open > should remove terminal data on TerminalRemoved event
-{
-  type: 'Inspector',
-  path: [ 'inspector' ],
-  payload: {
-    type: 'terminal-state',
-    data: { terminalId: 'term1', mousePosition: [Object] }
-  },
-  phase: 'target'
-}
- ❯ src/app/inspector/+state/inspector.service.spec.ts (9 tests | 2 failed) 21ms
-   ✓ InspectorService > should be created 3ms
-   ✓ InspectorService > Event Handling when Open > should update firedKeybinding on keybind event 2ms
-   × InspectorService > Event Handling when Open > should update terminal state on terminal-state event 4ms
-     → service.terminalMouseById is not a function
-   ✓ InspectorService > Event Handling when Open > should track global mouse movement 3ms
-   × InspectorService > Event Handling when Open > should remove terminal data on TerminalRemoved event 2ms
-     → service.terminalMouseById is not a function
-   ✓ InspectorService > Event Handling when Open > should register Escape key listener 3ms
-   ✓ InspectorService > Lifecycle and Modes > should unregister listeners when closed 1ms
-   ✓ InspectorService > Lifecycle and Modes > should stop listening to events when closed 0ms
-   ✓ InspectorService > Lifecycle and Modes > should handle mode off by closing 1ms
- ✓ src/app/common/color/color.spec.ts (18 tests) 21ms
- ✓ src/app/common/dialog/dialog.service.spec.ts (5 tests) 14ms
- ✓ src/app/common/tree/binary-tree.spec.ts (25 tests) 9ms
- ✓ src/app/common/time-ago/time-ago.pipe.spec.ts (6 tests) 14ms
- ✓ src/app/cli-command/cli-action.service.spec.ts (3 tests) 6ms
- ✓ src/app/keybinding/pipe/keybinding.pipe.spec.ts (7 tests) 7ms
- ✓ src/app/app-buttons/app-buttons.component.spec.ts (4 tests) 5ms
- ✓ src/app/icons/icon/icon.component.spec.ts (3 tests) 5ms
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
- FAIL  src/app/inspector/+state/inspector.service.spec.ts > InspectorService > Event Handling when Open > should update terminal state on terminal-state event
-TypeError: service.terminalMouseById is not a function
- ❯ src/app/inspector/+state/inspector.service.spec.ts:91:28
-     89|             });
-     90|
-     91|             expect(service.terminalMouseById()['term1']).toEqual(data);
-       |                            ^
-     92|             expect(service.terminalCursorById()['term1']).toEqual(data…
-     93|             expect(service.terminalDimsById()['term1']).toEqual(data);
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
- FAIL  src/app/inspector/+state/inspector.service.spec.ts > InspectorService > Event Handling when Open > should remove terminal data on TerminalRemoved event
-TypeError: service.terminalMouseById is not a function
- ❯ src/app/inspector/+state/inspector.service.spec.ts:120:28
-    118|             });
-    119|
-    120|             expect(service.terminalMouseById()['term1']).toBeUndefined…
-       |                            ^
-    121|             expect(service.terminalIds()).not.toContain('term1');
-    122|         });
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
- FAIL  src/app/terminal/+state/handler/focus.handler.spec.ts > FocusHandler > registration > should update hasFocus when textarea focus event fires
-TypeError: Cannot set properties of undefined (setting 'isFocused')
- ❯ src/app/terminal/+state/handler/focus.handler.ts:56:32
-     54|         const textarea = terminal.textarea;
-     55|         textarea?.addEventListener("focus", () => {
-     56|             this._sessionState.isFocused = true;
+ ❯ src/app/terminal/+state/advanced/command-line.observer.spec.ts:62:32
+     60|     onWriteParsedCallback();
+     61|
+     62|     expect(sessionState.input).toBe('ls -la');
        |                                ^
-     57|         });
-     58|         textarea?.addEventListener("blur", () => {
- ❯ src/app/terminal/+state/handler/focus.handler.spec.ts:36:7
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
- FAIL  src/app/terminal/+state/handler/focus.handler.spec.ts > FocusHandler > registration > should update hasFocus when textarea blur event fires
-TypeError: Cannot set properties of undefined (setting 'isFocused')
- ❯ src/app/terminal/+state/handler/focus.handler.ts:56:32
-     54|         const textarea = terminal.textarea;
-     55|         textarea?.addEventListener("focus", () => {
-     56|             this._sessionState.isFocused = true;
-       |                                ^
-     57|         });
-     58|         textarea?.addEventListener("blur", () => {
- ❯ src/app/terminal/+state/handler/focus.handler.spec.ts:48:7
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
- FAIL  src/app/terminal/+state/handler/focus.handler.spec.ts > FocusHandler > bus events > should focus terminal when FocusTerminal event for this id is received
+     63|   });
+     64|
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should publish correct cursor position on move
 AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
-Received:
-  1st publish call:
-  [
--   ObjectContaining {
-+   {
-+     "path": [
-+       "app",
-+       "terminal",
-+     ],
-      "payload": "test-terminal-id",
--     "type": "TerminalFocused",
-+     "phase": "bubble",
-+     "type": "FocusTerminal",
-    },
-  ]
-Number of calls: 1
- ❯ src/app/terminal/+state/handler/focus.handler.spec.ts:69:26
-     67|
-     68|       expect(focusSpy).toHaveBeenCalled();
-     69|       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining(…
-       |                          ^
-     70|     });
-     71|
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
- FAIL  src/app/terminal/+state/handler/focus.handler.spec.ts > FocusHandler > bus events > should blur terminal when FocusTerminal event for other id is received
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:71:27
+     69|       await new Promise(resolve => setTimeout(resolve, 0));
+     70|
+     71|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+     72|           expect.objectContaining({
+     73|             path: ['inspector'],
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle cursor at origin (0, 0)
 AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
-Received:
-  1st publish call:
-  [
--   ObjectContaining {
--     "payload": "test-terminal-id",
--     "type": "TerminalBlurred",
-+   {
-+     "path": [
-+       "app",
-+       "terminal",
-+     ],
-+     "payload": "other-id",
-+     "phase": "bubble",
-+     "type": "FocusTerminal",
-    },
-  ]
-Number of calls: 1
- ❯ src/app/terminal/+state/handler/focus.handler.spec.ts:79:26
-     77|
-     78|       expect(blurSpy).toHaveBeenCalled();
-     79|       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining(…
-       |                          ^
-     80|     });
-     81|
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
- FAIL  src/app/terminal/+state/handler/pty.handler.spec.ts > PtyHandler > data flow > should write PTY data to terminal and publish PtyInitialized on first data
-TypeError: terminal.onWriteParsed is not a function
- ❯ src/app/terminal/+state/handler/pty.handler.ts:41:50
-     39|                 terminal.write(data);
-     40|                 if(isFirst) {
-     41|                     const disposable  = terminal.onWriteParsed(() => {
-       |                                                  ^
-     42|                         this._bus.publish({path: ['app', 'terminal', t…
-     43|                         disposable.dispose();
- ❯ src/app/terminal/+state/handler/pty.handler.spec.ts:67:7
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-Vitest caught 4 unhandled errors during the test run.
-This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-TypeError: Cannot set properties of undefined (setting 'isFocused')
- ❯ FocusHandler.focus src/app/terminal/+state/handler/focus.handler.ts:67:28
-     65|     focus() {
-     66|         this._terminal?.focus();
-     67|         this._sessionState.isFocused = true;
-       |                            ^
-     68|         this._bus.publish({type: "TerminalFocused", payload: this._ter…
-     69|     }
- ❯ Object.next src/app/terminal/+state/handler/focus.handler.ts:32:22
- ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
- ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
- ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
- ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
- ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
- ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
-This error originated in "src/app/terminal/+state/handler/focus.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-TypeError: Cannot set properties of undefined (setting 'isFocused')
- ❯ FocusHandler.blur src/app/terminal/+state/handler/focus.handler.ts:73:28
-     71|     blur() {
-     72|         this._terminal?.blur();
-     73|         this._sessionState.isFocused = false;
-       |                            ^
-     74|         this._bus.publish({type: "TerminalBlurred", payload: this._ter…
-     75|     }
- ❯ Object.next src/app/terminal/+state/handler/focus.handler.ts:34:22
- ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
- ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
- ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
- ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
- ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
- ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
-This error originated in "src/app/terminal/+state/handler/focus.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-TypeError: Cannot set properties of undefined (setting 'isFocused')
- ❯ FocusHandler.focus src/app/terminal/+state/handler/focus.handler.ts:67:28
-     65|     focus() {
-     66|         this._terminal?.focus();
-     67|         this._sessionState.isFocused = true;
-       |                            ^
-     68|         this._bus.publish({type: "TerminalFocused", payload: this._ter…
-     69|     }
- ❯ Object.next src/app/terminal/+state/handler/focus.handler.ts:42:18
- ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
- ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
- ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
- ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
- ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
- ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
-This error originated in "src/app/terminal/+state/handler/focus.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-TypeError: Cannot set properties of undefined (setting 'isFocused')
- ❯ FocusHandler.blur src/app/terminal/+state/handler/focus.handler.ts:73:28
-     71|     blur() {
-     72|         this._terminal?.blur();
-     73|         this._sessionState.isFocused = false;
-       |                            ^
-     74|         this._bus.publish({type: "TerminalBlurred", payload: this._ter…
-     75|     }
- ❯ Object.next src/app/terminal/+state/handler/focus.handler.ts:50:22
- ❯ ConsumerObserver.next node_modules/rxjs/src/internal/Subscriber.ts:155:25
- ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/src/internal/Subscriber.ts:113:22
- ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/operators/filter.ts:72:109
- ❯ OperatorSubscriber._this._next node_modules/rxjs/src/internal/operators/OperatorSubscriber.ts:70:13
- ❯ OperatorSubscriber.Subscriber.next node_modules/rxjs/src/internal/Subscriber.ts:71:12
- ❯ node_modules/rxjs/src/internal/Subject.ts:67:20
- ❯ Object.errorContext node_modules/rxjs/src/internal/util/errorContext.ts:29:5
-This error originated in "src/app/terminal/+state/handler/focus.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
- Test Files  3 failed | 30 passed (33)
-      Tests  7 failed | 303 passed (310)
-     Errors  4 errors
-   Start at  17:24:44
-   Duration  4.62s (transform 1.15s, setup 2.13s, collect 8.34s, tests 1.77s, environment 8.48s, prepare 3.24s)
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:110:27
+    108|       await new Promise(resolve => setTimeout(resolve, 0));
+    109|
+    110|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    111|           expect.objectContaining({
+    112|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle different viewport offsets
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:145:27
+    143|       await new Promise(resolve => setTimeout(resolve, 0));
+    144|
+    145|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    146|           expect.objectContaining({
+    147|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle multi-character cells
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:177:27
+    175|       await new Promise(resolve => setTimeout(resolve, 0));
+    176|
+    177|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    178|           expect.objectContaining({
+    179|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle empty cells
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:209:27
+    207|       await new Promise(resolve => setTimeout(resolve, 0));
+    208|
+    209|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    210|           expect.objectContaining({
+    211|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should use default values when buffer is missing
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:239:27
+    237|       await new Promise(resolve => setTimeout(resolve, 0));
+    238|
+    239|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    240|           expect.objectContaining({
+    241|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should use default values when active buffer is missing
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:270:27
+    268|       await new Promise(resolve => setTimeout(resolve, 0));
+    269|
+    270|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    271|           expect.objectContaining({
+    272|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should handle getLine throwing an error
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:306:27
+    304|       await new Promise(resolve => setTimeout(resolve, 0));
+    305|
+    306|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    307|           expect.objectContaining({
+    308|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should handle getLine returning null
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:341:27
+    339|       await new Promise(resolve => setTimeout(resolve, 0));
+    340|
+    341|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    342|           expect.objectContaining({
+    343|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should handle getCell returning null
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+Number of calls: 0
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:374:27
+    372|       await new Promise(resolve => setTimeout(resolve, 0));
+    373|
+    374|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    375|           expect.objectContaining({
+    376|             payload: expect.objectContaining({
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+ FAIL  src/app/terminal/+state/handler/mouse.handler.spec.ts > MouseHandler > registration > should add mousemove listener to screen element
+ FAIL  src/app/terminal/+state/handler/mouse.handler.spec.ts > MouseHandler > mouse movement > should update sessionState with correct coordinates and character
+ FAIL  src/app/terminal/+state/handler/mouse.handler.spec.ts > MouseHandler > mouse movement > should handle viewport offset correctly
+ FAIL  src/app/terminal/+state/handler/mouse.handler.spec.ts > MouseHandler > mouse movement > should clamp coordinates to terminal bounds
+ FAIL  src/app/terminal/+state/handler/mouse.handler.spec.ts > MouseHandler > mouse movement > should handle missing buffer line or cell gracefully
+ FAIL  src/app/terminal/+state/handler/mouse.handler.spec.ts > MouseHandler > Lifecycle > should remove event listener on dispose
+TypeError: this._terminalContainer.querySelector is not a function
+ ❯ new MouseHandler src/app/terminal/+state/handler/mouse.handler.ts:18:53
+     16|
+     17|   constructor(private _terminalContainer: HTMLDivElement, private _ses…
+     18|       this._screenElement = this._terminalContainer.querySelector('.xt…
+       |                                                     ^
+     19|   }
+     20|
+ ❯ src/app/terminal/+state/handler/mouse.handler.spec.ts:38:15
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+ FAIL  src/app/terminal/+state/handler/theme.handler.spec.ts > ThemeHandler > configureTerminal > should apply config options to terminal
+AssertionError: expected undefined to be 5000 // Object.is equality
+- Expected:
+5000
++ Received:
+undefined
+ ❯ src/app/terminal/+state/handler/theme.handler.spec.ts:45:47
+     43|       handler.configureTerminal(config);
+     44|
+     45|       expect(mockTerminal.options.scrollback).toBe(5000);
+       |                                               ^
+     46|       expect(mockTerminal.options.fontSize).toBe(14);
+     47|       expect(mockTerminal.options.fontFamily).toBe("'Fira Code', monos…
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+ Test Files  5 failed | 32 passed (37)
+      Tests  19 failed | 312 passed (331)
+   Start at  17:00:23
+   Duration  5.58s (transform 1.20s, setup 3.17s, collect 9.34s, tests 2.09s, environment 10.22s, prepare 3.82s)
