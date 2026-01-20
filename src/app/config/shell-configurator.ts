@@ -48,40 +48,30 @@ export class ShellConfigurator {
             shell_type: sh.shell_type,
             path: sh.path,
             args: [],
+            env: {},
             working_dir: '/~',
             enable_shell_integration: true,
             inject_path: true,
         };
 
         const args: string[] = [];
-        //TODO: Add cogno to path during installation
+        const env: Record<string, string> = {};
         switch (sh.shell_type) {
             case 'GitBash': {
-                args.push('--login', '-i', '-lc');
-                const exePath = this.windowsPathToMsys(Environment.exeDirPath());
-                const exportCmd = `export PATH='${exePath}':"$PATH"; exec bash -i`;
-                args.push(exportCmd);
+                args.push('--login', '-i');
+                env['TERM'] = 'xterm-256color'
                 break;
             }
             case 'ZSH': {
-                args.push('--login', '-i', '-lc');
-                const exePath = Environment.exeDirPath();
-                const exportCmd = `export PATH='${exePath}':"$PATH"; exec zsh -i`;
-                args.push(exportCmd);
+                args.push('--login', '-i');
                 break;
             }
             case 'Bash': {
-                args.push('--login', '-i', '-lc');
-                const exePath = Environment.exeDirPath();
-                const exportCmd = `export PATH='${exePath}':"$PATH"; exec bash -i`;
-                args.push(exportCmd);
+                args.push('--login', '-i');
                 break;
             }
             case 'PowerShell': {
-                args.push('-NoLogo', '-NoExit', '-Command');
-                const exePath = Environment.exeDirPath();
-                const exportCmd = `$env:Path = '${exePath};'+$env:Path`;
-                args.push(exportCmd);
+                args.push('-NoLogo', '-NoExit');
                 break;
             }
             default: {
@@ -89,18 +79,6 @@ export class ShellConfigurator {
                 break;
             }
         }
-        return {...base, args};
+        return {...base, args, env};
     }
-
-    private windowsPathToMsys(p: string): string {
-    let s = p;
-    if (s.startsWith('\\\\?\\')) s = s.slice(4);
-    s = s.replace(/\\/g, '/');
-    if (s.length >= 2 && s[1] === ':') {
-      const drive = s[0].toLowerCase();
-      const rest = s.slice(2);
-      return `/${drive}${rest}`;
-    }
-    return s;
-  }
 }

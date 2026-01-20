@@ -24,6 +24,7 @@ import {PathInjector} from "./advanced/path.injector";
 import {CognoOscHandler} from "./advanced/cogno-osc.handler";
 import {CommandLineObserver} from "./advanced/command-line.observer";
 import {SessionState} from "./session.state";
+import {CommandLineEditor} from './advanced/command-line.editor';
 
 export class TerminalSession {
 
@@ -80,6 +81,7 @@ export class TerminalSession {
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
             this.disposables.push(this.renderer.register(new CommandLineObserver(sessionState)));
+            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.terminalId)));
 
         }
 
