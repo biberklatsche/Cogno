@@ -5,7 +5,7 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-    Input, input
+    Input, input, ViewEncapsulation
 } from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {ConfigService} from "../config/+state/config.service";
@@ -19,7 +19,8 @@ import {ShellConfig, ShellConfigPosition} from "../config/+models/config";
     selector: 'app-terminal',
     templateUrl: './terminal.component.html',
     styleUrls: ['./terminal.component.scss'],
-    standalone: true
+    standalone: true,
+    encapsulation: ViewEncapsulation.None
 })
 export class TerminalComponent implements OnInit, AfterViewInit {
     @ViewChild('terminalContainer', {static: true}) terminalContainer!: ElementRef<HTMLDivElement>;

@@ -73,7 +73,7 @@ export class MarkerManager implements IDisposable {
         const decoration = this._terminal.registerDecoration({
             marker,
             x: 0,
-            width: 1,
+            width: 20,
             anchor: 'left'
         });
 

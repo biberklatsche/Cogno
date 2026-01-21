@@ -1,7 +1,7 @@
 import {DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
-import {BehaviorSubject, debounceTime, filter, Observable, Subject, Subscription} from 'rxjs';
+import {BehaviorSubject, filter, Observable, Subscription} from 'rxjs';
 import {Config, ShellConfig, ShellConfigPosition} from "../+models/config";
 import {ConfigReader} from "./config.reader";
 import {Logger} from "../../_tauri/logger";

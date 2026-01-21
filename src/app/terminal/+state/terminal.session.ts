@@ -48,17 +48,10 @@ export class TerminalSession {
             this.renderer,
             this.pty
         ];
-        this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
-            if (config.enable_webgl) {
-                this.renderer.useWebGl();
-            } else {
-                this.renderer.useCanvas();
-            }
-        }));
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
-        this.renderer.open(terminalContainer);
+        this.renderer.open(terminalContainer, this.configService.config.font?.enable_ligatures ?? false);
         const sessionState = new SessionState(this.terminalId, this.shellConfig.shell_type!, this.bus);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus, sessionState);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);

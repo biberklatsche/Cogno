@@ -63,5 +63,5 @@ function prompt {
 
     # Sichtbarer Prompt
     # `n ist das PowerShell-Kürzel für Newline
-    Write-Output "`nCOGNO$($global:COGNO_COUNT)@$hostName `n"
+    Write-Output "`nCOGNO$($global:COGNO_COUNT) `n"
 }

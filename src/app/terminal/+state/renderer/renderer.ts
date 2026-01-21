@@ -12,11 +12,7 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
-    open(terminalContainer: HTMLDivElement): void;
-
-    useWebGl(): void;
-
-    useCanvas(): void;
+    open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
 
     dispose(): void;
 
@@ -36,6 +32,7 @@ export class Renderer implements IRenderer, IDisposable {
 
     constructor(config: Config) {
         this._terminal = new Terminal({
+            fontFamily:`${config.font!.family}`,
             overviewRulerWidth: config.overview_ruler_width,
             scrollback: config.scrollback_lines,
             tabStopWidth: config.tab_stop_width,
@@ -67,6 +64,11 @@ export class Renderer implements IRenderer, IDisposable {
         this._terminal.loadAddon(this._searchAddon);
         this._terminal.loadAddon(this._unicodeAddon);
         this._terminal.unicode.activeVersion = '11';
+        if(config.enable_webgl) {
+            this.useWebGl();
+        } else {
+            this.useCanvas();
+        }
     }
 
     register(handler: ITerminalHandler | IFitHandler): IDisposable {
@@ -79,18 +81,28 @@ export class Renderer implements IRenderer, IDisposable {
         throw new Error('unknown handler type');
     }
 
-    public open(terminalContainer: HTMLDivElement) {
+    public open(terminalContainer: HTMLDivElement, enableLigatures: boolean) {
         this._terminal.open(terminalContainer);
+        if(enableLigatures) {
+            this.useLigatures();
+        }
     }
 
-    public useWebGl() {
+    private useLigatures() {
+        if (!this._ligaturesAddon) {
+            this._ligaturesAddon = new LigaturesAddon();
+        }
+        this._terminal.loadAddon(this._ligaturesAddon);
+    }
+
+    private useWebGl() {
         if (!this._webglAddon) {
             this._webglAddon = new WebglAddon();
         }
         this._terminal.loadAddon(this._webglAddon);
     }
 
-    public useCanvas() {
+    private useCanvas() {
         if (!this._canvasAddon) {
             this._canvasAddon = new CanvasAddon();
         }
