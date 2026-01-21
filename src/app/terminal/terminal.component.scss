@@ -17,9 +17,9 @@ app-terminal {
         color: white;
         border-radius: 4px;
         padding: 0 4px;
-        font-size: 10px;
-        font-family: var(--font-family);
-        height: 14px;
+        font-size: var(--font-size);
+        font-family: var(--font-family), monospace;
+        height: var(--font-size);
         margin-left: 0px; /* Position links vom Text */
         position: relative; /* Geändert von absolute */
         z-index: 10;
