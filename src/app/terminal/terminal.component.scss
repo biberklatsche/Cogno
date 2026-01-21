@@ -8,3 +8,32 @@
     height: 100%;
     overflow: auto; /* Scrollbar am Container statt im xterm-Viewport */
 }
+
+::ng-deep {
+    .cogno-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-primary, #3b82f6);
+        color: white;
+        border-radius: 4px;
+        padding: 0 4px;
+        font-size: 10px;
+        font-family: monospace;
+        height: 14px;
+        margin-left: 40px; /* Position links vom Text */
+        position: relative; /* Geändert von absolute */
+        z-index: 10;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        white-space: nowrap;
+
+        &.dot-only {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: -20px;
+            padding: 0;
+            display: block; /* Sicherstellen, dass es angezeigt wird */
+        }
+    }
+}

@@ -4,18 +4,22 @@ import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
 import {Command, Position, SessionState} from "../session.state";
 import OscParser from "./cogno-osc.parser";
+import {MarkerManager} from "../../ui/marker-manager";
 
 export class CommandLineObserver implements ITerminalHandler {
 
     private _disposables: IDisposable[] = [];
     private _terminal?: Terminal;
+    private _markerManager: MarkerManager;
 
     constructor(private sessionState: SessionState) {
-
+        this._markerManager = new MarkerManager(sessionState);
     }
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
+        this._markerManager.setTerminal(terminal);
+
         this._disposables.push(terminal.onCursorMove(() => {
             if (!terminal?.buffer?.active) return;
             try {
@@ -45,6 +49,18 @@ export class CommandLineObserver implements ITerminalHandler {
             }
         }));
 
+        this._disposables.push(this._terminal.onScroll(() => {
+            this._markerManager.refreshMarkers();
+        }));
+
+        this._disposables.push(this._terminal.onResize(() => {
+            this._markerManager.refreshMarkers();
+        }));
+
+        this._disposables.push(this._terminal.onRender(() => {
+            this._markerManager.refreshMarkers();
+        }));
+
         this._disposables.push(terminal.parser
             .registerOscHandler(733, (data: string) => {
                 this.sessionState.isCommandRunning = false;
@@ -66,6 +82,7 @@ export class CommandLineObserver implements ITerminalHandler {
     dispose(): void {
         this._disposables.forEach(d => d.dispose());
         this._disposables = [];
+        this._markerManager.dispose();
         this._terminal = undefined;
     }
 
