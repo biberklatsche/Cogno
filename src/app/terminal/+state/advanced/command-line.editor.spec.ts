@@ -31,6 +31,11 @@ describe('CommandLineEditor', () => {
     } as any;
     editor = new CommandLineEditor(mockBus, mockPty, state);
     mockTerminal = TerminalMockFactory.createTerminal();
+    
+    // Default mocks for selection
+    vi.mocked(mockTerminal.hasSelection).mockReturnValue(false);
+    vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue(undefined);
+
     editor.registerTerminal(mockTerminal);
   });
 
@@ -115,6 +120,13 @@ describe('CommandLineEditor', () => {
       // startCol: 0%80=0, startRow: 0+1=1, length: 1
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
       expect(mockPty.write).toHaveBeenCalledWith('\x1b[C');
+      
+      // Simuliere dass xterm nun eine Selektion hat
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 1, y: 1 }
+      });
     });
 
     it('should select text to the left and move cursor', () => {
@@ -164,6 +176,13 @@ describe('CommandLineEditor', () => {
       mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
       
+      // Simuliere xterm selektion nach erstem Schritt
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 1, y: 1 }
+      });
+
       // Update state as if cursor moved
       state.input.cursorIndex = 1;
       
@@ -176,11 +195,26 @@ describe('CommandLineEditor', () => {
     it('should shrink selection when reversing direction', () => {
       state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
       
-      // Select 2 chars right
+      // Select 1 char right
       mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
       state.input.cursorIndex = 1;
+      
+      // Simuliere xterm selektion
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 1, y: 1 }
+      });
+
+      // Select another char right
       mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
       state.input.cursorIndex = 2;
+      
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 2, y: 1 }
+      });
+
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 2);
       
       // Select 1 char left
@@ -208,14 +242,16 @@ describe('CommandLineEditor', () => {
     });
 
     it('should delete selection when Backspace is pressed', () => {
-      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      state.input = { text: 'hello world', cursorIndex: 5, maxCursorIndex: 11 };
       
-      // Select 5 chars right ('hello')
-      for (let i = 0; i < 5; i++) {
-        mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
-        state.input.cursorIndex = i + 1;
-      }
-      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 5);
+      // Mock xterm selection position (0-based)
+      // Prompt ends at row 0 (0-based findLastCognoMarkerY), so input starts at row 1.
+      // Index 0-5 means column 0 to 5 on row 1.
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 }, 
+        end: { x: 5, y: 1 }    
+      });
       
       // Get the custom key handler
       const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
@@ -225,23 +261,21 @@ describe('CommandLineEditor', () => {
       const result = customKeyHandler(event);
       
       expect(result).toBe(false); // Handled
-      // Cursor was at 5. Range 0-5. end=5, currentPos=5. countToMoveRight = 5-5 = 0.
+      // Cursor was at 5. Range index 0 to 5. endIdx = 5. currentCursorIdx = 5.
       // Expected: write 5 backspaces.
       expect(mockPty.write).toHaveBeenLastCalledWith('\x08'.repeat(5));
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
     });
 
     it('should delete selection when Delete is pressed', () => {
-      state.input = { text: 'hello world', cursorIndex: 11, maxCursorIndex: 11 };
+      state.input = { text: 'hello world', cursorIndex: 6, maxCursorIndex: 11 };
       
-      // Select 5 chars left ('world')
-      // world starts at index 6, ends at 11
-      for (let i = 0; i < 5; i++) {
-        mockBus.publish({ type: 'SelectTextLeft', payload: terminalId, path: ['app', 'terminal'] });
-        state.input.cursorIndex = 11 - (i + 1);
-      }
-      // start: 6, end: 11, currentPos: 6
-      expect(mockTerminal.select).toHaveBeenLastCalledWith(6, 1, 5);
+      // Select index 6 to 11 ('world')
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 6, y: 1 }, 
+        end: { x: 11, y: 1 }    
+      });
       
       const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
       
@@ -250,10 +284,28 @@ describe('CommandLineEditor', () => {
       const result = customKeyHandler(event);
       
       expect(result).toBe(false); // Handled
-      // end=11, currentPos=6. countToMoveRight = 11 - 6 = 5.
+      // endIdx=11, currentPos=6. cursorOffsetToEnd = 11 - 6 = 5.
       // Expected: move right 5 times, then 5 backspaces.
       expect(mockPty.write).toHaveBeenLastCalledWith('\x1b[C'.repeat(5) + '\x08'.repeat(5));
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should not delete selection if it is outside of input area', () => {
+      state.input = { text: 'hello', cursorIndex: 5, maxCursorIndex: 5 };
+      
+      // Selection on row 0 (prompt area)
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 0 }, 
+        end: { x: 5, y: 0 }    
+      });
+      
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      const event = { type: 'keydown', key: 'Backspace' } as KeyboardEvent;
+      const result = customKeyHandler(event);
+      
+      expect(result).toBe(true); // Should return true to let xterm handle it
+      expect(mockPty.write).not.toHaveBeenCalled();
     });
 
     it('should not delete selection if command is running', () => {
@@ -267,6 +319,16 @@ describe('CommandLineEditor', () => {
       
       expect(result).toBe(true); // Not handled by custom handler
       expect(mockPty.write).not.toHaveBeenCalledWith('\x08');
+    });
+
+    it('should dispose selection listener on dispose', () => {
+      const selectionDispose = vi.fn();
+      vi.mocked(mockTerminal.onSelectionChange).mockReturnValue({ dispose: selectionDispose });
+
+      editor.registerTerminal(mockTerminal);
+      editor.dispose();
+
+      expect(selectionDispose).toHaveBeenCalled();
     });
   });
 });

@@ -78,6 +78,7 @@ export class TerminalMockFactory {
       input: vi.fn(),
       dispose: vi.fn(),
       getSelection: vi.fn(),
+      getSelectionPosition: vi.fn(),
       hasSelection: vi.fn(),
       clearSelection: vi.fn(),
       select: vi.fn(),
