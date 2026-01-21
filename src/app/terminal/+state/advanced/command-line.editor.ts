@@ -1,3 +1,4 @@
+import {AppMessage} from '../../../app-bus/messages';
 import {ITerminalHandler} from '../handler/handler';
 import {Terminal} from '@xterm/xterm';
 import {IDisposable} from '../../../common/models/models';
@@ -25,7 +26,7 @@ export class CommandLineEditor implements ITerminalHandler  {
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
-        this.onKey = terminal.onKey((key) => {
+        this.onKey = terminal.onKey(() => {
             this._selectionStart = null;
         });
 
@@ -40,94 +41,61 @@ export class CommandLineEditor implements ITerminalHandler  {
             return true;
         });
 
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearLine'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.clearCurrentInput();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearLineToEnd'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.clearLineToEnd();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearLineToStart'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.clearLineToStart();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'DeletePreviousWord'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.deletePreviousWord();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'DeleteNextWord'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.deleteNextWord();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'GoToNextWord'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.goToNextWord();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'GoToPreviousWord'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this._selectionStart = null;
-            this.goToPreviousWord();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'SelectTextRight'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this.selectTextRight();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'SelectTextLeft'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this.selectTextLeft();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'SelectWordRight'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this.selectWordRight();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'SelectWordLeft'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this.selectWordLeft();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'SelectTextToEndOfLine'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this.selectTextToEndOfLine();
-        }));
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'SelectTextToStartOfLine'}).subscribe(async event => {
-            if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
-            this.selectTextToStartOfLine();
-        }));
+        const actions: Record<string, (event: any) => void> = {
+            'ClearLine': () => this.clearCurrentInput(),
+            'ClearLineToEnd': () => this.clearLineToEnd(),
+            'ClearLineToStart': () => this.clearLineToStart(),
+            'DeletePreviousWord': () => this.deletePreviousWord(),
+            'DeleteNextWord': () => this.deleteNextWord(),
+            'GoToNextWord': () => this.goToNextWord(),
+            'GoToPreviousWord': () => this.goToPreviousWord(),
+            'SelectTextRight': () => this.selectTextRight(),
+            'SelectTextLeft': () => this.selectTextLeft(),
+            'SelectWordRight': () => this.selectWordRight(),
+            'SelectWordLeft': () => this.selectWordLeft(),
+            'SelectTextToEndOfLine': () => this.selectTextToEndOfLine(),
+            'SelectTextToStartOfLine': () => this.selectTextToStartOfLine(),
+        } satisfies Partial<Record<AppMessage['type'], (event: any) => void>>;
+
+        Object.entries(actions).forEach(([key, handler]) => {
+            const type = key as AppMessage['type'];
+            this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type }).subscribe(async event => {
+                if (event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
+                
+                // Reset selection start for non-selection actions
+                if (!type.startsWith('Select')) {
+                    this._selectionStart = null;
+                }
+                
+                handler(event);
+            }));
+        });
+
         return this;
     }
 
     clearCurrentInput() {
         if(!this._terminal) return;
-        const countCharsToDelete = this.sessionState.input.text.length;
-        const countToEnd = countCharsToDelete - this.sessionState.input.cursorIndex;
-        // Methode 1: Cursor ans Ende + Backspace (universell)
-        this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToEnd) + String.fromCharCode(8).repeat(countCharsToDelete)); // Nach rechts
+        const text = this.sessionState.input.text;
+        const countToEnd = text.length - this.sessionState.input.cursorIndex;
+        this._ptyWrite(this._buildCursorMoveCommand(countToEnd) + "\x08".repeat(text.length));
     }
 
     clearLineToEnd() {
-        if(!this._terminal) return;
         const countToEnd = this.sessionState.input.text.length - this.sessionState.input.cursorIndex;
         if (countToEnd > 0) {
-            this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToEnd) + String.fromCharCode(8).repeat(countToEnd)); // Delete character
+            this._ptyWrite(this._buildCursorMoveCommand(countToEnd) + "\x08".repeat(countToEnd));
         }
     }
 
     clearLineToStart() {
-        if(!this._terminal) return;
         const countToStart = this.sessionState.input.cursorIndex;
         if (countToStart > 0) {
-            this._pty.write(String.fromCharCode(8).repeat(countToStart));
+            this._ptyWrite("\x08".repeat(countToStart));
         }
     }
 
     deletePreviousWord() {
-        if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
         if (currentPos === 0) return;
 
@@ -135,12 +103,11 @@ export class CommandLineEditor implements ITerminalHandler  {
         const countToDelete = currentPos - prevWordStart;
 
         if (countToDelete > 0) {
-            this._pty.write(String.fromCharCode(8).repeat(countToDelete));
+            this._ptyWrite("\x08".repeat(countToDelete));
         }
     }
 
     deleteNextWord() {
-        if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
         const text = this.sessionState.input.text;
         if (currentPos >= text.length) return;
@@ -149,12 +116,11 @@ export class CommandLineEditor implements ITerminalHandler  {
         const countToDelete = nextWordEnd - currentPos;
 
         if (countToDelete > 0) {
-            this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToDelete) + String.fromCharCode(8).repeat(countToDelete));
+            this._ptyWrite(this._buildCursorMoveCommand(countToDelete) + "\x08".repeat(countToDelete));
         }
     }
 
     goToNextWord() {
-        if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
         const text = this.sessionState.input.text;
         if (currentPos >= text.length) return;
@@ -163,12 +129,11 @@ export class CommandLineEditor implements ITerminalHandler  {
         const countToMove = nextWordEnd - currentPos;
 
         if (countToMove > 0) {
-            this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToMove));
+            this._ptyWrite(this._buildCursorMoveCommand(countToMove));
         }
     }
 
     goToPreviousWord() {
-        if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
         if (currentPos === 0) return;
 
@@ -176,104 +141,84 @@ export class CommandLineEditor implements ITerminalHandler  {
         const countToMove = currentPos - prevWordStart;
 
         if (countToMove > 0) {
-            this._pty.write(`${String.fromCharCode(27)}[D`.repeat(countToMove));
+            this._ptyWrite(this._buildCursorMoveCommand(-countToMove));
         }
     }
 
     selectTextRight() {
-        if(!this._terminal) return;
-        this.select(1);
-        this._pty.write(`${String.fromCharCode(27)}[C`);
+        this._selectAndMove(1);
     }
 
     selectTextLeft() {
-        if(!this._terminal) return;
-        this.select(-1);
-        this._pty.write(`${String.fromCharCode(27)}[D`);
+        this._selectAndMove(-1);
     }
 
     selectWordRight() {
-        if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
-        const text = this.sessionState.input.text;
-        const nextWordEnd = this.findNextWordEnd(text, currentPos);
+        const nextWordEnd = this.findNextWordEnd(this.sessionState.input.text, currentPos);
         const countToMove = nextWordEnd - currentPos;
         if (countToMove > 0) {
-            this.select(countToMove);
-            this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToMove));
+            this._selectAndMove(countToMove);
         }
     }
 
     selectWordLeft() {
-        if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
-        const text = this.sessionState.input.text;
-        const prevWordStart = this.findPreviousWordStart(text, currentPos);
+        const prevWordStart = this.findPreviousWordStart(this.sessionState.input.text, currentPos);
         const countToMove = currentPos - prevWordStart;
         if (countToMove > 0) {
-            this.select(-countToMove);
-            this._pty.write(`${String.fromCharCode(27)}[D`.repeat(countToMove));
+            this._selectAndMove(-countToMove);
         }
     }
 
     selectTextToEndOfLine() {
-        if(!this._terminal) return;
-        const currentPos = this.sessionState.input.cursorIndex;
-        const text = this.sessionState.input.text;
-        const countToMove = text.length - currentPos;
+        const countToMove = this.sessionState.input.text.length - this.sessionState.input.cursorIndex;
         if (countToMove > 0) {
-            this.select(countToMove);
-            this._pty.write(`${String.fromCharCode(27)}[C`.repeat(countToMove));
+            this._selectAndMove(countToMove);
         }
     }
 
     selectTextToStartOfLine() {
-        if(!this._terminal) return;
-        const currentPos = this.sessionState.input.cursorIndex;
-        if (currentPos > 0) {
-            this.select(-currentPos);
-            this._pty.write(`${String.fromCharCode(27)}[D`.repeat(currentPos));
+        const countToMove = this.sessionState.input.cursorIndex;
+        if (countToMove > 0) {
+            this._selectAndMove(-countToMove);
         }
     }
 
+    private _selectAndMove(offset: number) {
+        this.select(offset);
+        this._ptyWrite(this._buildCursorMoveCommand(offset));
+    }
+
+    private _ptyWrite(data: string) {
+        if (!this._terminal) return;
+        this._pty.write(data);
+    }
+
     private deleteSelection() {
-        // Früher Abbruch wenn keine Selektion vorhanden
-        if (!this._terminal || this._selectionStart === null) {
-            return;
-        }
+        if (!this._terminal || this._selectionStart === null) return;
 
         const cursorPos = this.sessionState.input.cursorIndex;
         const text = this.sessionState.input.text;
 
-        // Berechne Selektionsgrenzen (unabhängig von der Richtung)
         const selectionStart = Math.min(this._selectionStart, cursorPos);
         const selectionEnd = Math.max(this._selectionStart, cursorPos);
 
-        // Nichts zu löschen wenn Start = End
         if (selectionStart === selectionEnd) {
             this._clearSelection();
             return;
         }
 
-        // Begrenze Selektion auf editierbaren Textbereich
-        const deleteStart = selectionStart;
         const deleteEnd = Math.min(selectionEnd, text.length);
-        const deleteLength = deleteEnd - deleteStart;
+        const deleteLength = deleteEnd - selectionStart;
 
-        // Prüfe ob etwas im editierbaren Bereich liegt
-        if (deleteStart >= text.length || deleteLength <= 0) {
+        if (selectionStart >= text.length || deleteLength <= 0) {
             this._clearSelection();
             return;
         }
 
-        // Bewege Cursor an die Stelle, wo gelöscht werden soll
         const cursorOffset = deleteEnd - cursorPos;
-        let ptyCommand = this._buildCursorMoveCommand(cursorOffset);
-
-        // Lösche die Zeichen mit Backspace
-        ptyCommand += String.fromCharCode(8).repeat(deleteLength);
-
-        this._pty.write(ptyCommand);
+        this._ptyWrite(this._buildCursorMoveCommand(cursorOffset) + "\x08".repeat(deleteLength));
         this._clearSelection();
     }
 
