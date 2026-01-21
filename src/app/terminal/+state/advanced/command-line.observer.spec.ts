@@ -5,7 +5,7 @@ import { SessionState } from '../session.state';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 
-describe('InputObserver', () => {
+describe('CommandLineObserver', () => {
   let observer: CommandLineObserver;
   let mockTerminal: any;
   let sessionState: SessionState;
@@ -85,5 +85,39 @@ describe('InputObserver', () => {
 
     expect(parsedDispose).toHaveBeenCalled();
     expect(keyDispose).toHaveBeenCalled();
+  });
+
+  it('should register OSC handler for 733', () => {
+    observer.registerTerminal(mockTerminal);
+    expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(733, expect.any(Function));
+  });
+
+  it('should update sessionState.isCommandRunning to false when OSC 733 is received', () => {
+    observer.registerTerminal(mockTerminal);
+    sessionState.isCommandRunning = true;
+
+    const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
+    const data = 'COGNO:PROMPT;r=0;u=larswolfram;m=Air;d=/Users/lars;t=7;c=ls;';
+    const result = oscHandler(data);
+
+    expect(sessionState.isCommandRunning).toBe(false);
+    expect(result).toBe(true);
+    expect(sessionState.commands.length).toBe(1);
+    expect(sessionState.commands[0]).toEqual({
+      command: 'ls',
+      directory: '/Users/lars',
+      returnCode: 0,
+      id: '7'
+    });
+  });
+
+  it('should dispose registered OSC handler', () => {
+    const disposeSpy = vi.fn();
+    vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });
+
+    observer.registerTerminal(mockTerminal);
+    observer.dispose();
+
+    expect(disposeSpy).toHaveBeenCalled();
   });
 });

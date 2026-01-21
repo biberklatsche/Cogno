@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TerminalSession } from './terminal.session';
-import { ConfigService } from '../../config/+state/config.service';
 import { AppBus } from '../../app-bus/app-bus';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { ShellConfig } from '../../config/+models/config';
 
 // Mocking dependencies that are not passed in constructor but used internally
@@ -79,8 +78,8 @@ describe('TerminalSession', () => {
         const mockElement = document.createElement('div');
         session.initializeTerminal(mockElement);
 
-        // Handlers: 10 base + CognoOsc, CommandLineObserver, CommandLineEditor = 13
-        expect((session as any).renderer.register).toHaveBeenCalledTimes(13); 
+        // Handlers: 10 base + CognoOsc, CommandLineObserver, CommandLineEditor = 12
+        expect((session as any).renderer.register).toHaveBeenCalledTimes(12);
     });
 
     it('should build context menu', () => {

@@ -21,7 +21,6 @@ import {CursorHandler} from "./handler/cursor.handler";
 import {ShellConfig} from "../../config/+models/config";
 import {ScriptInjector} from "./advanced/script.injector";
 import {PathInjector} from "./advanced/path.injector";
-import {CognoOscHandler} from "./advanced/cogno-osc.handler";
 import {CommandLineObserver} from "./advanced/command-line.observer";
 import {SessionState} from "./session.state";
 import {CommandLineEditor} from './advanced/command-line.editor';
@@ -79,7 +78,6 @@ export class TerminalSession {
         }
         if(this.shellConfig.enable_shell_integration) {
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
-            this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
             this.disposables.push(this.renderer.register(new CommandLineObserver(sessionState)));
             this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, sessionState)));
 
