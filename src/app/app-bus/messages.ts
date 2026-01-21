@@ -32,6 +32,8 @@ import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
 import {TabTitleChangedEvent} from "../grid-list/+bus/events";
 
+export type TerminalCommandType = AppMessage['type']
+
 export type AppMessage =
     | TabRemovedEvent
     | RemoveTabAction

@@ -25,9 +25,21 @@ export class CommandLineEditor implements ITerminalHandler  {
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
-        this.onKey = terminal.onKey(() => {
+        this.onKey = terminal.onKey((key) => {
             this._selectionStart = null;
         });
+
+        terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+            if (this.sessionState.isCommandRunning) return true;
+            if (event.type !== 'keydown') return true;
+
+            if ((event.key === 'Backspace' || event.key === 'Delete') && this._selectionStart !== null) {
+                this.deleteSelection();
+                return false;
+            }
+            return true;
+        });
+
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ClearLine'}).subscribe(async event => {
             if(event.payload !== this.sessionState.terminalId || this.sessionState.isCommandRunning) return;
             this._selectionStart = null;
@@ -118,10 +130,10 @@ export class CommandLineEditor implements ITerminalHandler  {
         if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
         if (currentPos === 0) return;
-        
+
         const prevWordStart = this.findPreviousWordStart(this.sessionState.input.text, currentPos);
         const countToDelete = currentPos - prevWordStart;
-        
+
         if (countToDelete > 0) {
             this._pty.write(String.fromCharCode(8).repeat(countToDelete));
         }
@@ -224,10 +236,75 @@ export class CommandLineEditor implements ITerminalHandler  {
         }
     }
 
+    private deleteSelection() {
+        // Früher Abbruch wenn keine Selektion vorhanden
+        if (!this._terminal || this._selectionStart === null) {
+            return;
+        }
+
+        const cursorPos = this.sessionState.input.cursorIndex;
+        const text = this.sessionState.input.text;
+
+        // Berechne Selektionsgrenzen (unabhängig von der Richtung)
+        const selectionStart = Math.min(this._selectionStart, cursorPos);
+        const selectionEnd = Math.max(this._selectionStart, cursorPos);
+
+        // Nichts zu löschen wenn Start = End
+        if (selectionStart === selectionEnd) {
+            this._clearSelection();
+            return;
+        }
+
+        // Begrenze Selektion auf editierbaren Textbereich
+        const deleteStart = selectionStart;
+        const deleteEnd = Math.min(selectionEnd, text.length);
+        const deleteLength = deleteEnd - deleteStart;
+
+        // Prüfe ob etwas im editierbaren Bereich liegt
+        if (deleteStart >= text.length || deleteLength <= 0) {
+            this._clearSelection();
+            return;
+        }
+
+        // Bewege Cursor an die Stelle, wo gelöscht werden soll
+        const cursorOffset = deleteEnd - cursorPos;
+        let ptyCommand = this._buildCursorMoveCommand(cursorOffset);
+
+        // Lösche die Zeichen mit Backspace
+        ptyCommand += String.fromCharCode(8).repeat(deleteLength);
+
+        this._pty.write(ptyCommand);
+        this._clearSelection();
+    }
+
+    /**
+     * Erstellt einen Cursor-Bewegungsbefehl für das Terminal
+     * @param offset Anzahl Positionen (positiv = rechts, negativ = links)
+     */
+    private _buildCursorMoveCommand(offset: number): string {
+        if (offset === 0) {
+            return '';
+        }
+
+        const escapeCode = String.fromCharCode(27);
+        const direction = offset > 0 ? 'C' : 'D'; // C = rechts, D = links
+        const count = Math.abs(offset);
+
+        return `${escapeCode}[${direction}`.repeat(count);
+    }
+
+    /**
+     * Setzt die Selektion zurück
+     */
+    private _clearSelection() {
+        this._selectionStart = null;
+        this._terminal?.clearSelection();
+    }
+
     private select(count: number) {
         if(!this._terminal) return;
         const currentPos = this.sessionState.input.cursorIndex;
-        
+
         if (this._selectionStart === null) {
             this._selectionStart = currentPos;
         }
@@ -235,14 +312,14 @@ export class CommandLineEditor implements ITerminalHandler  {
         const newPos = Math.max(0, Math.min(this.sessionState.input.text.length, currentPos + count));
         const start = Math.min(this._selectionStart, newPos);
         const length = Math.abs(newPos - this._selectionStart);
-        
+
         // Wir brauchen die absolute Position im Buffer.
         // CommandLineObserver berechnet cursorIndex relativ zum Prompt.
         const startInputY = this.findLastCognoMarkerY() + 1;
-        
+
         const startCol = start % this._terminal.cols;
         const startRow = startInputY + Math.floor(start / this._terminal.cols);
-        
+
         this._terminal.select(startCol, startRow, length);
     }
 

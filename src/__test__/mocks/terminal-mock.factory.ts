@@ -81,6 +81,7 @@ export class TerminalMockFactory {
       hasSelection: vi.fn(),
       clearSelection: vi.fn(),
       select: vi.fn(),
+      attachCustomKeyEventHandler: vi.fn(),
       options: {},
       element: document.createElement('div'),
       textarea: {

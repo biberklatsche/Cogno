@@ -206,5 +206,67 @@ describe('CommandLineEditor', () => {
       // Should start new selection from 5 to 6
       expect(mockTerminal.select).toHaveBeenLastCalledWith(5, 1, 1);
     });
+
+    it('should delete selection when Backspace is pressed', () => {
+      state.input = { text: 'hello world', cursorIndex: 0, maxCursorIndex: 11 };
+      
+      // Select 5 chars right ('hello')
+      for (let i = 0; i < 5; i++) {
+        mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+        state.input.cursorIndex = i + 1;
+      }
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 5);
+      
+      // Get the custom key handler
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      
+      // Simulate Backspace
+      const event = { type: 'keydown', key: 'Backspace' } as KeyboardEvent;
+      const result = customKeyHandler(event);
+      
+      expect(result).toBe(false); // Handled
+      // Cursor was at 5. Range 0-5. end=5, currentPos=5. countToMoveRight = 5-5 = 0.
+      // Expected: write 5 backspaces.
+      expect(mockPty.write).toHaveBeenLastCalledWith('\x08'.repeat(5));
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should delete selection when Delete is pressed', () => {
+      state.input = { text: 'hello world', cursorIndex: 11, maxCursorIndex: 11 };
+      
+      // Select 5 chars left ('world')
+      // world starts at index 6, ends at 11
+      for (let i = 0; i < 5; i++) {
+        mockBus.publish({ type: 'SelectTextLeft', payload: terminalId, path: ['app', 'terminal'] });
+        state.input.cursorIndex = 11 - (i + 1);
+      }
+      // start: 6, end: 11, currentPos: 6
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(6, 1, 5);
+      
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      
+      // Simulate Delete
+      const event = { type: 'keydown', key: 'Delete' } as KeyboardEvent;
+      const result = customKeyHandler(event);
+      
+      expect(result).toBe(false); // Handled
+      // end=11, currentPos=6. countToMoveRight = 11 - 6 = 5.
+      // Expected: move right 5 times, then 5 backspaces.
+      expect(mockPty.write).toHaveBeenLastCalledWith('\x1b[C'.repeat(5) + '\x08'.repeat(5));
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should not delete selection if command is running', () => {
+      state.isCommandRunning = true;
+      state.input = { text: 'hello', cursorIndex: 0, maxCursorIndex: 5 };
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      const event = { type: 'keydown', key: 'Backspace' } as KeyboardEvent;
+      const result = customKeyHandler(event);
+      
+      expect(result).toBe(true); // Not handled by custom handler
+      expect(mockPty.write).not.toHaveBeenCalledWith('\x08');
+    });
   });
 });
