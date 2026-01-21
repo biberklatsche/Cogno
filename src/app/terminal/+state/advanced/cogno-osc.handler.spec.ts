@@ -30,10 +30,18 @@ describe('CognoOscHandler', () => {
     sessionState.isCommandRunning = true;
 
     const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
-    const result = oscHandler('some-title');
+    const data = 'COGNO:PROMPT;r=0;u=larswolfram;m=Air;d=/Users/lars;t=7;c=ls;';
+    const result = oscHandler(data);
 
     expect(sessionState.isCommandRunning).toBe(false);
     expect(result).toBe(true);
+    expect(sessionState.commands.length).toBe(1);
+    expect(sessionState.commands[0]).toEqual({
+      command: 'ls',
+      directory: '/Users/lars',
+      returnCode: 0,
+      id: '7'
+    });
   });
 
   it('should dispose registered OSC handler', () => {

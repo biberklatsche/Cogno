@@ -4,12 +4,14 @@ import { ZshAdapter } from './zsh.adapter';
 import { PowerShellAdapter } from './powershell.adapter';
 import { AdapterFactory } from './adapter.factory';
 import { Script } from '../../../../_tauri/script';
+import { TauriMockFactory } from '../../../../../__test__/mocks/tauri-mock.factory';
 
-vi.mock('../../../../_tauri/script', () => ({
-    Script: {
-        read: vi.fn()
-    }
-}));
+vi.mock('../../../../_tauri/script', async (importOriginal) => {
+    const { TauriMockFactory } = await import('../../../../../__test__/mocks/tauri-mock.factory');
+    return {
+        Script: TauriMockFactory.createScript()
+    };
+});
 
 describe('Shell Adapters', () => {
     

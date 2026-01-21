@@ -3,17 +3,14 @@ import { Pty } from './pty';
 import { TauriPty } from '../../../_tauri/pty';
 import { Logger } from '../../../_tauri/logger';
 import { ShellConfig } from '../../../config/+models/config';
+import { TauriMockFactory } from '../../../../__test__/mocks/tauri-mock.factory';
 
-vi.mock('../../../_tauri/pty', () => ({
-    TauriPty: {
-        spawn: vi.fn().mockResolvedValue(undefined),
-        kill: vi.fn().mockResolvedValue(undefined),
-        resize: vi.fn().mockResolvedValue(undefined),
-        onData: vi.fn().mockResolvedValue(() => {}),
-        onExit: vi.fn().mockResolvedValue(() => {}),
-        write: vi.fn().mockResolvedValue(undefined)
-    }
-}));
+vi.mock('../../../_tauri/pty', async (importOriginal) => {
+    const { TauriMockFactory } = await import('../../../../__test__/mocks/tauri-mock.factory');
+    return {
+        TauriPty: TauriMockFactory.createTauriPty()
+    };
+});
 
 vi.mock('../../../_tauri/logger', () => ({
     Logger: {
