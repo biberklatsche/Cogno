@@ -3,6 +3,7 @@ import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.fa
 import { MouseHandler } from './mouse.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
+import { SessionState } from '../session.state';
 
 describe('MouseHandler', () => {
   let handler: MouseHandler;
@@ -10,10 +11,12 @@ describe('MouseHandler', () => {
   let mockBus: AppBus;
   let container: HTMLDivElement;
   let screenElement: HTMLDivElement;
+  let sessionState: SessionState;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
+    sessionState = new SessionState(terminalId, 'Bash', mockBus);
     container = document.createElement('div');
     screenElement = document.createElement('div');
     screenElement.className = 'xterm-screen';
@@ -32,26 +35,24 @@ describe('MouseHandler', () => {
       toJSON: () => {}
     });
 
-    handler = new MouseHandler(mockBus, container, terminalId);
+    handler = new MouseHandler(container, sessionState);
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
   describe('registration', () => {
     it('should add mousemove listener to screen element', () => {
       const addEventListenerSpy = vi.spyOn(screenElement, 'addEventListener');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function), { passive: true });
     });
   });
 
   describe('mouse movement', () => {
     beforeEach(() => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
-    it('should publish inspector event with correct coordinates and character', () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
-      
+    it('should update sessionState with correct coordinates and character', () => {
       // Setup buffer line with content
       const mockLine = TerminalMockFactory.createLine('Hello World');
       vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(mockLine);
@@ -66,32 +67,22 @@ describe('MouseHandler', () => {
 
       screenElement.dispatchEvent(event);
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'Inspector',
-        payload: {
-          type: 'terminal-mouse-position',
-          data: {
-            terminalId,
-            viewportCol: 1,
-            viewportRow: 1,
-            char: 'H',
-            col: 1,
-            row: 1
-          }
-        }
-      }));
+      expect(sessionState.mousePosition).toEqual({
+        viewport: { col: 1, row: 1 },
+        col: 1,
+        row: 1,
+        char: 'H'
+      });
     });
 
     it('should handle viewport offset correctly', () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
-      
       // Update terminal with viewport offset
       const mockTerminalWithOffset = TerminalMockFactory.createTerminal({ 
         cols: 80, 
         rows: 24,
         viewportY: 10 
       });
-      handler.register(mockTerminalWithOffset);
+      handler.registerTerminal(mockTerminalWithOffset);
 
       const mockLine = TerminalMockFactory.createLine('Viewport Line');
       vi.mocked(mockTerminalWithOffset.buffer.active.getLine).mockReturnValue(mockLine);
@@ -105,19 +96,12 @@ describe('MouseHandler', () => {
 
       screenElement.dispatchEvent(event);
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        payload: expect.objectContaining({
-          data: expect.objectContaining({
-            viewportRow: 1,
-            row: 11 // absRow + 1
-          })
-        })
-      }));
+      expect(sessionState.mousePosition.viewport.row).toBe(1);
+      expect(sessionState.mousePosition.row).toBe(11); // absRow + 1
     });
 
     it('should clamp coordinates to terminal bounds', () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       // Outside to the right and bottom
       const event = new MouseEvent('mousemove', {
@@ -127,39 +111,26 @@ describe('MouseHandler', () => {
 
       screenElement.dispatchEvent(event);
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        payload: expect.objectContaining({
-          data: expect.objectContaining({
-            viewportCol: 80,
-            viewportRow: 24
-          })
-        })
-      }));
+      expect(sessionState.mousePosition.viewport.col).toBe(80);
+      expect(sessionState.mousePosition.viewport.row).toBe(24);
     });
 
     it('should handle missing buffer line or cell gracefully', () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(undefined as any);
 
       const event = new MouseEvent('mousemove', { clientX: 15, clientY: 25 });
       screenElement.dispatchEvent(event);
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        payload: expect.objectContaining({
-          data: expect.objectContaining({
-            char: ''
-          })
-        })
-      }));
+      expect(sessionState.mousePosition.char).toBe('');
     });
   });
 
   describe('Lifecycle', () => {
     it('should remove event listener on dispose', () => {
       const removeEventListenerSpy = vi.spyOn(screenElement, 'removeEventListener');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
       expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function));
     });

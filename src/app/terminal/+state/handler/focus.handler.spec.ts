@@ -22,7 +22,7 @@ describe('FocusHandler', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
       const addEventListenerSpy = vi.spyOn(mockTerminal.textarea!, 'addEventListener');
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       expect(addEventListenerSpy).toHaveBeenCalledWith('focus', expect.any(Function));
       expect(addEventListenerSpy).toHaveBeenCalledWith('blur', expect.any(Function));
@@ -30,7 +30,7 @@ describe('FocusHandler', () => {
 
     it('should update hasFocus when textarea focus event fires', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       const focusCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'focus')![1] as Function;
       focusCallback();
@@ -40,7 +40,7 @@ describe('FocusHandler', () => {
 
     it('should update hasFocus when textarea blur event fires', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
 
       const focusCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'focus')![1] as Function;
       const blurCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'blur')![1] as Function;
@@ -56,14 +56,14 @@ describe('FocusHandler', () => {
   describe('bus events', () => {
     beforeEach(() => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should focus terminal when FocusTerminal event for this id is received', () => {
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       const publishSpy = vi.spyOn(mockBus, 'publish');
 
-      mockBus.publish({ type: 'FocusTerminal', payload: terminalId, path: ['app', 'terminal'] });
+      mockBus.publish({ type: 'FocusTerminal', payload: terminalId, path: ['app', 'terminal'], phase: 'target' });
 
       expect(focusSpy).toHaveBeenCalled();
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'TerminalFocused', payload: terminalId }));
@@ -73,16 +73,16 @@ describe('FocusHandler', () => {
       const blurSpy = vi.spyOn(mockTerminal, 'blur');
       const publishSpy = vi.spyOn(mockBus, 'publish');
 
-      mockBus.publish({ type: 'FocusTerminal', payload: 'other-id', path: ['app', 'terminal'] });
+      mockBus.publish({ type: 'FocusTerminal', payload: 'other-id', path: ['app', 'terminal'], phase: 'target' });
 
       expect(blurSpy).toHaveBeenCalled();
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'TerminalBlurred', payload: terminalId }));
     });
 
-    it('should focus terminal when TerminalInitialized event is received', () => {
+    it('should focus terminal when PtyInitialized event is received', () => {
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       
-      mockBus.publish({ type: 'TerminalInitialized', payload: terminalId, path: ['app', 'terminal', terminalId] });
+      mockBus.publish({ type: 'PtyInitialized', payload: terminalId, path: ['app', 'terminal', terminalId], phase: 'target' });
 
       expect(focusSpy).toHaveBeenCalled();
     });
@@ -90,7 +90,7 @@ describe('FocusHandler', () => {
     it('should blur terminal when BlurTerminal event for this id is received', () => {
       const blurSpy = vi.spyOn(mockTerminal, 'blur');
       
-      mockBus.publish({ type: 'BlurTerminal', payload: terminalId, path: ['app', 'terminal'] });
+      mockBus.publish({ type: 'BlurTerminal', payload: terminalId, path: ['app', 'terminal'], phase: 'target' });
 
       expect(blurSpy).toHaveBeenCalled();
     });
@@ -99,12 +99,12 @@ describe('FocusHandler', () => {
   describe('Lifecycle', () => {
     it('should unsubscribe on dispose', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       handler.dispose();
 
-      mockBus.publish({ type: 'FocusTerminal', payload: terminalId, path: ['app', 'terminal'] });
+      mockBus.publish({ type: 'FocusTerminal', payload: terminalId, path: ['app', 'terminal'], phase: 'target' });
 
       expect(focusSpy).not.toHaveBeenCalled();
     });

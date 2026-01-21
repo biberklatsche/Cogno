@@ -28,7 +28,7 @@ export class PtyHandler implements ITerminalHandler {
         this._resizeObserver = undefined;
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this.spawnPty(this._terminalId, terminal).then(_ => {
             this._disposables.push(terminal.onData(data => this._pty?.write(data)));
             this._disposables.push(this._pty?.onData(data => {
@@ -36,10 +36,13 @@ export class PtyHandler implements ITerminalHandler {
                 if (isFirst) {
                     this._firstWriteEvent = true;
                 }
-                if(isFirst) {
-                    this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "TerminalInitialized", payload: this._terminalId});
-                }
                 terminal.write(data);
+                if(isFirst) {
+                    const disposable  = terminal.onWriteParsed(() => {
+                        this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "PtyInitialized", payload: {terminalId: this._terminalId, shellType: this._shellConfig.shell_type!}});
+                        disposable.dispose();
+                    });
+                                    }
             }));
             this._disposables.push(this._pty?.onExit(data => {
                 this._bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this._terminalId});

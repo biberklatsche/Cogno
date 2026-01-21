@@ -20,7 +20,7 @@ export class SelectionHandler implements ITerminalHandler {
         this.subscription.unsubscribe();
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Copy'}).subscribe(async event => {
             if(event.payload !== this._terminalId || !this.hasSelection()) return;

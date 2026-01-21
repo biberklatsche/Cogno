@@ -77,6 +77,9 @@ export const FontSchema = z.object({
     enable_ligatures: z.boolean().optional(),
     weight: FontWeightSchema.optional(),
     weight_bold: FontWeightSchema.optional(),
+    custom_glyphs: z.boolean().optional(),
+    draw_bold_text_in_bright_colors: z.boolean().optional(),
+    rescale_overlapping_glyphs: z.boolean().optional(),
     app: AppFontSchema.optional(),
 });
 
@@ -103,13 +106,14 @@ export const ColorSchema = z.object({
 });
 
 export const CursorSchema = z.object({
-    width: z.int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10').optional(),
+    width: z.number().int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10').optional(),
     blink: z.boolean().optional(),
     style: z
-        .enum(['bar', 'underline'])
-        .refine((val) => ['bar', 'underscore'].includes(val), {
-            message: 'Cursor style must be either "bar" or "underscore"',
-        }).optional(),
+        .enum(['bar', 'underline', 'block'])
+        .optional(),
+    inactive_style: z
+        .enum(['outline', 'block', 'bar', 'underline', 'none'])
+        .optional(),
     color: HexColorSchema.optional(),
 })
 
@@ -139,6 +143,8 @@ const ShellSchema = z.object({
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
+    inject_path: z.boolean().optional().default(true),
+    enable_shell_integration: z.boolean().optional().default(true),
 }).describe("The shell configuration");
 
 export const SHELL_CONFIG_POSITIONS = [
@@ -171,6 +177,20 @@ export const ConfigSchema = z.object({
     .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
     enable_webgl: z.boolean().optional(),
     enable_watch_config: z.boolean().optional(),
+    alt_click_moves_cursor: z.boolean().optional(),
+    convert_eol: z.boolean().optional(),
+    fast_scroll_modifier: z.enum(['none', 'alt', 'ctrl', 'shift']).optional(),
+    fast_scroll_sensitivity: z.number().optional(),
+    ignore_bracketed_paste_mode: z.boolean().optional(),
+    minimum_contrast_ratio: z.number().optional(),
+    right_click_selects_word: z.boolean().optional(),
+    screen_reader_mode: z.boolean().optional(),
+    scroll_on_user_input: z.boolean().optional(),
+    scroll_sensitivity: z.number().optional(),
+    smooth_scroll_duration: z.number().optional(),
+    allow_transparency: z.boolean().optional(),
+    tab_stop_width: z.number().optional(),
+    word_separator: z.string().optional(),
     font: FontSchema.optional(),
     color: ColorSchema.optional(),
     cursor: CursorSchema.optional(),
@@ -180,6 +200,7 @@ export const ConfigSchema = z.object({
     selection: SelectionSchema.optional(),
     menu: MenuSchema.optional(),
     scrollbar: ScrollbarSchema.optional(),
+    overview_ruler_width: z.number().optional(),
     workspace: FeatureWorkspaceSchema.optional(),
     inspector: FeatureInspectorSchema.optional(),
     notification: FeatureNotificationSchema.optional(),

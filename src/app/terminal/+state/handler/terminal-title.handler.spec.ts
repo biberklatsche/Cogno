@@ -1,24 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { TabTitleHandler } from './tab-title.handler';
+import { TerminalTitleHandler } from './terminal-title.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 
-describe('TabTitleHandler', () => {
-  let handler: TabTitleHandler;
+describe('TerminalTitleHandler', () => {
+  let handler: TerminalTitleHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
-    handler = new TabTitleHandler(terminalId, mockBus);
+    handler = new TerminalTitleHandler(terminalId, mockBus);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
   describe('registration', () => {
     it('should register OSC handlers for 0 and 2', () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(0, expect.any(Function));
       expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(2, expect.any(Function));
     });
@@ -29,10 +29,10 @@ describe('TabTitleHandler', () => {
 
     beforeEach(() => {
       publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
-    it('should publish TabTitleChanged when OSC 0 is received', () => {
+    it('should publish TerminalTitleChanged when OSC 0 is received', () => {
       const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls.find(call => 
         call[0] === 0
       )![1];
@@ -41,12 +41,12 @@ describe('TabTitleHandler', () => {
 
       expect(result).toBe(true);
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'TabTitleChanged',
-        payload: { terminalId, title: 'New Title 0' }
+        type: 'TerminalTitleChanged',
+        payload: { terminalId, title: 'New Title 0', oscCode: 0 }
       }));
     });
 
-    it('should publish TabTitleChanged when OSC 2 is received', () => {
+    it('should publish TerminalTitleChanged when OSC 2 is received', () => {
       const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls.find(call => 
         call[0] === 2
       )![1];
@@ -55,8 +55,8 @@ describe('TabTitleHandler', () => {
 
       expect(result).toBe(true);
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'TabTitleChanged',
-        payload: { terminalId, title: 'New Title 2' }
+        type: 'TerminalTitleChanged',
+        payload: { terminalId, title: 'New Title 2', oscCode: 2 }
       }));
     });
   });
@@ -66,7 +66,7 @@ describe('TabTitleHandler', () => {
       const disposeSpy = vi.fn();
       vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
 
       expect(disposeSpy).toHaveBeenCalledTimes(2);

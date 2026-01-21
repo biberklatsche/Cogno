@@ -6,3 +6,4 @@ pub mod shells;
 pub mod pty;
 pub mod environment;
 pub mod window;
+pub mod script;

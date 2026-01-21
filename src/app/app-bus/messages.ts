@@ -2,11 +2,15 @@ import {ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent} from "../confi
 import {InitConfigAction} from "../config/+bus/actions";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
-    BlurTerminalAction, ClearBufferAction, CopyAction,
-    FocusTerminalAction, PasteAction, TerminalRemovedAction,
-} from "../terminal/+bus/actions";
+    BlurTerminalAction, ClearBufferAction, ClearLineAction,
+    ClearLineToEndAction, ClearLineToStartAction, DeletePreviousWordAction,
+    DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
+    SelectTextRightAction, SelectTextLeftAction, SelectWordRightAction,
+    SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
+    CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction,
+} from '../terminal/+bus/actions';
 import {PtyInitializedEvent} from "../terminal/+bus/events";
-import {TabTitleChangedEvent} from "../terminal/+state/handler/tab-title.handler";
+import {TerminalTitleChangedEvent} from "../terminal/+state/handler/terminal-title.handler";
 import {
     TerminalThemeChangedEvent,
     TerminalThemePaddingAddedEvent,
@@ -26,6 +30,9 @@ import {InspectorEvent} from "../inspector/+bus/events";
 import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
+import {TabTitleChangedEvent} from "../grid-list/+bus/events";
+
+export type TerminalCommandType = AppMessage['type']
 
 export type AppMessage =
     | TabRemovedEvent
@@ -38,7 +45,7 @@ export type AppMessage =
     | ThemeChangedEvent
     | InitConfigAction
     | PtyInitializedEvent
-    | TabTitleChangedEvent
+    | TerminalTitleChangedEvent
     | TerminalThemeChangedEvent
     | TerminalThemePaddingAddedEvent
     | TerminalThemePaddingRemovedEvent
@@ -46,6 +53,20 @@ export type AppMessage =
     | BlurTerminalAction
     | PasteAction
     | CopyAction
+    | CutAction
+    | ClearLineAction
+    | ClearLineToEndAction
+    | ClearLineToStartAction
+    | DeletePreviousWordAction
+    | DeleteNextWordAction
+    | GoToNextWordAction
+    | GoToPreviousWordAction
+    | SelectTextRightAction
+    | SelectTextLeftAction
+    | SelectWordRightAction
+    | SelectWordLeftAction
+    | SelectTextToEndOfLineAction
+    | SelectTextToStartOfLineAction
     | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent
@@ -62,4 +83,5 @@ export type AppMessage =
     | InspectorEvent
     | NotificationEvent
     | SideMenuEvent
+    | TabTitleChangedEvent
     ;

@@ -33,8 +33,9 @@ export class ThemeHandler implements ITerminalHandler {
         this._terminal.options.cursorWidth = config.cursor!.width;
         this._terminal.options.cursorBlink = config.cursor!.blink;
         this._terminal.options.cursorStyle =  config.cursor!.style;
+        this._terminal.options.cursorInactiveStyle = config.cursor!.inactive_style;
         this._terminal.options.theme = {
-            background: '#00000000',
+            background: config.allow_transparency ? '#00000000' : `#${config.color!.background}`,
             cursor: config.cursor!.color ? `#${config.cursor!.color}CC` : `#${config.color!.highlight}CC`,
             cursorAccent: `#${config.color!.highlight}66`,
             foreground: `#${config.color!.foreground}`,
@@ -64,7 +65,7 @@ export class ThemeHandler implements ITerminalHandler {
         this.subscription?.unsubscribe();
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._configService.config$.subscribe(config => {
             this.configureTerminal(config);

@@ -12,6 +12,8 @@ export interface TerminalMockOptions {
   onResize?: (callback: (event: { cols: number; rows: number }) => void) => { dispose: () => void };
   onTitleChange?: (callback: (title: string) => void) => { dispose: () => void };
   onSelectionChange?: (callback: () => void) => { dispose: () => void };
+  onWriteParsed?: (callback: () => void) => { dispose: () => void };
+  onKey?: (callback: (event: { key: string; domEvent: KeyboardEvent }) => void) => { dispose: () => void };
 }
 
 export interface BufferMockOptions {
@@ -40,6 +42,8 @@ export class TerminalMockFactory {
       onResize = () => ({ dispose: vi.fn() }),
       onTitleChange = () => ({ dispose: vi.fn() }),
       onSelectionChange = () => ({ dispose: vi.fn() }),
+      onWriteParsed = () => ({ dispose: vi.fn() }),
+      onKey = () => ({ dispose: vi.fn() }),
     } = options;
 
     const buffer = this.createBuffer({ cursorX, cursorY, viewportY });
@@ -57,6 +61,8 @@ export class TerminalMockFactory {
       onResize: vi.fn().mockImplementation(onResize),
       onTitleChange: vi.fn().mockImplementation(onTitleChange),
       onSelectionChange: vi.fn().mockImplementation(onSelectionChange),
+      onWriteParsed: vi.fn().mockImplementation(onWriteParsed),
+      onKey: vi.fn().mockImplementation(onKey),
       parser: {
         registerCsiHandler: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         registerDcsHandler: vi.fn().mockReturnValue({ dispose: vi.fn() }),
@@ -72,8 +78,11 @@ export class TerminalMockFactory {
       input: vi.fn(),
       dispose: vi.fn(),
       getSelection: vi.fn(),
+      getSelectionPosition: vi.fn(),
       hasSelection: vi.fn(),
       clearSelection: vi.fn(),
+      select: vi.fn(),
+      attachCustomKeyEventHandler: vi.fn(),
       options: {},
       element: document.createElement('div'),
       textarea: {

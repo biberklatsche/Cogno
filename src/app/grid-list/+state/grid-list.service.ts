@@ -10,6 +10,7 @@ import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
 import {FocusActiveTerminalAction} from "../+bus/actions";
+import {TerminalTitleChangedEvent} from "../../terminal/+state/handler/terminal-title.handler";
 
 
 @Injectable({providedIn: 'root'})
@@ -38,6 +39,13 @@ export class GridListService {
 
         this.bus.onType$('TabSelected').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabSelectedEvent) => {
             this.selectGrid(event.payload);
+        });
+
+        this.bus.onType$('TerminalTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalTitleChangedEvent) => {
+            const gridList = this._gridList.value;
+            let tabId = this.determineTabId(gridList, event.payload?.terminalId);
+            if(!tabId || !event.payload?.title) return;
+            this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.title}});
         });
 
         this.bus.onType$('FocusActiveTerminal').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: FocusActiveTerminalAction) => {
@@ -88,7 +96,7 @@ export class GridListService {
 
     private removePane(terminalId: TerminalId) {
         const gridList = this._gridList.value;
-        let gridAndNode = this.determineGridId(gridList, terminalId);
+        let gridAndNode = this.determineGrid(gridList, terminalId);
         if (!gridAndNode) return;
         if(gridAndNode.node.isRoot) {
             this.bus.publish({path: ['app', 'terminal'], type: "RemoveTab", payload: gridAndNode.grid.tabId});
@@ -223,12 +231,23 @@ export class GridListService {
         return this._gridList.value[this._activeTabId.value];
     }
 
-    private determineGridId(gridList: GridList, terminalId?: TerminalId): {grid: Grid, node: BinaryNode<Pane> }| undefined {
+    private determineGrid(gridList: GridList, terminalId?: TerminalId): {grid: Grid, node: BinaryNode<Pane> }| undefined {
         if(!terminalId) return;
         for (const grid of Object.values(gridList)) {
             const node = grid.tree.first(p => p.data!.terminalId === terminalId);
             if(node && node.isLeaf) {
                 return {grid, node};
+            }
+        }
+        return;
+    }
+
+    private determineTabId(gridList: GridList, terminalId: TerminalId | undefined): TabId | undefined {
+        if(!terminalId) return;
+        for (const grid of Object.values(gridList)) {
+            const node = grid.tree.first(p => p.data!.terminalId === terminalId);
+            if(node && node.isLeaf) {
+                return grid.tabId;
             }
         }
         return;

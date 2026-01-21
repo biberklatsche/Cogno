@@ -61,6 +61,7 @@ describe('WorkspaceService', () => {
         tabListService = getTabListService();
         vi.spyOn(tabListService, 'getTabConfigs').mockReturnValue([]);
         vi.spyOn(tabListService, 'restoreTabs').mockImplementation(() => {});
+        vi.spyOn(tabListService, 'selectTab').mockImplementation(() => {});
 
         destroyRef = getDestroyRef();
 
@@ -219,10 +220,91 @@ describe('WorkspaceService', () => {
             expect(service.workspaceList().find(w => w.id === 'new-id')).toBeTruthy();
         });
 
-        it('should delete a workspace', async () => {
-            await service.deleteWorkspace('ws2');
-            expect(workspaceRepository.deleteWorkspace).toHaveBeenCalledWith('ws2');
-            expect(service.workspaceList().length).toBe(3);
+        it('should delete a workspace and select another if it was active', async () => {
+            // ws1 is active (idx 1). Delete it.
+            const listBefore = [...service.workspaceList()];
+            expect(listBefore[1].id).toBe('ws1');
+            expect(listBefore[1].isActive).toBe(true);
+
+            await service.deleteWorkspace('ws1');
+            
+            expect(workspaceRepository.deleteWorkspace).toHaveBeenCalledWith('ws1');
+            const listAfter = service.workspaceList();
+            expect(listAfter.length).toBe(3);
+            expect(listAfter[0].isActive).toBe(true); // Default (idx 0) should become active
+            expect(tabListService.restoreTabs).toHaveBeenCalled();
+        });
+
+        it('should throw error if deleting non-existent workspace', async () => {
+            await expect(service.deleteWorkspace('non-existent')).rejects.toThrow('Workspace id not found');
+        });
+
+        it('should restore workspace and select first tab if no active tab found', async () => {
+            const ws = { 
+                id: 'ws-no-active-tab', 
+                name: 'Test', 
+                tabs: [{ tabId: 't1', isActive: false }, { tabId: 't2', isActive: false }],
+                grids: []
+            } as any;
+            
+            await service.restoreWorkspace(ws);
+            expect(tabListService.selectTab).toHaveBeenCalledWith('t1');
+        });
+
+        it('should autosave previous workspace when restoring a new one', async () => {
+            // Current active is ws1 (id: 'ws1')
+            const list = [...service.workspaceList()];
+            const ws1 = list.find(w => w.id === 'ws1')!;
+            ws1.isActive = true;
+            ws1.autosave = true;
+            service['_workspaceList'].set([...list]);
+
+            const ws2 = list.find(w => w.id === 'ws2')!;
+            await service.restoreWorkspace(ws2);
+
+            expect(workspaceRepository.updateWorkspace).toHaveBeenCalled();
+        });
+
+        it('should handle Escape key to close side menu', () => {
+            service['handleKey']({ key: 'Escape' } as KeyboardEvent);
+            expect(sideMenuService.close).toHaveBeenCalled();
+        });
+
+        it('should handle ArrowUp navigation', () => {
+             // ws1 is at idx 1. ArrowUp from 1 -> idx (1-2+4)%4 = 3 (ws3)
+             service['handleKey']({ key: 'ArrowUp' } as KeyboardEvent);
+             expect(service.workspaceList().findIndex(w => w.isSelected)).toBe(3);
+        });
+
+        it('should do nothing on selectNextWorkspace if list is empty', () => {
+            service['_workspaceList'].set([]);
+            service['selectNextWorkspace']('r');
+            expect(service.workspaceList()).toEqual([]);
+        });
+
+        it('should handle ActionFired messages in constructor for autosave', async () => {
+            const action = {
+                type: 'ActionFired',
+                payload: 'close_window',
+                trigger: 'shortcut',
+                path: ['app', 'sub'], // More than one element to trigger capture on 'app'
+                args: []
+            } as any;
+            
+            // Setup active workspace with autosave
+            const list = [...service.workspaceList()];
+            const ws1 = list.find(w => w.id === 'ws1')!;
+            ws1.isActive = true;
+            ws1.autosave = true;
+            service['_workspaceList'].set([...list]);
+
+            const updateSpy = vi.spyOn(workspaceRepository, 'updateWorkspace');
+
+            appBus.publish(action);
+
+            await vi.waitFor(() => {
+                expect(updateSpy).toHaveBeenCalled();
+            }, { timeout: 2000 });
         });
     });
 

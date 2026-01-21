@@ -40,7 +40,7 @@ export class NativeMenuService {
                   id: 'about',
                   text: 'About',
                   action: () => {
-                      console.log('About pressed');
+                      console.log('TODO: About pressed');
                   },
               }),
               await PredefinedMenuItem.new({

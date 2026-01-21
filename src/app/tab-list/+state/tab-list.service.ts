@@ -4,13 +4,13 @@ import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {TabConfig, TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {TabTitleChangedEvent} from "../../terminal/+state/handler/tab-title.handler";
 import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {ActionFired, ActionFiredEvent} from "../../action/action.models";
 import {ColorName} from "../../common/color/color";
+import {TabTitleChangedEvent} from "../../grid-list/+bus/events";
 
 
 @Injectable({providedIn: 'root'})
@@ -27,7 +27,7 @@ export class TabListService {
         return this._showRename.asReadonly();
     }
 
-    constructor(private bus: AppBus, private configService: ConfigService, destroyRef: DestroyRef) {
+    constructor(private bus: AppBus, configService: ConfigService, destroyRef: DestroyRef) {
         this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
             this.selectTab(event.payload!);
             event.propagationStopped = true;
@@ -38,8 +38,8 @@ export class TabListService {
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
             const tabList = [...this._tabList.value];
-            const tab = tabList.find(s => s.id === event.payload?.terminalId);
-            if(!tab || !event.payload?.title) return;
+            const tab = tabList.find(s => s.id === event.payload?.tabId);
+            if(!tab || tab.isTitleLocked || !event.payload?.title) return;
             tab.title = event.payload.title;
             this._tabList.next(tabList);
             event.propagationStopped = true;
@@ -167,6 +167,7 @@ export class TabListService {
         const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
         tab.title = value;
+        tab.isTitleLocked = true;
         this._tabList.next(tabList);
         this.closeRename();
     }

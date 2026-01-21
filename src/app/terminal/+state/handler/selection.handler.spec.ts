@@ -33,7 +33,7 @@ describe('SelectionHandler', () => {
 
   describe('selection methods', () => {
     beforeEach(() => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should proxy hasSelection', () => {
@@ -57,7 +57,7 @@ describe('SelectionHandler', () => {
 
   describe('bus events', () => {
     beforeEach(() => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should copy selection to clipboard when Copy event is received', async () => {
@@ -113,7 +113,7 @@ describe('SelectionHandler', () => {
 
   describe('Lifecycle', () => {
     it('should unsubscribe on dispose', () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
       
       vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);

@@ -1,18 +1,21 @@
-import {ITerminalHandler} from "./handler";
+import {IFitHandler, ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IPty} from "../pty/pty";
-import {IDisposable} from "../../../common/models/models";
 import {FitAddon} from "@xterm/addon-fit";
 import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
+import {IDisposable} from "../../../common/models/models";
+import {SessionState} from "../session.state";
 
-export type TerminalDimensions = {rows: number; cols: number};
+export type TerminalDimensions = { rows: number; cols: number };
 
-export class ResizeHandler implements ITerminalHandler {
+export class ResizeHandler implements ITerminalHandler, IFitHandler {
 
     private _subscription?: Subscription;
     private _resizeObserver?: ResizeObserver;
+    private _terminal?: Terminal;
+    private _fitAddon?: FitAddon;
     private _resizeRaf?: number;
     private _ptyResizeTimeout: number | null = null;
 
@@ -20,8 +23,13 @@ export class ResizeHandler implements ITerminalHandler {
         private _terminalId: TerminalId,
         private _pty: IPty,
         private _bus: AppBus,
-        private _terminalContainer: HTMLDivElement
+        private _terminalContainer: HTMLDivElement,
+        private _sessionState: SessionState
     ) {
+    }
+
+    registerFitAddon(fitAddon: FitAddon) {
+        this._fitAddon = fitAddon;
     }
 
     dispose(): void {
@@ -35,14 +43,18 @@ export class ResizeHandler implements ITerminalHandler {
 
         this._subscription?.unsubscribe();
         this._subscription = undefined;
+
+        this._fitAddon = undefined;
+        this._terminal = undefined;
     }
 
-    register(terminal: Terminal, fitAddon: FitAddon): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
+        this._terminal = terminal;
         this._resizeObserver = new ResizeObserver(() => {
             // leichtes Throttling gegen Resize-Spam
             if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
             this._resizeRaf = requestAnimationFrame(() => {
-                this.resize(terminal, fitAddon);
+                this.resize();
             });
         });
         this._resizeObserver.observe(this._terminalContainer, {box: 'content-box'});
@@ -50,36 +62,32 @@ export class ResizeHandler implements ITerminalHandler {
         this._subscription = this._bus.on$({path: ['app', 'terminal', this._terminalId]})
             .subscribe((e) => {
             switch (e.type) {
-                //case 'TerminalInitialized':
                 case 'TerminalThemeChanged':
                 case 'TerminalThemePaddingRemoved':
-                    setTimeout(() => this.resize(terminal, fitAddon), 100);
+                    setTimeout(() => this.resize(), 100);
                     break;
                 case 'TerminalThemePaddingAdded':
-                    setTimeout(() => this.resize(terminal, fitAddon), 100);
+                    setTimeout(() => this.resize(), 100);
                     break;
             }
         });
         return this;
     }
 
-    public resize(terminal: Terminal, fitAddon: FitAddon) {
-        const currentDimensions: TerminalDimensions = {cols: terminal.cols, rows: terminal.rows};
-        const newRendererDimensions = fitAddon.proposeDimensions();
+    public resize() {
+        if(this._terminal === undefined || this._fitAddon === undefined) return;
+        const currentDimensions: TerminalDimensions = {cols: this._terminal.cols, rows: this._terminal.rows};
+        const newRendererDimensions = this._fitAddon.proposeDimensions();
         if(!newRendererDimensions) return;
         if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
-            fitAddon.fit();
-            const terminalDimensions: TerminalDimensions = {cols: terminal.cols, rows: terminal.rows};
+            this._fitAddon.fit();
+            const terminalDimensions: TerminalDimensions = {cols: this._terminal.cols, rows: this._terminal.rows};
 
             if(!this.areDimensionsEqual(newRendererDimensions, terminalDimensions)){
                 throw new Error('dimensions are not equal!');
             }
 
-            this._bus.publish({
-                path: ["inspector"],
-                type: "Inspector",
-                payload: { type: "terminal-dimensions", data: { terminalId: this._terminalId, cols: newRendererDimensions.cols, rows: newRendererDimensions.rows } }
-            });
+            this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows };
 
             if (this._ptyResizeTimeout !== null) {
                 clearTimeout(this._ptyResizeTimeout);

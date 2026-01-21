@@ -26,14 +26,14 @@ describe('InputHandler', () => {
   describe('registration', () => {
     it('should register for bus events', () => {
       const subscribeSpy = vi.spyOn(mockBus, 'on$');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       expect(subscribeSpy).toHaveBeenCalled();
     });
   });
 
   describe('bus events', () => {
     beforeEach(() => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should clear terminal when ClearBuffer event for this id is received', () => {
@@ -73,7 +73,7 @@ describe('InputHandler', () => {
   describe('Lifecycle', () => {
     it('should unsubscribe on dispose', () => {
       const clearSpy = vi.spyOn(mockTerminal, 'clear');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
 
       mockBus.publish({ type: 'ClearBuffer', payload: terminalId, path: ['app', 'terminal'] });

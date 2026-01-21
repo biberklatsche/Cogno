@@ -4,6 +4,7 @@ import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
+import {SessionState} from "../session.state";
 
 export type TerminalFocusedEvent = MessageBase<"TerminalFocused", TerminalId>;
 export type TerminalBlurredEvent = MessageBase<"TerminalBlurred", TerminalId>;
@@ -12,9 +13,8 @@ export class FocusHandler implements ITerminalHandler {
 
     private subscription: Subscription = new Subscription();
     private _terminal?: Terminal;
-    private _hasFocus: boolean = false;
 
-    constructor(private _terminalId: TerminalId, private _bus: AppBus) {
+    constructor(private _terminalId: TerminalId, private _bus: AppBus, private _sessionState: SessionState) {
 
     }
 
@@ -22,7 +22,7 @@ export class FocusHandler implements ITerminalHandler {
         this.subscription?.unsubscribe();
     }
 
-    register(terminal: Terminal): IDisposable {
+    registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
         this.subscription.add(this._bus.on$({
             path: ['app', 'terminal'],
@@ -37,7 +37,7 @@ export class FocusHandler implements ITerminalHandler {
 
         this.subscription.add(this._bus.on$({
             path: ['app', 'terminal', this._terminalId],
-            type: 'TerminalInitialized'
+            type: 'PtyInitialized'
         }).subscribe(event => {
             this.focus();
         }));
@@ -53,10 +53,10 @@ export class FocusHandler implements ITerminalHandler {
 
         const textarea = terminal.textarea;
         textarea?.addEventListener("focus", () => {
-            this._hasFocus = true;
+            this._sessionState.isFocused = true;
         });
         textarea?.addEventListener("blur", () => {
-            this._hasFocus = false
+            this._sessionState.isFocused = false
         });
 
         return this;
@@ -64,15 +64,17 @@ export class FocusHandler implements ITerminalHandler {
 
     focus() {
         this._terminal?.focus();
+        this._sessionState.isFocused = true;
         this._bus.publish({type: "TerminalFocused", payload: this._terminalId});
     }
 
     blur() {
         this._terminal?.blur();
+        this._sessionState.isFocused = false;
         this._bus.publish({type: "TerminalBlurred", payload: this._terminalId});
     }
 
     hasFocus() {
-        return this._hasFocus;
+        return this._sessionState.isFocused;
     }
 }

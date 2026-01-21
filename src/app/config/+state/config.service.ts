@@ -76,12 +76,12 @@ export class RealConfigService extends ConfigService{
         this._unwatch?.unsubscribe();
         const configDir = Environment.configDir();
         if(!await Fs.exists(configDir)) {
-            console.log('create config dir' + configDir);
             await Fs.mkdir(configDir);
         }
         const path = Environment.configFilePath();
         if(!await Fs.exists(path)) {
-            const userConfig: Config = {shell: {}};
+            const userConfig: Config = {
+                shell: {}};
             await this.shells.apply(userConfig);
             await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }

@@ -18,7 +18,7 @@ describe('FullScreenAppHandler', () => {
 
   describe('registration', () => {
     it('should register CSI handlers', () => {
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       expect(mockTerminal.parser.registerCsiHandler).toHaveBeenCalledTimes(3);
     });
   });
@@ -28,7 +28,7 @@ describe('FullScreenAppHandler', () => {
 
     beforeEach(() => {
       publishSpy = vi.spyOn(mockBus, 'publish');
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
     });
 
     it('should publish FullScreenAppEntered when Restore Window CSI sequence is received', () => {
@@ -105,7 +105,7 @@ describe('FullScreenAppHandler', () => {
       const disposeSpy = vi.fn();
       vi.mocked(mockTerminal.parser.registerCsiHandler).mockReturnValue({ dispose: disposeSpy });
       
-      handler.register(mockTerminal);
+      handler.registerTerminal(mockTerminal);
       handler.dispose();
 
       expect(disposeSpy).toHaveBeenCalledTimes(3);
