@@ -6,6 +6,7 @@ import {AppBus} from '../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
 import {IPty} from '../pty/pty';
 import {InternalState} from "../session.state";
+import {Clipboard} from "../../../_tauri/clipboard";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;
@@ -56,6 +57,7 @@ export class CommandLineEditor implements ITerminalHandler  {
             'SelectWordLeft': () => this.selectWordLeft(),
             'SelectTextToEndOfLine': () => this.selectTextToEndOfLine(),
             'SelectTextToStartOfLine': () => this.selectTextToStartOfLine(),
+            'Cut': () => this.cutSelection(),
         } satisfies Partial<Record<AppMessage['type'], (event: any) => void>>;
 
         Object.entries(actions).forEach(([key, handler]) => {
@@ -233,6 +235,16 @@ export class CommandLineEditor implements ITerminalHandler  {
     private _ptyWrite(data: string) {
         if (!this._terminal) return;
         this._pty.write(data);
+    }
+
+    private cutSelection() {
+        if (!this._terminal?.hasSelection()) return;
+        
+        const selectionText = this._terminal.getSelection();
+        if (selectionText) {
+            Clipboard.writeText(selectionText);
+        }
+        this.deleteSelection();
     }
 
     private deleteSelection(): boolean {

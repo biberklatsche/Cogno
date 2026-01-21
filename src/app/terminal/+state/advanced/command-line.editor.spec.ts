@@ -5,6 +5,14 @@ import { IPty } from '../pty/pty';
 import { InternalState } from '../session.state';
 import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
+import { Clipboard } from '../../../_tauri/clipboard';
+
+vi.mock('../../../_tauri/clipboard', () => ({
+  Clipboard: {
+    writeText: vi.fn(),
+    readText: vi.fn(),
+  }
+}));
 
 describe('CommandLineEditor', () => {
   let editor: CommandLineEditor;
@@ -287,6 +295,25 @@ describe('CommandLineEditor', () => {
       // endIdx=11, currentPos=6. cursorOffsetToEnd = 11 - 6 = 5.
       // Expected: move right 5 times, then 5 backspaces.
       expect(mockPty.write).toHaveBeenLastCalledWith('\x1b[C'.repeat(5) + '\x08'.repeat(5));
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should copy selection to clipboard and delete it when Cut action is fired', async () => {
+      state.input = { text: 'hello world', cursorIndex: 5, maxCursorIndex: 11 };
+      
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 }, 
+        end: { x: 5, y: 1 }    
+      });
+      vi.mocked(mockTerminal.getSelection).mockReturnValue('hello');
+      
+      mockBus.publish({ type: 'Cut', payload: terminalId, path: ['app', 'terminal'] });
+      
+      expect(Clipboard.writeText).toHaveBeenCalledWith('hello');
+      // Cursor was at 5. Range index 0 to 5. endIdx = 5. currentCursorIdx = 5.
+      // Expected: write 5 backspaces.
+      expect(mockPty.write).toHaveBeenLastCalledWith('\x08'.repeat(5));
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
     });
 

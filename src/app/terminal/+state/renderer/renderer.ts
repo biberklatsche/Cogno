@@ -35,7 +35,6 @@ export class Renderer implements IRenderer, IDisposable {
     private _canvasAddon: CanvasAddon | undefined = undefined;
 
     constructor(config: Config) {
-        console.log('renderer created', config);
         this._terminal = new Terminal({
             overviewRulerWidth: config.overview_ruler_width,
             scrollback: config.scrollback_lines,

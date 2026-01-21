@@ -55,7 +55,6 @@ export class Pty implements IPty {
 
     write(data: string) {
         if(!this._terminalId) throw Error('Please spawn Pty before write to it.');
-        console.log(data);
         TauriPty.write(this._terminalId, data)
             .catch(err => console.error('Failed to write to PTY:', err));
     }

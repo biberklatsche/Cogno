@@ -5,6 +5,7 @@ export type ActionFiredEvent = ActionBase<"ActionFired", ActionName>
 export const ACTION_NAMES = [
     'copy',
     'paste',
+    'cut',
     'new_tab',
     'close_tab',
     'split_right',

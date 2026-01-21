@@ -7,7 +7,7 @@ import {
     DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
     SelectTextRightAction, SelectTextLeftAction, SelectWordRightAction,
     SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
-    CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction,
+    CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction,
 } from '../terminal/+bus/actions';
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TerminalTitleChangedEvent} from "../terminal/+state/handler/terminal-title.handler";
@@ -53,6 +53,7 @@ export type AppMessage =
     | BlurTerminalAction
     | PasteAction
     | CopyAction
+    | CutAction
     | ClearLineAction
     | ClearLineToEndAction
     | ClearLineToStartAction

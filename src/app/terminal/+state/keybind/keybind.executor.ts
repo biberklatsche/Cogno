@@ -54,6 +54,14 @@ export class KeybindExecutor implements IDisposable  {
                     event.performed = true;
                     break;
                 }
+                case 'cut': {
+                    const isPerformable = this.calcPreventDefault(event.trigger?.performable, () => this._selectionHandler!.hasSelection());
+                    if (isPerformable) {
+                        this._bus.publish({type: 'Cut', payload: this._terminalId, path: ['app', 'terminal']});
+                        event.performed = true;
+                    }
+                    break;
+                }
                 case 'clear_buffer': {
                     this._bus.publish({type: 'ClearBuffer', payload: this._terminalId, path: ['app', 'terminal']});
                     event.performed = true;

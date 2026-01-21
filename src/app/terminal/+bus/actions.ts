@@ -7,6 +7,7 @@ export type BlurTerminalAction = ActionBase<"BlurTerminal", TerminalId>
 export type ClearBufferAction = ActionBase<"ClearBuffer", TerminalId>
 export type PasteAction = ActionBase<"Paste", TerminalId>
 export type CopyAction = ActionBase<"Copy", TerminalId>
+export type CutAction = ActionBase<"Cut", TerminalId>
 export type ClearLineAction = ActionBase<"ClearLine", TerminalId>
 export type ClearLineToEndAction = ActionBase<"ClearLineToEnd", TerminalId>
 export type ClearLineToStartAction = ActionBase<"ClearLineToStart", TerminalId>
