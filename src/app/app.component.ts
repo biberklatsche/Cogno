@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
 import {OS} from "./_tauri/os";
@@ -11,7 +11,7 @@ import {migrate} from "./migrations/migrate";
 
 @Component({
     selector: 'app-root',
-    imports: [CommonModule, GridListComponent, AppButtonsComponent, TabListComponent],
+    imports: [GridListComponent, AppButtonsComponent, TabListComponent],
     template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>

@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import { ContextMenuItem, ContextMenuOverlayComponent } from './context-menu-overlay.types';
-import {CommonModule} from "@angular/common";
+
 import {ColorSelectComponent} from "../../common/color/color-select.component";
 import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
 import {ColorName} from "../../common/color/color";
@@ -32,10 +32,9 @@ import {ColorName} from "../../common/color/color";
         </div>
     `,
     imports: [
-        ActionKeybindingPipe,
-        CommonModule,
-        ColorSelectComponent
-    ],
+    ActionKeybindingPipe,
+    ColorSelectComponent
+],
     styles: [
         `
             :host {

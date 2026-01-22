@@ -7,12 +7,14 @@ import { WebglAddon } from '@xterm/addon-webgl';
 // Mock xterm and addons
 vi.mock('@xterm/xterm', () => {
     return {
-        Terminal: vi.fn().mockImplementation(() => ({
-            loadAddon: vi.fn(),
-            open: vi.fn(),
-            dispose: vi.fn(),
-            unicode: { activeVersion: '' }
-        }))
+        Terminal: vi.fn().mockImplementation(function() {
+            return {
+                loadAddon: vi.fn(),
+                open: vi.fn(),
+                dispose: vi.fn(),
+                unicode: { activeVersion: '' }
+            };
+        })
     };
 });
 

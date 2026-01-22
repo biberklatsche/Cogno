@@ -9,21 +9,25 @@ import { Renderer } from './renderer/renderer';
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
     return {
-        Renderer: vi.fn().mockImplementation(() => ({
-            open: vi.fn(),
-            register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-            dispose: vi.fn()
-        }))
+        Renderer: vi.fn().mockImplementation(function() {
+            return {
+                open: vi.fn(),
+                register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                dispose: vi.fn()
+            };
+        })
     };
 });
 
 vi.mock('./pty/pty', () => {
     return {
-        Pty: vi.fn().mockImplementation(() => ({
-            dispose: vi.fn(),
-            write: vi.fn(),
-            spawn: vi.fn().mockResolvedValue(undefined)
-        }))
+        Pty: vi.fn().mockImplementation(function() {
+            return {
+                dispose: vi.fn(),
+                write: vi.fn(),
+                spawn: vi.fn().mockResolvedValue(undefined)
+            };
+        })
     };
 });
 

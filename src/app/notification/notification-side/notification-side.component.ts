@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit, Signal} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {
     Notification, NotificationId,
     NotificationService
@@ -12,10 +12,9 @@ import {remove} from '@tauri-apps/plugin-fs';
 @Component({
   selector: 'app-notification-side',
     imports: [
-        CommonModule,
-        IconComponent,
-        TimeAgoPipe
-    ],
+    IconComponent,
+    TimeAgoPipe
+],
   templateUrl: './notification-side.component.html',
   styleUrl: './notification-side.component.scss'})
 export class NotificationSideComponent {
