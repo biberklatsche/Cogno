@@ -49,15 +49,16 @@ export class CommandLineObserver implements ITerminalHandler {
             }
         }));
 
+        this._disposables.push(this._terminal.onRender(() => {
+            this._markerManager.refreshMarkers();
+        }));
+
         this._disposables.push(this._terminal.onScroll(() => {
             this._markerManager.refreshMarkers();
         }));
 
         this._disposables.push(this._terminal.onResize(() => {
-            this._markerManager.refreshMarkers();
-        }));
-
-        this._disposables.push(this._terminal.onRender(() => {
+            this._markerManager.disposeMarkers();
             this._markerManager.refreshMarkers();
         }));
 
@@ -91,7 +92,7 @@ export class CommandLineObserver implements ITerminalHandler {
         if(!this._terminal?.buffer?.active) return lastPromptRow;
         for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
             const line = this._terminal.buffer.active.getLine(i);
-            if (line && line.translateToString().startsWith('COGNO')) {
+            if (line && line.translateToString().startsWith('^^#')) {
                 lastPromptRow = i;
                 break;
             }

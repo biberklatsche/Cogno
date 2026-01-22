@@ -64,5 +64,5 @@ trap '_cogno_preexec' DEBUG
 PROMPT_COMMAND='_cogno_precmd'
 
 # Set prompt - Bash 3.2 doesn't expand variables in PS1 as easily
-PS1='\nCOGNO${COGNO_COUNT}\n'
+PS1='\n^^#${COGNO_COUNT}\n'
 

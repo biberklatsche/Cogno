@@ -1,4 +1,4 @@
-import {ITerminalHandler} from "./handler";
+import {IFitHandler, ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
@@ -6,6 +6,7 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Config} from "../../../config/+models/config";
+import { FitAddon } from "@xterm/addon-fit";
 
 export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
 export type TerminalThemePaddingAddedEvent = MessageBase<"TerminalThemePaddingAdded", TerminalId>;
@@ -13,7 +14,7 @@ export type TerminalThemePaddingRemovedEvent = MessageBase<"TerminalThemePadding
 
 export class ThemeHandler implements ITerminalHandler {
 
-    private readonly subscription= new Subscription();
+    private readonly subscription = new Subscription();
     private _terminal?: Terminal;
 
     constructor(
@@ -21,11 +22,12 @@ export class ThemeHandler implements ITerminalHandler {
         private _configService: ConfigService,
         private _bus: AppBus,
         private _terminalContainer: HTMLDivElement
-    ) {}
+    ) {
+    }
 
     public configureTerminal(config: Config) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
-        console.log(config.font);
+        this._terminal.options.fontFamily = `'${config.font?.family}', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`;
         this._terminal.options.scrollback = config.scrollback_lines;
         this._terminal.options.fontSize = config.font!.size;
         this._terminal.options.fontWeight = config.font!.weight;

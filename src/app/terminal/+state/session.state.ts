@@ -13,7 +13,7 @@ export type TerminalMousePosition = Position & {
     char: string,
 }
 
-export type TerminalDimensions = { rows: number; cols: number };
+export type TerminalDimensions = { rows: number; cols: number; cellHeight: number; cellWidth: number };
 
 export type Command = {
     command: string,
@@ -62,7 +62,7 @@ export class SessionState {
                 col: 1, row: 1,
                 char: ''
             },
-            dimensions: { rows: 0, cols: 0 },
+            dimensions: { rows: 0, cols: 0, cellHeight: 0, cellWidth: 0 },
             isFocused: false,
             isCommandRunning: false,
             input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}

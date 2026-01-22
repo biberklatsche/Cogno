@@ -13,21 +13,22 @@ app-terminal {
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--color-primary, #3b82f6);
-        color: white;
+        background-color: var(--color-blue);
+        color: var(--background-color);
         border-radius: 4px;
         padding: 0 4px;
         font-size: var(--font-size);
-        font-family: var(--font-family), monospace;
-        height: var(--font-size);
+        font-family: var(--font-family), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        height: 100%;
+        width: min-content;
         margin-left: 0px; /* Position links vom Text */
         position: relative; /* Geändert von absolute */
         z-index: 10;
         box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         white-space: nowrap;
 
-        &.dot-only {
-            display: block; /* Sicherstellen, dass es angezeigt wird */
+        &.input {
+            background-color: var(--color-cyan);
         }
     }
 }

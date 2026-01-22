@@ -357,7 +357,7 @@ export class CommandLineEditor implements ITerminalHandler  {
         if(!this._terminal?.buffer?.active) return lastPromptRow;
         for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
             const line = this._terminal.buffer.active.getLine(i);
-            if (line && line.translateToString().startsWith('COGNO')) {
+            if (line && line.translateToString().startsWith('^^#')) {
                 lastPromptRow = i;
                 break;
             }

@@ -81,13 +81,13 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         if(!newRendererDimensions) return;
         if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
             this._fitAddon.fit();
-            const terminalDimensions: TerminalDimensions = {cols: this._terminal.cols, rows: this._terminal.rows};
 
-            if(!this.areDimensionsEqual(newRendererDimensions, terminalDimensions)){
-                throw new Error('dimensions are not equal!');
-            }
+            console.log((this._terminal as any)._core._renderService);
 
-            this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows };
+            const cellHeight = (this._terminal as any)._core._renderService._charSizeService.height;
+            const cellWidth = (this._terminal as any)._core._renderService._charSizeService.width;
+
+            this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth };
 
             if (this._ptyResizeTimeout !== null) {
                 clearTimeout(this._ptyResizeTimeout);

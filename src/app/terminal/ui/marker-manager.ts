@@ -12,7 +12,16 @@ export class MarkerManager implements IDisposable {
         this._terminal = terminal;
     }
 
+    disposeMarkers(){
+        for (const [lineIndex, decoration] of this._decorations.entries()) {
+            if (!decoration.isDisposed) {
+                decoration.dispose();
+            }
+        }
+    }
+
     refreshMarkers() {
+        console.log('refreshMarkers');
         if (!this._terminal) return;
 
         const buffer = this._terminal.buffer.active;
@@ -29,10 +38,16 @@ export class MarkerManager implements IDisposable {
             const line = buffer.getLine(i);
             if (line) {
                 const lineText = line.translateToString();
-                if (lineText.startsWith('COGNO')) {
-                    console.log('marker on line:', i);
+                if (lineText.startsWith('^^#')) {
                     currentMarkerLines.add(i);
                 }
+            }
+        }
+
+        // Disposed Decorations entfernen
+        for (const [lineIndex, decoration] of this._decorations.entries()) {
+            if (decoration.isDisposed) {
+                this._decorations.delete(lineIndex);
             }
         }
 
@@ -43,7 +58,7 @@ export class MarkerManager implements IDisposable {
             }
         }
 
-        // Alte Dekorationen entfernen, die nicht mehr im Scan-Bereich sind oder keine COGNO Zeile mehr sind
+        // Alte Dekorationen entfernen, die nicht mehr im Scan-Bereich sind oder keine ^^# Zeile mehr sind
         for (const [lineIndex, decoration] of this._decorations.entries()) {
             if (!currentMarkerLines.has(lineIndex)) {
                 decoration.dispose();
@@ -60,7 +75,7 @@ export class MarkerManager implements IDisposable {
 
         const lineText = line.translateToString();
         // Erwarte COGNO<ID> am Anfang der Zeile
-        const match = lineText.match(/^COGNO(\d+)/);
+        const match = lineText.match(/^\^\^#(\d+)/);
         const commandId = match ? match[1] : null;
         
         const buffer = this._terminal.buffer.active;
@@ -73,7 +88,7 @@ export class MarkerManager implements IDisposable {
         const decoration = this._terminal.registerDecoration({
             marker,
             x: 0,
-            width: 20,
+            width: 1,
             anchor: 'left'
         });
 
@@ -93,14 +108,18 @@ export class MarkerManager implements IDisposable {
         const markerEl = document.createElement('div');
         markerEl.classList.add('cogno-marker');
 
-        const command = commandId ? this.sessionState.commands.find(c => c.id === commandId) : null;
+        const index = this.sessionState.commands.findIndex(c => c.id === commandId);
 
-        if (command) {
-            markerEl.innerText = `COGNO${commandId}`;
-            // Optional: Zeige mehr Daten aus Command im Title/Tooltip
-            markerEl.title = `Command: ${command.command}\nDir: ${command.directory}\nExit Code: ${command.returnCode}`;
+        if (index === -1) {
+            markerEl.innerText = `COGNO`;
+        } else if (index + 1 < this.sessionState.commands.length) {
+            const command = this.sessionState.commands[index + 1];
+            const directory = this.sessionState.commands[index];
+            markerEl.innerText = `${directory.directory} ${command.returnCode}`;
         } else {
-            markerEl.classList.add('dot-only');
+            const command = this.sessionState.commands[index];
+            markerEl.innerText = `${command.directory}`;
+            markerEl.classList.add('input');
         }
 
         element.appendChild(markerEl);

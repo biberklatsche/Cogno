@@ -23,8 +23,8 @@ describe('MarkerManager', () => {
         markerManager.setTerminal(mockTerminal);
     });
 
-    it('should create markers for lines starting with COGNO', () => {
-        const line1 = TerminalMockFactory.createLine('COGNO1 text');
+    it('should create markers for lines starting with ^^#', () => {
+        const line1 = TerminalMockFactory.createLine('^^#1 text');
         const line2 = TerminalMockFactory.createLine('other text');
         
         vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
@@ -45,7 +45,7 @@ describe('MarkerManager', () => {
     });
 
     it('should not recreate existing markers', () => {
-        const line = TerminalMockFactory.createLine('COGNO1');
+        const line = TerminalMockFactory.createLine('^^#1');
         vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(line);
         mockTerminal.buffer.active.length = 1;
         mockTerminal.rows = 10;
@@ -59,9 +59,9 @@ describe('MarkerManager', () => {
         expect(mockTerminal.registerMarker).toHaveBeenCalledTimes(1);
     });
 
-    it('should create multiple markers for multiple COGNO lines', () => {
-        const line1 = TerminalMockFactory.createLine('COGNO1 text');
-        const line2 = TerminalMockFactory.createLine('COGNO2 text');
+    it('should create multiple markers for multiple ^^# lines', () => {
+        const line1 = TerminalMockFactory.createLine('^^#1 text');
+        const line2 = TerminalMockFactory.createLine('^^#2 text');
         
         vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
             if (index === 5) return line1;
@@ -82,7 +82,7 @@ describe('MarkerManager', () => {
     });
 
     it('should use correct marker index when baseY is not 0', () => {
-        const line1 = TerminalMockFactory.createLine('COGNO1 text');
+        const line1 = TerminalMockFactory.createLine('^^#1 text');
         
         vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
             if (index === 105) return line1;
@@ -102,7 +102,7 @@ describe('MarkerManager', () => {
     });
 
     it('should dispose old markers', () => {
-        const lineWithCogno = TerminalMockFactory.createLine('COGNO1');
+        const lineWithCogno = TerminalMockFactory.createLine('^^#1');
         const lineWithoutCogno = TerminalMockFactory.createLine('no cogno');
         
         vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(lineWithCogno);
@@ -130,7 +130,7 @@ describe('MarkerManager', () => {
     });
 
     it('should keep markers that are still in viewport', () => {
-        const lineWithCogno = TerminalMockFactory.createLine('COGNO1');
+        const lineWithCogno = TerminalMockFactory.createLine('^^#1');
         const emptyLine = TerminalMockFactory.createLine(' ');
         vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index) => {
             if (index === 0) return lineWithCogno;

@@ -43,9 +43,14 @@
                     {{ terminalState.cursorPosition.col }}, {{ terminalState.cursorPosition.row }}, '{{ terminalState.cursorPosition.char || ' ' }}'
 
                 </div>
-                <div class="label">Size</div>
+                <div class="label">Terminal Size</div>
                 <div class="value" role="cell">
                     {{ terminalState.dimensions.cols }} × {{ terminalState.dimensions.rows }}
+                </div>
+                <div></div>
+                <div class="label">Cell Size</div>
+                <div class="value" role="cell">
+                    {{ terminalState.dimensions.cellHeight }} × {{ terminalState.dimensions.cellWidth }}
                 </div>
                 <div></div>
                 <div class="label">Input</div>
