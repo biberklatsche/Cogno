@@ -29,7 +29,7 @@ export class Renderer implements IRenderer, IDisposable {
 
     constructor(config: Config) {
         this._terminal = new Terminal({
-            overviewRuler: {width: config.overview_ruler_width, showBottomBorder: true, showTopBorder: true},
+            overviewRuler: {width: config.overview_ruler_width, showBottomBorder: false, showTopBorder: false},
             scrollback: config.scrollback_lines,
             tabStopWidth: config.tab_stop_width,
             scrollSensitivity: config.scroll_sensitivity,
