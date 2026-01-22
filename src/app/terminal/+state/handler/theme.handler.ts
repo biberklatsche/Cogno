@@ -37,6 +37,7 @@ export class ThemeHandler implements ITerminalHandler {
         this._terminal.options.cursorStyle =  config.cursor!.style;
         this._terminal.options.cursorInactiveStyle = config.cursor!.inactive_style;
         this._terminal.options.theme = {
+            overviewRulerBorder: '#555555',
             background: config.allow_transparency ? '#00000000' : `#${config.color!.background}`,
             cursor: config.cursor!.color ? `#${config.cursor!.color}CC` : `#${config.color!.highlight}CC`,
             cursorAccent: `#${config.color!.highlight}66`,
