@@ -43,7 +43,7 @@ describe('CommandLineObserver', () => {
     const onWriteParsedCallback = vi.mocked(mockTerminal.onWriteParsed).mock.calls[0][0];
 
     // Mock terminal buffer
-    const promptLine = TerminalMockFactory.createLine('COGNO: /path $ ');
+    const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: /path $ ');
     const inputLine = TerminalMockFactory.createLine('ls -la');
     
     vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {

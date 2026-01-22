@@ -82,10 +82,9 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
             this._fitAddon.fit();
 
-            console.log((this._terminal as any)._core._renderService);
-
-            const cellHeight = (this._terminal as any)._core._renderService._charSizeService.height;
-            const cellWidth = (this._terminal as any)._core._renderService._charSizeService.width;
+            const core = (this._terminal as any)._core;
+            const cellHeight = core?._renderService?._charSizeService?.height;
+            const cellWidth = core?._renderService?._charSizeService?.width;
 
             this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth };
 

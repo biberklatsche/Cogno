@@ -1,0 +1,75 @@
+
+> cogno@0.1.0 test
+> vitest run src/app/terminal/+state/terminal.session.spec.ts
+
+
+ RUN  v3.2.4 /Users/larswolfram/projects/cogno2
+
+ ❯ src/app/terminal/+state/terminal.session.spec.ts (6 tests | 2 failed) 11ms
+   × TerminalSession > should initialize with correct renderer settings based on config 4ms
+     → expected "spy" to be called at least once
+   × TerminalSession > should initialize terminal and register handlers 4ms
+     → expected "spy" to be called with arguments: [ <div></div> ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    <div />,[22m
+[31m+   false,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   ✓ TerminalSession > should enable shell integration features if configured 1ms
+   ✓ TerminalSession > should build context menu 0ms
+   ✓ TerminalSession > should publish TerminalRemoved event and dispose resources on dispose 1ms
+   ✓ TerminalSession > should not dispose twice 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/terminal/+state/terminal.session.spec.ts > TerminalSession > should initialize with correct renderer settings based on config
+AssertionError: expected "spy" to be called at least once
+ ❯ src/app/terminal/+state/terminal.session.spec.ts:63:52
+     61|         session = new TerminalSession(mockConfigService, mockBus, term…
+     62|         
+     63|         expect((session as any).renderer.useWebGl).toHaveBeenCalled();
+       |                                                    ^
+     64|     });
+     65| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/app/terminal/+state/terminal.session.spec.ts > TerminalSession > should initialize terminal and register handlers
+AssertionError: expected "spy" to be called with arguments: [ <div></div> ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[2m  [[22m
+[2m    <div />,[22m
+[31m+   false,[90m
+[2m  ][22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ src/app/terminal/+state/terminal.session.spec.ts:70:48
+     68|         session.initializeTerminal(mockElement);
+     69| 
+     70|         expect((session as any).renderer.open).toHaveBeenCalledWith(mo…
+       |                                                ^
+     71|         // Check if some handlers were registered
+     72|         // Handlers: Pty, Resize, Theme, Title, FullScreen, Focus, Sel…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  12:19:30
+   Duration  713ms (transform 120ms, setup 57ms, collect 214ms, tests 11ms, environment 133ms, prepare 57ms)
+

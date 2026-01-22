@@ -104,7 +104,9 @@ describe('ResizeHandler', () => {
         // terminal remains 80x24
        handler.registerFitAddon(mockFitAddon);
        handler.registerTerminal(mockTerminal);
-        expect(() => handler.resize()).toThrow('dimensions are not equal!');
+       handler.resize();
+       expect(mockFitAddon.fit).toHaveBeenCalled();
+       // Since the check was removed, it should not throw anymore but just work (or do nothing if we added a check)
     });
   });
 

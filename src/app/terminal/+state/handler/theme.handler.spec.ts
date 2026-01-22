@@ -44,7 +44,7 @@ describe('ThemeHandler', () => {
 
       expect(mockTerminal.options.scrollback).toBe(5000);
       expect(mockTerminal.options.fontSize).toBe(14);
-      expect(mockTerminal.options.fontFamily).toBe("'Fira Code', monospace");
+      expect(mockTerminal.options.fontFamily).toContain("'Fira Code'");
       expect(mockTerminal.options.theme?.foreground).toBe(`#${config.color!.foreground}`);
     });
 

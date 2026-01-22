@@ -115,7 +115,7 @@ describe('CommandLineEditor', () => {
     beforeEach(() => {
       mockTerminal.cols = 80;
       mockTerminal.buffer.active.length = 2;
-      const promptLine = TerminalMockFactory.createLine('COGNO: / $ ');
+      const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: / $ ');
       vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
         if (index === 0) return promptLine;
         return null;

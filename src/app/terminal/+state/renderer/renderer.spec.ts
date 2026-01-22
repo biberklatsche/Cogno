@@ -51,7 +51,7 @@ describe('Renderer', () => {
 
     it('should load default addons', () => {
         const terminalInstance = vi.mocked(Terminal).mock.results[0].value;
-        expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(3); // fit, search, unicode
+        expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(4); // Fit, Search, Unicode, Webgl/Canvas
     });
 
     it('should register terminal handler', () => {

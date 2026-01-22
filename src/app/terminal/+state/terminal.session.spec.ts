@@ -4,14 +4,14 @@ import { AppBus } from '../../app-bus/app-bus';
 import { BehaviorSubject } from 'rxjs';
 import { ShellConfig } from '../../config/+models/config';
 
+import { Renderer } from './renderer/renderer';
+
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
     return {
         Renderer: vi.fn().mockImplementation(() => ({
             open: vi.fn(),
             register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-            useWebGl: vi.fn(),
-            useCanvas: vi.fn(),
             dispose: vi.fn()
         }))
     };
@@ -54,20 +54,17 @@ describe('TerminalSession', () => {
     });
 
     it('should initialize with correct renderer settings based on config', () => {
-        const configSubject = new BehaviorSubject<any>({ enable_webgl: true });
-        mockConfigService.config$ = configSubject;
-        
-        // Re-create session to trigger constructor subscription with new config$
+        mockConfigService.config = { enable_webgl: true, font: { family: 'Fira Code' } };
         session = new TerminalSession(mockConfigService, mockBus, terminalId, mockShellConfig);
         
-        expect((session as any).renderer.useWebGl).toHaveBeenCalled();
+        expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
     });
 
     it('should initialize terminal and register handlers', () => {
         const mockElement = document.createElement('div');
         session.initializeTerminal(mockElement);
 
-        expect((session as any).renderer.open).toHaveBeenCalledWith(mockElement);
+        expect((session as any).renderer.open).toHaveBeenCalledWith(mockElement, false);
         // Check if some handlers were registered
         // Handlers: Pty, Resize, Theme, Title, FullScreen, Focus, Selection, Input, Mouse, Cursor = 10
         expect((session as any).renderer.register).toHaveBeenCalledTimes(10);
