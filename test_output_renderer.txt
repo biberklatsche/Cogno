@@ -5,34 +5,10 @@
 
  RUN  v3.2.4 /Users/larswolfram/projects/cogno2
 
- ❯ src/app/terminal/+state/renderer/renderer.spec.ts (8 tests | 1 failed) 8ms
-   ✓ Renderer > should initialize terminal with config 2ms
-   × Renderer > should load default addons 3ms
-     → expected "spy" to be called 3 times, but got 4 times
-   ✓ Renderer > should register terminal handler 1ms
-   ✓ Renderer > should register fit handler 0ms
-   ✓ Renderer > should use WebGL addon 0ms
-   ✓ Renderer > should use Canvas addon 0ms
-   ✓ Renderer > should open terminal in container 1ms
-   ✓ Renderer > should dispose terminal 0ms
+ ✓ src/app/terminal/+state/renderer/renderer.spec.ts (7 tests) 5ms
 
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
-
- FAIL  src/app/terminal/+state/renderer/renderer.spec.ts > Renderer > should load default addons
-AssertionError: expected "spy" to be called 3 times, but got 4 times
- ❯ src/app/terminal/+state/renderer/renderer.spec.ts:54:44
-     52|     it('should load default addons', () => {
-     53|         const terminalInstance = vi.mocked(Terminal).mock.results[0].v…
-     54|         expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(3); /…
-       |                                            ^
-     55|     });
-     56| 
-
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
-
-
- Test Files  1 failed (1)
-      Tests  1 failed | 7 passed (8)
-   Start at  12:20:22
-   Duration  599ms (transform 51ms, setup 59ms, collect 96ms, tests 8ms, environment 137ms, prepare 64ms)
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  15:36:54
+   Duration  591ms (transform 52ms, setup 58ms, collect 108ms, tests 5ms, environment 166ms, prepare 78ms)
 

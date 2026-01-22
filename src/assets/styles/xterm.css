@@ -17,3 +17,7 @@
 .terminal.xterm.column-select.focus {
     cursor: default;
 }
+
+.terminal.xterm .xterm-decoration-overview-ruler {
+    opacity: 0.3;
+}

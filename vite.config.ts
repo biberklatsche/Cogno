@@ -8,6 +8,9 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['setup-vitest.ts'],
+    alias: [
+      { find: '@xterm/addon-ligatures', replacement: '/src/__test__/mocks/xterm-addon-ligatures-mock.ts' },
+    ],
     include: ['src/**/*.spec.ts'],
     coverage: {
       reporter: ['text', 'lcov'],

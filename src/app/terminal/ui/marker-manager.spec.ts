@@ -132,7 +132,7 @@ describe('MarkerManager', () => {
     it('should keep markers that are still in viewport', () => {
         const lineWithCogno = TerminalMockFactory.createLine('^^#1');
         const emptyLine = TerminalMockFactory.createLine(' ');
-        vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index) => {
+        vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
             if (index === 0) return lineWithCogno;
             return emptyLine;
         });
