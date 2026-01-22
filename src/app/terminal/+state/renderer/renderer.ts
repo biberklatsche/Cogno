@@ -12,8 +12,6 @@ import {Config} from "../../../config/+models/config";
 export interface IRenderer {
     open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
 
-    useWebGl(): void;
-
     dispose(): void;
 
     register(handler: ITerminalHandler): IDisposable;
@@ -63,8 +61,6 @@ export class Renderer implements IRenderer, IDisposable {
         this._terminal.unicode.activeVersion = '11';
         if(config.enable_webgl) {
             this.useWebGl();
-        } else {
-            this.useCanvas();
         }
     }
 
