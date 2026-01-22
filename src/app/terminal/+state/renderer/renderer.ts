@@ -5,14 +5,14 @@ import {SearchAddon} from "@xterm/addon-search";
 import {Unicode11Addon} from "@xterm/addon-unicode11";
 import {LigaturesAddon} from "@xterm/addon-ligatures";
 import {WebglAddon} from "@xterm/addon-webgl";
-import {CanvasAddon} from "@xterm/addon-canvas";
 import {IDisposable} from "../../../common/models/models";
 import {IFitHandler, isFitHandler, isTerminalHandler, ITerminalHandler} from "../handler/handler";
-import {ConfigService} from "../../../config/+state/config.service";
 import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
     open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
+
+    useWebGl(): void;
 
     dispose(): void;
 
@@ -28,12 +28,10 @@ export class Renderer implements IRenderer, IDisposable {
     private _unicodeAddon = new Unicode11Addon();
     private _ligaturesAddon: LigaturesAddon | undefined = undefined;
     private _webglAddon: WebglAddon | undefined = undefined;
-    private _canvasAddon: CanvasAddon | undefined = undefined;
 
     constructor(config: Config) {
         this._terminal = new Terminal({
-            fontFamily:`${config.font!.family}`,
-            overviewRulerWidth: config.overview_ruler_width,
+            overviewRuler: {width: config.overview_ruler_width, showBottomBorder: true, showTopBorder: true},
             scrollback: config.scrollback_lines,
             tabStopWidth: config.tab_stop_width,
             scrollSensitivity: config.scroll_sensitivity,
@@ -44,7 +42,6 @@ export class Renderer implements IRenderer, IDisposable {
             convertEol: config.convert_eol,
             customGlyphs: config.font!.custom_glyphs,
             drawBoldTextInBrightColors: config.font!.draw_bold_text_in_bright_colors,
-            fastScrollModifier: config.fast_scroll_modifier,
             fastScrollSensitivity: config.fast_scroll_sensitivity,
             ignoreBracketedPasteMode: config.ignore_bracketed_paste_mode,
             minimumContrastRatio: config.minimum_contrast_ratio,
@@ -100,13 +97,6 @@ export class Renderer implements IRenderer, IDisposable {
             this._webglAddon = new WebglAddon();
         }
         this._terminal.loadAddon(this._webglAddon);
-    }
-
-    private useCanvas() {
-        if (!this._canvasAddon) {
-            this._canvasAddon = new CanvasAddon();
-        }
-        this._terminal!.loadAddon(this._canvasAddon);
     }
 
     public dispose() {

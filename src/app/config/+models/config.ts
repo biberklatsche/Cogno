@@ -179,7 +179,6 @@ export const ConfigSchema = z.object({
     enable_watch_config: z.boolean().optional(),
     alt_click_moves_cursor: z.boolean().optional(),
     convert_eol: z.boolean().optional(),
-    fast_scroll_modifier: z.enum(['none', 'alt', 'ctrl', 'shift']).optional(),
     fast_scroll_sensitivity: z.number().optional(),
     ignore_bracketed_paste_mode: z.boolean().optional(),
     minimum_contrast_ratio: z.number().optional(),

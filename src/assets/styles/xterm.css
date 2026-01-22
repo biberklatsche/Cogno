@@ -6,6 +6,10 @@
     cursor: default;
 }
 
+.xterm .xterm-viewport {
+    background-color: #00000000!important;
+}
+
 .terminal.xterm .xterm-helper-textarea {
     cursor: default;
 }
