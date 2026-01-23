@@ -28,7 +28,7 @@ export class ThemeHandler implements ITerminalHandler {
     public configureTerminal(config: Config) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
         this._terminal.options.fontFamily = `'${config.font?.family}', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`;
-        this._terminal.options.scrollback = config.scrollback_lines;
+        this._terminal.options.scrollback = config.scrollbar?.scrollback_lines;
         this._terminal.options.fontSize = config.font!.size;
         this._terminal.options.fontWeight = config.font!.weight;
         this._terminal.options.fontWeightBold = config.font!.weight_bold;
@@ -38,14 +38,14 @@ export class ThemeHandler implements ITerminalHandler {
         this._terminal.options.cursorInactiveStyle = config.cursor!.inactive_style;
         this._terminal.options.theme = {
 
-            overviewRulerBorder: '#555555',
-            scrollbarSliderBackground: 'rgba(255, 0, 0, 0.25)',
-            scrollbarSliderHoverBackground: 'rgba(255, 0, 0, 0.4)',
-            scrollbarSliderActiveBackground: 'rgba(255, 0, 0, 0.6)',
+            overviewRulerBorder: `#${config.scrollbar!.overview_ruler_border_color}`,
+            scrollbarSliderBackground: `#${config.scrollbar!.slider_color}`,
+            scrollbarSliderHoverBackground: `#${config.scrollbar!.slider_hover_color}`,
+            scrollbarSliderActiveBackground: `#${config.scrollbar!.slider_active_color}`,
 
             background: config.allow_transparency ? '#00000000' : `#${config.color!.background}`,
-            cursor: config.cursor!.color ? `#${config.cursor!.color}CC` : `#${config.color!.highlight}CC`,
-            cursorAccent: `#${config.color!.highlight}66`,
+            cursor: `#${config.cursor!.color}`,
+            cursorAccent: `#${config.cursor!.accent_color}`,
             foreground: `#${config.color!.foreground}`,
             selectionBackground: `#${config.color!.highlight}88`,
             selectionInactiveBackground: `#${config.color!.highlight}55`,

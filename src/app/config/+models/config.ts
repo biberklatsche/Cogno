@@ -3,7 +3,7 @@ import {OS, OsType} from "../../_tauri/os";
 
 const HexColorSchema = z
     .string()
-    .regex(/^(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/, 'Must be a 4-, 6-, or 8-digit hex color');
+    .regex(/^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/, 'Must be a 4-, 6-, or 8-digit hex color');
 
 const PaddingValueSchema = z.number().min(0);
 
@@ -37,16 +37,6 @@ const FeatureNotificationSchema = z.object({
 
 const FeatureCommandPaletteSchema = z.object({
     mode: FeatureModeEnum.optional(),
-});
-
-const ScrollbarVisibilityEnum = z
-    .enum(['hidden', 'auto', 'always'])
-    .refine((val) => ['hidden', 'auto', 'always'].includes(val), {
-        message: 'Scrollbar visibility must be either "hidden", "auto" or "always"',
-    }).optional();
-
-const ScrollbarSchema = z.object({
-   visibility: ScrollbarVisibilityEnum.optional(),
 });
 
 export const FontWeightSchema = z.union([
@@ -102,8 +92,25 @@ export const ColorSchema = z.object({
     bright_blue: HexColorSchema.optional(),
     bright_magenta: HexColorSchema.optional(),
     bright_cyan: HexColorSchema.optional(),
-    bright_white: HexColorSchema.optional(),
+    bright_white: HexColorSchema.optional()
 });
+
+export const ScrollbarSchema = z.object({
+    width: z.number().int().min(0, 'Cursor-With must be at least 0').optional(),
+    overview_ruler_border_color: HexColorSchema.optional(),
+    slider_color: HexColorSchema.optional(),
+    slider_hover_color: HexColorSchema.optional(),
+    slider_active_color: HexColorSchema.optional(),
+    sensitivity: z.int().min(0, 'Scrollbar sensitivity must be at least 0').optional(),
+    scroll_on_user_input: z.boolean().optional(),
+    smooth_scroll_duration: z.int().min(0, 'Scrollbar smooth scroll duration must be at least 0').optional(),
+    fast_scroll_sensitivity: z.int().min(0, 'Scrollbar smooth scroll duration must be at least 0').optional(),
+    scrollback_lines: z
+        .number()
+        .int()
+        .min(100, "Scrollback lines must be at least 100")
+        .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
+})
 
 export const CursorSchema = z.object({
     width: z.number().int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10').optional(),
@@ -115,10 +122,15 @@ export const CursorSchema = z.object({
         .enum(['outline', 'block', 'bar', 'underline', 'none'])
         .optional(),
     color: HexColorSchema.optional(),
+    accent_color: HexColorSchema.optional(),
+    alt_click_moves_cursor: z.boolean().optional()
 })
 
 export const SelectionSchema= z.object({
     clear_on_copy: z.boolean().optional(),
+    background_color: HexColorSchema.optional(),
+    inactive_background_color: HexColorSchema.optional(),
+    right_click_selects_word: z.boolean().optional(),
 })
 
 export const ImageSchema = z.object({
@@ -170,23 +182,14 @@ const MenuSchema = z.object({
 
 export const ConfigSchema = z.object({
     keybind: KeybindsSchema.optional(),
-    scrollback_lines: z
-    .number()
-    .int()
-    .min(100, "Scrollback lines must be at least 100")
-    .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
     enable_webgl: z.boolean().optional(),
     enable_watch_config: z.boolean().optional(),
-    alt_click_moves_cursor: z.boolean().optional(),
+
     convert_eol: z.boolean().optional(),
-    fast_scroll_sensitivity: z.number().optional(),
     ignore_bracketed_paste_mode: z.boolean().optional(),
     minimum_contrast_ratio: z.number().optional(),
-    right_click_selects_word: z.boolean().optional(),
+
     screen_reader_mode: z.boolean().optional(),
-    scroll_on_user_input: z.boolean().optional(),
-    scroll_sensitivity: z.number().optional(),
-    smooth_scroll_duration: z.number().optional(),
     allow_transparency: z.boolean().optional(),
     tab_stop_width: z.number().optional(),
     word_separator: z.string().optional(),
@@ -199,7 +202,6 @@ export const ConfigSchema = z.object({
     selection: SelectionSchema.optional(),
     menu: MenuSchema.optional(),
     scrollbar: ScrollbarSchema.optional(),
-    overview_ruler_width: z.number().optional(),
     workspace: FeatureWorkspaceSchema.optional(),
     inspector: FeatureInspectorSchema.optional(),
     notification: FeatureNotificationSchema.optional(),
@@ -217,4 +219,4 @@ export type HexColor = z.infer<typeof HexColorSchema>;
 export type ShellConfig = z.infer<typeof ShellSchema>;
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 export type FeatureMode = z.infer<typeof FeatureModeEnum>;
-export type ScrollbarVisibility = z.infer<typeof ScrollbarVisibilityEnum>;
+export type Scrollbar = z.infer<typeof ScrollbarSchema>;
