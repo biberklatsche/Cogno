@@ -5,7 +5,7 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {IPty} from "../pty/pty";
 import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
-import {ShellConfig, ShellConfigPosition} from "../../../config/+models/config";
+import {ShellConfig} from "../../../config/+models/config";
 
 export class PtyHandler implements ITerminalHandler {
 

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import {z} from 'zod'
 import {OS, OsType} from "../../_tauri/os";
 
 const HexColorSchema = z
@@ -126,7 +126,7 @@ export const CursorSchema = z.object({
     alt_click_moves_cursor: z.boolean().optional()
 })
 
-export const SelectionSchema= z.object({
+export const SelectionSchema = z.object({
     clear_on_copy: z.boolean().optional(),
     background_color: HexColorSchema.optional(),
     inactive_background_color: HexColorSchema.optional(),
@@ -149,32 +149,46 @@ const KeybindsSchema = z.array(KeybindSchema);
 const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash", "GitBash"]);
 
 const ShellSchema = z.object({
-    shell_type: ShellTypeEnum.optional(),
+    shell_type: ShellTypeEnum,
     path: z.string().optional(),
-    args: z.array(z.string().optional()).optional(),
+    args: z.array(z.string()).optional(),
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
-    inject_path: z.boolean().optional().default(true),
-    enable_shell_integration: z.boolean().optional().default(true),
+    inject_path: z.boolean().default(true),
+    enable_shell_integration: z.boolean().default(true),
 }).describe("The shell configuration");
 
-export const SHELL_CONFIG_POSITIONS = [
-    1, 2, 3, 4, 5,
-    6, 7, 8, 9, 10,
-    11, 12, 13, 14, 15,
-    16, 17, 18, 19, 20,
-] as const;
-export const MAX_SHELL_POSITION = SHELL_CONFIG_POSITIONS[SHELL_CONFIG_POSITIONS.length - 1];
+const ShellProfilesSchema = z.record(z.string().min(1), ShellSchema);
 
-export type ShellConfigPosition = typeof SHELL_CONFIG_POSITIONS[number];
-type ShellConfigPosKey = `${ShellConfigPosition}`; // "1" | "2" | ... | "20"
+export const ShellConfigSchema = z.object({
+    default: z.string().min(1),
+    order: z.array(z.string().min(1)).optional(),
+    profiles: ShellProfilesSchema,
+}).superRefine((s, ctx) => {
+    // default muss existieren
+    if (!s.profiles[s.default]) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["default"],
+            message: `Default shell profile '${s.default}' is not defined in shell.profiles.`,
+        });
+    }
 
-const ShellListSchema = z.object(
-    Object.fromEntries(
-        SHELL_CONFIG_POSITIONS.map((n) => [String(n), ShellSchema.optional()])
-    ) as Record<ShellConfigPosKey, ReturnType<typeof ShellSchema.optional>>
-);
+    // order darf nur existierende Profile referenzieren
+    if (s.order) {
+        for (let i = 0; i < s.order.length; i++) {
+            const name = s.order[i];
+            if (!s.profiles[name]) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["order", i],
+                    message: `Shell profile '${name}' in shell.order is not defined in shell.profiles.`,
+                });
+            }
+        }
+    }
+});
 
 const MenuSchema = z.object({
     opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
@@ -198,7 +212,7 @@ export const ConfigSchema = z.object({
     cursor: CursorSchema.optional(),
     padding: PaddingSchema.optional(),
     background_image: ImageSchema.optional(),
-    shell: ShellListSchema.optional(),
+    shell: ShellConfigSchema.optional(),
     selection: SelectionSchema.optional(),
     menu: MenuSchema.optional(),
     scrollbar: ScrollbarSchema.optional(),

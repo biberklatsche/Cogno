@@ -1,47 +1,81 @@
 import { Injectable } from '@angular/core';
-import {
-    Config,
-    MAX_SHELL_POSITION,
-    ShellConfig,
-    ShellConfigPosition,
-    ShellType
-} from './+models/config';
-import {Shell, Shells} from '../_tauri/shells';
-import { Environment } from '../common/environment/environment';
+import { Config, ShellConfig, ShellType } from './+models/config';
+import { Shell, Shells } from '../_tauri/shells';
 
 @Injectable({ providedIn: 'root' })
 export class ShellConfigurator {
-  /**
-   * Detects available shells and writes them into the config.shell list starting at position 1.
-   */
-  async apply(config: Config): Promise<void> {
-    const installedShells = await Shells.load();
+    /**
+     * Detects available shells and writes them into config.shell.profiles
+     * and sets config.shell.default + (optional) config.shell.order.
+     */
+    async apply(config: Config): Promise<void> {
+        const installedShells = await Shells.load();
 
-    // Stable sort order preference
-    const weight: Record<ShellType, number> = {
-        GitBash: 1,
-        PowerShell: 2,
-        ZSH: 3,
-        Bash: 4,
-    };
+        // Stable sort order preference
+        const weight: Record<ShellType, number> = {
+            GitBash: 1,
+            PowerShell: 2,
+            ZSH: 3,
+            Bash: 4,
+        };
 
-    const sortedShells = installedShells.sort((a, b) => {
-      const wa = weight[a.shell_type] ?? 99;
-      const wb = weight[b.shell_type] ?? 99;
-      return wa - wb;
-    });
+        const sortedShells = installedShells.sort((a, b) => {
+            const wa = weight[a.shell_type] ?? 99;
+            const wb = weight[b.shell_type] ?? 99;
+            return wa - wb;
+        });
 
-    if(config.shell === undefined) {
-        config.shell = {};
+        // Ensure new structure exists
+        if (!config.shell) {
+            config.shell = {
+                default: '',
+                order: [],
+                profiles: {},
+            };
+        } else {
+            config.shell.profiles ??= {};
+            config.shell.order ??= [];
+            // default lassen wir ggf. wie er ist (siehe weiter unten)
+        }
+
+        // Optional: nur initial befüllen, wenn noch keine Profile existieren
+        // (damit du User-Konfig nicht überschreibst)
+        if (Object.keys(config.shell.profiles).length > 0) {
+            return;
+        }
+
+        const order: string[] = [];
+
+        for (const sh of sortedShells) {
+            const name = this.makeUniqueProfileName(config.shell.profiles, sh.shell_type);
+            config.shell.profiles[name] = this.createShellConfig(sh);
+            order.push(name);
+        }
+
+        // Default setzen: wenn leer oder ungültig → erstes Profil
+        const hasDefault = !!config.shell.default && !!config.shell.profiles[config.shell.default];
+        if (!hasDefault) {
+            config.shell.default = order[0] ?? '';
+        }
+
+        // order setzen (nur wenn du UI-Reihenfolge brauchst)
+        config.shell.order = order;
     }
 
-    let shellPosition: ShellConfigPosition = 1;
-    for (const shell of sortedShells) {
-        config.shell[shellPosition] = this.createShellConfig(shell);
-        shellPosition = shellPosition + 1 as ShellConfigPosition;
-        if (shellPosition > MAX_SHELL_POSITION) break;
+    private makeUniqueProfileName(
+        profiles: Record<string, ShellConfig>,
+        shellType: ShellType
+    ): string {
+        // Basisname aus ShellType (z.B. "ZSH" -> "zsh", "GitBash" -> "gitbash")
+        const base = shellType.toLowerCase();
+
+        if (!profiles[base]) return base;
+
+        // Kollisionsfrei: zsh2, zsh3, ...
+        let i = 2;
+        while (profiles[`${base}${i}`]) i++;
+        return `${base}${i}`;
     }
-  }
 
     private createShellConfig(sh: Shell): ShellConfig {
         const base: ShellConfig = {
@@ -56,10 +90,11 @@ export class ShellConfigurator {
 
         const args: string[] = [];
         const env: Record<string, string> = {};
+
         switch (sh.shell_type) {
             case 'GitBash': {
                 args.push('--login', '-i');
-                env['TERM'] = 'xterm-256color'
+                env['TERM'] = 'xterm-256color';
                 break;
             }
             case 'ZSH': {
@@ -75,10 +110,10 @@ export class ShellConfigurator {
                 break;
             }
             default: {
-                // Fallback: no special args
                 break;
             }
         }
-        return {...base, args, env};
+
+        return { ...base, args, env };
     }
 }

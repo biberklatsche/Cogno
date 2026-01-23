@@ -31,7 +31,7 @@ export class GridListService {
         });
 
         this.bus.onType$('TabAdded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabAddedEvent) => {
-            this.restoreGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellConfigPosition: event.payload!.shellConfigPosition ?? 1}});
+            this.restoreGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellName: event.payload!.shellName}});
             if(event.payload!.isActive) {
                 this.selectGrid(event.payload!.tabId);
             }
@@ -123,7 +123,7 @@ export class GridListService {
         };
         this.bus.publish({path: ['app', 'terminal'], type: "BlurTerminal", payload: node.data?.terminalId!});
 
-        const paneChild: Pane = {shellConfigPosition: 1, terminalId: IdCreator.newTerminalId()};
+        const paneChild: Pane = {terminalId: IdCreator.newTerminalId()};
         tree.add(node.key, side, paneParent, paneChild);
         this._gridList.next(gridList);
     }
@@ -172,7 +172,7 @@ export class GridListService {
             this.addNode(leftChild, nodeConfig.leftChild)
             this.addNode(rightChild, nodeConfig.rightChild)
         } else {
-            parent.data = {shellConfigPosition: nodeConfig.shellConfigPosition ?? 1, workingDir: nodeConfig.workingDir, terminalId: IdCreator.newTerminalId()};
+            parent.data = {shellName: nodeConfig.shellName, workingDir: nodeConfig.workingDir, terminalId: IdCreator.newTerminalId()};
         }
     }
 
@@ -180,7 +180,7 @@ export class GridListService {
         // Leaf node -> TerminalConfig
         if (node.isLeaf) {
             return {
-                shellConfigPosition: node.data?.shellConfigPosition,
+                shellName: node.data?.shellName,
                 workingDir: node.data?.workingDir
             };
         }

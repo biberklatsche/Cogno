@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal} from '@angular/core';
 import {TerminalComponentFactory} from "../+state/terminal-component.factory";
 import {Pane, TerminalId} from "../+model/model";
-import {ShellConfig, ShellConfigPosition} from "../../config/+models/config";
+import {ShellConfig} from "../../config/+models/config";
 import {ConfigService} from "../../config/+state/config.service";
 
 @Component({
@@ -51,8 +51,7 @@ export class PaneComponent implements AfterViewInit {
     }
 
     getShellConfig(pane: Pane): ShellConfig {
-        if(!pane.shellConfigPosition) throw new Error('Invalid shell config position');
-        const shellConfig = this._configService.getShellConfigOrDefault(pane.shellConfigPosition);
+        const shellConfig = this._configService.getShellConfigOrDefault(pane.shellName);
         if(pane.workingDir) {
             shellConfig.working_dir = pane.workingDir;
         }

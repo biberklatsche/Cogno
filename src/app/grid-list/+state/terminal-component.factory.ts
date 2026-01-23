@@ -4,15 +4,11 @@ import {
     EnvironmentInjector,
     Type,
     createComponent,
-    ComponentRef,
-    DestroyRef
+    ComponentRef
 } from '@angular/core';
 import {TerminalComponent} from "../../terminal/terminal.component";
 import {TerminalId} from "../+model/model";
-import {AppBus} from "../../app-bus/app-bus";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {TabRemovedEvent} from "../../tab-list/+bus/events";
-import {ShellConfig, ShellConfigPosition} from "../../config/+models/config";
+import {ShellConfig} from "../../config/+models/config";
 
 @Injectable({ providedIn: 'root' })
 export class TerminalComponentFactory {

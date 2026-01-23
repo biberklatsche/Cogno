@@ -49,7 +49,7 @@ export class TabListService {
             .subscribe((event: ActionFiredEvent) => {
                 switch (event.payload) {
                     case 'new_tab':
-                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});
+                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.profiles[configService.config.shell?.default]?.shell_type ?? 'unknown', isActive: true});
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
