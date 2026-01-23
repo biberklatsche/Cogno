@@ -1,11 +1,10 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {TerminalId} from "../../../grid-list/+model/model";
-import {ConfigService} from "../../../config/+state/config.service";
 import {IPty} from "../pty/pty";
 import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
-import {ShellConfig} from "../../../config/+models/config";
+import {ShellProfile} from "../../../config/+models/shell-config";
 
 export class PtyHandler implements ITerminalHandler {
 
@@ -17,7 +16,7 @@ export class PtyHandler implements ITerminalHandler {
     constructor(
         private _terminalId: TerminalId,
         private _pty: IPty,
-        private _shellConfig: ShellConfig,
+        private _shellProfile: ShellProfile,
         private _bus: AppBus
     ) {}
 
@@ -39,7 +38,7 @@ export class PtyHandler implements ITerminalHandler {
                 terminal.write(data);
                 if(isFirst) {
                     const disposable  = terminal.onWriteParsed(() => {
-                        this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "PtyInitialized", payload: {terminalId: this._terminalId, shellType: this._shellConfig.shell_type!}});
+                        this._bus.publish({path: ['app', 'terminal', this._terminalId], type: "PtyInitialized", payload: {terminalId: this._terminalId, shellType: this._shellProfile.shell_type!}});
                         disposable.dispose();
                     });
                                     }
@@ -52,7 +51,7 @@ export class PtyHandler implements ITerminalHandler {
     }
 
     private spawnPty(terminalId: TerminalId, terminal: Terminal) {
-        return this._pty.spawn(terminalId, this._shellConfig, {cols: terminal.cols, rows: terminal.rows});
+        return this._pty.spawn(terminalId, this._shellProfile, {cols: terminal.cols, rows: terminal.rows});
     }
 
 }

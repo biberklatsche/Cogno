@@ -1,12 +1,19 @@
 import { Terminal, IDecoration } from '@xterm/xterm';
 import { SessionState, Command } from '../../session.state';
 import { IDisposable } from '../../../../common/models/models';
+import {Config} from "../../../../config/+models/config";
+import {PromptConfig, PromptProfile, PromptSegment} from "../../../../config/+models/prompt-config";
+import {PromptMarkerRenderer} from "./prompt-renderer";
 
 export class MarkerManager implements IDisposable {
     private _decorations: Map<number, IDecoration> = new Map();
     private _terminal?: Terminal;
+    private _renderer?: PromptMarkerRenderer;
 
-    constructor(private sessionState: SessionState) {}
+    constructor(private sessionState: SessionState, private promptSegments: PromptSegment[]) {
+        console.log('MarkerManager', promptSegments);
+        this._renderer = new PromptMarkerRenderer(sessionState, promptSegments);
+    }
 
     setTerminal(terminal: Terminal) {
         this._terminal = terminal;
@@ -94,7 +101,7 @@ export class MarkerManager implements IDisposable {
 
         if (decoration) {
             decoration.onRender((element) => {
-                this.renderMarkerContent(element, commandId);
+                this._renderer!.render(element, commandId);
             });
             decoration.onDispose(() => {
                 marker.dispose();
@@ -103,7 +110,7 @@ export class MarkerManager implements IDisposable {
         }
     }
 
-    private renderMarkerContent(element: HTMLElement, commandId: string | null) {
+    /*private renderMarkerContent(element: HTMLElement, commandId: string | null) {
         element.innerHTML = '';
         const markerEl = document.createElement('div');
         markerEl.classList.add('cogno-marker');
@@ -123,7 +130,7 @@ export class MarkerManager implements IDisposable {
         }
 
         element.appendChild(markerEl);
-    }
+    }*/
 
     dispose() {
         this._decorations.forEach(d => d.dispose());

@@ -24,6 +24,7 @@ export class Command {
 
     get command(): string | undefined { return this.data['command']; }
     get directory(): string | undefined { return this.data['directory']; }
+    get machine(): string | undefined { return this.data['machine']; }
     get user(): string | undefined { return this.data['user']; }
     get returnCode(): number | undefined {
         const rc = this.data['returnCode'];

@@ -12,6 +12,8 @@ import {DefaultConfig} from "../../_tauri/default-config";
 import {ConfigWriter} from "./config.writer";
 import {ActionFired} from "../../action/action.models";
 import {Opener} from "../../_tauri/opener";
+import {ShellProfile} from "../+models/shell-config";
+import {PromptProfile, PromptSegment} from "../+models/prompt-config";
 
 
 export abstract class ConfigService {
@@ -22,7 +24,9 @@ export abstract class ConfigService {
      * Returns the shell config for a given profile name.
      * Falls name fehlt oder ungültig ist, wird default verwendet.
      */
-    abstract getShellConfigOrDefault(name?: string): ShellConfig;
+    abstract getShellProfileOrDefault(name?: string): ShellProfile;
+
+    abstract getPromptSegments(): PromptSegment[];
 }
 
 
@@ -45,7 +49,7 @@ export class RealConfigService extends ConfigService {
     /**
      * New API: resolve shell config by profile name
      */
-    getShellConfigOrDefault(name?: string): ShellConfig {
+    getShellProfileOrDefault(name?: string): ShellProfile {
         const config = this._config.value;
         if (!config) throw new Error('Config is not loaded!');
 
@@ -73,6 +77,25 @@ export class RealConfigService extends ConfigService {
 
         // 3) Fallback: erstes Profil
         return { ...profiles[profileNames[0]] };
+    }
+
+    getPromptSegments(): PromptSegment[] {
+        const config = this._config.value;
+        if (!config) throw new Error('Config is not loaded!');
+
+        const prompt = config.prompt;
+        if (!prompt || !prompt.profile) {
+            throw new Error('No prompt configuration defined!');
+        }
+
+        const profile = prompt.profile;
+        const activeProfileName = prompt.active;
+        const order =  profile[activeProfileName].order;
+        const segments: PromptSegment[] = [];
+        for (const segmentName of order) {
+            segments.push(prompt.segment[segmentName]);
+        }
+        return segments;
     }
 
     constructor(

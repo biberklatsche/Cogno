@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Config, ShellConfig, ShellType } from './+models/config';
 import { Shell, Shells } from '../_tauri/shells';
+import {ShellProfile} from "./+models/shell-config";
 
 @Injectable({ providedIn: 'root' })
 export class ShellConfigurator {
@@ -63,7 +64,7 @@ export class ShellConfigurator {
     }
 
     private makeUniqueProfileName(
-        profiles: Record<string, ShellConfig>,
+        profiles: Record<string, ShellProfile>,
         shellType: ShellType
     ): string {
         // Basisname aus ShellType (z.B. "ZSH" -> "zsh", "GitBash" -> "gitbash")
@@ -77,8 +78,8 @@ export class ShellConfigurator {
         return `${base}${i}`;
     }
 
-    private createShellConfig(sh: Shell): ShellConfig {
-        const base: ShellConfig = {
+    private createShellConfig(sh: Shell): ShellProfile {
+        const base: ShellProfile = {
             shell_type: sh.shell_type,
             path: sh.path,
             args: [],

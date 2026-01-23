@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import {TerminalComponent} from "../../terminal/terminal.component";
 import {TerminalId} from "../+model/model";
-import {ShellConfig} from "../../config/+models/config";
+import {ShellProfile} from "../../config/+models/shell-config";
 
 @Injectable({ providedIn: 'root' })
 export class TerminalComponentFactory {
@@ -19,7 +19,7 @@ export class TerminalComponentFactory {
     }
 
     /** Returns the existing component for terminalId – or creates component exactly once */
-    private getOrCreate(terminalId: TerminalId, shellConfig: ShellConfig): ComponentRef<TerminalComponent> {
+    private getOrCreate(terminalId: TerminalId, shellProfile: ShellProfile): ComponentRef<TerminalComponent> {
         let ref = this.map.get(terminalId);
         if (!ref) {
             ref = createComponent(TerminalComponent as Type<TerminalComponent>, {
@@ -27,7 +27,7 @@ export class TerminalComponentFactory {
                 elementInjector: this.injector,
             });
             ref.setInput('terminalId', terminalId);
-            ref.setInput('shellConfig', shellConfig);
+            ref.setInput('shellProfile', shellProfile);
             // one-time change detection for rendering
             ref.changeDetectorRef.detectChanges();
             this.map.set(terminalId, ref);
@@ -40,8 +40,8 @@ export class TerminalComponentFactory {
         return ref?.instance.getTerminalSnapshot() ?? "";
     }
 
-    attach(terminalId: TerminalId, shellConfig: ShellConfig, host: HTMLElement) {
-        const ref = this.getOrCreate(terminalId, shellConfig);
+    attach(terminalId: TerminalId, shellProfile: ShellProfile, host: HTMLElement) {
+        const ref = this.getOrCreate(terminalId, shellProfile);
         host.appendChild(ref.location.nativeElement); // reparent – no destroy/rebuild
         ref.changeDetectorRef.detectChanges();
 

@@ -5,6 +5,8 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {Command, Position, SessionState} from "../session.state";
 import OscParser from "./cogno-osc.parser";
 import {MarkerManager} from "./ui/marker-manager";
+import {Config} from "../../../config/+models/config";
+import {PromptConfig, PromptProfile, PromptSegment} from "../../../config/+models/prompt-config";
 
 export class CommandLineObserver implements ITerminalHandler {
 
@@ -12,8 +14,8 @@ export class CommandLineObserver implements ITerminalHandler {
     private _terminal?: Terminal;
     private _markerManager: MarkerManager;
 
-    constructor(private sessionState: SessionState) {
-        this._markerManager = new MarkerManager(sessionState);
+    constructor(private sessionState: SessionState, promptSegments: PromptSegment[]) {
+        this._markerManager = new MarkerManager(sessionState, promptSegments);
     }
 
     registerTerminal(terminal: Terminal): IDisposable {

@@ -4,9 +4,10 @@ import {IDisposable} from "../../../common/models/models";
 import {Logger} from "../../../_tauri/logger";
 import {TauriPty} from "../../../_tauri/pty";
 import {TerminalDimensions} from '../handler/resize.handler';
+import {ShellProfile} from "../../../config/+models/shell-config";
 
 export interface IPty extends IDisposable{
-    spawn(terminalId: string, shellConfig: ShellConfig, dimensions: TerminalDimensions): Promise<void>;
+    spawn(terminalId: string, shellProfile: ShellProfile, dimensions: TerminalDimensions): Promise<void>;
     resize(dimensions: TerminalDimensions): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
@@ -23,9 +24,9 @@ export class Pty implements IPty {
     constructor() {
     }
 
-    async spawn(terminalId: string, shellConfig: ShellConfig, dimensions: TerminalDimensions): Promise<void> {
+    async spawn(terminalId: string, shellProfile: ShellProfile, dimensions: TerminalDimensions): Promise<void> {
         this._terminalId = terminalId;
-        await TauriPty.spawn(this._terminalId, shellConfig, dimensions);
+        await TauriPty.spawn(this._terminalId, shellProfile, dimensions);
     }
 
     kill(signal?: string): void {

@@ -3,6 +3,8 @@ import {TerminalComponentFactory} from "../+state/terminal-component.factory";
 import {Pane, TerminalId} from "../+model/model";
 import {ShellConfig} from "../../config/+models/config";
 import {ConfigService} from "../../config/+state/config.service";
+import {ShellProfile} from "../../config/+models/shell-config";
+import {PromptProfile} from "../../config/+models/prompt-config";
 
 @Component({
   selector: 'app-pane',
@@ -38,24 +40,25 @@ export class PaneComponent implements AfterViewInit {
             if (!this._viewReady()) return;
             const pane = this.pane();
             const id = pane.terminalId;
-            const shellConfig = this.getShellConfig(pane);
+            const shellProfile = this.getShellProfile(pane);
+            const promptProfile = this._configService.getPromptSegments();
             const host = this.hostRef?.nativeElement;
             if (!id || !host) return;
             if (this._attachedTerminalId !== id) {
                 // Clear previous content to avoid multiple components in the dock
                 while (host.firstChild) host.removeChild(host.firstChild);
-                this._terminalComponents.attach(id, shellConfig, host);
+                this._terminalComponents.attach(id, shellProfile, host);
                 this._attachedTerminalId= id;
             }
         });
     }
 
-    getShellConfig(pane: Pane): ShellConfig {
-        const shellConfig = this._configService.getShellConfigOrDefault(pane.shellName);
+    getShellProfile(pane: Pane): ShellProfile {
+        const shellProfile = this._configService.getShellProfileOrDefault(pane.shellName);
         if(pane.workingDir) {
-            shellConfig.working_dir = pane.workingDir;
+            shellProfile.working_dir = pane.workingDir;
         }
-        return shellConfig;
+        return shellProfile;
     }
 
     ngAfterViewInit() {

@@ -14,6 +14,8 @@ import {TerminalId} from "../grid-list/+model/model";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 import {ShellConfig} from "../config/+models/config";
+import {ShellProfile} from "../config/+models/shell-config";
+import {PromptProfile} from "../config/+models/prompt-config";
 
 @Component({
     selector: 'app-terminal',
@@ -26,13 +28,13 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     @ViewChild('terminalContainer', {static: true}) terminalContainer!: ElementRef<HTMLDivElement>;
     private terminalSession?: TerminalSession;
     terminalId = input.required<TerminalId>();
-    shellConfig = input.required<ShellConfig>();
+    shellProfile = input.required<ShellProfile>();
 
     constructor(private configService: ConfigService, private bus: AppBus, private destroyRef: DestroyRef, private menu: ContextMenuOverlayService) {
     }
 
     ngOnInit(): void {
-        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId(), this.shellConfig());
+        this.terminalSession = new TerminalSession(this.configService, this.bus, this.terminalId(), this.shellProfile());
         this.destroyRef.onDestroy(() => {
             this.terminalSession?.dispose();
         });

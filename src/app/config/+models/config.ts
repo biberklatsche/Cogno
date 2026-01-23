@@ -1,198 +1,24 @@
 import {z} from 'zod'
-import {OS, OsType} from "../../_tauri/os";
+import {PromptConfigSchema} from "./prompt-config";
+import {HexColor, HexColorSchema, FeatureMode} from "./shared";
+import {Font, FontSchema} from "./font-config";
+import {Color, ColorSchema} from "./color-config";
+import {Cursor, CursorSchema} from "./cursor-config";
+import {Padding, PaddingSchema} from "./padding-config";
+import {ImageSchema} from "./image-config";
+import {ShellConfig, ShellConfigSchema, ShellType} from "./shell-config";
+import {Selection, SelectionSchema} from "./selection-config";
+import {MenuSchema} from "./menu-config";
+import {Scrollbar, ScrollbarSchema} from "./scrollbar-config";
+import {
+    FeatureCommandPaletteSchema,
+    FeatureInspectorSchema,
+    FeatureNotificationSchema,
+    FeatureWorkspaceSchema
+} from "./feature-config";
+import {KeybindsSchema, Keybinding} from "./keybind-config";
 
-const HexColorSchema = z
-    .string()
-    .regex(/^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/, 'Must be a 4-, 6-, or 8-digit hex color');
-
-const PaddingValueSchema = z.number().min(0);
-
-const PaddingSchema = z.object({
-    left: PaddingValueSchema.optional(),
-    right: PaddingValueSchema.optional(),
-    top: PaddingValueSchema.optional(),
-    bottom: PaddingValueSchema.optional(),
-    remove_on_full_screen_app: z.boolean().optional(),
-});
-
-//hidden, auto, always
-
-const FeatureModeEnum = z
-    .enum(['off', 'hidden', 'visible'])
-    .refine((val) => ['off', 'hidden', 'visible'].includes(val), {
-        message: 'Feature mode must be either "off", "hidden" or "visible"',
-    }).optional();
-
-const FeatureWorkspaceSchema = z.object({
-    mode: FeatureModeEnum.optional(),
-});
-
-const FeatureInspectorSchema = z.object({
-    mode: FeatureModeEnum.optional(),
-});
-
-const FeatureNotificationSchema = z.object({
-    mode: FeatureModeEnum.optional(),
-});
-
-const FeatureCommandPaletteSchema = z.object({
-    mode: FeatureModeEnum.optional(),
-});
-
-export const FontWeightSchema = z.union([
-    z.enum([
-        "normal",
-        "bold",
-        "100",
-        "200",
-        "300",
-        "400",
-        "500",
-        "600",
-        "700",
-        "800",
-        "900",
-    ]),
-    z.number(),
-]);
-
-export const AppFontSchema = z.object({
-    family: z.string().optional(),
-    size: z.int().min(1, 'Font size must be at least 1').optional(),
-})
-
-export const FontSchema = z.object({
-    family: z.string().optional(),
-    size: z.int().min(1, 'Font size must be at least 1').optional(),
-    enable_ligatures: z.boolean().optional(),
-    weight: FontWeightSchema.optional(),
-    weight_bold: FontWeightSchema.optional(),
-    custom_glyphs: z.boolean().optional(),
-    draw_bold_text_in_bright_colors: z.boolean().optional(),
-    rescale_overlapping_glyphs: z.boolean().optional(),
-    app: AppFontSchema.optional(),
-});
-
-export const ColorSchema = z.object({
-    foreground: HexColorSchema.optional(),
-    background: HexColorSchema.optional(),
-    highlight: HexColorSchema.optional(),
-    black: HexColorSchema.optional(),
-    red: HexColorSchema.optional(),
-    green: HexColorSchema.optional(),
-    yellow: HexColorSchema.optional(),
-    blue: HexColorSchema.optional(),
-    magenta: HexColorSchema.optional(),
-    cyan: HexColorSchema.optional(),
-    white: HexColorSchema.optional(),
-    bright_black: HexColorSchema.optional(),
-    bright_red: HexColorSchema.optional(),
-    bright_green: HexColorSchema.optional(),
-    bright_yellow: HexColorSchema.optional(),
-    bright_blue: HexColorSchema.optional(),
-    bright_magenta: HexColorSchema.optional(),
-    bright_cyan: HexColorSchema.optional(),
-    bright_white: HexColorSchema.optional()
-});
-
-export const ScrollbarSchema = z.object({
-    width: z.number().int().min(0, 'Cursor-With must be at least 0').optional(),
-    overview_ruler_border_color: HexColorSchema.optional(),
-    slider_color: HexColorSchema.optional(),
-    slider_hover_color: HexColorSchema.optional(),
-    slider_active_color: HexColorSchema.optional(),
-    sensitivity: z.int().min(0, 'Scrollbar sensitivity must be at least 0').optional(),
-    scroll_on_user_input: z.boolean().optional(),
-    smooth_scroll_duration: z.int().min(0, 'Scrollbar smooth scroll duration must be at least 0').optional(),
-    fast_scroll_sensitivity: z.int().min(0, 'Scrollbar smooth scroll duration must be at least 0').optional(),
-    scrollback_lines: z
-        .number()
-        .int()
-        .min(100, "Scrollback lines must be at least 100")
-        .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
-})
-
-export const CursorSchema = z.object({
-    width: z.number().int().min(0, 'Cursor-With must be at least 0').max(10, 'Cursor-With must be at most 10').optional(),
-    blink: z.boolean().optional(),
-    style: z
-        .enum(['bar', 'underline', 'block'])
-        .optional(),
-    inactive_style: z
-        .enum(['outline', 'block', 'bar', 'underline', 'none'])
-        .optional(),
-    color: HexColorSchema.optional(),
-    accent_color: HexColorSchema.optional(),
-    alt_click_moves_cursor: z.boolean().optional()
-})
-
-export const SelectionSchema = z.object({
-    clear_on_copy: z.boolean().optional(),
-    background_color: HexColorSchema.optional(),
-    inactive_background_color: HexColorSchema.optional(),
-    right_click_selects_word: z.boolean().optional(),
-})
-
-export const ImageSchema = z.object({
-    path: z.string().optional(),
-    opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
-    blur: z.int().min(0, 'Blur must be at least 0').max(10, 'Blur must be at most 10').optional(),
-});
-
-const KeybindSchema = z.string().regex(
-    /^[^\s=>]+(?:\+[^\s=>]+)*(?:>(?:[^\s=>]+(?:\+[^\s=>]+)*))*=(?:\[(?:all|unconsumed|performable)(?::(?:all|unconsumed|performable))*\])?[A-Za-z0-9_]+(?::[A-Za-z0-9_]+)*$/,
-    "Keybind must be of the form combo[>combo...]=[triggers]action[:arg...]"
-);
-
-const KeybindsSchema = z.array(KeybindSchema);
-
-const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash", "GitBash"]);
-
-const ShellSchema = z.object({
-    shell_type: ShellTypeEnum,
-    path: z.string().optional(),
-    args: z.array(z.string()).optional(),
-    env: z.record(z.string(), z.string()).optional(),
-    use_conpty: z.boolean().optional(),
-    working_dir: z.string().optional(),
-    inject_path: z.boolean().default(true),
-    enable_shell_integration: z.boolean().default(true),
-}).describe("The shell configuration");
-
-const ShellProfilesSchema = z.record(z.string().min(1), ShellSchema);
-
-export const ShellConfigSchema = z.object({
-    default: z.string().min(1),
-    order: z.array(z.string().min(1)).optional(),
-    profiles: ShellProfilesSchema,
-}).superRefine((s, ctx) => {
-    // default muss existieren
-    if (!s.profiles[s.default]) {
-        ctx.addIssue({
-            code: "custom",
-            path: ["default"],
-            message: `Default shell profile '${s.default}' is not defined in shell.profiles.`,
-        });
-    }
-
-    // order darf nur existierende Profile referenzieren
-    if (s.order) {
-        for (let i = 0; i < s.order.length; i++) {
-            const name = s.order[i];
-            if (!s.profiles[name]) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: ["order", i],
-                    message: `Shell profile '${name}' in shell.order is not defined in shell.profiles.`,
-                });
-            }
-        }
-    }
-});
-
-const MenuSchema = z.object({
-    opacity: z.int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
-});
+export {HexColor, FeatureMode, Font, Color, Cursor, Padding, ShellConfig, ShellType, Selection, Scrollbar, Keybinding};
 
 export const ConfigSchema = z.object({
     keybind: KeybindsSchema.optional(),
@@ -220,17 +46,7 @@ export const ConfigSchema = z.object({
     inspector: FeatureInspectorSchema.optional(),
     notification: FeatureNotificationSchema.optional(),
     command_palette: FeatureCommandPaletteSchema.optional(),
+    prompt: PromptConfigSchema.optional(),
 }).strict();
 
 export type Config = z.infer<typeof ConfigSchema>;
-export type Font = z.infer<typeof FontSchema>;
-export type Color = z.infer<typeof ColorSchema>;
-export type Cursor = z.infer<typeof CursorSchema>;
-export type Padding = z.infer<typeof PaddingSchema>;
-export type Selection = z.infer<typeof SelectionSchema>;
-export type Keybinding = z.infer<typeof KeybindsSchema>;
-export type HexColor = z.infer<typeof HexColorSchema>;
-export type ShellConfig = z.infer<typeof ShellSchema>;
-export type ShellType = z.infer<typeof ShellTypeEnum>;
-export type FeatureMode = z.infer<typeof FeatureModeEnum>;
-export type Scrollbar = z.infer<typeof ScrollbarSchema>;
