@@ -1,6 +1,6 @@
 import { Terminal, IDecoration } from '@xterm/xterm';
-import { SessionState, Command } from '../+state/session.state';
-import { IDisposable } from '../../common/models/models';
+import { SessionState, Command } from '../../session.state';
+import { IDisposable } from '../../../../common/models/models';
 
 export class MarkerManager implements IDisposable {
     private _decorations: Map<number, IDecoration> = new Map();

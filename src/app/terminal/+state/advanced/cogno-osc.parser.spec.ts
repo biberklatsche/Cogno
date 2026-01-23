@@ -3,24 +3,24 @@ import OscParser from './cogno-osc.parser';
 
 describe('OscParser', () => {
     it('sollte eine einfache Sequenz korrekt parsen', () => {
-        const input = "COGNO:PROMPT;r=0;u=larswolfram;m=Air-von-Lars;d=/Users/larswolfram;t=7;c=ls;";
+        const input = "COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air-von-Lars;directory=/Users/larswolfram;id=7;command=ls;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
-            r: '0',
-            u: 'larswolfram',
-            m: 'Air-von-Lars',
-            d: '/Users/larswolfram',
-            t: '7',
-            c: 'ls'
+            returnCode: '0',
+            user: 'larswolfram',
+            machine: 'Air-von-Lars',
+            directory: '/Users/larswolfram',
+            id: '7',
+            command: 'ls'
         });
     });
 
     it('sollte Sequenzen ohne Präfix parsen', () => {
-        const input = "r=1;u=test;";
+        const input = "returnCode=1;user=test;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
-            r: '1',
-            u: 'test'
+            returnCode: '1',
+            user: 'test'
         });
     });
 

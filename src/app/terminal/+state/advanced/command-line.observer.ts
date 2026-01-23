@@ -4,7 +4,7 @@ import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
 import {Command, Position, SessionState} from "../session.state";
 import OscParser from "./cogno-osc.parser";
-import {MarkerManager} from "../../ui/marker-manager";
+import {MarkerManager} from "./ui/marker-manager";
 
 export class CommandLineObserver implements ITerminalHandler {
 
@@ -67,13 +67,7 @@ export class CommandLineObserver implements ITerminalHandler {
                 this.sessionState.isCommandRunning = false;
                 const kv = OscParser.parse(data);
                 if(!kv) return true;
-                //'COGNO:PROMPT;r=0;u=larswolfram;m=Air-von-Lars;d=/Users/larswolfram;t=7;c=ls;'
-                const command: Command = {
-                    command: kv['c'],
-                    directory: kv['d'],
-                    returnCode: Number.parseInt(kv['r']),
-                    id: kv['t']
-                }
+                const command = new Command(kv);
                 this.sessionState.addCommand(command);
                 return true;
             }));

@@ -66,8 +66,8 @@
                 <div class="label commands">Last Commands</div>
                 <div class="value command-line">
                     @for (cmd of getLastCommands(terminalState); track cmd.id) {
-                        <div class="command"  [appTooltip]="cmd.command">{{ cmd.command }}</div>
-                        <div>Return Code: {{ cmd.returnCode ?? '—' }}</div>
+                        <div class="command"  [appTooltip]="cmd.command ?? ''">{{ cmd.command }}</div>
+                        <div>Return Code: {{ cmd.returnCode ?? '' }}</div>
                     }
                 </div>
             }

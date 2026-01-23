@@ -47,7 +47,7 @@ _cogno_precmd() {
   fi
 
   # OSC payload - use printf for better Bash 3.2 compatibility
-  printf '\033]733;COGNO:PROMPT;r=%s;u=%s;m=%s;d=%s;t=%s;c=%s;\033\\' \
+  printf '\033]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;\033\\' \
     "$last_ec" "$USER" "$host" "$cwd" "$ts" "$cmd"
 
   # Reset for next prompt

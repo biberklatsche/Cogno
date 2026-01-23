@@ -52,7 +52,7 @@ function prompt {
 
     # OSC Payload zusammenbauen
     # Format: ESC]733;...BEL
-    $osc = "${esc}]733;COGNO:PROMPT;r=$last_ec;u=$user;m=$hostName;d=$cwd;t=$ts;c=$cmd;${bel}"
+    $osc = "${esc}]733;COGNO:PROMPT;returnCode=$last_ec;user=$user;machine=$hostName;directory=$cwd;id=$ts;command=$cmd;${bel}"
 
     # Sequenz an das Terminal senden
     Write-Host -NoNewline $osc

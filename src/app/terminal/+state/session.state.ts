@@ -15,11 +15,29 @@ export type TerminalMousePosition = Position & {
 
 export type TerminalDimensions = { rows: number; cols: number; cellHeight: number; cellWidth: number };
 
-export type Command = {
-    command: string,
-    directory: string,
-    returnCode: number | null,
-    id: string,
+export class Command {
+    private data: Record<string, string> = {};
+
+    constructor(data: Record<string, string> = {}) {
+        this.data = { ...data };
+    }
+
+    get command(): string | undefined { return this.data['command']; }
+    get directory(): string | undefined { return this.data['directory']; }
+    get user(): string | undefined { return this.data['user']; }
+    get returnCode(): number | undefined {
+        const rc = this.data['returnCode'];
+        return rc !== undefined ? Number.parseInt(rc) : undefined;
+    }
+    get id(): string { return this.data['id']; }
+
+    get(key: string): string | undefined {
+        return this.data[key];
+    }
+
+    set(key: string, value: string): void {
+        this.data[key] = value;
+    }
 }
 
 export type TerminalInput = {

@@ -35,7 +35,7 @@ _cogno_precmd() {
   cmd="${cmd//|/\\|}"
 
   # OSC payload (c is empty if no command was entered)
-  local osc=$'\e]733;COGNO:PROMPT;'"r=${last_ec};u=${USER};m=${host};d=${cwd};t=${ts};c=${cmd};"$'\e\\'
+  local osc=$'\e]733;COGNO:PROMPT;'"returnCode=${last_ec};user=${USER};machine=${host};directory=${cwd};id=${ts};command=${cmd};"$'\e\\'
 
   print -n -r -- "$osc"
 
