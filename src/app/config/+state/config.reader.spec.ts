@@ -20,9 +20,10 @@ describe('ConfigReader', () => {
       enable_webgl=true
       scrollbar.scrollback_lines=12345
       cursor.blink=false
-      shell.1.shell_type=Bash
-      shell.1.path=/bin/bash
-      shell.1.args=[--login,"-i"]
+      shell.default=default
+      shell.profiles.default.shell_type=Bash
+      shell.profiles.default.path=/bin/bash
+      shell.profiles.default.args=[--login,"-i"]
       keybind=Ctrl+5=run5
     `;
 
@@ -34,7 +35,7 @@ describe('ConfigReader', () => {
         expect(parsed.cursor!.blink).toBe(false);
 
         // Array parsing (non-keybind arrays are replaced)
-        expect(parsed.shell![1]?.args).toEqual(['--login', '-i']);
+        expect(parsed.shell!.profiles['default']?.args).toEqual(['--login', '-i']);
 
         // Keybind array concatenates: defaults first, then user values
         const defaultKeybindCount = DEFAULTS.keybind.length;
@@ -92,14 +93,15 @@ describe('ConfigReader', () => {
 
     it('shell args array is replaced, not concatenated', () => {
         const text = `
-      shell.1.shell_type=Bash
-      shell.1.path=/bin/test
-      shell.1.args=[--custom,--args]
+      shell.default=default
+      shell.profiles.default.shell_type=Bash
+      shell.profiles.default.path=/bin/test
+      shell.profiles.default.args=[--custom,--args]
     `;
         const config = ConfigReader.fromStringToConfig(defaultText, text);
 
         // Shell args should be replaced, not concatenated with defaults
-        expect(config.shell![1]?.args).toEqual(['--custom', '--args']);
-        expect(config.shell![1]?.args?.length).toBe(2);
+        expect(config.shell!.profiles['default']?.args).toEqual(['--custom', '--args']);
+        expect(config.shell!.profiles['default']?.args?.length).toBe(2);
     });
 });

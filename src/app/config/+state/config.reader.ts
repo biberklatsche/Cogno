@@ -97,24 +97,6 @@ export class ConfigReader {
             let cur: any = out;
             while (parts.length > 1) {
                 const p = parts.shift()!;
-                // Special case: ensure shell.<n> object also carries its id
-                if (p === 'shell' && parts.length > 0) {
-                    const next = parts[0];
-                    if (/^\d+$/.test(next)) {
-                        cur[p] ??= {};
-                        cur = cur[p];
-                        cur[next] ??= {};
-                        // inject id on the shell entry
-                        if (typeof cur[next] === 'object' && cur[next] !== null && (cur[next] as any).id == null) {
-                            (cur[next] as any).id = next;
-                        }
-                        // consume the numeric segment so it won't be processed again
-                        parts.shift();
-                        // advance into the numeric child and continue
-                        cur = cur[next];
-                        continue;
-                    }
-                }
                 cur[p] ??= {};
                 cur = cur[p];
             }
