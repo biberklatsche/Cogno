@@ -137,6 +137,11 @@ export class KeybindExecutor implements IDisposable  {
                     event.performed = true;
                     break;
                 }
+                case 'select_all': {
+                    this._bus.publish({type: 'SelectAll', payload: this._terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
             }
         }));
     }

@@ -51,6 +51,7 @@ export class CommandLineEditor implements ITerminalHandler  {
             'DeleteNextWord': () => this.deleteNextWord(),
             'GoToNextWord': () => this.goToNextWord(),
             'GoToPreviousWord': () => this.goToPreviousWord(),
+            'SelectAll': () => this.selectAll(),
             'SelectTextRight': () => this.selectTextRight(),
             'SelectTextLeft': () => this.selectTextLeft(),
             'SelectWordRight': () => this.selectWordRight(),
@@ -227,6 +228,32 @@ export class CommandLineEditor implements ITerminalHandler  {
         }
     }
 
+    private selectAll() {
+        this._clearSelection();
+        this._selectionStart = 0;
+        const currentCursorIdx = this.sessionState.input.cursorIndex;
+        const textLength = this.sessionState.input.text.length;
+
+        // Move cursor to the end of the line
+        const offsetToEnd = textLength - currentCursorIdx;
+        this._ptyWrite(this._buildCursorMoveCommand(offsetToEnd));
+
+        // Mark from 0 to textLength
+        this.selectAbsolute(0, textLength);
+    }
+
+    private selectAbsolute(start: number, end: number) {
+        if (!this._terminal) return;
+        const length = Math.abs(end - start);
+        const actualStart = Math.min(start, end);
+
+        const startInputY = this.findLastCognoMarkerY() + 1;
+        const startCol = actualStart % this._terminal.cols;
+        const startRow = startInputY + Math.floor(actualStart / this._terminal.cols);
+
+        this._terminal.select(startCol, startRow, length);
+    }
+
     private _selectAndMove(offset: number) {
         this.select(offset);
         this._ptyWrite(this._buildCursorMoveCommand(offset));
@@ -314,6 +341,14 @@ export class CommandLineEditor implements ITerminalHandler  {
      */
     private select(count: number) {
         if(!this._terminal) return;
+        const lastCognoY = this.findLastCognoMarkerY();
+        if (lastCognoY === -1 && this._terminal.buffer.active) {
+            // If no marker found but buffer exists, we might still want to avoid selection if it's meant to be input-only
+            // but let's stick to current behavior of allowing it from top if no marker.
+            // HOWEVER, the test expects NO call if buffer.active is null.
+        }
+        if (!this._terminal.buffer.active) return;
+
         const currentPos = this.sessionState.input.cursorIndex;
 
         if (this._selectionStart === null) {

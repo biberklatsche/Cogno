@@ -18,7 +18,7 @@ describe('ConfigReader', () => {
       # comment
       ; another comment
       enable_webgl=true
-      scrollback_lines=12345
+      scrollbar.scrollback_lines=12345
       cursor.blink=false
       shell.1.shell_type=Bash
       shell.1.path=/bin/bash
@@ -30,7 +30,7 @@ describe('ConfigReader', () => {
 
         // Basic values
         expect(parsed.enable_webgl).toBe(true);
-        expect(parsed.scrollback_lines).toBe(12345);
+        expect(parsed.scrollbar!.scrollback_lines).toBe(12345);
         expect(parsed.cursor!.blink).toBe(false);
 
         // Array parsing (non-keybind arrays are replaced)
@@ -53,22 +53,22 @@ describe('ConfigReader', () => {
         expect(settings.enable_webgl).toBe(true);
 
         // Defaults from default file are present
-        expect(settings.scrollback_lines).toBe(10000);
+        expect(settings.scrollbar!.scrollback_lines).toBe(10000);
         expect(settings.font!.size).toBe(14);
     });
 
     it('throws on invalid values (e.g., negative scrollback_lines)', () => {
         const text = `
-      scrollback_lines=-1
+      scrollbar.scrollback_lines=-1
     `;
         expect(() => ConfigReader.fromStringToConfig(defaultText, text)).toThrowError();
     });
 
     it('single-arg overload still works (no defaults)', () => {
-        const proper = `enable_webgl=false\nscrollback_lines=9999\n`;
+        const proper = `enable_webgl=false\nscrollbar.scrollback_lines=9999\n`;
         const settings = ConfigReader.fromStringToConfig(proper);
         expect(settings.enable_webgl).toBe(false);
-        expect(settings.scrollback_lines).toBe(9999);
+        expect(settings.scrollbar!.scrollback_lines).toBe(9999);
     });
 
     it('keybind array is concatenated with defaults (defaults first, then user values)', () => {

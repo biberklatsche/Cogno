@@ -17,7 +17,7 @@ describe('ThemeHandler', () => {
     mockBus = new AppBus();
     mockConfig = new ConfigServiceMock();
     mockConfig.setConfig({
-      scrollback_lines: 1000,
+      scrollbar: {scrollback_lines: 1000},
       font: { size: 12, family: 'monospace', weight: 'normal', weight_bold: 'bold' },
       color: { foreground: 'ffffff', highlight: '00ff00', black: '000000', red: 'ff0000', green: '00ff00', yellow: 'ffff00', blue: '0000ff', magenta: 'ff00ff', cyan: '00ffff', white: 'ffffff' },
       cursor: { width: 2, blink: true, style: 'bar', color: 'ffffff' },
@@ -37,7 +37,7 @@ describe('ThemeHandler', () => {
       handler.registerTerminal(mockTerminal);
       
       const config = { ...mockConfig.config };
-      config.scrollback_lines = 5000;
+      config.scrollbar!.scrollback_lines = 5000;
       config.font = { size: 14, family: 'Fira Code', weight: 'normal', weight_bold: 'bold' };
       
       handler.configureTerminal(config);

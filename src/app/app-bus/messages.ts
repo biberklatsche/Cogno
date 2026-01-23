@@ -7,7 +7,7 @@ import {
     DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
     SelectTextRightAction, SelectTextLeftAction, SelectWordRightAction,
     SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
-    CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction,
+    CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction, SelectAllAction,
 } from '../terminal/+bus/actions';
 import {PtyInitializedEvent} from "../terminal/+bus/events";
 import {TerminalTitleChangedEvent} from "../terminal/+state/handler/terminal-title.handler";
@@ -61,6 +61,7 @@ export type AppMessage =
     | DeleteNextWordAction
     | GoToNextWordAction
     | GoToPreviousWordAction
+    | SelectAllAction
     | SelectTextRightAction
     | SelectTextLeftAction
     | SelectWordRightAction

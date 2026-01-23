@@ -37,7 +37,7 @@ export function getAppBus(): AppBus {
 
 export function getSessionState(terminalId: TerminalId = 'test-terminal'): SessionState {
     if(!sessionState) {
-        sessionState = new SessionState(terminalId, 'Bash' as any, getAppBus());
+        sessionState = new SessionState(terminalId, 'Bash', getAppBus());
     }
     return sessionState;
 }
@@ -135,7 +135,7 @@ export function getFocusHandler(terminalId: TerminalId): FocusHandler {
 
 export function getSelectionHandler(terminalId: TerminalId): SelectionHandler {
     if(!selectionHandler) {
-        selectionHandler = new SelectionHandler(getAppBus(), getConfigService() as any, terminalId);
+        selectionHandler = new SelectionHandler(getAppBus(), getConfigService(), terminalId);
     }
     return selectionHandler;
 }

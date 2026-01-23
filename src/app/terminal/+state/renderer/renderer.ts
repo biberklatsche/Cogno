@@ -44,7 +44,7 @@ export class Renderer implements IRenderer, IDisposable {
             ignoreBracketedPasteMode: config.ignore_bracketed_paste_mode,
             minimumContrastRatio: config.minimum_contrast_ratio,
             rescaleOverlappingGlyphs: config.font!.rescale_overlapping_glyphs,
-            rightClickSelectsWord: config.right_click_selects_word,
+            rightClickSelectsWord: config.selection!.right_click_selects_word,
             screenReaderMode: config.screen_reader_mode,
             wordSeparator: config.word_separator,
             windowsPty: OS.platform() === 'windows' ? {backend: 'conpty'} : undefined,

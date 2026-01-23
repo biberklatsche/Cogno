@@ -30,15 +30,20 @@ describe('Renderer', () => {
 
     beforeEach(() => {
         mockConfig = {
-            overview_ruler_width: 10,
-            scrollback_lines: 1000,
+            scrollbar: {
+                width: 10,
+                scrollback_lines: 1000,
+            },
+            cursor: {
+                alt_click_moves_cursor: false
+            },
             tab_stop_width: 8,
             font: {
                 custom_glyphs: true,
-                drawBoldTextInBrightColors: true,
+                draw_bold_text_in_bright_colors: true,
                 rescale_overlapping_glyphs: true
             }
-        } as any;
+        };
         renderer = new Renderer(mockConfig);
     });
 

@@ -21,7 +21,8 @@ describe('ConfigWriter', () => {
   it('toDotString can render without comments when asComments=false', () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
     curr.enable_webgl = true;
-    curr.scrollback_lines = 1234;
+    if (!curr.scrollbar) curr.scrollbar = {};
+    curr.scrollbar.scrollback_lines = 1234;
 
     const text = ConfigWriter.toDotString(curr, false);
     const lines = text.trimEnd().split('\n');
@@ -31,7 +32,7 @@ describe('ConfigWriter', () => {
 
     // Contains some expected values
     expect(lines).toContain('enable_webgl = true');
-    expect(lines).toContain('scrollback_lines = 1234');
+    expect(lines).toContain('scrollbar.scrollback_lines = 1234');
 
     // trailing newline is present according to implementation
     expect(text.endsWith('\n')).toBe(true);
@@ -51,16 +52,17 @@ describe('ConfigWriter', () => {
   it('handles edge cases in unwrapSchema and extractShape', () => {
     // We create a mock schema to trigger specific branches in ConfigWriter's private methods
     // since they are called via toDotProperties.
-    const mockConfig = {
-        test: {
-            sub: 1
+    const mockConfig: Config = {
+        scrollbar: {
+            slider_color: '11111',
+
         }
     };
     
     // We can't easily pass a custom schema to toDotString without changing the signature,
     // but we can test it through the public API with different config structures.
-    const text = ConfigWriter.toDotString(mockConfig as any, true);
-    expect(text).toContain('test.sub = 1');
+    const text = ConfigWriter.toDotString(mockConfig, true);
+    expect(text).toContain('scrollbar.slider_color = 11111');
   });
 
   it('renders other arrays as comma-separated list', () => {
