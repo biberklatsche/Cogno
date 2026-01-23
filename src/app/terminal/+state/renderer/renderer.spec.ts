@@ -38,6 +38,9 @@ describe('Renderer', () => {
                 alt_click_moves_cursor: false
             },
             tab_stop_width: 8,
+            selection: {
+                right_click_selects_word: true
+            },
             font: {
                 custom_glyphs: true,
                 draw_bold_text_in_bright_colors: true,
