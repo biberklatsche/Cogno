@@ -43,7 +43,8 @@ describe('TerminalSession', () => {
         mockConfigService = {
             config: { enable_webgl: false },
             config$: configSubject, // Use Subject directly
-            configSubject: configSubject // Keep reference for next()
+            configSubject: configSubject, // Keep reference for next()
+            getPromptSegments: vi.fn().mockReturnValue([])
         };
         mockBus = new AppBus();
         vi.spyOn(mockBus, 'publish');

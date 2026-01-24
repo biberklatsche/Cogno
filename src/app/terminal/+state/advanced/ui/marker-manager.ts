@@ -11,7 +11,6 @@ export class MarkerManager implements IDisposable {
     private _renderer?: PromptMarkerRenderer;
 
     constructor(private sessionState: SessionState, private promptSegments: PromptSegment[]) {
-        console.log('MarkerManager', promptSegments);
         this._renderer = new PromptMarkerRenderer(sessionState, promptSegments);
     }
 
@@ -28,7 +27,6 @@ export class MarkerManager implements IDisposable {
     }
 
     refreshMarkers() {
-        console.log('refreshMarkers');
         if (!this._terminal) return;
 
         const buffer = this._terminal.buffer.active;

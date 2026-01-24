@@ -41,7 +41,7 @@ import {migrate} from "./migrations/migrate";
                 overflow: hidden;
                 max-width: 100vw;
                 &.space-left-window-buttons {
-                    padding-left: 65px;
+                    padding-left: 70px;
                 }
             }
 

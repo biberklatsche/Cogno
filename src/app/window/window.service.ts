@@ -1,5 +1,4 @@
 import {DestroyRef, Injectable} from '@angular/core';
-import {TabListService} from "../tab-list/+state/tab-list.service";
 import {AppWindow} from "../_tauri/window";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {AppBus} from "../app-bus/app-bus";

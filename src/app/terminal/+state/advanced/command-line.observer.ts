@@ -24,6 +24,7 @@ export class CommandLineObserver implements ITerminalHandler {
 
         this._disposables.push(terminal.onCursorMove(() => {
             if (!terminal?.buffer?.active) return;
+            if(this.sessionState.isCommandRunning) return;
             try {
                 const buffer = terminal.buffer?.active;
                 const startInputY = this.findLastCognoMarkerY() + 1;
@@ -52,10 +53,12 @@ export class CommandLineObserver implements ITerminalHandler {
         }));
 
         this._disposables.push(this._terminal.onRender(() => {
+            if(this.sessionState.isCommandRunning) return;
             this._markerManager.refreshMarkers();
         }));
 
         this._disposables.push(this._terminal.onScroll(() => {
+            if(this.sessionState.isCommandRunning) return;
             this._markerManager.refreshMarkers();
         }));
 

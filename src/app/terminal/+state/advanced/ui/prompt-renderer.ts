@@ -23,6 +23,7 @@ export class PromptMarkerRenderer {
         hostElement: HTMLElement,
         commandId: string | undefined,
     ): void {
+
         hostElement.replaceChildren();
 
         const markerElement = this.createMarkerElement();
@@ -61,7 +62,6 @@ export class PromptMarkerRenderer {
     ): void {
         for (let index = 0; index < this.segments.length; index++) {
             const segment = this.segments[index];
-            console.log(segment, this.shouldRenderSegment(segment, record));
             if (!this.shouldRenderSegment(segment, record)) {
                 continue;
             }

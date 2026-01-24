@@ -135,7 +135,8 @@ export class SessionState {
     set isCommandRunning(value: boolean) {
         this._stateSubject.next({
             ...this._stateSubject.value,
-            isCommandRunning: value
+            isCommandRunning: value,
+            input: value ? {...this._stateSubject.value.input, text: '', maxCursorIndex: 0, cursorIndex: 0} : this._stateSubject.value.input
         });
     }
 
