@@ -149,7 +149,7 @@ export class PromptMarkerRenderer {
         record: PromptRecord,
     ): string {
         if ('text' in segment) {
-            return segment.text;
+            return segment.text.length > 0 ? segment.text : ' ';
         }
 
         const value = record[segment.field as keyof PromptRecord];
