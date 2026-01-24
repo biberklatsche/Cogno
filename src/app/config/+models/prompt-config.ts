@@ -57,9 +57,14 @@ const SegmentCommonSchema = z
         italic: z.boolean().optional(),
         underline: z.boolean().optional(),
 
-        separator: z.string().optional(),
-
         when: WhenExpressionSchema.optional(),
+
+        padding_left: z.number().int().min(0).optional(),
+        padding_right: z.number().int().min(0).optional(),
+        margin_left: z.number().int().min(0).optional(),
+        margin_right: z.number().int().min(0).optional(),
+        radius_left: z.number().int().min(0).optional(),
+        radius_right: z.number().int().min(0).optional(),
 
         title: z.string().optional(),
         className: z.string().optional(),

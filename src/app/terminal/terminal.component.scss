@@ -13,8 +13,8 @@ app-terminal {
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: var(--color-blue);
-        color: var(--background-color);
+        background-color: var(--background-color);
+        color: var(--foreground-color);
         border-radius: 4px;
         padding: 0 4px;
         font-size: var(--font-size);
@@ -28,7 +28,6 @@ app-terminal {
         white-space: nowrap;
 
         &.input {
-            background-color: var(--color-cyan);
         }
     }
 }

@@ -22,7 +22,7 @@ export class PromptMarkerRenderer {
 
     public render(
         hostElement: HTMLElement,
-        commandId: string | null,
+        commandId: string | undefined,
     ): void {
         hostElement.replaceChildren();
 
@@ -71,10 +71,6 @@ export class PromptMarkerRenderer {
             }
 
             this.appendSegment(markerElement, segment, text);
-
-            if (segment.separator) {
-                markerElement.appendChild(document.createTextNode(segment.separator));
-            }
         }
     }
 
@@ -99,11 +95,7 @@ export class PromptMarkerRenderer {
     /* record building                                                     */
     /* ------------------------------------------------------------------ */
 
-    private buildRecord(commandId: string | null): PromptRecord {
-        if (!commandId) {
-            return this.createDefaultRecord();
-        }
-
+    private buildRecord(commandId: string | undefined): PromptRecord {
         const index = this.findCommandIndex(commandId);
         if (index === -1) {
             return this.createDefaultRecord();
@@ -119,7 +111,7 @@ export class PromptMarkerRenderer {
         };
     }
 
-    private findCommandIndex(commandId: string): number {
+    private findCommandIndex(commandId: string | undefined): number {
         return this.sessionState.commands.findIndex(c => c.id === commandId);
     }
 
@@ -248,6 +240,9 @@ export class PromptMarkerRenderer {
     private applyStyles(element: HTMLElement, segment: PromptSegment): void {
         this.applyColors(element, segment);
         this.applyTextStyles(element, segment);
+        this.applyBorderStyles(element, segment);
+        this.applyPaddingStyles(element, segment);
+        this.applyMarginStyles(element, segment);
         this.applyMetadata(element, segment);
     }
 
@@ -275,6 +270,35 @@ export class PromptMarkerRenderer {
         }
     }
 
+    private applyBorderStyles(element: HTMLElement, segment: PromptSegment) {
+        if (segment.radius_left) {
+            element.style.borderTopLeftRadius = `${segment.radius_left}px`;
+            element.style.borderBottomLeftRadius = `${segment.radius_left}px`;
+        }
+        if (segment.radius_right) {
+            element.style.borderTopRightRadius = `${segment.radius_right}px`;
+            element.style.borderBottomRightRadius = `${segment.radius_right}px`;
+        }
+    }
+
+    private applyPaddingStyles(element: HTMLElement, segment: PromptSegment) {
+        if (segment.padding_left) {
+            element.style.paddingLeft = `${segment.padding_left}px`;
+        }
+        if (segment.padding_right) {
+            element.style.paddingRight = `${segment.padding_right}px`;
+        }
+    }
+
+    private applyMarginStyles(element: HTMLElement, segment: PromptSegment) {
+        if (segment.margin_left) {
+            element.style.marginLeft = `${segment.margin_left}px`;
+        }
+        if (segment.margin_right) {
+            element.style.marginRight = `${segment.margin_right}px`;
+        }
+    }
+
     private applyMetadata(element: HTMLElement, segment: PromptSegment): void {
         if (segment.className) {
             element.classList.add(segment.className);
@@ -288,6 +312,6 @@ export class PromptMarkerRenderer {
         if (color.startsWith('#')) {
             return color;
         }
-        return `var(--terminal-${color})`;
+        return `var(--color-${color})`;
     }
 }

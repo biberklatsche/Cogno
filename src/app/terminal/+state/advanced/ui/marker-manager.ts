@@ -83,7 +83,7 @@ export class MarkerManager implements IDisposable {
         const lineText = line.translateToString();
         // Erwarte COGNO<ID> am Anfang der Zeile
         const match = lineText.match(/^\^\^#(\d+)/);
-        const commandId = match ? match[1] : null;
+        const commandId = match ? match[1] : undefined;
         
         const buffer = this._terminal.buffer.active;
         const cursorYAbsolute = buffer.baseY + buffer.cursorY;
