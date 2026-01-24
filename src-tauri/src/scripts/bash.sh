@@ -39,6 +39,7 @@ _cogno_precmd() {
 
   local ts="$COGNO_COUNT"
   local host="${HOSTNAME%%.*}"
+  local user="${USER:-${USERNAME:-$(whoami)}}"
   local cwd="$PWD"
 
   local cmd=""
@@ -48,7 +49,7 @@ _cogno_precmd() {
 
   # OSC payload - use printf for better Bash 3.2 compatibility
   printf '\033]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;\033\\' \
-    "$last_ec" "$USER" "$host" "$cwd" "$ts" "$cmd"
+    "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd"
 
   # Reset for next prompt
   COGNO_CMD_SEEN=0
