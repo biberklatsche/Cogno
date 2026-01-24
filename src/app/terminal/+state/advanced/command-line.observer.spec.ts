@@ -15,7 +15,7 @@ describe('CommandLineObserver', () => {
   beforeEach(() => {
     mockBus = new AppBus();
     sessionState = new SessionState(terminalId, 'Bash' as any, mockBus);
-    observer = new CommandLineObserver(sessionState);
+    observer = new CommandLineObserver(sessionState, []);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -72,6 +72,54 @@ describe('CommandLineObserver', () => {
     onWriteParsedCallback();
 
     expect(sessionState.input.text).toBe('old input');
+  });
+
+  it('should NOT update cursorIndex when command is running', () => {
+    observer.registerTerminal(mockTerminal);
+    const onCursorMoveCallback = vi.mocked(mockTerminal.onCursorMove).mock.calls[0][0];
+
+    sessionState.isCommandRunning = true;
+    sessionState.input = { text: '', cursorIndex: 10, maxCursorIndex: 10 };
+
+    onCursorMoveCallback();
+
+    expect(sessionState.input.cursorIndex).toBe(10);
+  });
+
+  it('should NOT refresh markers on render when command is running', () => {
+    // @ts-ignore - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+    observer.registerTerminal(mockTerminal);
+    const onRenderCallback = vi.mocked(mockTerminal.onRender).mock.calls[0][0];
+
+    sessionState.isCommandRunning = true;
+    onRenderCallback({ start: 0, end: 10 });
+
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('should NOT refresh markers on scroll when command is running', () => {
+    // @ts-ignore - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+    observer.registerTerminal(mockTerminal);
+    const onScrollCallback = vi.mocked(mockTerminal.onScroll).mock.calls[0][0];
+
+    sessionState.isCommandRunning = true;
+    onScrollCallback(0);
+
+    expect(refreshSpy).not.toHaveBeenCalled();
+  });
+
+  it('should NOT refresh markers on resize when command is running', () => {
+    // @ts-ignore - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+    observer.registerTerminal(mockTerminal);
+    const onResizeCallback = vi.mocked(mockTerminal.onResize).mock.calls[0][0];
+
+    sessionState.isCommandRunning = true;
+    onResizeCallback({ cols: 100, rows: 40 });
+
+    expect(refreshSpy).not.toHaveBeenCalled();
   });
 
   it('should dispose listeners on dispose', () => {

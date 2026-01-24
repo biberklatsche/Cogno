@@ -63,6 +63,7 @@ export class CommandLineObserver implements ITerminalHandler {
         }));
 
         this._disposables.push(this._terminal.onResize(() => {
+            if(this.sessionState.isCommandRunning) return;
             this._markerManager.disposeMarkers();
             this._markerManager.refreshMarkers();
         }));
