@@ -53,7 +53,7 @@ export class TerminalSession {
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer, this.configService.config.font?.enable_ligatures ?? false);
-        const sessionState = new SessionState(this.terminalId, this.shellProfile.shell_type!, this.bus);
+        const sessionState:SessionState = new SessionState(this.terminalId, this.shellProfile.shell_type!, this.bus);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus, sessionState);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));

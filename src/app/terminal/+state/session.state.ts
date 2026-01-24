@@ -26,6 +26,10 @@ export class Command {
     get directory(): string | undefined { return this.data['directory']; }
     get machine(): string | undefined { return this.data['machine']; }
     get user(): string | undefined { return this.data['user']; }
+    get duration(): number | undefined {
+        const d = this.data['duration'];
+        return d !== undefined ? Number.parseInt(d) : undefined;
+    }
     get returnCode(): number | undefined {
         const rc = this.data['returnCode'];
         return rc !== undefined ? Number.parseInt(rc) : undefined;
@@ -55,6 +59,7 @@ export type InternalState = {
     dimensions: TerminalDimensions;
     isFocused: boolean;
     isCommandRunning: boolean;
+    commandStartTime: number | undefined;
     input: TerminalInput;
     commands: Command[];
 }
@@ -84,6 +89,7 @@ export class SessionState {
             dimensions: { rows: 0, cols: 0, cellHeight: 0, cellWidth: 0 },
             isFocused: false,
             isCommandRunning: false,
+            commandStartTime: undefined,
             input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
         });
 
@@ -136,8 +142,13 @@ export class SessionState {
         this._stateSubject.next({
             ...this._stateSubject.value,
             isCommandRunning: value,
+            commandStartTime: value ? Date.now() : this._stateSubject.value.commandStartTime,
             input: value ? {...this._stateSubject.value.input, text: '', maxCursorIndex: 0, cursorIndex: 0} : this._stateSubject.value.input
         });
+    }
+
+    get commandDuration() {
+        return this._stateSubject.value.commandStartTime !== undefined ? Date.now() - this._stateSubject.value.commandStartTime : undefined;
     }
 
     get input(): TerminalInput { return this._stateSubject.value.input; }

@@ -73,6 +73,7 @@ export class CommandLineObserver implements ITerminalHandler {
                 this.sessionState.isCommandRunning = false;
                 const kv = OscParser.parse(data);
                 if(!kv) return true;
+                kv['duration'] = this.sessionState.commandDuration?.toString() ?? '';
                 const command = new Command(kv);
                 this.sessionState.addCommand(command);
                 return true;

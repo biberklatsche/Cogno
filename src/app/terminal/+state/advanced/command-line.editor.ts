@@ -5,7 +5,7 @@ import {IDisposable} from '../../../common/models/models';
 import {AppBus} from '../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
 import {IPty} from '../pty/pty';
-import {InternalState} from "../session.state";
+import {InternalState, SessionState} from "../session.state";
 import {Clipboard} from "../../../_tauri/clipboard";
 
 export class CommandLineEditor implements ITerminalHandler  {
@@ -15,7 +15,7 @@ export class CommandLineEditor implements ITerminalHandler  {
     private readonly WORD_SEPARATORS = "()[]{}'\"\\,;:/&<>*+=$^!~` ";
     private _selectionStart: number | null = null;
 
-    constructor(private _bus: AppBus, private _pty: IPty, private sessionState: InternalState) {
+    constructor(private _bus: AppBus, private _pty: IPty, private sessionState: SessionState) {
     }
 
     dispose(): void {

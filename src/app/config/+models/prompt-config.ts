@@ -37,6 +37,7 @@ export const PromptFormatSchema = z.union([
     z.literal('json'),
     z.literal('upper'),
     z.literal('lower'),
+    z.literal('timespan'),
 ]);
 
 /**

@@ -1,5 +1,6 @@
 import { SessionState } from "../../session.state";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
+import {timespan, TimespanPipe} from "../../../../common/timespan/timespan.pipe";
 
 type PromptRecord = {
     label?: string;
@@ -7,6 +8,7 @@ type PromptRecord = {
     user?: string;
     machine?: string;
     returnCode?: number;
+    duration?: number;
     isInput: boolean;
 }
 
@@ -134,6 +136,7 @@ export class PromptMarkerRenderer {
         return {
             directory: current.directory,
             returnCode: next.returnCode,
+            duration: next.duration,
             user: current.user,
             machine: current.machine,
             isInput: false,
@@ -156,7 +159,7 @@ export class PromptMarkerRenderer {
         if (value === undefined || value === null) {
             return segment.fallback ?? '';
         }
-
+        console.log('##########', value, segment.format);
         return this.formatValue(value, segment.format);
     }
 
@@ -170,6 +173,9 @@ export class PromptMarkerRenderer {
                 return JSON.stringify(value);
             case 'number':
                 return String(Number(value));
+            case 'timespan':
+                console.log('#########', value, Number(value));
+                return timespan(Number(value));
             case 'string':
             default:
                 return String(value);
