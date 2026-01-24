@@ -53,16 +53,16 @@ const SegmentCommonSchema = z
         background: PromptColorSchema.optional(),
 
         bold: z.boolean().optional(),
-        dim: z.boolean().optional(),
         italic: z.boolean().optional(),
         underline: z.boolean().optional(),
+        size: z.number().int().min(1).optional(),
 
         when: WhenExpressionSchema.optional(),
 
-        padding_left: z.number().int().min(0).optional(),
-        padding_right: z.number().int().min(0).optional(),
-        margin_left: z.number().int().min(0).optional(),
-        margin_right: z.number().int().min(0).optional(),
+        padding_left: z.number().int().optional(),
+        padding_right: z.number().int().optional(),
+        margin_left: z.number().int().optional(),
+        margin_right: z.number().int().optional(),
         radius_left: z.number().int().min(0).optional(),
         radius_right: z.number().int().min(0).optional(),
 

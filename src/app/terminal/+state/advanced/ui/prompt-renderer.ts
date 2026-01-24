@@ -15,7 +15,6 @@ type PrimitiveValue = string | number | boolean;
 
 export class PromptMarkerRenderer {
     private static readonly DEFAULT_LABEL = 'COGNO';
-    private static readonly DEFAULT_OPACITY = '0.75';
     private static readonly BOLD_WEIGHT = '600';
 
     public constructor(private readonly sessionState: SessionState, private readonly segments: PromptSegment[]) {}
@@ -60,7 +59,8 @@ export class PromptMarkerRenderer {
         markerElement: HTMLElement,
         record: PromptRecord,
     ): void {
-        for (const segment of this.segments) {
+        for (let index = 0; index < this.segments.length; index++) {
+            const segment = this.segments[index];
             if (!this.shouldRenderSegment(segment, record)) {
                 continue;
             }
@@ -70,7 +70,7 @@ export class PromptMarkerRenderer {
                 continue;
             }
 
-            this.appendSegment(markerElement, segment, text);
+            this.appendSegment(markerElement, segment, text, index);
         }
     }
 
@@ -82,11 +82,12 @@ export class PromptMarkerRenderer {
         markerElement: HTMLElement,
         segment: PromptSegment,
         text: string,
+        index: number,
     ): void {
         const span = document.createElement('span');
         span.classList.add('prompt-segment');
         span.textContent = text;
-
+        span.style.zIndex = (99 - index).toString(10);
         this.applyStyles(span, segment);
         markerElement.appendChild(span);
     }
@@ -265,8 +266,8 @@ export class PromptMarkerRenderer {
         if (segment.underline) {
             element.style.textDecoration = 'underline';
         }
-        if (segment.dim) {
-            element.style.opacity = PromptMarkerRenderer.DEFAULT_OPACITY;
+        if (segment.size) {
+            element.style.fontSize = segment.size + 'px';
         }
     }
 
