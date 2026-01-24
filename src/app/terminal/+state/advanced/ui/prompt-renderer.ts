@@ -61,6 +61,7 @@ export class PromptMarkerRenderer {
     ): void {
         for (let index = 0; index < this.segments.length; index++) {
             const segment = this.segments[index];
+            console.log(segment, this.shouldRenderSegment(segment, record));
             if (!this.shouldRenderSegment(segment, record)) {
                 continue;
             }
@@ -228,6 +229,7 @@ export class PromptMarkerRenderer {
         operator: ComparisonOperator,
         right: PrimitiveValue,
     ): boolean {
+        if(left === undefined || left === null) return false;
         if (operator === '==') {
             return left === right;
         }
