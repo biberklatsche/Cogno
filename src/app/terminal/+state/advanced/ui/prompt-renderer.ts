@@ -23,13 +23,13 @@ export class PromptMarkerRenderer {
 
     public render(
         hostElement: HTMLElement,
-        commandId: string | undefined,
+        commandIndex: number | undefined,
     ): void {
 
         hostElement.replaceChildren();
 
         const markerElement = this.createMarkerElement();
-        const record = this.buildRecord(commandId);
+        const record = this.buildRecord(commandIndex);
 
         if (this.segments.length === 0) {
             this.renderFallback(markerElement);
@@ -98,14 +98,11 @@ export class PromptMarkerRenderer {
     /* ------------------------------------------------------------------ */
     /* record building                                                     */
     /* ------------------------------------------------------------------ */
-
-    private buildRecord(commandId: string | undefined): PromptRecord {
-        const index = this.findCommandIndex(commandId);
-        if (index === -1) {
+    private buildRecord(commandIndex: number | undefined): PromptRecord {
+        if (commandIndex === undefined) {
             return this.createDefaultRecord();
         }
-
-        return this.createCommandRecord(index);
+        return this.createCommandRecord(commandIndex);
     }
 
     private createDefaultRecord(): PromptRecord {
@@ -113,10 +110,6 @@ export class PromptMarkerRenderer {
             label: PromptMarkerRenderer.DEFAULT_LABEL,
             isInput: false,
         };
-    }
-
-    private findCommandIndex(commandId: string | undefined): number {
-        return this.sessionState.commands.findIndex(c => c.id === commandId);
     }
 
     private createCommandRecord(index: number): PromptRecord {

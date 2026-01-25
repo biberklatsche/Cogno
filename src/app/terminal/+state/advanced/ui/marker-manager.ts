@@ -82,7 +82,8 @@ export class MarkerManager implements IDisposable {
         // Erwarte COGNO<ID> am Anfang der Zeile
         const match = lineText.match(/^\^\^#(\d+)/);
         const commandId = match ? match[1] : undefined;
-        
+        const commandIndex = this.findCommandIndex(commandId);
+
         const buffer = this._terminal.buffer.active;
         const cursorYAbsolute = buffer.baseY + buffer.cursorY;
         const cursorYOffset = lineIndex - cursorYAbsolute;
@@ -99,7 +100,7 @@ export class MarkerManager implements IDisposable {
 
         if (decoration) {
             decoration.onRender((element) => {
-                this._renderer!.render(element, commandId);
+                this._renderer!.render(element, commandIndex);
             });
             decoration.onDispose(() => {
                 marker.dispose();
@@ -108,27 +109,9 @@ export class MarkerManager implements IDisposable {
         }
     }
 
-    /*private renderMarkerContent(element: HTMLElement, commandId: string | null) {
-        element.innerHTML = '';
-        const markerEl = document.createElement('div');
-        markerEl.classList.add('cogno-marker');
-
-        const index = this.sessionState.commands.findIndex(c => c.id === commandId);
-
-        if (index === -1) {
-            markerEl.innerText = `COGNO`;
-        } else if (index + 1 < this.sessionState.commands.length) {
-            const command = this.sessionState.commands[index + 1];
-            const directory = this.sessionState.commands[index];
-            markerEl.innerText = `${directory.directory} ${command.returnCode}`;
-        } else {
-            const command = this.sessionState.commands[index];
-            markerEl.innerText = `${command.directory}`;
-            markerEl.classList.add('input');
-        }
-
-        element.appendChild(markerEl);
-    }*/
+    private findCommandIndex(commandId: string | undefined): number {
+        return this.sessionState.commands.findIndex(c => c.id === commandId);
+    }
 
     dispose() {
         this._decorations.forEach(d => d.dispose());
