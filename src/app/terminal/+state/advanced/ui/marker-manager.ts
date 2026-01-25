@@ -1,8 +1,7 @@
 import { Terminal, IDecoration } from '@xterm/xterm';
-import { SessionState, Command } from '../../session.state';
+import { SessionState } from '../../session.state';
 import { IDisposable } from '../../../../common/models/models';
-import {Config} from "../../../../config/+models/config";
-import {PromptConfig, PromptProfile, PromptSegment} from "../../../../config/+models/prompt-config";
+import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
 
 
@@ -34,7 +33,10 @@ export class MarkerManager implements IDisposable {
 
         const buffer = this._terminal.buffer.active;
         const viewportStart = buffer.viewportY;
-        const viewportEnd = viewportStart + this._terminal.rows;
+        const viewportEnd = viewportStart + this._terminal.rows - 1; // inclusive
+
+        // Sichtbarkeit der Commands strikt auf den aktuellen Viewport setzen
+        this.updateViewportVisibility(viewportStart, viewportEnd);
 
         // Wir scannen den aktuellen Viewport + einen größeren Puffer um Flackern zu vermeiden
         const startScan = Math.max(0, viewportStart - 20);
@@ -75,6 +77,29 @@ export class MarkerManager implements IDisposable {
         }
     }
 
+    private updateViewportVisibility(viewportStart: number, viewportEnd: number) {
+        if (!this._terminal) return;
+        const buffer = this._terminal.buffer.active;
+
+        const visibleCommandIndices = new Set<number>();
+        for (let i = viewportStart; i <= viewportEnd; i++) {
+            console.log('####test', viewportStart, viewportEnd)
+            const line = buffer.getLine(i);
+            if (!line) continue;
+            const text = line.translateToString();
+            const match = text.match(/^\^\^#(\d+)/);
+            if (!match) continue;
+            const commandId = match[1];
+            const idx = this.findCommandIndex(commandId);
+            if (idx >= 0) visibleCommandIndices.add(idx);
+        }
+
+        const commands = this.sessionState.commands;
+        for (let idx = 0; idx < commands.length; idx++) {
+            commands[idx].isInViewport = visibleCommandIndices.has(idx);
+        }
+    }
+
     private addMarker(lineIndex: number) {
         if (!this._terminal) return;
 
@@ -82,7 +107,7 @@ export class MarkerManager implements IDisposable {
         if (!line) return;
 
         const lineText = line.translateToString();
-        // Erwarte COGNO<ID> am Anfang der Zeile
+        // Erwarte ^^#<ID> am Anfang der Zeile
         const match = lineText.match(/^\^\^#(\d+)/);
         const commandId = match ? match[1] : undefined;
         const commandIndex = this.findCommandIndex(commandId);

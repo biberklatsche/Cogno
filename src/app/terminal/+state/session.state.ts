@@ -1,5 +1,5 @@
 import {ShellType} from "../../config/+models/config";
-import {BehaviorSubject, debounceTime, skip} from "rxjs";
+import {BehaviorSubject, debounceTime, map, Observable, skip} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 
 export type Position = {col: number, row: number};
@@ -17,15 +17,24 @@ export type TerminalDimensions = { rows: number; cols: number; cellHeight: numbe
 
 export class Command {
     private data: Record<string, string> = {};
+    public isInViewport: boolean = false;
 
-    constructor(data: Record<string, string> = {}) {
-        this.data = { ...data };
+    constructor(
+        private _id: string,
+        private _directory: string,
+        private _machine: string,
+        private _user: string) {
     }
 
+    setData(data: Record<string, string>) {
+        this.data = data;
+    }
+
+    get directory(): string | undefined { return this._directory; }
+    get machine(): string | undefined { return this._machine; }
+    get user(): string | undefined { return this._user; }
+
     get command(): string | undefined { return this.data['command']; }
-    get directory(): string | undefined { return this.data['directory']; }
-    get machine(): string | undefined { return this.data['machine']; }
-    get user(): string | undefined { return this.data['user']; }
     get duration(): number | undefined {
         const d = this.data['duration'];
         return d !== undefined ? Number.parseInt(d) : undefined;
@@ -34,7 +43,8 @@ export class Command {
         const rc = this.data['returnCode'];
         return rc !== undefined ? Number.parseInt(rc) : undefined;
     }
-    get id(): string { return this.data['id']; }
+
+    get id(): string { return this._id;}
 
     get(key: string): string | undefined {
         return this.data[key];
@@ -163,10 +173,28 @@ export class SessionState {
     get shellType() { return this._stateSubject.value.shellType; }
 
     get commands() { return this._stateSubject.value.commands; }
-    addCommand(command: Command) {
+
+    updateCommandList(data: Record<string, string>) {
+        const commands = [...this._stateSubject.value.commands];
+        const id = data['id'];
+        const directory = data['directory'];
+        const user = data['user'];
+        const machine = data['machine'];
+        const index = commands.findIndex(c => c.id === id);
+        if(index !== -1) return;
+        if(commands.length > 0) {
+            const previousCommand = commands[commands.length -1];
+            console.log('####previousCommand', previousCommand)
+            delete data['id'];
+            delete data['directory'];
+            delete data['user'];
+            delete data['machine'];
+            previousCommand.setData(data);
+        }
+        commands.push(new Command(id, directory, machine, user));
         this._stateSubject.next({
             ...this._stateSubject.value,
-            commands: [...this._stateSubject.value.commands, command]
+            commands: commands
         });
     }
 }

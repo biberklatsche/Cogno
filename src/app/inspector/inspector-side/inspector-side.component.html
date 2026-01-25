@@ -25,7 +25,6 @@
         <div class="table c3">
             <div class="span-full"><b>Terminal {{ i + 1 }}</b></div>
             <div></div>
-            @if (terminalState.isFocused) {
                 <div class="label">Viewport</div>
                 <div class="label">Absolute</div>
                 <div class="label">Mouse</div>
@@ -63,14 +62,15 @@
                     {{ terminalState.isCommandRunning }}
                 </div>
                 <div></div>
-                <div class="label commands">Last Commands</div>
+                <div class="label commands">Commands in Viewport</div>
                 <div class="value command-line span-2">
-                    @for (cmd of getLastCommands(terminalState); track cmd.id) {
-                        <div class="command"  [appTooltip]="cmd.command ?? ''">{{ cmd.command }}</div>
-                        <div>Return Code: {{ cmd.returnCode ?? '' }}</div>
+                    @for (cmd of terminalState.commands; track cmd.id) {
+                        @if (cmd.isInViewport) {
+                            <div class="command" [appTooltip]="cmd.command ?? ''"> {{cmd.id}}  {{ cmd.command }}</div>
+                            <div>Return Code: {{ cmd.returnCode ?? '' }}</div>
+                        }
                     }
                 </div>
-            }
         </div>
         }
     }
