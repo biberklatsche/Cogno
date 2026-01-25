@@ -24,12 +24,18 @@ _cogno_sanitize_cmd() {
 # Preexec equivalent - capture command before execution
 _cogno_preexec() {
   # Filter out internal commands
-  if [[ "$BASH_COMMAND" != "_cogno_precmd"* &&
-        "$BASH_COMMAND" != "_cogno_preexec"* &&
-        "$BASH_COMMAND" != "COGNO_"* ]]; then
-    COGNO_LAST_CMD="$BASH_COMMAND"
-    COGNO_CMD_SEEN=1
-  fi
+  # Den tatsächlich eingegebenen String aus der History holen
+    local actual_input
+    actual_input=$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+
+    # Filter-Logik (angepasst auf den echten Input)
+    if [[ "$actual_input" != "_cogno_precmd"* &&
+          "$actual_input" != "_cogno_preexec"* &&
+          "$actual_input" != "COGNO_"* ]]; then
+
+      COGNO_LAST_CMD="$actual_input"
+      COGNO_CMD_SEEN=1
+    fi
 }
 
 # Precmd equivalent - run before each prompt

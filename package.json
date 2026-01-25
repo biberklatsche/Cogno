@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "watch": "ng build --watch --configuration development",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "generate-icon": "tauri icon ./icon/icon.png"
   },
   "private": true,
   "dependencies": {
