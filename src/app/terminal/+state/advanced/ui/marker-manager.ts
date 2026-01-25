@@ -5,12 +5,15 @@ import {Config} from "../../../../config/+models/config";
 import {PromptConfig, PromptProfile, PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
 
+
+type LineIndex = number;
+
 export class MarkerManager implements IDisposable {
-    private _decorations: Map<number, IDecoration> = new Map();
+    private _decorations: Map<LineIndex, IDecoration> = new Map();
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
 
-    constructor(private sessionState: SessionState, private promptSegments: PromptSegment[]) {
+    constructor(private sessionState: SessionState, promptSegments: PromptSegment[]) {
         this._renderer = new PromptMarkerRenderer(sessionState, promptSegments);
     }
 
