@@ -5,15 +5,13 @@ import {
 } from "../+state/inspector.service";
 import {TerminalId} from "../../grid-list/+model/model";
 import {Keybinding} from "../../config/+models/config";
-import {InternalState, SessionState} from '../../terminal/+state/session.state';
+import {SessionState} from '../../terminal/+state/session.state';
 import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
-import {AsyncPipe} from '@angular/common';
 
 @Component({
   selector: 'app-inspector-side',
     imports: [
-        TooltipDirective,
-        AsyncPipe
+        TooltipDirective
     ],
   templateUrl: './inspector-side.component.html',
   styleUrl: './inspector-side.component.scss'
