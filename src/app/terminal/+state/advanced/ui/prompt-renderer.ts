@@ -113,25 +113,24 @@ export class PromptMarkerRenderer {
     }
 
     private createCommandRecord(index: number): PromptRecord {
-        const current = this.sessionState.commands[index];
-        const isLastCommand = index + 1 >= this.sessionState.commands.length;
+        const command = this.sessionState.commands[index];
+        const isLastCommand = command.command === undefined;
 
         if (isLastCommand) {
             return {
-                directory: current.directory,
-                user: current.user,
-                machine: current.machine,
+                directory: command.directory,
+                user: command.user,
+                machine: command.machine,
                 isInput: true,
             };
         }
 
-        const next = this.sessionState.commands[index + 1];
         return {
-            directory: current.directory,
-            returnCode: next.returnCode,
-            duration: next.duration,
-            user: current.user,
-            machine: current.machine,
+            directory: command.directory,
+            returnCode: command.returnCode,
+            duration: command.duration,
+            user: command.user,
+            machine: command.machine,
             isInput: false,
         };
     }
