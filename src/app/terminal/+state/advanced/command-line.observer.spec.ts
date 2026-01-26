@@ -144,13 +144,21 @@ describe('CommandLineObserver', () => {
     observer.registerTerminal(mockTerminal);
     sessionState.isCommandRunning = true;
 
+    // We need to have a command already in the list for the OSC 733 to update it
+    sessionState.updateCommandList({
+      id: '7',
+      user: 'larswolfram',
+      machine: 'Air',
+      directory: '/Users/lars'
+    });
+
     const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
-    const data = 'COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air;directory=/Users/lars;id=7;command=ls;';
+    const data = 'COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air;directory=/Users/lars;id=8;command=ls;';
     const result = oscHandler(data);
 
     expect(sessionState.isCommandRunning).toBe(false);
     expect(result).toBe(true);
-    expect(sessionState.commands.length).toBe(1);
+    expect(sessionState.commands.length).toBe(2);
     expect(sessionState.commands[0].command).toBe('ls');
     expect(sessionState.commands[0].directory).toBe('/Users/lars');
     expect(sessionState.commands[0].returnCode).toBe(0);

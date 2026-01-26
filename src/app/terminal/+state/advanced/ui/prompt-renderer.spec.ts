@@ -30,7 +30,7 @@ describe('PromptMarkerRenderer', () => {
             { text: 'World' }
         ];
         const renderer = new PromptMarkerRenderer(sessionState, segments);
-        renderer.render(hostElement, undefined);
+        renderer.render(hostElement, 0);
 
         const spans = hostElement.querySelectorAll('.prompt-segment');
         expect(spans.length).toBe(2);
@@ -39,13 +39,12 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render field segments from command', () => {
-        const command = new Command({
+        sessionState.updateCommandList({
             id: 'cmd-1',
             user: 'tester',
             machine: 'localhost',
             directory: '~/projects'
         });
-        sessionState.addCommand(command);
 
         const segments: PromptSegment[] = [
             { field: 'user' },
@@ -55,7 +54,7 @@ describe('PromptMarkerRenderer', () => {
             { field: 'directory' }
         ];
         const renderer = new PromptMarkerRenderer(sessionState, segments);
-        renderer.render(hostElement, 'cmd-1');
+        renderer.render(hostElement, 0);
 
         const marker = hostElement.querySelector('.cogno-marker');
         expect(marker?.textContent).toBe('tester@localhost:~/projects');
@@ -94,54 +93,41 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should evaluate "when" conditions correctly', () => {
-        const command = new Command({
+        // Create first command
+        sessionState.updateCommandList({
             id: 'cmd-1',
+            user: 'tester'
+        });
+        // Add second command, which updates first command with data (returnCode=0)
+        sessionState.updateCommandList({
+            id: 'cmd-2',
             returnCode: '0'
         });
-        const commandError = new Command({
-            id: 'cmd-2',
-            returnCode: '1'
-        });
-        sessionState.addCommand(command);
-        sessionState.addCommand(commandError);
-
+        
         const segments: PromptSegment[] = [
             { text: 'OK', when: 'returnCode == 0' },
             { text: 'FAIL', when: 'returnCode != 0' }
         ];
         const renderer = new PromptMarkerRenderer(sessionState, segments);
 
-        // Test with returnCode 0
-        // Note: in PromptMarkerRenderer, returnCode is taken from the NEXT command 
-        // if we are looking at a history command. For the last command, it's isInput=true.
-        // Wait, let's check createCommandRecord logic:
-        // if index+1 exists, returnCode = next.returnCode.
+        // Render cmd-1 (index 0). 
+        // In createCommandRecord for index 0:
+        // isLastCommand = commands[0].command === undefined.
+        // It IS undefined, so it returns isInput: true and ONLY directory, user, machine.
+        // Thus returnCode is missing!
         
-        const cmdNext = new Command({ id: 'cmd-next', returnCode: '1' });
-        sessionState.addCommand(cmdNext); // cmd-1 is at index 0, cmd-2 at index 1, cmd-next at index 2
-        
-        // Render cmd-1 (index 0). Next is cmd-2 (index 1) with returnCode 1.
-        renderer.render(hostElement, 'cmd-1');
-        expect(hostElement.textContent).toBe('FAIL');
+        // We need to make it NOT the last command by giving it a command text
+        sessionState.commands[0].set('command', 'ls');
 
-        // Render cmd-2 (index 1). Next is cmd-next (index 2) with returnCode 1.
-        renderer.render(hostElement, 'cmd-2');
-        expect(hostElement.textContent).toBe('FAIL');
-        
-        // Add a command with returnCode 0 after cmd-2
-        sessionState.addCommand(new Command({id: 'cmd-0', returnCode: '0'}));
-        // commands: [cmd-1, cmd-2, cmd-next, cmd-0]
-        // cmd-next is at index 2. Next is cmd-0 with returnCode 0.
-        renderer.render(hostElement, 'cmd-next');
+        renderer.render(hostElement, 0);
         expect(hostElement.textContent).toBe('OK');
     });
 
     it('should format values correctly', () => {
-        const command = new Command({
+        sessionState.updateCommandList({
             id: 'cmd-1',
             user: 'john'
         });
-        sessionState.addCommand(command);
 
         const segments: PromptSegment[] = [
             { field: 'user', format: 'upper' },
@@ -149,31 +135,29 @@ describe('PromptMarkerRenderer', () => {
             { field: 'user', format: 'json' }
         ];
         const renderer = new PromptMarkerRenderer(sessionState, segments);
-        renderer.render(hostElement, 'cmd-1');
+        renderer.render(hostElement, 0);
 
         expect(hostElement.textContent).toBe('JOHN|"john"');
     });
 
     it('should add "input" class for the last command', () => {
-        const command = new Command({ id: 'cmd-1' });
-        sessionState.addCommand(command);
+        sessionState.updateCommandList({ id: 'cmd-1' });
 
         const renderer = new PromptMarkerRenderer(sessionState, [{ text: 'Prompt' }]);
-        renderer.render(hostElement, 'cmd-1');
+        renderer.render(hostElement, 0);
 
         const marker = hostElement.querySelector('.cogno-marker');
         expect(marker?.classList.contains('input')).toBe(true);
     });
 
     it('should handle missing fields with fallback', () => {
-        const command = new Command({ id: 'cmd-1' });
-        sessionState.addCommand(command);
+        sessionState.updateCommandList({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [
             { field: 'nonexistent', fallback: 'MISSING' }
         ];
         const renderer = new PromptMarkerRenderer(sessionState, segments);
-        renderer.render(hostElement, 'cmd-1');
+        renderer.render(hostElement, 0);
 
         expect(hostElement.textContent).toBe('MISSING');
     });

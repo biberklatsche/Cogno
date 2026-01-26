@@ -114,6 +114,11 @@ export class PromptMarkerRenderer {
 
     private createCommandRecord(index: number): PromptRecord {
         const command = this.sessionState.commands[index];
+
+        if (!command) {
+            return this.createDefaultRecord();
+        }
+
         const isLastCommand = command.command === undefined;
 
         if (isLastCommand) {

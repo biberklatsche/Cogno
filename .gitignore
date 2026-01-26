@@ -44,3 +44,7 @@ Thumbs.db
 .output.txt
 
 coverage_output.txt
+
+test_output.txt
+
+test_output_2.txt

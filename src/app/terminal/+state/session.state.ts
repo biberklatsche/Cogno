@@ -184,7 +184,6 @@ export class SessionState {
         if(index !== -1) return;
         if(commands.length > 0) {
             const previousCommand = commands[commands.length -1];
-            console.log('####previousCommand', previousCommand)
             delete data['id'];
             delete data['directory'];
             delete data['user'];
