@@ -83,7 +83,6 @@ export class MarkerManager implements IDisposable {
 
         const visibleCommandIndices = new Set<number>();
         for (let i = viewportStart; i <= viewportEnd; i++) {
-            console.log('####test', viewportStart, viewportEnd)
             const line = buffer.getLine(i);
             if (!line) continue;
             const text = line.translateToString();

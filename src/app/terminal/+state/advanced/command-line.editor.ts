@@ -7,6 +7,7 @@ import {Subscription} from 'rxjs';
 import {IPty} from '../pty/pty';
 import {InternalState, SessionState} from "../session.state";
 import {Clipboard} from "../../../_tauri/clipboard";
+import {Char} from "../../../common/chars/chars";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;
@@ -34,9 +35,14 @@ export class CommandLineEditor implements ITerminalHandler  {
         });
 
         terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-            if (this.sessionState.isCommandRunning) return true;
             if (event.type !== 'keydown') return true;
-
+            if (event.key === 'Enter' && event.shiftKey) {
+                this._ptyWrite(String.fromCharCode(10));
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+            if (this.sessionState.isCommandRunning) return true;
             if ((event.key === 'Backspace' || event.key === 'Delete') && this._terminal?.hasSelection()) {
                 return !this.deleteSelection();
             }
