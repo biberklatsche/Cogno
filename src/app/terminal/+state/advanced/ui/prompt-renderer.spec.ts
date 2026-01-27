@@ -1,22 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PromptMarkerRenderer } from './prompt-renderer';
-import { SessionState, Command } from '../../session.state';
+import { TerminalStateManager } from '../../../state';
 import { PromptSegment } from '../../../../config/+models/prompt-config';
 import { AppBus } from '../../../../app-bus/app-bus';
 
 describe('PromptMarkerRenderer', () => {
-    let sessionState: SessionState;
+    let stateManager: TerminalStateManager;
     let busMock: AppBus;
     let hostElement: HTMLElement;
 
     beforeEach(() => {
         busMock = { publish: vi.fn() } as unknown as AppBus;
-        sessionState = new SessionState('test-term', 'Bash', busMock);
+        stateManager = new TerminalStateManager('test-term', 'Bash', busMock);
         hostElement = document.createElement('div');
     });
 
     it('should render default label when no segments are provided', () => {
-        const renderer = new PromptMarkerRenderer(sessionState, []);
+        const renderer = new PromptMarkerRenderer(stateManager, []);
         renderer.render(hostElement, undefined);
 
         const marker = hostElement.querySelector('.cogno-marker');
@@ -29,7 +29,7 @@ describe('PromptMarkerRenderer', () => {
             { text: 'Hello ' },
             { text: 'World' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, 0);
 
         const spans = hostElement.querySelectorAll('.prompt-segment');
@@ -39,7 +39,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render field segments from command', () => {
-        sessionState.updateCommandList({
+        stateManager.updateCommandList({
             id: 'cmd-1',
             user: 'tester',
             machine: 'localhost',
@@ -53,7 +53,7 @@ describe('PromptMarkerRenderer', () => {
             { text: ':' },
             { field: 'directory' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, 0);
 
         const marker = hostElement.querySelector('.cogno-marker');
@@ -75,7 +75,7 @@ describe('PromptMarkerRenderer', () => {
             className: 'custom-class',
             title: 'Hover me'
         }];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, undefined);
 
         const span = hostElement.querySelector('.prompt-segment') as HTMLElement;
@@ -94,12 +94,12 @@ describe('PromptMarkerRenderer', () => {
 
     it('should evaluate "when" conditions correctly', () => {
         // Create first command
-        sessionState.updateCommandList({
+        stateManager.updateCommandList({
             id: 'cmd-1',
             user: 'tester'
         });
         // Add second command, which updates first command with data (returnCode=0)
-        sessionState.updateCommandList({
+        stateManager.updateCommandList({
             id: 'cmd-2',
             returnCode: '0'
         });
@@ -108,7 +108,7 @@ describe('PromptMarkerRenderer', () => {
             { text: 'OK', when: 'returnCode == 0' },
             { text: 'FAIL', when: 'returnCode != 0' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
 
         // Render cmd-1 (index 0). 
         // In createCommandRecord for index 0:
@@ -117,14 +117,14 @@ describe('PromptMarkerRenderer', () => {
         // Thus returnCode is missing!
         
         // We need to make it NOT the last command by giving it a command text
-        sessionState.commands[0].set('command', 'ls');
+        stateManager.commands[0].set('command', 'ls');
 
         renderer.render(hostElement, 0);
         expect(hostElement.textContent).toBe('OK');
     });
 
     it('should format values correctly', () => {
-        sessionState.updateCommandList({
+        stateManager.updateCommandList({
             id: 'cmd-1',
             user: 'john'
         });
@@ -134,16 +134,16 @@ describe('PromptMarkerRenderer', () => {
             { text: '|' },
             { field: 'user', format: 'json' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, 0);
 
         expect(hostElement.textContent).toBe('JOHN|"john"');
     });
 
     it('should add "input" class for the last command', () => {
-        sessionState.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommandList({ id: 'cmd-1' });
 
-        const renderer = new PromptMarkerRenderer(sessionState, [{ text: 'Prompt' }]);
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }]);
         renderer.render(hostElement, 0);
 
         const marker = hostElement.querySelector('.cogno-marker');
@@ -151,12 +151,12 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should handle missing fields with fallback', () => {
-        sessionState.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommandList({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [
             { field: 'nonexistent', fallback: 'MISSING' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, 0);
 
         expect(hostElement.textContent).toBe('MISSING');
@@ -164,7 +164,7 @@ describe('PromptMarkerRenderer', () => {
 
     it('should handle undefined commandId gracefully', () => {
         const segments: PromptSegment[] = [{ field: 'user', fallback: 'anonymous' }];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, undefined);
 
         expect(hostElement.textContent).toBe('anonymous');
@@ -175,7 +175,7 @@ describe('PromptMarkerRenderer', () => {
             { text: 'Hidden', when: 'isInput == true' },
             { text: 'Visible', when: 'isInput == false' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         // buildRecord(undefined) returns isInput: false
         renderer.render(hostElement, undefined);
 
@@ -186,7 +186,7 @@ describe('PromptMarkerRenderer', () => {
         const segments: PromptSegment[] = [
             { text: 'ShouldNotAppear', when: 'invalid expression' }
         ];
-        const renderer = new PromptMarkerRenderer(sessionState, segments);
+        const renderer = new PromptMarkerRenderer(stateManager, segments);
         renderer.render(hostElement, undefined);
 
         expect(hostElement.textContent).toBe('');

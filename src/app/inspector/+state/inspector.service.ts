@@ -11,10 +11,10 @@ import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 import {
     TerminalCursorPosition,
-    InternalState,
+    TerminalState,
     TerminalMousePosition,
-    SessionState
-} from '../../terminal/+state/session.state';
+    TerminalStateManager
+} from '../../terminal/state';
 
 export type TerminalIdentifier = { terminalId: string };
 export type GlobalMousePosition = { x: number; y: number };
@@ -27,7 +27,7 @@ export class InspectorService {
     // State signals
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
     private _globalMousePosition: WritableSignal<GlobalMousePosition | undefined> = signal(undefined);
-    private _terminalStateById: WritableSignal<Record<TerminalId, SessionState>> = signal({});
+    private _terminalStateById: WritableSignal<Record<TerminalId, TerminalState>> = signal({});
     // Derived signals
     private _terminalIds = computed<TerminalId[]>(() => {
         return Object.keys(this._terminalStateById()) as TerminalId[];
@@ -42,7 +42,7 @@ export class InspectorService {
         return this._globalMousePosition.asReadonly();
     }
 
-    public get terminalStateById(): Signal<Record<TerminalId, SessionState>> {
+    public get terminalStateById(): Signal<Record<TerminalId, TerminalState>> {
         return this._terminalStateById.asReadonly();
     }
 
@@ -130,7 +130,7 @@ export class InspectorService {
         }
     }
 
-    private updateTerminalData(data: SessionState): void {
+    private updateTerminalData(data: TerminalState): void {
         if (!data) return;
         this._terminalStateById.update(current => ({
             ...current,

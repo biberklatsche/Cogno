@@ -82,7 +82,7 @@ describe('FocusHandler', () => {
     it('should focus terminal when PtyInitialized event is received', () => {
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       
-      mockBus.publish({ type: 'PtyInitialized', payload: terminalId, path: ['app', 'terminal', terminalId], phase: 'target' });
+      mockBus.publish({ type: 'PtyInitialized', payload: {terminalId: terminalId, shellType: "Bash"}, path: ['app', 'terminal', terminalId], phase: 'target' });
 
       expect(focusSpy).toHaveBeenCalled();
     });

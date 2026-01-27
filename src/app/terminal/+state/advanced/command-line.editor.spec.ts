@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandLineEditor } from './command-line.editor';
 import { AppBus } from '../../../app-bus/app-bus';
 import { IPty } from '../pty/pty';
-import { InternalState } from '../session.state';
+import { TerminalStateManager } from '../../state';
 import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { Clipboard } from '../../../_tauri/clipboard';
@@ -19,7 +19,7 @@ describe('CommandLineEditor', () => {
   let mockBus: AppBus;
   let mockPty: IPty;
   let mockTerminal: any;
-  let state: InternalState;
+  let state: any;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -36,8 +36,8 @@ describe('CommandLineEditor', () => {
       isCommandRunning: false,
       input: { text: 'hello world example', cursorIndex: 6, maxCursorIndex: 19 },
       shellType: 'Bash' as any,
-    } as any;
-    editor = new CommandLineEditor(mockBus, mockPty, state);
+    };
+    editor = new CommandLineEditor(mockBus, mockPty, state as any);
     mockTerminal = TerminalMockFactory.createTerminal();
     
     // Default mocks for selection

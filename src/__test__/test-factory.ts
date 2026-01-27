@@ -13,7 +13,7 @@ import {WindowService} from "../app/window/window.service";
 import {FocusHandler} from "../app/terminal/+state/handler/focus.handler";
 import {SelectionHandler} from "../app/terminal/+state/handler/selection.handler";
 import {TerminalId} from "../app/grid-list/+model/model";
-import {SessionState} from "../app/terminal/+state/session.state";
+import {TerminalStateManager} from "../app/terminal/state";
 import {ShellType} from "../app/config/+models/config";
 
 let appBus: AppBus | undefined;
@@ -28,18 +28,18 @@ let terminalComponentFactory: TerminalComponentFactory | undefined;
 let windowService: WindowService | undefined;
 let focusHandler: FocusHandler | undefined;
 let selectionHandler: SelectionHandler | undefined;
-let sessionState: SessionState | undefined;
+let stateManager: TerminalStateManager | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
     return appBus;
 }
 
-export function getSessionState(terminalId: TerminalId = 'test-terminal'): SessionState {
-    if(!sessionState) {
-        sessionState = new SessionState(terminalId, 'Bash', getAppBus());
+export function getStateManager(terminalId: TerminalId = 'test-terminal'): TerminalStateManager {
+    if(!stateManager) {
+        stateManager = new TerminalStateManager(terminalId, 'Bash', getAppBus());
     }
-    return sessionState;
+    return stateManager;
 }
 
 export function getSideMenuService(): SideMenuService {
@@ -128,7 +128,7 @@ export function getWindowService(): WindowService {
 
 export function getFocusHandler(terminalId: TerminalId): FocusHandler {
     if(!focusHandler) {
-        focusHandler = new FocusHandler(terminalId, getAppBus(), getSessionState(terminalId));
+        focusHandler = new FocusHandler(terminalId, getAppBus(), getStateManager(terminalId));
     }
     return focusHandler;
 }
@@ -154,5 +154,5 @@ export function clear() {
     windowService = undefined;
     focusHandler = undefined;
     selectionHandler = undefined;
-    sessionState = undefined;
+    stateManager = undefined;
 }

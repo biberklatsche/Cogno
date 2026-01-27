@@ -21,7 +21,7 @@ import {CursorHandler} from "./handler/cursor.handler";
 import {ScriptInjector} from "./advanced/script.injector";
 import {PathInjector} from "./advanced/path.injector";
 import {CommandLineObserver} from "./advanced/command-line.observer";
-import {SessionState} from "./session.state";
+import {TerminalStateManager} from "../state";
 import {CommandLineEditor} from './advanced/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {PromptProfile, PromptSegment} from "../../config/+models/prompt-config";
@@ -53,27 +53,27 @@ export class TerminalSession {
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
         this.renderer.open(terminalContainer, this.configService.config.font?.enable_ligatures ?? false);
-        const sessionState:SessionState = new SessionState(this.terminalId, this.shellProfile.shell_type!, this.bus);
-        this.focusHandler = new FocusHandler(this.terminalId, this.bus, sessionState);
+        const stateManager: TerminalStateManager = new TerminalStateManager(this.terminalId, this.shellProfile.shell_type!, this.bus);
+        this.focusHandler = new FocusHandler(this.terminalId, this.bus, stateManager);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));
-        this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer, sessionState)));
+        this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer, stateManager)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
-        this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, sessionState)));
-        this.disposables.push(this.renderer.register(new CursorHandler(sessionState)));
+        this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, stateManager)));
+        this.disposables.push(this.renderer.register(new CursorHandler(stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
         if(this.shellProfile.inject_path) {
             this.disposables.push(new PathInjector(this.bus, this.pty, this.terminalId));
         }
         if(this.shellProfile.enable_shell_integration) {
             this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
-            this.disposables.push(this.renderer.register(new CommandLineObserver(sessionState, this.configService.getPromptSegments())));
-            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, sessionState)));
+            this.disposables.push(this.renderer.register(new CommandLineObserver(stateManager, this.configService.getPromptSegments())));
+            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, stateManager)));
 
         }
 

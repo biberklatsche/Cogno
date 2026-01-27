@@ -3,12 +3,12 @@ import { CursorHandler } from './cursor.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { SessionState } from '../session.state';
+import { TerminalStateManager } from '../../state';
 
 describe('CursorHandler', () => {
   let bus: AppBus;
   let handler: CursorHandler;
-  let sessionState: SessionState;
+  let stateManager: TerminalStateManager;
   let cursorMoveCallback: (() => void) | null = null;
   const terminalId = 'test-terminal-id';
 
@@ -18,8 +18,8 @@ describe('CursorHandler', () => {
     bus = new AppBus();
     vi.spyOn(bus, 'publish');
 
-    sessionState = new SessionState(terminalId, 'bash' as any, bus);
-    handler = new CursorHandler(sessionState);
+    stateManager = new TerminalStateManager(terminalId, 'bash' as any, bus);
+    handler = new CursorHandler(stateManager);
   });
 
   describe('register', () => {

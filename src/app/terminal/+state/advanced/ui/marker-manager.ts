@@ -1,5 +1,5 @@
 import { Terminal, IDecoration } from '@xterm/xterm';
-import { SessionState } from '../../session.state';
+import { TerminalStateManager } from '../../state';
 import { IDisposable } from '../../../../common/models/models';
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
@@ -12,7 +12,7 @@ export class MarkerManager implements IDisposable {
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
 
-    constructor(private sessionState: SessionState, promptSegments: PromptSegment[]) {
+    constructor(private sessionState: TerminalStateManager, promptSegments: PromptSegment[]) {
         this._renderer = new PromptMarkerRenderer(sessionState, promptSegments);
     }
 

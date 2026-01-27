@@ -6,7 +6,7 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {IDisposable} from "../../../common/models/models";
-import {SessionState} from "../session.state";
+import {TerminalStateManager} from "../../state";
 
 export type TerminalDimensions = { rows: number; cols: number };
 
@@ -24,7 +24,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         private _pty: IPty,
         private _bus: AppBus,
         private _terminalContainer: HTMLDivElement,
-        private _sessionState: SessionState
+        private _stateManager: TerminalStateManager
     ) {
     }
 
@@ -86,7 +86,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
             const cellHeight = core?._renderService?._charSizeService?.height;
             const cellWidth = core?._renderService?._charSizeService?.width;
 
-            this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth };
+            this._stateManager.updateDimensions({ cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth });
 
             if (this._ptyResizeTimeout !== null) {
                 clearTimeout(this._ptyResizeTimeout);

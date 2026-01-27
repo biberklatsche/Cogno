@@ -3,7 +3,7 @@ import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.fa
 import { MouseHandler } from './mouse.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
-import { SessionState } from '../session.state';
+import { TerminalStateManager } from '../../state';
 
 describe('MouseHandler', () => {
   let handler: MouseHandler;
@@ -11,12 +11,12 @@ describe('MouseHandler', () => {
   let mockBus: AppBus;
   let container: HTMLDivElement;
   let screenElement: HTMLDivElement;
-  let sessionState: SessionState;
+  let stateManager: TerminalStateManager;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
-    sessionState = new SessionState(terminalId, 'Bash', mockBus);
+    stateManager = new TerminalStateManager(terminalId, 'Bash', mockBus);
     container = document.createElement('div');
     screenElement = document.createElement('div');
     screenElement.className = 'xterm-screen';
@@ -35,7 +35,7 @@ describe('MouseHandler', () => {
       toJSON: () => {}
     });
 
-    handler = new MouseHandler(container, sessionState);
+    handler = new MouseHandler(container, stateManager);
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
@@ -67,7 +67,7 @@ describe('MouseHandler', () => {
 
       screenElement.dispatchEvent(event);
 
-      expect(sessionState.mousePosition).toEqual({
+      expect(stateManager.mousePosition).toEqual({
         viewport: { col: 1, row: 1 },
         col: 1,
         row: 1,
@@ -96,8 +96,8 @@ describe('MouseHandler', () => {
 
       screenElement.dispatchEvent(event);
 
-      expect(sessionState.mousePosition.viewport.row).toBe(1);
-      expect(sessionState.mousePosition.row).toBe(11); // absRow + 1
+      expect(stateManager.mousePosition.viewport.row).toBe(1);
+      expect(stateManager.mousePosition.row).toBe(11); // absRow + 1
     });
 
     it('should clamp coordinates to terminal bounds', () => {
@@ -111,8 +111,8 @@ describe('MouseHandler', () => {
 
       screenElement.dispatchEvent(event);
 
-      expect(sessionState.mousePosition.viewport.col).toBe(80);
-      expect(sessionState.mousePosition.viewport.row).toBe(24);
+      expect(stateManager.mousePosition.viewport.col).toBe(80);
+      expect(stateManager.mousePosition.viewport.row).toBe(24);
     });
 
     it('should handle missing buffer line or cell gracefully', () => {
@@ -123,7 +123,7 @@ describe('MouseHandler', () => {
       const event = new MouseEvent('mousemove', { clientX: 15, clientY: 25 });
       screenElement.dispatchEvent(event);
 
-      expect(sessionState.mousePosition.char).toBe('');
+      expect(stateManager.mousePosition.char).toBe('');
     });
   });
 

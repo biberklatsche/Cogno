@@ -1,4 +1,4 @@
-import { SessionState } from "../../session.state";
+import { TerminalStateManager } from "../../state";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import {timespan} from "../../../../common/timespan/timespan.pipe";
 
@@ -19,7 +19,7 @@ export class PromptMarkerRenderer {
     private static readonly DEFAULT_LABEL = 'COGNO';
     private static readonly BOLD_WEIGHT = '600';
 
-    public constructor(private readonly sessionState: SessionState, private readonly segments: PromptSegment[]) {}
+    public constructor(private readonly sessionState: TerminalStateManager, private readonly segments: PromptSegment[]) {}
 
     public render(
         hostElement: HTMLElement,

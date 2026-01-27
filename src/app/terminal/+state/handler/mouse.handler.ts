@@ -1,9 +1,7 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {AppBus} from "../../../app-bus/app-bus";
-import {TerminalId} from "../../../grid-list/+model/model";
-import {SessionState} from "../session.state";
+import {TerminalStateManager} from "../../state";
 
 /**
  * Publishes inspector events with the current terminal cell (col,row)
@@ -14,7 +12,7 @@ export class MouseHandler implements ITerminalHandler {
   private readonly _screenElement?: HTMLElement;
   private _listener?: (e: MouseEvent) => void;
 
-  constructor(private _terminalContainer: HTMLDivElement, private _sessionState: SessionState) {
+  constructor(private _terminalContainer: HTMLDivElement, private _stateManager: TerminalStateManager) {
       this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
   }
 
@@ -62,12 +60,12 @@ export class MouseHandler implements ITerminalHandler {
         // ignore, keep empty char
       }
 
-      this._sessionState.mousePosition = {
+      this._stateManager.updateMousePosition({
         viewport: {col: col, row: row},
         col: col,
         row: absRow + 1,
         char: char
-      };
+      });
     };
 
     this._screenElement?.addEventListener('mousemove', this._listener, { passive: true });

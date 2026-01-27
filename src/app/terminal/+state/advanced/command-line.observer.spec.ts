@@ -1,21 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { CommandLineObserver } from './command-line.observer';
-import { SessionState } from '../session.state';
+import { TerminalStateManager } from '../../state';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 
 describe('CommandLineObserver', () => {
   let observer: CommandLineObserver;
   let mockTerminal: any;
-  let sessionState: SessionState;
+  let stateManager: TerminalStateManager;
   let mockBus: AppBus;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
-    sessionState = new SessionState(terminalId, 'Bash' as any, mockBus);
-    observer = new CommandLineObserver(sessionState, []);
+    stateManager = new TerminalStateManager(terminalId, 'Bash' as any, mockBus);
+    observer = new CommandLineObserver(stateManager, []);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -29,13 +29,13 @@ describe('CommandLineObserver', () => {
     observer.registerTerminal(mockTerminal);
     const onKeyCallback = vi.mocked(mockTerminal.onKey).mock.calls[0][0];
 
-    sessionState.isCommandRunning = false;
+    stateManager.endCommand();
     onKeyCallback({ key: '\r', domEvent: {} as any });
-    expect(sessionState.isCommandRunning).toBe(true);
+    expect(stateManager.isCommandRunning).toBe(true);
 
-    sessionState.isCommandRunning = false;
+    stateManager.endCommand();
     onKeyCallback({ key: '\n', domEvent: {} as any });
-    expect(sessionState.isCommandRunning).toBe(true);
+    expect(stateManager.isCommandRunning).toBe(true);
   });
 
   it('should update sessionState.input when terminal is parsed and command is not running', () => {
@@ -54,36 +54,36 @@ describe('CommandLineObserver', () => {
     mockTerminal.buffer.active.length = 2;
     
     // Set cursor position and maxCursorIndex in session state
-    sessionState.input = { text: '', cursorIndex: 0, maxCursorIndex: 6 };
-    sessionState.isCommandRunning = false;
+    stateManager.updateInput({ text: '', cursorIndex: 0, maxCursorIndex: 6 });
+    stateManager.endCommand();
 
     onWriteParsedCallback();
 
-    expect(sessionState.input.text).toBe('ls -la');
+    expect(stateManager.input.text).toBe('ls -la');
   });
 
   it('should NOT update sessionState.input when command is running', () => {
     observer.registerTerminal(mockTerminal);
     const onWriteParsedCallback = vi.mocked(mockTerminal.onWriteParsed).mock.calls[0][0];
 
-    sessionState.isCommandRunning = true;
-    sessionState.input = { text: 'old input', cursorIndex: 0, maxCursorIndex: 9 };
+    stateManager.startCommand();
+    stateManager.updateInput({ text: 'old input', cursorIndex: 0, maxCursorIndex: 9 });
 
     onWriteParsedCallback();
 
-    expect(sessionState.input.text).toBe('old input');
+    expect(stateManager.input.text).toBe('old input');
   });
 
   it('should NOT update cursorIndex when command is running', () => {
     observer.registerTerminal(mockTerminal);
     const onCursorMoveCallback = vi.mocked(mockTerminal.onCursorMove).mock.calls[0][0];
 
-    sessionState.isCommandRunning = true;
-    sessionState.input = { text: '', cursorIndex: 10, maxCursorIndex: 10 };
+    stateManager.startCommand();
+    stateManager.updateInput({ text: '', cursorIndex: 10, maxCursorIndex: 10 });
 
     onCursorMoveCallback();
 
-    expect(sessionState.input.cursorIndex).toBe(10);
+    expect(stateManager.input.cursorIndex).toBe(10);
   });
 
   it('should NOT refresh markers on render when command is running', () => {
@@ -92,7 +92,7 @@ describe('CommandLineObserver', () => {
     observer.registerTerminal(mockTerminal);
     const onRenderCallback = vi.mocked(mockTerminal.onRender).mock.calls[0][0];
 
-    sessionState.isCommandRunning = true;
+    stateManager.startCommand();
     onRenderCallback({ start: 0, end: 10 });
 
     expect(refreshSpy).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe('CommandLineObserver', () => {
     observer.registerTerminal(mockTerminal);
     const onScrollCallback = vi.mocked(mockTerminal.onScroll).mock.calls[0][0];
 
-    sessionState.isCommandRunning = true;
+    stateManager.startCommand();
     onScrollCallback(0);
 
     expect(refreshSpy).not.toHaveBeenCalled();
@@ -116,7 +116,7 @@ describe('CommandLineObserver', () => {
     observer.registerTerminal(mockTerminal);
     const onResizeCallback = vi.mocked(mockTerminal.onResize).mock.calls[0][0];
 
-    sessionState.isCommandRunning = true;
+    stateManager.startCommand();
     onResizeCallback({ cols: 100, rows: 40 });
 
     expect(refreshSpy).not.toHaveBeenCalled();
@@ -142,10 +142,10 @@ describe('CommandLineObserver', () => {
 
   it('should update sessionState.isCommandRunning to false when OSC 733 is received', () => {
     observer.registerTerminal(mockTerminal);
-    sessionState.isCommandRunning = true;
+    stateManager.startCommand();
 
     // We need to have a command already in the list for the OSC 733 to update it
-    sessionState.updateCommandList({
+    stateManager.updateCommandList({
       id: '7',
       user: 'larswolfram',
       machine: 'Air',
@@ -156,14 +156,14 @@ describe('CommandLineObserver', () => {
     const data = 'COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air;directory=/Users/lars;id=8;command=ls;';
     const result = oscHandler(data);
 
-    expect(sessionState.isCommandRunning).toBe(false);
+    expect(stateManager.isCommandRunning).toBe(false);
     expect(result).toBe(true);
-    expect(sessionState.commands.length).toBe(2);
-    expect(sessionState.commands[0].command).toBe('ls');
-    expect(sessionState.commands[0].directory).toBe('/Users/lars');
-    expect(sessionState.commands[0].returnCode).toBe(0);
-    expect(sessionState.commands[0].id).toBe('7');
-    expect(sessionState.commands[0].user).toBe('larswolfram');
+    expect(stateManager.commands.length).toBe(2);
+    expect(stateManager.commands[0].command).toBe('ls');
+    expect(stateManager.commands[0].directory).toBe('/Users/lars');
+    expect(stateManager.commands[0].returnCode).toBe(0);
+    expect(stateManager.commands[0].id).toBe('7');
+    expect(stateManager.commands[0].user).toBe('larswolfram');
   });
 
   it('should dispose registered OSC handler', () => {
