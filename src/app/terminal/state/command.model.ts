@@ -1,6 +1,7 @@
 export class Command {
     private data: Record<string, string> = {};
     public isInViewport: boolean = false;
+    public isFirstCommandOutOfViewport: boolean = false;
 
     constructor(
         private _id: string,

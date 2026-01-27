@@ -35,11 +35,6 @@ export class TerminalComponentFactory {
         return ref;
     }
 
-    getSnapshot(terminalId: TerminalId): string {
-        const ref = this.map.get(terminalId);
-        return ref?.instance.getTerminalSnapshot() ?? "";
-    }
-
     attach(terminalId: TerminalId, shellProfile: ShellProfile, host: HTMLElement) {
         const ref = this.getOrCreate(terminalId, shellProfile);
         host.appendChild(ref.location.nativeElement); // reparent – no destroy/rebuild

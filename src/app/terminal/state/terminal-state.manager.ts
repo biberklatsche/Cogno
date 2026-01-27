@@ -1,39 +1,27 @@
 import {ShellType} from "../../config/+models/config";
 import {BehaviorSubject, debounceTime, Observable, skip} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {TerminalCursorPosition, TerminalDimensions, TerminalInput, TerminalMousePosition, TerminalState} from "./terminal.state";
-import {CommandHistory} from "./command-history";
+import {
+    INITIAL_STATE,
+    TerminalCursorPosition,
+    TerminalDimensions,
+    TerminalInput,
+    TerminalMousePosition,
+    TerminalState
+} from "./terminal.state";
 import {Command} from "./command.model";
 
 export class TerminalStateManager {
     private _stateSubject: BehaviorSubject<TerminalState>;
+    private _historySubject: BehaviorSubject<Command[]>;
 
     constructor(
         terminalId: string,
         shellType: ShellType,
         private _bus: AppBus
     ) {
-        this._stateSubject = new BehaviorSubject<TerminalState>({
-            terminalId,
-            shellType,
-            commandHistory: new CommandHistory(),
-            cursorPosition: {
-                viewport: {col: 1, row: 1},
-                col: 1, row: 1,
-                char: ''
-            },
-            mousePosition: {
-                viewport: {col: 1, row: 1},
-                col: 1, row: 1,
-                char: ''
-            },
-            dimensions: { rows: 0, cols: 0, cellHeight: 0, cellWidth: 0 },
-            isFocused: false,
-            isCommandRunning: false,
-            commandStartTime: undefined,
-            input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
-        });
-
+        this._stateSubject = new BehaviorSubject<TerminalState>({...INITIAL_STATE, terminalId, shellType});
+        this._historySubject = new BehaviorSubject<Command[]>([]);
         this._stateSubject.pipe(
             skip(1), // Initialen State ignorieren
             debounceTime(0) // Damit multiple Änderungen in einem Frame zusammengefasst werden
@@ -83,6 +71,7 @@ export class TerminalStateManager {
 
     get isCommandRunning() { return this._stateSubject.value.isCommandRunning; }
     startCommand(): void {
+        console.log("#####Starte Command!");
         this.updateState({
             isCommandRunning: true,
             commandStartTime: Date.now(),
@@ -110,7 +99,11 @@ export class TerminalStateManager {
     get shellType() { return this._stateSubject.value.shellType; }
 
     get commands(): readonly Command[] {
-        return this._stateSubject.value.commandHistory.getCommands();
+        return this._historySubject.value;
+    }
+
+    get commands$(): Observable<Command[]> {
+        return this._historySubject.asObservable();
     }
 
     updateCommandList(data: Record<string, string>): void {
@@ -118,30 +111,34 @@ export class TerminalStateManager {
         const directory = data['directory'];
         const user = data['user'];
         const machine = data['machine'];
-        
-        const commandHistory = this._stateSubject.value.commandHistory;
-        
+
         // Check if command already exists
-        if (commandHistory.findById(id)) {
+        if ( this.commands.find(c => c.id === id)) {
             return;
         }
+        const commands = [...this.commands];
         
         // Update previous command if exists
-        if (commandHistory.getCommands().length > 0) {
+        if (commands.length > 0) {
             const updateData = {...data};
             delete updateData['id'];
             delete updateData['directory'];
             delete updateData['user'];
             delete updateData['machine'];
-            commandHistory.updateLastCommand(updateData);
+            const lastCommand = commands[commands.length - 1];
+            lastCommand.setData(data);
         }
-        
-        // Add new command
-        commandHistory.addCommand(id, directory, machine, user);
-        
-        // Trigger state update
-        this.updateState({ 
-            commandHistory: commandHistory 
-        });
+        const command = new Command(id, directory, machine, user);
+        console.log('####push', command);
+        commands.push(command);
+        this._historySubject.next(commands);
+    }
+
+    updateCommands(commands: Command[]) {
+        this._historySubject.next(commands);
+    }
+
+    updateCwd(cwd: string) {
+        this._stateSubject.next({...this._stateSubject.value, cwd});
     }
 }

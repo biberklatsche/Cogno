@@ -1,6 +1,6 @@
-import { TerminalStateManager } from "../../state";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import {timespan} from "../../../../common/timespan/timespan.pipe";
+import {TerminalStateManager} from "../../../state";
 
 type PromptRecord = {
     label?: string;
@@ -19,7 +19,7 @@ export class PromptMarkerRenderer {
     private static readonly DEFAULT_LABEL = 'COGNO';
     private static readonly BOLD_WEIGHT = '600';
 
-    public constructor(private readonly sessionState: TerminalStateManager, private readonly segments: PromptSegment[]) {}
+    public constructor(private readonly stateManager: TerminalStateManager, private readonly segments: PromptSegment[]) {}
 
     public render(
         hostElement: HTMLElement,
@@ -113,7 +113,7 @@ export class PromptMarkerRenderer {
     }
 
     private createCommandRecord(index: number): PromptRecord {
-        const command = this.sessionState.commands[index];
+        const command = this.stateManager.commands[index];
 
         if (!command) {
             return this.createDefaultRecord();

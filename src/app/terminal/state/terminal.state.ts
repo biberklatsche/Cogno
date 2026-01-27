@@ -1,7 +1,6 @@
 import {ShellType} from "../../config/+models/config";
-import {CommandHistory} from "./command-history";
 
-export type Position = {col: number, row: number};
+export type Position = { col: number, row: number };
 export type TerminalCursorPosition = Position & {
     viewport: Position,
     char: string
@@ -30,5 +29,26 @@ export type TerminalState = {
     isCommandRunning: boolean;
     commandStartTime: number | undefined;
     input: TerminalInput;
-    commandHistory: CommandHistory;
+    cwd: string;
+}
+
+export const INITIAL_STATE: TerminalState = {
+    terminalId: '',
+    cwd: '',
+    shellType: 'Bash',
+    cursorPosition: {
+        viewport: {col: 1, row: 1},
+        col: 1, row: 1,
+        char: ''
+    },
+    mousePosition: {
+        viewport: {col: 1, row: 1},
+        col: 1, row: 1,
+        char: ''
+    },
+    dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0},
+    isFocused: false,
+    isCommandRunning: false,
+    commandStartTime: undefined,
+    input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
 }

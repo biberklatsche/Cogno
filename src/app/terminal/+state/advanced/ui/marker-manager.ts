@@ -1,8 +1,8 @@
 import { Terminal, IDecoration } from '@xterm/xterm';
-import { TerminalStateManager } from '../../state';
 import { IDisposable } from '../../../../common/models/models';
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
+import {TerminalStateManager} from "../../../state";
 
 
 type LineIndex = number;
@@ -12,8 +12,8 @@ export class MarkerManager implements IDisposable {
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
 
-    constructor(private sessionState: TerminalStateManager, promptSegments: PromptSegment[]) {
-        this._renderer = new PromptMarkerRenderer(sessionState, promptSegments);
+    constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
+        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments);
     }
 
     setTerminal(terminal: Terminal) {
@@ -93,10 +93,28 @@ export class MarkerManager implements IDisposable {
             if (idx >= 0) visibleCommandIndices.add(idx);
         }
 
-        const commands = this.sessionState.commands;
+        // Finde den ersten Command oberhalb des Viewports
+        let firstCommandOutOfViewportIdx = -1;
+        for (let i = viewportStart - 1; i >= 0; i--) {
+            const line = buffer.getLine(i);
+            if (!line) continue;
+            const text = line.translateToString();
+            const match = text.match(/^\^\^#(\d+)/);
+            if (!match) continue;
+            const commandId = match[1];
+            const idx = this.findCommandIndex(commandId);
+            if (idx >= 0) {
+                firstCommandOutOfViewportIdx = idx;
+                break;
+            }
+        }
+
+        const commands = [...this.stateManager.commands];
         for (let idx = 0; idx < commands.length; idx++) {
             commands[idx].isInViewport = visibleCommandIndices.has(idx);
+            commands[idx].isFirstCommandOutOfViewport = (idx === firstCommandOutOfViewportIdx);
         }
+        this.stateManager.updateCommands(commands);
     }
 
     private addMarker(lineIndex: number) {
@@ -137,7 +155,7 @@ export class MarkerManager implements IDisposable {
     }
 
     private findCommandIndex(commandId: string | undefined): number {
-        return this.sessionState.commands.findIndex(c => c.id === commandId);
+        return this.stateManager.commands.findIndex(c => c.id === commandId);
     }
 
     dispose() {
