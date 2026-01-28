@@ -10,17 +10,17 @@ import {
     TerminalState
 } from "./terminal.state";
 import {Command} from "./command.model";
+import {Injectable} from "@angular/core";
 
+@Injectable()
 export class TerminalStateManager {
-    private _stateSubject: BehaviorSubject<TerminalState>;
-    private _historySubject: BehaviorSubject<Command[]>;
+    public readonly _stateSubject: BehaviorSubject<TerminalState>;
+    public readonly _historySubject: BehaviorSubject<Command[]>;
 
     constructor(
-        terminalId: string,
-        shellType: ShellType,
         private _bus: AppBus
     ) {
-        this._stateSubject = new BehaviorSubject<TerminalState>({...INITIAL_STATE, terminalId, shellType});
+        this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
         this._historySubject = new BehaviorSubject<Command[]>([]);
         this._stateSubject.pipe(
             skip(1), // Initialen State ignorieren
@@ -32,6 +32,10 @@ export class TerminalStateManager {
                 payload: { type: 'terminal-state', data: {...state} }
             });
         });
+    }
+
+    initialize(terminalId: string, shellType: ShellType): void {
+        this._stateSubject.next({...this._stateSubject.value, terminalId, shellType});
     }
 
     private updateState(updates: Partial<TerminalState>): void {

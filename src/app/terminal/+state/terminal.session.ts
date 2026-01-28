@@ -24,7 +24,9 @@ import {CommandLineObserver} from "./advanced/command-line.observer";
 import {Command, TerminalState, TerminalStateManager} from "../state";
 import {CommandLineEditor} from './advanced/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
+import {Injectable} from "@angular/core";
 
+@Injectable()
 export class TerminalSession {
 
     private renderer: IRenderer;
@@ -32,28 +34,37 @@ export class TerminalSession {
 
     private focusHandler?: FocusHandler = undefined;
     private selectionHandler?: SelectionHandler = undefined;
-    private stateManager: TerminalStateManager;
 
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[];
     private disposed: boolean = false;
 
+    private terminalId?: TerminalId;
+    private shellProfile?: ShellProfile;
+
 
     constructor(
         private configService: ConfigService,
         private bus: AppBus,
-        private terminalId: TerminalId,
-        private shellProfile: ShellProfile
+        private stateManager: TerminalStateManager
     ) {
         this.renderer = new Renderer(this.configService.config);
-        this.stateManager = new TerminalStateManager(this.terminalId, this.shellProfile.shell_type!, this.bus);
         this.disposables = [
             this.renderer,
             this.pty
         ];
     }
 
+    initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
+        this.terminalId = terminalId;
+        this.shellProfile = shellProfile;
+        this.stateManager.initialize(terminalId, shellProfile.shell_type!);
+    }
+
     initializeTerminal(terminalContainer: HTMLDivElement): void {
+        if (!this.terminalId || !this.shellProfile) {
+            throw new Error('TerminalSession must be initialized before initializeTerminal');
+        }
         this.renderer.open(terminalContainer, this.configService.config.font?.enable_ligatures ?? false);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus, this.stateManager);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
