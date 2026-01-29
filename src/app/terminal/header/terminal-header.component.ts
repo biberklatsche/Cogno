@@ -8,10 +8,11 @@ import {map, Observable} from "rxjs";
   standalone: true,
   template: `
     <div class="terminal-header">
-      {{terminalId()}}
-      {{cwd()}}
+      <span class="cwd">{{cwd()}}</span>
       @if (commandOutOfView(); as command) {
-        <span class="status-running">{{command.command}}</span>
+        <span class="command">{{command.command}}</span>
+      } @else {
+        <span class="command">&nbsp;</span>
       }
     </div>
   `,
@@ -21,10 +22,21 @@ import {map, Observable} from "rxjs";
       flex-direction: column;
       align-items: center;
       padding: 4px 8px;
-      background: var(--background-color-20d);
+      background: #00000000;
+    }
+    
+    .cwd {
+      font-size: .8rem;
       color: var(--foreground-color);
-      font-size: 12px;
-      height: 24px;
+      opacity: 0.8;
+    }
+    
+    .command {
+      align-self: flex-start;
+      color: var(--foreground-color);
+      font-size: 1rem;
+      font: var(--font-family);
+      font-weight: bold;
     }
   `
 })
@@ -35,10 +47,6 @@ export class TerminalHeaderComponent {
 
   commandOutOfView = toSignal(this.stateManager.commands$.pipe(
       map(commands => commands.find(s => s.isFirstCommandOutOfViewport))
-  ));
-
-  terminalId = toSignal(this.stateManager.state$.pipe(
-      map(state => state.terminalId)
   ));
 
   cwd = toSignal(this.stateManager.state$.pipe(

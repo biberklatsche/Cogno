@@ -127,6 +127,22 @@ describe('MouseHandler', () => {
 
       expect(stateManager.mousePosition.char).toBe('');
     });
+
+    it('should only call updateMousePosition when position changes', () => {
+      const spy = vi.spyOn(stateManager, 'updateMousePosition');
+      handler.registerTerminal(mockTerminal);
+
+      // Same cell movement (col 1, row 1)
+      screenElement.dispatchEvent(new MouseEvent('mousemove', { clientX: 11, clientY: 11 }));
+      screenElement.dispatchEvent(new MouseEvent('mousemove', { clientX: 12, clientY: 12 }));
+      screenElement.dispatchEvent(new MouseEvent('mousemove', { clientX: 13, clientY: 13 }));
+
+      // Different cell (col 2, row 1)
+      // cellW=10, cellH=20. relX=11 (clientX=21) -> col=2
+      screenElement.dispatchEvent(new MouseEvent('mousemove', { clientX: 21, clientY: 11 }));
+
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('Lifecycle', () => {

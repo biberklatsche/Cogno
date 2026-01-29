@@ -11,6 +11,7 @@ import {IdCreator} from "../../common/id-creator/id-creator";
 import {ActionFired, ActionFiredEvent} from "../../action/action.models";
 import {ColorName} from "../../common/color/color";
 import {TabTitleChangedEvent} from "../../grid-list/+bus/events";
+import {TerminalId} from "../../grid-list/+model/model";
 
 
 @Injectable({providedIn: 'root'})
@@ -170,6 +171,10 @@ export class TabListService {
         tab.isTitleLocked = true;
         this._tabList.next(tabList);
         this.closeRename();
+    }
+
+    private renameTab(payload: { terminalId: TerminalId; cwd: string }) {
+
     }
 
     private setColor(tabId: TabId, name: ColorName | undefined) {

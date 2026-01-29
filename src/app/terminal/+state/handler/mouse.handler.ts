@@ -11,6 +11,8 @@ export class MouseHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private readonly _screenElement?: HTMLElement;
   private _listener?: (e: MouseEvent) => void;
+  private _lastCol?: number;
+  private _lastRow?: number;
 
   constructor(private _terminalContainer: HTMLDivElement, private _stateManager: TerminalStateManager) {
       this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
@@ -25,6 +27,8 @@ export class MouseHandler implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    this._lastCol = undefined;
+    this._lastRow = undefined;
     this._listener = (evt: MouseEvent) => {
       if (!this._terminal || !this._screenElement) return;
       const rect = this._screenElement.getBoundingClientRect();
@@ -44,6 +48,13 @@ export class MouseHandler implements ITerminalHandler {
       // clamp to terminal bounds
       if (col < 1) col = 1; else if (col > cols) col = cols;
       if (row < 1) row = 1; else if (row > rows) row = rows;
+
+      if (this._lastCol === col && this._lastRow === row) {
+        return;
+      }
+
+      this._lastCol = col;
+      this._lastRow = row;
 
       const buffer = this._terminal.buffer.active as any;
       const absRow = (buffer.viewportY ?? 0) + (row - 1);

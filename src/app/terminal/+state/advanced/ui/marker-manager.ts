@@ -32,7 +32,7 @@ export class MarkerManager implements IDisposable {
         if (!this._terminal) return;
 
         const buffer = this._terminal.buffer.active;
-        const viewportStart = buffer.viewportY;
+        const viewportStart = buffer.viewportY - 1;
         const viewportEnd = viewportStart + this._terminal.rows - 1; // inclusive
 
         // Sichtbarkeit der Commands strikt auf den aktuellen Viewport setzen
@@ -80,32 +80,35 @@ export class MarkerManager implements IDisposable {
     private updateViewportVisibility(viewportStart: number, viewportEnd: number) {
         if (!this._terminal) return;
         const buffer = this._terminal.buffer.active;
-
         const visibleCommandIndices = new Set<number>();
+        let isCommandOnFirstLine = false;
         for (let i = viewportStart; i <= viewportEnd; i++) {
             const line = buffer.getLine(i);
             if (!line) continue;
             const text = line.translateToString();
             const match = text.match(/^\^\^#(\d+)/);
             if (!match) continue;
+            isCommandOnFirstLine = i === viewportStart;
             const commandId = match[1];
             const idx = this.findCommandIndex(commandId);
             if (idx >= 0) visibleCommandIndices.add(idx);
         }
 
-        // Finde den ersten Command oberhalb des Viewports
         let firstCommandOutOfViewportIdx = -1;
-        for (let i = viewportStart - 1; i >= 0; i--) {
-            const line = buffer.getLine(i);
-            if (!line) continue;
-            const text = line.translateToString();
-            const match = text.match(/^\^\^#(\d+)/);
-            if (!match) continue;
-            const commandId = match[1];
-            const idx = this.findCommandIndex(commandId);
-            if (idx >= 0) {
-                firstCommandOutOfViewportIdx = idx;
-                break;
+        if(!isCommandOnFirstLine) {
+            // Finde den ersten Command oberhalb des Viewports
+            for (let i = viewportStart - 1; i >= 0; i--) {
+                const line = buffer.getLine(i);
+                if (!line) continue;
+                const text = line.translateToString();
+                const match = text.match(/^\^\^#(\d+)/);
+                if (!match) continue;
+                const commandId = match[1];
+                const idx = this.findCommandIndex(commandId);
+                if (idx >= 0) {
+                    firstCommandOutOfViewportIdx = idx;
+                    break;
+                }
             }
         }
 

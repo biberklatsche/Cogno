@@ -10,7 +10,7 @@ import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
 import {FocusActiveTerminalAction} from "../+bus/actions";
-import {TerminalTitleChangedEvent} from "../../terminal/+state/handler/terminal-title.handler";
+import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal/+bus/events";
 
 
 @Injectable({providedIn: 'root'})
@@ -46,6 +46,13 @@ export class GridListService {
             let tabId = this.determineTabId(gridList, event.payload?.terminalId);
             if(!tabId || !event.payload?.title) return;
             this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.title}});
+        });
+
+        this.bus.onType$('TerminalCwdChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalCwdChangedEvent) => {
+            const gridList = this._gridList.value;
+            let tabId = this.determineTabId(gridList, event.payload?.terminalId);
+            if(!tabId || !event.payload?.cwd) return;
+            this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.cwd}});
         });
 
         this.bus.onType$('FocusActiveTerminal').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: FocusActiveTerminalAction) => {

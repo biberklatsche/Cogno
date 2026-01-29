@@ -174,7 +174,6 @@ export class TerminalStateManager {
             lastCommand.setData(data);
         }
         const command = new Command(id, directory, machine, user);
-        console.log('####push', command);
         commands.push(command);
         this._historySubject.next(commands);
     }
@@ -185,5 +184,10 @@ export class TerminalStateManager {
 
     updateCwd(cwd: string) {
         this.updateState({cwd});
+        this._bus.publish({
+            path: ['app', 'terminal', this._stateSubject.value.terminalId],
+            payload: {cwd: this._stateSubject.value.cwd, terminalId: this._stateSubject.value.terminalId},
+            type: 'TerminalCwdChanged'
+        });
     }
 }

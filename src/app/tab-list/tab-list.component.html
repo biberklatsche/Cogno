@@ -13,7 +13,6 @@
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
-            <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
             @if (showRename()===tab.id) {
                 <input class="inline-input"
                     #renameInput
