@@ -5,11 +5,10 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-    input, ViewEncapsulation, ChangeDetectorRef, ChangeDetectionStrategy, ApplicationRef, effect
+    input, ViewEncapsulation, ChangeDetectionStrategy
 } from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {TerminalHeaderComponent} from "./header/terminal-header.component";
-import {AppBus} from "../app-bus/app-bus";
 import {TerminalId} from "../grid-list/+model/model";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
@@ -34,17 +33,13 @@ import {TerminalStateManager} from "./+state/state";
 export class TerminalComponent implements OnInit, AfterViewInit {
     @ViewChild('terminalContainer', {static: true}) terminalContainer!: ElementRef<HTMLDivElement>;
 
-    readonly terminalState = this.stateManager.state;
-    readonly history = this.stateManager.commands;
-
     terminalId = input.required<TerminalId>();
     shellProfile = input.required<ShellProfile>();
 
     constructor(
         private destroyRef: DestroyRef,
         private menu: ContextMenuOverlayService,
-        private terminalSession: TerminalSession,
-        private stateManager: TerminalStateManager
+        private terminalSession: TerminalSession
     ) {
     }
 

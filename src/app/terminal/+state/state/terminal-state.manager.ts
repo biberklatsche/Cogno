@@ -1,5 +1,5 @@
 import {ShellType} from "../../../config/+models/config";
-import {debounceTime, Observable, skip} from 'rxjs';
+import {debounceTime, skip} from 'rxjs';
 import {AppBus} from "../../../app-bus/app-bus";
 import {
     INITIAL_STATE,
@@ -12,6 +12,7 @@ import {
 import {Command} from "./command.model";
 import {Injectable, signal, WritableSignal, Signal, computed} from "@angular/core";
 import {toObservable} from "@angular/core/rxjs-interop";
+import {TerminalId} from '../../../grid-list/+model/model';
 
 @Injectable()
 export class TerminalStateManager {
@@ -109,7 +110,7 @@ export class TerminalStateManager {
         this.updateState({ input: input });
     }
 
-    get terminalId(): Signal<string> {
+    get terminalId(): Signal<TerminalId> {
         return computed(() => this._stateSubject().terminalId);
     }
     get shellType(): Signal<ShellType | undefined> {

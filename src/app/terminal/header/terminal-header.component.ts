@@ -1,5 +1,5 @@
 import {Component, input, computed, Signal} from '@angular/core';
-import {Command, TerminalState} from '../+state/state';
+import {Command, TerminalState, TerminalStateManager} from '../+state/state';
 import {TerminalId} from "../../grid-list/+model/model";
 
 @Component({
@@ -28,21 +28,15 @@ import {TerminalId} from "../../grid-list/+model/model";
   `
 })
 export class TerminalHeaderComponent {
-  terminalState  = input.required<TerminalState>();
-  history  = input.required<Command[]>();
 
-  constructor() {
+  constructor(private stateManager: TerminalStateManager) {
   }
 
-  commandOutOfView: Signal<Command | undefined> = computed(() => {
-    return this.history().find(s => s.isFirstCommandOutOfViewport);
-  });
+  commandOutOfView = computed(() => this.stateManager.commands().find(s => s.isFirstCommandOutOfViewport));
 
-  terminalId: Signal<TerminalId | undefined> = computed(() => {
-    return this.terminalState().terminalId;
-  });
+  terminalId = this.stateManager.terminalId;
 
-  cwd: Signal<TerminalId | undefined> = computed(() => {
-    return this.terminalState().cwd;
+  cwd: Signal<string | undefined> = computed(() => {
+    return this.stateManager.state().cwd;
   });
 }

@@ -14,10 +14,11 @@ export class ShellConfigurator {
 
         // Stable sort order preference
         const weight: Record<ShellType, number> = {
-            GitBash: 1,
-            PowerShell: 2,
-            ZSH: 3,
-            Bash: 4,
+            Fish: 1,
+            GitBash: 2,
+            PowerShell: 3,
+            ZSH: 4,
+            Bash: 5,
         };
 
         const sortedShells = installedShells.sort((a, b) => {
