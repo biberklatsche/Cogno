@@ -14,7 +14,7 @@ import {
     TerminalState,
     TerminalMousePosition,
     TerminalStateManager
-} from '../../terminal/state';
+} from '../../terminal/+state/state';
 
 export type TerminalIdentifier = { terminalId: string };
 export type GlobalMousePosition = { x: number; y: number };

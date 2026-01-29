@@ -5,7 +5,7 @@ import {
 } from "../+state/inspector.service";
 import {TerminalId} from "../../grid-list/+model/model";
 import {Keybinding} from "../../config/+models/config";
-import {TerminalState} from '../../terminal/state';
+import {TerminalState} from '../../terminal/+state/state';
 import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 
 @Component({

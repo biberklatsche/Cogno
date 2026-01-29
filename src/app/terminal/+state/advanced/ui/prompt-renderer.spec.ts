@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PromptMarkerRenderer } from './prompt-renderer';
-import { TerminalStateManager } from '../../../state';
+import { TerminalStateManager } from '../../state';
 import { PromptSegment } from '../../../../config/+models/prompt-config';
 import { AppBus } from '../../../../app-bus/app-bus';
 

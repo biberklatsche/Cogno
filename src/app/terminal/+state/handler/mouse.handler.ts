@@ -1,7 +1,7 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {TerminalStateManager} from "../../state";
+import {TerminalStateManager} from "../state";
 
 /**
  * Publishes inspector events with the current terminal cell (col,row)

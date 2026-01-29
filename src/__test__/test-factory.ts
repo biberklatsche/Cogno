@@ -13,7 +13,7 @@ import {WindowService} from "../app/window/window.service";
 import {FocusHandler} from "../app/terminal/+state/handler/focus.handler";
 import {SelectionHandler} from "../app/terminal/+state/handler/selection.handler";
 import {TerminalId} from "../app/grid-list/+model/model";
-import {TerminalStateManager} from "../app/terminal/state";
+import {TerminalStateManager} from "../app/terminal/+state/state";
 import {ShellType} from "../app/config/+models/config";
 
 let appBus: AppBus | undefined;

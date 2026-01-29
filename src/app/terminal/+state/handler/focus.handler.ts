@@ -4,7 +4,7 @@ import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
-import {TerminalStateManager} from "../../state";
+import {TerminalStateManager} from "../state";
 
 export type TerminalFocusedEvent = MessageBase<"TerminalFocused", TerminalId>;
 export type TerminalBlurredEvent = MessageBase<"TerminalBlurred", TerminalId>;

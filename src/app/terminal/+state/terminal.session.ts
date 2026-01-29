@@ -21,7 +21,7 @@ import {CursorHandler} from "./handler/cursor.handler";
 import {ScriptInjector} from "./advanced/script.injector";
 import {PathInjector} from "./advanced/path.injector";
 import {CommandLineObserver} from "./advanced/command-line.observer";
-import {Command, TerminalState, TerminalStateManager} from "../state";
+import {Command, TerminalState, TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";

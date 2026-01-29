@@ -1,6 +1,6 @@
-import {ShellType} from "../../config/+models/config";
+import {ShellType} from "../../../config/+models/config";
 import {BehaviorSubject, debounceTime, Observable, skip} from 'rxjs';
-import {AppBus} from "../../app-bus/app-bus";
+import {AppBus} from "../../../app-bus/app-bus";
 import {
     INITIAL_STATE,
     TerminalCursorPosition,

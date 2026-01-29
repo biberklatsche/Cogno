@@ -1,7 +1,7 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {TerminalStateManager} from "../../state";
+import {TerminalStateManager} from "../state";
 
 export class CursorHandler implements ITerminalHandler {
     private _cursorListener?: IDisposable;

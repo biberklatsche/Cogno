@@ -5,7 +5,7 @@ import {IDisposable} from '../../../common/models/models';
 import {AppBus} from '../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
 import {IPty} from '../pty/pty';
-import {TerminalStateManager} from "../../state";
+import {TerminalStateManager} from "../state";
 import {Clipboard} from "../../../_tauri/clipboard";
 
 export class CommandLineEditor implements ITerminalHandler  {

@@ -5,7 +5,7 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-    input, ViewEncapsulation, ChangeDetectorRef, ChangeDetectionStrategy
+    input, ViewEncapsulation, ChangeDetectorRef, ChangeDetectionStrategy, ApplicationRef
 } from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {TerminalHeaderComponent} from "./header/terminal-header.component";
@@ -14,7 +14,7 @@ import {TerminalId} from "../grid-list/+model/model";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 import {ShellProfile} from "../config/+models/shell-config";
-import {INITIAL_STATE, TerminalStateManager} from "./state";
+import {INITIAL_STATE, TerminalStateManager} from "./+state/state";
 import {toSignal} from "@angular/core/rxjs-interop";
 import {animationFrameScheduler, auditTime, tap} from "rxjs";
 
@@ -40,7 +40,9 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         this.stateManager.state$.pipe(
             auditTime(0, animationFrameScheduler),
             tap(() => {
-                this.ch.detectChanges();
+                this.ch.markForCheck();
+                this.appRef.tick();
+                //this.ch.detectChanges();
             })
         ),
         { initialValue: INITIAL_STATE }
@@ -50,7 +52,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         this.stateManager.commands$.pipe(
             auditTime(0, animationFrameScheduler),
             tap(() => {
-                this.ch.detectChanges();
+                //this.ch.detectChanges();
             })
         ),
         { initialValue: [] }
@@ -63,6 +65,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     constructor(
         private destroyRef: DestroyRef,
         private ch: ChangeDetectorRef,
+        private appRef: ApplicationRef,
         private menu: ContextMenuOverlayService,
         private terminalSession: TerminalSession,
         private stateManager: TerminalStateManager

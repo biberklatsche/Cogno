@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MarkerManager } from './marker-manager';
 import { AppBus } from '../../../../app-bus/app-bus';
 import { TerminalMockFactory } from '../../../../../__test__/mocks/terminal-mock.factory';
-import {TerminalStateManager} from "../../../state";
+import {TerminalStateManager} from "../../state";
 
 describe('MarkerManager', () => {
     let markerManager: MarkerManager;

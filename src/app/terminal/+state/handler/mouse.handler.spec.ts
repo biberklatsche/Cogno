@@ -3,7 +3,7 @@ import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.fa
 import { MouseHandler } from './mouse.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
-import { TerminalStateManager } from '../../state';
+import { TerminalStateManager } from '../state';
 
 describe('MouseHandler', () => {
   let handler: MouseHandler;

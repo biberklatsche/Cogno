@@ -1,5 +1,5 @@
 import {Component, input, computed, Signal} from '@angular/core';
-import {Command, TerminalState} from '../state';
+import {Command, TerminalState} from '../+state/state';
 import {TerminalId} from "../../grid-list/+model/model";
 
 @Component({

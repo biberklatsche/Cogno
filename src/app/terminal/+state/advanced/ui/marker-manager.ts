@@ -2,7 +2,7 @@ import { Terminal, IDecoration } from '@xterm/xterm';
 import { IDisposable } from '../../../../common/models/models';
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
-import {TerminalStateManager} from "../../../state";
+import {TerminalStateManager} from "../../state";
 
 
 type LineIndex = number;

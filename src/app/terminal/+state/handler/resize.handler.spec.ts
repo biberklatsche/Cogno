@@ -5,7 +5,7 @@ import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { IPty } from '../pty/pty';
 import { FitAddon } from '@xterm/addon-fit';
-import { TerminalStateManager } from '../../state';
+import { TerminalStateManager } from '../state';
 
 describe('ResizeHandler', () => {
   let handler: ResizeHandler;

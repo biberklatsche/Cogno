@@ -1,4 +1,4 @@
-import {ShellType} from "../../config/+models/config";
+import {ShellType} from "../../../config/+models/config";
 
 export type Position = { col: number, row: number };
 export type TerminalCursorPosition = Position & {

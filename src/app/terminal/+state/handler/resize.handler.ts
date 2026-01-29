@@ -6,7 +6,7 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {IDisposable} from "../../../common/models/models";
-import {TerminalStateManager} from "../../state";
+import {TerminalStateManager} from "../state";
 
 export type TerminalDimensions = { rows: number; cols: number };
 

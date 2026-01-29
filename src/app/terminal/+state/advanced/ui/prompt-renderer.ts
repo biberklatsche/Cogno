@@ -1,6 +1,6 @@
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import {timespan} from "../../../../common/timespan/timespan.pipe";
-import {TerminalStateManager} from "../../../state";
+import {TerminalStateManager} from "../../state";
 
 type PromptRecord = {
     label?: string;

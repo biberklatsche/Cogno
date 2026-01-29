@@ -2,7 +2,7 @@ import {ITerminalHandler} from "../handler/handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
-import {TerminalStateManager} from "../../state";
+import {TerminalStateManager} from "../state";
 import OscParser from "./cogno-osc.parser";
 import {MarkerManager} from "./ui/marker-manager";
 import {Config} from "../../../config/+models/config";
