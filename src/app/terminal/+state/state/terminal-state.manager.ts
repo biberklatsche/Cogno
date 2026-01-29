@@ -1,5 +1,5 @@
 import {ShellType} from "../../../config/+models/config";
-import {debounceTime, skip} from 'rxjs';
+import {BehaviorSubject, debounceTime, map, Observable, skip} from 'rxjs';
 import {AppBus} from "../../../app-bus/app-bus";
 import {
     INITIAL_STATE,
@@ -10,22 +10,21 @@ import {
     TerminalState
 } from "./terminal.state";
 import {Command} from "./command.model";
-import {Injectable, signal, WritableSignal, Signal, computed} from "@angular/core";
-import {toObservable} from "@angular/core/rxjs-interop";
+import {Injectable} from "@angular/core";
 import {TerminalId} from '../../../grid-list/+model/model';
 
 @Injectable()
 export class TerminalStateManager {
-    private readonly _stateSubject: WritableSignal<TerminalState>;
-    private readonly _historySubject: WritableSignal<Command[]>;
+    private readonly _stateSubject: BehaviorSubject<TerminalState>;
+    private readonly _historySubject: BehaviorSubject<Command[]>;
 
     constructor(
         private _bus: AppBus
     ) {
-        this._stateSubject = signal<TerminalState>(INITIAL_STATE);
-        this._historySubject = signal<Command[]>([]);
+        this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
+        this._historySubject = new BehaviorSubject<Command[]>([]);
         
-        toObservable(this._stateSubject).pipe(
+        this._stateSubject.pipe(
             skip(1), // Initialen State ignorieren
             debounceTime(0) // Damit multiple Änderungen in einem Frame zusammengefasst werden
         ).subscribe((state) => {
@@ -38,51 +37,72 @@ export class TerminalStateManager {
     }
 
     initialize(terminalId: string, shellType: ShellType): void {
-        this._stateSubject.update(s => ({...s, terminalId, shellType}));
+        this.updateState({terminalId, shellType});
     }
 
     private updateState(updates: Partial<TerminalState>): void {
-        this._stateSubject.update(s => ({
-            ...s,
+        this._stateSubject.next({
+            ...this._stateSubject.value,
             ...updates
-        }));
+        });
     }
 
-    get state(): Signal<TerminalState> {
-        return this._stateSubject.asReadonly();
+    get state$(): Observable<TerminalState> {
+        return this._stateSubject.asObservable();
     }
 
-    get cursorPosition(): Signal<TerminalCursorPosition> {
-        return computed(() => this._stateSubject().cursorPosition);
+    get state(): TerminalState {
+        return this._stateSubject.value;
     }
+
+    get cursorPosition$(): Observable<TerminalCursorPosition> {
+        return this._stateSubject.pipe(map(s => s.cursorPosition));
+    }
+
+    get cursorPosition(): TerminalCursorPosition {
+        return this._stateSubject.value.cursorPosition;
+    }
+
     updateCursorPosition(position: TerminalCursorPosition): void {
         this.updateState({ cursorPosition: position });
     }
 
-    get mousePosition(): Signal<TerminalMousePosition> {
-        return computed(() => this._stateSubject().mousePosition);
+    get mousePosition(): TerminalMousePosition {
+        return this._stateSubject.value.mousePosition;
     }
+
     updateMousePosition(position: TerminalMousePosition): void {
         this.updateState({ mousePosition: position });
     }
 
-    get dimensions(): Signal<TerminalDimensions> {
-        return computed(() => this._stateSubject().dimensions);
+    get dimensions(): TerminalDimensions {
+        return this._stateSubject.value.dimensions;
     }
+
     updateDimensions(dimensions: TerminalDimensions): void {
         this.updateState({ dimensions: dimensions });
     }
 
-    get isFocused(): Signal<boolean> {
-        return computed(() => this._stateSubject().isFocused);
+    get isFocused(): boolean {
+        return this._stateSubject.value.isFocused;
     }
+
+    get isFocused$(): Observable<boolean> {
+        return this._stateSubject.pipe(map(s => s.isFocused));
+    }
+
     setFocus(focused: boolean): void {
         this.updateState({ isFocused: focused });
     }
 
-    get isCommandRunning(): Signal<boolean> {
-        return computed(() => this._stateSubject().isCommandRunning);
+    get isCommandRunning(): boolean {
+        return this._stateSubject.value.isCommandRunning;
     }
+
+    get isCommandRunning$(): Observable<boolean> {
+        return this._stateSubject.pipe(map(s => s.isCommandRunning))
+    }
+
     startCommand(): void {
         console.log("#####Starte Command!");
         this.updateState({
@@ -99,26 +119,36 @@ export class TerminalStateManager {
     }
 
     getCommandDuration(): number | undefined {
-        const startTime = this._stateSubject().commandStartTime;
+        const startTime = this._stateSubject.value.commandStartTime;
         return startTime !== undefined ? Date.now() - startTime : undefined;
     }
 
-    get input(): Signal<TerminalInput> {
-        return computed(() => this._stateSubject().input);
+    get input(): TerminalInput {
+        return this._stateSubject.value.input;
     }
+
+    get input$(): Observable<TerminalInput> {
+        return this._stateSubject.pipe(map(s => s.input));
+    }
+
     updateInput(input: TerminalInput): void {
         this.updateState({ input: input });
     }
 
-    get terminalId(): Signal<TerminalId> {
-        return computed(() => this._stateSubject().terminalId);
-    }
-    get shellType(): Signal<ShellType | undefined> {
-        return computed(() => this._stateSubject().shellType);
+    get terminalId(): TerminalId {
+        return this._stateSubject.value.terminalId;
     }
 
-    get commands(): Signal<Command[]> {
-        return this._historySubject.asReadonly();
+    get shellType(): ShellType | undefined {
+        return this._stateSubject.value.shellType;
+    }
+
+    get commands(): Command[] {
+        return this._historySubject.value;
+    }
+
+    get commands$(): Observable<Command[]> {
+        return this._historySubject.asObservable();
     }
 
     updateCommandList(data: Record<string, string>): void {
@@ -128,10 +158,10 @@ export class TerminalStateManager {
         const machine = data['machine'];
 
         // Check if command already exists
-        if ( this._historySubject().find(c => c.id === id)) {
+        if ( this._historySubject.value.find(c => c.id === id)) {
             return;
         }
-        const commands = [...this._historySubject()];
+        const commands = [...this._historySubject.value];
         
         // Update previous command if exists
         if (commands.length > 0) {
@@ -146,14 +176,14 @@ export class TerminalStateManager {
         const command = new Command(id, directory, machine, user);
         console.log('####push', command);
         commands.push(command);
-        this._historySubject.set(commands);
+        this._historySubject.next(commands);
     }
 
     updateCommands(commands: Command[]) {
-        this._historySubject.set(commands);
+        this._historySubject.next(commands);
     }
 
     updateCwd(cwd: string) {
-        this._stateSubject.update(s => ({...s, cwd}));
+        this.updateState({cwd});
     }
 }

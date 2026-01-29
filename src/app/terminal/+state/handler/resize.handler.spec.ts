@@ -20,7 +20,9 @@ describe('ResizeHandler', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockBus = new AppBus();
-    stateManager = new TerminalStateManager(terminalId, 'Bash', mockBus);
+    vi.spyOn(mockBus, 'publish');
+    stateManager = new TerminalStateManager(mockBus);
+    stateManager.initialize(terminalId, 'Bash');
     mockPty = {
       resize: vi.fn().mockResolvedValue(undefined),
     } as unknown as IPty;
@@ -96,7 +98,8 @@ describe('ResizeHandler', () => {
 
       handler.resize();
 
-      expect(stateManager.dimensions()).toEqual({ cols: 100, rows: 30 });
+      expect(stateManager.dimensions.cols).toBe(100);
+      expect(stateManager.dimensions.rows).toBe(30);
     });
 
     it('should throw error if terminal does not match proposed dimensions after fit', () => {

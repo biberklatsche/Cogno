@@ -109,7 +109,7 @@ export class MarkerManager implements IDisposable {
             }
         }
 
-        const commands = [...this.stateManager.commands()];
+        const commands = [...this.stateManager.commands];
         for (let idx = 0; idx < commands.length; idx++) {
             commands[idx].isInViewport = visibleCommandIndices.has(idx);
             commands[idx].isFirstCommandOutOfViewport = (idx === firstCommandOutOfViewportIdx);
@@ -155,7 +155,7 @@ export class MarkerManager implements IDisposable {
     }
 
     private findCommandIndex(commandId: string | undefined): number {
-        return this.stateManager.commands().findIndex(c => c.id === commandId);
+        return this.stateManager.commands.findIndex(c => c.id === commandId);
     }
 
     dispose() {

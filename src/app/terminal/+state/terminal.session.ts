@@ -24,7 +24,7 @@ import {CommandLineObserver} from "./advanced/command-line.observer";
 import {Command, TerminalState, TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
-import {Injectable, Signal} from "@angular/core";
+import {Injectable} from "@angular/core";
 
 @Injectable()
 export class TerminalSession {
@@ -141,13 +141,5 @@ export class TerminalSession {
 
     focus(): void{
         this.focusHandler?.focus();
-    }
-
-    get state(): Signal<TerminalState> {
-        return this.stateManager.state;
-    }
-
-    get history(): Signal<Command[]> {
-        return this.stateManager.commands;
     }
 }

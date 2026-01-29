@@ -11,7 +11,9 @@ describe('MarkerManager', () => {
 
     beforeEach(() => {
         const mockBus = new AppBus();
-        stateManager = new TerminalStateManager('test-id', 'Bash' as any, mockBus);
+        vi.spyOn(mockBus, 'publish');
+        stateManager = new TerminalStateManager(mockBus);
+        stateManager.initialize('test-id', 'Bash' as any);
         markerManager = new MarkerManager(stateManager, []);
         mockTerminal = TerminalMockFactory.createTerminal();
         mockTerminal.registerMarker = vi.fn().mockReturnValue({ dispose: vi.fn(), line: 0 });

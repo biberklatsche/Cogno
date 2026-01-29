@@ -75,6 +75,6 @@ export class FocusHandler implements ITerminalHandler {
     }
 
     hasFocus() {
-        return this.stateManager.isFocused();
+        return this.stateManager.isFocused;
     }
 }

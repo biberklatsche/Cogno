@@ -23,4 +23,8 @@ export class ConfigServiceMock extends ConfigService {
 
     setConfig(config: Config) {this._config$.next(config);}
 
+    getPromptSegments(): any[] {
+        return [];
+    }
+
 }

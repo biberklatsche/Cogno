@@ -10,8 +10,10 @@ describe('PromptMarkerRenderer', () => {
     let hostElement: HTMLElement;
 
     beforeEach(() => {
-        busMock = { publish: vi.fn() } as unknown as AppBus;
-        stateManager = new TerminalStateManager('test-term', 'Bash', busMock);
+        busMock = new AppBus();
+        vi.spyOn(busMock, 'publish');
+        stateManager = new TerminalStateManager(busMock);
+        stateManager.initialize('test-term', 'Bash' as any);
         hostElement = document.createElement('div');
     });
 
@@ -117,7 +119,7 @@ describe('PromptMarkerRenderer', () => {
         // Thus returnCode is missing!
         
         // We need to make it NOT the last command by giving it a command text
-        stateManager.commands()[0].set('command', 'ls');
+        stateManager.commands[0].set('command', 'ls');
 
         renderer.render(hostElement, 0);
         expect(hostElement.textContent).toBe('OK');

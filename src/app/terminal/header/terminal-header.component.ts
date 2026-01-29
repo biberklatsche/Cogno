@@ -1,6 +1,7 @@
-import {Component, input, computed, Signal} from '@angular/core';
-import {Command, TerminalState, TerminalStateManager} from '../+state/state';
-import {TerminalId} from "../../grid-list/+model/model";
+import {Component} from '@angular/core';
+import {TerminalStateManager} from '../+state/state';
+import {toSignal} from "@angular/core/rxjs-interop";
+import {map, Observable} from "rxjs";
 
 @Component({
   selector: 'app-terminal-header',
@@ -32,11 +33,15 @@ export class TerminalHeaderComponent {
   constructor(private stateManager: TerminalStateManager) {
   }
 
-  commandOutOfView = computed(() => this.stateManager.commands().find(s => s.isFirstCommandOutOfViewport));
+  commandOutOfView = toSignal(this.stateManager.commands$.pipe(
+      map(commands => commands.find(s => s.isFirstCommandOutOfViewport))
+  ));
 
-  terminalId = this.stateManager.terminalId;
+  terminalId = toSignal(this.stateManager.state$.pipe(
+      map(state => state.terminalId)
+  ));
 
-  cwd: Signal<string | undefined> = computed(() => {
-    return this.stateManager.state().cwd;
-  });
+  cwd = toSignal(this.stateManager.state$.pipe(
+      map(state => state.cwd)
+  ));
 }

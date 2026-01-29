@@ -15,6 +15,7 @@ import {SelectionHandler} from "../app/terminal/+state/handler/selection.handler
 import {TerminalId} from "../app/grid-list/+model/model";
 import {TerminalStateManager} from "../app/terminal/+state/state";
 import {ShellType} from "../app/config/+models/config";
+import {TerminalSession} from "../app/terminal/+state/terminal.session";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -29,15 +30,17 @@ let windowService: WindowService | undefined;
 let focusHandler: FocusHandler | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let stateManager: TerminalStateManager | undefined;
+let terminalSession: TerminalSession | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
     return appBus;
 }
 
-export function getStateManager(terminalId: TerminalId = 'test-terminal'): TerminalStateManager {
+export function getStateManager(): TerminalStateManager {
     if(!stateManager) {
-        stateManager = new TerminalStateManager(terminalId, 'Bash', getAppBus());
+        stateManager = new TerminalStateManager(getAppBus());
+        stateManager.initialize('test-terminal', 'Bash' as any);
     }
     return stateManager;
 }
@@ -45,6 +48,13 @@ export function getStateManager(terminalId: TerminalId = 'test-terminal'): Termi
 export function getSideMenuService(): SideMenuService {
     if(!sideMenuService) sideMenuService = new SideMenuService(getAppBus());
     return sideMenuService;
+}
+
+export function getTerminalSession(): TerminalSession {
+    if(!terminalSession) {
+        terminalSession = new TerminalSession(getConfigService(), getAppBus(), getStateManager());
+    }
+    return terminalSession;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -128,7 +138,7 @@ export function getWindowService(): WindowService {
 
 export function getFocusHandler(terminalId: TerminalId): FocusHandler {
     if(!focusHandler) {
-        focusHandler = new FocusHandler(terminalId, getAppBus(), getStateManager(terminalId));
+        focusHandler = new FocusHandler(terminalId, getAppBus(), getStateManager());
     }
     return focusHandler;
 }
