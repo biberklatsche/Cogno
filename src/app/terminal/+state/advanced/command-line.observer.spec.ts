@@ -31,11 +31,11 @@ describe('CommandLineObserver', () => {
 
     stateManager.endCommand();
     onKeyCallback({ key: '\r', domEvent: {} as any });
-    expect(stateManager.isCommandRunning).toBe(true);
+    expect(stateManager.isCommandRunning()).toBe(true);
 
     stateManager.endCommand();
     onKeyCallback({ key: '\n', domEvent: {} as any });
-    expect(stateManager.isCommandRunning).toBe(true);
+    expect(stateManager.isCommandRunning()).toBe(true);
   });
 
   it('should update sessionState.input when terminal is parsed and command is not running', () => {
@@ -59,7 +59,7 @@ describe('CommandLineObserver', () => {
 
     onWriteParsedCallback();
 
-    expect(stateManager.input.text).toBe('ls -la');
+    expect(stateManager.input().text).toBe('ls -la');
   });
 
   it('should NOT update sessionState.input when command is running', () => {
@@ -71,7 +71,7 @@ describe('CommandLineObserver', () => {
 
     onWriteParsedCallback();
 
-    expect(stateManager.input.text).toBe('old input');
+    expect(stateManager.input().text).toBe('old input');
   });
 
   it('should NOT update cursorIndex when command is running', () => {
@@ -83,7 +83,7 @@ describe('CommandLineObserver', () => {
 
     onCursorMoveCallback();
 
-    expect(stateManager.input.cursorIndex).toBe(10);
+    expect(stateManager.input().cursorIndex).toBe(10);
   });
 
   it('should NOT refresh markers on render when command is running', () => {
@@ -156,14 +156,14 @@ describe('CommandLineObserver', () => {
     const data = 'COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air;directory=/Users/lars;id=8;command=ls;';
     const result = oscHandler(data);
 
-    expect(stateManager.isCommandRunning).toBe(false);
+    expect(stateManager.isCommandRunning()).toBe(false);
     expect(result).toBe(true);
-    expect(stateManager.commands.length).toBe(2);
-    expect(stateManager.commands[0].command).toBe('ls');
-    expect(stateManager.commands[0].directory).toBe('/Users/lars');
-    expect(stateManager.commands[0].returnCode).toBe(0);
-    expect(stateManager.commands[0].id).toBe('7');
-    expect(stateManager.commands[0].user).toBe('larswolfram');
+    expect(stateManager.commands().length).toBe(2);
+    expect(stateManager.commands()[0].command).toBe('ls');
+    expect(stateManager.commands()[0].directory).toBe('/Users/lars');
+    expect(stateManager.commands()[0].returnCode).toBe(0);
+    expect(stateManager.commands()[0].id).toBe('7');
+    expect(stateManager.commands()[0].user).toBe('larswolfram');
   });
 
   it('should dispose registered OSC handler', () => {

@@ -117,7 +117,7 @@ describe('PromptMarkerRenderer', () => {
         // Thus returnCode is missing!
         
         // We need to make it NOT the last command by giving it a command text
-        stateManager.commands[0].set('command', 'ls');
+        stateManager.commands()[0].set('command', 'ls');
 
         renderer.render(hostElement, 0);
         expect(hostElement.textContent).toBe('OK');

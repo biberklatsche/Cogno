@@ -96,7 +96,7 @@ describe('ResizeHandler', () => {
 
       handler.resize();
 
-      expect(stateManager.dimensions).toEqual({ cols: 100, rows: 30 });
+      expect(stateManager.dimensions()).toEqual({ cols: 100, rows: 30 });
     });
 
     it('should throw error if terminal does not match proposed dimensions after fit', () => {

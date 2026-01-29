@@ -113,7 +113,7 @@ export class PromptMarkerRenderer {
     }
 
     private createCommandRecord(index: number): PromptRecord {
-        const command = this.stateManager.commands[index];
+        const command = this.stateManager.commands()[index];
 
         if (!command) {
             return this.createDefaultRecord();

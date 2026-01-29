@@ -5,7 +5,7 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-    input, ViewEncapsulation, ChangeDetectorRef, ChangeDetectionStrategy, ApplicationRef
+    input, ViewEncapsulation, ChangeDetectorRef, ChangeDetectionStrategy, ApplicationRef, effect
 } from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {TerminalHeaderComponent} from "./header/terminal-header.component";
@@ -14,9 +14,7 @@ import {TerminalId} from "../grid-list/+model/model";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 import {ShellProfile} from "../config/+models/shell-config";
-import {INITIAL_STATE, TerminalStateManager} from "./+state/state";
-import {toSignal} from "@angular/core/rxjs-interop";
-import {animationFrameScheduler, auditTime, tap} from "rxjs";
+import {TerminalStateManager} from "./+state/state";
 
 @Component({
     selector: 'app-terminal',
@@ -36,36 +34,14 @@ import {animationFrameScheduler, auditTime, tap} from "rxjs";
 export class TerminalComponent implements OnInit, AfterViewInit {
     @ViewChild('terminalContainer', {static: true}) terminalContainer!: ElementRef<HTMLDivElement>;
 
-    readonly terminalState = toSignal(
-        this.stateManager.state$.pipe(
-            auditTime(0, animationFrameScheduler),
-            tap(() => {
-                this.ch.markForCheck();
-                this.appRef.tick();
-                //this.ch.detectChanges();
-            })
-        ),
-        { initialValue: INITIAL_STATE }
-    );
-
-    readonly history = toSignal(
-        this.stateManager.commands$.pipe(
-            auditTime(0, animationFrameScheduler),
-            tap(() => {
-                //this.ch.detectChanges();
-            })
-        ),
-        { initialValue: [] }
-    );
-
+    readonly terminalState = this.stateManager.state;
+    readonly history = this.stateManager.commands;
 
     terminalId = input.required<TerminalId>();
     shellProfile = input.required<ShellProfile>();
 
     constructor(
         private destroyRef: DestroyRef,
-        private ch: ChangeDetectorRef,
-        private appRef: ApplicationRef,
         private menu: ContextMenuOverlayService,
         private terminalSession: TerminalSession,
         private stateManager: TerminalStateManager

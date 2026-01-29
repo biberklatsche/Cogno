@@ -4,7 +4,7 @@ import {
     EnvironmentInjector,
     Type,
     createComponent,
-    ComponentRef
+    ComponentRef, ApplicationRef
 } from '@angular/core';
 import {TerminalComponent} from "../../terminal/terminal.component";
 import {TerminalId} from "../+model/model";
@@ -14,7 +14,7 @@ import {ShellProfile} from "../../config/+models/shell-config";
 export class TerminalComponentFactory {
     private map = new Map<TerminalId, ComponentRef<TerminalComponent>>();
 
-    constructor(private env: EnvironmentInjector, private injector: Injector) {
+    constructor(private env: EnvironmentInjector, private injector: Injector, private appRef: ApplicationRef) {
 
     }
 
@@ -26,6 +26,7 @@ export class TerminalComponentFactory {
                 environmentInjector: this.env,
                 elementInjector: this.injector,
             });
+            this.appRef.attachView(ref.hostView);
             ref.setInput('terminalId', terminalId);
             ref.setInput('shellProfile', shellProfile);
             // one-time change detection for rendering

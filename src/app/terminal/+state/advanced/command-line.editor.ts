@@ -41,7 +41,7 @@ export class CommandLineEditor implements ITerminalHandler  {
                 event.stopPropagation();
                 return false;
             }
-            if (this.stateManager.isCommandRunning) return true;
+            if (this.stateManager.isCommandRunning()) return true;
             if ((event.key === 'Backspace' || event.key === 'Delete') && this._terminal?.hasSelection()) {
                 return !this.deleteSelection();
             }
@@ -69,7 +69,7 @@ export class CommandLineEditor implements ITerminalHandler  {
         Object.entries(actions).forEach(([key, handler]) => {
             const type = key as AppMessage['type'];
             this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type }).subscribe(async event => {
-                if (event.payload !== this.stateManager.terminalId || this.stateManager.isCommandRunning) return;
+                if (event.payload !== this.stateManager.terminalId() || this.stateManager.isCommandRunning()) return;
                 
                 // Reset selection start for non-selection actions
                 if (!type.startsWith('Select')) {
@@ -88,8 +88,9 @@ export class CommandLineEditor implements ITerminalHandler  {
      */
     clearCurrentInput() {
         if(!this._terminal) return;
-        const text = this.stateManager.input.text;
-        const countToEnd = text.length - this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const text = input.text;
+        const countToEnd = text.length - input.cursorIndex;
         this._ptyWrite(this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(text.length));
     }
 
@@ -97,7 +98,8 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Clears the line from the current cursor position to the end.
      */
     clearLineToEnd() {
-        const countToEnd = this.stateManager.input.text.length - this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const countToEnd = input.text.length - input.cursorIndex;
         if (countToEnd > 0) {
             this._ptyWrite(this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(countToEnd));
         }
@@ -107,7 +109,8 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Clears the line from the current cursor position to the start.
      */
     clearLineToStart() {
-        const countToStart = this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const countToStart = input.cursorIndex;
         if (countToStart > 0) {
             this._ptyWrite(String.fromCharCode(8).repeat(countToStart));
         }
@@ -117,10 +120,11 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Deletes the word immediately preceding the cursor.
      */
     deletePreviousWord() {
-        const currentPos = this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
         if (currentPos === 0) return;
 
-        const prevWordStart = this.findPreviousWordStart(this.stateManager.input.text, currentPos);
+        const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
         const countToDelete = currentPos - prevWordStart;
 
         if (countToDelete > 0) {
@@ -132,8 +136,9 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Deletes the word immediately following the cursor.
      */
     deleteNextWord() {
-        const currentPos = this.stateManager.input.cursorIndex;
-        const text = this.stateManager.input.text;
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
+        const text = input.text;
         if (currentPos >= text.length) return;
 
         const nextWordEnd = this.findNextWordEnd(text, currentPos);
@@ -148,8 +153,9 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Moves the cursor to the end of the next word.
      */
     goToNextWord() {
-        const currentPos = this.stateManager.input.cursorIndex;
-        const text = this.stateManager.input.text;
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
+        const text = input.text;
         if (currentPos >= text.length) return;
 
         const nextWordEnd = this.findNextWordEnd(text, currentPos);
@@ -164,10 +170,11 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Moves the cursor to the start of the previous word.
      */
     goToPreviousWord() {
-        const currentPos = this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
         if (currentPos === 0) return;
 
-        const prevWordStart = this.findPreviousWordStart(this.stateManager.input.text, currentPos);
+        const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
         const countToMove = currentPos - prevWordStart;
 
         if (countToMove > 0) {
@@ -193,8 +200,9 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Selects to the end of the next word and moves the cursor.
      */
     selectWordRight() {
-        const currentPos = this.stateManager.input.cursorIndex;
-        const nextWordEnd = this.findNextWordEnd(this.stateManager.input.text, currentPos);
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
+        const nextWordEnd = this.findNextWordEnd(input.text, currentPos);
         const countToMove = nextWordEnd - currentPos;
         if (countToMove > 0) {
             this._selectAndMove(countToMove);
@@ -205,8 +213,9 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Selects to the start of the previous word and moves the cursor.
      */
     selectWordLeft() {
-        const currentPos = this.stateManager.input.cursorIndex;
-        const prevWordStart = this.findPreviousWordStart(this.stateManager.input.text, currentPos);
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
+        const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
         const countToMove = currentPos - prevWordStart;
         if (countToMove > 0) {
             this._selectAndMove(-countToMove);
@@ -217,7 +226,8 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Selects text from the current cursor position to the end of the line.
      */
     selectTextToEndOfLine() {
-        const countToMove = this.stateManager.input.text.length - this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const countToMove = input.text.length - input.cursorIndex;
         if (countToMove > 0) {
             this._selectAndMove(countToMove);
         }
@@ -227,7 +237,8 @@ export class CommandLineEditor implements ITerminalHandler  {
      * Selects text from the current cursor position to the start of the line.
      */
     selectTextToStartOfLine() {
-        const countToMove = this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const countToMove = input.cursorIndex;
         if (countToMove > 0) {
             this._selectAndMove(-countToMove);
         }
@@ -236,8 +247,9 @@ export class CommandLineEditor implements ITerminalHandler  {
     private selectAll() {
         this._clearSelection();
         this._selectionStart = 0;
-        const currentCursorIdx = this.stateManager.input.cursorIndex;
-        const textLength = this.stateManager.input.text.length;
+        const input = this.stateManager.input();
+        const currentCursorIdx = input.cursorIndex;
+        const textLength = input.text.length;
 
         // Move cursor to the end of the line
         const offsetToEnd = textLength - currentCursorIdx;
@@ -295,7 +307,8 @@ export class CommandLineEditor implements ITerminalHandler  {
         const endIdx = (selection.end.y - startInputY) * cols + selection.end.x;
 
         // Check if selection is within input range
-        if (startIdx < 0 || endIdx > this.stateManager.input.maxCursorIndex) {
+        const input = this.stateManager.input();
+        if (startIdx < 0 || endIdx > input.maxCursorIndex) {
             // Selection is at least partially outside of input area
             console.warn('Selection is outside of input area', startIdx, endIdx);
             return false;
@@ -307,7 +320,7 @@ export class CommandLineEditor implements ITerminalHandler  {
             return true;
         }
 
-        const currentCursorIdx = this.stateManager.input.cursorIndex;
+        const currentCursorIdx = input.cursorIndex;
         const cursorOffsetToEnd = endIdx - currentCursorIdx;
 
         // Position cursor at the end of selection, then delete back
@@ -354,7 +367,8 @@ export class CommandLineEditor implements ITerminalHandler  {
         }
         if (!this._terminal.buffer.active) return;
 
-        const currentPos = this.stateManager.input.cursorIndex;
+        const input = this.stateManager.input();
+        const currentPos = input.cursorIndex;
 
         if (this._selectionStart === null) {
             // If no internal selection is active, check if there is an external one
@@ -381,7 +395,7 @@ export class CommandLineEditor implements ITerminalHandler  {
             }
         }
 
-        const newPos = Math.max(0, Math.min(this.stateManager.input.text.length, currentPos + count));
+        const newPos = Math.max(0, Math.min(input.text.length, currentPos + count));
         const start = Math.min(this._selectionStart, newPos);
         const length = Math.abs(newPos - this._selectionStart);
 
