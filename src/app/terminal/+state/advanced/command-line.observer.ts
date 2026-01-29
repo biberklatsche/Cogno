@@ -22,6 +22,7 @@ export class CommandLineObserver implements ITerminalHandler {
         this._renderSubject.pipe(
             debounceTime(50)
         ).subscribe(() => {
+            if (this.stateManager.isCommandRunning) return;
             this._markerManager.refreshMarkers();
         });
     }
