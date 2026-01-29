@@ -27,6 +27,7 @@ export type TerminalState = {
     dimensions: TerminalDimensions;
     isFocused: boolean;
     isCommandRunning: boolean;
+    isInFullScreenMode: boolean;
     commandStartTime: number | undefined;
     input: TerminalInput;
     cwd: string;
@@ -49,6 +50,7 @@ export const INITIAL_STATE: TerminalState = {
     dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0},
     isFocused: false,
     isCommandRunning: false,
+    isInFullScreenMode: false,
     commandStartTime: undefined,
     input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
 }

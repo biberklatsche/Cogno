@@ -13,6 +13,7 @@ describe('CommandLineObserver', () => {
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
+    vi.useFakeTimers();
     mockBus = new AppBus();
     vi.spyOn(mockBus, 'publish');
     stateManager = new TerminalStateManager(mockBus);
@@ -21,10 +22,28 @@ describe('CommandLineObserver', () => {
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+    observer.dispose();
+  });
+
   it('should register onWriteParsed and onKey listeners', () => {
     observer.registerTerminal(mockTerminal);
     expect(mockTerminal.onWriteParsed).toHaveBeenCalled();
     expect(mockTerminal.onKey).toHaveBeenCalled();
+  });
+
+  it('should refresh markers on render after debounce time', () => {
+    // @ts-ignore - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+    observer.registerTerminal(mockTerminal);
+    const onRenderCallback = vi.mocked(mockTerminal.onRender).mock.calls[0][0];
+
+    onRenderCallback({ start: 0, end: 10 });
+    expect(refreshSpy).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(50);
+    expect(refreshSpy).toHaveBeenCalled();
   });
 
   it('should set isCommandRunning to true on Enter key', () => {
@@ -96,6 +115,7 @@ describe('CommandLineObserver', () => {
 
     stateManager.startCommand();
     onRenderCallback({ start: 0, end: 10 });
+    vi.advanceTimersByTime(50);
 
     expect(refreshSpy).not.toHaveBeenCalled();
   });
@@ -108,6 +128,7 @@ describe('CommandLineObserver', () => {
 
     stateManager.startCommand();
     onScrollCallback(0);
+    vi.advanceTimersByTime(50);
 
     expect(refreshSpy).not.toHaveBeenCalled();
   });
@@ -120,6 +141,7 @@ describe('CommandLineObserver', () => {
 
     stateManager.startCommand();
     onResizeCallback({ cols: 100, rows: 40 });
+    vi.advanceTimersByTime(50);
 
     expect(refreshSpy).not.toHaveBeenCalled();
   });

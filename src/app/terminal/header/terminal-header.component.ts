@@ -21,7 +21,7 @@ import {map, Observable} from "rxjs";
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 4px 8px;
+      padding: 4px 8px 2px 8px;
       background: #00000000;
     }
     

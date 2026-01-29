@@ -62,15 +62,18 @@
                     {{ terminalState.isCommandRunning }}
                 </div>
                 <div></div>
-                <div class="label commands">Commands in Viewport</div>
-                <!--div class="value command-line span-2">
-                    @for (cmd of terminalState.commandHistory.getCommands(); track cmd.id) {
-                        @if (cmd.isInViewport) {
-                            <div class="command" [appTooltip]="cmd.command ?? ''"> {{cmd.id}}  {{ cmd.command }}</div>
-                            <div>Return Code: {{ cmd.returnCode ?? '' }}</div>
-                        }
+            <div class="label">Full Screen</div>
+            <div class="value">
+                {{ terminalState.isInFullScreenMode }}
+            </div>
+            <div></div>
+                <div class="label commands">History</div>
+                <div class="value command-line span-2">
+                    @for (cmd of terminalHistoryById()[id]; track cmd.id) {
+                        <div class="command" [appTooltip]="cmd.command ?? ''"> {{cmd.id}}  {{ cmd.command }}</div>
+                        <div>Return Code: {{ cmd.returnCode ?? '' }}</div>
                     }
-                </div-->
+                </div>
         </div>
         }
     }

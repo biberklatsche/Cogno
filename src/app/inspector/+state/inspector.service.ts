@@ -13,7 +13,8 @@ import {
     TerminalCursorPosition,
     TerminalState,
     TerminalMousePosition,
-    TerminalStateManager
+    TerminalStateManager,
+    Command
 } from '../../terminal/+state/state';
 
 export type TerminalIdentifier = { terminalId: string };
@@ -28,6 +29,7 @@ export class InspectorService {
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
     private _globalMousePosition: WritableSignal<GlobalMousePosition | undefined> = signal(undefined);
     private _terminalStateById: WritableSignal<Record<TerminalId, TerminalState>> = signal({});
+    private _terminalHistoryById: WritableSignal<Record<TerminalId, Command[]>> = signal({});
     // Derived signals
     private _terminalIds = computed<TerminalId[]>(() => {
         return Object.keys(this._terminalStateById()) as TerminalId[];
@@ -44,6 +46,10 @@ export class InspectorService {
 
     public get terminalStateById(): Signal<Record<TerminalId, TerminalState>> {
         return this._terminalStateById.asReadonly();
+    }
+
+    public get terminalHistoryById(): Signal<Record<TerminalId, Command[]>> {
+        return this._terminalHistoryById.asReadonly();
     }
 
     public get terminalIds(): Signal<TerminalId[]> {
@@ -127,6 +133,10 @@ export class InspectorService {
             case 'terminal-state':
                 this.updateTerminalData(event.payload?.data);
                 break;
+
+            case 'terminal-history':
+                this.updateTerminalHistory(event.payload?.data);
+                break;
         }
     }
 
@@ -138,10 +148,24 @@ export class InspectorService {
         }));
     }
 
+    private updateTerminalHistory(data: { terminalId: string, commands: Command[] }): void {
+        if (!data) return;
+        this._terminalHistoryById.update(current => ({
+            ...current,
+            [data.terminalId]: data.commands
+        }));
+    }
+
     private removeTerminalData(id?: TerminalId): void {
         if (!id) return;
 
         this._terminalStateById.update(current => {
+            const next = {...current};
+            delete next[id];
+            return next;
+        });
+
+        this._terminalHistoryById.update(current => {
             const next = {...current};
             delete next[id];
             return next;

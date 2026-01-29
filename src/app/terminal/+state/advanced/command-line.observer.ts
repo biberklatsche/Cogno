@@ -7,15 +7,23 @@ import OscParser from "./cogno-osc.parser";
 import {MarkerManager} from "./ui/marker-manager";
 import {Config} from "../../../config/+models/config";
 import {PromptConfig, PromptProfile, PromptSegment} from "../../../config/+models/prompt-config";
+import {debounceTime, Subject} from "rxjs";
 
 export class CommandLineObserver implements ITerminalHandler {
 
     private _disposables: IDisposable[] = [];
     private _terminal?: Terminal;
     private _markerManager: MarkerManager;
+    private _renderSubject = new Subject<void>();
 
     constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
         this._markerManager = new MarkerManager(stateManager, promptSegments);
+
+        this._renderSubject.pipe(
+            debounceTime(50)
+        ).subscribe(() => {
+            this._markerManager.refreshMarkers();
+        });
     }
 
     registerTerminal(terminal: Terminal): IDisposable {
@@ -42,6 +50,18 @@ export class CommandLineObserver implements ITerminalHandler {
                 // ignore errors and keep defaults
             }
         }));
+        this._disposables.push(this._terminal.onRender(() => {
+            this._renderSubject.next();
+        }));
+
+        this._disposables.push(this._terminal.onScroll(() => {
+            this._renderSubject.next();
+        }));
+
+        this._disposables.push(this._terminal.onResize(() => {
+            //this._markerManager.disposeMarkers();
+            this._renderSubject.next();
+        }));
         this._disposables.push(this._terminal.onWriteParsed(() => {
             if(this.stateManager.isCommandRunning) return;
             const text = this.readCurrentText();
@@ -53,23 +73,6 @@ export class CommandLineObserver implements ITerminalHandler {
                 this.stateManager.startCommand();
             }
         }));
-
-        this._disposables.push(this._terminal.onRender(() => {
-            if(this.stateManager.isCommandRunning) return;
-            this._markerManager.refreshMarkers();
-        }));
-
-        this._disposables.push(this._terminal.onScroll(() => {
-            if(this.stateManager.isCommandRunning) return;
-            this._markerManager.refreshMarkers();
-        }));
-
-        this._disposables.push(this._terminal.onResize(() => {
-            if(this.stateManager.isCommandRunning) return;
-            this._markerManager.disposeMarkers();
-            this._markerManager.refreshMarkers();
-        }));
-
         this._disposables.push(terminal.parser
             .registerOscHandler(733, (data: string) => {
                 this.stateManager.endCommand();
@@ -88,6 +91,7 @@ export class CommandLineObserver implements ITerminalHandler {
         this._disposables = [];
         this._markerManager.dispose();
         this._terminal = undefined;
+        this._renderSubject.complete();
     }
 
     private findLastCognoMarkerY(): number {

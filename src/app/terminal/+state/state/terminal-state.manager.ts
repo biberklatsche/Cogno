@@ -26,12 +26,29 @@ export class TerminalStateManager {
         
         this._stateSubject.pipe(
             skip(1), // Initialen State ignorieren
-            debounceTime(0) // Damit multiple Änderungen in einem Frame zusammengefasst werden
+            debounceTime(10) // Damit multiple Änderungen in einem Frame zusammengefasst werden
         ).subscribe((state) => {
             this._bus.publish({
                 path: ['inspector'],
                 type: 'Inspector',
                 payload: { type: 'terminal-state', data: {...state} }
+            });
+        });
+
+        this._historySubject.pipe(
+            skip(1),
+            debounceTime(10)
+        ).subscribe((history) => {
+            this._bus.publish({
+                path: ['inspector'],
+                type: 'Inspector',
+                payload: {
+                    type: 'terminal-history',
+                    data: {
+                        terminalId: this._stateSubject.value.terminalId,
+                        commands: history
+                    }
+                }
             });
         });
     }
@@ -95,6 +112,14 @@ export class TerminalStateManager {
         this.updateState({ isFocused: focused });
     }
 
+    get isInFullScreenMode$(): Observable<boolean> {
+        return this._stateSubject.pipe(map(s => s.isInFullScreenMode));
+    }
+
+    setInFullScreenMode(fullSizeMode: boolean): void {
+        this.updateState({ isInFullScreenMode: fullSizeMode });
+    }
+
     get isCommandRunning(): boolean {
         return this._stateSubject.value.isCommandRunning;
     }
@@ -104,7 +129,14 @@ export class TerminalStateManager {
     }
 
     startCommand(): void {
-        console.log("#####Starte Command!");
+        console.log('startCommand');
+        const currentInput = this._stateSubject.value.input;
+        const commands = [...this._historySubject.value];
+        if (commands.length > 0) {
+            const lastCommand = commands[commands.length - 1];
+            lastCommand.set('command', currentInput.text.trim());
+            this._historySubject.next(commands);
+        }
         this.updateState({
             isCommandRunning: true,
             commandStartTime: Date.now(),

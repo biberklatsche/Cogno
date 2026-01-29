@@ -5,7 +5,7 @@ import {
 } from "../+state/inspector.service";
 import {TerminalId} from "../../grid-list/+model/model";
 import {Keybinding} from "../../config/+models/config";
-import {TerminalState} from '../../terminal/+state/state';
+import {TerminalState, Command} from '../../terminal/+state/state';
 import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 
 @Component({
@@ -23,11 +23,13 @@ export class InspectorSideComponent {
 
     terminalIds: Signal<TerminalId[]>;
     terminalStateById: Signal<Record<TerminalId, TerminalState>>;
+    terminalHistoryById: Signal<Record<TerminalId, Command[]>>;
 
     constructor(inspectorService: InspectorService) {
         this.firedKeybinding = inspectorService.firedKeybinding;
         this.globalMousePosition = inspectorService.globalMousePosition;
         this.terminalIds = inspectorService.terminalIds;
         this.terminalStateById = inspectorService.terminalStateById;
+        this.terminalHistoryById = inspectorService.terminalHistoryById;
     }
 }
