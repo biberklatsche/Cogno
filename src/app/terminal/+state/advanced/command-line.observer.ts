@@ -57,7 +57,6 @@ export class CommandLineObserver implements ITerminalHandler {
         }));
 
         this._disposables.push(this._terminal.onScroll(() => {
-            this._markerManager.disposeMarkers();
             this._renderSubject.next();
         }));
 
