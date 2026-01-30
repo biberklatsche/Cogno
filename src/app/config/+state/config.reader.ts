@@ -1,4 +1,5 @@
 import {Config, ConfigSchema} from "../+models/config";
+import {OS, OsType} from "../../_tauri/os";
 
 /**
  * Reader class for reading/validating the configuration.
@@ -56,7 +57,61 @@ export class ConfigReader {
         };
 
         const merged = merge(defaultConfig ?? {}, userConfig ?? {});
-        return ConfigSchema.parse(merged);
+        const config = ConfigSchema.parse(merged);
+
+        // Add platform-specific font fallbacks
+        if (config.font?.family) {
+            config.font.family = this.addFontFallbacks(config.font.family);
+        }
+
+        return config;
+    }
+
+    /**
+     * Adds platform-specific font fallbacks to the font family string.
+     * - macOS: ui-monospace, SFMono-Regular, Menlo, Monaco
+     * - Windows: Consolas, Courier New
+     * - Linux: Liberation Mono, DejaVu Sans Mono, monospace
+     */
+    private static addFontFallbacks(fontFamily: string): string {
+        const platform = OS.platform();
+        const fallbacks = this.getPlatformFontFallbacks(platform);
+        const cleanedFontFamily = this.quoteFontName(fontFamily);
+
+        // If the font is a generic keyword (monospace, sans-serif, etc),
+        // don't add it at the beginning - it's already in the fallback list
+        const genericFonts = ['monospace', 'sans-serif', 'serif', 'cursive', 'fantasy'];
+        if (genericFonts.includes(cleanedFontFamily.toLowerCase())) {
+            console.log('[addFontFallbacks] Generic font detected, using fallbacks only:', fallbacks);
+            return fallbacks;
+        }
+
+        const result = `${cleanedFontFamily}, ${fallbacks}`;
+        console.log('[addFontFallbacks] Added fallbacks to', cleanedFontFamily, ':', result);
+        return result;
+    }
+
+    private static quoteFontName(fontName: string): string {
+        // Simply return the font name without adding quotes
+        // The quotes will be handled by CSS/xterm.js when needed
+        let cleaned = fontName.trim();
+        // Remove surrounding quotes if present (both at start AND end)
+        if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+            (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+            cleaned = cleaned.slice(1, -1);
+        }
+        return cleaned;
+    }
+
+    private static getPlatformFontFallbacks(platform: OsType): string {
+        switch (platform) {
+            case 'macos':
+                return 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace';
+            case 'windows':
+                return 'Consolas, Courier New, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace';
+            case 'linux':
+                return 'Liberation Mono, DejaVu Sans Mono, ui-monospace, Consolas, monospace';
+        }
     }
 
     private static isPlainObject(v: unknown): v is Record<string, unknown> {

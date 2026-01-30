@@ -18,7 +18,7 @@ app-terminal {
         color: var(--foreground-color);
         border-radius: 4px;
         font-size: var(--font-size);
-        font-family: var(--font-family), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-family: var(--font-family);
         height: 100%;
         width: min-content;
         margin-left: 0px; /* Position links vom Text */

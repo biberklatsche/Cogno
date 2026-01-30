@@ -104,8 +104,8 @@ export class StyleService {
         document.documentElement.style.setProperty('--shadow3', '0 3px 4px 0 var(--color-shadow3), 0 3px 3px -2px var(--color-shadow1), 0 1px 8px 0 var(--color-shadow2)');
         document.documentElement.style.setProperty('--font-size', `${config.font!.size}px`);
         document.documentElement.style.setProperty('--font-weight', `${config.font!.weight}`);
-        document.documentElement.style.setProperty('--font-family', `'${config.font!.family}'`);
-        document.documentElement.style.setProperty('--app-font-family', `'${config.font!.app!.family}'`);
+        document.documentElement.style.setProperty('--font-family', `${config.font!.family}`);
+        document.documentElement.style.setProperty('--app-font-family', `${config.font!.app!.family}`);
         document.documentElement.style.setProperty('--app-font-size', `${config.font!.app!.size}px`);
         document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top}rem ${config.padding!.right}rem ${config.padding!.bottom}rem ${config.padding!.left}rem`);
         if (config.allow_transparency && config.background_image?.path) {

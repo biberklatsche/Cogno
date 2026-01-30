@@ -13,7 +13,6 @@ html, body {
     background-position: center;
     background-repeat: no-repeat;
     overscroll-behavior: none;
-    font-size: var(--app-font-size);
 }
 
 
@@ -42,7 +41,8 @@ body.has-background::before {
     outline: none;
 }
 
-* {
+/* Apply app font to UI elements, but not to terminal */
+body, button, input, select, textarea {
     font-family: var(--app-font-family), Roboto, sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;

@@ -23,6 +23,7 @@ import {map, Observable} from "rxjs";
       align-items: center;
       padding: 4px 8px 2px 8px;
       background: #00000000;
+      font-family: var(--font-family);
     }
     
     .cwd {
@@ -35,7 +36,6 @@ import {map, Observable} from "rxjs";
       align-self: flex-start;
       color: var(--foreground-color);
       font-size: 1rem;
-      font: var(--font-family);
       font-weight: bold;
     }
   `

@@ -104,4 +104,27 @@ describe('ConfigReader', () => {
         expect(config.shell!.profiles['default']?.args).toEqual(['--custom', '--args']);
         expect(config.shell!.profiles['default']?.args?.length).toBe(2);
     });
+
+    it('adds platform-specific font fallbacks to font.family', () => {
+        const text = `
+      font.family=monospace
+    `;
+        const config = ConfigReader.fromStringToConfig(defaultText, text);
+
+        // Font should have fallbacks added
+        expect(config.font!.family).toContain('monospace');
+        expect(config.font!.family).toContain('ui-monospace');
+        expect(config.font!.family).toMatch(/monospace.*ui-monospace|ui-monospace.*monospace/);
+    });
+
+    it('handles font names with spaces in fallback list', () => {
+        const text = `
+      font.family=Fira Code
+    `;
+        const config = ConfigReader.fromStringToConfig(defaultText, text);
+
+        // Font name with spaces should be preserved without quotes
+        expect(config.font!.family).toMatch(/^Fira Code,/);
+        expect(config.font!.family).toContain('ui-monospace');
+    });
 });

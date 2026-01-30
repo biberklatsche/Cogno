@@ -52,7 +52,12 @@ export class Renderer implements IRenderer, IDisposable {
             windowOptions: {
                 pushTitle: true, //handle CSI Ps=22 vim on gitbash uses this to enter full screen
                 popTitle: true //handle CSI Ps=23 vim on gitbash uses this to leaf full screen
-            }
+            },
+            // Font settings - must be set during initialization
+            fontFamily: config.font!.family,
+            fontSize: config.font!.size,
+            fontWeight: config.font!.weight,
+            fontWeightBold: config.font!.weight_bold,
         });
 
         this._terminal.loadAddon(this._fitAddon);
