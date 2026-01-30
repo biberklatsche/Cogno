@@ -110,7 +110,6 @@ export class MarkerManager implements IDisposable {
                     break;
                 }
             }
-            console.log('firstCommandOutOfViewportIdx', firstCommandOutOfViewportIdx);
         }
 
         const commands = [...this.stateManager.commands];

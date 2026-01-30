@@ -22,6 +22,7 @@ export class CommandLineObserver implements ITerminalHandler {
         this._renderSubject.pipe(
             debounceTime(50)
         ).subscribe(() => {
+            console.log('render');
             if (this.stateManager.isCommandRunning) return;
             this._markerManager.refreshMarkers();
         });
@@ -56,11 +57,12 @@ export class CommandLineObserver implements ITerminalHandler {
         }));
 
         this._disposables.push(this._terminal.onScroll(() => {
+            this._markerManager.disposeMarkers();
             this._renderSubject.next();
         }));
 
         this._disposables.push(this._terminal.onResize(() => {
-            //this._markerManager.disposeMarkers();
+            this._markerManager.disposeMarkers();
             this._renderSubject.next();
         }));
         this._disposables.push(this._terminal.onWriteParsed(() => {
