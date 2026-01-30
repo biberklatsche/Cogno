@@ -1,14 +1,12 @@
-import { Terminal, IDecoration } from '@xterm/xterm';
+import { Terminal, IDecoration, IMarker } from '@xterm/xterm';
 import { IDisposable } from '../../../../common/models/models';
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
 import {TerminalStateManager} from "../../state";
 
 
-type LineIndex = number;
-
 export class MarkerManager implements IDisposable {
-    private _decorations: Map<LineIndex, IDecoration> = new Map();
+    private _decorations: Map<IMarker, IDecoration> = new Map();
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
 
@@ -21,7 +19,7 @@ export class MarkerManager implements IDisposable {
     }
 
     disposeMarkers(){
-        for (const [lineIndex, decoration] of this._decorations.entries()) {
+        for (const [marker, decoration] of this._decorations.entries()) {
             if (!decoration.isDisposed) {
                 decoration.dispose();
             }
@@ -54,27 +52,39 @@ export class MarkerManager implements IDisposable {
             }
         }
 
-        // Disposed Decorations entfernen
-        for (const [lineIndex, decoration] of this._decorations.entries()) {
+        // Disposed Decorations und Marker entfernen
+        for (const [marker, decoration] of this._decorations.entries()) {
             if (decoration.isDisposed) {
-                this._decorations.delete(lineIndex);
+                this._decorations.delete(marker);
             }
         }
 
         // Neue Marker hinzufügen
         for (const lineIndex of currentMarkerLines) {
-            if (!this._decorations.has(lineIndex)) {
+            // Prüfe ob bereits ein Marker für diese Zeile existiert
+            const existingMarker = this.findMarkerForLine(lineIndex);
+            if (!existingMarker) {
                 this.addMarker(lineIndex);
             }
         }
 
-        // Alte Dekorationen entfernen, die nicht mehr im Scan-Bereich sind oder keine ^^# Zeile mehr sind
-        for (const [lineIndex, decoration] of this._decorations.entries()) {
-            if (!currentMarkerLines.has(lineIndex)) {
+        // Alte Dekorationen entfernen, deren Marker nicht mehr im Scan-Bereich sind
+        for (const [marker, decoration] of this._decorations.entries()) {
+            const markerLine = marker.line;
+            if (markerLine < startScan || markerLine > endScan || !currentMarkerLines.has(markerLine)) {
                 decoration.dispose();
-                this._decorations.delete(lineIndex);
+                this._decorations.delete(marker);
             }
         }
+    }
+
+    private findMarkerForLine(lineIndex: number): IMarker | undefined {
+        for (const marker of this._decorations.keys()) {
+            if (marker.line === lineIndex) {
+                return marker;
+            }
+        }
+        return undefined;
     }
 
     private updateViewportVisibility(viewportStart: number, viewportEnd: number) {
@@ -153,7 +163,7 @@ export class MarkerManager implements IDisposable {
             decoration.onDispose(() => {
                 marker.dispose();
             });
-            this._decorations.set(lineIndex, decoration);
+            this._decorations.set(marker, decoration);
         }
     }
 

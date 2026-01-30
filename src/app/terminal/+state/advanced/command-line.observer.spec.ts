@@ -107,43 +107,45 @@ describe('CommandLineObserver', () => {
     expect(stateManager.input.cursorIndex).toBe(10);
   });
 
-  it('should NOT refresh markers on render when command is running', () => {
+  it('should refresh markers on render (debounced)', () => {
     // @ts-ignore - access private markerManager for spying
     const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
     observer.registerTerminal(mockTerminal);
     const onRenderCallback = vi.mocked(mockTerminal.onRender).mock.calls[0][0];
 
-    stateManager.startCommand();
     onRenderCallback({ start: 0, end: 10 });
-    vi.advanceTimersByTime(50);
-
+    // Should not be called immediately
     expect(refreshSpy).not.toHaveBeenCalled();
+
+    // Should be called after debounce time
+    vi.advanceTimersByTime(20);
+    expect(refreshSpy).toHaveBeenCalledOnce();
   });
 
-  it('should NOT refresh markers on scroll when command is running', () => {
+  it('should refresh markers on scroll (debounced)', () => {
     // @ts-ignore - access private markerManager for spying
     const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
     observer.registerTerminal(mockTerminal);
     const onScrollCallback = vi.mocked(mockTerminal.onScroll).mock.calls[0][0];
 
-    stateManager.startCommand();
     onScrollCallback(0);
-    vi.advanceTimersByTime(50);
-
+    // Should not be called immediately
     expect(refreshSpy).not.toHaveBeenCalled();
+
+    // Should be called after debounce time
+    vi.advanceTimersByTime(20);
+    expect(refreshSpy).toHaveBeenCalledOnce();
   });
 
-  it('should NOT refresh markers on resize when command is running', () => {
+  it('should refresh markers on resize (immediate)', () => {
     // @ts-ignore - access private markerManager for spying
     const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
     observer.registerTerminal(mockTerminal);
     const onResizeCallback = vi.mocked(mockTerminal.onResize).mock.calls[0][0];
 
-    stateManager.startCommand();
     onResizeCallback({ cols: 100, rows: 40 });
-    vi.advanceTimersByTime(50);
-
-    expect(refreshSpy).not.toHaveBeenCalled();
+    // Resize should refresh immediately
+    expect(refreshSpy).toHaveBeenCalledOnce();
   });
 
   it('should dispose listeners on dispose', () => {

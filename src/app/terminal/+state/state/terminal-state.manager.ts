@@ -129,7 +129,6 @@ export class TerminalStateManager {
     }
 
     startCommand(): void {
-        console.log('startCommand');
         const currentInput = this._stateSubject.value.input;
         const commands = [...this._historySubject.value];
         if (commands.length > 0) {

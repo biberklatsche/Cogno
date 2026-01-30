@@ -28,11 +28,6 @@ export class ThemeHandler implements ITerminalHandler {
     public configureTerminal(config: Config) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
         this._terminal.options.fontFamily = config.font?.family;
-        console.log('[ThemeHandler] Set xterm fontFamily to:', this._terminal.options.fontFamily);
-        // Force a re-render by triggering a refresh
-        setTimeout(() => {
-            console.log('[ThemeHandler] After timeout, xterm fontFamily is:', this._terminal?.options.fontFamily);
-        }, 1000);
         this._terminal.options.scrollback = config.scrollbar?.scrollback_lines;
         this._terminal.options.fontSize = config.font!.size;
         this._terminal.options.fontWeight = config.font!.weight;

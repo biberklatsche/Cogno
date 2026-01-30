@@ -82,13 +82,9 @@ export class ConfigReader {
         // don't add it at the beginning - it's already in the fallback list
         const genericFonts = ['monospace', 'sans-serif', 'serif', 'cursive', 'fantasy'];
         if (genericFonts.includes(cleanedFontFamily.toLowerCase())) {
-            console.log('[addFontFallbacks] Generic font detected, using fallbacks only:', fallbacks);
             return fallbacks;
         }
-
-        const result = `${cleanedFontFamily}, ${fallbacks}`;
-        console.log('[addFontFallbacks] Added fallbacks to', cleanedFontFamily, ':', result);
-        return result;
+        return `${cleanedFontFamily}, ${fallbacks}`;
     }
 
     private static quoteFontName(fontName: string): string {

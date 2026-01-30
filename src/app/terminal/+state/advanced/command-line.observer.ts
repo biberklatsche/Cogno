@@ -14,18 +14,18 @@ export class CommandLineObserver implements ITerminalHandler {
     private _disposables: IDisposable[] = [];
     private _terminal?: Terminal;
     private _markerManager: MarkerManager;
-    private _renderSubject = new Subject<void>();
+    private _refreshMarkerSubject = new Subject<void>();
 
     constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
         this._markerManager = new MarkerManager(stateManager, promptSegments);
 
-        this._renderSubject.pipe(
-            debounceTime(50)
-        ).subscribe(() => {
-            console.log('render');
-            if (this.stateManager.isCommandRunning) return;
-            this._markerManager.refreshMarkers();
-        });
+        // Debounce marker refresh to improve performance with long outputs
+        // 16ms = ~60fps, which batches rapid render events without noticeable lag
+        this._refreshMarkerSubject
+            .pipe(debounceTime(16))
+            .subscribe(() => {
+                this._markerManager.refreshMarkers();
+            });
     }
 
     registerTerminal(terminal: Terminal): IDisposable {
@@ -53,16 +53,16 @@ export class CommandLineObserver implements ITerminalHandler {
             }
         }));
         this._disposables.push(this._terminal.onRender(() => {
-            this._renderSubject.next();
+            this._refreshMarkerSubject.next();
         }));
 
         this._disposables.push(this._terminal.onScroll(() => {
-            this._renderSubject.next();
+            this._refreshMarkerSubject.next();
         }));
 
         this._disposables.push(this._terminal.onResize(() => {
             this._markerManager.disposeMarkers();
-            this._renderSubject.next();
+            this._markerManager.refreshMarkers();
         }));
         this._disposables.push(this._terminal.onWriteParsed(() => {
             if(this.stateManager.isCommandRunning) return;
@@ -91,9 +91,9 @@ export class CommandLineObserver implements ITerminalHandler {
     dispose(): void {
         this._disposables.forEach(d => d.dispose());
         this._disposables = [];
+        this._refreshMarkerSubject.complete();
         this._markerManager.dispose();
         this._terminal = undefined;
-        this._renderSubject.complete();
     }
 
     private findLastCognoMarkerY(): number {

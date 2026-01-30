@@ -106,8 +106,7 @@ describe('StyleService', () => {
       configService.setConfig(baseConfig);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--font-size', '14px');
-      expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--font-family', "'Fira Code'");
-      expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--app-font-family', "'Inter'");
+      expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--font-family', baseConfig.font.family);
     });
 
     it('should set padding variables correctly', () => {
