@@ -52,6 +52,10 @@ export class GridListService {
             const gridList = this._gridList.value;
             let tabId = this.determineTabId(gridList, event.payload?.terminalId);
             if(!tabId || !event.payload?.cwd) return;
+            const paneConfig = gridList[tabId].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload?.terminalId)?.data;
+            if(!paneConfig) return;
+            paneConfig.workingDir = event.payload.cwd;
+            this._gridList.next(gridList);
             this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.cwd}});
         });
 
