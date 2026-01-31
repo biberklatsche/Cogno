@@ -20,12 +20,6 @@ import {toSignal} from "@angular/core/rxjs-interop";
   styles: `
     :host {
       display: block;
-      height: 24px;
-    }
-
-    :host:has(.pane-header:empty) {
-      display: none;
-      height: 0;
     }
 
     .pane-header {
