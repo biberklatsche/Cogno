@@ -1,16 +1,23 @@
-import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal, computed} from '@angular/core';
 import {TerminalComponentFactory} from "../+state/terminal-component.factory";
 import {Pane, TerminalId} from "../+model/model";
 import {ShellConfig} from "../../config/+models/config";
 import {ConfigService} from "../../config/+state/config.service";
 import {ShellProfile} from "../../config/+models/shell-config";
 import {PromptProfile} from "../../config/+models/prompt-config";
+import {PaneHeaderComponent} from "./pane-header.component";
+import {GridListService} from "../+state/grid-list.service";
+import {toSignal} from "@angular/core/rxjs-interop";
+import {map} from "rxjs";
 
 @Component({
   selector: 'app-pane',
-  imports: [],
+  imports: [PaneHeaderComponent],
   template: `
-      <div #dock class="dock"></div>
+      @if (showHeader()) {
+        <app-pane-header [cwd]="cwd()"></app-pane-header>
+      }
+      <div #dock class="dock" [class.with-header]="showHeader()"></div>
   `,
   styles: [`:host{
       display:block;
@@ -24,6 +31,10 @@ import {PromptProfile} from "../../config/+models/prompt-config";
       min-height: 0;
       min-width: 0;
   }
+
+  .dock.with-header {
+      height: calc(100% - 24px);
+  }
   `]
 })
 export class PaneComponent implements AfterViewInit {
@@ -33,7 +44,25 @@ export class PaneComponent implements AfterViewInit {
     private _attachedTerminalId?: TerminalId;
     private _viewReady = signal(false);
 
-    constructor(private _terminalComponents: TerminalComponentFactory, private _configService: ConfigService) {
+    private activeGrid = toSignal(this._gridListService.grids$.pipe(
+        map(grids => grids.find(g => g.tabId === this._gridListService['_activeTabId'].value))
+    ));
+
+    showHeader = computed(() => {
+        const grid = this.activeGrid();
+        if (!grid) return false;
+        // Count leaf nodes (panes) in the tree
+        const paneCount = grid.tree.find(node => node.isLeaf).length;
+        return paneCount > 1;
+    });
+
+    cwd = computed(() => this.pane().workingDir || '');
+
+    constructor(
+        private _terminalComponents: TerminalComponentFactory,
+        private _configService: ConfigService,
+        private _gridListService: GridListService
+    ) {
         // Create the effect within an injection context (constructor)
         effect(() => {
             // wait until view is ready so hostRef is available

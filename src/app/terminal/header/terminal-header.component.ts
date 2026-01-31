@@ -8,7 +8,6 @@ import {map, Observable} from "rxjs";
   standalone: true,
   template: `
     <div class="terminal-header">
-      <span class="cwd">{{cwd()}}</span>
       @if (commandOutOfView(); as command) {
         <span class="command">
           {{command.command}}
