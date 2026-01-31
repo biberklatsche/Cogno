@@ -15,7 +15,7 @@ export const ScrollbarSchema = z.object({
         .number()
         .int()
         .min(100, "Scrollback lines must be at least 100")
-        .max(1_000_000, "Scrollback lines must not exceed 1,000,000").optional(),
+        .optional(),
 })
 
 export type Scrollbar = z.infer<typeof ScrollbarSchema>;
