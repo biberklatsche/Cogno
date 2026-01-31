@@ -25,6 +25,16 @@ export class GridListService {
         return this._activeTabId.asObservable();
     }
 
+    get activeGridIsSplit$(): Observable<boolean> {
+        return this._gridList.pipe(
+            map(gridList => {
+                if (!this._activeTabId.value) return false;
+                const grid = gridList[this._activeTabId.value];
+                return grid ? !grid.tree.root.isLeaf : false;
+            })
+        );
+    }
+
     constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
         this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
