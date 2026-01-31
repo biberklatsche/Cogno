@@ -4,33 +4,27 @@ import {Pane, TerminalId} from "../+model/model";
 import {ConfigService} from "../../config/+state/config.service";
 import {ShellProfile} from "../../config/+models/shell-config";
 import {PaneHeaderComponent} from "./pane-header.component";
-import {GridListService} from "../+state/grid-list.service";
-import {toSignal} from "@angular/core/rxjs-interop";
 
 @Component({
   selector: 'app-pane',
   imports: [PaneHeaderComponent],
   template: `
-      @if (showHeader()) {
-        <app-pane-header [cwd]="cwd()"></app-pane-header>
+      @if (pane().terminalId) {
+          <app-pane-header [cwd]="cwd()" [terminalId]="pane().terminalId!"></app-pane-header>
       }
-      <div #dock class="dock" [class.with-header]="showHeader()"></div>
+      <div #dock class="dock"></div>
   `,
   styles: [`:host{
-      display:block;
-      height:100%;
-      width:100%;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
   }
 
   .dock {
-      height:100%;
-      width:100%;
+      flex: 1;
       min-height: 0;
       min-width: 0;
-  }
-
-  .dock.with-header {
-      height: calc(100% - 24px);
   }
   `]
 })
@@ -41,13 +35,11 @@ export class PaneComponent implements AfterViewInit {
     private _attachedTerminalId?: TerminalId;
     private _viewReady = signal(false);
 
-    showHeader = toSignal(this._gridListService.activeGridIsSplit$, { initialValue: false });
     cwd = computed(() => this.pane().workingDir || '');
 
     constructor(
         private _terminalComponents: TerminalComponentFactory,
-        private _configService: ConfigService,
-        private _gridListService: GridListService
+        private _configService: ConfigService
     ) {
         // Create the effect within an injection context (constructor)
         effect(() => {

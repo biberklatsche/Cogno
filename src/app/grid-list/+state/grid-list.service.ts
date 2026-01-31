@@ -116,7 +116,7 @@ export class GridListService {
         });
     }
 
-    private removePane(terminalId: TerminalId) {
+    removePane(terminalId: TerminalId) {
         const gridList = this._gridList.value;
         let gridAndNode = this.determineGrid(gridList, terminalId);
         if (!gridAndNode) return;
