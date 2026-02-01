@@ -145,7 +145,6 @@ export class MarkerManager implements IDisposable {
         const buffer = this._terminal.buffer.active;
         const cursorYAbsolute = buffer.baseY + buffer.cursorY;
         const cursorYOffset = lineIndex - cursorYAbsolute;
-        
         const marker = this._terminal.registerMarker(cursorYOffset);
         if (!marker) return;
 

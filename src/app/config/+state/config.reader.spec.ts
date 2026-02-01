@@ -54,7 +54,7 @@ describe('ConfigReader', () => {
         expect(settings.enable_webgl).toBe(true);
 
         // Defaults from default file are present
-        expect(settings.scrollbar!.scrollback_lines).toBe(10000);
+        expect(settings.scrollbar!.scrollback_lines).toBe(100000);
         expect(settings.font!.size).toBe(14);
     });
 

@@ -18,8 +18,6 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
-import {ScriptInjector} from "./advanced/script.injector";
-import {PathInjector} from "./advanced/path.injector";
 import {CommandLineObserver} from "./advanced/command-line.observer";
 import {Command, TerminalState, TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/command-line.editor';
@@ -79,14 +77,10 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
-        if(this.shellProfile.inject_path) {
-            this.disposables.push(new PathInjector(this.bus, this.pty, this.terminalId));
-        }
+
         if(this.shellProfile.enable_shell_integration) {
-            this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
             this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
             this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.stateManager)));
-
         }
 
     }

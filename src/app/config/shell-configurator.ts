@@ -93,22 +93,28 @@ export class ShellConfigurator {
         const args: string[] = [];
         const env: Record<string, string> = {};
 
+        // When shell integration is enabled, args are mostly handled by the integration system
+        // Only set user-facing args that make sense with integration
         switch (sh.shell_type) {
             case 'GitBash': {
-                args.push('--login', '-i');
+                args.push('-l', '-i'); // login + interactive
                 env['TERM'] = 'xterm-256color';
                 break;
             }
             case 'ZSH': {
-                args.push('--login', '-i');
+                args.push('-l', '-i'); // login + interactive (ZDOTDIR will be set by integration)
                 break;
             }
             case 'Bash': {
-                args.push('--login', '-i');
+                args.push('-l', '-i'); // login + interactive
+                break;
+            }
+            case 'Fish': {
+                args.push('-l'); // login shell
                 break;
             }
             case 'PowerShell': {
-                args.push('-NoLogo', '-NoExit');
+                // Integration system handles PowerShell args
                 break;
             }
             default: {

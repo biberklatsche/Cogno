@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { CommandLineObserver } from './command-line.observer';
 import { TerminalStateManager } from '../state';
 import { AppBus } from '../../../app-bus/app-bus';
-import { Terminal } from '@xterm/xterm';
 
 describe('CommandLineObserver', () => {
   let observer: CommandLineObserver;

@@ -25,7 +25,6 @@ export class PromptMarkerRenderer {
         hostElement: HTMLElement,
         commandIndex: number | undefined,
     ): void {
-
         hostElement.replaceChildren();
 
         const markerElement = this.createMarkerElement();

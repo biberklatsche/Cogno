@@ -2,7 +2,7 @@ import{DestroyRef, Injectable} from '@angular/core';
 import {Fs} from "../../_tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, filter, Observable, Subscription} from 'rxjs';
-import {Config, ShellConfig} from "../+models/config";
+import {Config} from "../+models/config";
 import {ConfigReader} from "./config.reader";
 import {Logger} from "../../_tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
@@ -13,7 +13,8 @@ import {ConfigWriter} from "./config.writer";
 import {ActionFired} from "../../action/action.models";
 import {Opener} from "../../_tauri/opener";
 import {ShellProfile} from "../+models/shell-config";
-import {PromptProfile, PromptSegment} from "../+models/prompt-config";
+import {PromptSegment} from "../+models/prompt-config";
+import {ShellIntegrationWriter} from "../shell-integration.writer";
 
 
 export abstract class ConfigService {
@@ -176,6 +177,9 @@ export class RealConfigService extends ConfigService {
             defaultConfigString,
             userConfigString
         );
+
+        // Ensure shell integration scripts are installed
+        await ShellIntegrationWriter.ensure();
 
         if (config.enable_watch_config) {
             setTimeout(async () => {

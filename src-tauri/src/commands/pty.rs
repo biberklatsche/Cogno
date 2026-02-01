@@ -6,17 +6,15 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use super::shell_spawner::{ShellProfile, ShellSpawner};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpawnOptions {
     pub name: String,
     pub cols: u16,
     pub rows: u16,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResizeOptions {
-    pub cols: u16,
-    pub rows: u16,
+    pub profile: ShellProfile,
+    pub dev_mode: Option<bool>,
 }
 
 struct Session {
@@ -41,14 +39,17 @@ impl PtyState {
 pub async fn pty_spawn(
     app: AppHandle,
     state: State<'_, PtyState>,
-    program: String,
-    args: Vec<String>,
     options: SpawnOptions,
 ) -> Result<(), String> {
     let terminal_id = options.name.clone();
-    
+
+    // Prepare shell spawn with integration
+    let dev_mode = options.dev_mode.unwrap_or(false);
+    let spawner = ShellSpawner::new(dev_mode)?;
+    let (program, args, env, working_dir) = spawner.prepare_spawn(&options.profile)?;
+
     let pty_system = native_pty_system();
-    
+
     let pair = pty_system
         .openpty(PtySize {
             rows: options.rows,
@@ -60,6 +61,23 @@ pub async fn pty_spawn(
 
     let mut cmd = CommandBuilder::new(&program);
     cmd.args(&args);
+
+    // Set environment variables
+    for (key, value) in env {
+        cmd.env(key, value);
+    }
+
+    // Set working directory (expand ~ if needed)
+    let expanded_dir = if working_dir.starts_with("~") {
+        if let Some(home) = dirs::home_dir() {
+            working_dir.replacen("~", &home.to_string_lossy(), 1)
+        } else {
+            working_dir
+        }
+    } else {
+        working_dir
+    };
+    cmd.cwd(expanded_dir);
 
     let mut child = pair
         .slave
@@ -93,20 +111,22 @@ pub async fn pty_spawn(
     let terminal_id_for_child = terminal_id.clone();
     let app_for_child = app.clone();
     let sessions_for_child = state.sessions.clone();
-    
+
     std::thread::spawn(move || {
-        // Wait for process to end
         let exit_code = match child.wait() {
             Ok(status) => status.exit_code() as i32,
             Err(_) => 1,
         };
-        
-        println!("exit!!!! Child process ended with code: {}", exit_code);
-        
-        let _ = app_for_child.emit(&format!("pty-exit:{}", terminal_id_for_child), serde_json::json!({
-            "exitCode": exit_code
-        }));
-        
+
+        println!("Child process ended with code: {}", exit_code);
+
+        let _ = app_for_child.emit(
+            &format!("pty-exit:{}", terminal_id_for_child),
+            serde_json::json!({
+                "exitCode": exit_code
+            }),
+        );
+
         let mut sessions = sessions_for_child.lock().unwrap();
         sessions.remove(&terminal_id_for_child);
     });
@@ -119,7 +139,7 @@ pub async fn pty_spawn(
     std::thread::spawn(move || {
         let mut reader = reader;
         let mut buf = [0u8; 8192];
-        
+
         loop {
             if should_exit_clone.load(Ordering::Relaxed) {
                 break;
@@ -153,18 +173,18 @@ pub fn pty_write(
     data: String,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
-    
+
     if let Some(session) = sessions.get_mut(&terminal_id) {
         session
             .writer
             .write_all(data.as_bytes())
             .map_err(|e| format!("Failed to write to PTY: {}", e))?;
-        
+
         session
             .writer
             .flush()
             .map_err(|e| format!("Failed to flush PTY: {}", e))?;
-        
+
         Ok(())
     } else {
         Err(format!("Session not found: {}", terminal_id))
@@ -179,7 +199,7 @@ pub fn pty_resize(
     rows: u16,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
-    
+
     if let Some(session) = sessions.get_mut(&terminal_id) {
         session
             .master
@@ -190,7 +210,7 @@ pub fn pty_resize(
                 pixel_height: 0,
             })
             .map_err(|e| format!("Failed to resize PTY: {}", e))?;
-        
+
         Ok(())
     } else {
         Err(format!("Session not found: {}", terminal_id))
@@ -203,7 +223,7 @@ pub fn pty_kill(
     terminal_id: String,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
-    
+
     if let Some(session) = sessions.remove(&terminal_id) {
         session.should_exit.store(true, Ordering::Relaxed);
         drop(session.master);
