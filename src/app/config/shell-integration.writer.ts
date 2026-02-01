@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.9";
+const INTEGRATION_VERSION = "1.0.10";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -531,6 +531,9 @@ if ($env:COGNO_ALLOW_USER_RC -eq "1") {
     }
 }
 
+$esc = [char]27
+$bel = [char]7
+
 # State
 $global:COGNO_COUNT = 0
 $global:COGNO_LAST_CMD = ""
@@ -541,22 +544,26 @@ function Sanitize-CognoCommand {
     $s = $Command
     $s = $s -replace "\`r", ""
     $s = $s -replace "\`n", "\\n"
-    $s = $s -replace "\`e", ""
-    $s = $s -replace "\`a", ""
+    $s = $s -replace "[$esc]", ""
+    $s = $s -replace "[$bel]", ""
     $s = $s -replace ";", "\\;"
     $s = $s -replace "\\|", "\\|"
 
     return $s
 }
 
-# Capture command before execution
-$ExecutionContext.InvokeCommand.PreCommandLookupAction = {
-    param($CommandName, $CommandLookupEventArgs)
+# Pre-Execution Hook via PSReadLine
+if ($null -ne (Get-Module -ListAvailable PSReadLine)) {
+    Set-PSReadLineKeyHandler -Key Enter -ScriptBlock {
+        $line = ""
+        $cursor = 0
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
 
-    # Get the command line
-    $line = $CommandLookupEventArgs.CommandOrigin
-    if ($line -and $line.ToString()) {
-        $global:COGNO_LAST_CMD = $line.ToString()
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            $global:COGNO_LAST_CMD = $line
+            $global:COGNO_CMD_SEEN = $true
+        }
+        [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
     }
 }
 
@@ -578,7 +585,7 @@ function prompt {
     }
 
     # OSC payload
-    $osc = "\`e]733;COGNO:PROMPT;returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;\`e\\"
+    $osc = "\${esc}]733;COGNO:PROMPT;returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;\${bel}"
     Write-Host -NoNewline $osc
 
     # Reset for next prompt

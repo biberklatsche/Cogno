@@ -23,7 +23,7 @@ export abstract class ConfigService {
 
     /**
      * Returns the shell config for a given profile name.
-     * Falls name fehlt oder ungültig ist, wird default verwendet.
+     * If name is missing or invalid, default is used.
      */
     abstract getShellProfileOrDefault(name?: string): ShellProfile;
 
@@ -66,17 +66,17 @@ export class RealConfigService extends ConfigService {
             throw new Error('No shell profiles defined!');
         }
 
-        // 1) expliziter Name
+        // 1) Explicit name
         if (name && profiles[name]) {
             return { ...profiles[name] };
         }
 
-        // 2) default
+        // 2) Default
         if (shell.default && profiles[shell.default]) {
             return { ...profiles[shell.default] };
         }
 
-        // 3) Fallback: erstes Profil
+        // 3) Fallback: first profile
         return { ...profiles[profileNames[0]] };
     }
 
@@ -158,7 +158,7 @@ export class RealConfigService extends ConfigService {
         const path = Environment.configFilePath();
 
         if (!await Fs.exists(path)) {
-            // Initiale Config im neuen Format
+            // Initial config in new format
             const userConfig: Config = {
                 shell: {
                     default: '',

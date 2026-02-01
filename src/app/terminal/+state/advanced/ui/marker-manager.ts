@@ -33,10 +33,10 @@ export class MarkerManager implements IDisposable {
         const viewportStart = buffer.viewportY - 1;
         const viewportEnd = viewportStart + this._terminal.rows - 1; // inclusive
 
-        // Sichtbarkeit der Commands strikt auf den aktuellen Viewport setzen
+        // Strictly set visibility of commands to the current viewport
         this.updateViewportVisibility(viewportStart, viewportEnd);
 
-        // Wir scannen den aktuellen Viewport + einen größeren Puffer um Flackern zu vermeiden
+        // We scan the current viewport + a larger buffer to avoid flickering
         const startScan = Math.max(0, viewportStart - 20);
         const endScan = Math.min(buffer.length - 1, viewportEnd + 20);
 
@@ -52,23 +52,23 @@ export class MarkerManager implements IDisposable {
             }
         }
 
-        // Disposed Decorations und Marker entfernen
+        // Remove disposed decorations and markers
         for (const [marker, decoration] of this._decorations.entries()) {
             if (decoration.isDisposed) {
                 this._decorations.delete(marker);
             }
         }
 
-        // Neue Marker hinzufügen
+        // Add new markers
         for (const lineIndex of currentMarkerLines) {
-            // Prüfe ob bereits ein Marker für diese Zeile existiert
+            // Check if a marker already exists for this line
             const existingMarker = this.findMarkerForLine(lineIndex);
             if (!existingMarker) {
                 this.addMarker(lineIndex);
             }
         }
 
-        // Alte Dekorationen entfernen, deren Marker nicht mehr im Scan-Bereich sind
+        // Remove old decorations whose markers are no longer in the scan range
         for (const [marker, decoration] of this._decorations.entries()) {
             const markerLine = marker.line;
             if (markerLine < startScan || markerLine > endScan || !currentMarkerLines.has(markerLine)) {
@@ -106,7 +106,7 @@ export class MarkerManager implements IDisposable {
 
         let firstCommandOutOfViewportIdx = -1;
         if(!isCommandOnFirstLine) {
-            // Finde den ersten Command oberhalb des Viewports
+            // Find the first command above the viewport
             for (let i = viewportStart - 1; i >= 0; i--) {
                 const line = buffer.getLine(i);
                 if (!line) continue;
@@ -137,7 +137,7 @@ export class MarkerManager implements IDisposable {
         if (!line) return;
 
         const lineText = line.translateToString();
-        // Erwarte ^^#<ID> am Anfang der Zeile
+        // Expect ^^#<ID> at the beginning of the line
         const match = lineText.match(/^\^\^#(\d+)/);
         const commandId = match ? match[1] : undefined;
         const commandIndex = this.findCommandIndex(commandId);

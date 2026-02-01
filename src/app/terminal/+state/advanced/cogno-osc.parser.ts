@@ -4,6 +4,7 @@ const OscParser = {
      * "COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air-von-Lars;directory=/Users/larswolfram;id=7;command=ls;"
      */
     parse(input: string): Record<string, string> | undefined {
+
         if(!input) return undefined;
 
         const prefix = "COGNO:PROMPT;";
@@ -48,6 +49,17 @@ function splitUnescaped(s: string, delimiter: string): string[] {
         }
 
         if (ch === "\\") {
+            // Lookahead: Is this a Windows drive path?
+            // Check if cur ends with "X:" (e.g., "C:", "D:")
+            if (/[A-Za-z]:$/.test(cur) && i + 1 < s.length) {
+                const nextCh = s[i + 1];
+                // If the \ is followed by a delimiter or the end, it's a Windows path
+                if (nextCh === delimiter || i + 1 === s.length - 1) {
+                    cur += ch; // Add backslash as part of the path
+                    continue;
+                }
+            }
+
             cur += ch;
             escaped = true;
             continue;
@@ -64,6 +76,11 @@ function splitUnescaped(s: string, delimiter: string): string[] {
 
     res.push(cur);
     return res;
+}
+
+function looksLikeWindowsDriveRoot(s: string): boolean {
+    // Supports both: C:\ and C:/
+    return /^[A-Za-z]:[\\\/]$/.test(s);
 }
 
 function indexOfUnescaped(s: string, needle: string): number {

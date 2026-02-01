@@ -37,11 +37,11 @@ export class ShellConfigurator {
         } else {
             config.shell.profiles ??= {};
             config.shell.order ??= [];
-            // default lassen wir ggf. wie er ist (siehe weiter unten)
+            // Leave default as it is (see below)
         }
 
-        // Optional: nur initial befüllen, wenn noch keine Profile existieren
-        // (damit du User-Konfig nicht überschreibst)
+        // Optional: only populate initially if no profiles exist yet
+        // (to avoid overwriting user configuration)
         if (Object.keys(config.shell.profiles).length > 0) {
             return;
         }
@@ -54,13 +54,13 @@ export class ShellConfigurator {
             order.push(name);
         }
 
-        // Default setzen: wenn leer oder ungültig → erstes Profil
+        // Set default: if empty or invalid → first profile
         const hasDefault = !!config.shell.default && !!config.shell.profiles[config.shell.default];
         if (!hasDefault) {
             config.shell.default = order[0] ?? '';
         }
 
-        // order setzen (nur wenn du UI-Reihenfolge brauchst)
+        // set order (only if you need UI order)
         config.shell.order = order;
     }
 
@@ -68,7 +68,7 @@ export class ShellConfigurator {
         profiles: Record<string, ShellProfile>,
         shellType: ShellType
     ): string {
-        // Basisname aus ShellType (z.B. "ZSH" -> "zsh", "GitBash" -> "gitbash")
+        // Base name from ShellType (e.g., "ZSH" -> "zsh", "GitBash" -> "gitbash")
         const base = shellType.toLowerCase();
 
         if (!profiles[base]) return base;

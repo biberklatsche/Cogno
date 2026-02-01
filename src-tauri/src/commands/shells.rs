@@ -37,7 +37,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
             }
         }
 
-        // Git Bash aus Registry
+        // Git Bash from Registry
         let git_paths = [
             "SOFTWARE\\GitForWindows",
             "SOFTWARE\\WOW6432Node\\GitForWindows",
@@ -66,7 +66,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
         use std::fs::read_to_string;
         use std::path::Path;
 
-        // Liefert "Bash", "ZSH" oder "Fish" (genau so geschrieben), sonst None
+        // Returns "Bash", "ZSH" or "Fish" (exactly as written), otherwise None
         fn detect_shell_label(path: &str) -> Option<&'static str> {
             let fname = Path::new(path)
                 .file_name()
@@ -74,12 +74,12 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 .unwrap_or("")
                 .to_ascii_lowercase();
 
-            // exakte Namen zuerst
+            // exact names first
             if fname == "bash" { return Some("Bash"); }
             if fname == "zsh"  { return Some("ZSH"); }
             if fname == "fish" { return Some("Fish"); }
 
-            // optional: toleranter für Varianten wie bash5, zsh-5.9, fish-3.6
+            // optional: more tolerant for variants like bash5, zsh-5.9, fish-3.6
             if fname.contains("bash") { return Some("Bash"); }
             if fname.contains("zsh")  { return Some("ZSH"); }
             if fname.contains("fish") { return Some("Fish"); }
@@ -104,7 +104,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
                     shells.push(ShellInfo {
                         name,
                         path: line.to_string(),
-                        shell_type: label.to_string(), // "Bash", "ZSH" oder "Fish"
+                        shell_type: label.to_string(), // "Bash", "ZSH" or "Fish"
                     });
                 }
             }

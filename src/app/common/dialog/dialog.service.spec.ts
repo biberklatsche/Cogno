@@ -102,17 +102,17 @@ describe('DialogService', () => {
     const hostEl = componentRefMock.location.nativeElement;
     vi.spyOn(hostEl, 'remove');
 
-    // Wir rufen open auf. Intern wird ein DialogRef erstellt.
-    // Da wir aber componentRefMock.instance.dialogRef mocken, 
-    // müssen wir sicherstellen, dass wir das echte Verhalten testen können,
-    // oder zumindest dass die destroy-Funktion, die der Service erstellt, korrekt ist.
+    // We call open. Internally, a DialogRef is created.
+    // But since we mock componentRefMock.instance.dialogRef,
+    // we need to ensure that we can test the real behavior,
+    // or at least that the destroy function created by the service is correct.
     
-    // Um die interne 'destroy'-Funktion zu testen, müssen wir zulassen, dass der Service
-    // ein DialogRef erstellt, und wir müssen dieses abfangen.
-    // ODER wir mocken den DialogRef-Constructor (schwierig in JS/TS).
+    // To test the internal 'destroy' function, we must allow the service
+    // to create a DialogRef, and we must intercept it.
+    // OR we mock the DialogRef constructor (difficult in JS/TS).
     
-    // Einfacherer Weg: Wir schauen uns an, was der Service mit hostRef.setInput('dialogRef', ...) macht.
-    // Dort übergibt er das von ihm erstellte DialogRef an die Komponente.
+    // Simpler way: We look at what the service does with hostRef.setInput('dialogRef', ...).
+    // There it passes the DialogRef it created to the component.
     
     let capturedDialogRef: DialogRef<any> | undefined;
     componentRefMock.setInput.mockImplementation((name: string, value: any) => {
