@@ -25,6 +25,7 @@ export const ConfigSchema = z.object({
     enable_webgl: z.boolean().optional(),
     enable_watch_config: z.boolean().optional(),
 
+    inactive_overlay_opacity: z.number().int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
     convert_eol: z.boolean().optional(),
     ignore_bracketed_paste_mode: z.boolean().optional(),
     minimum_contrast_ratio: z.number().optional(),

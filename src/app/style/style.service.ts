@@ -27,6 +27,7 @@ export class StyleService {
         const menuOpacity = config.menu?.opacity ?? 100;
         const opacity = Color.getHexOpacity(menuOpacity)
         const opacityDouble = Color.getHexOpacity(menuOpacity === 100 ? 100 : menuOpacity / 2);
+        const inactiveOpacity = (config.inactive_overlay_opacity ?? 50) / 100;
 
         document.documentElement.style.setProperty('--background-color', `#${config.color!.background}`);
         document.documentElement.style.setProperty('--background-color-ct', `#${config.color!.background}${opacity}`);
@@ -108,6 +109,7 @@ export class StyleService {
         document.documentElement.style.setProperty('--app-font-family', `${config.font!.app!.family}`);
         document.documentElement.style.setProperty('--app-font-size', `${config.font!.app!.size}px`);
         document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top}rem ${config.padding!.right}rem ${config.padding!.bottom}rem ${config.padding!.left}rem`);
+        document.documentElement.style.setProperty('--inactive-overlay-opacity', `${inactiveOpacity}`);
         if (config.allow_transparency && config.background_image?.path) {
             const url = Fs.convertFileSrc(config.background_image.path);
             const color = `#${config.color!.background}` + Color.getHexOpacity(config.background_image.opacity);
