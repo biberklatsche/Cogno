@@ -105,6 +105,20 @@ describe('ConfigReader', () => {
         expect(config.shell!.profiles['default']?.args?.length).toBe(2);
     });
 
+    it('empty array [] is parsed correctly, not as [undefined]', () => {
+        const text = `
+      shell.default=default
+      shell.profiles.default.shell_type=Bash
+      shell.profiles.default.path=/bin/test
+      shell.profiles.default.args=[]
+    `;
+        const config = ConfigReader.fromStringToConfig(defaultText, text);
+
+        // Empty array should be [], not [undefined]
+        expect(config.shell!.profiles['default']?.args).toEqual([]);
+        expect(config.shell!.profiles['default']?.args?.length).toBe(0);
+    });
+
     it('adds platform-specific font fallbacks to font.family', () => {
         const text = `
       font.family=monospace

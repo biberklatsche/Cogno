@@ -137,8 +137,13 @@ export class ConfigReader {
             if (
                 (rawVal.startsWith("[") && rawVal.endsWith("]"))
             ) {
-                rawVal = rawVal.slice(1, -1);
-                value = rawVal.split(',').map(v => this.parseValue(v));
+                rawVal = rawVal.slice(1, -1).trim();
+                // Empty array case: [] becomes empty array, not [undefined]
+                if (rawVal.length === 0) {
+                    value = [];
+                } else {
+                    value = rawVal.split(',').map(v => this.parseValue(v));
+                }
             } else {
                 value = this.parseValue(rawVal);
             }

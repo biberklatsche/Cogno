@@ -13,6 +13,7 @@ pub struct ShellProfile {
     pub working_dir: Option<String>,
     pub enable_shell_integration: Option<bool>,
     pub inject_path: Option<bool>,
+    pub load_user_rc: Option<bool>,
 }
 
 pub struct ShellSpawner {
@@ -39,6 +40,7 @@ impl ShellSpawner {
 
         let enable_integration = profile.enable_shell_integration.unwrap_or(true);
         let inject_path = profile.inject_path.unwrap_or(true);
+        let load_user_rc = profile.load_user_rc.unwrap_or(false);
         let working_dir = profile
             .working_dir
             .clone()
@@ -59,6 +61,7 @@ impl ShellSpawner {
         let env_builder = EnvironmentBuilder::new(
             self.integration_root.clone(),
             log_dir,
+            load_user_rc,
         )
         .with_path_injection(inject_path, cogno_paths)
         .with_shell_specific_env(&profile.shell_type, &working_dir);

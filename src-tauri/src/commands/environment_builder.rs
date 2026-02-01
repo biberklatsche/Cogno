@@ -14,13 +14,14 @@ pub struct EnvironmentBuilder {
 }
 
 impl EnvironmentBuilder {
-    pub fn new(integration_root: PathBuf, log_dir: PathBuf) -> Self {
+    pub fn new(integration_root: PathBuf, log_dir: PathBuf, load_user_rc: bool) -> Self {
         let session_id = Uuid::new_v4().to_string();
 
         let mut env = HashMap::new();
 
         // Mandatory environment variables
         env.insert("COGNO".to_string(), "1".to_string());
+        env.insert("TERM".to_string(), "xterm-256color".to_string());
         env.insert("TERM_PROGRAM".to_string(), "cogno2".to_string());
         env.insert("COGNO_SESSION_ID".to_string(), session_id.clone());
         env.insert(
@@ -31,7 +32,10 @@ impl EnvironmentBuilder {
             "COGNO_LOG_DIR".to_string(),
             log_dir.to_string_lossy().to_string(),
         );
-        env.insert("COGNO_ALLOW_USER_RC".to_string(), "0".to_string());
+        env.insert(
+            "COGNO_ALLOW_USER_RC".to_string(),
+            if load_user_rc { "1" } else { "0" }.to_string(),
+        );
 
         Self {
             env,
