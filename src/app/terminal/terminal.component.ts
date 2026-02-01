@@ -5,7 +5,7 @@ import {
     ElementRef,
     OnInit,
     ViewChild,
-    input, ViewEncapsulation, ChangeDetectionStrategy
+    input, ViewEncapsulation, ChangeDetectionStrategy, signal, Signal
 } from '@angular/core';
 import {TerminalSession} from "./+state/terminal.session";
 import {TerminalHeaderComponent} from "./header/terminal-header.component";
@@ -14,6 +14,7 @@ import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-me
 import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 import {ShellProfile} from "../config/+models/shell-config";
 import {TerminalStateManager} from "./+state/state";
+import {toSignal} from "@angular/core/rxjs-interop";
 
 @Component({
     selector: 'app-terminal',
@@ -36,11 +37,15 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     terminalId = input.required<TerminalId>();
     shellProfile = input.required<ShellProfile>();
 
+    isFocused: Signal<boolean | undefined>;
+
     constructor(
         private destroyRef: DestroyRef,
         private menu: ContextMenuOverlayService,
-        private terminalSession: TerminalSession
+        private terminalSession: TerminalSession,
+        private terminalStateManager: TerminalStateManager
     ) {
+        this.isFocused = toSignal(this.terminalStateManager.isFocused$);
     }
 
     ngOnInit(): void {
