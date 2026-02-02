@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.10";
+const INTEGRATION_VERSION = "1.0.11";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -285,7 +285,7 @@ trap '_cogno_preexec' DEBUG
 PROMPT_COMMAND='_cogno_precmd'
 
 # Set prompt - Bash 3.2 doesn't expand variables in PS1 as easily
-PS1='\\n^^#\${COGNO_COUNT}\\n$ '
+PS1='\\n^^#\${COGNO_COUNT}\\n'
 `;
 
 const ZSH_BOOTSTRAP = `#!/bin/zsh
@@ -389,7 +389,7 @@ _cogno_precmd() {
 add-zsh-hook preexec _cogno_preexec
 add-zsh-hook precmd  _cogno_precmd
 
-PROMPT=$'^^#\${COGNO_COUNT}\\n% '
+PROMPT=$'\\n^^#\${COGNO_COUNT}\\n'
 `;
 
 const FISH_BOOTSTRAP = `#!/usr/bin/env fish
