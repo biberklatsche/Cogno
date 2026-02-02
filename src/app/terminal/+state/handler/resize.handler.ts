@@ -17,7 +17,6 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     private _terminal?: Terminal;
     private _fitAddon?: FitAddon;
     private _resizeRaf?: number;
-    private _ptyResizeTimeout: number | null = null;
 
     constructor(
         private _terminalId: TerminalId,
@@ -87,15 +86,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
             const cellWidth = core?._renderService?._charSizeService?.width;
 
             this._stateManager.updateDimensions({ cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth });
-
-            if (this._ptyResizeTimeout !== null) {
-                clearTimeout(this._ptyResizeTimeout);
-            }
-
-            this._ptyResizeTimeout = window.setTimeout(() => {
-                this._pty.resize(newRendererDimensions);
-                this._ptyResizeTimeout = null;
-            }, 100);
+            this._pty.resize(newRendererDimensions);
         }
     }
 
