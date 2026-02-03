@@ -30,7 +30,7 @@ export class WorkspaceService {
 
     constructor(
         private bus: AppBus,
-        sideMenuService: SideMenuService,
+        private sideMenuService: SideMenuService,
         config: ConfigService,
         keybinds: KeybindService,
         private workspaceRepository: WorkspaceRepository,
@@ -51,7 +51,7 @@ export class WorkspaceService {
                 onOpen: () => this.onOpen(),
                 onClose: () => this.onClose(),
             },
-            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+            { sideMenuService: this.sideMenuService, bus, configService: config, keybinds, destroyRef }
         );
 
         this.bus.onceType$('DBInitialized').subscribe(async e => {
@@ -177,6 +177,13 @@ export class WorkspaceService {
             this.tabListService.selectTab(workspace!.tabs[0].tabId);
         }
         this._workspaceList.set(workspaceList);
+
+        // Update badge color - don't show badge for default workspace
+        if (workspace.id === DEFAULT_WORKSPACE_ID) {
+            this.sideMenuService.updateBadgeColor('Workspace', undefined);
+        } else {
+            this.sideMenuService.updateBadgeColor('Workspace', workspace.color);
+        }
     }
 
     createWorkspaceDraft(): WorkspaceConfigUi {

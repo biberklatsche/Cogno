@@ -48,6 +48,9 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 <button class="button icon-button" (click)="open(menuItem)"
                         [class.selected]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
+                    @if (menuItem.badgeColor) {
+                        <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
+                    }
                 </button>
             }
         </menu>`,
@@ -72,6 +75,20 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 
             .button.icon.selected {
                 background-color: var(--background-color-30l-ct2);
+            }
+
+            .button {
+                position: relative;
+            }
+
+            .badge {
+                position: absolute;
+                bottom: 2px;
+                right: 2px;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                border: 1px solid var(--background-color);
             }
         }
 

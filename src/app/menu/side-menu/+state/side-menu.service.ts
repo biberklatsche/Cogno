@@ -13,6 +13,8 @@ export type SideMenuItem = {
     separator?: boolean;
     // Optional component to render in the side "aside" area when this item is active
     component: Type<any>;
+    // Optional badge color indicator
+    badgeColor?: string;
 };
 
 @Injectable({providedIn: 'root'})
@@ -128,5 +130,10 @@ export class SideMenuService {
     updateIcon(label: string, icon: Icon) {
         this._menuItems.update(s => s.map(i => i.label === label ? {...i, icon} : i));
         this._selectedItem.update(s => s?.label === label ? {...s, icon} : s);
+    }
+
+    updateBadgeColor(label: string, color?: string) {
+        this._menuItems.update(s => s.map(i => i.label === label ? {...i, badgeColor: color} : i));
+        this._selectedItem.update(s => s?.label === label ? {...s, badgeColor: color} : s);
     }
 }
