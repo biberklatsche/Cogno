@@ -39,7 +39,7 @@ export class FocusHandler implements ITerminalHandler {
             path: ['app', 'terminal', this._terminalId],
             type: 'PtyInitialized'
         }).subscribe(event => {
-            this.focus();
+            setTimeout(() => this.focus(), 50);
         }));
 
         this.subscription.add(this._bus.on$({

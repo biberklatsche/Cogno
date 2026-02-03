@@ -76,15 +76,14 @@ export class WorkspaceService {
                 if (msg.payload !== 'close_window' && msg.payload !== 'quit') return;
                 const args = msg.args ?? [];
                 // Guard to avoid endless loop when we re-publish
-                if (args.includes('autosave_done')) return;
+                if (args.includes('workspace_saved')) return;
 
                 const active = this.getActiveWorkspace();
-                if (!active?.autosave) return;
-
-                // Stop current propagation, perform autosave, then re-publish action
+                if (active?.autosave) {
+                    await this.saveWorkspace(active);
+                }
                 msg.propagationStopped = true;
-                await this.saveWorkspace(active);
-                this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'autosave_done']));
+                this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'workspace_saved']));
             });
     }
 

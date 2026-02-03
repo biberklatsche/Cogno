@@ -5,11 +5,14 @@ import {AppBus} from "../app-bus/app-bus";
 import {invoke} from "@tauri-apps/api/core";
 import {Logger} from "../_tauri/logger";
 import {Process} from "../_tauri/process";
+import {ActionFired} from "../action/action.models";
 
 @Injectable({
   providedIn: 'root'
 })
 export class WindowService {
+  private isClosing = false;
+
   constructor(bus: AppBus, ref: DestroyRef) {
       bus.publish({type: "InitConfigCommand"});
       bus.on$({path: ['app', 'action'], type: 'ActionFired'})
@@ -28,16 +31,28 @@ export class WindowService {
                       event.performed = true;
                       break;
                   case 'close_window':
-                      AppWindow.close().then(() => Logger.debug('close window'));
-                      event.performed = true;
+                      // Only close if all pre-close handlers are done (marked by 'ready_to_close')
+                      if (event.args?.includes('workspace_saved')) {
+                          this.isClosing = true;
+                          AppWindow.close().then(() => Logger.debug('close window'));
+                          event.performed = true;
+                      }
                       break;
               }
           });
 
       AppWindow.onCloseRequested$
           .pipe(takeUntilDestroyed(ref))
-          .subscribe(() => {
-              bus.publish({type: "ActionFired", path: ['app', 'action'], payload: 'close_all_tabs'});
+          .subscribe(async (evt) => {
+              // Prevent infinite loop
+              if (this.isClosing) return;
+
+              // Prevent the window from closing immediately
+              evt.preventDefault();
+
+              // Fire close_window event - other services can intercept to do cleanup
+              // They should re-fire with 'ready_to_close' when done
+              bus.publish(ActionFired.create('close_window', undefined, []));
           });
   }
 }

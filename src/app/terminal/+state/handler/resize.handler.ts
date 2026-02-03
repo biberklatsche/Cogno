@@ -79,14 +79,12 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         const newRendererDimensions = this._fitAddon.proposeDimensions();
         if(!newRendererDimensions) return;
         if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
+            this._pty.resize(newRendererDimensions);
             this._fitAddon.fit();
-
             const core = (this._terminal as any)._core;
             const cellHeight = core?._renderService?._charSizeService?.height;
             const cellWidth = core?._renderService?._charSizeService?.width;
-
             this._stateManager.updateDimensions({ cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth });
-            this._pty.resize(newRendererDimensions);
         }
     }
 
