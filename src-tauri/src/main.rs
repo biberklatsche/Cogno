@@ -1,3 +1,4 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use clap::Parser;
 use cogno_lib::cli::{Cli};
 use cogno_lib::commands::config::read_default_config;

@@ -38,7 +38,6 @@ export class Renderer implements IRenderer, IDisposable {
             smoothScrollDuration: config.scrollbar!.smooth_scroll_duration,
             allowTransparency: config.allow_transparency,
             altClickMovesCursor: config.cursor!.alt_click_moves_cursor,
-            convertEol: config.convert_eol,
             customGlyphs: config.font!.custom_glyphs,
             drawBoldTextInBrightColors: config.font!.draw_bold_text_in_bright_colors,
             ignoreBracketedPasteMode: config.ignore_bracketed_paste_mode,
