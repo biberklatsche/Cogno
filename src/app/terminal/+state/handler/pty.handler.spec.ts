@@ -71,9 +71,11 @@ describe('PtyHandler', () => {
       
       // First data event
       onPtyDataCallback('pty output 1');
-      expect(writeSpy).toHaveBeenCalledWith('pty output 1');
-      
-      // Wait for onWriteParsed to be called
+
+      // First write is buffered, not written yet
+      expect(writeSpy).not.toHaveBeenCalled();
+
+      // Wait for onWriteParsed to be called and trigger it
       expect(mockTerminal.onWriteParsed).toHaveBeenCalled();
       onWriteParsedCallback();
 
@@ -85,10 +87,10 @@ describe('PtyHandler', () => {
       }));
       expect(onWriteParsedDispose).toHaveBeenCalled();
 
-      // Second data event
+      // Second data event - should flush buffered data along with new data
       publishSpy.mockClear();
       onPtyDataCallback('pty output 2');
-      expect(writeSpy).toHaveBeenCalledWith('pty output 2');
+      expect(writeSpy).toHaveBeenCalledWith('pty output 2pty output 1');
       expect(publishSpy).not.toHaveBeenCalled();
     });
   });

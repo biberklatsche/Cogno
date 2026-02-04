@@ -56,7 +56,7 @@ describe('WindowService', () => {
         });
 
         it('should handle close_window action', async () => {
-            const event = { type: 'ActionFired', payload: 'close_window', path: ['app', 'action'] } as any;
+            const event = { type: 'ActionFired', payload: 'close_window', path: ['app', 'action'], args: ['workspace_saved'] } as any;
             bus.publish(event);
 
             await vi.waitFor(() => {
@@ -77,13 +77,13 @@ describe('WindowService', () => {
     });
 
     describe('onCloseRequested$', () => {
-        it('should publish close_all_tabs when window close is requested', () => {
-            (AppWindow.onCloseRequested$ as Subject<any>).next({});
-            
+        it('should publish close_window when window close is requested', () => {
+            (AppWindow.onCloseRequested$ as Subject<any>).next({ preventDefault: vi.fn() });
+
             expect(bus.publish).toHaveBeenCalledWith(expect.objectContaining({
                 type: "ActionFired",
                 path: ['app', 'action'],
-                payload: 'close_all_tabs'
+                payload: 'close_window'
             }));
         });
     });

@@ -101,6 +101,47 @@ describe('CommandLineObserver', () => {
     stateManager.startCommand();
     stateManager.updateInput({ text: '', cursorIndex: 10, maxCursorIndex: 10 });
 
+    // Advance time past debounce period to ensure debounce is not the reason for skipping
+    vi.advanceTimersByTime(150);
+
+    onCursorMoveCallback();
+
+    expect(stateManager.input.cursorIndex).toBe(10);
+  });
+
+  it('should NOT update cursorIndex during active typing (within debounce period)', () => {
+    observer.registerTerminal(mockTerminal);
+    const onCursorMoveCallback = vi.mocked(mockTerminal.onCursorMove).mock.calls[0][0];
+    const onKeyCallback = vi.mocked(mockTerminal.onKey).mock.calls[0][0];
+
+    // Mock terminal buffer
+    const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: /path $ ');
+    const inputLine = TerminalMockFactory.createLine('some input text');
+    vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
+      if (index === 0) return promptLine;
+      if (index === 1) return inputLine;
+      return null;
+    });
+    mockTerminal.buffer.active.length = 2;
+    mockTerminal.buffer.active.viewportY = 0;
+    mockTerminal.buffer.active.cursorY = 1;
+    mockTerminal.buffer.active.cursorX = 5;
+
+    stateManager.endCommand();
+    stateManager.updateInput({ text: '', cursorIndex: 5, maxCursorIndex: 5 });
+
+    // Simulate a keystroke
+    onKeyCallback({ key: 'a', domEvent: {} as any });
+
+    // Try to update cursor position immediately after keystroke
+    onCursorMoveCallback();
+
+    // Cursor should not have been updated (still at 5)
+    expect(stateManager.input.cursorIndex).toBe(5);
+
+    // After debounce period, cursor updates should work again
+    vi.advanceTimersByTime(150);
+    mockTerminal.buffer.active.cursorX = 10;
     onCursorMoveCallback();
 
     expect(stateManager.input.cursorIndex).toBe(10);
