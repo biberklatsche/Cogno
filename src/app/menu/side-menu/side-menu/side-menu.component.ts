@@ -73,8 +73,8 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 margin: 0;
             }
 
-            .button.icon.selected {
-                background-color: var(--background-color-30l-ct2);
+            .button.icon-button.selected {
+                background-color: var(--background-color-10l);
             }
 
             .button {

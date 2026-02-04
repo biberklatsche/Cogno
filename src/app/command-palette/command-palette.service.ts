@@ -174,7 +174,7 @@ export class CommandPaletteService {
 
         setTimeout(() => this.bus.publish(
             ActionFired.createFromDefinition(selected.action)
-        ));
+        ), 50);
     }
 
     public filterCommands(filter: string): void {
