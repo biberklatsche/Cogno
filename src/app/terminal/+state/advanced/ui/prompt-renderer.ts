@@ -1,6 +1,6 @@
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import {timespan} from "../../../../common/timespan/timespan.pipe";
-import {TerminalStateManager} from "../../state";
+import {Command, TerminalStateManager} from "../../state";
 
 type PromptRecord = {
     label?: string;
@@ -26,9 +26,9 @@ export class PromptMarkerRenderer {
         commandIndex: number | undefined,
     ): void {
         hostElement.replaceChildren();
-
-        const markerElement = this.createMarkerElement();
-        const record = this.buildRecord(commandIndex);
+        const command = this.stateManager.commands[commandIndex ?? 0];
+        const markerElement = this.createMarkerElement(command);
+        const record = this.buildRecord(command);
 
         if (this.segments.length === 0) {
             this.renderFallback(markerElement);
@@ -47,9 +47,10 @@ export class PromptMarkerRenderer {
     /* DOM creation                                                        */
     /* ------------------------------------------------------------------ */
 
-    private createMarkerElement(): HTMLDivElement {
+    private createMarkerElement(command: Command): HTMLDivElement {
         const element = document.createElement('div');
         element.classList.add('cogno-marker');
+        element.style.minWidth = `${3 + (command.id?.length ?? 2)}rem`;
         return element;
     }
 
@@ -97,29 +98,12 @@ export class PromptMarkerRenderer {
     /* ------------------------------------------------------------------ */
     /* record building                                                     */
     /* ------------------------------------------------------------------ */
-    private buildRecord(commandIndex: number | undefined): PromptRecord {
-        if (commandIndex === undefined) {
-            return this.createDefaultRecord();
-        }
-        return this.createCommandRecord(commandIndex);
+    private buildRecord(command: Command): PromptRecord {
+        return this.createCommandRecord(command);
     }
 
-    private createDefaultRecord(): PromptRecord {
-        return {
-            label: PromptMarkerRenderer.DEFAULT_LABEL,
-            isInput: false,
-        };
-    }
-
-    private createCommandRecord(index: number): PromptRecord {
-        const command = this.stateManager.commands[index];
-
-        if (!command) {
-            return this.createDefaultRecord();
-        }
-
+    private createCommandRecord(command: Command): PromptRecord {
         const isLastCommand = command.command === undefined;
-
         if (isLastCommand) {
             return {
                 directory: command.directory,
