@@ -23,10 +23,16 @@ export class PromptMarkerRenderer {
 
     public render(
         hostElement: HTMLElement,
-        commandIndex: number | undefined,
+        commandIndex?: number
     ): void {
         hostElement.replaceChildren();
-        const command = this.stateManager.commands[commandIndex ?? 0];
+        const commands = this.stateManager.commands;
+        const command = commands[commandIndex ?? 0];
+
+        if (!command) {
+            return;
+        }
+
         const markerElement = this.createMarkerElement(command);
         const record = this.buildRecord(command);
 

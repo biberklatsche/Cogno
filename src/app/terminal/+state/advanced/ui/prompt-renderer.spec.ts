@@ -18,8 +18,10 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render default label when no segments are provided', () => {
+        stateManager.updateCommandList({ id: 'cmd-1' });
+
         const renderer = new PromptMarkerRenderer(stateManager, []);
-        renderer.render(hostElement, undefined);
+        renderer.render(hostElement, 0);
 
         const marker = hostElement.querySelector('.cogno-marker');
         expect(marker).toBeTruthy();
@@ -27,6 +29,8 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render text segments', () => {
+        stateManager.updateCommandList({ id: 'cmd-1' });
+
         const segments: PromptSegment[] = [
             { text: 'Hello ' },
             { text: 'World' }
@@ -63,6 +67,8 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should apply styles correctly', () => {
+        stateManager.updateCommandList({ id: 'cmd-1' });
+
         const segments: PromptSegment[] = [{
             text: 'Styled',
             foreground: 'red',
@@ -78,7 +84,7 @@ describe('PromptMarkerRenderer', () => {
             title: 'Hover me'
         }];
         const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, undefined);
+        renderer.render(hostElement, 0);
 
         const span = hostElement.querySelector('.prompt-segment') as HTMLElement;
         expect(span.style.color).toBe('var(--color-red)');
@@ -165,21 +171,27 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should handle undefined commandId gracefully', () => {
+        stateManager.updateCommandList({ id: 'cmd-1' });
+
         const segments: PromptSegment[] = [{ field: 'user', fallback: 'anonymous' }];
         const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, undefined);
+        renderer.render(hostElement, 0);
 
         expect(hostElement.textContent).toBe('anonymous');
     });
 
     it('should not render segments with false "when" condition', () => {
+        stateManager.updateCommandList({ id: 'cmd-1' });
+
         const segments: PromptSegment[] = [
             { text: 'Hidden', when: 'isInput == true' },
             { text: 'Visible', when: 'isInput == false' }
         ];
         const renderer = new PromptMarkerRenderer(stateManager, segments);
-        // buildRecord(undefined) returns isInput: false
-        renderer.render(hostElement, undefined);
+        // Command at index 0 with undefined command field returns isInput: true
+        // So we need to add a command field to make it not the input line
+        stateManager.commands[0].set('command', 'ls');
+        renderer.render(hostElement, 0);
 
         expect(hostElement.textContent).toBe('Visible');
     });
