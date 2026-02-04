@@ -138,7 +138,8 @@ pub async fn pty_spawn(
 
     std::thread::spawn(move || {
         let mut reader = reader;
-        let mut buf = [0u8; 8192];
+        let mut buf = [0u8; 4096];
+        let mut utf8_buffer = Vec::new();
 
         loop {
             if should_exit_clone.load(Ordering::Relaxed) {
@@ -146,14 +147,45 @@ pub async fn pty_spawn(
             }
             match std::io::Read::read(&mut reader, &mut buf) {
                 Ok(0) => {
+                    // EOF - flush any remaining valid UTF-8 data
+                    if !utf8_buffer.is_empty() {
+                        let data = String::from_utf8_lossy(&utf8_buffer).to_string();
+                        let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
+                    }
                     break;
                 }
                 Ok(n) => {
-                    if !should_exit_clone.load(Ordering::Relaxed) {
-                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                        let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
-                    } else {
+                    if should_exit_clone.load(Ordering::Relaxed) {
                         break;
+                    }
+
+                    // Append new data to buffer
+                    utf8_buffer.extend_from_slice(&buf[..n]);
+
+                    // Try to convert to UTF-8
+                    match String::from_utf8(utf8_buffer.clone()) {
+                        Ok(text) => {
+                            // All data is valid UTF-8, emit it
+                            let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                            utf8_buffer.clear();
+                        }
+                        Err(e) => {
+                            // Contains invalid UTF-8, but may have valid prefix
+                            let valid_up_to = e.utf8_error().valid_up_to();
+                            if valid_up_to > 0 {
+                                // Emit the valid prefix
+                                let text = String::from_utf8_lossy(&utf8_buffer[..valid_up_to]).to_string();
+                                let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                                // Keep only the invalid suffix (might be incomplete multi-byte char)
+                                utf8_buffer.drain(..valid_up_to);
+                            }
+                            // If buffer gets too large with invalid data, force flush
+                            if utf8_buffer.len() > 16 {
+                                let text = String::from_utf8_lossy(&utf8_buffer).to_string();
+                                let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                                utf8_buffer.clear();
+                            }
+                        }
                     }
                 }
                 Err(_e) => {
