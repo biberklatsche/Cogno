@@ -10,28 +10,14 @@ html, body {
     scrollbar-color: var(--sb-thumb) var(--sb-track);
 }
 
-/* ===== Firefox ===== */
-* {
-    /* Default: hide scrollbars */
-    scrollbar-width: none; /* Firefox: hide */
-    scrollbar-color: transparent transparent;
-    scrollbar-gutter: auto; /* lässt Layout stabiler wirken */
-}
-
-/* Show only while scrolling (controlled by body.scrolling) */
-body.scrolling * {
+body * {
     scrollbar-width: thin; /* Firefox: show thin */
     scrollbar-color: var(--sb-thumb) var(--sb-track);
-}
-
-/* ===== WebKit (Chrome, Edge, Safari) ===== */
-*::-webkit-scrollbar {
-    width: 0; /* hide */
-    height: 0; /* hide */
+    scrollbar-gutter: auto;
 }
 
 /* Show only while body has .scrolling */
-body.scrolling *::-webkit-scrollbar {
+body *::-webkit-scrollbar {
     width: var(--sb-size);
     height: var(--sb-size);
 }

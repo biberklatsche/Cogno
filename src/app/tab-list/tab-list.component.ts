@@ -13,6 +13,7 @@ import {Tab} from "./+model/tab";
 import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
 import {TooltipDirective} from "../common/tooltip/tooltip.directive";
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
+
 @Component({
   selector: 'app-tab-list',
   standalone: true,

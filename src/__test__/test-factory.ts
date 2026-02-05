@@ -13,8 +13,9 @@ import {WindowService} from "../app/window/window.service";
 import {FocusHandler} from "../app/terminal/+state/handler/focus.handler";
 import {SelectionHandler} from "../app/terminal/+state/handler/selection.handler";
 import {TerminalId} from "../app/grid-list/+model/model";
-import {SessionState} from "../app/terminal/+state/session.state";
+import {TerminalStateManager} from "../app/terminal/+state/state";
 import {ShellType} from "../app/config/+models/config";
+import {TerminalSession} from "../app/terminal/+state/terminal.session";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -28,23 +29,32 @@ let terminalComponentFactory: TerminalComponentFactory | undefined;
 let windowService: WindowService | undefined;
 let focusHandler: FocusHandler | undefined;
 let selectionHandler: SelectionHandler | undefined;
-let sessionState: SessionState | undefined;
+let stateManager: TerminalStateManager | undefined;
+let terminalSession: TerminalSession | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
     return appBus;
 }
 
-export function getSessionState(terminalId: TerminalId = 'test-terminal'): SessionState {
-    if(!sessionState) {
-        sessionState = new SessionState(terminalId, 'Bash' as any, getAppBus());
+export function getStateManager(): TerminalStateManager {
+    if(!stateManager) {
+        stateManager = new TerminalStateManager(getAppBus());
+        stateManager.initialize('test-terminal', 'Bash' as any);
     }
-    return sessionState;
+    return stateManager;
 }
 
 export function getSideMenuService(): SideMenuService {
     if(!sideMenuService) sideMenuService = new SideMenuService(getAppBus());
     return sideMenuService;
+}
+
+export function getTerminalSession(): TerminalSession {
+    if(!terminalSession) {
+        terminalSession = new TerminalSession(getConfigService(), getAppBus(), getStateManager());
+    }
+    return terminalSession;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -128,14 +138,14 @@ export function getWindowService(): WindowService {
 
 export function getFocusHandler(terminalId: TerminalId): FocusHandler {
     if(!focusHandler) {
-        focusHandler = new FocusHandler(terminalId, getAppBus(), getSessionState(terminalId));
+        focusHandler = new FocusHandler(terminalId, getAppBus(), getStateManager());
     }
     return focusHandler;
 }
 
 export function getSelectionHandler(terminalId: TerminalId): SelectionHandler {
     if(!selectionHandler) {
-        selectionHandler = new SelectionHandler(getAppBus(), getConfigService() as any, terminalId);
+        selectionHandler = new SelectionHandler(getAppBus(), getConfigService(), terminalId);
     }
     return selectionHandler;
 }
@@ -154,5 +164,5 @@ export function clear() {
     windowService = undefined;
     focusHandler = undefined;
     selectionHandler = undefined;
-    sessionState = undefined;
+    stateManager = undefined;
 }

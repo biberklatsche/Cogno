@@ -4,13 +4,6 @@ import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {ITerminalHandler} from "./handler";
 
-export type TerminalTitle = {
-    oscCode: 0 | 2
-    terminalId: TerminalId;
-    title: string;
-}
-export type TerminalTitleChangedEvent = MessageBase<"TerminalTitleChanged", TerminalTitle>;
-
 export class TerminalTitleHandler implements ITerminalHandler{
 
     private _disposables?: IDisposable[] = undefined;

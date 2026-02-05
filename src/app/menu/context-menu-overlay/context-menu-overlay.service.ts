@@ -104,7 +104,6 @@ export class ContextMenuOverlayService {
     return ref;
   }
 
-  // Convenience: fixed context menu openers
   openContextAt(pointOrEvent: Point | MouseEvent, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
     return this.openAt(pointOrEvent, ContextMenuComponent, inputs);
   }

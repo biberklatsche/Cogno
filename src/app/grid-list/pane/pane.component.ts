@@ -1,24 +1,28 @@
-import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, input, ViewChild, effect, signal, computed} from '@angular/core';
 import {TerminalComponentFactory} from "../+state/terminal-component.factory";
 import {Pane, TerminalId} from "../+model/model";
-import {ShellConfig, ShellConfigPosition} from "../../config/+models/config";
 import {ConfigService} from "../../config/+state/config.service";
+import {ShellProfile} from "../../config/+models/shell-config";
+import {PaneHeaderComponent} from "./pane-header.component";
 
 @Component({
   selector: 'app-pane',
-  imports: [],
+  imports: [PaneHeaderComponent],
   template: `
+      @if (pane().terminalId) {
+          <app-pane-header [cwd]="cwd()" [terminalId]="pane().terminalId!"></app-pane-header>
+      }
       <div #dock class="dock"></div>
   `,
   styles: [`:host{
-      display:block;
-      height:100%;
-      width:100%;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
   }
 
   .dock {
-      height:100%;
-      width:100%;
+      flex: 1;
       min-height: 0;
       min-width: 0;
   }
@@ -31,36 +35,37 @@ export class PaneComponent implements AfterViewInit {
     private _attachedTerminalId?: TerminalId;
     private _viewReady = signal(false);
 
-    constructor(private _terminalComponents: TerminalComponentFactory, private _configService: ConfigService) {
+    cwd = computed(() => this.pane().workingDir || '');
+
+    constructor(
+        private _terminalComponents: TerminalComponentFactory,
+        private _configService: ConfigService
+    ) {
         // Create the effect within an injection context (constructor)
         effect(() => {
-            // wait until view is ready so hostRef is available
             if (!this._viewReady()) return;
             const pane = this.pane();
             const id = pane.terminalId;
-            const shellConfig = this.getShellConfig(pane);
+            const shellProfile = this.getShellProfile(pane);
             const host = this.hostRef?.nativeElement;
             if (!id || !host) return;
             if (this._attachedTerminalId !== id) {
-                // Clear previous content to avoid multiple components in the dock
                 while (host.firstChild) host.removeChild(host.firstChild);
-                this._terminalComponents.attach(id, shellConfig, host);
-                this._attachedTerminalId= id;
+                this._terminalComponents.attach(id, shellProfile, host);
+                this._attachedTerminalId = id;
             }
         });
     }
 
-    getShellConfig(pane: Pane): ShellConfig {
-        if(!pane.shellConfigPosition) throw new Error('Invalid shell config position');
-        const shellConfig = this._configService.getShellConfigOrDefault(pane.shellConfigPosition);
-        if(pane.workingDir) {
-            shellConfig.working_dir = pane.workingDir;
+    private getShellProfile(pane: Pane): ShellProfile {
+        const shellProfile = this._configService.getShellProfileOrDefault(pane.shellName);
+        if (pane.workingDir) {
+            shellProfile.working_dir = pane.workingDir;
         }
-        return shellConfig;
+        return shellProfile;
     }
 
     ngAfterViewInit() {
-        // mark view as ready to trigger the effect once the host is available
         this._viewReady.set(true);
     }
 }

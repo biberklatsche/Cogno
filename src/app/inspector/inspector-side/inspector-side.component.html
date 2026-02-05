@@ -25,7 +25,6 @@
         <div class="table c3">
             <div class="span-full"><b>Terminal {{ i + 1 }}</b></div>
             <div></div>
-            @if (terminalState.isFocused) {
                 <div class="label">Viewport</div>
                 <div class="label">Absolute</div>
                 <div class="label">Mouse</div>
@@ -43,9 +42,14 @@
                     {{ terminalState.cursorPosition.col }}, {{ terminalState.cursorPosition.row }}, '{{ terminalState.cursorPosition.char || ' ' }}'
 
                 </div>
-                <div class="label">Size</div>
+                <div class="label">Terminal Size</div>
                 <div class="value" role="cell">
                     {{ terminalState.dimensions.cols }} × {{ terminalState.dimensions.rows }}
+                </div>
+                <div></div>
+                <div class="label">Cell Size</div>
+                <div class="value" role="cell">
+                    {{ terminalState.dimensions.cellHeight }} × {{ terminalState.dimensions.cellWidth }}
                 </div>
                 <div></div>
                 <div class="label">Input</div>
@@ -58,14 +62,18 @@
                     {{ terminalState.isCommandRunning }}
                 </div>
                 <div></div>
-                <div class="label commands">Last Commands</div>
-                <div class="value command-line">
-                    @for (cmd of getLastCommands(terminalState); track cmd.id) {
-                        <div class="command"  [appTooltip]="cmd.command">{{ cmd.command }}</div>
-                        <div>Return Code: {{ cmd.returnCode ?? '—' }}</div>
+            <div class="label">Full Screen</div>
+            <div class="value">
+                {{ terminalState.isInFullScreenMode }}
+            </div>
+            <div></div>
+                <div class="label commands">History</div>
+                <div class="value command-line span-2">
+                    @for (cmd of terminalHistoryById()[id]; track cmd.id) {
+                        <div class="command" [appTooltip]="cmd.command ?? ''"> {{cmd.id}}  {{ cmd.command }}</div>
+                        <div>Return Code: {{ cmd.returnCode ?? '' }}</div>
                     }
                 </div>
-            }
         </div>
         }
     }

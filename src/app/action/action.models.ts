@@ -33,6 +33,7 @@ export const ACTION_NAMES = [
     'delete_next_word',
     'go_to_next_word',
     'go_to_previous_word',
+    'select_all',
     'select_text_right',
     'select_text_left',
     'select_word_right',

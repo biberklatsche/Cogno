@@ -2,35 +2,48 @@ import { describe, it, expect } from 'vitest';
 import OscParser from './cogno-osc.parser';
 
 describe('OscParser', () => {
-    it('sollte eine einfache Sequenz korrekt parsen', () => {
-        const input = "COGNO:PROMPT;r=0;u=larswolfram;m=Air-von-Lars;d=/Users/larswolfram;t=7;c=ls;";
+    it('should parse a simple sequence', () => {
+        const input = "COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air-von-Lars;directory=/Users/larswolfram;id=7;command=ls;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
-            r: '0',
-            u: 'larswolfram',
-            m: 'Air-von-Lars',
-            d: '/Users/larswolfram',
-            t: '7',
-            c: 'ls'
+            returnCode: '0',
+            user: 'larswolfram',
+            machine: 'Air-von-Lars',
+            directory: '/Users/larswolfram',
+            id: '7',
+            command: 'ls'
         });
     });
 
-    it('sollte Sequenzen ohne Präfix parsen', () => {
-        const input = "r=1;u=test;";
+    it('should parse a C:\\ sequence correctly', () => {
+        const input = "COGNO:PROMPT;returnCode=0;user=micro;machine=SUPERPOWER;directory=C:\\;id=3;command=cd ..";
         const result = OscParser.parse(input);
         expect(result).toEqual({
-            r: '1',
-            u: 'test'
+            returnCode: '0',
+            user: 'micro',
+            machine: 'SUPERPOWER',
+            directory: "C:\\",
+            id: '3',
+            command: 'cd ..'
+        });
+    })
+
+    it('should parse sequences without prefix', () => {
+        const input = "returnCode=1;user=test;";
+        const result = OscParser.parse(input);
+        expect(result).toEqual({
+            returnCode: '1',
+            user: 'test'
         });
     });
 
-    it('sollte mit leeren Eingaben umgehen', () => {
+    it('should handle empty inputs', () => {
         expect(OscParser.parse('')).toBeUndefined();
         // @ts-ignore
         expect(OscParser.parse(null)).toBeUndefined();
     });
 
-    it('sollte maskierte Semikolons korrekt behandeln', () => {
+    it('should correctly handle escaped semicolons', () => {
         const input = "c=echo \\; hello;r=0;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
@@ -39,7 +52,7 @@ describe('OscParser', () => {
         });
     });
 
-    it('sollte maskierte Newlines und andere Zeichen korrekt dekodieren', () => {
+    it('should correctly decode escaped newlines and other characters', () => {
         const input = "m=line1\\nline2;p=a\\|b;s=back\\\\slash;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
@@ -49,18 +62,18 @@ describe('OscParser', () => {
         });
     });
 
-    it('sollte führende/nachfolgende Leerzeichen in Schlüsseln trimmen', () => {
+    it('should trim leading/trailing whitespace in keys', () => {
         const input = " r = 0 ; u = user ;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
             r: ' 0 ',
             u: ' user '
         });
-        // Hinweis: Laut Code wird nur der Key getrimmt: const key = part.slice(0, eq).trim();
-        // Der Wert wird per decodeValue dekodiert, aber nicht explizit getrimmt.
+        // Note: According to the code, only the key is trimmed: const key = part.slice(0, eq).trim();
+        // The value is decoded via decodeValue, but not explicitly trimmed.
     });
 
-    it('sollte Parts ohne Gleichheitszeichen ignorieren', () => {
+    it('should ignore parts without an equals sign', () => {
         const input = "r=0;invalid_part;u=user;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
@@ -69,7 +82,7 @@ describe('OscParser', () => {
         });
     });
 
-    it('sollte Parts mit leerem Schlüssel ignorieren', () => {
+    it('should ignore parts with an empty key', () => {
         const input = "r=0;=value;u=user;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
@@ -78,7 +91,7 @@ describe('OscParser', () => {
         });
     });
 
-    it('sollte mit mehrfachen Semikolons am Ende umgehen', () => {
+    it('should handle multiple semicolons at the end', () => {
         const input = "r=0;;;";
         const result = OscParser.parse(input);
         expect(result).toEqual({
@@ -86,8 +99,8 @@ describe('OscParser', () => {
         });
     });
 
-    it('sollte ein maskiertes Gleichheitszeichen im Wert korrekt behandeln', () => {
-        // indexOfUnescaped findet das erste unmaskierte '='
+    it('should correctly handle an escaped equals sign in the value', () => {
+        // indexOfUnescaped finds the first unescaped '='
         const input = "cmd=ls -l \\=always;r=0;";
         const result = OscParser.parse(input);
         expect(result).toEqual({

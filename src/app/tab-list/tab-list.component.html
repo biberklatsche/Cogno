@@ -8,12 +8,10 @@
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
                 [attr.data-tab-id]="tab.id"
-                appTooltip="{{tab.title}}"
                 (click)="selectTab(tab.id)"
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
-            <span class="icon"><app-icon [name]="iconForShell(tab.activeShellType)"></app-icon></span>
             @if (showRename()===tab.id) {
                 <input class="inline-input"
                     #renameInput
@@ -26,7 +24,7 @@
                     (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
                     (blur)="commitRename(renameInput.value);">
             } @else {
-                <span class="title">{{ tab.title }}</span>
+                <span class="title" appTooltip="{{tab.title}}">{{ tab.title }}</span>
             }
 
             <span class="close" (click)="$event.stopPropagation(); closeTab(tab.id)">

@@ -130,7 +130,7 @@ export class DialogComponent<TData = unknown> implements OnInit {
   }
 
   @HostListener('document:keydown.escape', ['$event'])
-  onEsc(e: KeyboardEvent) {
+  onEsc(e: Event) {
     e.stopPropagation();
     this.close();
   }

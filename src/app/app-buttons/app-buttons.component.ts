@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {AppButtonsService} from './+state/app-buttons.service';
-import {CommonModule} from '@angular/common';
+
 import {IconComponent} from "../icons/icon/icon.component";
 import {OS} from "../_tauri/os";
 
@@ -77,9 +77,8 @@ import {OS} from "../_tauri/os";
         }
     `],
     imports: [
-        CommonModule,
-        IconComponent
-    ],
+    IconComponent
+],
     standalone: true
 })
 export class AppButtonsComponent {

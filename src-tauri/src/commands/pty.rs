@@ -6,17 +6,15 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use super::shell_spawner::{ShellProfile, ShellSpawner};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpawnOptions {
     pub name: String,
     pub cols: u16,
     pub rows: u16,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ResizeOptions {
-    pub cols: u16,
-    pub rows: u16,
+    pub profile: ShellProfile,
+    pub dev_mode: Option<bool>,
 }
 
 struct Session {
@@ -41,14 +39,17 @@ impl PtyState {
 pub async fn pty_spawn(
     app: AppHandle,
     state: State<'_, PtyState>,
-    program: String,
-    args: Vec<String>,
     options: SpawnOptions,
 ) -> Result<(), String> {
     let terminal_id = options.name.clone();
-    
+
+    // Prepare shell spawn with integration
+    let dev_mode = options.dev_mode.unwrap_or(false);
+    let spawner = ShellSpawner::new(dev_mode)?;
+    let (program, args, env, working_dir) = spawner.prepare_spawn(&options.profile)?;
+
     let pty_system = native_pty_system();
-    
+
     let pair = pty_system
         .openpty(PtySize {
             rows: options.rows,
@@ -60,6 +61,23 @@ pub async fn pty_spawn(
 
     let mut cmd = CommandBuilder::new(&program);
     cmd.args(&args);
+
+    // Set environment variables
+    for (key, value) in env {
+        cmd.env(key, value);
+    }
+
+    // Set working directory (expand ~ if needed)
+    let expanded_dir = if working_dir.starts_with("~") {
+        if let Some(home) = dirs::home_dir() {
+            working_dir.replacen("~", &home.to_string_lossy(), 1)
+        } else {
+            working_dir
+        }
+    } else {
+        working_dir
+    };
+    cmd.cwd(expanded_dir);
 
     let mut child = pair
         .slave
@@ -93,20 +111,22 @@ pub async fn pty_spawn(
     let terminal_id_for_child = terminal_id.clone();
     let app_for_child = app.clone();
     let sessions_for_child = state.sessions.clone();
-    
+
     std::thread::spawn(move || {
-        // Wait for process to end
         let exit_code = match child.wait() {
             Ok(status) => status.exit_code() as i32,
             Err(_) => 1,
         };
-        
-        println!("exit!!!! Child process ended with code: {}", exit_code);
-        
-        let _ = app_for_child.emit(&format!("pty-exit:{}", terminal_id_for_child), serde_json::json!({
-            "exitCode": exit_code
-        }));
-        
+
+        println!("Child process ended with code: {}", exit_code);
+
+        let _ = app_for_child.emit(
+            &format!("pty-exit:{}", terminal_id_for_child),
+            serde_json::json!({
+                "exitCode": exit_code
+            }),
+        );
+
         let mut sessions = sessions_for_child.lock().unwrap();
         sessions.remove(&terminal_id_for_child);
     });
@@ -118,22 +138,54 @@ pub async fn pty_spawn(
 
     std::thread::spawn(move || {
         let mut reader = reader;
-        let mut buf = [0u8; 8192];
-        
+        let mut buf = [0u8; 4096];
+        let mut utf8_buffer = Vec::new();
+
         loop {
             if should_exit_clone.load(Ordering::Relaxed) {
                 break;
             }
             match std::io::Read::read(&mut reader, &mut buf) {
                 Ok(0) => {
+                    // EOF - flush any remaining valid UTF-8 data
+                    if !utf8_buffer.is_empty() {
+                        let data = String::from_utf8_lossy(&utf8_buffer).to_string();
+                        let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
+                    }
                     break;
                 }
                 Ok(n) => {
-                    if !should_exit_clone.load(Ordering::Relaxed) {
-                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                        let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
-                    } else {
+                    if should_exit_clone.load(Ordering::Relaxed) {
                         break;
+                    }
+
+                    // Append new data to buffer
+                    utf8_buffer.extend_from_slice(&buf[..n]);
+
+                    // Try to convert to UTF-8
+                    match String::from_utf8(utf8_buffer.clone()) {
+                        Ok(text) => {
+                            // All data is valid UTF-8, emit it
+                            let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                            utf8_buffer.clear();
+                        }
+                        Err(e) => {
+                            // Contains invalid UTF-8, but may have valid prefix
+                            let valid_up_to = e.utf8_error().valid_up_to();
+                            if valid_up_to > 0 {
+                                // Emit the valid prefix
+                                let text = String::from_utf8_lossy(&utf8_buffer[..valid_up_to]).to_string();
+                                let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                                // Keep only the invalid suffix (might be incomplete multi-byte char)
+                                utf8_buffer.drain(..valid_up_to);
+                            }
+                            // If buffer gets too large with invalid data, force flush
+                            if utf8_buffer.len() > 16 {
+                                let text = String::from_utf8_lossy(&utf8_buffer).to_string();
+                                let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                                utf8_buffer.clear();
+                            }
+                        }
                     }
                 }
                 Err(_e) => {
@@ -153,18 +205,18 @@ pub fn pty_write(
     data: String,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
-    
+
     if let Some(session) = sessions.get_mut(&terminal_id) {
         session
             .writer
             .write_all(data.as_bytes())
             .map_err(|e| format!("Failed to write to PTY: {}", e))?;
-        
+
         session
             .writer
             .flush()
             .map_err(|e| format!("Failed to flush PTY: {}", e))?;
-        
+
         Ok(())
     } else {
         Err(format!("Session not found: {}", terminal_id))
@@ -179,7 +231,7 @@ pub fn pty_resize(
     rows: u16,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
-    
+
     if let Some(session) = sessions.get_mut(&terminal_id) {
         session
             .master
@@ -190,7 +242,7 @@ pub fn pty_resize(
                 pixel_height: 0,
             })
             .map_err(|e| format!("Failed to resize PTY: {}", e))?;
-        
+
         Ok(())
     } else {
         Err(format!("Session not found: {}", terminal_id))
@@ -203,7 +255,7 @@ pub fn pty_kill(
     terminal_id: String,
 ) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
-    
+
     if let Some(session) = sessions.remove(&terminal_id) {
         session.should_exit.store(true, Ordering::Relaxed);
         drop(session.master);

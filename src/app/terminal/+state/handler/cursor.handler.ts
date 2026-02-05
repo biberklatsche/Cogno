@@ -1,12 +1,12 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {SessionState} from "../session.state";
+import {TerminalStateManager} from "../state";
 
 export class CursorHandler implements ITerminalHandler {
     private _cursorListener?: IDisposable;
 
-    constructor(private sessionState: SessionState) {
+    constructor(private stateManager: TerminalStateManager) {
     }
 
     dispose(): void {
@@ -27,12 +27,12 @@ export class CursorHandler implements ITerminalHandler {
             try {
                 const buffer = terminal.buffer?.active;
                 if (!buffer) {
-                    this.sessionState.cursorPosition = {
+                    this.stateManager.updateCursorPosition({
                         char: char,
                         viewport: {row: viewportRow, col: col},
                         row: row,
                         col: col
-                    };
+                    });
                     return;
                 }
                 const cursorX = buffer.cursorX; // 0-based column in viewport
@@ -54,12 +54,12 @@ export class CursorHandler implements ITerminalHandler {
             } catch {
                 // ignore errors and keep defaults
             }
-            this.sessionState.cursorPosition = {
+            this.stateManager.updateCursorPosition({
                char: char,
                 viewport: {row: viewportRow, col: col},
                 row: row,
                 col: col
-            };
+            });
         });
 
         return this;

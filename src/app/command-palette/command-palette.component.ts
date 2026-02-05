@@ -7,7 +7,7 @@ import {
     DestroyRef,
     ElementRef, Signal, WritableSignal, AfterViewInit, OnDestroy
 } from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {CommandEntry, CommandPaletteService} from './command-palette.service';
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
 import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
@@ -15,7 +15,7 @@ import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
 @Component({
     selector: 'app-command-palette',
     standalone: true,
-    imports: [CommonModule, ActionKeybindingPipe, AutofocusDirective],
+    imports: [ActionKeybindingPipe, AutofocusDirective],
     template: `
         <input
                 autocomplete="off"

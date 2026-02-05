@@ -1,9 +1,7 @@
 import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {IDisposable} from "../../../common/models/models";
-import {AppBus} from "../../../app-bus/app-bus";
-import {TerminalId} from "../../../grid-list/+model/model";
-import {SessionState} from "../session.state";
+import {TerminalStateManager} from "../state";
 
 /**
  * Publishes inspector events with the current terminal cell (col,row)
@@ -13,8 +11,10 @@ export class MouseHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private readonly _screenElement?: HTMLElement;
   private _listener?: (e: MouseEvent) => void;
+  private _lastCol?: number;
+  private _lastRow?: number;
 
-  constructor(private _terminalContainer: HTMLDivElement, private _sessionState: SessionState) {
+  constructor(private _terminalContainer: HTMLDivElement, private _stateManager: TerminalStateManager) {
       this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
   }
 
@@ -27,6 +27,8 @@ export class MouseHandler implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    this._lastCol = undefined;
+    this._lastRow = undefined;
     this._listener = (evt: MouseEvent) => {
       if (!this._terminal || !this._screenElement) return;
       const rect = this._screenElement.getBoundingClientRect();
@@ -47,6 +49,13 @@ export class MouseHandler implements ITerminalHandler {
       if (col < 1) col = 1; else if (col > cols) col = cols;
       if (row < 1) row = 1; else if (row > rows) row = rows;
 
+      if (this._lastCol === col && this._lastRow === row) {
+        return;
+      }
+
+      this._lastCol = col;
+      this._lastRow = row;
+
       const buffer = this._terminal.buffer.active as any;
       const absRow = (buffer.viewportY ?? 0) + (row - 1);
       // Try to read the character under the mouse from xterm's buffer
@@ -62,12 +71,12 @@ export class MouseHandler implements ITerminalHandler {
         // ignore, keep empty char
       }
 
-      this._sessionState.mousePosition = {
+      this._stateManager.updateMousePosition({
         viewport: {col: col, row: row},
         col: col,
         row: absRow + 1,
         char: char
-      };
+      });
     };
 
     this._screenElement?.addEventListener('mousemove', this._listener, { passive: true });

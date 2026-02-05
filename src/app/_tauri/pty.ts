@@ -3,18 +3,22 @@ import {ShellConfig} from "../config/+models/config";
 import {TerminalId} from "../grid-list/+model/model";
 import {listen} from "@tauri-apps/api/event";
 import {TerminalDimensions} from "../terminal/+state/handler/resize.handler";
+import {ShellProfile} from "../config/+models/shell-config";
+import {Environment} from "../common/environment/environment";
 
 export const TauriPty = {
-    spawn(terminalId: TerminalId, shellConfig: ShellConfig, dimensions: TerminalDimensions) {
+    spawn(terminalId: TerminalId, shellProfile: ShellProfile, dimensions: TerminalDimensions) {
+        const devMode = Environment.isDevMode();
         return invoke('pty_spawn', {
-        program: shellConfig.path,
-        args: shellConfig.args,
-        options: {
-            name: terminalId,
-            cols: 80,
-            rows: 25
-        }
-    });},
+            options: {
+                name: terminalId,
+                cols: dimensions.cols,
+                rows: dimensions.rows,
+                profile: shellProfile,
+                dev_mode: devMode
+            }
+        });
+    },
 
     kill(terminalId: TerminalId) {
         return invoke('pty_kill', {

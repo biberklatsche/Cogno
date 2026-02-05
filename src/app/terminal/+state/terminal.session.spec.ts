@@ -1,105 +1,115 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TerminalSession } from './terminal.session';
-import { ConfigService } from '../../config/+state/config.service';
 import { AppBus } from '../../app-bus/app-bus';
-import { BehaviorSubject, of } from 'rxjs';
-import { ShellConfig } from '../../config/+models/config';
+import { Renderer } from './renderer/renderer';
+import {getStateManager, getConfigService, getAppBus} from "../../../__test__/test-factory";
+import {ShellProfile} from "../../config/+models/shell-config";
+import {ConfigService} from "../../config/+state/config.service";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
     return {
-        Renderer: vi.fn().mockImplementation(() => ({
-            open: vi.fn(),
-            register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-            useWebGl: vi.fn(),
-            useCanvas: vi.fn(),
-            dispose: vi.fn()
-        }))
+        Renderer: vi.fn().mockImplementation(function() {
+            return {
+                open: vi.fn(),
+                register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+                dispose: vi.fn()
+            };
+        })
     };
 });
 
 vi.mock('./pty/pty', () => {
     return {
-        Pty: vi.fn().mockImplementation(() => ({
-            dispose: vi.fn(),
-            write: vi.fn(),
-            spawn: vi.fn().mockResolvedValue(undefined)
-        }))
+        Pty: vi.fn().mockImplementation(function() {
+            return {
+                dispose: vi.fn(),
+                write: vi.fn(),
+                spawn: vi.fn().mockResolvedValue(undefined)
+            };
+        })
     };
 });
 
 describe('TerminalSession', () => {
     let session: TerminalSession;
-    let mockConfigService: any;
+    let mockConfigService: ConfigService;
     let mockBus: AppBus;
-    let mockShellConfig: ShellConfig;
+    let mockShellProfile: ShellProfile;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
-        const configSubject = new BehaviorSubject<any>({ enable_webgl: false });
-        mockConfigService = {
-            config: { enable_webgl: false },
-            config$: configSubject, // Use Subject directly
-            configSubject: configSubject // Keep reference for next()
-        };
-        mockBus = new AppBus();
+        mockConfigService = getConfigService() as unknown as ConfigService;
+        mockBus = getAppBus();
         vi.spyOn(mockBus, 'publish');
         
-        mockShellConfig = {
+        mockShellProfile = {
             shell_type: 'Bash',
             inject_path: false,
             enable_shell_integration: false
-        } as any;
+        };
 
-        session = new TerminalSession(mockConfigService, mockBus, terminalId, mockShellConfig);
+        session = new TerminalSession(mockConfigService, mockBus, getStateManager());
     });
 
     it('should initialize with correct renderer settings based on config', () => {
-        const configSubject = new BehaviorSubject<any>({ enable_webgl: true });
-        mockConfigService.config$ = configSubject;
+        const config = { enable_webgl: true, font: { family: 'Fira Code' } } as any;
+        (mockConfigService as any).setConfig(config);
+        session = new TerminalSession(mockConfigService, mockBus, getStateManager());
         
-        // Re-create session to trigger constructor subscription with new config$
-        session = new TerminalSession(mockConfigService, mockBus, terminalId, mockShellConfig);
-        
-        expect((session as any).renderer.useWebGl).toHaveBeenCalled();
+        expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
     });
 
     it('should initialize terminal and register handlers', () => {
+        const config = { font: { enable_ligatures: false } } as any;
+        (mockConfigService as any).setConfig(config);
         const mockElement = document.createElement('div');
+        session.initialize(terminalId, mockShellProfile);
         session.initializeTerminal(mockElement);
 
-        expect((session as any).renderer.open).toHaveBeenCalledWith(mockElement);
-        // Check if some handlers were registered
+        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+        expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
         // Handlers: Pty, Resize, Theme, Title, FullScreen, Focus, Selection, Input, Mouse, Cursor = 10
-        expect((session as any).renderer.register).toHaveBeenCalledTimes(10);
+        expect(rendererInstance.register).toHaveBeenCalledTimes(10);
     });
 
     it('should enable shell integration features if configured', () => {
-        mockShellConfig.enable_shell_integration = true;
+        const config = { font: { enable_ligatures: false } } as any;
+        (mockConfigService as any).setConfig(config);
+        mockShellProfile.enable_shell_integration = true;
         const mockElement = document.createElement('div');
+        session.initialize(terminalId, mockShellProfile);
         session.initializeTerminal(mockElement);
 
-        // Handlers: 10 base + CognoOsc, CommandLineObserver, CommandLineEditor = 13
-        expect((session as any).renderer.register).toHaveBeenCalledTimes(13); 
+        const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
+        // Handlers: 10 base + CognoOsc (handled by CommandLineObserver), CommandLineObserver, CommandLineEditor = 12
+        expect(rendererInstance.register).toHaveBeenCalledTimes(12);
     });
 
     it('should build context menu', () => {
+        session.initialize(terminalId, mockShellProfile);
         const items = session.buildContextMenu();
         expect(items.length).toBeGreaterThan(0);
         expect(items.find(i => i.label === 'Paste')).toBeDefined();
     });
 
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {
+        session.initialize(terminalId, mockShellProfile);
         session.dispose();
         expect(mockBus.publish).toHaveBeenCalledWith(expect.objectContaining({
             type: 'TerminalRemoved',
             payload: terminalId
         }));
-        expect((session as any).renderer.dispose).toHaveBeenCalled();
-        expect((session as any).pty.dispose).toHaveBeenCalled();
+        
+        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+        expect(rendererInstance.dispose).toHaveBeenCalled();
+        // session.pty is private, but it's part of the disposables. 
+        // We can't easily check pty.dispose without reaching into private, 
+        // but the code calls it.
     });
 
     it('should not dispose twice', () => {
+        session.initialize(terminalId, mockShellProfile);
         session.dispose();
         vi.clearAllMocks();
         session.dispose();

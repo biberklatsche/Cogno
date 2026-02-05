@@ -3,16 +3,19 @@ import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.fa
 import { FullScreenAppHandler } from './full-screen-app.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
+import { TerminalStateManager } from '../state';
 
 describe('FullScreenAppHandler', () => {
   let handler: FullScreenAppHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
+  let mockStateManager: TerminalStateManager;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
-    handler = new FullScreenAppHandler(terminalId, mockBus);
+    mockStateManager = new TerminalStateManager(mockBus);
+    handler = new FullScreenAppHandler(terminalId, mockBus, mockStateManager);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 

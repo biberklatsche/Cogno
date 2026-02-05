@@ -1,0 +1,422 @@
+
+ RUN  v4.0.17 /Users/larswolfram/projects/cogno2
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts (15 tests | 10 failed) 32ms
+       ✓ should register onCursorMove listener 4ms
+       ✓ should return disposable when registered 1ms
+       × should publish correct cursor position on move 6ms
+       × should handle cursor at origin (0, 0) 3ms
+       × should handle different viewport offsets 1ms
+       × should handle multi-character cells 1ms
+       × should handle empty cells 2ms
+       × should use default values when buffer is missing 2ms
+       × should use default values when active buffer is missing 3ms
+       × should handle getLine throwing an error 3ms
+       × should handle getLine returning null 1ms
+       × should handle getCell returning null 2ms
+       ✓ should dispose the listener when dispose is called 0ms
+       ✓ should handle dispose being called multiple times 0ms
+       ✓ should handle dispose being called before register 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should publish correct cursor position on move
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:71:27
+     69|       await new Promise(resolve => setTimeout(resolve, 0));
+     70| 
+     71|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+     72|           expect.objectContaining({
+     73|             path: ['inspector'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle cursor at origin (0, 0)
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:110:27
+    108|       await new Promise(resolve => setTimeout(resolve, 0));
+    109| 
+    110|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    111|           expect.objectContaining({
+    112|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle different viewport offsets
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:145:27
+    143|       await new Promise(resolve => setTimeout(resolve, 0));
+    144| 
+    145|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    146|           expect.objectContaining({
+    147|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle multi-character cells
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:177:27
+    175|       await new Promise(resolve => setTimeout(resolve, 0));
+    176| 
+    177|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    178|           expect.objectContaining({
+    179|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > cursor position publishing > should handle empty cells
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:209:27
+    207|       await new Promise(resolve => setTimeout(resolve, 0));
+    208| 
+    209|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    210|           expect.objectContaining({
+    211|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should use default values when buffer is missing
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:239:27
+    237|       await new Promise(resolve => setTimeout(resolve, 0));
+    238| 
+    239|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    240|           expect.objectContaining({
+    241|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should use default values when active buffer is missing
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:270:27
+    268|       await new Promise(resolve => setTimeout(resolve, 0));
+    269| 
+    270|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    271|           expect.objectContaining({
+    272|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should handle getLine throwing an error
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:306:27
+    304|       await new Promise(resolve => setTimeout(resolve, 0));
+    305| 
+    306|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    307|           expect.objectContaining({
+    308|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should handle getLine returning null
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:341:27
+    339|       await new Promise(resolve => setTimeout(resolve, 0));
+    340| 
+    341|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    342|           expect.objectContaining({
+    343|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/app/terminal/+state/handler/cursor.handler.spec.ts > CursorHandler > error handling > should handle getCell returning null
+AssertionError: expected "publish" to be called with arguments: [ ObjectContaining{…} ]
+
+Number of calls: 0
+
+ ❯ src/app/terminal/+state/handler/cursor.handler.spec.ts:374:27
+    372|       await new Promise(resolve => setTimeout(resolve, 0));
+    373| 
+    374|       expect(bus.publish).toHaveBeenCalledWith(
+       |                           ^
+    375|           expect.objectContaining({
+    376|             payload: expect.objectContaining({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 10 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle cursor at origin (0, 0)". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle different viewport offsets". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle multi-character cells". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle empty cells". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should use default values when buffer is missing". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should use default values when active buffer is missing". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle getLine throwing an error". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle getLine returning null". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "should handle getCell returning null". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+TypeError: this._bus.publish is not a function
+ ❯ Object.next src/app/terminal/+state/state/terminal-state.manager.ts:31:23
+     29|             debounceTime(0) // Damit multiple Änderungen in einem Fram…
+     30|         ).subscribe((state) => {
+     31|             this._bus.publish({
+       |                       ^
+     32|                 path: ['inspector'],
+     33|                 type: 'Inspector',
+ ❯ ConsumerObserver.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:113:33
+ ❯ SafeSubscriber.Subscriber._next node_modules/rxjs/dist/cjs/internal/Subscriber.js:80:26
+ ❯ SafeSubscriber.Subscriber.next node_modules/rxjs/dist/cjs/internal/Subscriber.js:51:18
+ ❯ emit node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:19:28
+ ❯ AsyncAction.emitWhenIdle node_modules/rxjs/dist/cjs/internal/operators/debounceTime.js:30:13
+ ❯ AsyncAction._execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:79:18
+ ❯ AsyncAction.execute node_modules/rxjs/dist/cjs/internal/scheduler/AsyncAction.js:67:26
+ ❯ AsyncScheduler.flush node_modules/rxjs/dist/cjs/internal/scheduler/AsyncScheduler.js:38:33
+ ❯ listOnTimeout node:internal/timers:594:17
+
+This error originated in "src/app/terminal/+state/handler/cursor.handler.spec.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 5 passed (15)
+     Errors  10 errors
+   Start at  17:09:11
+   Duration  760ms (transform 78ms, setup 65ms, import 120ms, tests 32ms, environment 333ms)
+

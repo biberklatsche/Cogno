@@ -6,7 +6,7 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {IDisposable} from "../../../common/models/models";
-import {SessionState} from "../session.state";
+import {TerminalStateManager} from "../state";
 
 export type TerminalDimensions = { rows: number; cols: number };
 
@@ -17,14 +17,13 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     private _terminal?: Terminal;
     private _fitAddon?: FitAddon;
     private _resizeRaf?: number;
-    private _ptyResizeTimeout: number | null = null;
 
     constructor(
         private _terminalId: TerminalId,
         private _pty: IPty,
         private _bus: AppBus,
         private _terminalContainer: HTMLDivElement,
-        private _sessionState: SessionState
+        private _stateManager: TerminalStateManager
     ) {
     }
 
@@ -80,23 +79,12 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         const newRendererDimensions = this._fitAddon.proposeDimensions();
         if(!newRendererDimensions) return;
         if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
+            this._pty.resize(newRendererDimensions);
             this._fitAddon.fit();
-            const terminalDimensions: TerminalDimensions = {cols: this._terminal.cols, rows: this._terminal.rows};
-
-            if(!this.areDimensionsEqual(newRendererDimensions, terminalDimensions)){
-                throw new Error('dimensions are not equal!');
-            }
-
-            this._sessionState.dimensions = { cols: newRendererDimensions.cols, rows: newRendererDimensions.rows };
-
-            if (this._ptyResizeTimeout !== null) {
-                clearTimeout(this._ptyResizeTimeout);
-            }
-
-            this._ptyResizeTimeout = window.setTimeout(() => {
-                this._pty.resize(newRendererDimensions);
-                this._ptyResizeTimeout = null;
-            }, 100);
+            const core = (this._terminal as any)._core;
+            const cellHeight = core?._renderService?._charSizeService?.height;
+            const cellWidth = core?._renderService?._charSizeService?.width;
+            this._stateManager.updateDimensions({ cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth });
         }
     }
 

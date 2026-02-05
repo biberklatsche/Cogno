@@ -38,6 +38,11 @@ export const Environment = (() => {
             return exeDirPath;
         },
 
+        /** Returns whether we're in dev mode */
+        isDevMode(): boolean {
+            return isDevMode();
+        },
+
         /** Initializes the environment (determines all paths) */
         async init(): Promise<void> {
             Logger.info('Initializing environment');

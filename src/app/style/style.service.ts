@@ -27,6 +27,7 @@ export class StyleService {
         const menuOpacity = config.menu?.opacity ?? 100;
         const opacity = Color.getHexOpacity(menuOpacity)
         const opacityDouble = Color.getHexOpacity(menuOpacity === 100 ? 100 : menuOpacity / 2);
+        const inactiveOpacity = (config.inactive_overlay_opacity ?? 50) / 100;
 
         document.documentElement.style.setProperty('--background-color', `#${config.color!.background}`);
         document.documentElement.style.setProperty('--background-color-ct', `#${config.color!.background}${opacity}`);
@@ -85,6 +86,9 @@ export class StyleService {
         document.documentElement.style.setProperty('--color-magenta', `#${config.color!.magenta}`);
         document.documentElement.style.setProperty('--color-magenta-ct2', `#${config.color!.magenta}${opacityDouble}`);
         document.documentElement.style.setProperty('--color-magenta-10t', `#${config.color!.magenta}66`);
+        document.documentElement.style.setProperty('--color-cyan', `#${config.color!.cyan}`);
+        document.documentElement.style.setProperty('--color-cyan-ct2', `#${config.color!.cyan}${opacityDouble}`);
+        document.documentElement.style.setProperty('--color-cyan-10t', `#${config.color!.cyan}66`);
 
         document.documentElement.style.setProperty('--color-white', `#${config.color!.white}`);
         document.documentElement.style.setProperty('--color-white-ct2', `#${config.color!.white}${opacityDouble}`);
@@ -101,10 +105,11 @@ export class StyleService {
         document.documentElement.style.setProperty('--shadow3', '0 3px 4px 0 var(--color-shadow3), 0 3px 3px -2px var(--color-shadow1), 0 1px 8px 0 var(--color-shadow2)');
         document.documentElement.style.setProperty('--font-size', `${config.font!.size}px`);
         document.documentElement.style.setProperty('--font-weight', `${config.font!.weight}`);
-        document.documentElement.style.setProperty('--font-family', `'${config.font!.family}'`);
-        document.documentElement.style.setProperty('--app-font-family', `'${config.font!.app!.family}'`);
+        document.documentElement.style.setProperty('--font-family', `${config.font!.family}`);
+        document.documentElement.style.setProperty('--app-font-family', `${config.font!.app!.family}`);
         document.documentElement.style.setProperty('--app-font-size', `${config.font!.app!.size}px`);
         document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top}rem ${config.padding!.right}rem ${config.padding!.bottom}rem ${config.padding!.left}rem`);
+        document.documentElement.style.setProperty('--inactive-overlay-opacity', `${inactiveOpacity}`);
         if (config.allow_transparency && config.background_image?.path) {
             const url = Fs.convertFileSrc(config.background_image.path);
             const color = `#${config.color!.background}` + Color.getHexOpacity(config.background_image.opacity);

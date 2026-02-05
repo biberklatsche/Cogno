@@ -24,6 +24,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
             ("PowerShell", "powershell.exe", "PowerShell"),
             ("PowerShell Core", "pwsh.exe", "PowerShell"),
             ("WSL", "wsl.exe", "Bash"),
+            ("Fish", "fish.exe", "Fish"),
         ];
 
         for (name, binary, shell_type) in known_shells {
@@ -36,7 +37,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
             }
         }
 
-        // Git Bash aus Registry
+        // Git Bash from Registry
         let git_paths = [
             "SOFTWARE\\GitForWindows",
             "SOFTWARE\\WOW6432Node\\GitForWindows",
@@ -65,47 +66,49 @@ pub fn list_shells() -> Vec<ShellInfo> {
         use std::fs::read_to_string;
         use std::path::Path;
 
-        // Liefert "Bash" oder "ZSH" (genau so geschrieben), sonst None
-            fn detect_shell_label(path: &str) -> Option<&'static str> {
-                let fname = Path::new(path)
-                    .file_name()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("")
-                    .to_ascii_lowercase();
+        // Returns "Bash", "ZSH" or "Fish" (exactly as written), otherwise None
+        fn detect_shell_label(path: &str) -> Option<&'static str> {
+            let fname = Path::new(path)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
 
-                // exakte Namen zuerst
-                if fname == "bash" { return Some("Bash"); }
-                if fname == "zsh"  { return Some("ZSH"); }
+            // exact names first
+            if fname == "bash" { return Some("Bash"); }
+            if fname == "zsh"  { return Some("ZSH"); }
+            if fname == "fish" { return Some("Fish"); }
 
-                // optional: toleranter für Varianten wie bash5, zsh-5.9
-                if fname.contains("bash") { return Some("Bash"); }
-                if fname.contains("zsh")  { return Some("ZSH"); }
+            // optional: more tolerant for variants like bash5, zsh-5.9, fish-3.6
+            if fname.contains("bash") { return Some("Bash"); }
+            if fname.contains("zsh")  { return Some("ZSH"); }
+            if fname.contains("fish") { return Some("Fish"); }
 
-                None
-            }
+            None
+        }
 
-            if let Ok(content) = read_to_string("/etc/shells") {
-                for line in content.lines() {
-                    let line = line.trim();
-                    if line.is_empty() || line.starts_with('#') || !line.starts_with('/') {
-                        continue;
-                    }
+        if let Ok(content) = read_to_string("/etc/shells") {
+            for line in content.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') || !line.starts_with('/') {
+                    continue;
+                }
 
-                    if let Some(label) = detect_shell_label(line) {
-                        let name = Path::new(line)
-                            .file_name()
-                            .and_then(|s| s.to_str())
-                            .unwrap_or(line)
-                            .to_string();
+                if let Some(label) = detect_shell_label(line) {
+                    let name = Path::new(line)
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or(line)
+                        .to_string();
 
-                        shells.push(ShellInfo {
-                            name,
-                            path: line.to_string(),
-                            shell_type: label.to_string(), // "Bash" oder "ZSH"
-                        });
-                    }
+                    shells.push(ShellInfo {
+                        name,
+                        path: line.to_string(),
+                        shell_type: label.to_string(), // "Bash", "ZSH" or "Fish"
+                    });
                 }
             }
+        }
     }
     shells
 }

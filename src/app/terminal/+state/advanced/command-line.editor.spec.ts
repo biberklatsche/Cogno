@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandLineEditor } from './command-line.editor';
 import { AppBus } from '../../../app-bus/app-bus';
 import { IPty } from '../pty/pty';
-import { InternalState } from '../session.state';
+import { TerminalStateManager } from '../state';
 import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { Clipboard } from '../../../_tauri/clipboard';
@@ -19,7 +19,7 @@ describe('CommandLineEditor', () => {
   let mockBus: AppBus;
   let mockPty: IPty;
   let mockTerminal: any;
-  let state: InternalState;
+  let state: any;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -36,8 +36,8 @@ describe('CommandLineEditor', () => {
       isCommandRunning: false,
       input: { text: 'hello world example', cursorIndex: 6, maxCursorIndex: 19 },
       shellType: 'Bash' as any,
-    } as any;
-    editor = new CommandLineEditor(mockBus, mockPty, state);
+    };
+    editor = new CommandLineEditor(mockBus, mockPty, state as any);
     mockTerminal = TerminalMockFactory.createTerminal();
     
     // Default mocks for selection
@@ -115,7 +115,7 @@ describe('CommandLineEditor', () => {
     beforeEach(() => {
       mockTerminal.cols = 80;
       mockTerminal.buffer.active.length = 2;
-      const promptLine = TerminalMockFactory.createLine('COGNO: / $ ');
+      const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: / $ ');
       vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
         if (index === 0) return promptLine;
         return null;
@@ -175,6 +175,18 @@ describe('CommandLineEditor', () => {
       // start: 0, length: 6
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 6);
       expect(mockPty.write).toHaveBeenCalledWith('\x1b[D'.repeat(6));
+    });
+
+    it('should select all text and move cursor to end of line', async () => {
+      state.input = { text: 'hello world', cursorIndex: 6, maxCursorIndex: 11 };
+      
+      mockBus.publish({ type: 'SelectAll', payload: terminalId, path: ['app', 'terminal'] });
+      
+      // Move to end: text len 11, cursor 6 -> move 5 right
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[C'.repeat(5));
+      
+      // Should select from 0 to 11
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 11);
     });
 
     it('should extend selection when selecting multiple times', () => {
@@ -356,6 +368,112 @@ describe('CommandLineEditor', () => {
       editor.dispose();
 
       expect(selectionDispose).toHaveBeenCalled();
+    });
+
+    it('should handle findLastCognoMarkerY when no marker is present', () => {
+      vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue({
+        translateToString: () => 'some random line without marker'
+      });
+      
+      // selectTextRight internally calls findLastCognoMarkerY
+      state.input = { text: 'test', cursorIndex: 0, maxCursorIndex: 4 };
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      
+      // findLastCognoMarkerY returns -1. startInputY = -1 + 1 = 0.
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 0, 1);
+    });
+
+    it('should handle findLastCognoMarkerY when buffer is not active', () => {
+      const originalBuffer = mockTerminal.buffer;
+      mockTerminal.buffer = { active: null }; // Mock active as null
+      
+      state.input = { text: 'test', cursorIndex: 0, maxCursorIndex: 4 };
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      
+      expect(mockTerminal.select).not.toHaveBeenCalled();
+      mockTerminal.buffer = originalBuffer;
+    });
+
+    it('should handle findPreviousWordStart with leading separators', () => {
+      state.input = { text: '   abc', cursorIndex: 6, maxCursorIndex: 6 };
+      mockBus.publish({ type: 'DeletePreviousWord', payload: terminalId, path: ['app', 'terminal'] });
+      
+      // '   abc' has 3 separators and 3 chars. 
+      // Starting at 6: skips nothing (it's at end), then finds 'abc' (3 chars), stops at index 3.
+      // Wait, '   abc' indices: 0:' ', 1:' ', 2:' ', 3:'a', 4:'b', 5:'c'. length 6.
+      // cursor at 6. pos = 5 ('c'). not separator. while(!separator) pos-- until pos is 2.
+      // returns pos + 1 = 3.
+      // count = 6 - 3 = 3.
+      expect(mockPty.write).toHaveBeenCalledWith('\x08'.repeat(3));
+    });
+
+    it('should handle findPreviousWordStart with only separators', () => {
+      state.input = { text: '   ', cursorIndex: 3, maxCursorIndex: 3 };
+      mockBus.publish({ type: 'DeletePreviousWord', payload: terminalId, path: ['app', 'terminal'] });
+      
+      // pos = 2 (' '). is separator. while(separator) pos-- until -1.
+      // returns -1 + 1 = 0. count = 3.
+      expect(mockPty.write).toHaveBeenCalledWith('\x08'.repeat(3));
+    });
+
+    it('should handle findNextWordEnd with trailing separators', () => {
+      state.input = { text: 'abc   ', cursorIndex: 0, maxCursorIndex: 6 };
+      mockBus.publish({ type: 'DeleteNextWord', payload: terminalId, path: ['app', 'terminal'] });
+      
+      // starts at 0 ('a'). not separator. while(!separator) pos++ until 3.
+      // returns 3.
+      // count = 3 - 0 = 3.
+      // implementation of DeleteNextWord moves to end of word then backspaces.
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[C'.repeat(3) + '\x08'.repeat(3));
+    });
+
+    it('should handle findNextWordEnd with only separators', () => {
+      state.input = { text: '   ', cursorIndex: 0, maxCursorIndex: 3 };
+      mockBus.publish({ type: 'DeleteNextWord', payload: terminalId, path: ['app', 'terminal'] });
+      
+      // starts at 0 (' '). is separator. while(separator) pos++ until 3.
+      // returns 3.
+      expect(mockPty.write).toHaveBeenCalledWith('\x1b[C'.repeat(3) + '\x08'.repeat(3));
+    });
+
+    it('should do nothing in deleteSelection if length is 0', () => {
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 5, y: 1 },
+        end: { x: 5, y: 1 }
+      });
+      
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      const event = { type: 'keydown', key: 'Backspace' } as KeyboardEvent;
+      const result = customKeyHandler(event);
+      
+      expect(result).toBe(false); // Handled
+      expect(mockPty.write).not.toHaveBeenCalled();
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should handle multi-line input in select (simple wrap)', () => {
+      mockTerminal.cols = 10;
+      state.input = { text: '0123456789ABCDEF', cursorIndex: 0, maxCursorIndex: 16 };
+      
+      // Select 1 char right. cursor moved to 1.
+      mockBus.publish({ type: 'SelectTextRight', payload: terminalId, path: ['app', 'terminal'] });
+      state.input.cursorIndex = 1;
+      
+      // Simuliere xterm selektion
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 1, y: 1 }
+      });
+
+      // Select another 11 chars right (total 12).
+      // next word '0123456789ABCDEF' (all one word because no separators)
+      // SelectWordRight will move cursor to end of word (16)
+      mockBus.publish({ type: 'SelectWordRight', payload: terminalId, path: ['app', 'terminal'] });
+
+      // startIdx=0, endIdx=16. length=16.
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 16);
     });
   });
 });

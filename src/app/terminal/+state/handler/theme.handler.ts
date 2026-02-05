@@ -1,4 +1,4 @@
-import {ITerminalHandler} from "./handler";
+import {IFitHandler, ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
@@ -6,6 +6,7 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Config} from "../../../config/+models/config";
+import { FitAddon } from "@xterm/addon-fit";
 
 export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
 export type TerminalThemePaddingAddedEvent = MessageBase<"TerminalThemePaddingAdded", TerminalId>;
@@ -13,7 +14,7 @@ export type TerminalThemePaddingRemovedEvent = MessageBase<"TerminalThemePadding
 
 export class ThemeHandler implements ITerminalHandler {
 
-    private readonly subscription= new Subscription();
+    private readonly subscription = new Subscription();
     private _terminal?: Terminal;
 
     constructor(
@@ -21,13 +22,14 @@ export class ThemeHandler implements ITerminalHandler {
         private _configService: ConfigService,
         private _bus: AppBus,
         private _terminalContainer: HTMLDivElement
-    ) {}
+    ) {
+    }
 
     public configureTerminal(config: Config) {
         if(!this._terminal) throw new Error("Terminal has no terminal");
-        this._terminal.options.scrollback = config.scrollback_lines;
+        this._terminal.options.fontFamily = config.font?.family;
+        this._terminal.options.scrollback = config.scrollbar?.scrollback_lines;
         this._terminal.options.fontSize = config.font!.size;
-        this._terminal.options.fontFamily = `'${config.font!.family}', monospace`;
         this._terminal.options.fontWeight = config.font!.weight;
         this._terminal.options.fontWeightBold = config.font!.weight_bold;
         this._terminal.options.cursorWidth = config.cursor!.width;
@@ -35,9 +37,15 @@ export class ThemeHandler implements ITerminalHandler {
         this._terminal.options.cursorStyle =  config.cursor!.style;
         this._terminal.options.cursorInactiveStyle = config.cursor!.inactive_style;
         this._terminal.options.theme = {
+
+            overviewRulerBorder: `#${config.scrollbar!.overview_ruler_border_color}`,
+            scrollbarSliderBackground: `#${config.scrollbar!.slider_color}`,
+            scrollbarSliderHoverBackground: `#${config.scrollbar!.slider_hover_color}`,
+            scrollbarSliderActiveBackground: `#${config.scrollbar!.slider_active_color}`,
+
             background: config.allow_transparency ? '#00000000' : `#${config.color!.background}`,
-            cursor: config.cursor!.color ? `#${config.cursor!.color}CC` : `#${config.color!.highlight}CC`,
-            cursorAccent: `#${config.color!.highlight}66`,
+            cursor: `#${config.cursor!.color}`,
+            cursorAccent: `#${config.cursor!.accent_color}`,
             foreground: `#${config.color!.foreground}`,
             selectionBackground: `#${config.color!.highlight}88`,
             selectionInactiveBackground: `#${config.color!.highlight}55`,

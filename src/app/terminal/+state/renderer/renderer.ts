@@ -5,18 +5,12 @@ import {SearchAddon} from "@xterm/addon-search";
 import {Unicode11Addon} from "@xterm/addon-unicode11";
 import {LigaturesAddon} from "@xterm/addon-ligatures";
 import {WebglAddon} from "@xterm/addon-webgl";
-import {CanvasAddon} from "@xterm/addon-canvas";
 import {IDisposable} from "../../../common/models/models";
 import {IFitHandler, isFitHandler, isTerminalHandler, ITerminalHandler} from "../handler/handler";
-import {ConfigService} from "../../../config/+state/config.service";
 import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
-    open(terminalContainer: HTMLDivElement): void;
-
-    useWebGl(): void;
-
-    useCanvas(): void;
+    open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
 
     dispose(): void;
 
@@ -32,27 +26,24 @@ export class Renderer implements IRenderer, IDisposable {
     private _unicodeAddon = new Unicode11Addon();
     private _ligaturesAddon: LigaturesAddon | undefined = undefined;
     private _webglAddon: WebglAddon | undefined = undefined;
-    private _canvasAddon: CanvasAddon | undefined = undefined;
 
     constructor(config: Config) {
         this._terminal = new Terminal({
-            overviewRulerWidth: config.overview_ruler_width,
-            scrollback: config.scrollback_lines,
+            overviewRuler: {width: config.scrollbar!.width, showBottomBorder: false, showTopBorder: false},
+            scrollback: config.scrollbar!.scrollback_lines,
             tabStopWidth: config.tab_stop_width,
-            scrollSensitivity: config.scroll_sensitivity,
-            scrollOnUserInput: config.scroll_on_user_input,
-            smoothScrollDuration: config.smooth_scroll_duration,
+            scrollSensitivity: config.scrollbar!.sensitivity,
+            fastScrollSensitivity: config.scrollbar!.fast_scroll_sensitivity,
+            scrollOnUserInput: config.scrollbar!.scroll_on_user_input,
+            smoothScrollDuration: config.scrollbar!.smooth_scroll_duration,
             allowTransparency: config.allow_transparency,
-            altClickMovesCursor: config.alt_click_moves_cursor,
-            convertEol: config.convert_eol,
+            altClickMovesCursor: config.cursor!.alt_click_moves_cursor,
             customGlyphs: config.font!.custom_glyphs,
             drawBoldTextInBrightColors: config.font!.draw_bold_text_in_bright_colors,
-            fastScrollModifier: config.fast_scroll_modifier,
-            fastScrollSensitivity: config.fast_scroll_sensitivity,
             ignoreBracketedPasteMode: config.ignore_bracketed_paste_mode,
             minimumContrastRatio: config.minimum_contrast_ratio,
             rescaleOverlappingGlyphs: config.font!.rescale_overlapping_glyphs,
-            rightClickSelectsWord: config.right_click_selects_word,
+            rightClickSelectsWord: config.selection!.right_click_selects_word,
             screenReaderMode: config.screen_reader_mode,
             wordSeparator: config.word_separator,
             windowsPty: OS.platform() === 'windows' ? {backend: 'conpty'} : undefined,
@@ -60,13 +51,21 @@ export class Renderer implements IRenderer, IDisposable {
             windowOptions: {
                 pushTitle: true, //handle CSI Ps=22 vim on gitbash uses this to enter full screen
                 popTitle: true //handle CSI Ps=23 vim on gitbash uses this to leaf full screen
-            }
+            },
+            // Font settings - must be set during initialization
+            fontFamily: config.font!.family,
+            fontSize: config.font!.size,
+            fontWeight: config.font!.weight,
+            fontWeightBold: config.font!.weight_bold,
         });
 
         this._terminal.loadAddon(this._fitAddon);
         this._terminal.loadAddon(this._searchAddon);
         this._terminal.loadAddon(this._unicodeAddon);
         this._terminal.unicode.activeVersion = '11';
+        if(config.enable_webgl) {
+            this.useWebGl();
+        }
     }
 
     register(handler: ITerminalHandler | IFitHandler): IDisposable {
@@ -79,22 +78,25 @@ export class Renderer implements IRenderer, IDisposable {
         throw new Error('unknown handler type');
     }
 
-    public open(terminalContainer: HTMLDivElement) {
+    public open(terminalContainer: HTMLDivElement, enableLigatures: boolean) {
         this._terminal.open(terminalContainer);
+        if(enableLigatures) {
+            this.useLigatures();
+        }
     }
 
-    public useWebGl() {
+    private useLigatures() {
+        if (!this._ligaturesAddon) {
+            this._ligaturesAddon = new LigaturesAddon();
+        }
+        this._terminal.loadAddon(this._ligaturesAddon);
+    }
+
+    private useWebGl() {
         if (!this._webglAddon) {
             this._webglAddon = new WebglAddon();
         }
         this._terminal.loadAddon(this._webglAddon);
-    }
-
-    public useCanvas() {
-        if (!this._canvasAddon) {
-            this._canvasAddon = new CanvasAddon();
-        }
-        this._terminal!.loadAddon(this._canvasAddon);
     }
 
     public dispose() {

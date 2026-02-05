@@ -3,12 +3,12 @@ import { CursorHandler } from './cursor.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { SessionState } from '../session.state';
+import { TerminalStateManager } from '../state';
 
 describe('CursorHandler', () => {
   let bus: AppBus;
   let handler: CursorHandler;
-  let sessionState: SessionState;
+  let stateManager: TerminalStateManager;
   let cursorMoveCallback: (() => void) | null = null;
   const terminalId = 'test-terminal-id';
 
@@ -18,8 +18,9 @@ describe('CursorHandler', () => {
     bus = new AppBus();
     vi.spyOn(bus, 'publish');
 
-    sessionState = new SessionState(terminalId, 'bash' as any, bus);
-    handler = new CursorHandler(sessionState);
+    stateManager = new TerminalStateManager(bus);
+    stateManager.initialize(terminalId, 'bash' as any);
+    handler = new CursorHandler(stateManager);
   });
 
   describe('register', () => {
@@ -66,26 +67,12 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            path: ['inspector'],
-            type: 'Inspector',
-            payload: expect.objectContaining({
-              type: 'terminal-state',
-              data: expect.objectContaining({
-                terminalId,
-                cursorPosition: expect.objectContaining({
-                  char: 'A',
-                  viewport: { col: 3, row: 4 },
-                  col: 3,
-                  row: 14
-                })
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition).toEqual(expect.objectContaining({
+        char: 'A',
+        viewport: { col: 3, row: 4 },
+        col: 3,
+        row: 14
+      }));
     });
 
     it('should handle cursor at origin (0, 0)', async () => {
@@ -105,22 +92,12 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                cursorPosition: expect.objectContaining({
-                    viewport: { col: 1, row: 1 },
-                    char: 'B',
-                    col: 1,
-                    row: 1,
-                })
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition).toEqual(expect.objectContaining({
+          viewport: { col: 1, row: 1 },
+          char: 'B',
+          col: 1,
+          row: 1,
+      }));
     });
 
     it('should handle different viewport offsets', async () => {
@@ -140,19 +117,7 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                cursorPosition: expect.objectContaining({
-                  row: 106, // 5 + 100 + 1
-                })
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition.row).toBe(106); // 5 + 100 + 1
     });
 
     it('should handle multi-character cells', async () => {
@@ -172,19 +137,7 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                cursorPosition: expect.objectContaining({
-                  char: '€',
-                }),
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition.char).toBe('€');
     });
 
     it('should handle empty cells', async () => {
@@ -204,19 +157,7 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                cursorPosition: expect.objectContaining({
-                  char: '',
-                }),
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition.char).toBe('');
     });
   });
 
@@ -234,22 +175,11 @@ describe('CursorHandler', () => {
       handler.registerTerminal(terminal);
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                terminalId,
-                cursorPosition: expect.objectContaining({
-                  char: '',
-                  col: 1,
-                  row: 1,
-                })
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition).toEqual(expect.objectContaining({
+        char: '',
+        col: 1,
+        row: 1,
+      }));
     });
 
     it('should use default values when active buffer is missing', async () => {
@@ -265,22 +195,11 @@ describe('CursorHandler', () => {
       handler.registerTerminal(terminal);
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                terminalId,
-                cursorPosition: expect.objectContaining({
-                  char: '',
-                  col: 1,
-                  row: 1,
-                })
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition).toEqual(expect.objectContaining({
+        char: '',
+        col: 1,
+        row: 1,
+      }));
     });
 
     it('should handle getLine throwing an error', async () => {
@@ -301,23 +220,12 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                terminalId,
-                cursorPosition: expect.objectContaining({
-                  char: '', // Falls back to empty string on error
-                  viewport: { col: 3, row: 4 },
-                  col: 3,
-                  row: 14,
-                })
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition).toEqual(expect.objectContaining({
+        char: '', // Falls back to empty string on error
+        viewport: { col: 3, row: 4 },
+        col: 3,
+        row: 14,
+      }));
     });
 
     it('should handle getLine returning null', async () => {
@@ -336,19 +244,7 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                cursorPosition: expect.objectContaining({
-                  char: '',
-                }),
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition.char).toBe('');
     });
 
     it('should handle getCell returning null', async () => {
@@ -369,19 +265,7 @@ describe('CursorHandler', () => {
 
       cursorMoveCallback?.();
 
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({
-            payload: expect.objectContaining({
-              data: expect.objectContaining({
-                cursorPosition: expect.objectContaining({
-                  char: '',
-                }),
-              }),
-            }),
-          })
-      );
+      expect(stateManager.cursorPosition.char).toBe('');
     });
   });
 

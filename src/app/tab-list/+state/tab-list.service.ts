@@ -11,6 +11,7 @@ import {IdCreator} from "../../common/id-creator/id-creator";
 import {ActionFired, ActionFiredEvent} from "../../action/action.models";
 import {ColorName} from "../../common/color/color";
 import {TabTitleChangedEvent} from "../../grid-list/+bus/events";
+import {TerminalId} from "../../grid-list/+model/model";
 
 
 @Injectable({providedIn: 'root'})
@@ -49,7 +50,7 @@ export class TabListService {
             .subscribe((event: ActionFiredEvent) => {
                 switch (event.payload) {
                     case 'new_tab':
-                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.["1"]?.shell_type ?? 'unknown', isActive: true});
+                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.profiles[configService.config.shell?.default]?.shell_type ?? 'unknown', isActive: true});
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
@@ -170,6 +171,10 @@ export class TabListService {
         tab.isTitleLocked = true;
         this._tabList.next(tabList);
         this.closeRename();
+    }
+
+    private renameTab(payload: { terminalId: TerminalId; cwd: string }) {
+
     }
 
     private setColor(tabId: TabId, name: ColorName | undefined) {

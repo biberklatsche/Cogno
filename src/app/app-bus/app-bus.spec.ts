@@ -11,19 +11,19 @@ describe('AppBus', () => {
   });
 
   it('should publish and receive a message on the default path ["app"]', async () => {
-    const message: AppMessage = { type: 'CONFIG_LOADED', payload: {} } as any;
+    const message: AppMessage = { type: 'Cut', payload: 'term1' };
 
-    const promise = firstValueFrom(bus.onType$('CONFIG_LOADED' as any));
+    const promise = firstValueFrom(bus.onType$('Cut'));
     bus.publish(message);
 
     const received = await promise;
-    expect(received.type).toBe('CONFIG_LOADED');
+    expect(received.type).toBe('Cut');
     expect(received.phase).toBe('target');
   });
 
   it('should go through Capture, Target and Bubble phases', async () => {
     const path = ['app', 'workspace', 'terminal'];
-    const message: AppMessage = { type: 'TERMINAL_FOCUSED' as any, path } as any;
+    const message: AppMessage = { type: 'PtyInitialized', path, payload: { terminalId: 'term1', shellType: 'Bash' } };
 
     const events: { path: string; phase: string }[] = [];
 
@@ -45,7 +45,7 @@ describe('AppBus', () => {
 
   it('should stop propagation when propagationStopped is set', async () => {
     const path = ['app', 'child'];
-    const message: AppMessage = { type: 'ANY' as any, path } as any;
+    const message: AppMessage = { type: 'PtyInitialized', path, payload: { terminalId: 'term1', shellType: 'Bash' } };
 
     const events: string[] = [];
     bus.on$({ path: ['app'], phase: 'capture' }).subscribe(m => {
@@ -61,12 +61,12 @@ describe('AppBus', () => {
   });
 
   it('onceType$ should only deliver the first matching message', async () => {
-    const type = 'TAB_ADDED' as any;
+    const type = 'ConfigLoaded';
 
     const promise = firstValueFrom(bus.onceType$(type));
 
-    bus.publish({ type } as any);
-    bus.publish({ type } as any); // Second message
+    bus.publish({ type });
+    bus.publish({ type }); // Second message
 
     const received = await promise;
     expect(received.type).toBe(type);
@@ -77,7 +77,7 @@ describe('AppBus', () => {
   it('once$ should fail with a timeout if no message arrives', async () => {
     const promise = firstValueFrom(bus.once$({
       path: ['app'],
-      type: 'NON_EXISTENT' as any,
+      type: 'ConfigLoaded',
       timeoutMs: 10
     }));
 
@@ -89,20 +89,20 @@ describe('AppBus', () => {
 
       bus.on$({
           path: ['app'],
-          type: ['TAB_ADDED', 'TAB_REMOVED'] as any
+          type: ['TabAdded', 'TabRemoved']
       }).subscribe(m => events.push(m.type));
 
-      bus.publish({ type: 'TAB_ADDED' } as any);
-      bus.publish({ type: 'CONFIG_LOADED' } as any);
-      bus.publish({ type: 'TAB_REMOVED' } as any);
+      bus.publish({ type: 'TabAdded', payload: { tabId: 't1', isActive: true } });
+      bus.publish({ type: 'ConfigLoaded' });
+      bus.publish({ type: 'TabRemoved', payload: 't1' });
 
-      expect(events).toEqual(['TAB_ADDED', 'TAB_REMOVED']);
+      expect(events).toEqual(['TabAdded', 'TabRemoved']);
   });
 
   it('should return defaultPrevented correctly', () => {
-    const message: AppMessage = { type: 'ANY' as any } as any;
+    const message: AppMessage = { type: 'ConfigLoaded' };
 
-    bus.onType$('ANY' as any).subscribe(m => {
+    bus.onType$('ConfigLoaded').subscribe(m => {
       m.defaultPrevented = true;
     });
 
@@ -111,9 +111,9 @@ describe('AppBus', () => {
   });
 
   it('should return performed correctly', () => {
-    const message: AppMessage = { type: 'ANY' as any } as any;
+    const message: AppMessage = { type: 'ConfigLoaded' };
 
-    bus.onType$('ANY' as any).subscribe(m => {
+    bus.onType$('ConfigLoaded').subscribe(m => {
       m.performed = true;
     });
 

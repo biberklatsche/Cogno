@@ -21,18 +21,6 @@
       "identifier": "fs:scope",
       "allow": [
         {
-          "path": "$HOME/.cogno"
-        },
-        {
-          "path": "$HOME/.cogno/**"
-        },
-        {
-          "path": "$HOME/.cogno-dev"
-        },
-        {
-          "path": "$HOME/.cogno-dev/**"
-        },
-        {
           "path": "$HOME/.cogno2"
         },
         {
@@ -43,6 +31,12 @@
         },
         {
           "path": "$HOME/.cogno2-dev/**"
+        },
+        {
+          "path": "$HOME/.cogno2/shell-integration/zsh/.zshrc"
+        },
+        {
+          "path": "$HOME/.cogno2-dev/shell-integration/zsh/.zshrc"
         }
       ]
     },
@@ -73,18 +67,6 @@
     {
       "identifier": "opener:allow-open-path",
       "allow": [
-        {
-          "path": "$HOME/.cogno-dev"
-        },
-        {
-          "path": "$HOME/.cogno-dev/**"
-        },
-        {
-          "path": "$HOME/.cogno"
-        },
-        {
-          "path": "$HOME/.cogno/**"
-        },
         {
           "path": "$HOME/.cogno2-dev"
         },

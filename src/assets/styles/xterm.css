@@ -1,9 +1,21 @@
+/* Ensure terminal elements use their own font settings */
+.terminal, .terminal *{
+    font-family: var(--font-family) !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
 .terminal.xterm {
     padding: var(--padding-xterm);
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
     cursor: default;
+}
+
+.xterm .xterm-viewport {
+    background-color: #00000000 !important;
+    overflow-y: auto !important;
 }
 
 .terminal.xterm .xterm-helper-textarea {

@@ -1,5 +1,5 @@
 import {ConfigService} from "../../app/config/+state/config.service";
-import {Config, ShellConfig, ShellConfigPosition} from "../../app/config/+models/config";
+import {Config, ShellConfig} from "../../app/config/+models/config";
 import {BehaviorSubject, Observable} from "rxjs";
 import {filter} from "rxjs/operators";
 
@@ -14,11 +14,17 @@ export class ConfigServiceMock extends ConfigService {
         return this._config$.asObservable().pipe(filter(config => config !== undefined));
     }
 
-    getShellConfigOrDefault(pos: ShellConfigPosition): ShellConfig {
-        if(!this._config$.value?.shell || !this._config$.value.shell[pos]) throw new Error("Shell config not set");
-        return this._config$.value.shell[pos];
+    getShellConfigOrDefault(name: string | undefined): ShellConfig {
+        const shell = this._config$.value?.shell;
+        if(!shell?.default) throw new Error("Shell default not set");
+        if(!name) return shell.profiles[shell.default];
+        return shell.profiles[name];
     }
 
     setConfig(config: Config) {this._config$.next(config);}
+
+    getPromptSegments(): any[] {
+        return [];
+    }
 
 }

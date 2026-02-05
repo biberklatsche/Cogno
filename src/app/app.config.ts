@@ -12,7 +12,6 @@ import {KeybindService} from "./keybinding/keybind.service";
 import {CliActionService} from "./cli-command/cli-action.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
-import {ScrollbarService} from "./style/scrollbar.service";
 import {InspectorService} from "./inspector/+state/inspector.service";
 import {NotificationService} from "./notification/+state/notification.service";
 import {CommandPaletteService} from "./command-palette/command-palette.service";
@@ -33,7 +32,6 @@ export const appConfig: ApplicationConfig = {
           inject(CliActionService);
           inject(NativeMenuService);
           inject(WindowService);
-          inject(ScrollbarService);
       }),
   ],
 };

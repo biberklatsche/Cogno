@@ -10,7 +10,7 @@ import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
 import {FocusActiveTerminalAction} from "../+bus/actions";
-import {TerminalTitleChangedEvent} from "../../terminal/+state/handler/terminal-title.handler";
+import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal/+bus/events";
 
 
 @Injectable({providedIn: 'root'})
@@ -25,13 +25,23 @@ export class GridListService {
         return this._activeTabId.asObservable();
     }
 
+    get activeGridIsSplit$(): Observable<boolean> {
+        return this._gridList.pipe(
+            map(gridList => {
+                if (!this._activeTabId.value) return false;
+                const grid = gridList[this._activeTabId.value];
+                return grid ? !grid.tree.root.isLeaf : false;
+            })
+        );
+    }
+
     constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
         this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
         });
 
         this.bus.onType$('TabAdded').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabAddedEvent) => {
-            this.restoreGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellConfigPosition: event.payload!.shellConfigPosition ?? 1}});
+            this.restoreGrid({tabId: event.payload!.tabId, pane: {workingDir: event.payload!.workingDir, shellName: event.payload!.shellName}});
             if(event.payload!.isActive) {
                 this.selectGrid(event.payload!.tabId);
             }
@@ -46,6 +56,18 @@ export class GridListService {
             let tabId = this.determineTabId(gridList, event.payload?.terminalId);
             if(!tabId || !event.payload?.title) return;
             this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.title}});
+        });
+
+        this.bus.onType$('TerminalCwdChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalCwdChangedEvent) => {
+            const gridList = this._gridList.value;
+            let tabId = this.determineTabId(gridList, event.payload?.terminalId);
+            if(!tabId || !event.payload?.cwd) return;
+            const node = gridList[tabId].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload?.terminalId);
+            if(!node?.data) return;
+            // Immutable update der Pane
+            node.data = {...node.data, workingDir: event.payload.cwd};
+            this._gridList.next({...gridList});
+            this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.cwd}});
         });
 
         this.bus.onType$('FocusActiveTerminal').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: FocusActiveTerminalAction) => {
@@ -94,7 +116,7 @@ export class GridListService {
         });
     }
 
-    private removePane(terminalId: TerminalId) {
+    removePane(terminalId: TerminalId) {
         const gridList = this._gridList.value;
         let gridAndNode = this.determineGrid(gridList, terminalId);
         if (!gridAndNode) return;
@@ -123,7 +145,7 @@ export class GridListService {
         };
         this.bus.publish({path: ['app', 'terminal'], type: "BlurTerminal", payload: node.data?.terminalId!});
 
-        const paneChild: Pane = {shellConfigPosition: 1, terminalId: IdCreator.newTerminalId()};
+        const paneChild: Pane = {terminalId: IdCreator.newTerminalId()};
         tree.add(node.key, side, paneParent, paneChild);
         this._gridList.next(gridList);
     }
@@ -172,7 +194,7 @@ export class GridListService {
             this.addNode(leftChild, nodeConfig.leftChild)
             this.addNode(rightChild, nodeConfig.rightChild)
         } else {
-            parent.data = {shellConfigPosition: nodeConfig.shellConfigPosition ?? 1, workingDir: nodeConfig.workingDir, terminalId: IdCreator.newTerminalId()};
+            parent.data = {shellName: nodeConfig.shellName, workingDir: nodeConfig.workingDir, terminalId: IdCreator.newTerminalId()};
         }
     }
 
@@ -180,7 +202,7 @@ export class GridListService {
         // Leaf node -> TerminalConfig
         if (node.isLeaf) {
             return {
-                shellConfigPosition: node.data?.shellConfigPosition,
+                shellName: node.data?.shellName,
                 workingDir: node.data?.workingDir
             };
         }

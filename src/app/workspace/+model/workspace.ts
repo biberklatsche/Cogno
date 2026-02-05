@@ -1,4 +1,3 @@
-import {ShellConfigPosition} from "../../config/+models/config";
 import {ColorName} from "../../common/color/color";
 import {TerminalId} from "../../grid-list/+model/model";
 
@@ -46,7 +45,7 @@ export interface TerminalConfig {
     ratio?: never;
     child1?: never;
     child2?: never;
-    shellConfigPosition?: ShellConfigPosition;
+    shellName?: string;
     workingDir?: string;
 }
 

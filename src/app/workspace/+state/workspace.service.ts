@@ -1,8 +1,8 @@
-import {DestroyRef, Injectable, signal, WritableSignal, inject, Injector, Signal, computed} from "@angular/core";
+import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
-import {SideMenuItem, SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
+import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {ConfigService} from "../../config/+state/config.service";
@@ -13,7 +13,6 @@ import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
 import {ActionFired} from "../../action/action.models";
-import {Subscription} from "rxjs";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
@@ -32,8 +31,8 @@ export class WorkspaceService {
     constructor(
         private bus: AppBus,
         private sideMenuService: SideMenuService,
-        private config: ConfigService,
-        private keybinds: KeybindService,
+        config: ConfigService,
+        keybinds: KeybindService,
         private workspaceRepository: WorkspaceRepository,
         private gridListService: GridListService,
         private tabListService: TabListService,
@@ -52,7 +51,7 @@ export class WorkspaceService {
                 onOpen: () => this.onOpen(),
                 onClose: () => this.onClose(),
             },
-            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+            { sideMenuService: this.sideMenuService, bus, configService: config, keybinds, destroyRef }
         );
 
         this.bus.onceType$('DBInitialized').subscribe(async e => {
@@ -77,15 +76,14 @@ export class WorkspaceService {
                 if (msg.payload !== 'close_window' && msg.payload !== 'quit') return;
                 const args = msg.args ?? [];
                 // Guard to avoid endless loop when we re-publish
-                if (args.includes('autosave_done')) return;
+                if (args.includes('workspace_saved')) return;
 
                 const active = this.getActiveWorkspace();
-                if (!active?.autosave) return;
-
-                // Stop current propagation, perform autosave, then re-publish action
+                if (active?.autosave) {
+                    await this.saveWorkspace(active);
+                }
                 msg.propagationStopped = true;
-                await this.saveWorkspace(active);
-                this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'autosave_done']));
+                this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'workspace_saved']));
             });
     }
 
@@ -179,6 +177,13 @@ export class WorkspaceService {
             this.tabListService.selectTab(workspace!.tabs[0].tabId);
         }
         this._workspaceList.set(workspaceList);
+
+        // Update badge color - don't show badge for default workspace
+        if (workspace.id === DEFAULT_WORKSPACE_ID) {
+            this.sideMenuService.updateBadgeColor('Workspace', undefined);
+        } else {
+            this.sideMenuService.updateBadgeColor('Workspace', workspace.color);
+        }
     }
 
     createWorkspaceDraft(): WorkspaceConfigUi {
@@ -196,6 +201,7 @@ export class WorkspaceService {
         // Load current configurations from services
         workspace.grids = this.gridListService.getGridConfigs();
         workspace.tabs = this.tabListService.getTabConfigs();
+
         if (isNew) {
             await this.workspaceRepository.createWorkspace(workspace);
         } else {

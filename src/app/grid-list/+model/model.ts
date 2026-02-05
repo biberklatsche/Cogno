@@ -1,6 +1,5 @@
 import {TabId} from "../../workspace/+model/workspace";
 import {BinaryTree} from "../../common/tree/binary-tree";
-import {ShellConfigPosition} from "../../config/+models/config";
 
 export type GridList = Record<TabId, Grid>;
 
@@ -14,7 +13,7 @@ export interface Grid {
 export type Pane = {
     splitDirection?: SplitDirection;
     ratio?: number;
-    shellConfigPosition?: ShellConfigPosition;
+    shellName?: string;
     workingDir?: string;
     terminalId?: string;
     isFocused?: boolean;

@@ -38,6 +38,10 @@
     grid-column: 1 / -1;
   }
 
+  .span-2 {
+    grid-column: span 2;
+  }
+
   &:first-child {
     padding-top: 0;
     border-top: none;

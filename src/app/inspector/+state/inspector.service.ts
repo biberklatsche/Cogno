@@ -9,7 +9,13 @@ import {ConfigService} from "../../config/+state/config.service";
 import {FeatureMode, Keybinding} from "../../config/+models/config";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
-import {TerminalCursorPosition, InternalState, TerminalMousePosition} from "../../terminal/+state/session.state";
+import {
+    TerminalCursorPosition,
+    TerminalState,
+    TerminalMousePosition,
+    TerminalStateManager,
+    Command
+} from '../../terminal/+state/state';
 
 export type TerminalIdentifier = { terminalId: string };
 export type GlobalMousePosition = { x: number; y: number };
@@ -22,7 +28,8 @@ export class InspectorService {
     // State signals
     private _firedKeybinding: WritableSignal<Keybinding | undefined> = signal(undefined);
     private _globalMousePosition: WritableSignal<GlobalMousePosition | undefined> = signal(undefined);
-    private _terminalStateById: WritableSignal<Record<TerminalId, InternalState>> = signal({});
+    private _terminalStateById: WritableSignal<Record<TerminalId, TerminalState>> = signal({});
+    private _terminalHistoryById: WritableSignal<Record<TerminalId, Command[]>> = signal({});
     // Derived signals
     private _terminalIds = computed<TerminalId[]>(() => {
         return Object.keys(this._terminalStateById()) as TerminalId[];
@@ -37,8 +44,12 @@ export class InspectorService {
         return this._globalMousePosition.asReadonly();
     }
 
-    public get terminalStateById(): Signal<Record<TerminalId, InternalState>> {
+    public get terminalStateById(): Signal<Record<TerminalId, TerminalState>> {
         return this._terminalStateById.asReadonly();
+    }
+
+    public get terminalHistoryById(): Signal<Record<TerminalId, Command[]>> {
+        return this._terminalHistoryById.asReadonly();
     }
 
     public get terminalIds(): Signal<TerminalId[]> {
@@ -122,10 +133,14 @@ export class InspectorService {
             case 'terminal-state':
                 this.updateTerminalData(event.payload?.data);
                 break;
+
+            case 'terminal-history':
+                this.updateTerminalHistory(event.payload?.data);
+                break;
         }
     }
 
-    private updateTerminalData(data: InternalState): void {
+    private updateTerminalData(data: TerminalState): void {
         if (!data) return;
         this._terminalStateById.update(current => ({
             ...current,
@@ -133,10 +148,24 @@ export class InspectorService {
         }));
     }
 
+    private updateTerminalHistory(data: { terminalId: string, commands: Command[] }): void {
+        if (!data) return;
+        this._terminalHistoryById.update(current => ({
+            ...current,
+            [data.terminalId]: data.commands
+        }));
+    }
+
     private removeTerminalData(id?: TerminalId): void {
         if (!id) return;
 
         this._terminalStateById.update(current => {
+            const next = {...current};
+            delete next[id];
+            return next;
+        });
+
+        this._terminalHistoryById.update(current => {
             const next = {...current};
             delete next[id];
             return next;

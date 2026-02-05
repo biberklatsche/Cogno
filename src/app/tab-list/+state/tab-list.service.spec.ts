@@ -16,9 +16,16 @@ describe('TabListService', () => {
         configService = getConfigService();
         configService.setConfig({
             shell: {
-                "1": { shell_type: 'powershell' }
+                default: 'test',
+                profiles: {
+                    'test': {
+                        shell_type: 'PowerShell',
+                        inject_path: true,
+                        enable_shell_integration: true
+                    }
+                }
             }
-        } as any);
+        });
         
         service = new TabListService(bus, configService, getDestroyRef());
     });

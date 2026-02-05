@@ -43,7 +43,7 @@ describe('GridListService', () => {
             
             bus.publish({
                 type: 'TabAdded',
-                payload: { tabId, workingDir, isActive: true, shellConfigPosition: 1 }
+                payload: { tabId, workingDir, isActive: true }
             } as TabAddedEvent);
 
             let grids: Grid[] = [];

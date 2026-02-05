@@ -1,6 +1,6 @@
 import {ConfigService} from "../../config/+state/config.service";
 import {IRenderer, Renderer} from "./renderer/renderer";
-import {filter, first, Subscription} from "rxjs";
+import {Observable, Subscription} from "rxjs";
 import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalTitleHandler} from "./handler/terminal-title.handler";
@@ -18,14 +18,13 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
-import {ShellConfig} from "../../config/+models/config";
-import {ScriptInjector} from "./advanced/script.injector";
-import {PathInjector} from "./advanced/path.injector";
-import {CognoOscHandler} from "./advanced/cogno-osc.handler";
 import {CommandLineObserver} from "./advanced/command-line.observer";
-import {SessionState} from "./session.state";
+import {Command, TerminalState, TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/command-line.editor';
+import {ShellProfile} from "../../config/+models/shell-config";
+import {Injectable} from "@angular/core";
 
+@Injectable()
 export class TerminalSession {
 
     private renderer: IRenderer;
@@ -38,51 +37,50 @@ export class TerminalSession {
     private readonly disposables: IDisposable[];
     private disposed: boolean = false;
 
+    private terminalId?: TerminalId;
+    private shellProfile?: ShellProfile;
+
+
     constructor(
         private configService: ConfigService,
         private bus: AppBus,
-        private terminalId: TerminalId,
-        private shellConfig: ShellConfig
+        private stateManager: TerminalStateManager
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
             this.renderer,
             this.pty
         ];
-        this.subscription.add(configService.config$.pipe(filter(t => !!t), first()).subscribe(config => {
-            if (config.enable_webgl) {
-                this.renderer.useWebGl();
-            } else {
-                this.renderer.useCanvas();
-            }
-        }));
+    }
+
+    initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
+        this.terminalId = terminalId;
+        this.shellProfile = shellProfile;
+        this.stateManager.initialize(terminalId, shellProfile.shell_type!);
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
-        this.renderer.open(terminalContainer);
-        const sessionState = new SessionState(this.terminalId, this.shellConfig.shell_type!, this.bus);
-        this.focusHandler = new FocusHandler(this.terminalId, this.bus, sessionState);
+        if (!this.terminalId || !this.shellProfile) {
+            throw new Error('TerminalSession must be initialized before initializeTerminal');
+        }
+        this.renderer.open(terminalContainer, this.configService.config.font?.enable_ligatures ?? false);
+        this.focusHandler = new FocusHandler(this.terminalId, this.bus, this.stateManager);
         this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
-        this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellConfig, this.bus)));
-        this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer, sessionState)));
+        this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer, this.stateManager)));
+        this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
-        this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus)));
+        this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(this.selectionHandler));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
-        this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, sessionState)));
-        this.disposables.push(this.renderer.register(new CursorHandler(sessionState)));
+        this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
+        this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
-        if(this.shellConfig.inject_path) {
-            this.disposables.push(new PathInjector(this.bus, this.pty, this.terminalId));
-        }
-        if(this.shellConfig.enable_shell_integration) {
-            this.disposables.push(new ScriptInjector(this.bus, this.pty, this.terminalId));
-            this.disposables.push(this.renderer.register(new CognoOscHandler(sessionState)));
-            this.disposables.push(this.renderer.register(new CommandLineObserver(sessionState)));
-            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, sessionState)));
 
+        if(this.shellProfile.enable_shell_integration) {
+            this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
+            this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.stateManager)));
         }
 
     }

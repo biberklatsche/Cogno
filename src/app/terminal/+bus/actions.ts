@@ -15,6 +15,7 @@ export type DeletePreviousWordAction = ActionBase<"DeletePreviousWord", Terminal
 export type DeleteNextWordAction = ActionBase<"DeleteNextWord", TerminalId>
 export type GoToNextWordAction = ActionBase<"GoToNextWord", TerminalId>
 export type GoToPreviousWordAction = ActionBase<"GoToPreviousWord", TerminalId>
+export type SelectAllAction = ActionBase<"SelectAll", TerminalId>
 export type SelectTextRightAction = ActionBase<"SelectTextRight", TerminalId>
 export type SelectTextLeftAction = ActionBase<"SelectTextLeft", TerminalId>
 export type SelectWordRightAction = ActionBase<"SelectWordRight", TerminalId>

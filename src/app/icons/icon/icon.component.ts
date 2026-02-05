@@ -71,7 +71,7 @@ import {
     mdiWindowMinimize,
     mdiWindowRestore
 } from '@mdi/js';
-import {CommonModule} from '@angular/common';
+
 import {Icon} from '../+model/icon';
 
 @Component({
@@ -93,9 +93,7 @@ import {Icon} from '../+model/icon';
       <path [attr.d]="icon" d="M13,14H11V10H13M13,18H11V16H13M1,21H23L12,2L1,21Z"/>
     </svg>
   `,
-    imports: [
-        CommonModule
-    ]
+    imports: []
 })
 export class IconComponent {
 
