@@ -1,4 +1,14 @@
-import {ChangeDetectionStrategy, Component, computed, ElementRef, Signal, ViewChild} from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    EffectRef,
+    effect,
+    ElementRef,
+    OnDestroy,
+    Signal,
+    ViewChild
+} from '@angular/core';
 import {IconComponent} from "../../../icons/icon/icon.component";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
@@ -154,7 +164,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
         }
     `]
 })
-export class SideMenuComponent {
+export class SideMenuComponent implements OnDestroy {
     menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
     visibleItems: Signal<SideMenuItem[]> = computed(() => this.menuItems().filter(i => !i.hidden));
     selectedItem = this.menuItemService.selectedItem;
@@ -163,8 +173,47 @@ export class SideMenuComponent {
     @ViewChild('overlayAside', {static: false}) overlayAsideRef?: ElementRef<HTMLElement>;
     @ViewChild('menuCol', {static: false}) menuColRef?: ElementRef<HTMLElement>;
 
+    private clickOutsideEffect: EffectRef;
+    private lastOpenTimestamp = 0;
+
     constructor(private menuItemService: SideMenuService) {
+        this.clickOutsideEffect = effect(() => {
+            const isOpen = !!this.selectedItem();
+            const isOverlay = !this.overlay();
+            const isPinned = this.selectedItem()?.pinned;
+
+            if (isOpen && isOverlay && !isPinned) {
+                this.lastOpenTimestamp = performance.now();
+                document.addEventListener('pointerdown', this.onPointerDown, true);
+            } else {
+                document.removeEventListener('pointerdown', this.onPointerDown, true);
+            }
+        });
     }
+
+    ngOnDestroy() {
+        document.removeEventListener('pointerdown', this.onPointerDown, true);
+        this.clickOutsideEffect.destroy();
+    }
+
+    private onPointerDown = (ev: PointerEvent) => {
+        // Ignore the very event that triggered open
+        if (Math.abs(ev.timeStamp - this.lastOpenTimestamp) < 10) return;
+
+        // Double check pinned status in case effect didn't run yet or listener persists
+        if (this.selectedItem()?.pinned) {
+            document.removeEventListener('pointerdown', this.onPointerDown, true);
+            return;
+        }
+
+        const target = ev.target as Node;
+        const clickedInsideAside = this.overlayAsideRef?.nativeElement.contains(target);
+        const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
+
+        if (!clickedInsideAside && !clickedInsideMenu) {
+            this.close();
+        }
+    };
 
     open(menuItem: SideMenuItem) {
         this.menuItemService.open(menuItem.label);

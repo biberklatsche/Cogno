@@ -86,8 +86,12 @@ export class SideMenuService {
         this.bus.publish({type: 'SideMenuViewClosed', payload: {label: current.label}});
 
         this._selectedItem.set(undefined);
-        const item = this._menuItems().find(s => s.label === current.label);
-        item!.pinned = false;
+        
+        // Update the item in the menu list to be unpinned
+        this._menuItems.update(items => items.map(item => 
+            item.label === current.label ? { ...item, pinned: false } : item
+        ));
+
         const index = this._pinnedStack.findIndex(label => label === current.label);
         if(index > -1) {
             this._pinnedStack.splice(index, 1);
@@ -106,24 +110,21 @@ export class SideMenuService {
     togglePin() {
         const current = this._selectedItem();
         if (!current) return;
-        current.pinned = !current?.pinned;
-        this._selectedItem.set(current);
-        const item = this._menuItems().find(s => s.label === current.label);
-        item!.pinned = current.pinned;
+        const newPinned = !current.pinned;
+        
+        // Update the item in the menu list
+        this._menuItems.update(items => items.map(item => 
+            item.label === current.label ? { ...item, pinned: newPinned } : item
+        ));
+
+        // Update selected item with a new object reference to trigger signals/effects
+        this._selectedItem.set({ ...current, pinned: newPinned });
+
         const index = this._pinnedStack.findIndex(label => label == current.label);
-        if(current.pinned && index > -1) {
-            return;
-        }
-        if(current.pinned && index <= -1) {
+        if (newPinned && index === -1) {
             this._pinnedStack.push(current.label);
-            return;
-        }
-        if(!current.pinned && index > -1) {
+        } else if (!newPinned && index > -1) {
             this._pinnedStack.splice(index, 1);
-            return;
-        }
-        if(!current.pinned && index <= -1) {
-            return;
         }
     }
 
