@@ -22,7 +22,6 @@ import {CommandLineObserver} from "./advanced/command-line.observer";
 import {TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
-import {PathFactory} from "./adapter/path.factory";
 import {Injectable} from "@angular/core";
 
 @Injectable()
@@ -57,8 +56,7 @@ export class TerminalSession {
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
-        const adapter = shellProfile.shell_type ? PathFactory.createAdapter(shellProfile.shell_type) : undefined;
-        this.stateManager.initialize(terminalId, shellProfile.shell_type!, adapter);
+        this.stateManager.initialize(terminalId, shellProfile.shell_type!);
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {

@@ -1,9 +1,8 @@
-import {IPathAdapter, ParseContext, RenderContext} from "./path-adapter.interface";
-import {ShellType} from "../../../../config/+models/shell-config";
-import {OS, OsType} from "../../../../_tauri/os";
+import {IPathAdapter, RenderContext, ShellContext} from "./path-adapter.interface";
+import {OS} from "../../../../_tauri/os";
 
 export abstract class BasePathAdapter implements IPathAdapter {
-    abstract shellType: ShellType;
+    constructor(protected readonly ctx: ShellContext) {}
 
     normalize(input: string): string {
         const s = input.trim();
@@ -48,7 +47,7 @@ export abstract class BasePathAdapter implements IPathAdapter {
     render(cognoPath: string, ctx: RenderContext): string | undefined {
         const p = this.normalizeCognoAbs(cognoPath);
 
-        const backendOs = ctx.backendOs ?? OS.platform();
+        const backendOs = this.ctx.backendOs ?? OS.platform();
         const quoteMode = ctx.quoteMode ?? (ctx.purpose === "insert_arg" ? "if-needed" : "never");
 
         let raw: string | undefined = undefined;

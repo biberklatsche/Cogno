@@ -1,11 +1,13 @@
 import {BasePathAdapter} from "../base/base-path.adapter";
 import {ShellType} from "../../../../config/+models/shell-config";
 import {OsType} from "../../../../_tauri/os";
-import {RenderContext} from "../base/path-adapter.interface";
+import {RenderContext, ShellContext} from "../base/path-adapter.interface";
 
 export class PowerShellPathAdapter extends BasePathAdapter {
-    shellType: ShellType = "PowerShell";
 
+    constructor(ctx: Omit<ShellContext, "shellType">) {
+        super({...ctx, shellType: 'PowerShell'});
+    }
     protected override toShellView(p: string): string | undefined{
         return this.toWindowsBackendPath(p);
     }

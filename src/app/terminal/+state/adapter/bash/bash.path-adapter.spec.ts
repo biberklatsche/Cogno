@@ -2,18 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { BashPathAdapter } from './bash.path-adapter';
 
 describe('BashPathAdapter', () => {
-    const adapter = new BashPathAdapter();
+    const adapter = new BashPathAdapter({backendOs: "linux"});
 
     it('should normalize windows drives to cogno paths', () => {
-        expect(adapter.normalize('C:\\temp\\file.txt', {})).toBe('/c/temp/file.txt');
+        expect(adapter.normalize('C:\\temp\\file.txt')).toBe('/c/temp/file.txt');
     });
 
     it('should normalize UNC paths', () => {
-        expect(adapter.normalize('\\\\server\\share\\path', {})).toBe('//unc/server/share/path');
+        expect(adapter.normalize('\\\\server\\share\\path')).toBe('//unc/server/share/path');
     });
 
     it('should normalize WSL mount paths', () => {
-        expect(adapter.normalize('/mnt/c/Users', {})).toBe('/c/Users');
+        expect(adapter.normalize('/mnt/c/Users')).toBe('/c/Users');
     });
 
     it('should render posix paths normally', () => {
@@ -21,11 +21,12 @@ describe('BashPathAdapter', () => {
     });
 
     it('should render for backend_fs on linux', () => {
-        expect(adapter.render('/usr/bin/ls', { purpose: 'backend_fs', backendOs: 'linux' })).toBe('/usr/bin/ls');
+        expect(adapter.render('/usr/bin/ls', { purpose: 'backend_fs'})).toBe('/usr/bin/ls');
     });
 
     it('should render for backend_fs on windows', () => {
-        expect(adapter.render('/c/temp/file.txt', { purpose: 'backend_fs', backendOs: 'windows' })).toBe('C:\\temp\\file.txt');
+        const adapter = new BashPathAdapter({backendOs: "windows"});
+        expect(adapter.render('/c/temp/file.txt', { purpose: 'backend_fs'})).toBe('C:\\temp\\file.txt');
     });
 
     it('should quote if needed', () => {

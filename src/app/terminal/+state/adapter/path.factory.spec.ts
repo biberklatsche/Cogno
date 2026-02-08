@@ -8,23 +8,23 @@ import { GitBashPathAdapter } from './gitbash/gitbash.path-adapter';
 
 describe('PathFactory', () => {
     it('should create BashPathAdapter', () => {
-        expect(PathFactory.createAdapter('Bash')).toBeInstanceOf(BashPathAdapter);
+        expect(PathFactory.createAdapter({shellType: "Bash", backendOs: 'linux'})).toBeInstanceOf(BashPathAdapter);
     });
 
     it('should create ZshPathAdapter', () => {
-        expect(PathFactory.createAdapter('ZSH')).toBeInstanceOf(ZshPathAdapter);
+        expect(PathFactory.createAdapter({shellType: "ZSH", backendOs: 'macos'})).toBeInstanceOf(ZshPathAdapter);
     });
 
     it('should create FishPathAdapter', () => {
-        expect(PathFactory.createAdapter('Fish')).toBeInstanceOf(FishPathAdapter);
+        expect(PathFactory.createAdapter({shellType: "Fish", backendOs: 'linux'})).toBeInstanceOf(FishPathAdapter);
     });
 
     it('should create PowerShellPathAdapter', () => {
-        expect(PathFactory.createAdapter('PowerShell')).toBeInstanceOf(PowerShellPathAdapter);
+        expect(PathFactory.createAdapter({shellType: "PowerShell", backendOs: 'windows'})).toBeInstanceOf(PowerShellPathAdapter);
     });
 
     it('should create GitBashPathAdapter', () => {
-        expect(PathFactory.createAdapter('GitBash')).toBeInstanceOf(GitBashPathAdapter);
+        expect(PathFactory.createAdapter({shellType: "GitBash", backendOs: 'windows'})).toBeInstanceOf(GitBashPathAdapter);
     });
 
     it('should throw error for unsupported shell type', () => {

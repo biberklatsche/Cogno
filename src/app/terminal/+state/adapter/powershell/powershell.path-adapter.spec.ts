@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PowerShellPathAdapter } from './powershell.path-adapter';
 
 describe('PowerShellPathAdapter', () => {
-    const adapter = new PowerShellPathAdapter();
+    const adapter = new PowerShellPathAdapter({backendOs: 'windows'});
 
     it('should render as windows path in shell view', () => {
         expect(adapter.render('/c/temp/file.txt', { purpose: 'display' })).toBe('C:\\temp\\file.txt');

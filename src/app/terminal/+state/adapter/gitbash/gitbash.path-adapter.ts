@@ -1,10 +1,10 @@
 import {BasePathAdapter} from "../base/base-path.adapter";
-import {ShellType} from "../../../../config/+models/shell-config";
-import {ParseContext, RenderContext} from "../base/path-adapter.interface";
-import {OsType} from "../../../../_tauri/os";
+import {ShellContext} from "../base/path-adapter.interface";
 
 export class GitBashPathAdapter extends BasePathAdapter {
-    shellType: ShellType = "GitBash";
+    constructor(ctx: Omit<ShellContext, "shellType">) {
+        super({...ctx, shellType: 'GitBash'});
+    }
 
     protected override normalizeUnixPath(s: string): string {
         // Git-Bash rule:

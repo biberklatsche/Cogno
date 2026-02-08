@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { GitBashPathAdapter } from './gitbash.path-adapter';
 
 describe('GitBashPathAdapter', () => {
-    const adapter = new GitBashPathAdapter();
+    const adapter = new GitBashPathAdapter({backendOs: 'windows'});
 
     it('should normalize Unix paths to MSYS virtual paths if not a drive', () => {
-        expect(adapter.normalize('/usr/bin/ls', {})).toBe('//msys/usr/bin/ls');
+        expect(adapter.normalize('/usr/bin/ls')).toBe('//msys/usr/bin/ls');
     });
 
     it('should normalize drive letters correctly', () => {
-        expect(adapter.normalize('/c/temp', {})).toBe('/c/temp');
+        expect(adapter.normalize('/c/temp')).toBe('/c/temp');
     });
 
     it('should render MSYS paths back to absolute paths in shell view', () => {
@@ -21,6 +21,6 @@ describe('GitBashPathAdapter', () => {
     });
 
     it('should render Windows path in Git Bash', () => {
-        expect(adapter.render('/c/server/share/file', { purpose: 'backend_fs', backendOs: 'windows' })).toBe('C:\\server\\share\\file');
+        expect(adapter.render('/c/server/share/file', { purpose: 'backend_fs'})).toBe('C:\\server\\share\\file');
     });
 });

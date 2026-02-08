@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { FishPathAdapter } from './fish.path-adapter';
 
 describe('FishPathAdapter', () => {
-    const adapter = new FishPathAdapter();
+    const adapter = new FishPathAdapter({backendOs: "linux"});
 
     it('should normalize windows drives to cogno paths', () => {
-        expect(adapter.normalize('C:\\temp\\file.txt', {})).toBe('/c/temp/file.txt');
+        expect(adapter.normalize('C:\\temp\\file.txt')).toBe('/c/temp/file.txt');
     });
 
     it('should render posix paths normally', () => {

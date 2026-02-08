@@ -1,7 +1,8 @@
 import {BasePathAdapter} from "../base/base-path.adapter";
-import {ShellType} from "../../../../config/+models/shell-config";
-import {OsType} from "../../../../_tauri/os";
+import {ShellContext} from "../../state";
 
 export class BashPathAdapter extends BasePathAdapter {
-    shellType: ShellType = "Bash";
+    constructor(ctx: Omit<ShellContext, "shellType">) {
+        super({...ctx, shellType: 'Bash'});
+    }
 }

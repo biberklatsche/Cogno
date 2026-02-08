@@ -14,6 +14,23 @@ import {Injectable} from "@angular/core";
 import {TerminalId} from '../../../grid-list/+model/model';
 
 import {IPathAdapter} from "../adapter/base/path-adapter.interface";
+import {PathFactory} from "../adapter/path.factory";
+import {OS, OsType} from "../../../_tauri/os";
+
+type BaseShellContext = {
+    /** OS where your backend (Tauri/Rust) runs */
+    backendOs: OsType;
+    shellType: ShellType;
+};
+
+type WslShellContext = BaseShellContext & {
+    wslDistroName: string;
+    backendOs: 'windows';
+    shellType: 'Bash' | 'ZSH' | 'Fish';
+};
+
+export type ShellContext = BaseShellContext | WslShellContext;
+
 
 @Injectable()
 export class TerminalStateManager {
@@ -56,13 +73,10 @@ export class TerminalStateManager {
         });
     }
 
-    initialize(terminalId: string, shellType: ShellType, pathAdapter?: IPathAdapter): void {
-        this._pathAdapter = pathAdapter;
-        this.updateState({terminalId, shellType});
-    }
-
-    get pathAdapter(): IPathAdapter | undefined {
-        return this._pathAdapter;
+    initialize(terminalId: string, shellType: ShellType): void {
+        const shellContext = {shellType, backendOs: OS.platform()};
+        this._pathAdapter = PathFactory.createAdapter(shellContext) ;
+        this.updateState({terminalId, shellContext});
     }
 
     private updateState(updates: Partial<TerminalState>): void {
@@ -176,10 +190,6 @@ export class TerminalStateManager {
 
     get terminalId(): TerminalId {
         return this._stateSubject.value.terminalId;
-    }
-
-    get shellType(): ShellType | undefined {
-        return this._stateSubject.value.shellType;
     }
 
     get commands(): Command[] {

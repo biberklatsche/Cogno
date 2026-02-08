@@ -1,4 +1,5 @@
-import {ShellType} from "../../../config/+models/config";
+import {OS} from "../../../_tauri/os";
+import {ShellContext} from "./terminal-state.manager";
 
 export type Position = { col: number, row: number };
 export type TerminalCursorPosition = Position & {
@@ -21,7 +22,7 @@ export type TerminalInput = {
 
 export type TerminalState = {
     terminalId: string;
-    shellType: ShellType;
+    shellContext: ShellContext;
     cursorPosition: TerminalCursorPosition;
     mousePosition: TerminalMousePosition;
     dimensions: TerminalDimensions;
@@ -36,7 +37,7 @@ export type TerminalState = {
 export const INITIAL_STATE: TerminalState = {
     terminalId: '',
     cwd: '',
-    shellType: 'Bash',
+    shellContext: {shellType: 'Bash', backendOs: OS.platform()},
     cursorPosition: {
         viewport: {col: 1, row: 1},
         col: 1, row: 1,

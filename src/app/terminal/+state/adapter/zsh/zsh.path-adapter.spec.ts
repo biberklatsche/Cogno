@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { ZshPathAdapter } from './zsh.path-adapter';
 
 describe('ZshPathAdapter', () => {
-    const adapter = new ZshPathAdapter();
+    const adapter = new ZshPathAdapter({backendOs: "macos"});
 
     it('should normalize windows drives to cogno paths', () => {
-        expect(adapter.normalize('C:\\temp\\file.txt', {})).toBe('/c/temp/file.txt');
+        expect(adapter.normalize('C:\\temp\\file.txt')).toBe('/c/temp/file.txt');
     });
 
     it('should render posix paths normally', () => {

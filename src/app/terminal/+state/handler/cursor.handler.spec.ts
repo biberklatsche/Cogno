@@ -18,7 +18,7 @@ describe('CursorHandler', () => {
     vi.spyOn(bus, 'publish');
 
     stateManager = new TerminalStateManager(bus);
-    stateManager.initialize(terminalId, 'bash' as any);
+    stateManager.initialize(terminalId, 'Bash');
     handler = new CursorHandler(stateManager);
   });
 
