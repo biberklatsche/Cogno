@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CursorHandler } from './cursor.handler';
 import { AppBus } from '../../../app-bus/app-bus';
-import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { TerminalStateManager } from '../state';
 

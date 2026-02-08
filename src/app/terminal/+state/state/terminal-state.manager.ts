@@ -13,10 +13,13 @@ import {Command} from "./command.model";
 import {Injectable} from "@angular/core";
 import {TerminalId} from '../../../grid-list/+model/model';
 
+import {IPathAdapter} from "../adapter/base/path-adapter.interface";
+
 @Injectable()
 export class TerminalStateManager {
     private readonly _stateSubject: BehaviorSubject<TerminalState>;
     private readonly _historySubject: BehaviorSubject<Command[]>;
+    private _pathAdapter?: IPathAdapter;
 
     constructor(
         private _bus: AppBus
@@ -53,8 +56,13 @@ export class TerminalStateManager {
         });
     }
 
-    initialize(terminalId: string, shellType: ShellType): void {
+    initialize(terminalId: string, shellType: ShellType, pathAdapter?: IPathAdapter): void {
+        this._pathAdapter = pathAdapter;
         this.updateState({terminalId, shellType});
+    }
+
+    get pathAdapter(): IPathAdapter | undefined {
+        return this._pathAdapter;
     }
 
     private updateState(updates: Partial<TerminalState>): void {
@@ -215,9 +223,12 @@ export class TerminalStateManager {
 
     updateCwd(cwd: string) {
         this.updateState({cwd});
+        const normelizedPath = this._pathAdapter!.normalize(cwd);
+        const backendOsPath = this._pathAdapter!.render(normelizedPath, {purpose: "backend_fs"})
+        if(!backendOsPath) return;
         this._bus.publish({
             path: ['app', 'terminal', this._stateSubject.value.terminalId],
-            payload: {cwd: this._stateSubject.value.cwd, terminalId: this._stateSubject.value.terminalId},
+            payload: {cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId},
             type: 'TerminalCwdChanged'
         });
     }

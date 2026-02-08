@@ -78,11 +78,6 @@ function splitUnescaped(s: string, delimiter: string): string[] {
     return res;
 }
 
-function looksLikeWindowsDriveRoot(s: string): boolean {
-    // Supports both: C:\ and C:/
-    return /^[A-Za-z]:[\\\/]$/.test(s);
-}
-
 function indexOfUnescaped(s: string, needle: string): number {
     let escaped = false;
 

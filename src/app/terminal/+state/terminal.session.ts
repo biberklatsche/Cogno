@@ -1,6 +1,6 @@
 import {ConfigService} from "../../config/+state/config.service";
 import {IRenderer, Renderer} from "./renderer/renderer";
-import {Observable, Subscription} from "rxjs";
+import {Subscription} from "rxjs";
 import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalTitleHandler} from "./handler/terminal-title.handler";
@@ -19,9 +19,10 @@ import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
 import {CommandLineObserver} from "./advanced/command-line.observer";
-import {Command, TerminalState, TerminalStateManager} from "./state";
+import {TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
+import {PathFactory} from "./adapter/path.factory";
 import {Injectable} from "@angular/core";
 
 @Injectable()
@@ -56,7 +57,8 @@ export class TerminalSession {
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
-        this.stateManager.initialize(terminalId, shellProfile.shell_type!);
+        const adapter = shellProfile.shell_type ? PathFactory.createAdapter(shellProfile.shell_type) : undefined;
+        this.stateManager.initialize(terminalId, shellProfile.shell_type!, adapter);
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {

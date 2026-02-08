@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandLineEditor } from './command-line.editor';
 import { AppBus } from '../../../app-bus/app-bus';
 import { IPty } from '../pty/pty';
-import { TerminalStateManager } from '../state';
-import { Terminal } from '@xterm/xterm';
 import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
 import { Clipboard } from '../../../_tauri/clipboard';
 
