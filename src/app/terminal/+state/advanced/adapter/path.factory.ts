@@ -1,12 +1,11 @@
-import {ShellType} from "../../../config/+models/shell-config";
 import {IPathAdapter} from "./base/path-adapter.interface";
 import {BashPathAdapter} from "./bash/bash.path-adapter";
 import {ZshPathAdapter} from "./zsh/zsh.path-adapter";
 import {FishPathAdapter} from "./fish/fish.path-adapter";
 import {PowerShellPathAdapter} from "./powershell/powershell.path-adapter";
 import {GitBashPathAdapter} from "./gitbash/gitbash.path-adapter";
-import {OS} from "../../../_tauri/os";
-import {ShellContext} from "../state";
+import {OS} from "../../../../_tauri/os";
+import {ShellContext} from "../data/models";
 
 export class PathFactory {
     static createAdapter(context: ShellContext): IPathAdapter {

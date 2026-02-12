@@ -1,7 +1,5 @@
 import {BasePathAdapter} from "../base/base-path.adapter";
-import {ShellType} from "../../../../config/+models/shell-config";
-import {OsType} from "../../../../_tauri/os";
-import {ShellContext} from "../base/path-adapter.interface";
+import {ShellContext} from "../../data/models";
 
 export class ZshPathAdapter extends BasePathAdapter {
     constructor(ctx: Omit<ShellContext, "shellType">) {

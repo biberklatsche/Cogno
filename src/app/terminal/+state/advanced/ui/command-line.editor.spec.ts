@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandLineEditor } from './command-line.editor';
-import { AppBus } from '../../../app-bus/app-bus';
-import { IPty } from '../pty/pty';
-import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { Clipboard } from '../../../_tauri/clipboard';
+import { AppBus } from '../../../../app-bus/app-bus';
+import { IPty } from '../../pty/pty';
+import { TerminalMockFactory } from '../../../../../__test__/mocks/terminal-mock.factory';
+import { Clipboard } from '../../../../_tauri/clipboard';
 
 vi.mock('../../../_tauri/clipboard', () => ({
   Clipboard: {

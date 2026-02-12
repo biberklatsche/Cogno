@@ -18,9 +18,9 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
-import {CommandLineObserver} from "./advanced/command-line.observer";
+import {CommandLineObserver} from "./advanced/ui/command-line.observer";
 import {TerminalStateManager} from "./state";
-import {CommandLineEditor} from './advanced/command-line.editor';
+import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 

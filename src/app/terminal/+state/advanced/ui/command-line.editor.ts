@@ -1,12 +1,12 @@
-import {AppMessage} from '../../../app-bus/messages';
-import {ITerminalHandler} from '../handler/handler';
+import {AppMessage} from '../../../../app-bus/messages';
+import {ITerminalHandler} from '../../handler/handler';
 import {Terminal} from '@xterm/xterm';
-import {IDisposable} from '../../../common/models/models';
-import {AppBus} from '../../../app-bus/app-bus';
+import {IDisposable} from '../../../../common/models/models';
+import {AppBus} from '../../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
-import {IPty} from '../pty/pty';
-import {TerminalStateManager} from "../state";
-import {Clipboard} from "../../../_tauri/clipboard";
+import {IPty} from '../../pty/pty';
+import {TerminalStateManager} from "../../state";
+import {Clipboard} from "../../../../_tauri/clipboard";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;

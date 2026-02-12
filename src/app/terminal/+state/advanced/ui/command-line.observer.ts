@@ -1,10 +1,10 @@
-import {ITerminalHandler} from "../handler/handler";
+import {ITerminalHandler} from "../../handler/handler";
 import {Terminal} from "@xterm/xterm";
-import {IDisposable} from "../../../common/models/models";
-import {TerminalStateManager} from "../state";
-import OscParser from "./cogno-osc.parser";
-import {MarkerManager} from "./ui/marker-manager";
-import {PromptSegment} from "../../../config/+models/prompt-config";
+import {IDisposable} from "../../../../common/models/models";
+import {TerminalStateManager} from "../../state";
+import OscParser from "../osc/cogno-osc.parser";
+import {MarkerManager} from "./marker-manager";
+import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {debounceTime, Subject} from "rxjs";
 
 export class CommandLineObserver implements ITerminalHandler {

@@ -1,6 +1,8 @@
-import {ShellType} from "../../../config/+models/config";
-import {BehaviorSubject, debounceTime, map, Observable, skip} from 'rxjs';
-import {AppBus} from "../../../app-bus/app-bus";
+import { ShellType } from "../../../config/+models/config";
+import { BehaviorSubject, debounceTime, map, Observable, skip } from "rxjs";
+import { Injectable } from "@angular/core";
+
+import { AppBus } from "../../../app-bus/app-bus";
 import {
     INITIAL_STATE,
     TerminalCursorPosition,
@@ -9,74 +11,60 @@ import {
     TerminalMousePosition,
     TerminalState
 } from "./terminal.state";
-import {Command} from "./command.model";
-import {Injectable} from "@angular/core";
-import {TerminalId} from '../../../grid-list/+model/model';
+import { Command } from "./command.model";
+import { TerminalId } from "../../../grid-list/+model/model";
 
-import {IPathAdapter} from "../adapter/base/path-adapter.interface";
-import {PathFactory} from "../adapter/path.factory";
-import {OS, OsType} from "../../../_tauri/os";
-
-type BaseShellContext = {
-    /** OS where your backend (Tauri/Rust) runs */
-    backendOs: OsType;
-    shellType: ShellType;
-};
-
-type WslShellContext = BaseShellContext & {
-    wslDistroName: string;
-    backendOs: 'windows';
-    shellType: 'Bash' | 'ZSH' | 'Fish';
-};
-
-export type ShellContext = BaseShellContext | WslShellContext;
-
+import { OS } from "../../../_tauri/os";
+import { IPathAdapter } from "../advanced/adapter/base/path-adapter.interface";
+import { PathFactory } from "../advanced/adapter/path.factory";
+import { ShellContext } from "../advanced/data/models"; // nimm dein zentrales Model
+import { HistoryService } from "../advanced/history/history.service"; // Pfad anpassen
 
 @Injectable()
 export class TerminalStateManager {
     private readonly _stateSubject: BehaviorSubject<TerminalState>;
-    private readonly _historySubject: BehaviorSubject<Command[]>;
     private _pathAdapter?: IPathAdapter;
 
     constructor(
-        private _bus: AppBus
+        private _bus: AppBus,
+        private _history: HistoryService
     ) {
         this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
-        this._historySubject = new BehaviorSubject<Command[]>([]);
-        
-        this._stateSubject.pipe(
-            skip(1), // Initialen State ignorieren
-            debounceTime(10) // Damit multiple Änderungen in einem Frame zusammengefasst werden
-        ).subscribe((state) => {
-            this._bus.publish({
-                path: ['inspector'],
-                type: 'Inspector',
-                payload: { type: 'terminal-state', data: {...state} }
-            });
-        });
 
-        this._historySubject.pipe(
-            skip(1),
-            debounceTime(10)
-        ).subscribe((history) => {
-            this._bus.publish({
-                path: ['inspector'],
-                type: 'Inspector',
-                payload: {
-                    type: 'terminal-history',
-                    data: {
-                        terminalId: this._stateSubject.value.terminalId,
-                        commands: history
-                    }
-                }
+        // Inspector: terminal-state
+        this._stateSubject
+            .pipe(skip(1), debounceTime(10))
+            .subscribe(state => {
+                this._bus.publish({
+                    path: ["inspector"],
+                    type: "Inspector",
+                    payload: { type: "terminal-state", data: { ...state } }
+                });
             });
-        });
+
+        // Inspector: terminal-history (kommt jetzt aus HistoryService)
+        this._history.commands$
+            .pipe(skip(1), debounceTime(10))
+            .subscribe(history => {
+                this._bus.publish({
+                    path: ["inspector"],
+                    type: "Inspector",
+                    payload: {
+                        type: "terminal-history",
+                        data: {
+                            terminalId: this._stateSubject.value.terminalId,
+                            commands: history
+                        }
+                    }
+                });
+            });
     }
 
     initialize(terminalId: string, shellType: ShellType): void {
-        const shellContext = {shellType, backendOs: OS.platform()};
-        this._pathAdapter = PathFactory.createAdapter(shellContext) ;
-        this.updateState({terminalId, shellContext});
+        const shellContext: ShellContext = { shellType, backendOs: OS.platform() } as ShellContext;
+        this._pathAdapter = PathFactory.createAdapter(shellContext);
+        this._history.initialize(shellContext, this._pathAdapter);
+        this.updateState({ terminalId, shellContext });
     }
 
     private updateState(updates: Partial<TerminalState>): void {
@@ -85,6 +73,8 @@ export class TerminalStateManager {
             ...updates
         });
     }
+
+    // ---- State getters/streams wie vorher ----
 
     get state$(): Observable<TerminalState> {
         return this._stateSubject.asObservable();
@@ -119,7 +109,7 @@ export class TerminalStateManager {
     }
 
     updateDimensions(dimensions: TerminalDimensions): void {
-        this.updateState({ dimensions: dimensions });
+        this.updateState({ dimensions });
     }
 
     get isFocused(): boolean {
@@ -147,28 +137,24 @@ export class TerminalStateManager {
     }
 
     get isCommandRunning$(): Observable<boolean> {
-        return this._stateSubject.pipe(map(s => s.isCommandRunning))
+        return this._stateSubject.pipe(map(s => s.isCommandRunning));
     }
 
     startCommand(): void {
         const currentInput = this._stateSubject.value.input;
-        const commands = [...this._historySubject.value];
-        if (commands.length > 0) {
-            const lastCommand = commands[commands.length - 1];
-            lastCommand.set('command', currentInput.text.trim());
-            this._historySubject.next(commands);
-        }
+
+        this._history.startCommand(currentInput.text);
+
         this.updateState({
             isCommandRunning: true,
             commandStartTime: Date.now(),
-            input: { text: '', maxCursorIndex: 0, cursorIndex: 0 }
+            input: { text: "", maxCursorIndex: 0, cursorIndex: 0 }
         });
     }
 
     endCommand(): void {
-        this.updateState({
-            isCommandRunning: false
-        });
+        this.updateState({ isCommandRunning: false });
+        this._history.onCommandExecuted();
     }
 
     getCommandDuration(): number | undefined {
@@ -185,61 +171,45 @@ export class TerminalStateManager {
     }
 
     updateInput(input: TerminalInput): void {
-        this.updateState({ input: input });
+        this.updateState({ input });
     }
 
     get terminalId(): TerminalId {
         return this._stateSubject.value.terminalId;
     }
 
-    get commands(): Command[] {
-        return this._historySubject.value;
-    }
+    // ---- History Zugriff jetzt über Service ----
 
     get commands$(): Observable<Command[]> {
-        return this._historySubject.asObservable();
+        return this._history.commands$;
+    }
+
+    get commands(): Command[] {
+        return this._history.commands;
     }
 
     updateCommandList(data: Record<string, string>): void {
-        const id = data['id'];
-        const directory = data['directory'];
-        const user = data['user'];
-        const machine = data['machine'];
-
-        // Check if command already exists
-        if ( this._historySubject.value.find(c => c.id === id)) {
-            return;
-        }
-        const commands = [...this._historySubject.value];
-        
-        // Update previous command if exists
-        if (commands.length > 0) {
-            const updateData = {...data};
-            delete updateData['id'];
-            delete updateData['directory'];
-            delete updateData['user'];
-            delete updateData['machine'];
-            const lastCommand = commands[commands.length - 1];
-            lastCommand.setData(data);
-        }
-        const command = new Command(id, directory, machine, user);
-        commands.push(command);
-        this._historySubject.next(commands);
+        this._history.updateCommand(data);
     }
 
-    updateCommands(commands: Command[]) {
-        this._historySubject.next(commands);
+    updateCommands(commands: Command[]): void {
+        this._history.updateCommands(commands);
     }
 
-    updateCwd(cwd: string) {
-        this.updateState({cwd});
-        const normelizedPath = this._pathAdapter!.normalize(cwd);
-        const backendOsPath = this._pathAdapter!.render(normelizedPath, {purpose: "backend_fs"})
-        if(!backendOsPath) return;
+    updateCwd(cwd: string): void {
+        this.updateState({ cwd });
+
+        const normalizedPath = this._pathAdapter!.normalize(cwd);
+        const backendOsPath = this._pathAdapter!.render(normalizedPath, { purpose: "backend_fs" });
+        if (!backendOsPath) return;
+
+        // Persistierung + Stats
+        this._history.onCwdChanged(cwd);
+
         this._bus.publish({
-            path: ['app', 'terminal', this._stateSubject.value.terminalId],
-            payload: {cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId},
-            type: 'TerminalCwdChanged'
+            path: ["app", "terminal", this._stateSubject.value.terminalId],
+            payload: { cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId },
+            type: "TerminalCwdChanged"
         });
     }
 }

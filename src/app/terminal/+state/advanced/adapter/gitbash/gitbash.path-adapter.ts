@@ -1,5 +1,5 @@
 import {BasePathAdapter} from "../base/base-path.adapter";
-import {ShellContext} from "../base/path-adapter.interface";
+import {ShellContext} from "../../data/models";
 
 export class GitBashPathAdapter extends BasePathAdapter {
     constructor(ctx: Omit<ShellContext, "shellType">) {

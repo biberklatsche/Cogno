@@ -2,6 +2,7 @@
 // Migrationen als raw strings bundlen:
 import m001 from "./001_init_workspace.sql?raw";
 import m002 from "./002_add_workspace_autosave.sql?raw";
+import m003 from "./003_add_history.sql?raw";
 import {DB} from "../_tauri/db";
 
 type Migration = { id: string; sql: string };
@@ -9,6 +10,7 @@ type Migration = { id: string; sql: string };
 const MIGRATIONS: Migration[] = [
     {id: "001_init_workspace", sql: m001},
     {id: "002_add_workspace_autosave", sql: m002},
+    {id: "003_add_history", sql: m003},
 ].sort((a, b) => a.id.localeCompare(b.id));
 
 async function sha256(text: string): Promise<string> {
@@ -22,7 +24,7 @@ export async function migrate() {
     await DB.execute(`PRAGMA foreign_keys = ON;`);
     await DB.execute(`PRAGMA journal_mode = WAL;`);
     await DB.execute(`PRAGMA synchronous = NORMAL;`);
-
+    await DB.execute(`PRAGMA busy_timeout = 5000;`);
     // Bootstrap: migrations table
     await DB.execute(`
         CREATE TABLE IF NOT EXISTS schema_migrations

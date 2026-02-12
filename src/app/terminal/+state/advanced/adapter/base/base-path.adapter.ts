@@ -1,5 +1,6 @@
-import {IPathAdapter, RenderContext, ShellContext} from "./path-adapter.interface";
-import {OS} from "../../../../_tauri/os";
+import {IPathAdapter, RenderContext} from "./path-adapter.interface";
+import {OS} from "../../../../../_tauri/os";
+import {ShellContext} from "../../data/models";
 
 export abstract class BasePathAdapter implements IPathAdapter {
     constructor(protected readonly ctx: ShellContext) {}
@@ -143,5 +144,34 @@ export abstract class BasePathAdapter implements IPathAdapter {
 
     protected normalizePlainSlashes(s: string): string {
         return s.replace(/\\/g, "/").replace(/\/{3,}/g, "//");
+    }
+
+    parentOf(cognoPath: string): string | null {
+        const p = this.stripTrailingSlash(cognoPath);
+        if (p === "/" || p === "") return null;
+
+        const idx = p.lastIndexOf("/");
+        if (idx <= 0) return "/";
+
+        return p.slice(0, idx);
+    }
+
+    basenameOf(cognoPath: string): string {
+        const p = this.stripTrailingSlash(cognoPath);
+        if (p === "/" || p === "") return "/";
+        const idx = p.lastIndexOf("/");
+        return idx >= 0 ? p.slice(idx + 1) : p;
+    }
+
+    depthOf(cognoPath: string): number {
+        const p = this.stripTrailingSlash(cognoPath);
+        if (p === "/" || p === "") return 0;
+        return p.split("/").filter(Boolean).length;
+    }
+
+    private stripTrailingSlash(p: string): string {
+        if (!p) return p;
+        if (p === "/") return p;
+        return p.replace(/\/+$/, "");
     }
 }

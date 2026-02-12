@@ -1,5 +1,5 @@
 import {OS} from "../../../_tauri/os";
-import {ShellContext} from "./terminal-state.manager";
+import {ShellContext} from "../advanced/data/models";
 
 export type Position = { col: number, row: number };
 export type TerminalCursorPosition = Position & {
