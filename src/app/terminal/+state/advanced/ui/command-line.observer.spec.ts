@@ -211,7 +211,7 @@ describe('CommandLineObserver', () => {
     stateManager.startCommand();
 
     // We need to have a command already in the list for the OSC 733 to update it
-    stateManager.updateCommandList({
+    stateManager.updateCommand({
       id: '7',
       user: 'larswolfram',
       machine: 'Air',

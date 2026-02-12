@@ -16,8 +16,9 @@ export class HistoryService {
     private readonly _actions$ = new Subject<HistoryAction>();
 
     private readonly _historySubject = new BehaviorSubject<Command[]>([]);
-    readonly commands$: Observable<Command[]> = this._historySubject.asObservable();
-    readonly commands: Command[] = this._historySubject.value;
+
+    get commands(): Command[] { return this._historySubject.value; }
+    get commands$(): Observable<Command[]> { return this._historySubject.asObservable(); }
 
     constructor() {
         // serialisierte DB-Queue: Action -> wartet auf repo -> führt aus
@@ -66,6 +67,7 @@ export class HistoryService {
             delete updateData['machine'];
             const lastCommand = commands[commands.length - 1];
             lastCommand.setData(data);
+            this.onCommandExecuted();
         }
         const command = new Command(id, directory, machine, user);
         commands.push(command);
@@ -78,7 +80,6 @@ export class HistoryService {
         if (commands.length > 0) {
             const last = commands[commands.length - 1];
             last.set("command", currentInputText.trim());
-            console.log('#####startCommand',last);
             this._historySubject.next(commands);
         }
     }
@@ -97,7 +98,8 @@ export class HistoryService {
         const commands = this._historySubject.value;
         const lastCommand = commands[commands.length - 1];
         if(lastCommand?.command === undefined) return;
-        this.enqueue(repo => repo.upsertCommandExecution(lastCommand.command!, lastCommand.directory!));
+        if (lastCommand.command.trim().startsWith('cd')) return;
+        this.enqueue(async repo => await repo.upsertCommandExecution(lastCommand.command!, lastCommand.directory!));
     }
 
     deleteCommandExecution(commandRaw: string, cwdRaw: string): void {

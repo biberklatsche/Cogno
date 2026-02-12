@@ -129,9 +129,6 @@ export class HistoryRepository {
     }
 
     async upsertCommandExecution(commandRaw: string, cwdRaw: string): Promise<void> {
-
-        console.log('#####safe',commandRaw,cwdRaw );
-
         const command = commandRaw.trim();
         if (!command) return;
 

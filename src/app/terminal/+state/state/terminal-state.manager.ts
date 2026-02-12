@@ -154,7 +154,6 @@ export class TerminalStateManager {
 
     endCommand(): void {
         this.updateState({ isCommandRunning: false });
-        this._history.onCommandExecuted();
     }
 
     getCommandDuration(): number | undefined {
@@ -188,7 +187,7 @@ export class TerminalStateManager {
         return this._history.commands;
     }
 
-    updateCommandList(data: Record<string, string>): void {
+    updateCommand(data: Record<string, string>): void {
         this._history.updateCommand(data);
     }
 
