@@ -2,18 +2,19 @@ import { Injectable } from "@angular/core";
 import { BehaviorSubject, Subject, from, EMPTY, Observable } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 
-import { Command } from "../../state/command.model"; // ggf. Pfad anpassen
+import { Command } from "../../state";
 import { IPathAdapter } from "../adapter/base/path-adapter.interface";
-import { ShellContext } from "../data/models";
+import {OscDataType, ShellContext} from "../model/models";
 import { HistoryRepository } from "./history.repository";
+import {Logger} from "../../../../_tauri/logger";
 
-type HistoryAction = (repo: HistoryRepository) => Promise<void>;
+type HistoryFunction = (repo: HistoryRepository) => Promise<void>;
 
 @Injectable({ providedIn: "root" })
 export class HistoryService {
     private readonly _repo$ = new BehaviorSubject<HistoryRepository | null>(null);
 
-    private readonly _actions$ = new Subject<HistoryAction>();
+    private readonly _actions$ = new Subject<HistoryFunction>();
 
     private readonly _historySubject = new BehaviorSubject<Command[]>([]);
 
@@ -30,7 +31,7 @@ export class HistoryService {
                         take(1),
                         concatMap(repo => from(action(repo))),
                         catchError(err => {
-                            console.error("[HistoryService] action failed", err);
+                            Logger.error("[HistoryService] action failed", err);
                             return EMPTY;
                         })
                     )
@@ -40,13 +41,12 @@ export class HistoryService {
     }
 
     initialize(shellContext: ShellContext, adapter: IPathAdapter): void {
-        void this.createRepo(shellContext, adapter)
+        HistoryRepository.createForContext(shellContext, adapter)
             .then(repo => this._repo$.next(repo))
-            .catch(err => console.error("[HistoryService] init failed", err));
+            .catch(err => Logger.error("[HistoryService] init failed", err));
     }
 
-    /** Entspricht deiner bisherigen TerminalStateManager.updateCommandList(...) */
-    updateCommand(data: Record<string, string>): void {
+    updateCommand(data: Record<OscDataType, string>): void {
         const id = data['id'];
         const directory = data['directory'];
         const user = data['user'];
@@ -74,7 +74,6 @@ export class HistoryService {
         this._historySubject.next(commands);
     }
 
-    /** Entspricht deinem startCommand() Update des letzten Commands */
     startCommand(currentInputText: string): void {
         const commands = [...this._historySubject.value];
         if (commands.length > 0) {
@@ -106,12 +105,7 @@ export class HistoryService {
         this.enqueue(repo => repo.deleteCommandExecution(commandRaw, cwdRaw));
     }
 
-    private enqueue(action: HistoryAction): void {
+    private enqueue(action: HistoryFunction): void {
         this._actions$.next(action);
-    }
-
-    private async createRepo(shellContext: ShellContext, adapter: IPathAdapter): Promise<HistoryRepository> {
-        // make ensureContextId public (siehe Hinweis unten)
-        return await HistoryRepository.createForContext(shellContext, adapter);
     }
 }

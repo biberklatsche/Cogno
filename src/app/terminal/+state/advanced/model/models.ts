@@ -21,3 +21,6 @@ export function isWslContext(ctx: ShellContext): ctx is WslShellContext {
         && (ctx.shellType === 'Bash' || ctx.shellType === 'ZSH' || ctx.shellType === 'Fish')
         && 'wslDistroName' in ctx;
 }
+
+export type CognoOscDataType = 'id' | 'directory' | 'user' | 'machine' | 'returnCode';
+export type OscDataType = CognoOscDataType | string;

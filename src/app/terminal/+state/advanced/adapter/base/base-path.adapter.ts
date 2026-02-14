@@ -1,6 +1,6 @@
 import {IPathAdapter, RenderContext} from "./path-adapter.interface";
 import {OS} from "../../../../../_tauri/os";
-import {ShellContext} from "../../data/models";
+import {ShellContext} from "../../model/models";
 
 export abstract class BasePathAdapter implements IPathAdapter {
     constructor(protected readonly ctx: ShellContext) {}

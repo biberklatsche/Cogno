@@ -1,18 +1,12 @@
 import {IPathAdapter} from "../adapter/base/path-adapter.interface";
 import {DB} from "../../../../_tauri/db";
-import {isWslContext, ShellContext} from "../data/models";
+import {isWslContext, ShellContext} from "../model/models";
+import {Hash} from "../../../../common/hash/hash";
 
 type IdRow = { id: number };
 type PathRow = { id: number; parent_id?: number | null };
 
 function nowMs(): number { return Date.now(); }
-
-function hash64(input: string): string {
-    // Replace with stable hash (xxhash/blake3). Must be stable across OS.
-    let h = 0n;
-    for (let i = 0; i < input.length; i++) h = (h * 131n + BigInt(input.charCodeAt(i))) & ((1n << 64n) - 1n);
-    return h.toString(16).padStart(16, "0");
-}
 
 function firstToken(cmd: string): string {
     const t = cmd.trim();
@@ -110,7 +104,7 @@ export class HistoryRepository {
     async deleteWorkingDirectory(cwdRaw: string): Promise<void> {
         const ts = nowMs();
         const cwd = this.adapter.normalize(cwdRaw);
-        const cwdHash = hash64(cwd);
+        const cwdHash = Hash.create(cwd);
 
         await this.tx(async () => {
             const rows = await this.sel<IdRow[]>(
@@ -164,13 +158,13 @@ export class HistoryRepository {
         const ts = nowMs();
         const cwd = this.adapter.normalize(cwdRaw);
 
-        const cmdHash = hash64(command);
-        const cwdHash = hash64(cwd);
+        const commandHash = Hash.create(command);
+        const cwdHash = Hash.create(cwd);
 
         await this.tx(async () => {
             const cmdRows = await this.sel<IdRow[]>(
                 `SELECT id FROM command WHERE command_hash = ? LIMIT 1`,
-                [cmdHash]
+                [commandHash]
             );
             const cwdRows = await this.sel<IdRow[]>(
                 `SELECT id FROM path WHERE path_hash = ? LIMIT 1`,
@@ -191,7 +185,7 @@ export class HistoryRepository {
 
     private async ensurePathId(pathNorm: string, parentNorm?: string | null): Promise<number> {
         const ts = nowMs();
-        const h = hash64(pathNorm);
+        const h = Hash.create(pathNorm);
 
         await this.exec(
             `INSERT INTO path(path, path_hash, parent_id, basename, depth, created_at, deleted_at)
@@ -231,7 +225,7 @@ export class HistoryRepository {
 
     private async ensureCommandId(commandText: string): Promise<number> {
         const ts = nowMs();
-        const h = hash64(commandText);
+        const h = Hash.create(commandText);
 
         await this.exec(
             `INSERT INTO command(command_text, command_hash, first_token, created_at, deleted_at)

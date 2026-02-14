@@ -1,8 +1,5 @@
 const OscParser = {
-    /**
-     * Input example:
-     * "COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air-von-Lars;directory=/Users/larswolfram;id=7;command=ls;"
-     */
+
     parse(input: string): Record<string, string> | undefined {
 
         if(!input) return undefined;

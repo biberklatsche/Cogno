@@ -5,7 +5,7 @@ import {FishPathAdapter} from "./fish/fish.path-adapter";
 import {PowerShellPathAdapter} from "./powershell/powershell.path-adapter";
 import {GitBashPathAdapter} from "./gitbash/gitbash.path-adapter";
 import {OS} from "../../../../_tauri/os";
-import {ShellContext} from "../data/models";
+import {ShellContext} from "../model/models";
 
 export class PathFactory {
     static createAdapter(context: ShellContext): IPathAdapter {

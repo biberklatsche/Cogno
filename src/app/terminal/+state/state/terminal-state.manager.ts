@@ -17,7 +17,7 @@ import { TerminalId } from "../../../grid-list/+model/model";
 import { OS } from "../../../_tauri/os";
 import { IPathAdapter } from "../advanced/adapter/base/path-adapter.interface";
 import { PathFactory } from "../advanced/adapter/path.factory";
-import { ShellContext } from "../advanced/data/models"; // nimm dein zentrales Model
+import { ShellContext } from "../advanced/model/models"; // nimm dein zentrales Model
 import { HistoryService } from "../advanced/history/history.service"; // Pfad anpassen
 
 @Injectable()
