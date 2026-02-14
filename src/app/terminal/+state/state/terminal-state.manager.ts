@@ -17,8 +17,9 @@ import { TerminalId } from "../../../grid-list/+model/model";
 import { OS } from "../../../_tauri/os";
 import { IPathAdapter } from "../advanced/adapter/base/path-adapter.interface";
 import { PathFactory } from "../advanced/adapter/path.factory";
-import { ShellContext } from "../advanced/model/models"; // nimm dein zentrales Model
-import { HistoryService } from "../advanced/history/history.service"; // Pfad anpassen
+import { ShellContext } from "../advanced/model/models";
+import { TerminalCommandHistoryStore } from "../advanced/history/terminal-command-history.store";
+import { TerminalHistoryPersistenceService } from "../advanced/history/terminal-history-persistence.service";
 
 @Injectable()
 export class TerminalStateManager {
@@ -27,7 +28,8 @@ export class TerminalStateManager {
 
     constructor(
         private _bus: AppBus,
-        private _history: HistoryService
+        private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
+        private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService()
     ) {
         this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
 
@@ -42,8 +44,8 @@ export class TerminalStateManager {
                 });
             });
 
-        // Inspector: terminal-history (kommt jetzt aus HistoryService)
-        this._history.commands$
+        // Inspector: terminal-history
+        this._historyStore.commands$
             .pipe(skip(1), debounceTime(10))
             .subscribe(history => {
                 this._bus.publish({
@@ -63,7 +65,7 @@ export class TerminalStateManager {
     initialize(terminalId: string, shellType: ShellType): void {
         const shellContext: ShellContext = { shellType, backendOs: OS.platform() } as ShellContext;
         this._pathAdapter = PathFactory.createAdapter(shellContext);
-        this._history.initialize(shellContext, this._pathAdapter);
+        this._historyPersistence.initialize(shellContext, this._pathAdapter);
         this.updateState({ terminalId, shellContext });
     }
 
@@ -143,7 +145,7 @@ export class TerminalStateManager {
     startCommand(): void {
         const currentInput = this._stateSubject.value.input;
 
-        this._history.startCommand(currentInput.text);
+        this._historyStore.startCommand(currentInput.text);
 
         this.updateState({
             isCommandRunning: true,
@@ -177,22 +179,25 @@ export class TerminalStateManager {
         return this._stateSubject.value.terminalId;
     }
 
-    // ---- History Zugriff jetzt über Service ----
+    // ---- History Zugriff ----
 
     get commands$(): Observable<Command[]> {
-        return this._history.commands$;
+        return this._historyStore.commands$;
     }
 
     get commands(): Command[] {
-        return this._history.commands;
+        return this._historyStore.commands;
     }
 
     updateCommand(data: Record<string, string>): void {
-        this._history.updateCommand(data);
+        const executed = this._historyStore.updateCommand(data);
+        if (executed) {
+            this._historyPersistence.onCommandExecuted(executed.command, executed.directory);
+        }
     }
 
     updateCommands(commands: Command[]): void {
-        this._history.updateCommands(commands);
+        this._historyStore.updateCommands(commands);
     }
 
     updateCwd(cwd: string): void {
@@ -202,8 +207,7 @@ export class TerminalStateManager {
         const backendOsPath = this._pathAdapter!.render(normalizedPath, { purpose: "backend_fs" });
         if (!backendOsPath) return;
 
-        // Persistierung + Stats
-        this._history.onCwdChanged(cwd);
+        this._historyPersistence.onCwdChanged(cwd);
 
         this._bus.publish({
             path: ["app", "terminal", this._stateSubject.value.terminalId],

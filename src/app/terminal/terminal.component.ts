@@ -15,6 +15,8 @@ import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overl
 import {ShellProfile} from "../config/+models/shell-config";
 import {TerminalStateManager} from "./+state/state";
 import {toSignal} from "@angular/core/rxjs-interop";
+import {TerminalCommandHistoryStore} from "./+state/advanced/history/terminal-command-history.store";
+import {TerminalHistoryPersistenceService} from "./+state/advanced/history/terminal-history-persistence.service";
 
 @Component({
     selector: 'app-terminal',
@@ -26,6 +28,8 @@ import {toSignal} from "@angular/core/rxjs-interop";
         TerminalHeaderComponent
     ],
     providers: [
+        TerminalCommandHistoryStore,
+        TerminalHistoryPersistenceService,
         TerminalSession,
         TerminalStateManager
     ],
