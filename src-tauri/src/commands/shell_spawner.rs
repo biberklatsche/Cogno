@@ -40,7 +40,13 @@ impl ShellSpawner {
 
         let enable_integration = profile.enable_shell_integration.unwrap_or(true);
         let inject_path = profile.inject_path.unwrap_or(true);
-        let load_user_rc = profile.load_user_rc.unwrap_or(false);
+        // With shell integration enabled we rely on user rc files to reconstruct
+        // the same PATH/toolchain environment as a normal interactive shell.
+        let load_user_rc = if enable_integration {
+            true
+        } else {
+            profile.load_user_rc.unwrap_or(false)
+        };
         let working_dir = profile
             .working_dir
             .clone()
@@ -62,9 +68,10 @@ impl ShellSpawner {
             self.integration_root.clone(),
             log_dir,
             load_user_rc,
+            enable_integration,
         )
         .with_path_injection(inject_path, cogno_paths)
-        .with_shell_specific_env(&profile.shell_type, &working_dir);
+        .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);
 
         let env_builder = if let Some(custom_env) = &profile.env {
             env_builder.with_custom_env(custom_env.clone())
@@ -88,8 +95,10 @@ impl ShellSpawner {
                 let rcfile = self.integration_root.join("bash").join("cogno.bashrc");
 
                 // Use --rcfile to load our integration
-                // --rcfile requires the file path to exist
+                // Force interactive mode so readline keybindings (e.g. arrows) work.
+                // --rcfile requires the file path to exist.
                 Ok(vec![
+                    "-i".to_string(),
                     "--rcfile".to_string(),
                     rcfile.to_string_lossy().to_string(),
                 ])

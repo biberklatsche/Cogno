@@ -13,7 +13,7 @@ export const ShellProfileSchema = z.object({
     working_dir: z.string().optional(),
     inject_path: z.boolean().default(true),
     enable_shell_integration: z.boolean().default(true),
-    load_user_rc: z.boolean().default(false),
+    load_user_rc: z.boolean().default(true),
 }).describe("The shell configuration");
 
 export const ShellProfilesSchema = z.record(z.string().min(1), ShellProfileSchema);

@@ -86,7 +86,7 @@ export class ShellConfigurator {
             args: [],
             env: {},
             working_dir: '~',
-            load_user_rc: false,
+            load_user_rc: true,
             enable_shell_integration: true,
             inject_path: true,
         };

@@ -13,7 +13,6 @@ export class CommandLineObserver implements ITerminalHandler {
     private _terminal?: Terminal;
     private _markerManager: MarkerManager;
     private _refreshMarkerSubject = new Subject<void>();
-    private _lastKeystrokeTime = 0;
     private readonly KEYSTROKE_DEBOUNCE_MS = 100;
 
     constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
@@ -33,15 +32,9 @@ export class CommandLineObserver implements ITerminalHandler {
         this._markerManager.setTerminal(terminal);
 
         this._disposables.push(terminal.onCursorMove(() => {
+
             if (!terminal?.buffer?.active) return;
             if(this.stateManager.isCommandRunning) return;
-
-            // Ignore cursor moves during active typing to prevent race conditions
-            const now = Date.now();
-            if (now - this._lastKeystrokeTime < this.KEYSTROKE_DEBOUNCE_MS) {
-                return;
-            }
-
             try {
                 const buffer = terminal.buffer?.active;
                 const startInputY = this.findLastCognoMarkerY() + 1;
@@ -78,9 +71,6 @@ export class CommandLineObserver implements ITerminalHandler {
             this.stateManager.updateInput({...input, text: text});
         }));
         this._disposables.push(this._terminal.onKey((event) => {
-            // Update keystroke timestamp to debounce cursor position updates
-            this._lastKeystrokeTime = Date.now();
-
             if(event.key === '\r' || event.key === '\n') {
                 this.stateManager.startCommand();
             }
