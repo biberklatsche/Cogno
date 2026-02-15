@@ -7,6 +7,7 @@ import { OscDataType } from "../model/models";
 export type ExecutedCommand = {
     command: string;
     directory: string;
+    returnCode?: number;
 };
 
 @Injectable()
@@ -42,6 +43,7 @@ export class TerminalCommandHistoryStore {
                 executed = {
                     command: lastCommand.command,
                     directory: lastCommand.directory,
+                    returnCode: lastCommand.returnCode,
                 };
             }
         }

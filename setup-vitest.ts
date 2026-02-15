@@ -67,5 +67,4 @@ vi.mock('/src/app/_tauri/script.ts', async () => {
 // Reset all mocks between tests to keep isolation similar to Jest
 afterEach(() => {
   vi.clearAllMocks();
-  vi.resetModules();
 });

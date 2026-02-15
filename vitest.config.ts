@@ -11,6 +11,9 @@ export default defineConfig({
       { find: '@xterm/addon-ligatures', replacement: '/src/__test__/mocks/xterm-addon-ligatures-mock.ts' },
     ],
     include: ['src/**/*.spec.ts'],
+    exclude: [
+      'src/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts',
+    ],
     coverage: {
       reporter: ['text', 'lcov'],
       reportsDirectory: 'coverage',

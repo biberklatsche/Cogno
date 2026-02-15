@@ -194,7 +194,7 @@ export class TerminalStateManager {
     updateCommand(data: Record<string, string>): void {
         const executed = this._historyStore.updateCommand(data);
         if (executed) {
-            this._historyPersistence.onCommandExecuted(executed.command, executed.directory);
+            this._historyPersistence.onCommandExecuted(executed.command, executed.directory, executed.returnCode);
         }
     }
 

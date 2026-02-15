@@ -32,11 +32,11 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
                 score,
                 source: "history-cmd",
                 kind: "command",
-                replaceStart: context.replaceStart,
-                replaceEnd: context.replaceEnd,
+                // History commands must replace the entire terminal input.
+                replaceStart: 0,
+                replaceEnd: context.inputText.length,
                 selectedCommand: row.command,
             };
         });
     }
 }
-

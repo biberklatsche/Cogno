@@ -120,6 +120,32 @@ describe("Autocomplete Suggestors", () => {
         expect(result[0].kind).toBe("command");
     });
 
+    it("HistoryCommandSuggestor replaces full input in npm-script mode", async () => {
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: 1 },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "npm-script",
+            beforeCursor: "npm te",
+            inputText: "npm te",
+            cursorIndex: 6,
+            replaceStart: 4,
+            replaceEnd: 6,
+            cwd: "/Users/larswolfram/projects",
+            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            fragment: "te",
+        };
+        const result = await suggestor.suggest(ctx);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].replaceStart).toBe(0);
+        expect(result[0].replaceEnd).toBe(6);
+    });
+
     it("SpecCommandSuggestor returns npm scripts when package.json exists", async () => {
         vi.spyOn(Fs, "exists").mockResolvedValue(true);
         vi.spyOn(Fs, "readTextFile").mockResolvedValue(
