@@ -76,6 +76,22 @@ describe("Autocomplete Suggestors", () => {
         expect(result.some(r => r.label === "/Users")).toBe(true);
     });
 
+    it("FilesystemDirectorySuggestor reuses cached dir results and narrows by prefix", async () => {
+        readDirMock.mockResolvedValue([
+            { name: "Projects", isDirectory: true, isFile: false, isSymlink: false },
+            { name: "Private", isDirectory: true, isFile: false, isSymlink: false },
+            { name: "tmp", isDirectory: true, isFile: false, isSymlink: false },
+        ]);
+
+        const suggestor = new FilesystemDirectorySuggestor();
+        const first = await suggestor.suggest(cdContext("p"));
+        const second = await suggestor.suggest(cdContext("pr"));
+
+        expect(readDirMock).toHaveBeenCalledTimes(1);
+        expect(first.some(r => r.label.toLowerCase().includes("projects"))).toBe(true);
+        expect(second.every(r => r.label.toLowerCase().includes("pr"))).toBe(true);
+    });
+
     it("HistoryCommandSuggestor returns ranked command suggestions", async () => {
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([

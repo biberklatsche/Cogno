@@ -77,7 +77,6 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            direction: rtl;
             text-align: left;
         }
 
@@ -97,6 +96,8 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TerminalAutocompleteComponent {
+    private static readonly MAX_LABEL_CHARS = 72;
+
     @ViewChild("panel") private panelRef?: ElementRef<HTMLDivElement>;
 
     protected readonly viewState = toSignal(this.autocomplete.viewState$, { initialValue: {
@@ -122,28 +123,48 @@ export class TerminalAutocompleteComponent {
     }
 
     protected labelParts(item: AutocompleteSuggestion): Array<{ text: string; match: boolean }> {
-        const ranges = [...(item.matchRanges ?? [])].sort((a, b) => a.start - b.start);
-        if (ranges.length === 0) return [{ text: item.label, match: false }];
+        const { label, ranges } = this.truncateForDisplay(item);
+        if (ranges.length === 0) return [{ text: label, match: false }];
 
         const parts: Array<{ text: string; match: boolean }> = [];
         let pos = 0;
 
         for (const range of ranges) {
-            const start = Math.max(pos, Math.max(0, Math.min(range.start, item.label.length)));
-            const end = Math.max(start, Math.max(0, Math.min(range.end, item.label.length)));
+            const start = Math.max(pos, Math.max(0, Math.min(range.start, label.length)));
+            const end = Math.max(start, Math.max(0, Math.min(range.end, label.length)));
             if (start > pos) {
-                parts.push({ text: item.label.slice(pos, start), match: false });
+                parts.push({ text: label.slice(pos, start), match: false });
             }
             if (end > start) {
-                parts.push({ text: item.label.slice(start, end), match: true });
+                parts.push({ text: label.slice(start, end), match: true });
             }
             pos = end;
         }
 
-        if (pos < item.label.length) {
-            parts.push({ text: item.label.slice(pos), match: false });
+        if (pos < label.length) {
+            parts.push({ text: label.slice(pos), match: false });
         }
-        return parts.length > 0 ? parts : [{ text: item.label, match: false }];
+        return parts.length > 0 ? parts : [{ text: label, match: false }];
+    }
+
+    private truncateForDisplay(item: AutocompleteSuggestion): { label: string; ranges: Array<{ start: number; end: number }> } {
+        const ranges = [...(item.matchRanges ?? [])].sort((a, b) => a.start - b.start);
+        if (item.label.length <= TerminalAutocompleteComponent.MAX_LABEL_CHARS) {
+            return { label: item.label, ranges };
+        }
+
+        const keep = TerminalAutocompleteComponent.MAX_LABEL_CHARS - 3;
+        const cutStart = Math.max(0, item.label.length - keep);
+        const label = `...${item.label.slice(cutStart)}`;
+        const mappedRanges = ranges
+            .map(r => ({ start: r.start - cutStart + 3, end: r.end - cutStart + 3 }))
+            .map(r => ({
+                start: Math.max(3, Math.min(r.start, label.length)),
+                end: Math.max(3, Math.min(r.end, label.length)),
+            }))
+            .filter(r => r.end > r.start);
+
+        return { label, ranges: mappedRanges };
     }
 
     private scrollSelectedIntoView(index: number): void {

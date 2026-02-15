@@ -9,6 +9,15 @@ import { Logger } from "../../../../../_tauri/logger";
 export class FilesystemDirectorySuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "filesystem-directory";
     readonly inputPattern = /^\s*cd(?:\s+.*)?$/;
+    private static readonly DIR_CACHE_TTL_MS = 800;
+    private static readonly DIR_CACHE_MAX = 32;
+
+    private readonly _dirCache = new Map<string, { expiresAt: number; candidates: DirectoryCandidate[] }>();
+    private _lastFilter?: {
+        dirKey: string;
+        query: string;
+        matches: DirectoryCandidate[];
+    };
 
     matches(context: QueryContext): boolean {
         return context.mode === "cd" && this.inputPattern.test(context.beforeCursor);
@@ -28,48 +37,39 @@ export class FilesystemDirectorySuggestor implements TerminalAutocompleteSuggest
         const lookupBackend = adapter.render(lookup.parentNorm, { purpose: "backend_fs" });
         if (!lookupBackend) return [];
 
-        let entries: Awaited<ReturnType<typeof readDir>>;
-        try {
-            entries = await readDir(lookupBackend);
-        } catch (err) {
-            Logger.error(`[FilesystemDirectorySuggestor] readDir failed for '${lookupBackend}': ${String(err)}`);
-            return [];
-        }
-        const sep = lookupBackend.includes("\\") ? "\\" : "/";
+        const candidates = await this.readDirectoryCandidates(lookupBackend, cwdNorm, context.shellContext, adapter);
+        if (candidates.length === 0) return [];
 
-        const result: AutocompleteSuggestion[] = [];
-        for (const entry of entries) {
-            if (!entry.isDirectory) continue;
-            if (query && !entry.name.toLowerCase().includes(query)) continue;
+        const reusableBase =
+            this._lastFilter &&
+            this._lastFilter.dirKey === lookupBackend &&
+            query.startsWith(this._lastFilter.query)
+                ? this._lastFilter.matches
+                : candidates;
 
-            const childBackend = lookupBackend.endsWith(sep) ? `${lookupBackend}${entry.name}` : `${lookupBackend}${sep}${entry.name}`;
-            let childNorm: string;
-            try {
-                childNorm = adapter.normalize(childBackend);
-            } catch {
-                continue;
-            }
+        const matches = reusableBase.filter(candidate => !query || candidate.entryNameLower.includes(query));
+        this._lastFilter = {
+            dirKey: lookupBackend,
+            query,
+            matches,
+        };
 
-            const displayPath = AutocompletePathUtil.toDisplayPath(childNorm, cwdNorm, context.shellContext);
-            if (displayPath === "." || displayPath === ".." || AutocompletePathUtil.isParentTraversalOnly(displayPath)) continue;
-            const starts = entry.name.toLowerCase().startsWith(query);
-            const contains = entry.name.toLowerCase().includes(query);
+        return matches.map(candidate => {
+            const starts = candidate.entryNameLower.startsWith(query);
+            const contains = candidate.entryNameLower.includes(query);
             const score = (starts ? 70 : contains ? 20 : 0) + 20;
-
-            result.push({
-                label: displayPath,
-                detail: childNorm,
-                insertText: displayPath,
+            return {
+                label: candidate.displayPath,
+                detail: candidate.childNorm,
+                insertText: candidate.displayPath,
                 score,
                 source: "fs-dir",
                 kind: "directory",
                 replaceStart: context.replaceStart,
                 replaceEnd: context.replaceEnd,
-                selectedPath: childNorm,
-            });
-        }
-
-        return result;
+                selectedPath: candidate.childNorm,
+            };
+        });
     }
 
     private resolveLookup(cwdNorm: string, fragment: string, adapter: ReturnType<typeof PathFactory.createAdapter>):
@@ -116,4 +116,68 @@ export class FilesystemDirectorySuggestor implements TerminalAutocompleteSuggest
             return undefined;
         }
     }
+
+    private async readDirectoryCandidates(
+        lookupBackend: string,
+        cwdNorm: string,
+        shellContext: QueryContext["shellContext"],
+        adapter: ReturnType<typeof PathFactory.createAdapter>
+    ): Promise<DirectoryCandidate[]> {
+        const now = Date.now();
+        const cached = this._dirCache.get(lookupBackend);
+        if (cached && cached.expiresAt > now) {
+            return cached.candidates;
+        }
+
+        let entries: Awaited<ReturnType<typeof readDir>>;
+        try {
+            entries = await readDir(lookupBackend);
+        } catch (err) {
+            Logger.error(`[FilesystemDirectorySuggestor] readDir failed for '${lookupBackend}': ${String(err)}`);
+            return [];
+        }
+
+        const sep = lookupBackend.includes("\\") ? "\\" : "/";
+        const candidates: DirectoryCandidate[] = [];
+        for (const entry of entries) {
+            if (!entry.isDirectory) continue;
+            const childBackend = lookupBackend.endsWith(sep) ? `${lookupBackend}${entry.name}` : `${lookupBackend}${sep}${entry.name}`;
+            let childNorm: string;
+            try {
+                childNorm = adapter.normalize(childBackend);
+            } catch {
+                continue;
+            }
+
+            const displayPath = AutocompletePathUtil.toDisplayPath(childNorm, cwdNorm, shellContext);
+            if (displayPath === "." || displayPath === ".." || AutocompletePathUtil.isParentTraversalOnly(displayPath)) continue;
+            candidates.push({
+                entryName: entry.name,
+                entryNameLower: entry.name.toLowerCase(),
+                childNorm,
+                displayPath,
+            });
+        }
+
+        this.setDirCache(lookupBackend, {
+            expiresAt: now + FilesystemDirectorySuggestor.DIR_CACHE_TTL_MS,
+            candidates,
+        });
+        return candidates;
+    }
+
+    private setDirCache(key: string, value: { expiresAt: number; candidates: DirectoryCandidate[] }): void {
+        if (this._dirCache.size >= FilesystemDirectorySuggestor.DIR_CACHE_MAX) {
+            const oldestKey = this._dirCache.keys().next().value;
+            if (oldestKey) this._dirCache.delete(oldestKey);
+        }
+        this._dirCache.set(key, value);
+    }
 }
+
+type DirectoryCandidate = {
+    entryName: string;
+    entryNameLower: string;
+    childNorm: string;
+    displayPath: string;
+};
