@@ -3,6 +3,7 @@ import { NgStyle } from "@angular/common";
 import { toSignal } from "@angular/core/rxjs-interop";
 
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
+import { AutocompleteSuggestion } from "./autocomplete.types";
 
 @Component({
     selector: "app-terminal-autocomplete",
@@ -23,7 +24,11 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
                         (mousedown)="apply($event, $index)"
                         type="button"
                     >
-                        <span class="label">{{ item.label }}</span>
+                        <span class="label">
+                            @for (part of labelParts(item); track $index) {
+                                <span [class.match]="part.match">{{ part.text }}</span>
+                            }
+                        </span>
                         <span class="meta">{{ item.source }} · {{ item.score }}</span>
                     </button>
                 }
@@ -32,8 +37,8 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
     `,
     styles: [`
         .autocomplete-panel {
-            position: absolute;
-            width: clamp(180px, 45%, 560px);
+            position: fixed;
+            width: clamp(220px, 55%, 760px);
             max-width: calc(100% - 8px);
             max-height: calc(5 * 32px + 8px);
             overflow-y: auto;
@@ -42,7 +47,7 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 8px;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-            z-index: 1500;
+            z-index: 1;
             padding: 4px;
         }
 
@@ -72,6 +77,15 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            direction: rtl;
+            text-align: left;
+        }
+
+        .autocomplete-item .label .match {
+            color: #9ddcff;
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
         }
 
         .autocomplete-item .meta {
@@ -105,6 +119,31 @@ export class TerminalAutocompleteComponent {
         event.preventDefault();
         event.stopPropagation();
         this.autocomplete.selectSuggestion(index);
+    }
+
+    protected labelParts(item: AutocompleteSuggestion): Array<{ text: string; match: boolean }> {
+        const ranges = [...(item.matchRanges ?? [])].sort((a, b) => a.start - b.start);
+        if (ranges.length === 0) return [{ text: item.label, match: false }];
+
+        const parts: Array<{ text: string; match: boolean }> = [];
+        let pos = 0;
+
+        for (const range of ranges) {
+            const start = Math.max(pos, Math.max(0, Math.min(range.start, item.label.length)));
+            const end = Math.max(start, Math.max(0, Math.min(range.end, item.label.length)));
+            if (start > pos) {
+                parts.push({ text: item.label.slice(pos, start), match: false });
+            }
+            if (end > start) {
+                parts.push({ text: item.label.slice(start, end), match: true });
+            }
+            pos = end;
+        }
+
+        if (pos < item.label.length) {
+            parts.push({ text: item.label.slice(pos), match: false });
+        }
+        return parts.length > 0 ? parts : [{ text: item.label, match: false }];
     }
 
     private scrollSelectedIntoView(index: number): void {

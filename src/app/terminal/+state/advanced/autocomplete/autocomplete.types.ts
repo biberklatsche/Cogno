@@ -2,6 +2,11 @@ import { TerminalState } from "../../state";
 
 export type AutocompleteSuggestionKind = "directory" | "command" | "script";
 
+export type AutocompleteMatchRange = {
+    start: number;
+    end: number;
+};
+
 export type AutocompleteSuggestion = {
     label: string;
     detail?: string;
@@ -11,6 +16,7 @@ export type AutocompleteSuggestion = {
     kind: AutocompleteSuggestionKind;
     replaceStart: number;
     replaceEnd: number;
+    matchRanges?: AutocompleteMatchRange[];
     selectedPath?: string;
     selectedCommand?: string;
 };

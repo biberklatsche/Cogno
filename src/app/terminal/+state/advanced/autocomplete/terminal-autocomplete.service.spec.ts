@@ -88,7 +88,7 @@ describe("TerminalAutocompleteService", () => {
             makeSuggestion("git status"),
         ]));
 
-        fakeState.emit({ ...fakeState.state, input: { text: "git s", cursorIndex: 5, maxCursorIndex: 5 } });
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
         await vi.advanceTimersByTimeAsync(400);
 
         const view = (service as any)._viewState.value;
@@ -99,7 +99,7 @@ describe("TerminalAutocompleteService", () => {
 
     it("Enter without selection does not apply a suggestion", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
-        fakeState.emit({ ...fakeState.state });
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
         await vi.advanceTimersByTimeAsync(400);
 
         window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
@@ -109,7 +109,7 @@ describe("TerminalAutocompleteService", () => {
 
     it("ArrowDown then Enter applies selected suggestion", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
-        fakeState.emit({ ...fakeState.state });
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
         await vi.advanceTimersByTimeAsync(400);
 
         const viewBefore = (service as any)._viewState.value;
@@ -123,11 +123,17 @@ describe("TerminalAutocompleteService", () => {
     });
 
     it("positions panel above cursor near bottom and keeps it in viewport", async () => {
+        const originalWidth = window.innerWidth;
+        const originalHeight = window.innerHeight;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 360 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 220 });
+
         service.registerSuggestor(new DummySuggestor(async () =>
             Array.from({ length: 20 }, (_, i) => makeSuggestion(`git status ${i}`))
         ));
         fakeState.emit({
             ...fakeState.state,
+            input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
             cursorPosition: {
                 ...fakeState.state.cursorPosition,
                 viewport: { col: 80, row: 24 },
@@ -146,5 +152,63 @@ describe("TerminalAutocompleteService", () => {
         expect(view.y).toBeGreaterThanOrEqual(0);
         // Must be above the cursor region when there is no room below.
         expect(view.y).toBeLessThan(24 * 18);
+
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWidth });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: originalHeight });
+    });
+
+    it("hides autocomplete when side menu opens", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect((service as any)._viewState.value.visible).toBe(true);
+
+        bus.publish({ type: "SideMenuViewOpened", payload: { label: "Command Palette" } } as any);
+        expect((service as any)._viewState.value.visible).toBe(true);
+    });
+
+    it("stays open while side menu is open", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+        bus.publish({ type: "SideMenuViewOpened", payload: { label: "Command Palette" } } as any);
+
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect((service as any)._viewState.value.visible).toBe(true);
+    });
+
+    it("does not open on mouse move without input change", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+        fakeState.emit({
+            ...fakeState.state,
+            mousePosition: { viewport: { col: 10, row: 5 }, col: 10, row: 5, char: " " },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect((service as any)._viewState.value.visible).toBe(false);
+    });
+
+    it("marks matching query parts for highlighting", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "Projects",
+            insertText: "Projects",
+            detail: "",
+            score: 10,
+            source: "test",
+            kind: "directory",
+            replaceStart: 3,
+            replaceEnd: 6,
+        }]));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "cd pro", cursorIndex: 6, maxCursorIndex: 6 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const view = (service as any)._viewState.value;
+        expect(view.visible).toBe(true);
+        expect(view.suggestions[0].matchRanges).toEqual([{ start: 0, end: 3 }]);
     });
 });

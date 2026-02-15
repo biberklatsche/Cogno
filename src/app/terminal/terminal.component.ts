@@ -51,7 +51,8 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         private destroyRef: DestroyRef,
         private menu: ContextMenuOverlayService,
         private terminalSession: TerminalSession,
-        private terminalStateManager: TerminalStateManager
+        private terminalStateManager: TerminalStateManager,
+        private terminalAutocomplete: TerminalAutocompleteService
     ) {
         this.isFocused = toSignal(this.terminalStateManager.isFocused$);
     }
@@ -64,6 +65,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
+        this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
         this.terminalSession.initializeTerminal(this.terminalContainer.nativeElement);
     }
 

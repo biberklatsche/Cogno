@@ -19,7 +19,7 @@ const MAX_SUGGESTIONS = 20;
 const MAX_VISIBLE_SUGGESTIONS = 5;
 
 const PANEL_MIN_WIDTH = 260;
-const PANEL_MAX_WIDTH = 560;
+const PANEL_MAX_WIDTH = 760;
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
@@ -31,12 +31,16 @@ const INITIAL_VIEW_STATE: AutocompleteViewState = {
 
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
+    private static visibleOwner: TerminalAutocompleteService | null = null;
+
     private readonly _viewState = new BehaviorSubject<AutocompleteViewState>(INITIAL_VIEW_STATE);
     private readonly _subscription = new Subscription();
     private readonly _suggestors: TerminalAutocompleteSuggestor[] = [];
     private _activeRequestId = 0;
     private _suppressNextRefresh = false;
     private readonly _keydownHandler: (event: KeyboardEvent) => void;
+    private _hostElement?: HTMLElement;
+    private _lastInputSignature: string;
 
     get viewState$() {
         return this._viewState.asObservable();
@@ -47,6 +51,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         private readonly persistence: TerminalHistoryPersistenceService,
         private readonly bus: AppBus,
     ) {
+        this._lastInputSignature = this.inputSignature(this.stateManager.state);
         this.registerDefaultSuggestors();
         this.subscribeStateChanges();
 
@@ -56,8 +61,15 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     ngOnDestroy(): void {
+        if (TerminalAutocompleteService.visibleOwner === this) {
+            TerminalAutocompleteService.visibleOwner = null;
+        }
         this._subscription.unsubscribe();
         window.removeEventListener("keydown", this._keydownHandler, { capture: true });
+    }
+
+    setHostElement(element: HTMLElement): void {
+        this._hostElement = element;
     }
 
     registerSuggestor(suggestor: TerminalAutocompleteSuggestor): void {
@@ -87,6 +99,13 @@ export class TerminalAutocompleteService implements OnDestroy {
             this.stateManager.state$
                 .pipe(debounceTime(REFRESH_DEBOUNCE_MS))
                 .subscribe(state => {
+                    if (!this.hasInputChanged(state)) {
+                        if (this._viewState.value.visible && (!state.isFocused || state.isCommandRunning)) {
+                            this.hide();
+                        }
+                        return;
+                    }
+                    this._lastInputSignature = this.inputSignature(state);
                     void this.refreshSuggestions(state);
                 })
         );
@@ -165,15 +184,17 @@ export class TerminalAutocompleteService implements OnDestroy {
             this.hide();
             return;
         }
+        const highlightedSuggestions = this.applyHighlights(suggestions, context);
 
-        const position = this.computePanelPosition(state, suggestions.length);
+        const position = this.computePanelPosition(state, highlightedSuggestions.length);
+        this.takeVisibleOwnership();
 
         this._viewState.next({
             visible: true,
             x: position.x,
             y: position.y,
             selectedIndex: null,
-            suggestions,
+            suggestions: highlightedSuggestions,
         });
     }
 
@@ -250,33 +271,38 @@ export class TerminalAutocompleteService implements OnDestroy {
         const row = Math.max(1, state.cursorPosition.viewport.row);
         const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
         const cellHeight = Math.max(1, state.dimensions.cellHeight || 18);
+        const hostRect = this._hostElement?.getBoundingClientRect();
 
         const fallbackViewportWidth = Math.max(cellWidth, state.dimensions.cols * cellWidth);
-        const fallbackViewportHeight = Math.max(cellHeight, state.dimensions.rows * cellHeight);
         const viewportWidth = Math.max(cellWidth, state.dimensions.viewportWidth || fallbackViewportWidth);
-        const viewportHeight = Math.max(cellHeight, state.dimensions.viewportHeight || fallbackViewportHeight);
+        const windowWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || viewportWidth);
+        const windowHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || cellHeight);
+        const bounds = this.resolveBoundsRect(windowWidth, windowHeight);
+        const availableWidth = Math.max(120, Math.min(bounds.width, viewportWidth));
 
         const estimatedPanelWidth = Math.min(
-            Math.max(120, viewportWidth - 8),
-            Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.floor(viewportWidth * 0.45)))
+            Math.max(120, availableWidth - 8),
+            Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.floor(availableWidth * 0.45)))
         );
         const estimatedItemHeight = Math.max(26, Math.floor(cellHeight * 1.4));
         const visibleSuggestions = Math.min(suggestionCount, MAX_VISIBLE_SUGGESTIONS);
         const estimatedPanelHeight = 8 + visibleSuggestions * estimatedItemHeight;
 
-        const maxX = Math.max(0, viewportWidth - estimatedPanelWidth - 4);
-        let x = (col - 1) * cellWidth;
-        x = Math.max(0, Math.min(x, maxX));
+        const cursorX = (hostRect?.left ?? 0) + (col - 1) * cellWidth;
+        const minX = Math.max(4, bounds.left + 4);
+        const maxX = Math.max(minX, bounds.right - estimatedPanelWidth - 4);
+        const x = Math.max(minX, Math.min(cursorX, maxX));
 
-        const belowY = row * cellHeight + 4;
-        const topOfCursorLine = (row - 1) * cellHeight;
+        const topOfCursorLine = (hostRect?.top ?? 0) + (row - 1) * cellHeight;
+        const belowY = topOfCursorLine + cellHeight + 4;
         // If we cannot render below, render above with one extra terminal row offset.
         const aboveY = topOfCursorLine - estimatedPanelHeight - cellHeight - 4;
-        const maxY = Math.max(0, viewportHeight - estimatedPanelHeight - 4);
-        const hasRoomBelow = belowY + estimatedPanelHeight <= viewportHeight - 4;
+        const minY = Math.max(4, bounds.top + 4);
+        const maxY = Math.max(minY, bounds.bottom - estimatedPanelHeight - 4);
+        const hasRoomBelow = belowY + estimatedPanelHeight <= bounds.bottom - 4;
         const y = hasRoomBelow
-            ? Math.max(0, Math.min(belowY, maxY))
-            : Math.max(0, Math.min(aboveY, maxY));
+            ? Math.max(minY, Math.min(belowY, maxY))
+            : Math.max(minY, Math.min(aboveY, maxY));
 
         return {
             x,
@@ -304,7 +330,33 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private hide(): void {
+        if (TerminalAutocompleteService.visibleOwner === this) {
+            TerminalAutocompleteService.visibleOwner = null;
+        }
         this._viewState.next(INITIAL_VIEW_STATE);
+    }
+
+    private takeVisibleOwnership(): void {
+        const previous = TerminalAutocompleteService.visibleOwner;
+        if (previous && previous !== this) {
+            previous.hide();
+        }
+        TerminalAutocompleteService.visibleOwner = this;
+    }
+
+    private resolveBoundsRect(windowWidth: number, windowHeight: number): DOMRect {
+        const fallback = new DOMRect(0, 0, windowWidth, windowHeight);
+        const host = this._hostElement;
+        if (!host) return fallback;
+
+        const grid = host.closest("app-grid") as HTMLElement | null;
+        if (grid) return grid.getBoundingClientRect();
+
+        const gridList = host.closest("app-grid-list") as HTMLElement | null;
+        const main = gridList?.querySelector(".main") as HTMLElement | null;
+        if (main) return main.getBoundingClientRect();
+
+        return fallback;
     }
 
     private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
@@ -317,5 +369,46 @@ export class TerminalAutocompleteService implements OnDestroy {
         } finally {
             if (timeoutId) clearTimeout(timeoutId);
         }
+    }
+
+    private hasInputChanged(state: TerminalState): boolean {
+        return this.inputSignature(state) !== this._lastInputSignature;
+    }
+
+    private inputSignature(state: TerminalState): string {
+        const input = state.input;
+        return `${input.text}\u0000${input.cursorIndex}\u0000${input.maxCursorIndex}`;
+    }
+
+    private applyHighlights(items: AutocompleteSuggestion[], context: QueryContext): AutocompleteSuggestion[] {
+        const needle = this.highlightNeedle(context);
+        if (!needle) return items;
+
+        return items.map(item => ({
+            ...item,
+            matchRanges: this.findMatchRanges(item.label, needle),
+        }));
+    }
+
+    private highlightNeedle(context: QueryContext): string {
+        if (context.mode === "command") {
+            return context.query.trim();
+        }
+        return context.fragment.trim();
+    }
+
+    private findMatchRanges(label: string, needle: string): Array<{ start: number; end: number }> {
+        if (!label || !needle) return [];
+        const ranges: Array<{ start: number; end: number }> = [];
+        const haystack = label.toLowerCase();
+        const query = needle.toLowerCase();
+        let from = 0;
+        while (from < haystack.length) {
+            const idx = haystack.indexOf(query, from);
+            if (idx < 0) break;
+            ranges.push({ start: idx, end: idx + query.length });
+            from = idx + query.length;
+        }
+        return ranges;
     }
 }
