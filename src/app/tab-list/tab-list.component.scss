@@ -62,7 +62,11 @@
     color: var(--foreground-color);
     border-color: var(--background-color-40l);
     background: var(--background-color-30l);
-    .close { opacity: 0.5; }
+    .close {
+      color: var(--foreground-color-40d);
+      background: var(--background-color-20l);
+      opacity: 1;
+    }
   }
 }
 
@@ -88,6 +92,8 @@
   opacity: 0;
   &:hover {
     opacity: 1 !important;
+    color: var(--foreground-color) !important;
+    background: var(--background-color-20l) !important;
   }
 }
 

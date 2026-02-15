@@ -211,4 +211,51 @@ describe("TerminalAutocompleteService", () => {
         expect(view.visible).toBe(true);
         expect(view.suggestions[0].matchRanges).toEqual([{ start: 0, end: 3 }]);
     });
+
+    it("keeps missing typed separator when applying cd suggestion", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "projects",
+            insertText: "projects",
+            detail: "",
+            score: 10,
+            source: "test",
+            kind: "directory",
+            replaceStart: 3,
+            replaceEnd: 3,
+            selectedPath: "/Users/larswolfram/projects",
+        }]));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "cd", cursorIndex: 3, maxCursorIndex: 3 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+
+        const applyCall = (bus.publish as any).mock.calls.find((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion");
+        expect(applyCall).toBeTruthy();
+        expect(applyCall[0].payload.inputText).toBe("cd projects");
+    });
+
+    it("does not open from ArrowUp history recall, only after typing", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("npm test")]));
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }));
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "npm test", cursorIndex: 8, maxCursorIndex: 8 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+        expect((service as any)._viewState.value.visible).toBe(false);
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "t", bubbles: true, cancelable: true }));
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "npm test t", cursorIndex: 10, maxCursorIndex: 10 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+        expect((service as any)._viewState.value.visible).toBe(true);
+    });
 });

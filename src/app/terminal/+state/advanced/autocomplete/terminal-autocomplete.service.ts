@@ -20,6 +20,8 @@ const MAX_VISIBLE_SUGGESTIONS = 5;
 
 const PANEL_MIN_WIDTH = 260;
 const PANEL_MAX_WIDTH = 760;
+const PANEL_ITEM_HEIGHT = 32;
+const PANEL_VERTICAL_PADDING = 8;
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
@@ -38,6 +40,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     private readonly _suggestors: TerminalAutocompleteSuggestor[] = [];
     private _activeRequestId = 0;
     private _suppressNextRefresh = false;
+    private _suppressUntilTyping = false;
     private readonly _keydownHandler: (event: KeyboardEvent) => void;
     private _hostElement?: HTMLElement;
     private _lastInputSignature: string;
@@ -98,15 +101,15 @@ export class TerminalAutocompleteService implements OnDestroy {
         this._subscription.add(
             this.stateManager.state$
                 .pipe(debounceTime(REFRESH_DEBOUNCE_MS))
-                .subscribe(state => {
-                    if (!this.hasInputChanged(state)) {
-                        if (this._viewState.value.visible && (!state.isFocused || state.isCommandRunning)) {
+                .subscribe(terminalState => {
+                    if (!this.hasInputChanged(terminalState)) {
+                        if (this._viewState.value.visible && (!terminalState.isFocused || terminalState.isCommandRunning)) {
                             this.hide();
                         }
                         return;
                     }
-                    this._lastInputSignature = this.inputSignature(state);
-                    void this.refreshSuggestions(state);
+                    this._lastInputSignature = this.inputSignature(terminalState);
+                    void this.refreshSuggestions(terminalState);
                 })
         );
     }
@@ -115,7 +118,16 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (!this.stateManager.isFocused) return;
 
         const view = this._viewState.value;
-        if (!view.visible || view.suggestions.length === 0) return;
+        if (!view.visible || view.suggestions.length === 0) {
+            if (this.isArrowKey(event.key)) {
+                this._suppressUntilTyping = true;
+                return;
+            }
+            if (this.isTypingKey(event)) {
+                this._suppressUntilTyping = false;
+            }
+            return;
+        }
 
         switch (event.key) {
             case "ArrowDown": {
@@ -159,6 +171,10 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private async refreshSuggestions(state: TerminalState): Promise<void> {
+        if (this._suppressUntilTyping) {
+            this.hide();
+            return;
+        }
         if (this.shouldHideForState(state)) return;
 
         const context = AutocompleteContextParser.parse(state);
@@ -240,9 +256,10 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (!suggestion) return;
 
         const input = this.stateManager.input;
-        const start = Math.max(0, Math.min(suggestion.replaceStart, input.text.length));
-        const end = Math.max(start, Math.min(suggestion.replaceEnd, input.text.length));
-        const inputText = input.text.slice(0, start) + suggestion.insertText + input.text.slice(end);
+        const paddedInputText = input.text.padEnd(Math.max(input.text.length, suggestion.replaceEnd), " ");
+        const start = Math.max(0, Math.min(suggestion.replaceStart, paddedInputText.length));
+        const end = Math.max(start, Math.min(suggestion.replaceEnd, paddedInputText.length));
+        const inputText = paddedInputText.slice(0, start) + suggestion.insertText + paddedInputText.slice(end);
         const cursorIndex = start + suggestion.insertText.length;
 
         if (suggestion.kind === "directory" && suggestion.selectedPath) {
@@ -284,9 +301,8 @@ export class TerminalAutocompleteService implements OnDestroy {
             Math.max(120, availableWidth - 8),
             Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.floor(availableWidth * 0.45)))
         );
-        const estimatedItemHeight = Math.max(26, Math.floor(cellHeight * 1.4));
         const visibleSuggestions = Math.min(suggestionCount, MAX_VISIBLE_SUGGESTIONS);
-        const estimatedPanelHeight = 8 + visibleSuggestions * estimatedItemHeight;
+        const estimatedPanelHeight = PANEL_VERTICAL_PADDING + visibleSuggestions * PANEL_ITEM_HEIGHT;
 
         const cursorX = (hostRect?.left ?? 0) + (col - 1) * cellWidth;
         const minX = Math.max(4, bounds.left + 4);
@@ -295,8 +311,8 @@ export class TerminalAutocompleteService implements OnDestroy {
 
         const topOfCursorLine = (hostRect?.top ?? 0) + (row - 1) * cellHeight;
         const belowY = topOfCursorLine + cellHeight + 4;
-        // If we cannot render below, render above with one extra terminal row offset.
-        const aboveY = topOfCursorLine - estimatedPanelHeight - cellHeight - 4;
+        // If we cannot render below, render above so panel bottom is exactly one row-height above cursor line.
+        const aboveY = topOfCursorLine - estimatedPanelHeight - cellHeight;
         const minY = Math.max(4, bounds.top + 4);
         const maxY = Math.max(minY, bounds.bottom - estimatedPanelHeight - 4);
         const hasRoomBelow = belowY + estimatedPanelHeight <= bounds.bottom - 4;
@@ -410,5 +426,15 @@ export class TerminalAutocompleteService implements OnDestroy {
             from = idx + query.length;
         }
         return ranges;
+    }
+
+    private isArrowKey(key: string): boolean {
+        return key === "ArrowUp" || key === "ArrowDown" || key === "ArrowLeft" || key === "ArrowRight";
+    }
+
+    private isTypingKey(event: KeyboardEvent): boolean {
+        if (event.ctrlKey || event.metaKey || event.altKey) return false;
+        if (event.key.length === 1) return true;
+        return event.key === "Backspace" || event.key === "Delete";
     }
 }
