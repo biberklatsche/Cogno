@@ -56,7 +56,7 @@ export class TerminalSession {
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
-        this.stateManager.initialize(terminalId, shellProfile.shell_type!);
+        this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {

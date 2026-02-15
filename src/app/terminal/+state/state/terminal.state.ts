@@ -12,7 +12,14 @@ export type TerminalMousePosition = Position & {
     char: string,
 }
 
-export type TerminalDimensions = { rows: number; cols: number; cellHeight: number; cellWidth: number };
+export type TerminalDimensions = {
+    rows: number;
+    cols: number;
+    cellHeight: number;
+    cellWidth: number;
+    viewportWidth?: number;
+    viewportHeight?: number;
+};
 
 export type TerminalInput = {
     cursorIndex: number,
@@ -48,7 +55,7 @@ export const INITIAL_STATE: TerminalState = {
         col: 1, row: 1,
         char: ''
     },
-    dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0},
+    dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0, viewportWidth: 0, viewportHeight: 0},
     isFocused: false,
     isCommandRunning: false,
     isInFullScreenMode: false,

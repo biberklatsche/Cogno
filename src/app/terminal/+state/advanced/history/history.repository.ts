@@ -5,6 +5,19 @@ import {Hash} from "../../../../common/hash/hash";
 
 type IdRow = { id: number };
 type PathRow = { id: number; parent_id?: number | null };
+export type DirectoryHistoryRow = {
+    path: string;
+    basename: string;
+    visitCount: number;
+    selectCount: number;
+    lastVisitAt: number;
+};
+export type CommandHistoryRow = {
+    command: string;
+    execCount: number;
+    selectCount: number;
+    lastExecAt: number;
+};
 
 function nowMs(): number { return Date.now(); }
 
@@ -22,6 +35,14 @@ function isLockError(e: unknown): boolean {
 
 function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
+}
+
+function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
+    try {
+        return adapter.normalize(raw);
+    } catch {
+        return undefined;
+    }
 }
 
 /**
@@ -73,7 +94,8 @@ export class HistoryRepository {
 
     async upsertWorkingDirectory(cwdRaw: string): Promise<void> {
         const ts = nowMs();
-        const cwd = this.adapter.normalize(cwdRaw);
+        const cwd = safeNormalize(this.adapter, cwdRaw);
+        if (!cwd) return;
         const parent = this.adapter.parentOf(cwd);
 
         await this.tx(async () => {
@@ -103,13 +125,13 @@ export class HistoryRepository {
 
     async deleteWorkingDirectory(cwdRaw: string): Promise<void> {
         const ts = nowMs();
-        const cwd = this.adapter.normalize(cwdRaw);
-        const cwdHash = Hash.create(cwd);
+        const cwd = safeNormalize(this.adapter, cwdRaw);
+        if (!cwd) return;
 
         await this.tx(async () => {
             const rows = await this.sel<IdRow[]>(
-                `SELECT id FROM path WHERE path_hash = ? LIMIT 1`,
-                [cwdHash]
+                `SELECT id FROM path WHERE path = ? LIMIT 1`,
+                [cwd]
             );
             if (rows.length === 0) return;
 
@@ -127,7 +149,8 @@ export class HistoryRepository {
         if (!command) return;
 
         const ts = nowMs();
-        const cwd = this.adapter.normalize(cwdRaw);
+        const cwd = safeNormalize(this.adapter, cwdRaw);
+        if (!cwd) return;
         const parent = this.adapter.parentOf(cwd);
 
         await this.tx(async () => {
@@ -156,19 +179,17 @@ export class HistoryRepository {
         if (!command) return;
 
         const ts = nowMs();
-        const cwd = this.adapter.normalize(cwdRaw);
-
-        const commandHash = Hash.create(command);
-        const cwdHash = Hash.create(cwd);
+        const cwd = safeNormalize(this.adapter, cwdRaw);
+        if (!cwd) return;
 
         await this.tx(async () => {
             const cmdRows = await this.sel<IdRow[]>(
-                `SELECT id FROM command WHERE command_hash = ? LIMIT 1`,
-                [commandHash]
+                `SELECT id FROM command WHERE command_text = ? LIMIT 1`,
+                [command]
             );
             const cwdRows = await this.sel<IdRow[]>(
-                `SELECT id FROM path WHERE path_hash = ? LIMIT 1`,
-                [cwdHash]
+                `SELECT id FROM path WHERE path = ? LIMIT 1`,
+                [cwd]
             );
             if (cmdRows.length === 0 || cwdRows.length === 0) return;
 
@@ -177,6 +198,107 @@ export class HistoryRepository {
                  SET deleted_at = ?
                  WHERE context_id = ? AND cwd_path_id = ? AND command_id = ? AND deleted_at IS NULL`,
                 [ts, this.contextId, cwdRows[0].id, cmdRows[0].id]
+            );
+        });
+    }
+
+    async searchDirectories(fragmentRaw: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
+        const fragment = fragmentRaw.trim().toLowerCase();
+        const q = `%${fragment}%`;
+        return this.sel<DirectoryHistoryRow[]>(
+            `SELECT
+                 p.path AS path,
+                 p.basename AS basename,
+                 ds.visit_count AS visitCount,
+                 ds.select_count AS selectCount,
+                 ds.last_visit_at AS lastVisitAt
+             FROM dir_stat ds
+                      JOIN path p ON p.id = ds.to_path_id
+             WHERE ds.context_id = ?
+               AND ds.deleted_at IS NULL
+               AND p.deleted_at IS NULL
+               AND (
+                 LOWER(p.path) LIKE ?
+                 OR LOWER(p.basename) LIKE ?
+               )
+             ORDER BY ds.select_count DESC, ds.visit_count DESC, ds.last_visit_at DESC
+             LIMIT ?`,
+            [this.contextId, q, q, limit]
+        );
+    }
+
+    async searchCommands(fragmentRaw: string, limit: number = 50): Promise<CommandHistoryRow[]> {
+        const fragment = fragmentRaw.trim().toLowerCase();
+        const q = `%${fragment}%`;
+        return this.sel<CommandHistoryRow[]>(
+            `SELECT
+                 c.command_text AS command,
+                 CAST(SUM(cs.exec_count) AS INTEGER) AS execCount,
+                 CAST(SUM(cs.select_count) AS INTEGER) AS selectCount,
+                 CAST(MAX(cs.last_exec_at) AS INTEGER) AS lastExecAt
+             FROM command_stat cs
+                      JOIN command c ON c.id = cs.command_id
+             WHERE cs.context_id = ?
+               AND cs.deleted_at IS NULL
+               AND c.deleted_at IS NULL
+               AND LOWER(c.command_text) LIKE ?
+             GROUP BY c.id
+             ORDER BY SUM(cs.select_count) DESC, SUM(cs.exec_count) DESC, MAX(cs.last_exec_at) DESC
+             LIMIT ?`,
+            [this.contextId, q, limit]
+        );
+    }
+
+    async markDirectorySelected(pathRaw: string): Promise<void> {
+        const ts = nowMs();
+        const path = safeNormalize(this.adapter, pathRaw);
+        if (!path) return;
+        const parent = this.adapter.parentOf(path);
+
+        await this.tx(async () => {
+            const pathId = await this.ensurePathId(path, parent);
+            await this.exec(
+                `INSERT INTO dir_stat(
+                    context_id, to_path_id,
+                    visit_count, last_visit_at,
+                    select_count, last_select_at,
+                    created_at, deleted_at
+                ) VALUES(?, ?, 0, ?, 1, ?, ?, NULL)
+                 ON CONFLICT(context_id, to_path_id) DO UPDATE SET
+                    select_count = dir_stat.select_count + 1,
+                    last_select_at = excluded.last_select_at,
+                    deleted_at = NULL`,
+                [this.contextId, pathId, ts, ts, ts]
+            );
+        });
+    }
+
+    async markCommandSelected(commandRaw: string, cwdRaw: string): Promise<void> {
+        const command = commandRaw.trim();
+        if (!command) return;
+
+        const ts = nowMs();
+        const cwd = safeNormalize(this.adapter, cwdRaw);
+        if (!cwd) return;
+        const parent = this.adapter.parentOf(cwd);
+
+        await this.tx(async () => {
+            const cwdId = await this.ensurePathId(cwd, parent);
+            const cmdId = await this.ensureCommandId(command);
+
+            await this.exec(
+                `INSERT INTO command_stat(
+                    context_id, cwd_path_id, command_id,
+                    exec_count, last_exec_at,
+                    select_count, last_select_at,
+                    avg_duration_ms, success_count, last_return_code,
+                    created_at, deleted_at
+                ) VALUES(?, ?, ?, 0, NULL, 1, ?, NULL, 0, NULL, ?, NULL)
+                 ON CONFLICT(context_id, cwd_path_id, command_id) DO UPDATE SET
+                    select_count = command_stat.select_count + 1,
+                    last_select_at = excluded.last_select_at,
+                    deleted_at = NULL`,
+                [this.contextId, cwdId, cmdId, ts, ts]
             );
         });
     }
@@ -190,13 +312,17 @@ export class HistoryRepository {
         await this.exec(
             `INSERT INTO path(path, path_hash, parent_id, basename, depth, created_at, deleted_at)
        VALUES(?, ?, NULL, ?, ?, ?, NULL)
-       ON CONFLICT(path_hash) DO UPDATE SET deleted_at = NULL`,
+       ON CONFLICT(path) DO UPDATE SET
+         path_hash = excluded.path_hash,
+         basename = excluded.basename,
+         depth = excluded.depth,
+         deleted_at = NULL`,
             [pathNorm, h, this.adapter.basenameOf(pathNorm), this.adapter.depthOf(pathNorm), ts]
         );
 
         const rows = await this.sel<PathRow[]>(
-            `SELECT id, parent_id FROM path WHERE path_hash = ? LIMIT 1`,
-            [h]
+            `SELECT id, parent_id FROM path WHERE path = ? LIMIT 1`,
+            [pathNorm]
         );
         if (rows.length === 0) throw new Error("ensurePathId failed");
         const id = rows[0].id;
@@ -230,13 +356,16 @@ export class HistoryRepository {
         await this.exec(
             `INSERT INTO command(command_text, command_hash, first_token, created_at, deleted_at)
        VALUES(?, ?, ?, ?, NULL)
-       ON CONFLICT(command_hash) DO UPDATE SET deleted_at = NULL`,
+       ON CONFLICT(command_text) DO UPDATE SET
+         command_hash = excluded.command_hash,
+         first_token = excluded.first_token,
+         deleted_at = NULL`,
             [commandText, h, firstToken(commandText), ts]
         );
 
         const rows = await this.sel<IdRow[]>(
-            `SELECT id FROM command WHERE command_hash = ? LIMIT 1`,
-            [h]
+            `SELECT id FROM command WHERE command_text = ? LIMIT 1`,
+            [commandText]
         );
         if (rows.length === 0) throw new Error("ensureCommandId failed");
         return rows[0].id;

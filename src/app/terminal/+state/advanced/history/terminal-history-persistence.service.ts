@@ -5,7 +5,7 @@ import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { Logger } from "../../../../_tauri/logger";
 import { IPathAdapter } from "../adapter/base/path-adapter.interface";
 import { ShellContext } from "../model/models";
-import { HistoryRepository } from "./history.repository";
+import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
 
@@ -23,7 +23,8 @@ export class TerminalHistoryPersistenceService {
                         take(1),
                         concatMap(repo => from(action(repo))),
                         catchError(err => {
-                            Logger.error("[TerminalHistoryPersistenceService] action failed", err);
+                            const detail = err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : String(err);
+                            Logger.error(`[TerminalHistoryPersistenceService] action failed: ${detail}`);
                             return EMPTY;
                         })
                     )
@@ -39,6 +40,7 @@ export class TerminalHistoryPersistenceService {
     }
 
     onCwdChanged(cwdRaw: string): void {
+        if (!cwdRaw?.trim()) return;
         this.enqueue(repo => repo.upsertWorkingDirectory(cwdRaw));
     }
 
@@ -51,7 +53,30 @@ export class TerminalHistoryPersistenceService {
     }
 
     deleteCommandExecution(commandRaw: string, cwdRaw: string): void {
+        if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
         this.enqueue(repo => repo.deleteCommandExecution(commandRaw, cwdRaw));
+    }
+
+    async searchDirectories(fragment: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
+        const repo = this._repo$.value;
+        if (!repo) return [];
+        return repo.searchDirectories(fragment, limit);
+    }
+
+    async searchCommands(fragment: string, limit: number = 50): Promise<CommandHistoryRow[]> {
+        const repo = this._repo$.value;
+        if (!repo) return [];
+        return repo.searchCommands(fragment, limit);
+    }
+
+    markDirectorySelected(pathRaw: string): void {
+        if (!pathRaw?.trim()) return;
+        this.enqueue(repo => repo.markDirectorySelected(pathRaw));
+    }
+
+    markCommandSelected(commandRaw: string, cwdRaw: string): void {
+        if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
+        this.enqueue(repo => repo.markCommandSelected(commandRaw, cwdRaw));
     }
 
     private enqueue(action: PersistenceAction): void {

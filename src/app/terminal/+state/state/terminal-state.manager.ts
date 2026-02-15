@@ -20,6 +20,8 @@ import { PathFactory } from "../advanced/adapter/path.factory";
 import { ShellContext } from "../advanced/model/models";
 import { TerminalCommandHistoryStore } from "../advanced/history/terminal-command-history.store";
 import { TerminalHistoryPersistenceService } from "../advanced/history/terminal-history-persistence.service";
+import { ShellProfile } from "../../../config/+models/shell-config";
+import { deriveShellContext } from "./terminal-shell-context.util";
 
 @Injectable()
 export class TerminalStateManager {
@@ -62,8 +64,8 @@ export class TerminalStateManager {
             });
     }
 
-    initialize(terminalId: string, shellType: ShellType): void {
-        const shellContext: ShellContext = { shellType, backendOs: OS.platform() } as ShellContext;
+    initialize(terminalId: string, shellType: ShellType, shellProfile?: ShellProfile): void {
+        const shellContext: ShellContext = deriveShellContext(shellType, shellProfile, OS.platform());
         this._pathAdapter = PathFactory.createAdapter(shellContext);
         this._historyPersistence.initialize(shellContext, this._pathAdapter);
         this.updateState({ terminalId, shellContext });

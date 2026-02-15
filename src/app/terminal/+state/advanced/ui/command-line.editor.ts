@@ -64,12 +64,18 @@ export class CommandLineEditor implements ITerminalHandler  {
             'SelectTextToEndOfLine': () => this.selectTextToEndOfLine(),
             'SelectTextToStartOfLine': () => this.selectTextToStartOfLine(),
             'Cut': () => this.cutSelection(),
+            'ApplyAutocompleteSuggestion': (event) => this.applyAutocompleteSuggestion(event.payload.inputText, event.payload.cursorIndex),
         } satisfies Partial<Record<AppMessage['type'], (event: any) => void>>;
 
         Object.entries(actions).forEach(([key, handler]) => {
             const type = key as AppMessage['type'];
             this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type }).subscribe(async event => {
-                if (event.payload !== this.stateManager.terminalId || this.stateManager.isCommandRunning) return;
+                const payloadTerminalId = typeof event.payload === 'string'
+                    ? event.payload
+                    : (typeof event.payload === 'object' && event.payload !== null && 'terminalId' in event.payload)
+                        ? String(event.payload.terminalId)
+                        : undefined;
+                if (payloadTerminalId !== this.stateManager.terminalId || this.stateManager.isCommandRunning) return;
                 
                 // Reset selection start for non-selection actions
                 if (!type.startsWith('Select')) {
@@ -279,6 +285,20 @@ export class CommandLineEditor implements ITerminalHandler  {
     private _ptyWrite(data: string) {
         if (!this._terminal) return;
         this._pty.write(data);
+    }
+
+    private applyAutocompleteSuggestion(inputText: string, cursorIndex: number) {
+        if (!this._terminal) return;
+        const input = this.stateManager.input;
+        const countToEnd = input.text.length - input.cursorIndex;
+        const clearCmd = this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(input.text.length);
+        this._ptyWrite(clearCmd);
+        this._ptyWrite(inputText);
+
+        const leftToTarget = inputText.length - Math.max(0, Math.min(cursorIndex, inputText.length));
+        if (leftToTarget > 0) {
+            this._ptyWrite(this._buildCursorMoveCommand(-leftToTarget));
+        }
     }
 
     private cutSelection() {

@@ -29,6 +29,19 @@ describe('BashPathAdapter', () => {
         expect(adapter.render('/c/temp/file.txt', { purpose: 'backend_fs'})).toBe('C:\\temp\\file.txt');
     });
 
+    it('should map unix paths to WSL namespace when context is WSL', () => {
+        const adapter = new BashPathAdapter({backendOs: "windows", wslDistroName: "Ubuntu"});
+        expect(adapter.normalize('/home/lars/project')).toBe('//wsl/Ubuntu/home/lars/project');
+        expect(adapter.render('//wsl/Ubuntu/home/lars/project', { purpose: 'display'})).toBe('/home/lars/project');
+        expect(adapter.render('//wsl/Ubuntu/home/lars/project', { purpose: 'backend_fs'}))
+            .toBe('\\\\wsl.localhost\\Ubuntu\\home\\lars\\project');
+    });
+
+    it('should normalize wsl UNC host paths', () => {
+        const adapter = new BashPathAdapter({backendOs: "windows", wslDistroName: "Ubuntu"});
+        expect(adapter.normalize('\\\\wsl.localhost\\Ubuntu\\home\\lars')).toBe('//wsl/Ubuntu/home/lars');
+    });
+
     it('should quote if needed', () => {
         expect(adapter.render('/path/with space', { purpose: 'insert_arg' })).toBe("'/path/with space'");
     });

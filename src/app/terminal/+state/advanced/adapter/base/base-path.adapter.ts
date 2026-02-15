@@ -1,6 +1,6 @@
 import {IPathAdapter, RenderContext} from "./path-adapter.interface";
 import {OS} from "../../../../../_tauri/os";
-import {ShellContext} from "../../model/models";
+import {isWslContext, ShellContext} from "../../model/models";
 
 export abstract class BasePathAdapter implements IPathAdapter {
     constructor(protected readonly ctx: ShellContext) {}
@@ -23,6 +23,9 @@ export abstract class BasePathAdapter implements IPathAdapter {
             const server = mUnc[2];
             const share = mUnc[3];
             const rest = (mUnc[4] ?? "").replace(/\\/g, "/");
+            if (/^wsl(\.localhost)?$/i.test(server)) {
+                return this.normalizeCognoAbs(`//wsl/${share}/${rest}`);
+            }
             return this.normalizeCognoAbs(`//unc/${server}/${share}/${rest}`);
         }
 
@@ -42,6 +45,9 @@ export abstract class BasePathAdapter implements IPathAdapter {
     }
 
     protected normalizeUnixPath(s: string): string {
+        if (isWslContext(this.ctx)) {
+            return this.normalizeCognoAbs(`//wsl/${this.ctx.wslDistroName}/${s.replace(/^\/+/, "")}`);
+        }
         return this.normalizeCognoAbs(s);
     }
 
@@ -65,6 +71,14 @@ export abstract class BasePathAdapter implements IPathAdapter {
     }
 
     protected toShellView(p?: string): string | undefined{
+        if (p === undefined) return undefined;
+        if (isWslContext(this.ctx)) {
+            const mWsl = /^\/\/wsl\/([^/]+)(?:\/(.*))?$/.exec(p);
+            if (mWsl) {
+                const rest = mWsl[2] ?? "";
+                return this.normalizePlainSlashes(`/${rest}`);
+            }
+        }
         return p;
     }
 

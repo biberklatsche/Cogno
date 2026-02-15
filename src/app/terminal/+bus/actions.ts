@@ -22,3 +22,8 @@ export type SelectWordRightAction = ActionBase<"SelectWordRight", TerminalId>
 export type SelectWordLeftAction = ActionBase<"SelectWordLeft", TerminalId>
 export type SelectTextToEndOfLineAction = ActionBase<"SelectTextToEndOfLine", TerminalId>
 export type SelectTextToStartOfLineAction = ActionBase<"SelectTextToStartOfLine", TerminalId>
+export type ApplyAutocompleteSuggestionAction = ActionBase<"ApplyAutocompleteSuggestion", {
+    terminalId: TerminalId;
+    inputText: string;
+    cursorIndex: number;
+}>

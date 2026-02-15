@@ -4,24 +4,23 @@ import {ZshPathAdapter} from "./zsh/zsh.path-adapter";
 import {FishPathAdapter} from "./fish/fish.path-adapter";
 import {PowerShellPathAdapter} from "./powershell/powershell.path-adapter";
 import {GitBashPathAdapter} from "./gitbash/gitbash.path-adapter";
-import {OS} from "../../../../_tauri/os";
 import {ShellContext} from "../model/models";
 
 export class PathFactory {
     static createAdapter(context: ShellContext): IPathAdapter {
         switch (context.shellType) {
             case "Bash":
-                return new BashPathAdapter({backendOs: OS.platform()});
+                return new BashPathAdapter(context);
             case "ZSH":
-                return new ZshPathAdapter({backendOs: OS.platform()});
+                return new ZshPathAdapter(context);
             case "Fish":
-                return new FishPathAdapter({backendOs: OS.platform()});
+                return new FishPathAdapter(context);
             case "PowerShell":
-                return new PowerShellPathAdapter({backendOs: OS.platform()});
+                return new PowerShellPathAdapter(context);
             case "GitBash":
-                return new GitBashPathAdapter({backendOs: OS.platform()});
+                return new GitBashPathAdapter(context);
             default:
-                throw new Error(`Unsupported shell type: ${context}`);
+                throw new Error(`Unsupported shell type: ${String((context as ShellContext)?.shellType ?? context)}`);
         }
     }
 }

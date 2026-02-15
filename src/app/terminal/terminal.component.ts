@@ -17,6 +17,8 @@ import {TerminalStateManager} from "./+state/state";
 import {toSignal} from "@angular/core/rxjs-interop";
 import {TerminalCommandHistoryStore} from "./+state/advanced/history/terminal-command-history.store";
 import {TerminalHistoryPersistenceService} from "./+state/advanced/history/terminal-history-persistence.service";
+import {TerminalAutocompleteService} from "./+state/advanced/autocomplete/terminal-autocomplete.service";
+import {TerminalAutocompleteComponent} from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 
 @Component({
     selector: 'app-terminal',
@@ -25,11 +27,13 @@ import {TerminalHistoryPersistenceService} from "./+state/advanced/history/termi
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        TerminalHeaderComponent
+        TerminalHeaderComponent,
+        TerminalAutocompleteComponent
     ],
     providers: [
         TerminalCommandHistoryStore,
         TerminalHistoryPersistenceService,
+        TerminalAutocompleteService,
         TerminalSession,
         TerminalStateManager
     ],
