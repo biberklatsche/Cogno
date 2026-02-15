@@ -1,4 +1,4 @@
-import { CommandSpec, SpecProviderBinding } from "../spec.types";
+import { CommandSpec, ShellConstraint, SpecProviderBinding } from "../spec.types";
 
 export function importFigSubsetSpecs(importedSpecs: CommandSpec[]): CommandSpec[] {
     const byName = new Map<string, CommandSpec>();
@@ -14,6 +14,8 @@ export function importFigSubsetSpecs(importedSpecs: CommandSpec[]): CommandSpec[
             options: dedupe(spec.options ?? []),
             subcommandOptions: dedupeSubcommandOptions(spec.subcommandOptions),
             providers: sanitizeProviders(spec.providers),
+            shells: sanitizeShellConstraints(spec.shells),
+            excludeShells: sanitizeShellConstraints(spec.excludeShells),
         });
     }
 
@@ -76,6 +78,16 @@ function dedupe(values: string[]): string[] {
         out.push(v);
     }
     return out;
+}
+
+function sanitizeShellConstraints(source?: ShellConstraint[]): ShellConstraint[] | undefined {
+    if (!source?.length) return undefined;
+    const allowed: ShellConstraint[] = ["PowerShell", "ZSH", "Bash", "GitBash", "Fish"];
+    const set = new Set<ShellConstraint>();
+    for (const value of source) {
+        if (allowed.includes(value)) set.add(value);
+    }
+    return set.size ? [...set] : undefined;
 }
 
 function dedupeSubcommandOptions(

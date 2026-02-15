@@ -263,6 +263,11 @@ import { TOFU_FIG_SPEC } from "./commands/tofu.spec";
 import { AWS_SSO_UTIL_FIG_SPEC } from "./commands/aws-sso-util.spec";
 import { CHAMBER_FIG_SPEC } from "./commands/chamber.spec";
 import { SAML2AWS_FIG_SPEC } from "./commands/saml2aws.spec";
+import { GET_CHILDITEM_FIG_SPEC } from "./commands/get-childitem.spec";
+import { SET_LOCATION_FIG_SPEC } from "./commands/set-location.spec";
+import { GET_CONTENT_FIG_SPEC } from "./commands/get-content.spec";
+import { SELECT_STRING_FIG_SPEC } from "./commands/select-string.spec";
+import { INVOKE_WEBREQUEST_FIG_SPEC } from "./commands/invoke-webrequest.spec";
 
 // Fig subset (statically imported, generators/scripts intentionally omitted).
 // Source root: https://github.com/withfig/autocomplete/tree/master/src
@@ -531,4 +536,9 @@ export const FIG_SUBSET_IMPORTED_SPECS: CommandSpec[] = [
     AWS_SSO_UTIL_FIG_SPEC,
     CHAMBER_FIG_SPEC,
     SAML2AWS_FIG_SPEC,
+    GET_CHILDITEM_FIG_SPEC,
+    SET_LOCATION_FIG_SPEC,
+    GET_CONTENT_FIG_SPEC,
+    SELECT_STRING_FIG_SPEC,
+    INVOKE_WEBREQUEST_FIG_SPEC,
 ];

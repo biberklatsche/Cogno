@@ -120,6 +120,32 @@ describe("Autocomplete Suggestors", () => {
         expect(result[0].kind).toBe("command");
     });
 
+    it("HistoryCommandSuggestor boosts only same command token over general matches", async () => {
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                { command: "npm test", execCount: 0, selectCount: 0, lastExecAt: 1 },
+                { command: "git npm helper", execCount: 0, selectCount: 0, lastExecAt: 1 },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "npm te",
+            inputText: "npm te",
+            cursorIndex: 6,
+            replaceStart: 0,
+            replaceEnd: 6,
+            cwd: "/Users/larswolfram/projects",
+            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            query: "npm te",
+        };
+        const result = await suggestor.suggest(ctx);
+
+        expect(result[0].label).toBe("npm test");
+        expect(result[0].score).toBeGreaterThan(result[1].score);
+    });
+
     it("HistoryCommandSuggestor replaces full input in npm-script mode", async () => {
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([
@@ -144,6 +170,36 @@ describe("Autocomplete Suggestors", () => {
         expect(result).toHaveLength(1);
         expect(result[0].replaceStart).toBe(0);
         expect(result[0].replaceEnd).toBe(6);
+    });
+
+    it("HistoryCommandSuggestor filters suggestions made only from words already in prompt", async () => {
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                { command: "npm", execCount: 10, selectCount: 5, lastExecAt: 1 },
+                { command: "npm run", execCount: 8, selectCount: 4, lastExecAt: 1 },
+                { command: "npm test", execCount: 6, selectCount: 3, lastExecAt: 1 },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "npm run t",
+            inputText: "npm run t",
+            cursorIndex: 9,
+            replaceStart: 0,
+            replaceEnd: 9,
+            cwd: "/Users/larswolfram/projects",
+            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            query: "npm run t",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        const labels = result.map(item => item.label);
+
+        expect(labels).not.toContain("npm");
+        expect(labels).not.toContain("npm run");
+        expect(labels).toContain("npm test");
     });
 
     it("SpecCommandSuggestor returns npm scripts when package.json exists", async () => {

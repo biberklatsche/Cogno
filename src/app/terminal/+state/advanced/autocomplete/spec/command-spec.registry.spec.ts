@@ -48,6 +48,7 @@ describe("CommandSpecRegistry defaults/importer", () => {
         expect(names).toContain("terragrunt");
         expect(names).toContain("ansible-playbook");
         expect(names).toContain("kubectx");
+        expect(names).toContain("Get-ChildItem");
     });
 
     it("deduplicates duplicate entries by command name and values", () => {
@@ -71,5 +72,11 @@ describe("CommandSpecRegistry defaults/importer", () => {
         expect(npm).toBeDefined();
         expect(npm!.providers?.some(p => p.providerId === "npm-scripts")).toBe(true);
         expect(npm!.providers?.[0]?.when?.firstArgIn).toContain("run");
+    });
+
+    it("keeps shell constraints from command specs", () => {
+        const psOnly = DEFAULT_COMMAND_SPECS.find(v => v.name === "Get-ChildItem");
+        expect(psOnly).toBeDefined();
+        expect(psOnly!.shells).toEqual(["PowerShell"]);
     });
 });

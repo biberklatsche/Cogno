@@ -1,7 +1,7 @@
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
 import { CommandSpecRegistry } from "../spec/command-spec.registry";
-import { SpecProviderBinding, SpecSuggestionProvider } from "../spec/spec.types";
+import { CommandSpec, SpecProviderBinding, SpecSuggestionProvider } from "../spec/spec.types";
 import { BinaryAvailabilityRanker, SpecCommandRanker } from "../spec/ranking/binary-availability.ranker";
 
 type ParsedInput = {
@@ -12,10 +12,21 @@ type ParsedInput = {
     activeValue: string;
 };
 
+const MAX_RANK_BOOST_CANDIDATES = 40;
+const MIN_QUERY_LEN_FOR_RANKER = 2;
+const BACKGROUND_PREWARM_CANDIDATES = 60;
+
+type ShellScopedCommand = {
+    name: string;
+    lower: string;
+};
+
 export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "spec-command";
     readonly inputPattern = /.+/;
     private readonly _providers = new Map<string, SpecSuggestionProvider>();
+    private readonly _commandNamesByShell = new Map<string, ShellScopedCommand[]>();
+    private readonly _prewarmedShells = new Set<string>();
 
     constructor(
         private readonly registry: CommandSpecRegistry,
@@ -58,15 +69,17 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         context: QueryContext
     ): Promise<AutocompleteSuggestion[]> {
         const queryLower = query.toLowerCase();
-        const base = this.registry.commandNames()
-            .filter(name => !queryLower || name.toLowerCase().includes(queryLower))
-            .map(name => {
-                const starts = name.toLowerCase().startsWith(queryLower);
-                const contains = name.toLowerCase().includes(queryLower);
+        this.maybePrewarmRanker(queryLower, context);
+        const commands = this.commandsForShell(context);
+        const base = commands
+            .filter(c => !queryLower || c.lower.includes(queryLower))
+            .map(c => {
+                const starts = c.lower.startsWith(queryLower);
+                const contains = c.lower.includes(queryLower);
                 return {
-                    label: name,
+                    label: c.name,
                     detail: "spec command",
-                    insertText: name,
+                    insertText: c.name,
                     score: (starts ? 95 : contains ? 30 : 0) + 40,
                     source: "spec-cmd",
                     kind: "command" as const,
@@ -75,8 +88,19 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 };
             });
 
-        const boosts = await Promise.all(base.map(s => this.commandRanker.boostForCommand(s.label, context)));
-        return base.map((s, idx) => ({ ...s, score: s.score + (boosts[idx] ?? 0) }));
+        if (queryLower.length < MIN_QUERY_LEN_FOR_RANKER || base.length === 0) {
+            return base;
+        }
+
+        const rankedCandidates = [...base]
+            .sort((a, b) => b.score - a.score)
+            .slice(0, MAX_RANK_BOOST_CANDIDATES);
+        const boosts = await Promise.all(rankedCandidates.map(s => this.commandRanker.boostForCommand(s.label, context)));
+        const boostByLabel = new Map<string, number>();
+        for (let i = 0; i < rankedCandidates.length; i++) {
+            boostByLabel.set(rankedCandidates[i].label, boosts[i] ?? 0);
+        }
+        return base.map(s => ({ ...s, score: s.score + (boostByLabel.get(s.label) ?? 0) }));
     }
 
     private async suggestCommandArgs(
@@ -86,7 +110,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         context: QueryContext
     ): Promise<AutocompleteSuggestion[]> {
         const spec = this.registry.get(command);
-        if (!spec) return [];
+        if (!spec || !this.isSpecAllowedInShell(spec, context)) return [];
 
         const parsed = this.parseTokens(argsInput);
         const activeToken = parsed.activeValue.toLowerCase();
@@ -163,6 +187,40 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         }
 
         return true;
+    }
+
+    private isSpecAllowedInShell(spec: CommandSpec | undefined, context: QueryContext): boolean {
+        if (!spec) return false;
+        const shell = context.shellContext.shellType;
+        if (spec.shells?.length && !spec.shells.includes(shell)) return false;
+        if (spec.excludeShells?.includes(shell)) return false;
+        return true;
+    }
+
+    private commandsForShell(context: QueryContext): ShellScopedCommand[] {
+        const shell = context.shellContext.shellType;
+        const cached = this._commandNamesByShell.get(shell);
+        if (cached) return cached;
+
+        const next: ShellScopedCommand[] = this.registry.commandNames()
+            .filter(name => this.isSpecAllowedInShell(this.registry.get(name), context))
+            .map(name => ({ name, lower: name.toLowerCase() }));
+        this._commandNamesByShell.set(shell, next);
+        return next;
+    }
+
+    private maybePrewarmRanker(queryLower: string, context: QueryContext): void {
+        if (queryLower.length !== 1) return;
+        const shell = context.shellContext.shellType;
+        if (this._prewarmedShells.has(shell)) return;
+        this._prewarmedShells.add(shell);
+
+        const top = this.commandsForShell(context)
+            .slice(0, BACKGROUND_PREWARM_CANDIDATES)
+            .map(c => c.name);
+
+        void Promise.all(top.map(command => this.commandRanker.boostForCommand(command, context)))
+            .catch(() => undefined);
     }
 
     private parseTokens(input: string): ParsedInput {

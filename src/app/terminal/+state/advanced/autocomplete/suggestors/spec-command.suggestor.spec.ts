@@ -8,6 +8,10 @@ import { SpecCommandSuggestor } from "./spec-command.suggestor";
 import { SpecCommandRanker } from "../spec/ranking/binary-availability.ranker";
 
 function commandContext(beforeCursor: string): QueryContext {
+    return commandContextWithShell(beforeCursor, "Bash");
+}
+
+function commandContextWithShell(beforeCursor: string, shellType: "Bash" | "PowerShell"): QueryContext {
     return {
         mode: "command",
         beforeCursor,
@@ -16,7 +20,7 @@ function commandContext(beforeCursor: string): QueryContext {
         replaceStart: 0,
         replaceEnd: beforeCursor.length,
         cwd: "/Users/larswolfram/projects",
-        shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+        shellContext: { shellType, backendOs: "macos" } as any,
         query: beforeCursor.trim(),
     };
 }
@@ -99,5 +103,19 @@ describe("SpecCommandSuggestor", () => {
         expect(result.some(v => v.label === "commit")).toBe(false);
         expect(result.some(v => v.label === "-a")).toBe(true);
         expect(result.some(v => v.label === "-m")).toBe(true);
+    });
+
+    it("shows PowerShell-only specs only in PowerShell", async () => {
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            [],
+            { boostForCommand: vi.fn().mockResolvedValue(0) }
+        );
+
+        const bashResult = await suggestor.suggest(commandContextWithShell("Get-", "Bash"));
+        expect(bashResult.some(v => v.label === "Get-ChildItem")).toBe(false);
+
+        const pwshResult = await suggestor.suggest(commandContextWithShell("Get-", "PowerShell"));
+        expect(pwshResult.some(v => v.label === "Get-ChildItem")).toBe(true);
     });
 });
