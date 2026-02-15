@@ -24,6 +24,16 @@ export const NPM_FIG_SPEC: CommandSpec = {
         "--global",
         "--save-dev",
     ],
-    scriptProviderId: "npm-scripts",
+    providers: [
+        {
+            providerId: "npm-scripts",
+            kind: "script",
+            source: "npm-script",
+            baseScore: 55,
+            when: {
+                firstArgIn: ["run", "run-script"],
+                minArgs: 1,
+            },
+        },
+    ],
 };
-

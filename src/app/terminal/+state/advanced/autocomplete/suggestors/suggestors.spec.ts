@@ -131,15 +131,15 @@ describe("Autocomplete Suggestors", () => {
             [new NpmScriptsSpecProvider()]
         );
         const ctx: QueryContext = {
-            mode: "npm-script",
-            beforeCursor: "npm ",
-            inputText: "npm ",
-            cursorIndex: 4,
-            replaceStart: 4,
-            replaceEnd: 4,
+            mode: "command",
+            beforeCursor: "npm run ",
+            inputText: "npm run ",
+            cursorIndex: 8,
+            replaceStart: 8,
+            replaceEnd: 8,
             cwd: "/Users/larswolfram/projects",
             shellContext: { shellType: "Bash", backendOs: "macos" } as any,
-            fragment: "",
+            query: "npm run",
         };
 
         const result = await suggestor.suggest(ctx);

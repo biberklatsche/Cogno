@@ -1,6 +1,7 @@
 import { CommandSpec } from "./spec.types";
 import { FIG_SUBSET_IMPORTED_SPECS } from "./imported/fig-subset.specs";
 import { importFigSubsetSpecs } from "./importer/fig-lite.importer";
+import { FIG_SECONDARY_OPTIONS } from "./imported/fig-secondary-options";
 
 export class CommandSpecRegistry {
     private readonly _specs = new Map<string, CommandSpec>();
@@ -20,4 +21,20 @@ export class CommandSpecRegistry {
     }
 }
 
-export const DEFAULT_COMMAND_SPECS: CommandSpec[] = importFigSubsetSpecs(FIG_SUBSET_IMPORTED_SPECS);
+export const DEFAULT_COMMAND_SPECS: CommandSpec[] = withSecondaryOptions(
+    importFigSubsetSpecs(FIG_SUBSET_IMPORTED_SPECS)
+);
+
+function withSecondaryOptions(specs: CommandSpec[]): CommandSpec[] {
+    return specs.map(spec => {
+        const secondary = FIG_SECONDARY_OPTIONS[spec.name];
+        if (!secondary) return spec;
+        return {
+            ...spec,
+            subcommandOptions: {
+                ...(spec.subcommandOptions ?? {}),
+                ...secondary,
+            },
+        };
+    });
+}

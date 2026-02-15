@@ -21,5 +21,18 @@ export const GIT_FIG_SPEC: CommandSpec = {
         "reset",
         "log",
     ],
+    options: ["--version", "--help", "-C", "-c"],
+    subcommandOptions: {
+        commit: [
+            "-a",
+            "-m",
+            "--amend",
+            "--no-edit",
+            "--signoff",
+            "--verbose",
+        ],
+        push: ["-u", "--force", "--tags", "--set-upstream"],
+        checkout: ["-b", "--track", "--detach"],
+        switch: ["-c", "-C", "--detach"],
+    },
 };
-

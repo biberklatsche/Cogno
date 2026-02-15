@@ -14,6 +14,9 @@ export const Path = {
     macAppBundle(): Promise<string | null> {
         return invoke<string | null>("get_macos_app_bundle");
     },
+    systemPath(): Promise<string | null> {
+        return invoke<string | null>("get_system_path");
+    },
 
     cognoHomeDir(devMode: boolean): Promise<string> {
         return invoke<string>("get_cogno_home_dir", { devMode });

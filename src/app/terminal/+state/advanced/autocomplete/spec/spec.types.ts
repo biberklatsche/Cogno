@@ -6,7 +6,23 @@ export type CommandSpec = {
     sourceUrl?: string;
     subcommands?: string[];
     options?: string[];
-    scriptProviderId?: string;
+    subcommandOptions?: Record<string, string[]>;
+    providers?: SpecProviderBinding[];
+};
+
+export type SpecProviderWhen = {
+    firstArgIn?: string[];
+    argsRegex?: string;
+    minArgs?: number;
+    maxArgs?: number;
+};
+
+export type SpecProviderBinding = {
+    providerId: string;
+    when?: SpecProviderWhen;
+    kind?: "command" | "script";
+    source?: string;
+    baseScore?: number;
 };
 
 export type SpecProviderContext = {

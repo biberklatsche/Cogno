@@ -58,3 +58,8 @@ pub fn get_cogno_db_file_path(dev_mode: bool) -> Result<String, String> {
     let db_path = PathBuf::from(cogno_home).join("cogno.db");
     Ok(db_path.display().to_string())
 }
+
+#[tauri::command]
+pub fn get_system_path() -> Result<Option<String>, String> {
+    Ok(std::env::var("PATH").ok())
+}

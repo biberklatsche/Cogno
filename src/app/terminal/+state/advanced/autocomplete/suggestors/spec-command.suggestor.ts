@@ -1,7 +1,8 @@
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
 import { CommandSpecRegistry } from "../spec/command-spec.registry";
-import { SpecSuggestionProvider } from "../spec/spec.types";
+import { SpecProviderBinding, SpecSuggestionProvider } from "../spec/spec.types";
+import { BinaryAvailabilityRanker, SpecCommandRanker } from "../spec/ranking/binary-availability.ranker";
 
 type ParsedInput = {
     tokens: Array<{ value: string; start: number; end: number }>;
@@ -18,7 +19,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
 
     constructor(
         private readonly registry: CommandSpecRegistry,
-        providers: SpecSuggestionProvider[] = []
+        providers: SpecSuggestionProvider[] = [],
+        private readonly commandRanker: SpecCommandRanker = new BinaryAvailabilityRanker(),
     ) {
         for (const provider of providers) {
             this._providers.set(provider.id, provider);
@@ -39,7 +41,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         if (parsed.tokens.length === 0) return [];
 
         if (parsed.activeTokenIndex === 0) {
-            return this.suggestCommandNames(parsed.activeValue, parsed.activeStart, parsed.activeEnd);
+            return this.suggestCommandNames(parsed.activeValue, parsed.activeStart, parsed.activeEnd, context);
         }
 
         const command = parsed.tokens[0]?.value;
@@ -49,9 +51,14 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         return this.suggestCommandArgs(command, argsInput, replaceBase, context);
     }
 
-    private suggestCommandNames(query: string, replaceStart: number, replaceEnd: number): AutocompleteSuggestion[] {
+    private async suggestCommandNames(
+        query: string,
+        replaceStart: number,
+        replaceEnd: number,
+        context: QueryContext
+    ): Promise<AutocompleteSuggestion[]> {
         const queryLower = query.toLowerCase();
-        return this.registry.commandNames()
+        const base = this.registry.commandNames()
             .filter(name => !queryLower || name.toLowerCase().includes(queryLower))
             .map(name => {
                 const starts = name.toLowerCase().startsWith(queryLower);
@@ -67,6 +74,9 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                     replaceEnd,
                 };
             });
+
+        const boosts = await Promise.all(base.map(s => this.commandRanker.boostForCommand(s.label, context)));
+        return base.map((s, idx) => ({ ...s, score: s.score + (boosts[idx] ?? 0) }));
     }
 
     private async suggestCommandArgs(
@@ -82,12 +92,19 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         const activeToken = parsed.activeValue.toLowerCase();
         const replaceStart = replaceBase + parsed.activeStart;
         const replaceEnd = replaceBase + parsed.activeEnd;
+        const typedTokenSet = new Set(parsed.tokens.map(t => t.value.toLowerCase()));
+        const selectedSubcommand = parsed.tokens[0]?.value;
+        const selectedSubcommandOptions = selectedSubcommand
+            ? (spec.subcommandOptions?.[selectedSubcommand] ?? spec.subcommandOptions?.[selectedSubcommand.toLowerCase()] ?? [])
+            : [];
 
         const suggestions: AutocompleteSuggestion[] = [];
         const add = (label: string, source: string, baseScore: number, kind: "command" | "script" = "command") => {
-            if (activeToken && !label.toLowerCase().includes(activeToken)) return;
-            const starts = label.toLowerCase().startsWith(activeToken);
-            const contains = label.toLowerCase().includes(activeToken);
+            const labelLower = label.toLowerCase();
+            if (typedTokenSet.has(labelLower)) return;
+            if (activeToken && !labelLower.includes(activeToken)) return;
+            const starts = labelLower.startsWith(activeToken);
+            const contains = labelLower.includes(activeToken);
             suggestions.push({
                 label,
                 detail: source,
@@ -107,28 +124,45 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         for (const opt of spec.options ?? []) {
             add(opt, "spec-opt", 38);
         }
+        for (const opt of selectedSubcommandOptions) {
+            add(opt, "spec-sub-opt", 42);
+        }
 
-        if (spec.scriptProviderId) {
-            const provider = this._providers.get(spec.scriptProviderId);
-            if (provider && this.shouldOfferScripts(command, parsed)) {
-                const scripts = await provider.suggest({ queryContext: context, command, args: parsed.tokens.map(t => t.value) });
-                for (const script of scripts) {
-                    add(script, "npm-script", 55, "script");
-                }
+        for (const binding of spec.providers ?? []) {
+            const provider = this._providers.get(binding.providerId);
+            if (!provider || !this.matchesProviderBinding(binding, parsed, argsInput)) continue;
+            const provided = await provider.suggest({
+                queryContext: context,
+                command,
+                args: parsed.tokens.map(t => t.value),
+            });
+            for (const value of provided) {
+                add(value, binding.source ?? binding.providerId, binding.baseScore ?? 55, binding.kind ?? "script");
             }
         }
 
         return suggestions;
     }
 
-    private shouldOfferScripts(command: string, parsed: ParsedInput): boolean {
-        if (command !== "npm") return false;
-        if (parsed.tokens.length === 0) return true;
-        const first = parsed.tokens[0]?.value;
-        if (!first) return true;
-        const activeIsFirst = parsed.activeTokenIndex === 0;
-        if (activeIsFirst) return true;
-        return first === "run" || first === "run-script";
+    private matchesProviderBinding(binding: SpecProviderBinding, parsed: ParsedInput, argsInput: string): boolean {
+        const when = binding.when;
+        if (!when) return true;
+
+        if (when.minArgs !== undefined && parsed.tokens.length < when.minArgs) return false;
+        if (when.maxArgs !== undefined && parsed.tokens.length > when.maxArgs) return false;
+
+        if (when.firstArgIn?.length) {
+            const firstArg = parsed.tokens[0]?.value.toLowerCase() ?? "";
+            const accepted = when.firstArgIn.map(v => v.toLowerCase());
+            if (!accepted.includes(firstArg)) return false;
+        }
+
+        if (when.argsRegex) {
+            const re = new RegExp(when.argsRegex, "i");
+            if (!re.test(argsInput)) return false;
+        }
+
+        return true;
     }
 
     private parseTokens(input: string): ParsedInput {
@@ -174,4 +208,3 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         };
     }
 }
-
