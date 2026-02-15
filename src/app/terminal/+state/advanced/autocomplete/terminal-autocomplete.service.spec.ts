@@ -46,9 +46,14 @@ function makeSuggestion(label: string): AutocompleteSuggestion {
 }
 
 class DummySuggestor implements TerminalAutocompleteSuggestor {
-    id = "dummy";
+    id: string;
     inputPattern = /.+/;
-    constructor(private readonly fn: (context: QueryContext) => Promise<AutocompleteSuggestion[]>) {}
+    constructor(
+        private readonly fn: (context: QueryContext) => Promise<AutocompleteSuggestion[]>,
+        id: string = "dummy"
+    ) {
+        this.id = id;
+    }
     matches(): boolean { return true; }
     suggest(context: QueryContext): Promise<AutocompleteSuggestion[]> { return this.fn(context); }
 }
@@ -257,5 +262,39 @@ describe("TerminalAutocompleteService", () => {
         });
         await vi.advanceTimersByTimeAsync(400);
         expect((service as any)._viewState.value.visible).toBe(true);
+    });
+
+    it("merges identical suggestions from different sources", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "git status",
+            insertText: "git status",
+            detail: "from history",
+            score: 40,
+            source: "history-cmd",
+            kind: "command",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedCommand: "git status",
+        }], "dummy-history"));
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "git status",
+            insertText: "git status",
+            detail: "from spec",
+            score: 50,
+            source: "spec-cmd",
+            kind: "command",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedCommand: "git status",
+        }], "dummy-spec"));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const view = (service as any)._viewState.value;
+        expect(view.suggestions).toHaveLength(1);
+        expect(view.suggestions[0].label).toBe("git status");
+        expect(view.suggestions[0].source).toBe("history-cmd + spec-cmd");
+        expect(view.suggestions[0].score).toBe(58);
     });
 });

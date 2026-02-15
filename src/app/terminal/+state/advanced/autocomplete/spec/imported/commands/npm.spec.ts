@@ -1,0 +1,29 @@
+import { CommandSpec } from "../../spec.types";
+
+export const NPM_FIG_SPEC: CommandSpec = {
+    name: "npm",
+    source: "fig",
+    sourceUrl: "https://github.com/withfig/autocomplete/tree/master/src/npm.ts",
+    subcommands: [
+        "run",
+        "run-script",
+        "test",
+        "start",
+        "build",
+        "install",
+        "ci",
+        "publish",
+        "exec",
+        "create",
+    ],
+    options: [
+        "--silent",
+        "--json",
+        "--workspaces",
+        "--if-present",
+        "--global",
+        "--save-dev",
+    ],
+    scriptProviderId: "npm-scripts",
+};
+

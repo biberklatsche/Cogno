@@ -10,8 +10,10 @@ import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./a
 import { FilesystemDirectorySuggestor } from "./suggestors/filesystem-directory.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
-import { NpmScriptsSuggestor } from "./suggestors/npm-scripts.suggestor";
+import { SpecCommandSuggestor } from "./suggestors/spec-command.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
+import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "./spec/command-spec.registry";
+import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
@@ -94,7 +96,8 @@ export class TerminalAutocompleteService implements OnDestroy {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
         this.registerSuggestor(new FilesystemDirectorySuggestor());
         this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
-        this.registerSuggestor(new NpmScriptsSuggestor());
+        const registry = new CommandSpecRegistry(DEFAULT_COMMAND_SPECS);
+        this.registerSuggestor(new SpecCommandSuggestor(registry, [new NpmScriptsSpecProvider()]));
     }
 
     private subscribeStateChanges(): void {
@@ -327,15 +330,48 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private dedupeSuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
-        const map = new Map<string, AutocompleteSuggestion>();
+        const map = new Map<string, { suggestion: AutocompleteSuggestion; sources: Set<string> }>();
         for (const item of items) {
             const key = `${item.kind}:${item.insertText}:${item.replaceStart}:${item.replaceEnd}`;
             const existing = map.get(key);
-            if (!existing || item.score > existing.score) {
-                map.set(key, item);
+            if (!existing) {
+                map.set(key, {
+                    suggestion: { ...item },
+                    sources: new Set([item.source]),
+                });
+                continue;
+            }
+
+            existing.sources.add(item.source);
+
+            if (item.score > existing.suggestion.score) {
+                existing.suggestion = {
+                    ...item,
+                    source: existing.suggestion.source,
+                    score: item.score,
+                };
+            } else {
+                if (!existing.suggestion.detail && item.detail) {
+                    existing.suggestion.detail = item.detail;
+                }
+                if (!existing.suggestion.selectedPath && item.selectedPath) {
+                    existing.suggestion.selectedPath = item.selectedPath;
+                }
+                if (!existing.suggestion.selectedCommand && item.selectedCommand) {
+                    existing.suggestion.selectedCommand = item.selectedCommand;
+                }
             }
         }
-        return [...map.values()];
+
+        return [...map.values()].map(entry => {
+            const sources = [...entry.sources].sort();
+            const sourceBonus = Math.max(0, sources.length - 1) * 8;
+            return {
+                ...entry.suggestion,
+                source: sources.join(" + "),
+                score: entry.suggestion.score + sourceBonus,
+            };
+        });
     }
 
     private suggestionEqualsCurrentInput(suggestion: AutocompleteSuggestion, currentInput: string): boolean {

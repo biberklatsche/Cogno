@@ -3,10 +3,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Fs } from "../../../../../_tauri/fs";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { QueryContext } from "../autocomplete.types";
+import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "../spec/command-spec.registry";
+import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
 import { FilesystemDirectorySuggestor } from "./filesystem-directory.suggestor";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./history-directory.suggestor";
-import { NpmScriptsSuggestor } from "./npm-scripts.suggestor";
+import { SpecCommandSuggestor } from "./spec-command.suggestor";
 
 const readDirMock = vi.fn();
 vi.mock("@tauri-apps/plugin-fs", () => ({
@@ -118,13 +120,16 @@ describe("Autocomplete Suggestors", () => {
         expect(result[0].kind).toBe("command");
     });
 
-    it("NpmScriptsSuggestor returns scripts when package.json exists", async () => {
+    it("SpecCommandSuggestor returns npm scripts when package.json exists", async () => {
         vi.spyOn(Fs, "exists").mockResolvedValue(true);
         vi.spyOn(Fs, "readTextFile").mockResolvedValue(
             JSON.stringify({ scripts: { test: "vitest", build: "ng build" } })
         );
 
-        const suggestor = new NpmScriptsSuggestor();
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            [new NpmScriptsSpecProvider()]
+        );
         const ctx: QueryContext = {
             mode: "npm-script",
             beforeCursor: "npm ",
