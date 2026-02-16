@@ -14,5 +14,7 @@ export const ESBUILD_FIG_SPEC: CommandSpec = {
         "--minify",
         "--sourcemap",
     ],
+    subcommandOptions: {
+        "--bundle": ["--outfile", "--outdir", "--platform", "--target", "--minify", "--sourcemap"],
+    },
 };
-

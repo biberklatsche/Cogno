@@ -4,5 +4,9 @@ export const GRADLE_FIG_SPEC: CommandSpec = {
     name: "gradle",
     source: "fig",
     subcommands: ["build", "test", "clean", "assemble", "run", "tasks", "dependencies", "wrapper", "--scan"],
+    subcommandOptions: {
+        test: ["--tests", "--info", "--stacktrace", "--scan", "--continue"],
+        build: ["--scan", "--info", "--stacktrace", "--parallel", "--build-cache"],
+        clean: ["--scan", "--info", "--stacktrace"],
+    },
 };
-

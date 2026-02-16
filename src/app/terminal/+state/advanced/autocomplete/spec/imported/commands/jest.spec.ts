@@ -4,4 +4,8 @@ export const JEST_FIG_SPEC: CommandSpec = {
     name: "jest",
     source: "fig",
     subcommands: ["--watch", "--watchAll", "--runInBand", "--coverage", "--testNamePattern", "--testPathPattern", "--updateSnapshot"],
+    subcommandOptions: {
+        "--watch": ["--coverage", "--runInBand", "--testNamePattern", "--onlyChanged"],
+        "--runInBand": ["--coverage", "--detectOpenHandles", "--verbose"],
+    },
 };

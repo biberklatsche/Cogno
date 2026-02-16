@@ -19,5 +19,10 @@ export const TERRAFORM_FIG_SPEC: CommandSpec = {
         "untaint",
         "import",
     ],
+    subcommandOptions: {
+        init: ["-upgrade", "-reconfigure", "-backend=false"],
+        plan: ["-out", "-var", "-var-file", "-target", "-destroy", "-refresh=false"],
+        apply: ["-auto-approve", "-var", "-var-file", "-target", "-refresh=false"],
+        destroy: ["-auto-approve", "-var", "-var-file", "-target", "-refresh=false"],
+    },
 };
-

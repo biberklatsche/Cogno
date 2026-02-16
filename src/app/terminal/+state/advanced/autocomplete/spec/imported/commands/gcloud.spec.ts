@@ -17,5 +17,9 @@ export const GCLOUD_FIG_SPEC: CommandSpec = {
         "services",
         "iam",
     ],
+    subcommandOptions: {
+        config: ["set", "get-value", "list", "configurations", "configurations activate"],
+        compute: ["instances", "disks", "networks", "firewall-rules", "--project", "--zone", "--region"],
+        run: ["deploy", "services", "revisions", "--region", "--platform", "--allow-unauthenticated", "--project"],
+    },
 };
-

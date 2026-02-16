@@ -14,5 +14,8 @@ export const WEBPACK_FIG_SPEC: CommandSpec = {
         "--progress",
         "--profile",
     ],
+    subcommandOptions: {
+        serve: ["--open", "--hot", "--port", "--host"],
+        watch: ["--mode", "--progress", "--env"],
+    },
 };
-

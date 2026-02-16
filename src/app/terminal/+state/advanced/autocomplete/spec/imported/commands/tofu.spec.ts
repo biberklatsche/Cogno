@@ -4,4 +4,10 @@ export const TOFU_FIG_SPEC: CommandSpec = {
     name: "tofu",
     source: "fig",
     subcommands: ["init", "plan", "apply", "destroy", "validate", "fmt", "providers", "state", "output"],
+    subcommandOptions: {
+        init: ["-upgrade", "-reconfigure", "-backend=false"],
+        plan: ["-out", "-var", "-var-file", "-target", "-destroy", "-refresh=false"],
+        apply: ["-auto-approve", "-var", "-var-file", "-target", "-refresh=false"],
+        destroy: ["-auto-approve", "-var", "-var-file", "-target", "-refresh=false"],
+    },
 };

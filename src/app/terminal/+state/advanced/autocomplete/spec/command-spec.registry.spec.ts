@@ -60,11 +60,12 @@ describe("CommandSpecRegistry defaults/importer", () => {
         expect(imported[0].subcommands).toEqual(["c"]);
     });
 
-    it("applies central secondary options mapping", () => {
+    it("keeps secondary options from command specs", () => {
         const git = DEFAULT_COMMAND_SPECS.find(v => v.name === "git");
         expect(git).toBeDefined();
         expect(git!.subcommandOptions?.commit).toContain("-a");
         expect(git!.subcommandOptions?.commit).toContain("-m");
+        expect(git!.subcommandOptions?.rebase).toContain("--continue");
     });
 
     it("keeps provider bindings from specs", () => {

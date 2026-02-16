@@ -16,5 +16,9 @@ export const DOTNET_FIG_SPEC: CommandSpec = {
         "remove",
         "tool",
     ],
+    subcommandOptions: {
+        build: ["-c", "-f", "-r", "--no-restore"],
+        run: ["-c", "-f", "--project", "--no-build"],
+        test: ["-c", "-f", "--filter", "--collect", "--logger"],
+    },
 };
-

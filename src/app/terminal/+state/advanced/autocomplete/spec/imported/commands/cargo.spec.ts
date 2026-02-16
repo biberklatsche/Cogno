@@ -19,5 +19,9 @@ export const CARGO_FIG_SPEC: CommandSpec = {
         "update",
         "tree",
     ],
+    subcommandOptions: {
+        run: ["--release", "--bin", "--example", "--features"],
+        build: ["--release", "--workspace", "--target", "--features"],
+        test: ["--release", "--workspace", "--package", "-- --nocapture"],
+    },
 };
-

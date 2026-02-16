@@ -4,4 +4,8 @@ export const CYPRESS_FIG_SPEC: CommandSpec = {
     name: "cypress",
     source: "fig",
     subcommands: ["open", "run", "verify", "install", "cache", "info", "--browser", "--spec", "--headless"],
+    subcommandOptions: {
+        run: ["--browser", "--spec", "--headless", "--record", "--parallel"],
+        open: ["--browser", "--project", "--e2e", "--component"],
+    },
 };

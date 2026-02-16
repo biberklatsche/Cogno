@@ -18,5 +18,10 @@ export const HELM_FIG_SPEC: CommandSpec = {
         "rollback",
         "dependency",
     ],
+    subcommandOptions: {
+        install: ["--namespace", "--create-namespace", "--set", "--set-string", "--values", "--version", "--wait"],
+        upgrade: ["--install", "--namespace", "--set", "--set-string", "--values", "--reuse-values", "--wait"],
+        uninstall: ["--namespace", "--keep-history", "--wait"],
+        template: ["--namespace", "--set", "--set-string", "--values", "--include-crds"],
+    },
 };
-

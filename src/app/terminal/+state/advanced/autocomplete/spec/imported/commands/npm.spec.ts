@@ -36,4 +36,10 @@ export const NPM_FIG_SPEC: CommandSpec = {
             },
         },
     ],
+    subcommandOptions: {
+        run: ["--silent", "--if-present", "--workspace", "--workspaces"],
+        "run-script": ["--silent", "--if-present", "--workspace", "--workspaces"],
+        install: ["--save-dev", "--save-exact", "--global", "--legacy-peer-deps"],
+        test: ["--watch", "--coverage"],
+    },
 };

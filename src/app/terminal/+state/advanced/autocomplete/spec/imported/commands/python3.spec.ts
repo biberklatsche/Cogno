@@ -4,5 +4,7 @@ export const PYTHON3_FIG_SPEC: CommandSpec = {
     name: "python3",
     source: "fig",
     subcommands: ["-m", "-c", "-V", "--version", "-i", "-u", "-O", "-B", "-X", "-W"],
+    subcommandOptions: {
+        "-m": ["venv", "pip", "http.server", "pytest"],
+    },
 };
-

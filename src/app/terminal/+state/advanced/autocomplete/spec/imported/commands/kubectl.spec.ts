@@ -17,5 +17,13 @@ export const KUBECTL_FIG_SPEC: CommandSpec = {
         "create",
         "edit",
     ],
+    subcommandOptions: {
+        get: ["-n", "-A", "-o", "--watch", "--selector"],
+        describe: ["-n", "-A"],
+        apply: ["-f", "-k", "--dry-run", "--server-side", "--prune", "--validate"],
+        delete: ["-f", "-k", "-n", "--grace-period", "--force"],
+        logs: ["-f", "-n", "--tail", "--since", "-c", "--previous", "--timestamps"],
+        exec: ["-it", "-n", "-c", "--"],
+        "port-forward": ["-n", "--address", "--pod-running-timeout"],
+    },
 };
-

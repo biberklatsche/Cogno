@@ -18,5 +18,9 @@ export const GO_FIG_SPEC: CommandSpec = {
         "env",
         "version",
     ],
+    subcommandOptions: {
+        test: ["./...", "-run", "-count", "-cover", "-v"],
+        build: ["./...", "-o", "-tags", "-race"],
+        run: ["./...", "-exec"],
+    },
 };
-

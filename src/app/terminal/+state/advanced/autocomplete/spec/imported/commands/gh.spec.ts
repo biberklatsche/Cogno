@@ -5,5 +5,10 @@ export const GH_FIG_SPEC: CommandSpec = {
     source: "fig",
     sourceUrl: "https://github.com/withfig/autocomplete/tree/master/src/gh.ts",
     subcommands: ["auth", "repo", "pr", "issue", "gist", "release", "workflow", "run", "api"],
+    subcommandOptions: {
+        pr: ["create", "list", "view", "checkout", "merge", "--repo", "--web"],
+        issue: ["create", "list", "view", "close", "reopen", "--repo", "--web"],
+        repo: ["clone", "create", "view", "fork", "--public", "--private", "--source"],
+        workflow: ["list", "view", "run", "--repo", "--ref"],
+    },
 };
-

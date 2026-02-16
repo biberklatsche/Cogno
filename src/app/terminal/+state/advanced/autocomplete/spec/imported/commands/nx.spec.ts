@@ -16,5 +16,9 @@ export const NX_FIG_SPEC: CommandSpec = {
         "generate",
         "format",
     ],
+    subcommandOptions: {
+        run: ["--configuration", "--skip-nx-cache", "--parallel"],
+        affected: ["--target", "--base", "--head", "--parallel", "--configuration", "--projects"],
+        generate: ["--project", "--dry-run", "--interactive"],
+    },
 };
-

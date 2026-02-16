@@ -19,5 +19,11 @@ export const DOCKER_FIG_SPEC: CommandSpec = {
         "stop",
         "start",
     ],
+    subcommandOptions: {
+        run: ["-it", "--rm", "-d", "-p", "-v", "--name", "--env", "--network"],
+        build: ["-t", "-f", "--build-arg", "--no-cache", "--target"],
+        exec: ["-it", "--user", "--workdir", "--env"],
+        logs: ["-f", "--tail", "--since", "--timestamps"],
+        compose: ["up", "down", "build", "logs", "exec", "run", "pull", "push"],
+    },
 };
-
