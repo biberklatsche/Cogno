@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Command;
 use serde::{Deserialize, Serialize};
 
 use super::environment_builder::EnvironmentBuilder;
@@ -12,7 +13,8 @@ pub struct ShellProfile {
     pub env: Option<HashMap<String, String>>,
     pub working_dir: Option<String>,
     pub enable_shell_integration: Option<bool>,
-    pub inject_path: Option<bool>,
+    #[serde(alias = "inject_path")]
+    pub inject_cogno_cli: Option<bool>,
     pub load_user_rc: Option<bool>,
 }
 
@@ -39,7 +41,7 @@ impl ShellSpawner {
             .ok_or("Shell path not specified in profile")?;
 
         let enable_integration = profile.enable_shell_integration.unwrap_or(true);
-        let inject_path = profile.inject_path.unwrap_or(true);
+        let inject_cogno_cli = profile.inject_cogno_cli.unwrap_or(true);
         // With shell integration enabled we rely on user rc files to reconstruct
         // the same PATH/toolchain environment as a normal interactive shell.
         let load_user_rc = if enable_integration {
@@ -70,14 +72,20 @@ impl ShellSpawner {
             load_user_rc,
             enable_integration,
         )
-        .with_path_injection(inject_path, cogno_paths)
+        .with_path_injection(inject_cogno_cli, cogno_paths)
         .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);
 
-        let env_builder = if let Some(custom_env) = &profile.env {
-            env_builder.with_custom_env(custom_env.clone())
-        } else {
-            env_builder
-        };
+        let mut merged_custom_env = profile.env.clone().unwrap_or_default();
+        if enable_integration
+            && load_user_rc
+            && !merged_custom_env.contains_key("COGNO_LOGIN_PATH")
+        {
+            if let Some(login_path) = self.detect_login_path(&profile.shell_type, &shell_path) {
+                merged_custom_env.insert("COGNO_LOGIN_PATH".to_string(), login_path);
+            }
+        }
+
+        let env_builder = env_builder.with_custom_env(merged_custom_env);
 
         let shell_env = env_builder.build();
 
@@ -135,7 +143,8 @@ impl ShellSpawner {
     fn get_cogno_paths(&self) -> Vec<PathBuf> {
         let mut paths = Vec::new();
 
-        // Add Cogno bin directory if it exists
+        // Add Cogno executable directory if it exists.
+        // This is controlled by profile.inject_cogno_cli.
         if let Ok(exe_path) = std::env::current_exe() {
             if let Some(exe_dir) = exe_path.parent() {
                 paths.push(exe_dir.to_path_buf());
@@ -146,5 +155,25 @@ impl ShellSpawner {
         // For example: ~/.cogno2/bin
 
         paths
+    }
+
+    fn detect_login_path(&self, shell_type: &str, shell_path: &str) -> Option<String> {
+        let args: Vec<&str> = match shell_type {
+            "ZSH" => vec!["-l", "-c", "print -r -- $PATH"],
+            "Bash" | "GitBash" => vec!["-l", "-c", "printf '%s' \"$PATH\""],
+            _ => return None,
+        };
+
+        let output = Command::new(shell_path).args(args).output().ok()?;
+        if !output.status.success() {
+            return None;
+        }
+
+        let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if value.is_empty() {
+            None
+        } else {
+            Some(value)
+        }
     }
 }

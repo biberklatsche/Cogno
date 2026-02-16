@@ -11,7 +11,7 @@ export const ShellProfileSchema = z.object({
     env: z.record(z.string(), z.string()).optional(),
     use_conpty: z.boolean().optional(),
     working_dir: z.string().optional(),
-    inject_path: z.boolean().default(true),
+    inject_cogno_cli: z.boolean().default(true),
     enable_shell_integration: z.boolean().default(true),
     load_user_rc: z.boolean().default(true),
 }).describe("The shell configuration");

@@ -45,7 +45,7 @@ describe('TerminalSession', () => {
         
         mockShellProfile = {
             shell_type: 'Bash',
-            inject_path: false,
+            inject_cogno_cli: false,
             enable_shell_integration: false
         };
 

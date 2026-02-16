@@ -20,7 +20,7 @@ describe('TabListService', () => {
                 profiles: {
                     'test': {
                         shell_type: 'PowerShell',
-                        inject_path: true,
+                        inject_cogno_cli: true,
                         enable_shell_integration: true
                     }
                 }

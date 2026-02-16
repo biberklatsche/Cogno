@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.11";
+const INTEGRATION_VERSION = "1.0.20";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -183,16 +183,32 @@ _cogno_log() {
 
 _cogno_log "Bash bootstrap started"
 
+# Use login-shell PATH as baseline if provided by backend
+if [[ -n "\${COGNO_LOGIN_PATH}" ]]; then
+    _cogno_log "Applying COGNO_LOGIN_PATH baseline"
+    export PATH="\${COGNO_LOGIN_PATH}"
+fi
+
 # Apply PATH prefix if set
 if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
     _cogno_log "Applying PATH prefix: \${COGNO_PATH_PREFIX}"
     export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
 fi
 
-# Optionally load user's .bashrc (only if COGNO_ALLOW_USER_RC=1)
-if [[ "\${COGNO_ALLOW_USER_RC}" == "1" && -f "\${HOME}/.bashrc" ]]; then
-    _cogno_log "Loading user .bashrc"
-    source "\${HOME}/.bashrc"
+# Optionally load user's Bash startup files (only if COGNO_ALLOW_USER_RC=1)
+# We run with --rcfile, so login startup files are not loaded automatically.
+if [[ "\${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    if [[ -f "\${HOME}/.bash_profile" ]]; then
+        _cogno_log "Loading user .bash_profile"
+        source "\${HOME}/.bash_profile"
+    elif [[ -f "\${HOME}/.profile" ]]; then
+        _cogno_log "Loading user .profile"
+        source "\${HOME}/.profile"
+    fi
+    if [[ -f "\${HOME}/.bashrc" ]]; then
+        _cogno_log "Loading user .bashrc"
+        source "\${HOME}/.bashrc"
+    fi
 fi
 
 # Load Cogno integration
@@ -308,16 +324,33 @@ _cogno_log() {
 
 _cogno_log "Zsh bootstrap started"
 
+# Use login-shell PATH as baseline if provided by backend
+if [[ -n "\${COGNO_LOGIN_PATH}" ]]; then
+    _cogno_log "Applying COGNO_LOGIN_PATH baseline"
+    export PATH="\${COGNO_LOGIN_PATH}"
+fi
+
 # Apply PATH prefix if set
 if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
     _cogno_log "Applying PATH prefix: \${COGNO_PATH_PREFIX}"
     export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
 fi
 
-# Optionally load user's .zshrc (only if COGNO_ALLOW_USER_RC=1)
-if [[ "\${COGNO_ALLOW_USER_RC}" == "1" && -f "\${HOME}/.zshrc" ]]; then
-    _cogno_log "Loading user .zshrc"
-    source "\${HOME}/.zshrc"
+# Optionally load user's Zsh startup files (only if COGNO_ALLOW_USER_RC=1)
+# We run with custom ZDOTDIR, so ~/.zshenv/.zprofile are not loaded automatically.
+if [[ "\${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    if [[ -f "\${HOME}/.zshenv" ]]; then
+        _cogno_log "Loading user .zshenv"
+        source "\${HOME}/.zshenv"
+    fi
+    if [[ -f "\${HOME}/.zprofile" ]]; then
+        _cogno_log "Loading user .zprofile"
+        source "\${HOME}/.zprofile"
+    fi
+    if [[ -f "\${HOME}/.zshrc" ]]; then
+        _cogno_log "Loading user .zshrc"
+        source "\${HOME}/.zshrc"
+    fi
 fi
 
 # Load Cogno integration
@@ -354,6 +387,7 @@ _cogno_preexec() {
 
 _cogno_precmd() {
   local last_ec=$?
+
   ((COGNO_COUNT++))
 
   local ts="$COGNO_COUNT"

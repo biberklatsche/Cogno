@@ -65,10 +65,14 @@ impl EnvironmentBuilder {
             self.env
                 .insert("COGNO_PATH_PREFIX".to_string(), path_prefix.clone());
 
-            // Also set PATH directly if we have access to system PATH
-            if let Ok(system_path) = std::env::var("PATH") {
-                let new_path = format!("{}{}{}", path_prefix, separator, system_path);
-                self.env.insert("PATH".to_string(), new_path);
+            // Only set PATH directly when shell integration is disabled.
+            // With integration enabled, bootstrap scripts apply COGNO_PATH_PREFIX.
+            // Setting both would prepend the same prefix twice.
+            if !self.env.contains_key("COGNO_INTEGRATION_ROOT") {
+                if let Ok(system_path) = std::env::var("PATH") {
+                    let new_path = format!("{}{}{}", path_prefix, separator, system_path);
+                    self.env.insert("PATH".to_string(), new_path);
+                }
             }
         }
 

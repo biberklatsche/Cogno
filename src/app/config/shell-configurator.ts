@@ -88,7 +88,7 @@ export class ShellConfigurator {
             working_dir: '~',
             load_user_rc: true,
             enable_shell_integration: true,
-            inject_path: true,
+            inject_cogno_cli: true,
         };
 
         // Note: When enable_shell_integration is true (default),
