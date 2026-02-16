@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.20";
+const INTEGRATION_VERSION = "1.0.21";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -197,14 +197,27 @@ fi
 
 # Optionally load user's Bash startup files (only if COGNO_ALLOW_USER_RC=1)
 # We run with --rcfile, so login startup files are not loaded automatically.
+# Load them manually to replicate login shell behavior.
 if [[ "\${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    # Load system-wide profile first (like -l does)
+    if [[ -f /etc/profile ]]; then
+        _cogno_log "Loading /etc/profile"
+        source /etc/profile
+    fi
+
+    # Load user profile
     if [[ -f "\${HOME}/.bash_profile" ]]; then
         _cogno_log "Loading user .bash_profile"
         source "\${HOME}/.bash_profile"
+    elif [[ -f "\${HOME}/.bash_login" ]]; then
+        _cogno_log "Loading user .bash_login"
+        source "\${HOME}/.bash_login"
     elif [[ -f "\${HOME}/.profile" ]]; then
         _cogno_log "Loading user .profile"
         source "\${HOME}/.profile"
     fi
+
+    # Load interactive rc file
     if [[ -f "\${HOME}/.bashrc" ]]; then
         _cogno_log "Loading user .bashrc"
         source "\${HOME}/.bashrc"

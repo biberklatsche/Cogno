@@ -82,7 +82,10 @@ export class CommandLineObserver implements ITerminalHandler {
                 if(!kv) return true;
                 kv['duration'] = this.stateManager.getCommandDuration()?.toString() ?? '';
                 this.stateManager.updateCommand(kv);
-                this.stateManager.updateCwd(kv['directory'] ?? '');
+                const directory = kv['directory'];
+                if (directory && directory.trim()) {
+                    this.stateManager.updateCwd(directory);
+                }
                 return true;
             }));
         return this;

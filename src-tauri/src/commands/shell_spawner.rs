@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::process::Command;
 use serde::{Deserialize, Serialize};
 
 use super::environment_builder::EnvironmentBuilder;
@@ -54,11 +53,22 @@ impl ShellSpawner {
             .clone()
             .unwrap_or_else(|| "~".to_string());
 
-        // Build argv based on shell type and integration settings
+        // Build argv based on integration settings
         let argv = if enable_integration {
-            self.build_integration_argv(&profile.shell_type, &shell_path, &profile.args)?
+            // Integration mode: filter incompatible args and add integration-specific args
+            let mut args = profile.args.clone().unwrap_or_default();
+
+            // For Bash/GitBash: remove incompatible flags
+            // -l/--login conflicts with --rcfile
+            // -i is redundant as --rcfile implies interactive mode
+            if matches!(profile.shell_type.as_str(), "Bash" | "GitBash") {
+                args.retain(|arg| arg != "-l" && arg != "--login" && arg != "-i");
+            }
+
+            args.extend(self.get_integration_args(&profile.shell_type)?);
+            args
         } else {
-            // Use user-provided args or defaults
+            // No integration: use profile args as-is
             profile.args.clone().unwrap_or_default()
         };
 
@@ -75,61 +85,39 @@ impl ShellSpawner {
         .with_path_injection(inject_cogno_cli, cogno_paths)
         .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);
 
-        let mut merged_custom_env = profile.env.clone().unwrap_or_default();
-        if enable_integration
-            && load_user_rc
-            && !merged_custom_env.contains_key("COGNO_LOGIN_PATH")
-        {
-            if let Some(login_path) = self.detect_login_path(&profile.shell_type, &shell_path) {
-                merged_custom_env.insert("COGNO_LOGIN_PATH".to_string(), login_path);
-            }
-        }
-
+        let merged_custom_env = profile.env.clone().unwrap_or_default();
         let env_builder = env_builder.with_custom_env(merged_custom_env);
 
         let shell_env = env_builder.build();
 
+        // Debug logging
+        println!("Shell spawn - Type: {}, Path: {}", profile.shell_type, shell_path);
+        println!("Shell spawn - Args: {:?}", argv);
+
         Ok((shell_path, argv, shell_env.env, working_dir))
     }
 
-    fn build_integration_argv(
-        &self,
-        shell_type: &str,
-        _shell_path: &str,
-        user_args: &Option<Vec<String>>,
-    ) -> Result<Vec<String>, String> {
+    fn get_integration_args(&self, shell_type: &str) -> Result<Vec<String>, String> {
         match shell_type {
             "Bash" | "GitBash" => {
                 let rcfile = self.integration_root.join("bash").join("cogno.bashrc");
-
-                // Use --rcfile to load our integration
-                // Force interactive mode so readline keybindings (e.g. arrows) work.
-                // --rcfile requires the file path to exist.
+                // Add --rcfile to load our integration
                 Ok(vec![
-                    "-i".to_string(),
                     "--rcfile".to_string(),
                     rcfile.to_string_lossy().to_string(),
                 ])
             }
             "ZSH" => {
-                // Zsh looks for .zshrc in ZDOTDIR (set in environment_builder)
-                // Just start interactive shell, ZDOTDIR/.zshrc will be loaded automatically
-                Ok(vec!["-i".to_string()])
+                // ZDOTDIR is set in environment, .zshrc loaded automatically
+                Ok(vec![])
             }
             "Fish" => {
                 // XDG_CONFIG_HOME is set in environment
-                // Use user-provided args or default to [-i]
-                if let Some(args) = user_args {
-                    Ok(args.clone())
-                } else {
-                    Ok(vec!["-i".to_string()])
-                }
+                Ok(vec![])
             }
             "PowerShell" => {
                 let integration_script = self.integration_root.join("pwsh").join("integration.ps1");
-
                 Ok(vec![
-                    "-NoLogo".to_string(),
                     "-NoExit".to_string(),
                     "-NoProfile".to_string(),
                     "-Command".to_string(),
@@ -157,23 +145,4 @@ impl ShellSpawner {
         paths
     }
 
-    fn detect_login_path(&self, shell_type: &str, shell_path: &str) -> Option<String> {
-        let args: Vec<&str> = match shell_type {
-            "ZSH" => vec!["-l", "-c", "print -r -- $PATH"],
-            "Bash" | "GitBash" => vec!["-l", "-c", "printf '%s' \"$PATH\""],
-            _ => return None,
-        };
-
-        let output = Command::new(shell_path).args(args).output().ok()?;
-        if !output.status.success() {
-            return None;
-        }
-
-        let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if value.is_empty() {
-            None
-        } else {
-            Some(value)
-        }
-    }
 }
