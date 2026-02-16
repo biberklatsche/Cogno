@@ -55,17 +55,12 @@ export async function migrate() {
             continue;
         }
 
-        await DB.execute("BEGIN;");
-        try {
+        await DB.transaction(async () => {
             await DB.execute(m.sql);
             await DB.execute(
                 'INSERT INTO schema_migrations (id, checksum) VALUES (?, ?);',
                 [m.id, cs]
             );
-            await DB.execute("COMMIT;");
-        } catch (e) {
-            await DB.execute("ROLLBACK;");
-            throw e;
-        }
+        });
     }
 }

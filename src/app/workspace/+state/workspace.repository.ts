@@ -86,8 +86,7 @@ export class WorkspaceRepository {
     }
 
     async createWorkspace(config: WorkspaceConfig): Promise<void> {
-        await DB.execute("BEGIN;");
-        try {
+        await DB.transaction(async () => {
             await DB.execute(
                 "INSERT INTO workspaces (id, name, color, autosave) VALUES (?, ?, ?, ?)",
                 [config.id, config.name, config.color, config.autosave ? 1 : 0]
@@ -101,17 +100,11 @@ export class WorkspaceRepository {
             for (const grid of config.grids) {
                 await this.insertGrid(config.id, grid);
             }
-
-            await DB.execute("COMMIT;");
-        } catch (e) {
-            await DB.execute("ROLLBACK;");
-            throw e;
-        }
+        });
     }
 
     async updateWorkspace(config: WorkspaceConfig): Promise<void> {
-        await DB.execute("BEGIN;");
-        try {
+        await DB.transaction(async () => {
             await DB.execute(
                 "UPDATE workspaces SET name = ?, color = ?, autosave = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                 [config.name, config.color, config.autosave ? 1 : 0, config.id]
@@ -128,12 +121,7 @@ export class WorkspaceRepository {
             for (const grid of config.grids) {
                 await this.insertGrid(config.id, grid);
             }
-
-            await DB.execute("COMMIT;");
-        } catch (e) {
-            await DB.execute("ROLLBACK;");
-            throw e;
-        }
+        });
     }
 
     async deleteWorkspace(id: string): Promise<void> {

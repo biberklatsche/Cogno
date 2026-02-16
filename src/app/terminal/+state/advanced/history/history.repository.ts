@@ -50,6 +50,8 @@ function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
  * Create via HistoryRepositoryFactory.
  */
 export class HistoryRepository {
+    private _inTransaction = false;
+
     private constructor(
         private readonly contextId: number,
         private readonly adapter: IPathAdapter,
@@ -374,22 +376,32 @@ export class HistoryRepository {
     // ---- DB wrappers with retry + tx ----
 
     private async exec(query: string, params?: unknown[]): Promise<void> {
-        await this.withRetry(() => DB.execute(query, params));
+        await DB.execute(query, params);
     }
 
     private async sel<T>(query: string, params?: unknown[]): Promise<T> {
-        return this.withRetry(() => DB.select<T>(query, params));
+        return DB.select<T>(query, params);
     }
 
     private async tx(fn: () => Promise<void>): Promise<void> {
-        await this.exec("BEGIN;");
-        try {
+        // Prevent nested transactions
+        if (this._inTransaction) {
+            // Already in a transaction, just execute fn
             await fn();
-            await this.exec("COMMIT;");
-        } catch (e) {
-            await this.exec("ROLLBACK;");
-            throw e;
+            return;
         }
+
+        // Retry the entire transaction as a unit
+        await this.withRetry(async () => {
+            this._inTransaction = true;
+            try {
+                await DB.transaction(fn);
+                this._inTransaction = false;
+            } catch (e) {
+                this._inTransaction = false;
+                throw e;
+            }
+        });
     }
 
     private async withRetry<T>(op: () => Promise<T>): Promise<T> {

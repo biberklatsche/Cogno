@@ -155,6 +155,8 @@ describe("TerminalAutocompleteService", () => {
         expect(view.visible).toBe(true);
         expect(view.x).toBeGreaterThanOrEqual(0);
         expect(view.y).toBeGreaterThanOrEqual(0);
+        // Cursor is far right, panel must clamp to right edge and stay fully visible.
+        expect(view.x + view.width).toBeLessThanOrEqual(360);
         // Must be above the cursor region when there is no room below.
         expect(view.y).toBeLessThan(24 * 18);
 

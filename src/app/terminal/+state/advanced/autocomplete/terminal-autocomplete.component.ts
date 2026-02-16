@@ -14,7 +14,7 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             <div
                 #panel
                 class="autocomplete-panel"
-                [ngStyle]="{ left: viewState().x + 'px', top: viewState().y + 'px' }"
+                [ngStyle]="{ left: viewState().x + 'px', top: viewState().y + 'px', width: viewState().width + 'px' }"
             >
                 @for (item of viewState().suggestions; track item.label + ':' + $index) {
                     <button
@@ -25,7 +25,7 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
                         type="button"
                     >
                         <span class="label">
-                            @for (part of labelParts(item); track $index) {
+                            @for (part of labelParts(item, viewState().width); track $index) {
                                 <span [class.match]="part.match">{{ part.text }}</span>
                             }
                         </span>
@@ -38,8 +38,9 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
     styles: [`
         .autocomplete-panel {
             position: fixed;
-            width: clamp(220px, 55%, 760px);
-            max-width: calc(100% - 8px);
+            box-sizing: border-box;
+            min-width: 160px;
+            max-width: 920px;
             max-height: calc(5 * 32px + 8px);
             overflow-y: auto;
             overflow-x: hidden;
@@ -76,7 +77,7 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
         .autocomplete-item .label {
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
+            text-overflow: clip;
             text-align: left;
         }
 
@@ -96,7 +97,10 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TerminalAutocompleteComponent {
-    private static readonly MAX_LABEL_CHARS = 72;
+    private static readonly MAX_LABEL_CHARS = 96;
+    private static readonly MIN_LABEL_CHARS = 12;
+    private static readonly APPROX_CHAR_PX = 8;
+    private static readonly META_RESERVE_PX = 132;
 
     @ViewChild("panel") private panelRef?: ElementRef<HTMLDivElement>;
 
@@ -104,6 +108,7 @@ export class TerminalAutocompleteComponent {
             visible: false,
             x: 0,
             y: 0,
+            width: 280,
             selectedIndex: null,
             suggestions: [],
         } });
@@ -122,8 +127,8 @@ export class TerminalAutocompleteComponent {
         this.autocomplete.selectSuggestion(index);
     }
 
-    protected labelParts(item: AutocompleteSuggestion): Array<{ text: string; match: boolean }> {
-        const { label, ranges } = this.truncateForDisplay(item);
+    protected labelParts(item: AutocompleteSuggestion, panelWidth: number): Array<{ text: string; match: boolean }> {
+        const { label, ranges } = this.truncateForDisplay(item, panelWidth);
         if (ranges.length === 0) return [{ text: label, match: false }];
 
         const parts: Array<{ text: string; match: boolean }> = [];
@@ -147,15 +152,34 @@ export class TerminalAutocompleteComponent {
         return parts.length > 0 ? parts : [{ text: label, match: false }];
     }
 
-    private truncateForDisplay(item: AutocompleteSuggestion): { label: string; ranges: Array<{ start: number; end: number }> } {
+    private truncateForDisplay(
+        item: AutocompleteSuggestion,
+        panelWidth: number
+    ): { label: string; ranges: Array<{ start: number; end: number }> } {
         const ranges = [...(item.matchRanges ?? [])].sort((a, b) => a.start - b.start);
-        if (item.label.length <= TerminalAutocompleteComponent.MAX_LABEL_CHARS) {
+        const availableLabelPx = Math.max(80, panelWidth - TerminalAutocompleteComponent.META_RESERVE_PX);
+        const dynamicChars = Math.floor(availableLabelPx / TerminalAutocompleteComponent.APPROX_CHAR_PX);
+        const maxChars = Math.max(
+            TerminalAutocompleteComponent.MIN_LABEL_CHARS,
+            Math.min(TerminalAutocompleteComponent.MAX_LABEL_CHARS, dynamicChars)
+        );
+
+        if (item.label.length <= maxChars) {
             return { label: item.label, ranges };
         }
 
-        const keep = TerminalAutocompleteComponent.MAX_LABEL_CHARS - 3;
-        const cutStart = Math.max(0, item.label.length - keep);
-        const label = `...${item.label.slice(cutStart)}`;
+        const keep = Math.max(1, maxChars - 3);
+        let cutStart = Math.max(0, item.label.length - keep);
+        // Preserve dotfiles when truncation starts at segment boundary (e.g. "/.nvm").
+        if (
+            cutStart > 1 &&
+            item.label[cutStart - 1] === "." &&
+            item.label[cutStart] !== "." &&
+            (item.label[cutStart - 2] === "/" || item.label[cutStart - 2] === "\\")
+        ) {
+            cutStart -= 1;
+        }
+        const label = `…${item.label.slice(cutStart)}`;
         const mappedRanges = ranges
             .map(r => ({ start: r.start - cutStart + 3, end: r.end - cutStart + 3 }))
             .map(r => ({

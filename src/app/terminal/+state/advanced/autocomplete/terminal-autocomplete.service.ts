@@ -20,15 +20,20 @@ const SUGGESTOR_TIMEOUT_MS = 180;
 const MAX_SUGGESTIONS = 20;
 const MAX_VISIBLE_SUGGESTIONS = 5;
 
-const PANEL_MIN_WIDTH = 260;
-const PANEL_MAX_WIDTH = 760;
+const PANEL_MIN_WIDTH = 280;
+const PANEL_MAX_WIDTH = 920;
 const PANEL_ITEM_HEIGHT = 32;
 const PANEL_VERTICAL_PADDING = 8;
+const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
+const PANEL_ITEM_GAP = 8;
+const PANEL_OUTER_PADDING_AND_BORDER = 10; // panel padding + border budget
+const LABEL_MEASURE_MAX_CHARS = 140;
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
     x: 0,
     y: 0,
+    width: PANEL_MIN_WIDTH,
     selectedIndex: null,
     suggestions: [],
 };
@@ -205,13 +210,14 @@ export class TerminalAutocompleteService implements OnDestroy {
         }
         const highlightedSuggestions = this.applyHighlights(suggestions, context);
 
-        const position = this.computePanelPosition(state, highlightedSuggestions.length);
+        const position = this.computePanelPosition(state, highlightedSuggestions);
         this.takeVisibleOwnership();
 
         this._viewState.next({
             visible: true,
             x: position.x,
             y: position.y,
+            width: position.width,
             selectedIndex: null,
             suggestions: highlightedSuggestions,
         });
@@ -286,30 +292,46 @@ export class TerminalAutocompleteService implements OnDestroy {
         this.hide();
     }
 
-    private computePanelPosition(state: TerminalState, suggestionCount: number): { x: number; y: number } {
+    private computePanelPosition(state: TerminalState, suggestions: AutocompleteSuggestion[]): { x: number; y: number; width: number } {
         const col = Math.max(1, state.cursorPosition.viewport.col);
         const row = Math.max(1, state.cursorPosition.viewport.row);
         const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
         const cellHeight = Math.max(1, state.dimensions.cellHeight || 18);
         const hostRect = this._hostElement?.getBoundingClientRect();
-
         const fallbackViewportWidth = Math.max(cellWidth, state.dimensions.cols * cellWidth);
         const viewportWidth = Math.max(cellWidth, state.dimensions.viewportWidth || fallbackViewportWidth);
         const windowWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || viewportWidth);
         const windowHeight = Math.max(1, window.innerHeight || document.documentElement.clientHeight || cellHeight);
         const bounds = this.resolveBoundsRect(windowWidth, windowHeight);
-        const availableWidth = Math.max(120, Math.min(bounds.width, viewportWidth));
+        const rightUiInset = this.resolveRightUiInset(windowWidth);
+        const effectiveRight = Math.max(bounds.left + 16, bounds.right - rightUiInset);
+        // Width is derived from the full window bounds (minus right-side overlays), not pane width.
+        const availableWidth = Math.max(240, effectiveRight - bounds.left);
 
-        const estimatedPanelWidth = Math.min(
-            Math.max(120, availableWidth - 8),
-            Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.floor(availableWidth * 0.45)))
+        const labelCharPx = Math.max(6, Math.floor(cellWidth * 0.95));
+        const metaCharPx = Math.max(6, Math.floor(labelCharPx * 0.9));
+        const widestLinePx = suggestions.reduce((max, item) => {
+            const labelChars = Math.min(item.label.length, LABEL_MEASURE_MAX_CHARS);
+            const metaText = `${item.source} · ${item.score}`;
+            const linePx =
+                (labelChars * labelCharPx) +
+                PANEL_ITEM_GAP +
+                (metaText.length * metaCharPx) +
+                PANEL_ITEM_HORIZONTAL_PADDING;
+            return Math.max(max, linePx);
+        }, 0);
+        const desiredWidth = widestLinePx + PANEL_OUTER_PADDING_AND_BORDER;
+        const estimatedPanelWidth = Math.max(
+            PANEL_MIN_WIDTH,
+            Math.min(availableWidth - 8, Math.min(PANEL_MAX_WIDTH, desiredWidth))
         );
-        const visibleSuggestions = Math.min(suggestionCount, MAX_VISIBLE_SUGGESTIONS);
+
+        const visibleSuggestions = Math.min(suggestions.length, MAX_VISIBLE_SUGGESTIONS);
         const estimatedPanelHeight = PANEL_VERTICAL_PADDING + visibleSuggestions * PANEL_ITEM_HEIGHT;
 
         const cursorX = (hostRect?.left ?? 0) + (col - 1) * cellWidth;
         const minX = Math.max(4, bounds.left + 4);
-        const maxX = Math.max(minX, bounds.right - estimatedPanelWidth - 4);
+        const maxX = Math.max(minX, effectiveRight - estimatedPanelWidth - 4);
         const x = Math.max(minX, Math.min(cursorX, maxX));
 
         const topOfCursorLine = (hostRect?.top ?? 0) + (row - 1) * cellHeight;
@@ -326,6 +348,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         return {
             x,
             y,
+            width: estimatedPanelWidth,
         };
     }
 
@@ -397,18 +420,31 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private resolveBoundsRect(windowWidth: number, windowHeight: number): DOMRect {
-        const fallback = new DOMRect(0, 0, windowWidth, windowHeight);
-        const host = this._hostElement;
-        if (!host) return fallback;
+        return new DOMRect(0, 0, windowWidth, windowHeight);
+    }
 
-        const grid = host.closest("app-grid") as HTMLElement | null;
-        if (grid) return grid.getBoundingClientRect();
+    private resolveRightUiInset(windowWidth: number): number {
+        // Reserve space for visible right side menu UI so autocomplete never renders under it.
+        const host = document.querySelector("app-side-menu");
+        if (!host) return 0;
 
-        const gridList = host.closest("app-grid-list") as HTMLElement | null;
-        const main = gridList?.querySelector(".main") as HTMLElement | null;
-        if (main) return main.getBoundingClientRect();
+        const candidates = [
+            ...host.querySelectorAll<HTMLElement>("aside:not(.hidden)"),
+            ...host.querySelectorAll<HTMLElement>("menu:not(.hidden)"),
+        ];
 
-        return fallback;
+        let maxInset = 0;
+        for (const el of candidates) {
+            const style = window.getComputedStyle(el);
+            if (style.display === "none" || style.visibility === "hidden") continue;
+
+            const rect = el.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) continue;
+
+            const inset = Math.max(0, windowWidth - rect.left);
+            if (inset > maxInset) maxInset = inset;
+        }
+        return maxInset;
     }
 
     private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {

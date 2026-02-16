@@ -8,6 +8,7 @@ vi.mock('../../_tauri/db', () => ({
     select: vi.fn(),
     execute: vi.fn(),
     load: vi.fn(),
+    transaction: vi.fn(async (fn: () => Promise<unknown>) => fn()),
   }
 }));
 
@@ -60,12 +61,11 @@ describe('WorkspaceRepository', () => {
 
       await repository.createWorkspace(config);
 
-      expect(DB.execute).toHaveBeenCalledWith('BEGIN;');
+      expect(DB.transaction).toHaveBeenCalled();
       expect(DB.execute).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO workspaces'),
         ['ws1', 'Workspace 1', 'blue', 1]
       );
-      expect(DB.execute).toHaveBeenCalledWith('COMMIT;');
     });
 
     it('should rollback on error', async () => {
@@ -78,12 +78,15 @@ describe('WorkspaceRepository', () => {
         grids: []
       };
 
+      vi.mocked(DB.transaction).mockImplementation(async (fn: () => Promise<unknown>) => {
+        await fn();
+      });
       vi.mocked(DB.execute).mockImplementation(async (q) => {
-        if (q.includes('INSERT INTO workspaces')) throw new Error('DB Error');
+        if ((q as string).includes('INSERT INTO workspaces')) throw new Error('DB Error');
       });
 
       await expect(repository.createWorkspace(config)).rejects.toThrow('DB Error');
-      expect(DB.execute).toHaveBeenCalledWith('ROLLBACK;');
+      expect(DB.transaction).toHaveBeenCalled();
     });
   });
 
@@ -107,14 +110,13 @@ describe('WorkspaceRepository', () => {
 
       await repository.updateWorkspace(config);
 
-      expect(DB.execute).toHaveBeenCalledWith('BEGIN;');
+      expect(DB.transaction).toHaveBeenCalled();
       expect(DB.execute).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE workspaces SET name = ?'),
         ['Updated WS', 'green', 0, 'ws1']
       );
       expect(DB.execute).toHaveBeenCalledWith('DELETE FROM workspace_tabs WHERE workspace_id = ?', ['ws1']);
       expect(DB.execute).toHaveBeenCalledWith('DELETE FROM workspace_grids WHERE workspace_id = ?', ['ws1']);
-      expect(DB.execute).toHaveBeenCalledWith('COMMIT;');
     });
   });
 
