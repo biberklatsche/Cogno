@@ -5,7 +5,6 @@ import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "../spec/command-spec
 import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
 import { QueryContext } from "../autocomplete.types";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
-import { SpecCommandRanker } from "../spec/ranking/binary-availability.ranker";
 
 function commandContext(beforeCursor: string): QueryContext {
     return commandContextWithShell(beforeCursor, "Bash");
@@ -27,8 +26,7 @@ function commandContextWithShell(beforeCursor: string, shellType: "Bash" | "Powe
 
 describe("SpecCommandSuggestor", () => {
     it("suggests command names in command mode", async () => {
-        const ranker: SpecCommandRanker = { boostForCommand: vi.fn().mockResolvedValue(0) };
-        const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry(DEFAULT_COMMAND_SPECS), [], ranker);
+        const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry(DEFAULT_COMMAND_SPECS), []);
         const result = await suggestor.suggest(commandContext("np"));
         expect(result.some(v => v.label === "npm")).toBe(true);
     });
@@ -44,8 +42,7 @@ describe("SpecCommandSuggestor", () => {
 
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
-            [new NpmScriptsSpecProvider()],
-            { boostForCommand: vi.fn().mockResolvedValue(0) }
+            [new NpmScriptsSpecProvider()]
         );
 
         const ctx: QueryContext = {
@@ -75,28 +72,16 @@ describe("SpecCommandSuggestor", () => {
 
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
-            [new NpmScriptsSpecProvider()],
-            { boostForCommand: vi.fn().mockResolvedValue(0) }
+            [new NpmScriptsSpecProvider()]
         );
         const result = await suggestor.suggest(commandContext("npm "));
         expect(result.some(v => v.source === "npm-script")).toBe(false);
     });
 
-    it("applies availability rank boost without errors", async () => {
-        const ranker: SpecCommandRanker = {
-            boostForCommand: vi.fn().mockResolvedValue(25),
-        };
-        const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry(DEFAULT_COMMAND_SPECS), [], ranker);
-        const result = await suggestor.suggest(commandContext("git"));
-        expect(result[0].score).toBeGreaterThan(0);
-        expect((ranker.boostForCommand as any).mock.calls.length).toBeGreaterThan(0);
-    });
-
     it("suggests secondary options for subcommand and hides already-typed token", async () => {
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
-            [],
-            { boostForCommand: vi.fn().mockResolvedValue(0) }
+            []
         );
         const result = await suggestor.suggest(commandContext("git commit "));
 
@@ -108,8 +93,7 @@ describe("SpecCommandSuggestor", () => {
     it("shows PowerShell-only specs only in PowerShell", async () => {
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
-            [],
-            { boostForCommand: vi.fn().mockResolvedValue(0) }
+            []
         );
 
         const bashResult = await suggestor.suggest(commandContextWithShell("Get-", "Bash"));
