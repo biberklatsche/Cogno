@@ -243,6 +243,7 @@ describe('TabListService', () => {
             let currentTabs: Tab[] = [];
             service.tabs$.subscribe(tabs => currentTabs = tabs);
             expect(currentTabs[0].title).toBe('New Name');
+            expect(currentTabs[0].isTitleLocked).toBe(true);
             expect(service.showRename$()).toBeUndefined();
         });
 
@@ -289,7 +290,7 @@ describe('TabListService', () => {
     describe('Workspace Integration', () => {
         it('should restore tabs from config', () => {
             const configs = [
-                { tabId: 'c1', title: 'Conf 1', isActive: true, color: 'blue' as const }
+                { tabId: 'c1', title: 'Conf 1', isActive: true, color: 'blue' as const, isTitleLocked: true }
             ];
             
             service.restoreTabs(configs);
@@ -299,16 +300,18 @@ describe('TabListService', () => {
             expect(currentTabs.length).toBe(1);
             expect(currentTabs[0].id).toBe('c1');
             expect(currentTabs[0].color).toBe('blue');
+            expect(currentTabs[0].isTitleLocked).toBe(true);
         });
 
         it('should return tab configs', () => {
-            service.addTab({ id: 't1', title: 'T1', isActive: true, color: 'green', activeShellType: 'unknown' });
+            service.addTab({ id: 't1', title: 'T1', isActive: true, color: 'green', isTitleLocked: true, activeShellType: 'unknown' });
             
             const configs = service.getTabConfigs();
             
             expect(configs.length).toBe(1);
             expect(configs[0].tabId).toBe('t1');
             expect(configs[0].color).toBe('green');
+            expect(configs[0].isTitleLocked).toBe(true);
         });
     });
 });

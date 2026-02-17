@@ -28,6 +28,7 @@ export class TerminalHistoryPersistenceService {
         defaultAllowedCodes: new Set([0]),
         perCommandAllowedCodes: new Map<string, Set<number>>(),
     };
+    private _lastCwdRaw = "";
 
     constructor() {
         this._actions$
@@ -56,6 +57,9 @@ export class TerminalHistoryPersistenceService {
 
     onCwdChanged(cwdRaw: string): void {
         if (!cwdRaw?.trim()) return;
+        const cwd = cwdRaw.trim();
+        if (cwd === this._lastCwdRaw) return;
+        this._lastCwdRaw = cwd;
         this.enqueue(repo => repo.upsertWorkingDirectory(cwdRaw));
     }
 

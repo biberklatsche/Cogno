@@ -3,6 +3,7 @@
 import m001 from "./001_init_workspace.sql?raw";
 import m002 from "./002_add_workspace_autosave.sql?raw";
 import m003 from "./003_add_history.sql?raw";
+import m004 from "./004_add_workspace_tab_title_lock.sql?raw";
 import {DB} from "../_tauri/db";
 
 type Migration = { id: string; sql: string };
@@ -11,6 +12,7 @@ const MIGRATIONS: Migration[] = [
     {id: "001_init_workspace", sql: m001},
     {id: "002_add_workspace_autosave", sql: m002},
     {id: "003_add_history", sql: m003},
+    {id: "004_add_workspace_tab_title_lock", sql: m004},
 ].sort((a, b) => a.id.localeCompare(b.id));
 
 async function sha256(text: string): Promise<string> {

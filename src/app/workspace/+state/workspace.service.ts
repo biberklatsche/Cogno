@@ -1,4 +1,5 @@
 import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {AppBus} from "../../app-bus/app-bus";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
@@ -48,8 +49,8 @@ export class WorkspaceService {
             },
             {
                 onModeChange: (mode) => this.onModeChange(mode),
-                onOpen: () => this.onOpen(),
-                onClose: () => this.onClose(),
+                onOpen: () => this.registerKeybindListener(),
+                onClose: () => this.unregisterKeybindListener(),
             },
             { sideMenuService: this.sideMenuService, bus, configService: config, keybinds, destroyRef }
         );
@@ -69,9 +70,17 @@ export class WorkspaceService {
             await this.restoreWorkspace(defaultWorkspace);
 
         });
+        this.bus.onType$('TabRenamed')
+            .pipe(takeUntilDestroyed(destroyRef))
+            .subscribe(async () => {
+                const active = this.getActiveWorkspace();
+                if (!active || active.id === DEFAULT_WORKSPACE_ID) return;
+                await this.saveWorkspace(active);
+            });
 
         // Capture-phase interceptor for close_window and quit to handle autosave without coupling WindowService
         this.bus.on$({ path: ['app'], type: 'ActionFired', phase: 'capture' })
+            .pipe(takeUntilDestroyed(destroyRef))
             .subscribe(async (msg) => {
                 if (msg.payload !== 'close_window' && msg.payload !== 'quit') return;
                 const args = msg.args ?? [];
@@ -89,27 +98,19 @@ export class WorkspaceService {
 
     private onModeChange(mode: FeatureMode): void {
         if (mode === 'off') {
-            this.onClose();
+            this.unregisterKeybindListener();
         }
     }
 
-    private onOpen(): void {
+    public registerKeybindListener(): void {
         this.feature.registerKeybindListener(
             ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
             evt => this.handleKey(evt)
         );
     }
 
-    private onClose(): void {
-        this.feature.unregisterKeybindListener();
-    }
-
-    public registerKeybindListener(): void {
-        this.onOpen();
-    }
-
     public unregisterKeybindListener(): void {
-        this.onClose();
+        this.feature.unregisterKeybindListener();
     }
 
     private handleKey(event: KeyboardEvent): void {
@@ -213,13 +214,6 @@ export class WorkspaceService {
     // Helpers for autosave scenarios
     private getActiveWorkspace(): WorkspaceConfigUi | undefined {
         return this._workspaceList().find(w => w.isActive);
-    }
-
-    public async saveActiveIfAutosave(): Promise<void> {
-        const active = this.getActiveWorkspace();
-        if (active?.autosave) {
-            await this.saveWorkspace(active);
-        }
     }
 
     // Public API to save a workspace coming from the dialog

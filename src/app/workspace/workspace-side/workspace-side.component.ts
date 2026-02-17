@@ -1,4 +1,4 @@
-import {Component, Signal} from '@angular/core';
+import {Component, OnDestroy, OnInit, Signal} from '@angular/core';
 import {DEFAULT_WORKSPACE_ID, WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";
@@ -134,11 +134,15 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
         
     `]
 })
-export class WorkspaceSideComponent {
+export class WorkspaceSideComponent implements OnDestroy {
 
     workspaceList: Signal<WorkspaceConfigUi[]> = this.workspaceService.workspaceList;
 
     constructor(public workspaceService: WorkspaceService, private readonly dialog: DialogService) {
+    }
+
+    ngOnDestroy(): void {
+        this.workspaceService.unregisterKeybindListener();
     }
 
     addWorkspace() {

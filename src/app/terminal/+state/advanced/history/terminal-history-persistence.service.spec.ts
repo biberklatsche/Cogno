@@ -7,6 +7,22 @@ function flushActions(): Promise<void> {
 }
 
 describe("TerminalHistoryPersistenceService", () => {
+    it("deduplicates identical cwd updates", async () => {
+        const service = new TerminalHistoryPersistenceService();
+        const repo = {
+            upsertWorkingDirectory: vi.fn().mockResolvedValue(undefined),
+        };
+        (service as any)._repo$.next(repo);
+
+        service.onCwdChanged("/tmp");
+        service.onCwdChanged("/tmp");
+        service.onCwdChanged(" /tmp ");
+        await flushActions();
+
+        expect(repo.upsertWorkingDirectory).toHaveBeenCalledTimes(1);
+        expect(repo.upsertWorkingDirectory).toHaveBeenCalledWith("/tmp");
+    });
+
     it("persists only successful commands by default (return code 0)", async () => {
         const service = new TerminalHistoryPersistenceService();
         const repo = {

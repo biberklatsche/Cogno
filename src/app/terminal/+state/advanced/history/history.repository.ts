@@ -4,7 +4,14 @@ import {isWslContext, ShellContext} from "../model/models";
 import {Hash} from "../../../../common/hash/hash";
 
 type IdRow = { id: number };
-type PathRow = { id: number; parent_id?: number | null };
+type PathRow = {
+    id: number;
+    parent_id?: number | null;
+    path_hash?: number | null;
+    basename?: string | null;
+    depth?: number | null;
+    deleted_at?: number | null;
+};
 export type DirectoryHistoryRow = {
     path: string;
     basename: string;
@@ -51,6 +58,8 @@ function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
  */
 export class HistoryRepository {
     private _inTransaction = false;
+    private readonly _pathCache = new Map<string, { id: number; parentId: number | null }>();
+    private readonly _commandCache = new Map<string, number>();
 
     private constructor(
         private readonly contextId: number,
@@ -310,16 +319,56 @@ export class HistoryRepository {
     private async ensurePathId(pathNorm: string, parentNorm?: string | null): Promise<number> {
         const ts = nowMs();
         const h = Hash.create(pathNorm);
+        const basename = this.adapter.basenameOf(pathNorm);
+        const depth = this.adapter.depthOf(pathNorm);
+
+        let parentId: number | null = null;
+        if (parentNorm) {
+            parentId = await this.ensurePathId(parentNorm, this.adapter.parentOf(parentNorm));
+        }
+
+        const cached = this._pathCache.get(pathNorm);
+        if (cached && cached.parentId === parentId) {
+            return cached.id;
+        }
+
+        const existing = await this.sel<PathRow[]>(
+            `SELECT id, parent_id, path_hash, basename, depth, deleted_at FROM path WHERE path = ? LIMIT 1`,
+            [pathNorm]
+        );
+
+        if (existing.length > 0) {
+            const row = existing[0];
+            const needsUpdate =
+                row.deleted_at != null
+                || row.path_hash !== h
+                || row.basename !== basename
+                || row.depth !== depth
+                || (parentId !== null && row.parent_id !== parentId);
+
+            if (needsUpdate) {
+                await this.exec(
+                    `UPDATE path
+                     SET path_hash = ?, basename = ?, depth = ?, parent_id = ?, deleted_at = NULL
+                     WHERE id = ?`,
+                    [h, basename, depth, parentId, row.id]
+                );
+            }
+
+            this._pathCache.set(pathNorm, { id: row.id, parentId });
+            return row.id;
+        }
 
         await this.exec(
             `INSERT INTO path(path, path_hash, parent_id, basename, depth, created_at, deleted_at)
-       VALUES(?, ?, NULL, ?, ?, ?, NULL)
+       VALUES(?, ?, ?, ?, ?, ?, NULL)
        ON CONFLICT(path) DO UPDATE SET
          path_hash = excluded.path_hash,
+         parent_id = excluded.parent_id,
          basename = excluded.basename,
          depth = excluded.depth,
          deleted_at = NULL`,
-            [pathNorm, h, this.adapter.basenameOf(pathNorm), this.adapter.depthOf(pathNorm), ts]
+            [pathNorm, h, parentId, basename, depth, ts]
         );
 
         const rows = await this.sel<PathRow[]>(
@@ -327,16 +376,8 @@ export class HistoryRepository {
             [pathNorm]
         );
         if (rows.length === 0) throw new Error("ensurePathId failed");
-        const id = rows[0].id;
-
-        if (parentNorm) {
-            const parentId = await this.ensurePathId(parentNorm, this.adapter.parentOf(parentNorm));
-            if (rows[0].parent_id == null || rows[0].parent_id !== parentId) {
-                await this.exec(`UPDATE path SET parent_id = ? WHERE id = ?`, [parentId, id]);
-            }
-        }
-
-        return id;
+        this._pathCache.set(pathNorm, { id: rows[0].id, parentId });
+        return rows[0].id;
     }
 
     private async upsertDirectoryEdge(parentId: number, childId: number, ts: number): Promise<void> {
@@ -352,6 +393,9 @@ export class HistoryRepository {
     }
 
     private async ensureCommandId(commandText: string): Promise<number> {
+        const cached = this._commandCache.get(commandText);
+        if (cached) return cached;
+
         const ts = nowMs();
         const h = Hash.create(commandText);
 
@@ -370,6 +414,7 @@ export class HistoryRepository {
             [commandText]
         );
         if (rows.length === 0) throw new Error("ensureCommandId failed");
+        this._commandCache.set(commandText, rows[0].id);
         return rows[0].id;
     }
 

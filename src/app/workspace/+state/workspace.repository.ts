@@ -20,6 +20,7 @@ export interface TabEntity {
     workspace_id: string;
     tab_id: string;
     is_active: number;
+    is_title_locked?: number;
     color?: string;
     title?: string;
     position?: number;
@@ -57,6 +58,7 @@ export class WorkspaceRepository {
                 tabs: tabs.map(t => ({
                     tabId: t.tab_id,
                     isActive: t.is_active === 1,
+                    isTitleLocked: t.is_title_locked === 1,
                     color: this.toColorName(t.color),
                     title: t.title
                 })),
@@ -130,8 +132,8 @@ export class WorkspaceRepository {
 
     private async insertTab(workspaceId: WorkspaceId, tab: TabConfig, position?: number): Promise<void> {
         await DB.execute(
-            "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, color, title, position) VALUES (?, ?, ?, ?, ?, ?)",
-            [workspaceId, tab.tabId, tab.isActive ? 1 : 0, tab.color, tab.title, position]
+            "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, is_title_locked, color, title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [workspaceId, tab.tabId, tab.isActive ? 1 : 0, tab.isTitleLocked ? 1 : 0, tab.color, tab.title, position]
         );
     }
 

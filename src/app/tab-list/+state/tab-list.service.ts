@@ -170,6 +170,7 @@ export class TabListService {
         tab.title = value;
         tab.isTitleLocked = true;
         this._tabList.next(tabList);
+        this.bus.publish({type: 'TabRenamed', payload: {tabId: tab.id, title: tab.title}});
         this.closeRename();
     }
 
@@ -192,6 +193,7 @@ export class TabListService {
                 id: config.tabId,
                 color: config.color,
                 title: config.title ?? 'Shell',
+                isTitleLocked: config.isTitleLocked ?? false,
                 isActive: config.isActive ?? false,
                 activeShellType: 'unknown'
             }
@@ -205,7 +207,8 @@ export class TabListService {
             tabId: tab.id,
             isActive: tab.isActive,
             color: tab.color,
-            title: tab.title
+            title: tab.title,
+            isTitleLocked: tab.isTitleLocked ?? false
         }));
     }
 }

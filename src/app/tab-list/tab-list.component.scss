@@ -103,10 +103,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 180px; /* keep some space for icons and padding */
-  /* show ellipsis at the beginning when text is too long */
-  direction: rtl;      /* moves the ellipsis to the front (left in LTR UI) */
-  unicode-bidi: plaintext;
-  text-align: left;    /* keeps visual left alignment of the visible tail */
+  text-align: left;
   flex-shrink: 10;
 }
 
