@@ -16,25 +16,26 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
                 class="autocomplete-panel"
                 [ngStyle]="{ left: viewState().x + 'px', top: viewState().y + 'px', width: viewState().width + 'px' }"
             >
-                @for (item of viewState().suggestions; track item.label + ':' + $index) {
-                    <button
-                        [attr.data-index]="$index"
-                        class="autocomplete-item"
-                        [class.active]="$index === viewState().selectedIndex"
-                        (mousedown)="apply($event, $index)"
-                        type="button"
-                    >
-                        <span class="label">
-                            @for (part of labelParts(item, viewState().width); track $index) {
-                                <span [class.match]="part.match">{{ part.text }}</span>
-                            }
-                        </span>
-                        <span class="meta">{{ item.source }} · {{ item.score }}</span>
-                    </button>
-                }
-                @if (selectedDescription(); as description) {
-                    <div class="autocomplete-description">{{ description }}</div>
-                }
+                <div class="autocomplete-list">
+                    @for (item of viewState().suggestions; track item.label + ':' + $index) {
+                        <button
+                            [attr.data-index]="$index"
+                            class="autocomplete-item"
+                            [class.active]="$index === viewState().selectedIndex"
+                            (mouseenter)="preview($index)"
+                            (mousedown)="apply($event, $index)"
+                            type="button"
+                        >
+                            <span class="label">
+                                @for (part of labelParts(item, viewState().width); track $index) {
+                                    <span [class.match]="part.match">{{ part.text }}</span>
+                                }
+                            </span>
+                            <span class="meta">{{ item.source }} · {{ item.score }}</span>
+                        </button>
+                    }
+                </div>
+                <div class="autocomplete-description">{{ selectedDescription() }}</div>
             </div>
         }
     `,
@@ -44,15 +45,19 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             box-sizing: border-box;
             min-width: 160px;
             max-width: 920px;
-            max-height: calc(5 * 32px + 8px);
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow: hidden;
             background: rgba(19, 29, 41, 0.97);
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 8px;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
             z-index: 11;
             padding: 4px;
+        }
+
+        .autocomplete-list {
+            max-height: calc(5 * 32px + 8px);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .autocomplete-item {
@@ -103,11 +108,13 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             border-top: 1px solid rgba(255, 255, 255, 0.12);
             color: rgba(255, 255, 255, 0.82);
             font-size: 11px;
+            font-style: italic;
             line-height: 1.35;
             min-height: 20px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            max-height: 56px;
+            overflow-y: auto;
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -143,6 +150,10 @@ export class TerminalAutocompleteComponent {
         this.autocomplete.selectSuggestion(index);
     }
 
+    protected preview(index: number): void {
+        this.autocomplete.setSelectedIndex(index);
+    }
+
     protected labelParts(item: AutocompleteSuggestion, panelWidth: number): Array<{ text: string; match: boolean }> {
         const { label, ranges } = this.truncateForDisplay(item, panelWidth);
         if (ranges.length === 0) return [{ text: label, match: false }];
@@ -168,10 +179,11 @@ export class TerminalAutocompleteComponent {
         return parts.length > 0 ? parts : [{ text: label, match: false }];
     }
 
-    protected selectedDescription(): string | null {
+    protected selectedDescription(): string {
         const view = this.viewState();
-        if (view.selectedIndex === null) return null;
-        return view.suggestions[view.selectedIndex]?.description ?? null;
+        if (view.suggestions.length === 0) return "";
+        const index = view.selectedIndex ?? 0;
+        return view.suggestions[index]?.description ?? "";
     }
 
     private truncateForDisplay(
