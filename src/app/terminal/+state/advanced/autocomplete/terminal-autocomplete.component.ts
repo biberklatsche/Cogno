@@ -35,9 +35,7 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
                         </button>
                     }
                 </div>
-                @if (viewState().selectedIndex !== null && selectedDescription()) {
-                    <div class="autocomplete-description">{{ selectedDescription() }}</div>
-                }
+                <div class="autocomplete-description">{{ selectedDescription() || ' ' }}</div>
             </div>
         }
     `,
@@ -112,8 +110,7 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             font-size: 11px;
             font-style: italic;
             line-height: 1.35;
-            min-height: 20px;
-            max-height: 56px;
+            height: 56px;
             overflow-y: auto;
             white-space: normal;
             overflow-wrap: anywhere;
