@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.21";
+const INTEGRATION_VERSION = "1.0.22";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -189,12 +189,6 @@ if [[ -n "\${COGNO_LOGIN_PATH}" ]]; then
     export PATH="\${COGNO_LOGIN_PATH}"
 fi
 
-# Apply PATH prefix if set
-if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
-    _cogno_log "Applying PATH prefix: \${COGNO_PATH_PREFIX}"
-    export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
-fi
-
 # Optionally load user's Bash startup files (only if COGNO_ALLOW_USER_RC=1)
 # We run with --rcfile, so login startup files are not loaded automatically.
 # Load them manually to replicate login shell behavior.
@@ -222,6 +216,12 @@ if [[ "\${COGNO_ALLOW_USER_RC}" == "1" ]]; then
         _cogno_log "Loading user .bashrc"
         source "\${HOME}/.bashrc"
     fi
+fi
+
+# Apply PATH prefix after user startup files, so Cogno CLI stays available.
+if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
+    _cogno_log "Applying PATH prefix: \${COGNO_PATH_PREFIX}"
+    export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
 fi
 
 # Load Cogno integration
@@ -343,12 +343,6 @@ if [[ -n "\${COGNO_LOGIN_PATH}" ]]; then
     export PATH="\${COGNO_LOGIN_PATH}"
 fi
 
-# Apply PATH prefix if set
-if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
-    _cogno_log "Applying PATH prefix: \${COGNO_PATH_PREFIX}"
-    export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
-fi
-
 # Optionally load user's Zsh startup files (only if COGNO_ALLOW_USER_RC=1)
 # We run with custom ZDOTDIR, so ~/.zshenv/.zprofile are not loaded automatically.
 if [[ "\${COGNO_ALLOW_USER_RC}" == "1" ]]; then
@@ -364,6 +358,12 @@ if [[ "\${COGNO_ALLOW_USER_RC}" == "1" ]]; then
         _cogno_log "Loading user .zshrc"
         source "\${HOME}/.zshrc"
     fi
+fi
+
+# Apply PATH prefix after user startup files, so Cogno CLI stays available.
+if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
+    _cogno_log "Applying PATH prefix: \${COGNO_PATH_PREFIX}"
+    export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
 fi
 
 # Load Cogno integration
@@ -459,19 +459,19 @@ end
 
 _cogno_log "Fish bootstrap started"
 
-# Apply PATH prefix if set
+# Optionally load user's config.fish (only if COGNO_ALLOW_USER_RC=1)
+if test "$COGNO_ALLOW_USER_RC" = "1"; and test -f "$HOME/.config/fish/config.fish"
+    _cogno_log "Loading user config.fish"
+    source "$HOME/.config/fish/config.fish"
+end
+
+# Apply PATH prefix after user startup files, so Cogno CLI stays available.
 if set -q COGNO_PATH_PREFIX
     _cogno_log "Applying PATH prefix: $COGNO_PATH_PREFIX"
     # Split PATH prefix by colon and prepend to PATH
     for p in (string split : $COGNO_PATH_PREFIX)
         set -gx PATH $p $PATH
     end
-end
-
-# Optionally load user's config.fish (only if COGNO_ALLOW_USER_RC=1)
-if test "$COGNO_ALLOW_USER_RC" = "1"; and test -f "$HOME/.config/fish/config.fish"
-    _cogno_log "Loading user config.fish"
-    source "$HOME/.config/fish/config.fish"
 end
 
 # Load Cogno integration
@@ -563,12 +563,6 @@ function Write-CognoLog {
 
 Write-CognoLog "PowerShell integration started"
 
-# Apply PATH prefix if set
-if ($env:COGNO_PATH_PREFIX) {
-    Write-CognoLog "Applying PATH prefix: $($env:COGNO_PATH_PREFIX)"
-    $env:Path = "$($env:COGNO_PATH_PREFIX);$($env:Path)"
-}
-
 # Optionally load user's profile (only if COGNO_ALLOW_USER_RC=1)
 if ($env:COGNO_ALLOW_USER_RC -eq "1") {
     $userProfile = $PROFILE.CurrentUserAllHosts
@@ -576,6 +570,12 @@ if ($env:COGNO_ALLOW_USER_RC -eq "1") {
         Write-CognoLog "Loading user profile: $userProfile"
         . $userProfile
     }
+}
+
+# Apply PATH prefix after user startup files, so Cogno CLI stays available.
+if ($env:COGNO_PATH_PREFIX) {
+    Write-CognoLog "Applying PATH prefix: $($env:COGNO_PATH_PREFIX)"
+    $env:Path = "$($env:COGNO_PATH_PREFIX);$($env:Path)"
 }
 
 $esc = [char]27

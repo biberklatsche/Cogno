@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
@@ -131,6 +134,13 @@ impl ShellSpawner {
     fn get_cogno_paths(&self) -> Vec<PathBuf> {
         let mut paths = Vec::new();
 
+        if let Some(cogno_bin_dir) = self.get_cogno_bin_dir() {
+            if let Err(error) = self.ensure_cogno_command_in_bin_dir(&cogno_bin_dir) {
+                eprintln!("Failed to ensure cogno launcher: {}", error);
+            }
+            paths.push(cogno_bin_dir);
+        }
+
         // Add Cogno executable directory if it exists.
         // This is controlled by profile.inject_cogno_cli.
         if let Ok(exe_path) = std::env::current_exe() {
@@ -143,6 +153,46 @@ impl ShellSpawner {
         // For example: ~/.cogno2/bin
 
         paths
+    }
+
+    fn get_cogno_bin_dir(&self) -> Option<PathBuf> {
+        self.integration_root
+            .parent()
+            .map(|cogno_home_dir| cogno_home_dir.join("bin"))
+    }
+
+    fn ensure_cogno_command_in_bin_dir(&self, cogno_bin_dir: &PathBuf) -> Result<(), String> {
+        let executable_path = std::env::current_exe().map_err(|error| error.to_string())?;
+        fs::create_dir_all(cogno_bin_dir).map_err(|error| error.to_string())?;
+
+        #[cfg(windows)]
+        {
+            let launcher_path = cogno_bin_dir.join("cogno.cmd");
+            let launcher_script = format!(
+                "@echo off\r\n\"{}\" %*\r\n",
+                executable_path.display()
+            );
+            fs::write(&launcher_path, launcher_script).map_err(|error| error.to_string())?;
+            return Ok(());
+        }
+
+        #[cfg(not(windows))]
+        {
+            let launcher_path = cogno_bin_dir.join("cogno");
+            let launcher_script = format!(
+                "#!/usr/bin/env sh\n\"{}\" \"$@\"\n",
+                executable_path.display()
+            );
+            fs::write(&launcher_path, launcher_script).map_err(|error| error.to_string())?;
+
+            #[cfg(unix)]
+            {
+                let permissions = fs::Permissions::from_mode(0o755);
+                fs::set_permissions(&launcher_path, permissions).map_err(|error| error.to_string())?;
+            }
+
+            return Ok(());
+        }
     }
 
 }
