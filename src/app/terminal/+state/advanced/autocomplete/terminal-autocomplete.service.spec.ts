@@ -299,4 +299,37 @@ describe("TerminalAutocompleteService", () => {
         expect(view.suggestions[0].source).toBe("history-cmd + spec-cmd");
         expect(view.suggestions[0].score).toBe(58);
     });
+
+    it("merges same label from npm-script and spec-sub into one suggestion", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "test",
+            insertText: "test",
+            detail: "spec subcommand",
+            score: 135,
+            source: "spec-sub",
+            kind: "command",
+            replaceStart: 8,
+            replaceEnd: 10,
+            selectedCommand: "npm test",
+        }], "dummy-spec-sub"));
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "test",
+            insertText: "test",
+            detail: "npm script",
+            score: 145,
+            source: "npm-script",
+            kind: "script",
+            replaceStart: 8,
+            replaceEnd: 10,
+        }], "dummy-npm-script"));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "npm run te", cursorIndex: 10, maxCursorIndex: 10 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const view = (service as any)._viewState.value;
+        expect(view.suggestions).toHaveLength(1);
+        expect(view.suggestions[0].label).toBe("test");
+        expect(view.suggestions[0].source).toBe("npm-script + spec-sub");
+        expect(view.suggestions[0].score).toBe(153);
+    });
 });

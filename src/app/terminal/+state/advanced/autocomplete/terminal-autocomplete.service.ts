@@ -355,7 +355,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     private dedupeSuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
         const map = new Map<string, { suggestion: AutocompleteSuggestion; sources: Set<string> }>();
         for (const item of items) {
-            const key = `${item.kind}:${item.insertText}:${item.replaceStart}:${item.replaceEnd}`;
+            const key = `${item.label.toLowerCase()}:${item.replaceStart}:${item.replaceEnd}`;
             const existing = map.get(key);
             if (!existing) {
                 map.set(key, {
