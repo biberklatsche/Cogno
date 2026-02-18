@@ -71,8 +71,9 @@ describe("CommandSpecRegistry defaults/importer", () => {
     it("keeps provider bindings from specs", () => {
         const npm = DEFAULT_COMMAND_SPECS.find(v => v.name === "npm");
         expect(npm).toBeDefined();
-        expect(npm!.providers?.some(p => p.providerId === "npm-scripts")).toBe(true);
-        expect(npm!.providers?.[0]?.when?.firstArgIn).toContain("run");
+        const run = (npm!.subcommands as any[]).find(v => (typeof v === "string" ? v === "run" : v.name === "run"));
+        expect(run).toBeDefined();
+        expect(run.providers?.some((p: any) => p.providerId === "npm-scripts")).toBe(true);
     });
 
     it("keeps shell constraints from command specs", () => {

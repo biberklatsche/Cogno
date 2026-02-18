@@ -117,6 +117,10 @@ describe("SpecCommandSuggestor", () => {
                         { name: "zsh", description: "Generate for zsh" },
                     ],
                 },
+                {
+                    name: "deploy",
+                    args: { name: "target" },
+                },
             ],
             options: [
                 { name: ["--bind", "-b"], description: "Bind working directory" },
@@ -138,5 +142,66 @@ describe("SpecCommandSuggestor", () => {
         const resultOptions = await suggestor.suggest(commandContext("act --"));
         expect(resultOptions.some(v => v.label === "--bind")).toBe(true);
         expect(resultOptions.some(v => v.label === "--env")).toBe(true);
+
+        const resultNeedsUserInput = await suggestor.suggest(commandContext("act deploy "));
+        expect(resultNeedsUserInput).toEqual([]);
+    });
+
+    it("supports provider bindings on subcommands and blocks free-form arg suggestions", async () => {
+        const scriptsProvider = {
+            id: "scripts-provider",
+            suggest: vi.fn().mockResolvedValue(["test", "build"]),
+        };
+
+        const npmLike: CommandSpec = {
+            name: "xpm",
+            subcommands: [
+                {
+                    name: "run",
+                    args: { name: "script" },
+                    providers: [{ providerId: "scripts-provider", kind: "script", source: "xpm-script", baseScore: 60 }],
+                },
+            ],
+            options: [
+                { name: "-m", args: { name: "message" } },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...DEFAULT_COMMAND_SPECS, npmLike]),
+            [scriptsProvider as any]
+        );
+
+        const scripts = await suggestor.suggest(commandContext("xpm run "));
+        expect(scripts.map(v => v.label)).toContain("test");
+        expect(scripts.map(v => v.label)).toContain("build");
+
+        const noneAfterMessage = await suggestor.suggest(commandContext("xpm -m "));
+        expect(noneAfterMessage).toEqual([]);
+    });
+
+    it("supports options defined directly on subcommands", async () => {
+        const spec: CommandSpec = {
+            name: "toolx",
+            subcommands: [
+                {
+                    name: "deploy",
+                    options: [
+                        { name: ["--env", "-e"], args: { name: "env" } },
+                        { name: "--force" },
+                    ],
+                },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...DEFAULT_COMMAND_SPECS, spec]),
+            []
+        );
+
+        const result = await suggestor.suggest(commandContext("toolx deploy --"));
+        const labels = result.map(v => v.label);
+        expect(labels).toContain("--env");
+        expect(labels).toContain("--force");
     });
 });

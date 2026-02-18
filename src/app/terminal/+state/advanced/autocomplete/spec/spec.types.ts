@@ -12,11 +12,14 @@ export type FigOptionSpec = {
     description?: string;
     args?: FigArgSpec | FigArgSpec[];
     isRepeatable?: boolean;
+    providers?: SpecProviderBinding[];
 };
 
 export type FigSubcommandSpec = {
     name: string | string[];
     description?: string;
+    args?: FigArgSpec | FigArgSpec[];
+    providers?: SpecProviderBinding[];
     subcommands?: Array<string | FigSubcommandSpec>;
     options?: Array<string | FigOptionSpec>;
 };

@@ -143,6 +143,7 @@ function normalizeOption(source: string | FigOptionSpec): FigOptionSpec | undefi
         description: source.description?.trim() || undefined,
         args,
         isRepeatable: source.isRepeatable ? true : undefined,
+        providers: sanitizeProviders(source.providers),
     };
 }
 
@@ -167,6 +168,8 @@ function normalizeSubcommands(source?: Array<string | FigSubcommandSpec>): FigSu
         byPrimary.set(primary, {
             name: mergedName.length === 1 ? mergedName[0] : mergedName,
             description: existing.description ?? normalized.description,
+            args: normalizeArgs([...(Array.isArray(existing.args) ? existing.args : existing.args ? [existing.args] : []), ...(Array.isArray(normalized.args) ? normalized.args : normalized.args ? [normalized.args] : [])]),
+            providers: sanitizeProviders([...(existing.providers ?? []), ...(normalized.providers ?? [])]),
             options: mergedOptions,
             subcommands: mergedSubs,
         });
@@ -186,6 +189,8 @@ function normalizeSubcommand(source: string | FigSubcommandSpec): FigSubcommandS
     return {
         name: names.length === 1 ? names[0] : names,
         description: source.description?.trim() || undefined,
+        args: normalizeArgs(source.args),
+        providers: sanitizeProviders(source.providers),
         subcommands: normalizeSubcommands(source.subcommands),
         options: normalizeOptions(source.options),
     };

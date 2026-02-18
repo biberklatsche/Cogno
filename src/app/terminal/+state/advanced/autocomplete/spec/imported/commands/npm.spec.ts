@@ -5,8 +5,30 @@ export const NPM_FIG_SPEC: CommandSpec = {
     source: "fig",
     sourceUrl: "https://github.com/withfig/autocomplete/tree/master/src/npm.ts",
     subcommands: [
-        "run",
-        "run-script",
+        {
+            name: "run",
+            args: { name: "script" },
+            providers: [
+                {
+                    providerId: "npm-scripts",
+                    kind: "script",
+                    source: "npm-script",
+                    baseScore: 55,
+                },
+            ],
+        },
+        {
+            name: "run-script",
+            args: { name: "script" },
+            providers: [
+                {
+                    providerId: "npm-scripts",
+                    kind: "script",
+                    source: "npm-script",
+                    baseScore: 55,
+                },
+            ],
+        },
         "test",
         "start",
         "build",
@@ -23,18 +45,6 @@ export const NPM_FIG_SPEC: CommandSpec = {
         "--if-present",
         "--global",
         "--save-dev",
-    ],
-    providers: [
-        {
-            providerId: "npm-scripts",
-            kind: "script",
-            source: "npm-script",
-            baseScore: 55,
-            when: {
-                firstArgIn: ["run", "run-script"],
-                minArgs: 1,
-            },
-        },
     ],
     subcommandOptions: {
         run: ["--silent", "--if-present", "--workspace", "--workspaces"],
