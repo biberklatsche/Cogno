@@ -54,6 +54,7 @@ type TraverseState = {
     usedOptionAliases: Set<string>;
     pendingArgs: number;
     pendingProviders: SpecProviderBinding[];
+    pendingArgSource: "subcommand" | "option" | undefined;
 };
 
 const ROOT_NAME = "__root__";
@@ -219,10 +220,11 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             return this.suggestCommandNames(parsed.activeValue, parsed.activeStart, parsed.activeEnd, context);
         }
 
-        const command = parsed.tokens[0]?.value;
-        if (!command) return [];
-        const argsInput = context.beforeCursor.slice(command.length + 1);
-        const replaceBase = command.length + 1;
+        const commandToken = parsed.tokens[0];
+        const command = commandToken?.value;
+        if (!commandToken || !command) return [];
+        const argsInput = context.beforeCursor.slice(commandToken.end);
+        const replaceBase = commandToken.end;
         return this.suggestCommandArgs(command, argsInput, replaceBase, context);
     }
 
@@ -259,7 +261,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         command: string,
         argsInput: string,
         replaceBase: number,
-        context: QueryContext
+        context: QueryContext,
+        insertPrefix = ""
     ): Promise<AutocompleteSuggestion[]> {
         const spec = await this.registry.get(command);
         if (!spec || !this.isSpecAllowedInShell(spec, context)) return [];
@@ -273,17 +276,22 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         const traverse = this.traverse(prepared.root, parsed.tokens.slice(0, parsed.activeTokenIndex));
 
         if (traverse.pendingArgs > 0) {
-            return this.suggestFromProviders(
-                traverse.pendingProviders,
-                parsed,
-                argsInput,
-                context,
-                command,
-                activeToken,
-                replaceStart,
-                replaceEnd,
-                typedTokenSet
-            );
+            if (traverse.pendingProviders.length > 0) {
+                return this.suggestFromProviders(
+                    traverse.pendingProviders,
+                    parsed,
+                    argsInput,
+                    context,
+                    command,
+                    activeToken,
+                    replaceStart,
+                    replaceEnd,
+                    typedTokenSet
+                );
+            }
+            if (traverse.pendingArgSource === "option") {
+                return [];
+            }
         }
 
         const suggestions: AutocompleteSuggestion[] = [];
@@ -303,7 +311,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 label,
                 detail: source,
                 description,
-                insertText: label,
+                insertText: `${insertPrefix}${label}`,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
                 source,
                 kind,
@@ -312,6 +320,40 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 selectedCommand: kind === "command" ? `${command} ${label}` : undefined,
             });
         };
+
+        if (traverse.pendingArgs > 0 && traverse.pendingArgSource === "subcommand") {
+            const optionMap = new Map<string, PreparedOption>();
+            for (const option of prepared.root.options) {
+                optionMap.set(option.primary.toLowerCase(), option);
+            }
+            for (const option of traverse.node.options) {
+                optionMap.set(option.primary.toLowerCase(), option);
+            }
+
+            for (const option of optionMap.values()) {
+                const aliases = option.names;
+                const allUsed = aliases.every(alias => traverse.usedOptionAliases.has(alias.toLowerCase()));
+                if (allUsed && !option.isRepeatable) continue;
+                const selected = this.pickSuggestionName(aliases, activeToken);
+                add(selected, "spec-opt", 38, optionDescription(option));
+            }
+
+            return suggestions;
+        }
+
+        if (traverse.pendingArgs > 0) {
+            return this.suggestFromProviders(
+                traverse.pendingProviders,
+                parsed,
+                argsInput,
+                context,
+                command,
+                activeToken,
+                replaceStart,
+                replaceEnd,
+                typedTokenSet
+            );
+        }
 
         for (const sub of traverse.node.subcommands) {
             if (traverse.usedSubcommands.has(sub.primary.toLowerCase())) continue;
@@ -344,7 +386,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             activeToken,
             replaceStart,
             replaceEnd,
-            typedTokenSet
+            typedTokenSet,
+            insertPrefix
         );
         suggestions.push(...providerSuggestions);
 
@@ -360,7 +403,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         activeToken: string,
         replaceStart: number,
         replaceEnd: number,
-        typedTokenSet: Set<string>
+        typedTokenSet: Set<string>,
+        insertPrefix = ""
     ): Promise<AutocompleteSuggestion[]> {
         const suggestions: AutocompleteSuggestion[] = [];
         const add = (
@@ -377,7 +421,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             suggestions.push({
                 label,
                 detail: source,
-                insertText: label,
+                insertText: `${insertPrefix}${label}`,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
                 source,
                 kind,
@@ -410,6 +454,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             usedOptionAliases: new Set<string>(),
             pendingArgs: 0,
             pendingProviders: [],
+            pendingArgSource: undefined,
         };
 
         for (const token of committedTokens) {
@@ -417,7 +462,10 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
 
             if (state.pendingArgs > 0) {
                 state.pendingArgs -= 1;
-                if (state.pendingArgs === 0) state.pendingProviders = [];
+                if (state.pendingArgs === 0) {
+                    state.pendingProviders = [];
+                    state.pendingArgSource = undefined;
+                }
                 continue;
             }
 
@@ -427,6 +475,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 state.node = matchedSub;
                 state.pendingArgs = matchedSub.argCount;
                 state.pendingProviders = matchedSub.providers;
+                state.pendingArgSource = matchedSub.argCount > 0 ? "subcommand" : undefined;
                 continue;
             }
 
@@ -437,6 +486,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 }
                 state.pendingArgs = matchedOption.argCount;
                 state.pendingProviders = matchedOption.providers;
+                state.pendingArgSource = matchedOption.argCount > 0 ? "option" : undefined;
             }
         }
 

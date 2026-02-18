@@ -94,6 +94,35 @@ describe("SpecCommandSuggestor", () => {
         expect(result.some(v => v.label === "-m")).toBe(true);
     });
 
+    it("suggests subcommands even with leading whitespace", async () => {
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(defaults),
+            []
+        );
+        const result = await suggestor.suggest(commandContext("  git "));
+        expect(result.some(v => v.label === "commit")).toBe(true);
+    });
+
+    it("does not suggest subcommands for exact command token without trailing space", async () => {
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(defaults),
+            []
+        );
+        const result = await suggestor.suggest(commandContext("git"));
+        expect(result.some(v => v.label === "commit")).toBe(false);
+        expect(result.some(v => v.label === "git")).toBe(true);
+    });
+
+    it("does not suggest npm subcommands for exact command token without trailing space", async () => {
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(defaults),
+            []
+        );
+        const result = await suggestor.suggest(commandContext("npm"));
+        expect(result.some(v => v.label === "run")).toBe(false);
+        expect(result.some(v => v.label === "npm")).toBe(true);
+    });
+
     it("shows PowerShell-only specs only in PowerShell", async () => {
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(defaults),
@@ -147,7 +176,8 @@ describe("SpecCommandSuggestor", () => {
         expect(resultOptions.some(v => v.label === "--env")).toBe(true);
 
         const resultNeedsUserInput = await suggestor.suggest(commandContext("act deploy "));
-        expect(resultNeedsUserInput).toEqual([]);
+        expect(resultNeedsUserInput.some(v => v.label === "--bind")).toBe(true);
+        expect(resultNeedsUserInput.some(v => v.label === "--env")).toBe(true);
     });
 
     it("supports provider bindings on subcommands and blocks free-form arg suggestions", async () => {
@@ -206,5 +236,17 @@ describe("SpecCommandSuggestor", () => {
         const labels = result.map(v => v.label);
         expect(labels).toContain("--env");
         expect(labels).toContain("--force");
+    });
+
+    it("suggests subcommand options after subcommand with positional args", async () => {
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(defaults),
+            []
+        );
+
+        const result = await suggestor.suggest(commandContext("git commit "));
+        const labels = result.map(v => v.label);
+        expect(labels).toContain("-a");
+        expect(labels).toContain("-m");
     });
 });

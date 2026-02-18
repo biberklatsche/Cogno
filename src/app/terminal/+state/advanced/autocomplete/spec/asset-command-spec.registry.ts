@@ -2,9 +2,6 @@ import { CommandSpec } from "./spec.types";
 import { CommandShellConstraints, CommandSpecSource } from "./command-spec.source";
 import { importFigSubsetSpecs } from "./importer/fig-lite.importer";
 
-type JsonModule = { default: CommandSpec } | CommandSpec;
-type Loader = () => Promise<JsonModule>;
-
 type ManifestEntry = {
     name: string;
     file: string;
@@ -13,21 +10,12 @@ type ManifestEntry = {
 };
 
 const MANIFEST_URL = "/assets/autocomplete/fig/manifest.json";
-const GLOB_BASE = "../../../../../../assets/autocomplete/fig/commands/";
+const COMMANDS_BASE_URL = "/assets/autocomplete/fig/commands/";
 
 export class AssetCommandSpecRegistry implements CommandSpecSource {
     private readonly _cache = new Map<string, CommandSpec>();
     private readonly _inFlight = new Map<string, Promise<CommandSpec | undefined>>();
-    private readonly _loaders = import.meta.glob("../../../../../../assets/autocomplete/fig/commands/*.json") as Record<string, Loader>;
-    private readonly _loaderByFile = new Map<string, Loader>();
     private _manifestPromise?: Promise<Map<string, ManifestEntry>>;
-
-    constructor() {
-        for (const [key, loader] of Object.entries(this._loaders)) {
-            const file = key.startsWith(GLOB_BASE) ? key.slice(GLOB_BASE.length) : key.split("/").at(-1) ?? key;
-            this._loaderByFile.set(file, loader);
-        }
-    }
 
     async commandNames(): Promise<string[]> {
         const map = await this.loadManifest();
@@ -63,10 +51,9 @@ export class AssetCommandSpecRegistry implements CommandSpecSource {
         const manifest = await this.loadManifest();
         const row = manifest.get(command);
         if (!row) return undefined;
-        const loader = this._loaderByFile.get(row.file);
-        if (!loader) return undefined;
-        const mod = await loader();
-        const raw = (mod as { default?: CommandSpec }).default ?? (mod as CommandSpec);
+        const response = await fetch(`${COMMANDS_BASE_URL}${row.file}`);
+        if (!response.ok) return undefined;
+        const raw = await response.json() as CommandSpec;
         const imported = importFigSubsetSpecs([raw])[0];
         if (imported) this._cache.set(command, imported);
         return imported;
