@@ -264,22 +264,23 @@ export class HistoryRepository {
         const ts = nowMs();
         const path = safeNormalize(this.adapter, pathRaw);
         if (!path) return;
-        const parent = this.adapter.parentOf(path);
 
         await this.tx(async () => {
-            const pathId = await this.ensurePathId(path, parent);
+            const rows = await this.sel<IdRow[]>(
+                `SELECT id FROM path WHERE path = ? AND deleted_at IS NULL LIMIT 1`,
+                [path]
+            );
+            if (rows.length === 0) return;
+
             await this.exec(
-                `INSERT INTO dir_stat(
-                    context_id, to_path_id,
-                    visit_count, last_visit_at,
-                    select_count, last_select_at,
-                    created_at, deleted_at
-                ) VALUES(?, ?, 0, ?, 1, ?, ?, NULL)
-                 ON CONFLICT(context_id, to_path_id) DO UPDATE SET
-                    select_count = dir_stat.select_count + 1,
-                    last_select_at = excluded.last_select_at,
-                    deleted_at = NULL`,
-                [this.contextId, pathId, ts, ts, ts]
+                `UPDATE dir_stat
+                 SET select_count = select_count + 1,
+                     last_select_at = ?,
+                     deleted_at = NULL
+                 WHERE context_id = ?
+                   AND to_path_id = ?
+                   AND deleted_at IS NULL`,
+                [ts, this.contextId, rows[0].id]
             );
         });
     }
@@ -291,25 +292,28 @@ export class HistoryRepository {
         const ts = nowMs();
         const cwd = safeNormalize(this.adapter, cwdRaw);
         if (!cwd) return;
-        const parent = this.adapter.parentOf(cwd);
 
         await this.tx(async () => {
-            const cwdId = await this.ensurePathId(cwd, parent);
-            const cmdId = await this.ensureCommandId(command);
+            const cmdRows = await this.sel<IdRow[]>(
+                `SELECT id FROM command WHERE command_text = ? AND deleted_at IS NULL LIMIT 1`,
+                [command]
+            );
+            const cwdRows = await this.sel<IdRow[]>(
+                `SELECT id FROM path WHERE path = ? AND deleted_at IS NULL LIMIT 1`,
+                [cwd]
+            );
+            if (cmdRows.length === 0 || cwdRows.length === 0) return;
 
             await this.exec(
-                `INSERT INTO command_stat(
-                    context_id, cwd_path_id, command_id,
-                    exec_count, last_exec_at,
-                    select_count, last_select_at,
-                    avg_duration_ms, success_count, last_return_code,
-                    created_at, deleted_at
-                ) VALUES(?, ?, ?, 0, NULL, 1, ?, NULL, 0, NULL, ?, NULL)
-                 ON CONFLICT(context_id, cwd_path_id, command_id) DO UPDATE SET
-                    select_count = command_stat.select_count + 1,
-                    last_select_at = excluded.last_select_at,
-                    deleted_at = NULL`,
-                [this.contextId, cwdId, cmdId, ts, ts]
+                `UPDATE command_stat
+                 SET select_count = select_count + 1,
+                     last_select_at = ?,
+                     deleted_at = NULL
+                 WHERE context_id = ?
+                   AND cwd_path_id = ?
+                   AND command_id = ?
+                   AND deleted_at IS NULL`,
+                [ts, this.contextId, cwdRows[0].id, cmdRows[0].id]
             );
         });
     }
