@@ -1,0 +1,96 @@
+{
+  "name": "tldr",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tldr.ts",
+  "description": "A simpler man page than the existing man page",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Display help for command"
+    },
+    {
+      "name": [
+        "-s",
+        "--search"
+      ],
+      "description": "Search all pages for the query",
+      "args": [
+        {
+          "name": "query"
+        }
+      ]
+    },
+    {
+      "name": "--linux",
+      "description": "Show command page for Linux",
+      "providers": [
+        {
+          "providerId": "fig-tldr-root-opt-2-option---linux-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--osx",
+      "description": "Show command page for OSX",
+      "providers": [
+        {
+          "providerId": "fig-tldr-root-opt-3-option---osx-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--sunos",
+      "description": "Show command page for SunOS",
+      "providers": [
+        {
+          "providerId": "fig-tldr-root-opt-4-option---sunos-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": [
+        "-l",
+        "--list"
+      ],
+      "description": "Show all pages for current platform"
+    },
+    {
+      "name": [
+        "-u",
+        "--update"
+      ],
+      "description": "Download the latest pages and generate search index"
+    },
+    {
+      "name": [
+        "-c",
+        "--clear-cache"
+      ],
+      "description": "Delete the entire local cache"
+    },
+    {
+      "name": [
+        "--platform",
+        "-p"
+      ],
+      "description": "Select platform",
+      "args": [
+        {
+          "name": "platform"
+        }
+      ]
+    }
+  ]
+}

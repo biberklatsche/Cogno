@@ -1,0 +1,79 @@
+{
+  "name": "tsx",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tsx.ts",
+  "description": "Run TypeScript file using tsx",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show help for tsx"
+    },
+    {
+      "name": "--no-cache",
+      "description": "Disable caching"
+    },
+    {
+      "name": "--clear-screen",
+      "description": "Disable clearing the screen on rerun",
+      "args": [
+        {
+          "name": "script path"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-tsx-root-opt-2-option---clear-screen-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": [
+        "-v",
+        "--version"
+      ],
+      "description": "Show version"
+    },
+    {
+      "name": "--tsconfig",
+      "description": "Custom tsconfig.json path",
+      "args": [
+        {
+          "name": "tsconfig.json path"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-tsx-root-opt-4-option---tsconfig-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "watch",
+      "description": "Run the script and watch for changes",
+      "args": [
+        {
+          "name": "script path"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-tsx-root-sub-0-sub-watch-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    }
+  ]
+}

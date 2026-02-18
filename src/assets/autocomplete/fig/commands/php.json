@@ -1,0 +1,6 @@
+{
+  "name": "php",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/php.ts",
+  "description": "Run the PHP interpreter"
+}

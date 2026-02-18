@@ -1,0 +1,6 @@
+{
+  "name": "dirname",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dirname.ts",
+  "description": "Return directory portion of pathname"
+}

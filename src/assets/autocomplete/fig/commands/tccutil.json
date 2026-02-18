@@ -1,0 +1,6 @@
+{
+  "name": "tccutil",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tccutil.ts",
+  "description": "Manage the privacy database"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "logout",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/logout.ts",
+  "description": "Log out to remove access to Azure subscriptions",
+  "options": [
+    {
+      "name": "--username",
+      "description": "Account user, if missing, logout the current active account",
+      "args": [
+        {
+          "name": "username"
+        }
+      ]
+    }
+  ]
+}

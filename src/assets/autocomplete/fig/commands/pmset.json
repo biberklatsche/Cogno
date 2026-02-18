@@ -1,0 +1,108 @@
+{
+  "name": "pmset",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pmset.ts",
+  "description": "Power management settings",
+  "options": [
+    {
+      "name": "-a",
+      "description": "Settings for all",
+      "args": [
+        {
+          "name": "setting"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    },
+    {
+      "name": "-b",
+      "description": "Settings for battery",
+      "args": [
+        {
+          "name": "setting"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    },
+    {
+      "name": "-c",
+      "description": "Settings for charger",
+      "args": [
+        {
+          "name": "setting"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    },
+    {
+      "name": "-u",
+      "description": "Settings for UPS",
+      "args": [
+        {
+          "name": "setting"
+        },
+        {
+          "name": "value"
+        }
+      ]
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "-g",
+      "description": "GETTING",
+      "args": [
+        {
+          "name": "UUID",
+          "description": "Used for historydetailed"
+        }
+      ]
+    },
+    {
+      "name": "schedule",
+      "description": "For setting up one-time power events",
+      "args": [
+        {
+          "name": "type"
+        },
+        {
+          "name": "date/time",
+          "description": "\"MM/dd/yy HH:mm:ss\" (in 24 hour format; must be in quotes)"
+        }
+      ],
+      "options": [
+        {
+          "name": "cancel"
+        }
+      ]
+    },
+    {
+      "name": "repeat",
+      "description": "For setting up daily/weekly power on and power off events",
+      "args": [
+        {
+          "name": "type"
+        },
+        {
+          "name": "weekdays",
+          "description": "A subset of MTWRFSU (\"M\" and \"MTWRF\" are valid strings)"
+        },
+        {
+          "name": "date/time",
+          "description": "\"MM/dd/yy HH:mm:ss\" (in 24 hour format; must be in quotes)"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "cancel"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "nocorrect",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nocorrect.ts",
+  "description": "ZSH pre-command modifier that disables correction"
+}

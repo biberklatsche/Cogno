@@ -1,6 +1,6 @@
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
-import { CommandSpecRegistry } from "../spec/command-spec.registry";
+import { CommandSpecSource } from "../spec/command-spec.source";
 import {
     CommandSpec,
     FigOptionSpec,
@@ -190,11 +190,11 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "spec-command";
     readonly inputPattern = /.+/;
     private readonly _providers = new Map<string, SpecSuggestionProvider>();
-    private readonly _commandNamesByShell = new Map<string, ShellScopedCommand[]>();
+    private readonly _commandNamesByShell = new Map<string, Promise<ShellScopedCommand[]>>();
     private readonly _preparedSpecByCommand = new Map<string, PreparedSpec>();
 
     constructor(
-        private readonly registry: CommandSpecRegistry,
+        private readonly registry: CommandSpecSource,
         providers: SpecSuggestionProvider[] = [],
     ) {
         for (const provider of providers) {
@@ -233,17 +233,16 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         context: QueryContext
     ): Promise<AutocompleteSuggestion[]> {
         const queryLower = query.toLowerCase();
-        const commands = this.commandsForShell(context);
+        const commands = await this.commandsForShell(context);
         const suggestions: AutocompleteSuggestion[] = [];
 
         for (const c of commands) {
             if (queryLower && !c.lower.includes(queryLower)) continue;
             const starts = c.lower.startsWith(queryLower);
-            const spec = this.registry.get(c.name);
             suggestions.push({
                 label: c.name,
                 detail: "spec command",
-                description: spec?.description,
+                description: undefined,
                 insertText: c.name,
                 score: starts ? 135 : 70,
                 source: "spec-cmd",
@@ -262,7 +261,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         replaceBase: number,
         context: QueryContext
     ): Promise<AutocompleteSuggestion[]> {
-        const spec = this.registry.get(command);
+        const spec = await this.registry.get(command);
         if (!spec || !this.isSpecAllowedInShell(spec, context)) return [];
         const prepared = this.prepareSpec(spec);
 
@@ -481,14 +480,22 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         return true;
     }
 
-    private commandsForShell(context: QueryContext): ShellScopedCommand[] {
+    private commandsForShell(context: QueryContext): Promise<ShellScopedCommand[]> {
         const shell = context.shellContext.shellType;
         const cached = this._commandNamesByShell.get(shell);
         if (cached) return cached;
 
-        const next: ShellScopedCommand[] = this.registry.commandNames()
-            .filter(name => this.isSpecAllowedInShell(this.registry.get(name), context))
-            .map(name => ({ name, lower: name.toLowerCase() }));
+        const next = Promise.resolve(this.registry.commandNames())
+            .then(async names => {
+                const scoped: ShellScopedCommand[] = [];
+                for (const name of names) {
+                    const constraints = await Promise.resolve(this.registry.getConstraints(name));
+                    if (constraints?.shells?.length && !constraints.shells.includes(shell)) continue;
+                    if (constraints?.excludeShells?.includes(shell)) continue;
+                    scoped.push({ name, lower: name.toLowerCase() });
+                }
+                return scoped;
+            });
         this._commandNamesByShell.set(shell, next);
         return next;
     }

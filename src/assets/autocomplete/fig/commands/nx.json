@@ -1,0 +1,1187 @@
+{
+  "name": "nx",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nx.ts",
+  "description": "Fig completions for Nx by Nrwl",
+  "subcommands": [
+    {
+      "name": "init",
+      "description": "Adds nx.json file and installs nx if not installed already",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "generate",
+      "description": "Runs a generator that creates and/or modifies files based on a generator from a collection",
+      "args": [
+        {
+          "name": "collection:generator"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-nx-root-sub-1-sub-generate-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": "--defaults",
+          "description": "When true, disables interactive input prompts for options with a default"
+        },
+        {
+          "name": "--dryRun",
+          "description": "When true, preview the changes without updating files"
+        },
+        {
+          "name": "--force",
+          "description": "When true, forces overwriting of existing files"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--interactive",
+          "description": "Enable/disable prompts"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "description": "Runs an Architect target with an optional custom builder configuration defined in your project",
+      "args": [
+        {
+          "name": "project:target[:configuration]"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-nx-root-sub-2-sub-run-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "--configuration",
+            "-c"
+          ],
+          "description": "A named builder configuration, defined in the \"configurations\" section of the workspace configuration file. The builder uses the named configuration to run the given target",
+          "args": [
+            {
+              "name": "configuration"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-2-sub-run-opt-0-option---configuration-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "daemon",
+      "description": "Prints information about the Nx Daemon process or starts a daemon process",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--start"
+        },
+        {
+          "name": "--stop"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "graph",
+      "description": "Graph dependencies within workspace",
+      "options": [
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-4-sub-graph-opt-0-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--file",
+          "description": "Output file (e.g. --file=output.json or --file=dep-graph.html)"
+        },
+        {
+          "name": "--focus",
+          "description": "Use to show the project graph for a particular project and every node that is either an ancestor or a descendant",
+          "args": [
+            {
+              "name": "project"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-4-sub-graph-opt-2-option---focus-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--groupByFolder",
+          "description": "Group projects by folder in the project graph"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--host",
+          "description": "Bind the project graph server to a specific ip address"
+        },
+        {
+          "name": "--open",
+          "description": "Open the project graph in the browser"
+        },
+        {
+          "name": "--port",
+          "description": "Bind the project graph server to a specific port"
+        },
+        {
+          "name": "--targets",
+          "description": "Targets (comma/space delimited)",
+          "args": [
+            {
+              "name": "targets"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-4-sub-graph-opt-8-option---targets-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        },
+        {
+          "name": "--view",
+          "description": "Choose whether to view the projects or task graph"
+        },
+        {
+          "name": "--watch",
+          "description": "Watch for changes to project graph and update in-browser"
+        }
+      ]
+    },
+    {
+      "name": "run-many",
+      "description": "Run target for multiple listed projects",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": [
+            "--configuration",
+            "-c"
+          ],
+          "description": "A named builder configuration, defined in the \"configurations\" section of the workspace configuration file. The builder uses the named configuration to run the given target",
+          "args": [
+            {
+              "name": "configuration"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-1-option---configuration-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-2-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--graph",
+          "description": "Show the task graph of the command"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--nx-bail",
+          "description": "Stop command execution after the first failed task"
+        },
+        {
+          "name": "--nx-ignore-cycles",
+          "description": "Ignore cycles in the task graph"
+        },
+        {
+          "name": "--output-style",
+          "description": "Defines how Nx emits outputs tasks logs"
+        },
+        {
+          "name": "--parallel",
+          "description": "Max number of parallel processes [default is 3]"
+        },
+        {
+          "name": "--projects",
+          "description": "Projects (comma/space delimited)",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-9-option---projects-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--runner",
+          "description": "This is the name of the tasks runner configured in nx.json"
+        },
+        {
+          "name": "--skip-nx-cache",
+          "description": "Rerun the tasks even when the results are available in the cache"
+        },
+        {
+          "name": "--targets",
+          "description": "Targets (comma/space delimited)",
+          "args": [
+            {
+              "name": "targets"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-12-option---targets-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "description": "Prints additional information about the commands (e.g., stack traces)"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "affected",
+      "description": "Run target for affected projects",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": "--base",
+          "description": "Base of the current branch (usually main)"
+        },
+        {
+          "name": [
+            "--configuration",
+            "-c"
+          ],
+          "description": "A named builder configuration, defined in the \"configurations\" section of the workspace configuration file. The builder uses the named configuration to run the given target",
+          "args": [
+            {
+              "name": "configuration"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-6-sub-affected-opt-2-option---configuration-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-6-sub-affected-opt-3-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--files",
+          "description": "Change the way Nx is calculating the affected command by providing directly changed files, list of files delimited by commas or spaces"
+        },
+        {
+          "name": "--graph",
+          "description": "Show the task graph of the command"
+        },
+        {
+          "name": "--head",
+          "description": "Latest commit of the current branch (usually HEAD)"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--nx-bail",
+          "description": "Stop command execution after the first failed task"
+        },
+        {
+          "name": "--nx-ignore-cycles",
+          "description": "Ignore cycles in the task graph"
+        },
+        {
+          "name": "--output-style",
+          "description": "Defines how Nx emits outputs tasks logs"
+        },
+        {
+          "name": "--parallel",
+          "description": "Max number of parallel processes [default is 3]"
+        },
+        {
+          "name": "--runner",
+          "description": "This is the name of the tasks runner configured in nx.json"
+        },
+        {
+          "name": "--skip-nx-cache",
+          "description": "Rerun the tasks even when the results are available in the cache"
+        },
+        {
+          "name": "--targets",
+          "description": "Targets (comma/space delimited)",
+          "args": [
+            {
+              "name": "targets"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-6-sub-affected-opt-14-option---targets-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--uncommitted",
+          "description": "Uncommitted changes"
+        },
+        {
+          "name": "--untracked",
+          "description": "Untracked changes"
+        },
+        {
+          "name": "--verbose",
+          "description": "Prints additional information about the commands (e.g., stack traces)"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "affected:graph",
+      "description": "Graph dependencies affected by changes",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": "--base",
+          "description": "Base of the current branch (usually main)"
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-7-sub-affected-graph-opt-2-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--file",
+          "description": "Output file (e.g. --file=output.json or --file=dep-graph.html)"
+        },
+        {
+          "name": "--files",
+          "description": "Change the way Nx is calculating the affected command by providing directly changed files, list of files delimited by commas or spaces"
+        },
+        {
+          "name": "--focus",
+          "description": "Use to show the project graph for a particular project and every node that is either an ancestor or a descendant",
+          "args": [
+            {
+              "name": "project"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-7-sub-affected-graph-opt-5-option---focus-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--groupByFolder",
+          "description": "Group projects by folder in the project graph"
+        },
+        {
+          "name": "--head",
+          "description": "Latest commit of the current branch (usually HEAD)"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--host",
+          "description": "Bind the project graph server to a specific ip address"
+        },
+        {
+          "name": "--open",
+          "description": "Open the project graph in the browser"
+        },
+        {
+          "name": "--port",
+          "description": "Bind the project graph server to a specific port"
+        },
+        {
+          "name": "--targets",
+          "description": "Targets (comma/space delimited)",
+          "args": [
+            {
+              "name": "targets"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-7-sub-affected-graph-opt-12-option---targets-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--uncommitted",
+          "description": "Uncommitted changes"
+        },
+        {
+          "name": "--untracked",
+          "description": "Untracked changes"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        },
+        {
+          "name": "--view",
+          "description": "Choose whether to view the projects or task graph"
+        },
+        {
+          "name": "--watch",
+          "description": "Watch for changes to project graph and update in-browser"
+        }
+      ]
+    },
+    {
+      "name": "print-affected",
+      "description": "Prints information about the projects and targets affected by changes",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": "--base",
+          "description": "Base of the current branch (usually main)"
+        },
+        {
+          "name": [
+            "--configuration",
+            "-c"
+          ],
+          "description": "A named builder configuration, defined in the \"configurations\" section of the workspace configuration file. The builder uses the named configuration to run the given target",
+          "args": [
+            {
+              "name": "configuration"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-8-sub-print-affected-opt-2-option---configuration-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-8-sub-print-affected-opt-3-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--files",
+          "description": "Change the way Nx is calculating the affected command by providing directly changed files, list of files delimited by commas or spaces"
+        },
+        {
+          "name": "--head",
+          "description": "Latest commit of the current branch (usually HEAD)"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--select",
+          "description": "Select the subset of the returned json document (e.g., --select=projects)"
+        },
+        {
+          "name": "--targets",
+          "description": "Targets (comma/space delimited)",
+          "args": [
+            {
+              "name": "targets"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-8-sub-print-affected-opt-8-option---targets-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "description": "Select the type of projects to be returned (e.g., --type=app)"
+        },
+        {
+          "name": "--uncommitted",
+          "description": "Uncommitted changes"
+        },
+        {
+          "name": "--untracked",
+          "description": "Untracked changes"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "format:check",
+      "description": "Check for un-formatted files",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": "--base",
+          "description": "Base of the current branch (usually main)"
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-9-sub-format-check-opt-2-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--files",
+          "description": "Change the way Nx is calculating the affected command by providing directly changed files, list of files delimited by commas or spaces"
+        },
+        {
+          "name": "--head",
+          "description": "Latest commit of the current branch (usually HEAD)"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--libs-and-apps",
+          "description": "Format only libraries and applications files"
+        },
+        {
+          "name": "--projects",
+          "description": "Projects (comma/space delimited)",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-9-sub-format-check-opt-7-option---projects-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--uncommitted",
+          "description": "Uncommitted changes"
+        },
+        {
+          "name": "--untracked",
+          "description": "Untracked changes"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "format:write",
+      "description": "Overwrite un-formatted files",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": "--base",
+          "description": "Base of the current branch (usually main)"
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-10-sub-format-write-opt-2-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--files",
+          "description": "Change the way Nx is calculating the affected command by providing directly changed files, list of files delimited by commas or spaces"
+        },
+        {
+          "name": "--head",
+          "description": "Latest commit of the current branch (usually HEAD)"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--libs-and-apps",
+          "description": "Format only libraries and applications files"
+        },
+        {
+          "name": "--projects",
+          "description": "Projects (comma/space delimited)",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-10-sub-format-write-opt-7-option---projects-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--uncommitted",
+          "description": "Uncommitted changes"
+        },
+        {
+          "name": "--untracked",
+          "description": "Untracked changes"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "migrate",
+      "description": "Creates a migrations file or runs migrations from the migrations file",
+      "args": [
+        {
+          "name": "packageAndVersion",
+          "description": "The target package and version (e.g, @nrwl/workspace@13.0.0)"
+        }
+      ],
+      "options": [
+        {
+          "name": "--commitPrefix",
+          "description": "Commit prefix to apply to the commit for each migration, when --create-commits is enabled"
+        },
+        {
+          "name": "--createCommits",
+          "description": "Automatically create a git commit after each migration runs"
+        },
+        {
+          "name": "--excludeAppliedMigrations",
+          "description": "Exclude migrations that should have been applied on previous updates. To be used with --from"
+        },
+        {
+          "name": "--from",
+          "description": "Use the provided versions for packages instead of the ones installed in node_modules (e.g., --from=\"@nrwl/react@12.0.0,@nrwl/js@12.0.0\")"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--ifExists",
+          "description": "Run migrations only if the migrations file exists, if not continues successfully"
+        },
+        {
+          "name": "--interactive",
+          "description": "Enable/disable prompts"
+        },
+        {
+          "name": "--runMigrations",
+          "description": "Execute migrations from a file (when the file isn't provided, execute migrations from migrations.json)"
+        },
+        {
+          "name": "--to",
+          "description": "Use the provided versions for packages instead of the ones calculated by the migrator (e.g., --to=\"@nrwl/react@12.0.0,@nrwl/js@12.0.0\")"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "description": "Reports useful version numbers to copy into the Nx issue template",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "args": [
+        {
+          "name": "plugin",
+          "description": "The name of an installed plugin to query"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-nx-root-sub-13-sub-list-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "workspace-generator",
+      "description": "Runs a workspace generator from the tools/generators directory",
+      "args": [
+        {
+          "name": "name",
+          "description": "The name of your generator"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-nx-root-sub-14-sub-workspace-generator-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--list-generators",
+          "description": "List the available workspace-generators"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "connect",
+      "description": "Connect workspace to Nx Cloud",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "reset",
+      "description": "Clears all the cached Nx artifacts and metadata about the workspace and shuts down the Nx Daemon",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "repair",
+      "description": "Repair any configuration that is no longer supported by Nx",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--verbose",
+          "description": "Prints additional information about the commands (e.g., stack traces)"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "exec",
+      "description": "Executes any command as if it was a target on the project",
+      "options": [
+        {
+          "name": [
+            "--configuration",
+            "-c"
+          ],
+          "description": "A named builder configuration, defined in the \"configurations\" section of the workspace configuration file. The builder uses the named configuration to run the given target",
+          "args": [
+            {
+              "name": "configuration"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-18-sub-exec-opt-0-option---configuration-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude certain projects from being processed",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-18-sub-exec-opt-1-option---exclude-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--graph",
+          "description": "Show the task graph of the command"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--nx-bail",
+          "description": "Stop command execution after the first failed task"
+        },
+        {
+          "name": "--nx-ignore-cycles",
+          "description": "Ignore cycles in the task graph"
+        },
+        {
+          "name": "--output-style",
+          "description": "Defines how Nx emits outputs tasks logs"
+        },
+        {
+          "name": "--parallel",
+          "description": "Max number of parallel processes [default is 3]"
+        },
+        {
+          "name": "--project",
+          "description": "Target project",
+          "args": [
+            {
+              "name": "project"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-18-sub-exec-opt-8-option---project-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--runner",
+          "description": "This is the name of the tasks runner configured in nx.json"
+        },
+        {
+          "name": "--skip-nx-cache",
+          "description": "Rerun the tasks even when the results are available in the cache"
+        },
+        {
+          "name": "--verbose",
+          "description": "Prints additional information about the commands (e.g., stack traces)"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "watch",
+      "description": "Watch for changes within projects, and execute commands",
+      "options": [
+        {
+          "name": "--all",
+          "description": "All projects"
+        },
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--includeDependentProjects",
+          "description": "When watching selected projects, include dependent projects as well"
+        },
+        {
+          "name": "--projects",
+          "description": "Projects (comma/space delimited)",
+          "args": [
+            {
+              "name": "projects"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-nx-root-sub-19-sub-watch-opt-3-option---projects-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "description": "Prints additional information about the commands (e.g., stack traces)"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Show information about the workspace (e.g., list of projects)",
+      "args": [
+        {
+          "name": "object",
+          "description": "What to show (e.g., projects)"
+        }
+      ],
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    },
+    {
+      "name": "view-logs",
+      "description": "Enables you to view and interact with the logs via the advanced analytic UI from Nx Cloud to help you debug your issue. To do this, Nx needs to connect your workspace to Nx Cloud and upload the most recent run details. Only the metrics are uploaded, not the artefacts",
+      "options": [
+        {
+          "name": "--help",
+          "description": "Show help"
+        },
+        {
+          "name": "--version",
+          "description": "Show version number"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "cd",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cd.ts",
+  "description": "Change the shell working directory"
+}

@@ -1,0 +1,164 @@
+{
+  "name": "git-flow",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/git-flow.ts",
+  "description": "A collection of Git extensions to provide high-level repository operations for Vincent Driessen's branching model",
+  "subcommands": [
+    {
+      "name": "init",
+      "description": "Initialize a new git repo with support for the branching model",
+      "options": [
+        {
+          "name": "-d",
+          "description": "Use default branch naming conventions"
+        },
+        {
+          "name": "-f",
+          "description": "Force setting of gitflow branches, even if already configured"
+        }
+      ]
+    },
+    {
+      "name": "feature",
+      "description": "List all feature branches",
+      "subcommands": [
+        {
+          "name": "start",
+          "description": "Create a new feature branch",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the new feature branch"
+            }
+          ]
+        },
+        {
+          "name": "finish",
+          "description": "Merge a feature branch into develop",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the feature branch to finish"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-git-flow-root-sub-1-sub-feature-1-sub-finish-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "publish",
+          "description": "Push a feature branch to the remote repository",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the feature branch to publish"
+            }
+          ]
+        },
+        {
+          "name": "pull",
+          "description": "Pull a feature branch from the remote repository",
+          "args": [
+            {
+              "name": "origin",
+              "description": "The name of the remote feature branch"
+            },
+            {
+              "name": "name",
+              "description": "The name of the local feature branch"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "description": "List all release branches",
+      "subcommands": [
+        {
+          "name": "start",
+          "description": "Create a new release branch",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the new release branch"
+            }
+          ]
+        },
+        {
+          "name": "finish",
+          "description": "Merge a release branch into develop",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the release branch to finish"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-git-flow-root-sub-2-sub-release-1-sub-finish-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hotfix",
+      "description": "List all hotfix branches",
+      "subcommands": [
+        {
+          "name": "start",
+          "description": "Create a new hotfix branch",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the new hotfix branch"
+            }
+          ]
+        },
+        {
+          "name": "finish",
+          "description": "Merge a hotfix branch into develop",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the hotfix branch to finish"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-git-flow-root-sub-3-sub-hotfix-1-sub-finish-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "support",
+      "description": "List all support branches",
+      "subcommands": [
+        {
+          "name": "start",
+          "description": "Create a new support branch",
+          "args": [
+            {
+              "name": "name",
+              "description": "The name of the new support branch"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

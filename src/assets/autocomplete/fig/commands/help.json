@@ -1,0 +1,6 @@
+{
+  "name": "help",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-help.ts",
+  "description": "The dotnet help command opens up the reference page for more detailed information about the specified command at docs.microsoft.com"
+}

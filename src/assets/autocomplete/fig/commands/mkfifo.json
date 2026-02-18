@@ -1,0 +1,17 @@
+{
+  "name": "mkfifo",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mkfifo.ts",
+  "description": "Make FIFOs (first-in, first-out)",
+  "options": [
+    {
+      "name": "-m",
+      "description": "Set the file permission bits of newly-created fifos to mode, without respect to the current umask; the mode is specified as in chmod(1)",
+      "args": [
+        {
+          "name": "MODE"
+        }
+      ]
+    }
+  ]
+}

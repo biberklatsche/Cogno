@@ -1,0 +1,44 @@
+{
+  "name": "sdc",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/@usermn/sdc/0.0.0.ts",
+  "description": "\"setup dominic's computer\" cli tool",
+  "options": [
+    {
+      "name": [
+        "-V",
+        "--version"
+      ],
+      "description": "Output the version number"
+    },
+    {
+      "name": [
+        "-f",
+        "--force"
+      ],
+      "description": "Bypass checks"
+    },
+    {
+      "name": "--no-end-clear",
+      "description": "Skip clearing the console at the end so that output can be viewed"
+    },
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Display help for command"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "help",
+      "description": "Display help for command",
+      "args": [
+        {
+          "name": "command"
+        }
+      ]
+    }
+  ]
+}

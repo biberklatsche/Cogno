@@ -1,0 +1,58 @@
+{
+  "name": "whereis",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/whereis.ts",
+  "description": "Locate the binary, source, and manual page files for a command",
+  "options": [
+    {
+      "name": "-b",
+      "description": "Search only for binaries"
+    },
+    {
+      "name": "-m",
+      "description": "Search only for manual sections"
+    },
+    {
+      "name": "-s",
+      "description": "Search only for sources"
+    },
+    {
+      "name": "-u",
+      "description": "Search for unusual entries"
+    },
+    {
+      "name": "-B",
+      "description": "Search for binaries only in the specified directory",
+      "args": [
+        {
+          "name": "directory",
+          "description": "The directory to search in"
+        }
+      ]
+    },
+    {
+      "name": "-M",
+      "description": "Search for manual pages only in the specified directory",
+      "args": [
+        {
+          "name": "directory",
+          "description": "The directory to search in"
+        }
+      ]
+    },
+    {
+      "name": "-S",
+      "description": "Search for sources only in the specified directory",
+      "args": [
+        {
+          "name": "directory",
+          "description": "The directory to search in"
+        }
+      ]
+    },
+    {
+      "name": "-f",
+      "description": "Terminate the -B, -M, and -S options"
+    }
+  ]
+}

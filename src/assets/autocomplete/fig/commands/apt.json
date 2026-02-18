@@ -1,0 +1,683 @@
+{
+  "name": "apt",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/apt.ts",
+  "description": "Package manager for Debian-based Linux distributions",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Print help message and exit"
+    },
+    {
+      "name": [
+        "-v",
+        "--version"
+      ],
+      "description": "Print version information and exit"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "update",
+      "description": "Update the package database",
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        }
+      ]
+    },
+    {
+      "name": "upgrade",
+      "description": "Install all available upgrades",
+      "args": [
+        {
+          "name": "package",
+          "description": "Package(s) to upgrade"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-1-sub-upgrade-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "full-upgrade",
+      "description": "Install available upgrades, removing currently installed packages if needed to upgrade the system as a whole",
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "description": "Install package(s)",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to install"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-3-sub-install-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        },
+        {
+          "providerId": "fig-apt-root-sub-3-sub-install-gen-1",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        },
+        {
+          "name": "--reinstall",
+          "description": "Reinstall the package if it is already installed"
+        },
+        {
+          "name": [
+            "-f",
+            "--fix-broken"
+          ],
+          "description": "Attempt to fix broken packages"
+        }
+      ]
+    },
+    {
+      "name": "reinstall",
+      "description": "Reinstall package(s)",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to reinstall"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-4-sub-reinstall-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Remove package(s)",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to remove"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-5-sub-remove-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        },
+        {
+          "name": [
+            "-f",
+            "--fix-broken"
+          ],
+          "description": "Attempt to fix broken packages"
+        }
+      ]
+    },
+    {
+      "name": "purge",
+      "description": "Remove package(s) and their configuration files",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to purge"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-6-sub-purge-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": [
+        "autoremove",
+        "auto-remove"
+      ],
+      "description": "Remove unused packages",
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List packages",
+      "options": [
+        {
+          "name": "--installed",
+          "description": "List installed packages"
+        },
+        {
+          "name": "--upgradable",
+          "description": "List upgradable packages"
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Search for packages",
+      "args": [
+        {
+          "name": "query",
+          "description": "The query to search for"
+        }
+      ],
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Show package details",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to show"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-10-sub-show-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "satisfy",
+      "description": "Satisfy package dependencies",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to satisfy"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-11-sub-satisfy-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "clean",
+      "description": "Remove downloaded package files",
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "edit-sources",
+      "description": "Edit the list of package sources",
+      "options": [
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        }
+      ]
+    },
+    {
+      "name": "source",
+      "description": "Fetch package source files",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to get source files for"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-14-sub-source-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        },
+        {
+          "name": "--compile",
+          "description": "Compile the package to a binary using dpkg-buildpackage"
+        },
+        {
+          "name": "--only-source"
+        },
+        {
+          "name": "--host-architecture",
+          "description": "The architecture to build for",
+          "args": [
+            {
+              "name": "architecture",
+              "description": "The architecture to build for"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "build-dep",
+      "description": "Install/remove packages in an attempt to satisfy the build dependencies for a source package",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to build dependencies for"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-15-sub-build-dep-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        },
+        {
+          "name": "--host-architecture",
+          "description": "The architecture to build for",
+          "args": [
+            {
+              "name": "architecture",
+              "description": "The architecture to build for"
+            }
+          ]
+        },
+        {
+          "name": "--only-source"
+        }
+      ]
+    },
+    {
+      "name": "download",
+      "description": "Download package binary into the current directory",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to download"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-16-sub-download-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        }
+      ]
+    },
+    {
+      "name": [
+        "autoclean",
+        "auto-clean"
+      ],
+      "description": "Like clean, but only removes package files that can no longer be downloaded",
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        },
+        {
+          "name": [
+            "-s",
+            "--simulate"
+          ],
+          "description": "Simulate running this command and show it's output, without actually changing anything"
+        }
+      ]
+    },
+    {
+      "name": "changelog",
+      "description": "Show the changelog for a package",
+      "args": [
+        {
+          "name": "package",
+          "description": "The package you want to show the changelog for"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-apt-root-sub-18-sub-changelog-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--download-only"
+          ],
+          "description": "For any operation that would download packages, download them, but do nothing else"
+        },
+        {
+          "name": "--no-download",
+          "description": "Do not download packages, attempt to use already downloaded packages"
+        },
+        {
+          "name": "-y",
+          "description": "Assume yes to all prompts"
+        },
+        {
+          "name": "--assume-no",
+          "description": "Assume no to all prompts"
+        }
+      ]
+    }
+  ]
+}

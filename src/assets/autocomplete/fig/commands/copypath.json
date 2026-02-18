@@ -1,0 +1,6 @@
+{
+  "name": "copypath",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/copypath.ts",
+  "description": "Oh-My-Zsh plugin that copies the path of given directory or file to the clipboard"
+}

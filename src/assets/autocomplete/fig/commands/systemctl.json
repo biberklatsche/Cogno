@@ -1,0 +1,1135 @@
+{
+  "name": "systemctl",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/systemctl.ts",
+  "description": "",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Show this help"
+    },
+    {
+      "name": "--version",
+      "description": "Show package version"
+    },
+    {
+      "name": "--system",
+      "description": "Connect to system manager"
+    },
+    {
+      "name": "--user",
+      "description": "Connect to user service manager"
+    },
+    {
+      "name": [
+        "-H",
+        "--host"
+      ],
+      "description": "Operate on remote host",
+      "args": [
+        {
+          "name": "[USER@]HOST"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-M",
+        "--machine"
+      ],
+      "description": "Operate on a local container",
+      "args": [
+        {
+          "name": "CONTAINER"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-t",
+        "--type"
+      ],
+      "description": "List units of a particular type",
+      "args": [
+        {
+          "name": "TYPE"
+        }
+      ]
+    },
+    {
+      "name": "--state",
+      "description": "List units with particular LOAD or SUB or ACTIVE state",
+      "args": [
+        {
+          "name": "STATE"
+        }
+      ]
+    },
+    {
+      "name": "--failed",
+      "description": "Shortcut for --state=failed"
+    },
+    {
+      "name": [
+        "-p",
+        "--property"
+      ],
+      "description": "Show only properties by this name",
+      "args": [
+        {
+          "name": "NAME"
+        }
+      ]
+    },
+    {
+      "name": "-P",
+      "description": "Equivalent to --value --property=NAME"
+    },
+    {
+      "name": [
+        "-a",
+        "--all"
+      ],
+      "description": "Show all properties/all units currently in memory, including dead/empty ones. To list all units installed on the system, use 'list-unit-files' instead"
+    },
+    {
+      "name": [
+        "-l",
+        "--full"
+      ],
+      "description": "Don't ellipsize unit names on output"
+    },
+    {
+      "name": [
+        "-r",
+        "--recursive"
+      ],
+      "description": "Show unit list of host and local containers"
+    },
+    {
+      "name": "--reverse",
+      "description": "Show reverse dependencies with 'list-dependencies'"
+    },
+    {
+      "name": "--with-dependencies",
+      "description": "Show unit dependencies with 'status', 'cat', 'list-units', and 'list-unit-files'"
+    },
+    {
+      "name": "--job-mode",
+      "description": "Specify how to deal with already queued jobs, when queueing a new job",
+      "args": [
+        {
+          "name": "MODE"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-T",
+        "--show-transaction"
+      ],
+      "description": "When enqueuing a unit job, show full transaction"
+    },
+    {
+      "name": "--show-types",
+      "description": "When showing sockets, explicitly show their type"
+    },
+    {
+      "name": "--value",
+      "description": "When showing properties, only print the value"
+    },
+    {
+      "name": "--check-inhibitors",
+      "description": "Specify if checking inhibitors before shutting down sleeping or hibernating",
+      "args": [
+        {
+          "name": "MODE"
+        }
+      ]
+    },
+    {
+      "name": "-i",
+      "description": "Shortcut for --check-inhibitors=no"
+    },
+    {
+      "name": "--kill-who",
+      "description": "Whom to send signal to",
+      "args": [
+        {
+          "name": "WHO"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-s",
+        "--signal"
+      ],
+      "description": "Which signal to send",
+      "args": [
+        {
+          "name": "SIGNAL"
+        }
+      ]
+    },
+    {
+      "name": "--what",
+      "description": "Which types of resources to remove",
+      "args": [
+        {
+          "name": "RESOURCES"
+        }
+      ]
+    },
+    {
+      "name": "--now",
+      "description": "Start or stop unit after enabling or disabling it"
+    },
+    {
+      "name": "--dry-run",
+      "description": "Only print what would be done"
+    },
+    {
+      "name": [
+        "-q",
+        "--quiet"
+      ],
+      "description": "Supress output"
+    },
+    {
+      "name": "--wait",
+      "description": "For (re)start, wait until service stopped again. For is-system-running, wait until startup is completed"
+    },
+    {
+      "name": "--no-block",
+      "description": "Do not wait until operation finished"
+    },
+    {
+      "name": "--no-wall",
+      "description": "Don't send wall message before halt/power-off/reboot"
+    },
+    {
+      "name": "--no-reload",
+      "description": "Don't reload daemon after en-/dis-abling unit files"
+    },
+    {
+      "name": "--legend",
+      "description": "Enable/disable the legend (column headers and hints)",
+      "args": [
+        {
+          "name": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "--no-pager",
+      "description": "Do not pipe output into a pager"
+    },
+    {
+      "name": "--no-ask-password",
+      "description": "Do not ask for system passwords"
+    },
+    {
+      "name": "--global",
+      "description": "Edit/enable/disable/mask default user unit files globally"
+    },
+    {
+      "name": "--runtime",
+      "description": "Edit/enable/disable/mask unit files temporarily until next reboot"
+    },
+    {
+      "name": [
+        "-f",
+        "--force"
+      ],
+      "description": "When enabling unit files, override existing symlinks. When shutting down, execute action immediately"
+    },
+    {
+      "name": "--preset-mode",
+      "description": "Apply only enable, only disable, or all presets",
+      "args": [
+        {
+          "name": "MODE"
+        }
+      ]
+    },
+    {
+      "name": "--root",
+      "description": "Edit/enable/disable/mask unit files in the specified root directory",
+      "args": [
+        {
+          "name": "PATH"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-n",
+        "--lines"
+      ],
+      "description": "Number of journal entries to show",
+      "args": [
+        {
+          "name": "N"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-o",
+        "--output"
+      ],
+      "description": "Change journal output mode",
+      "args": [
+        {
+          "name": "MODE"
+        }
+      ]
+    },
+    {
+      "name": "--firmware-setup",
+      "description": "Tell the firmware to show the setup menu on next boot"
+    },
+    {
+      "name": "--boot-loader-menu",
+      "description": "Boot into boot loader menu on next boot",
+      "args": [
+        {
+          "name": "TIME"
+        }
+      ]
+    },
+    {
+      "name": "--boot-loader-entry",
+      "description": "Boot into a specific boot loader entry on next boot",
+      "args": [
+        {
+          "name": "NAME"
+        }
+      ]
+    },
+    {
+      "name": "--plain",
+      "description": "Print unit dependencies as a list instead of a tree"
+    },
+    {
+      "name": "--timestamp",
+      "description": "Change format of printed timestamps",
+      "args": [
+        {
+          "name": "FORMAT"
+        }
+      ]
+    },
+    {
+      "name": "--read-only",
+      "description": "Create read-only bind mount"
+    },
+    {
+      "name": "--mkdir",
+      "description": "Create directory before mounting, if missing"
+    },
+    {
+      "name": "--marked",
+      "description": "Restart/reload previously marked units"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "list-units",
+      "description": "List units currently in memory",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-0-sub-list-units-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "list-sockets",
+      "description": "List socket units currently in memory ordered by address",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ]
+    },
+    {
+      "name": "list-timers",
+      "description": "List timer units currently in memory ordered by next elapse",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ]
+    },
+    {
+      "name": "is-active",
+      "description": "Check whether units are active",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-3-sub-is-active-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "is-failed",
+      "description": "Check whether units are failed",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-4-sub-is-failed-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Show runtime status of one or more units",
+      "args": [
+        {
+          "name": "PATTERN or PID"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-5-sub-status-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Show properties of one or more",
+      "args": [
+        {
+          "name": "PATTERN or JOB"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-6-sub-show-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "cat",
+      "description": "Show files and drop-ins of specified units",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-7-sub-cat-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "description": "Show manual for one or more units",
+      "args": [
+        {
+          "name": "PATTERN or PID"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-8-sub-help-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "list-dependencies",
+      "description": "Recursively show units which are required or wanted by the units or by which those",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-9-sub-list-dependencies-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Start (activate) one or more units",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-10-sub-start-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "stop",
+      "description": "Stop (deactivate) one or more units",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-11-sub-stop-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "reload",
+      "description": "Reload one or more units",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-12-sub-reload-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "restart",
+      "description": "Start or restart one or more units",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-13-sub-restart-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "try-restart",
+      "description": "Restart one or more units if active",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-14-sub-try-restart-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "reload-or-restart",
+      "description": "Reload one or more units if possible, otherwise start or restart",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ]
+    },
+    {
+      "name": "try-reload-or-restart",
+      "description": "If active, reload one or more units, if supported, otherwise restart",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-16-sub-try-reload-or-restart-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "isolate",
+      "description": "Start one unit and stop all others",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-17-sub-isolate-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "kill",
+      "description": "Send signal to processes of a unit",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-18-sub-kill-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "clean",
+      "description": "Clean runtime, cache, state, logs or configuration of unit",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-19-sub-clean-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "freeze",
+      "description": "Freeze execution of unit processes",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ]
+    },
+    {
+      "name": "thaw",
+      "description": "Resume execution of a frozen unit",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ]
+    },
+    {
+      "name": "set-property",
+      "description": "Sets one or more properties of a unit",
+      "args": [
+        {
+          "name": "UNIT"
+        },
+        {
+          "name": "PROPERTY=VALUE"
+        }
+      ]
+    },
+    {
+      "name": "bind",
+      "description": "Bind-mount a path from the host into a unit's namespace",
+      "args": [
+        {
+          "name": "UNIT"
+        },
+        {
+          "name": "PATH"
+        },
+        {
+          "name": "PATH"
+        }
+      ]
+    },
+    {
+      "name": "mount-image",
+      "description": "Mount an image from the host into a unit's namespace",
+      "args": [
+        {
+          "name": "UNIT"
+        },
+        {
+          "name": "PATH"
+        },
+        {
+          "name": "PATH"
+        },
+        {
+          "name": "OPTS"
+        }
+      ]
+    },
+    {
+      "name": "service-log-level",
+      "description": "Get/set logging threshold for service",
+      "args": [
+        {
+          "name": "SERVICE"
+        },
+        {
+          "name": "LEVEL"
+        }
+      ]
+    },
+    {
+      "name": "service-log-target",
+      "description": "Get/set logging target for service",
+      "args": [
+        {
+          "name": "SERVICE"
+        },
+        {
+          "name": "TARGET"
+        }
+      ]
+    },
+    {
+      "name": "reset-failed",
+      "description": "Reset failed state for all, one, or more units",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ]
+    },
+    {
+      "name": "list-unit-files",
+      "description": "List installed unit files",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-28-sub-list-unit-files-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "enable",
+      "description": "Enable one or more unit files",
+      "args": [
+        {
+          "name": "UNIT|PATH"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-29-sub-enable-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        },
+        {
+          "providerId": "fig-systemctl-root-sub-29-sub-enable-gen-1",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "disable",
+      "description": "Disable one or more unit files",
+      "args": [
+        {
+          "name": "UNIT|PATH"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-30-sub-disable-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        },
+        {
+          "providerId": "fig-systemctl-root-sub-30-sub-disable-gen-1",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "reenable",
+      "description": "Reenable one or more unit files",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-31-sub-reenable-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "preset",
+      "description": "Enable/disable one or more unit files based on preset configuration",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-32-sub-preset-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "preset-all",
+      "description": "Enable/disable all unit files based on preset configuration",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-33-sub-preset-all-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "mask",
+      "description": "Mask one or more unit files",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-34-sub-mask-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "unmask",
+      "description": "Unmask one or more unit files",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-35-sub-unmask-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "link",
+      "description": "Link one or more units files into the search path",
+      "args": [
+        {
+          "name": "PATH"
+        }
+      ]
+    },
+    {
+      "name": "revert",
+      "description": "Revert one or more unit files to vendor version",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-37-sub-revert-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "add-wants",
+      "description": "Add 'Wants' dependency for the target on specified one or more units",
+      "args": [
+        {
+          "name": "TARGET"
+        },
+        {
+          "name": "UNIT"
+        }
+      ]
+    },
+    {
+      "name": "add-requires",
+      "description": "Add 'Requires' dependency for the target on specified one or more units",
+      "args": [
+        {
+          "name": "TARGET"
+        },
+        {
+          "name": "UNIT"
+        }
+      ]
+    },
+    {
+      "name": "edit",
+      "description": "Edit one or more unit files",
+      "args": [
+        {
+          "name": "UNIT"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-systemctl-root-sub-40-sub-edit-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "get-default",
+      "description": "Get the name of the default target"
+    },
+    {
+      "name": "set-default",
+      "description": "Set the default target",
+      "args": [
+        {
+          "name": "TARGET"
+        }
+      ]
+    },
+    {
+      "name": "list-jobs",
+      "description": "List jobs",
+      "args": [
+        {
+          "name": "PATTERN"
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "description": "Cancel all, one, or more jobs",
+      "args": [
+        {
+          "name": "JOB"
+        }
+      ]
+    },
+    {
+      "name": "show-environment",
+      "description": "Dump environment"
+    },
+    {
+      "name": "set-environment",
+      "description": "Set one or more environment variables",
+      "args": [
+        {
+          "name": "VARIABLE=VALUE"
+        }
+      ]
+    },
+    {
+      "name": "unset-environment",
+      "description": "Unset one or more environment variables",
+      "args": [
+        {
+          "name": "VARIABLE"
+        }
+      ]
+    },
+    {
+      "name": "import-environment",
+      "description": "Import all or some environment variables",
+      "args": [
+        {
+          "name": "VARIABLE"
+        }
+      ]
+    },
+    {
+      "name": "daemon-reload",
+      "description": "Reload systemd manager configuration"
+    },
+    {
+      "name": "daemon-reexec",
+      "description": "Reexecute systemd manager"
+    },
+    {
+      "name": "log-level",
+      "description": "Get/set logging threshold for manager",
+      "args": [
+        {
+          "name": "LEVEL"
+        }
+      ]
+    },
+    {
+      "name": "log-target",
+      "description": "Get/set logging target for manager",
+      "args": [
+        {
+          "name": "TARGET"
+        }
+      ]
+    },
+    {
+      "name": "service-watchdogs",
+      "description": "Get/set service watchdog state",
+      "args": [
+        {
+          "name": "BOOL"
+        }
+      ]
+    },
+    {
+      "name": "is-system-running",
+      "description": "Check whether system is fully running"
+    },
+    {
+      "name": "default",
+      "description": "Enter system default mode"
+    },
+    {
+      "name": "rescue",
+      "description": "Enter system rescue mode"
+    },
+    {
+      "name": "emergency",
+      "description": "Enter system emergency mode"
+    },
+    {
+      "name": "halt",
+      "description": "Shut down and halt the system"
+    },
+    {
+      "name": "poweroff",
+      "description": "Shut down and power-off the system"
+    },
+    {
+      "name": "reboot",
+      "description": "Shut down and reboot the system"
+    },
+    {
+      "name": "kexec",
+      "description": "Shut down and reboot the system with kexec"
+    },
+    {
+      "name": "exit",
+      "description": "Request user instance or container exit",
+      "args": [
+        {
+          "name": "EXIT_CODE"
+        }
+      ]
+    },
+    {
+      "name": "switch-root",
+      "description": "Change to a different root file system",
+      "args": [
+        {
+          "name": "ROOT"
+        },
+        {
+          "name": "INIT"
+        }
+      ]
+    },
+    {
+      "name": "suspend",
+      "description": "Suspend the system"
+    },
+    {
+      "name": "hibernate",
+      "description": "Hibernate the system"
+    },
+    {
+      "name": "hybrid-sleep",
+      "description": "Hibernate and suspend the system"
+    },
+    {
+      "name": "suspend-then-hibernate",
+      "description": "Suspend the system, wake after a period of time, and hibernate"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "name": "arch",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/arch.ts",
+  "description": "Print architecture type or run select architecture",
+  "options": [
+    {
+      "name": "-32",
+      "description": "Add the native 32-bit architecture to the list of architectures"
+    },
+    {
+      "name": "-64",
+      "description": "Add the native 64-bit architecture to the list of architectures"
+    },
+    {
+      "name": "-arch",
+      "isRepeatable": true,
+      "args": [
+        {
+          "name": "arch_name"
+        }
+      ]
+    },
+    {
+      "name": "-i386",
+      "description": "32-bit intel",
+      "isRepeatable": true
+    },
+    {
+      "name": "-x86_64",
+      "description": "64-bit intel",
+      "isRepeatable": true
+    },
+    {
+      "name": "-x86_64h",
+      "description": "64-bit intel (haswell)",
+      "isRepeatable": true
+    },
+    {
+      "name": "-arm64",
+      "description": "64-bit arm",
+      "isRepeatable": true
+    },
+    {
+      "name": "-arm64e",
+      "description": "64-bit arm (Apple Silicon)",
+      "isRepeatable": true
+    },
+    {
+      "name": "-c",
+      "description": "Clear the environment that will be passed to the command"
+    },
+    {
+      "name": "-d",
+      "description": "Delete the named environment variable from the command's environment",
+      "isRepeatable": true,
+      "args": [
+        {
+          "name": "envname"
+        }
+      ]
+    },
+    {
+      "name": "-e",
+      "description": "Assign the given value to the variable in the command's environment",
+      "isRepeatable": true,
+      "args": [
+        {
+          "name": "envname=value"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "description": "Print a help message and exit"
+    }
+  ]
+}

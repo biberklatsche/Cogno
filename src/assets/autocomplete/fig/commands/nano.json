@@ -1,0 +1,6 @@
+{
+  "name": "nano",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nano.ts",
+  "description": "Nano's ANOther editor, an enhanced free Pico clone"
+}

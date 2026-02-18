@@ -1,0 +1,382 @@
+{
+  "name": "pkgutil",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pkgutil.ts",
+  "description": "Query and manipulate for macOS Installer packages and receipts",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "A brief summary of commands and usage"
+    },
+    {
+      "name": [
+        "-f",
+        "--force"
+      ],
+      "description": "Skip confirmation before a potentially destructive or ambiguous action"
+    },
+    {
+      "name": [
+        "-v",
+        "--verbose"
+      ],
+      "description": "Output in a human-readable format"
+    },
+    {
+      "name": "--volume",
+      "description": "Perform all operations on specified volume",
+      "args": [
+        {
+          "name": "volume",
+          "description": "Volume to perform operations on"
+        }
+      ]
+    },
+    {
+      "name": "--edit-pkg",
+      "description": "Specifies an existing receipt to be modified in-place by --learn",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "Package ID of the receipt to modify"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-opt-4-option---edit-pkg-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--only-files",
+      "description": "List only files (not directories) in --files listing"
+    },
+    {
+      "name": "--only-dirs",
+      "description": "List only directories (not files) in --files listing"
+    },
+    {
+      "name": "--regexp",
+      "description": "Use regex to match package-id arguments, if an exact match isn't found"
+    },
+    {
+      "name": "--pkgs",
+      "description": "List all installed package IDs, optionally matching kwarg REGEXP, on the specified --volume",
+      "args": [
+        {
+          "name": "REGEXP",
+          "description": "Regular expression"
+        }
+      ]
+    }
+  ],
+  "subcommands": [
+    {
+      "name": [
+        "--packages",
+        "--pkgs"
+      ],
+      "description": "List all installed package IDs on the specified --volume"
+    },
+    {
+      "name": "--pkgs-plist",
+      "description": "List all installed package IDs, in Mac OS X plist(5) format, on the specified --volume"
+    },
+    {
+      "name": "--files",
+      "description": "List all of the files installed under the package-id",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to list the files of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-2-sub---files-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--export-plist",
+      "description": "Print all receipt information about the specified package-id in Mac OS X plist(5) format",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to export the plist of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-3-sub---export-plist-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--verify",
+      "description": "Run repair_packages(8) to verify the specified package-id",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to verify"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-4-sub---verify-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--repair",
+      "description": "Run repair_packages(8) to repair the specified package-id",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to repair"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-5-sub---repair-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--pkg-info",
+      "description": "Print extended information about the specified package-id",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to print the info of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-6-sub---pkg-info-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--pkg-info-plist",
+      "description": "Print extended information about the specified package-id in Mac OS X plist(5) format",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to print the info of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-7-sub---pkg-info-plist-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--forget",
+      "description": "Discard all receipt data about package-id, but don't touch installed files",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to forget"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-8-sub---forget-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--learn",
+      "description": "Update the ACLs of the given path in the receipt identified by --edit-pkg",
+      "args": [
+        {
+          "name": "path",
+          "description": "The path to update ACLs on"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-9-sub---learn-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--pkg-groups",
+      "description": "List all of the package groups this package-id is a member of",
+      "args": [
+        {
+          "name": "package-id",
+          "description": "The package ID to list the groups of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-10-sub---pkg-groups-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--groups",
+      "description": "List all of the package groups ont he specified --volume"
+    },
+    {
+      "name": "--group-plist",
+      "description": "List all of the package groups ont he specified --volume in Mac OS X plist(5) format"
+    },
+    {
+      "name": "--group-pkgs",
+      "description": "List all of the packages that are members of this group-id",
+      "args": [
+        {
+          "name": "group-id",
+          "description": "The group ID to list the packages of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-13-sub---group-pkgs-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--file-info",
+      "description": "Show the metadata known about path",
+      "args": [
+        {
+          "name": "path",
+          "description": "The path to show the metadata of"
+        }
+      ]
+    },
+    {
+      "name": "--file-info-plist",
+      "description": "Show the metadata known about path in Mac OS X plist(5) format",
+      "args": [
+        {
+          "name": "path",
+          "description": "The path to show the metadata of"
+        }
+      ]
+    },
+    {
+      "name": "--expand",
+      "description": "Expand the flat package at pkg-path into a new directory specified by dir-path",
+      "args": [
+        {
+          "name": "pkg-path",
+          "description": "The path to the flat package to expand"
+        },
+        {
+          "name": "dir-path",
+          "description": "The path to the directory to expand the package into"
+        }
+      ]
+    },
+    {
+      "name": "--flatten",
+      "description": "Flatten the dir-path into a new flat package created at pkg-path",
+      "args": [
+        {
+          "name": "dir-path",
+          "description": "The path to the directory to flatten"
+        },
+        {
+          "name": "pkg-path",
+          "description": "The path to the flat package to create"
+        }
+      ]
+    },
+    {
+      "name": "--bom",
+      "description": "Extract any BOM files from the flat pkg at path into /tmp and return the filename(s)",
+      "args": [
+        {
+          "name": "path",
+          "description": "The path to the flat package to extract the BOM from"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-18-sub---bom-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--payload-files",
+      "description": "List the files archived within the uninstalled flat package(s) at path",
+      "args": [
+        {
+          "name": "path",
+          "description": "The path to the flat package to list the archived files of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-19-sub---payload-files-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "--check-signature",
+      "description": "Check the validity and trust of the signature on the package at pkg-path",
+      "args": [
+        {
+          "name": "pkg-path",
+          "description": "The path to the flat package to check the signature of"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-pkgutil-root-sub-20-sub---check-signature-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    }
+  ]
+}

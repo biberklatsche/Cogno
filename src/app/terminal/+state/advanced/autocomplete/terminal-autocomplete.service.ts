@@ -12,7 +12,7 @@ import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor"
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
 import { SpecCommandSuggestor } from "./suggestors/spec-command.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
-import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "./spec/command-spec.registry";
+import { AssetCommandSpecRegistry } from "./spec/asset-command-spec.registry";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 
 const REFRESH_DEBOUNCE_MS = 80;
@@ -101,7 +101,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
         this.registerSuggestor(new FilesystemDirectorySuggestor());
         this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
-        const registry = new CommandSpecRegistry(DEFAULT_COMMAND_SPECS);
+        const registry = new AssetCommandSpecRegistry();
         this.registerSuggestor(new SpecCommandSuggestor(registry, [new NpmScriptsSpecProvider()]));
     }
 

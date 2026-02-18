@@ -1,0 +1,259 @@
+{
+  "name": "spring",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/spring.ts",
+  "description": "The Spring Boot CLI is a command line tool that you can use to bootstrap a new project from start.spring.io or encode a password",
+  "options": [
+    {
+      "name": "--help",
+      "description": "Show help for spring"
+    },
+    {
+      "name": "--version",
+      "description": "Get spring CLI version"
+    },
+    {
+      "name": "--debug",
+      "description": "Print additional status information for the command you are running"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "init",
+      "description": "Initialize a new project using Spring Initializr",
+      "options": [
+        {
+          "name": [
+            "-a",
+            "---artifact-id"
+          ],
+          "description": "Project coordinates",
+          "args": [
+            {
+              "name": "Name"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-b",
+            "--boot-version"
+          ],
+          "description": "Spring Boot version",
+          "args": [
+            {
+              "name": "Version"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-spring-root-sub-0-sub-init-opt-1-option--b-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--build",
+          "description": "Build system to use",
+          "args": [
+            {
+              "name": "System"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-d",
+            "--dependencies"
+          ],
+          "description": "Comma-separated list of dependency identifiers to include in the generated project",
+          "args": [
+            {
+              "name": "Dependencies"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-spring-root-sub-0-sub-init-opt-3-option--d-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--description",
+          "description": "Project description",
+          "args": [
+            {
+              "name": "description"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-f",
+            "--force"
+          ],
+          "description": "Force overwrite of existing files"
+        },
+        {
+          "name": "--format",
+          "description": "Format of the generated content",
+          "args": [
+            {
+              "name": "Format"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-g",
+            "--group-id"
+          ],
+          "description": "Project coordinates",
+          "args": [
+            {
+              "name": "Group ID"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-j",
+            "--java-version"
+          ],
+          "description": "Language level",
+          "args": [
+            {
+              "name": "Version"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "fig-spring-root-sub-0-sub-init-opt-8-option--j-gen-0",
+              "kind": "script",
+              "source": "fig-generator",
+              "baseScore": 58
+            }
+          ]
+        },
+        {
+          "name": "--list",
+          "description": "List the capabilities of the service"
+        },
+        {
+          "name": [
+            "-n",
+            "--name"
+          ],
+          "description": "Project name",
+          "args": [
+            {
+              "name": "Name"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-p",
+            "--packaging"
+          ],
+          "description": "Project packaging",
+          "args": [
+            {
+              "name": "Packaging"
+            }
+          ]
+        },
+        {
+          "name": "--package-name",
+          "description": "Package name",
+          "args": [
+            {
+              "name": "Name"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-t",
+            "--type"
+          ],
+          "description": "Project type",
+          "args": [
+            {
+              "name": "Type"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "description": "URL of the service to use",
+          "args": [
+            {
+              "name": "URL"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-v",
+            "--version"
+          ],
+          "description": "Project version",
+          "args": [
+            {
+              "name": "Version"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-x",
+            "--extract"
+          ],
+          "description": "Extract the project archive. Inferred if a location is specified without an extension"
+        }
+      ]
+    },
+    {
+      "name": "encodepassword",
+      "description": "Encode a password for use with Spring Security",
+      "args": [
+        {
+          "name": "Password"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-a",
+            "--algorithm"
+          ],
+          "description": "The algorithm to use",
+          "args": [
+            {
+              "name": "Algorithm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shell",
+      "description": "Start a nested shell"
+    },
+    {
+      "name": "help",
+      "description": "Show help for other commands",
+      "args": [
+        {
+          "name": "Command"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "lima",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lima.ts",
+  "description": "Lima is an alias for \"limactl shell $LIMA_INSTANCE\"",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Help for lima"
+    }
+  ]
+}

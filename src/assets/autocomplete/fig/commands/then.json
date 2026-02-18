@@ -1,0 +1,6 @@
+{
+  "name": "then",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/then.ts",
+  "description": "Execute this command if the test returned 0"
+}

@@ -1,0 +1,91 @@
+{
+  "name": "tfenv",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tfenv.ts",
+  "description": "Terraform version manager",
+  "options": [
+    {
+      "name": [
+        "-v",
+        "--version"
+      ],
+      "description": "View your current tfenv version"
+    },
+    {
+      "name": "--help",
+      "description": "View commands"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "install",
+      "description": "Install a specific version of Terraform",
+      "args": [
+        {
+          "name": "version",
+          "description": "Possible Terraform Version"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-tfenv-root-sub-0-sub-install-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "use",
+      "description": "Switch to a version to use",
+      "args": [
+        {
+          "name": "version",
+          "description": "Installed Terraform Version"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-tfenv-root-sub-1-sub-use-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "uninstall",
+      "description": "Uninstall a specific version of Terraform",
+      "args": [
+        {
+          "name": "version",
+          "description": "Installed Terraform Version"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "fig-tfenv-root-sub-2-sub-uninstall-gen-0",
+          "kind": "script",
+          "source": "fig-generator",
+          "baseScore": 58
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List all installed versions"
+    },
+    {
+      "name": "list-remote",
+      "description": "List all installable versions"
+    },
+    {
+      "name": "version-name",
+      "description": "Print current version"
+    },
+    {
+      "name": "init",
+      "description": "Update environment to use tfenv correctly"
+    }
+  ]
+}

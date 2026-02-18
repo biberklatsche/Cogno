@@ -1,0 +1,19 @@
+{
+  "name": "nu",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nu.ts",
+  "description": "Use the right package manage - upgrade",
+  "options": [
+    {
+      "name": "-i",
+      "description": "Display the outdated packages before performing any upgrade"
+    },
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Output usage information"
+    }
+  ]
+}

@@ -11,7 +11,8 @@
     "test:coverage": "vitest run --coverage",
     "watch": "ng build --watch --configuration development",
     "tauri": "tauri",
-    "generate-icon": "tauri icon ./icon/icon.png"
+    "generate-icon": "tauri icon ./icon/icon.png",
+    "import:fig": "node scripts/import-fig-specs.mjs"
   },
   "private": true,
   "dependencies": {

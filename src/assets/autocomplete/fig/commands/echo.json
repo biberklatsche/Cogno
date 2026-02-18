@@ -1,0 +1,20 @@
+{
+  "name": "echo",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/echo.ts",
+  "description": "Write arguments to the standard output",
+  "options": [
+    {
+      "name": "-n",
+      "description": "Do not print the trailing newline character"
+    },
+    {
+      "name": "-e",
+      "description": "Interpret escape sequences"
+    },
+    {
+      "name": "-E",
+      "description": "Disable escape sequences"
+    }
+  ]
+}

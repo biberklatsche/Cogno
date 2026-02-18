@@ -1,0 +1,22 @@
+{
+  "name": "kubens",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kubens.ts",
+  "description": "Switch between Kubernetes-namespaces",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show help for kubens"
+    },
+    {
+      "name": [
+        "--current",
+        "-c"
+      ],
+      "description": "Show current namespace"
+    }
+  ]
+}

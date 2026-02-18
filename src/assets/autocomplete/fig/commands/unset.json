@@ -1,0 +1,12 @@
+{
+  "name": "unset",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/unset.ts",
+  "description": "Named variable shall be undefined",
+  "options": [
+    {
+      "name": "-v",
+      "description": "Variable definition will be unset"
+    }
+  ]
+}

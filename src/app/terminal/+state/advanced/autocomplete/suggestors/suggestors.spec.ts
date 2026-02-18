@@ -3,8 +3,9 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Fs } from "../../../../../_tauri/fs";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { QueryContext } from "../autocomplete.types";
-import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "../spec/command-spec.registry";
+import { CommandSpecRegistry } from "../spec/command-spec.registry";
 import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
+import { createCommandSpecsFixture } from "../spec/testing/command-specs.fixture";
 import { FilesystemDirectorySuggestor } from "./filesystem-directory.suggestor";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./history-directory.suggestor";
@@ -209,7 +210,7 @@ describe("Autocomplete Suggestors", () => {
         );
 
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            new CommandSpecRegistry(createCommandSpecsFixture()),
             [new NpmScriptsSpecProvider()]
         );
         const ctx: QueryContext = {

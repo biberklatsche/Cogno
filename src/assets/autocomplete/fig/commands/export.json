@@ -1,0 +1,6 @@
+{
+  "name": "export",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/export.ts",
+  "description": "Export variables"
+}

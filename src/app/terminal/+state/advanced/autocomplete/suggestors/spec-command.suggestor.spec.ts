@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { Fs } from "../../../../../_tauri/fs";
-import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "../spec/command-spec.registry";
+import { CommandSpecRegistry } from "../spec/command-spec.registry";
 import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
 import { QueryContext } from "../autocomplete.types";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
 import { CommandSpec } from "../spec/spec.types";
+import { createCommandSpecsFixture } from "../spec/testing/command-specs.fixture";
 
 function commandContext(beforeCursor: string): QueryContext {
     return commandContextWithShell(beforeCursor, "Bash");
@@ -26,8 +27,10 @@ function commandContextWithShell(beforeCursor: string, shellType: "Bash" | "Powe
 }
 
 describe("SpecCommandSuggestor", () => {
+    const defaults = createCommandSpecsFixture();
+
     it("suggests command names in command mode", async () => {
-        const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry(DEFAULT_COMMAND_SPECS), []);
+        const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry(defaults), []);
         const result = await suggestor.suggest(commandContext("np"));
         expect(result.some(v => v.label === "npm")).toBe(true);
     });
@@ -42,7 +45,7 @@ describe("SpecCommandSuggestor", () => {
         }));
 
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            new CommandSpecRegistry(defaults),
             [new NpmScriptsSpecProvider()]
         );
 
@@ -72,7 +75,7 @@ describe("SpecCommandSuggestor", () => {
         }));
 
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            new CommandSpecRegistry(defaults),
             [new NpmScriptsSpecProvider()]
         );
         const result = await suggestor.suggest(commandContext("npm "));
@@ -81,7 +84,7 @@ describe("SpecCommandSuggestor", () => {
 
     it("suggests secondary options for subcommand and hides already-typed token", async () => {
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            new CommandSpecRegistry(defaults),
             []
         );
         const result = await suggestor.suggest(commandContext("git commit "));
@@ -93,7 +96,7 @@ describe("SpecCommandSuggestor", () => {
 
     it("shows PowerShell-only specs only in PowerShell", async () => {
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry(DEFAULT_COMMAND_SPECS),
+            new CommandSpecRegistry(defaults),
             []
         );
 
@@ -129,7 +132,7 @@ describe("SpecCommandSuggestor", () => {
         };
 
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry([...DEFAULT_COMMAND_SPECS, actSpec]),
+            new CommandSpecRegistry([...defaults, actSpec]),
             []
         );
 
@@ -168,7 +171,7 @@ describe("SpecCommandSuggestor", () => {
         };
 
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry([...DEFAULT_COMMAND_SPECS, npmLike]),
+            new CommandSpecRegistry([...defaults, npmLike]),
             [scriptsProvider as any]
         );
 
@@ -195,7 +198,7 @@ describe("SpecCommandSuggestor", () => {
         };
 
         const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry([...DEFAULT_COMMAND_SPECS, spec]),
+            new CommandSpecRegistry([...defaults, spec]),
             []
         );
 

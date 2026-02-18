@@ -1,8 +1,7 @@
 import { CommandSpec } from "./spec.types";
-import { FIG_SUBSET_IMPORTED_SPECS } from "./imported/fig-subset.specs";
-import { importFigSubsetSpecs } from "./importer/fig-lite.importer";
+import { CommandShellConstraints, CommandSpecSource } from "./command-spec.source";
 
-export class CommandSpecRegistry {
+export class CommandSpecRegistry implements CommandSpecSource {
     private readonly _specs = new Map<string, CommandSpec>();
 
     constructor(specs: CommandSpec[]) {
@@ -18,6 +17,13 @@ export class CommandSpecRegistry {
     get(command: string): CommandSpec | undefined {
         return this._specs.get(command);
     }
-}
 
-export const DEFAULT_COMMAND_SPECS: CommandSpec[] = importFigSubsetSpecs(FIG_SUBSET_IMPORTED_SPECS);
+    getConstraints(command: string): CommandShellConstraints | undefined {
+        const spec = this._specs.get(command);
+        if (!spec) return undefined;
+        return {
+            shells: spec.shells,
+            excludeShells: spec.excludeShells,
+        };
+    }
+}
