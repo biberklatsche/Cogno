@@ -5,6 +5,7 @@ import { CommandSpecRegistry, DEFAULT_COMMAND_SPECS } from "../spec/command-spec
 import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
 import { QueryContext } from "../autocomplete.types";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
+import { CommandSpec } from "../spec/spec.types";
 
 function commandContext(beforeCursor: string): QueryContext {
     return commandContextWithShell(beforeCursor, "Bash");
@@ -101,5 +102,41 @@ describe("SpecCommandSuggestor", () => {
 
         const pwshResult = await suggestor.suggest(commandContextWithShell("Get-", "PowerShell"));
         expect(pwshResult.some(v => v.label === "Get-ChildItem")).toBe(true);
+    });
+
+    it("supports hierarchical fig subcommands/options with descriptions", async () => {
+        const actSpec: CommandSpec = {
+            name: "act",
+            description: "Run GitHub actions locally",
+            subcommands: [
+                {
+                    name: "completion",
+                    description: "Generate shell completion",
+                    subcommands: [
+                        { name: "bash", description: "Generate for bash" },
+                        { name: "zsh", description: "Generate for zsh" },
+                    ],
+                },
+            ],
+            options: [
+                { name: ["--bind", "-b"], description: "Bind working directory" },
+                { name: "--env", description: "Set env var", args: { name: "env" } },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...DEFAULT_COMMAND_SPECS, actSpec]),
+            []
+        );
+
+        const resultLevel2 = await suggestor.suggest(commandContext("act completion "));
+        const labels = resultLevel2.map(v => v.label);
+        expect(labels).toContain("bash");
+        expect(labels).toContain("zsh");
+        expect(resultLevel2.find(v => v.label === "bash")?.description).toBe("Generate for bash");
+
+        const resultOptions = await suggestor.suggest(commandContext("act --"));
+        expect(resultOptions.some(v => v.label === "--bind")).toBe(true);
+        expect(resultOptions.some(v => v.label === "--env")).toBe(true);
     });
 });

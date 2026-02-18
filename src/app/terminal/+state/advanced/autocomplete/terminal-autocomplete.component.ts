@@ -32,6 +32,9 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
                         <span class="meta">{{ item.source }} · {{ item.score }}</span>
                     </button>
                 }
+                @if (selectedDescription(); as description) {
+                    <div class="autocomplete-description">{{ description }}</div>
+                }
             </div>
         }
     `,
@@ -93,6 +96,19 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             font-size: 11px;
             white-space: nowrap;
         }
+
+        .autocomplete-description {
+            margin-top: 4px;
+            padding: 6px 8px 4px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 11px;
+            line-height: 1.35;
+            min-height: 20px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -150,6 +166,12 @@ export class TerminalAutocompleteComponent {
             parts.push({ text: label.slice(pos), match: false });
         }
         return parts.length > 0 ? parts : [{ text: label, match: false }];
+    }
+
+    protected selectedDescription(): string | null {
+        const view = this.viewState();
+        if (view.selectedIndex === null) return null;
+        return view.suggestions[view.selectedIndex]?.description ?? null;
     }
 
     private truncateForDisplay(

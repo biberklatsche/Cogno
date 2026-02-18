@@ -57,7 +57,7 @@ describe("CommandSpecRegistry defaults/importer", () => {
             { name: "foo", subcommands: ["c"] },
         ]);
         expect(imported).toHaveLength(1);
-        expect(imported[0].subcommands).toEqual(["c"]);
+        expect(imported[0].subcommands).toEqual([{ name: "c" }]);
     });
 
     it("keeps secondary options from command specs", () => {

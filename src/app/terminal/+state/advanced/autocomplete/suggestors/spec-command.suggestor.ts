@@ -1,7 +1,13 @@
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
 import { CommandSpecRegistry } from "../spec/command-spec.registry";
-import { CommandSpec, SpecProviderBinding, SpecSuggestionProvider } from "../spec/spec.types";
+import {
+    CommandSpec,
+    FigOptionSpec,
+    FigSubcommandSpec,
+    SpecProviderBinding,
+    SpecSuggestionProvider
+} from "../spec/spec.types";
 
 type ParsedInput = {
     tokens: Array<{ value: string; start: number; end: number }>;
@@ -15,6 +21,56 @@ type ShellScopedCommand = {
     name: string;
     lower: string;
 };
+
+type TraverseState = {
+    node: FigSubcommandSpec;
+    usedSubcommands: Set<string>;
+    usedOptionAliases: Set<string>;
+    pendingOptionArgs: number;
+};
+
+const ROOT_NAME = "__root__";
+
+function namesOf(name: string | string[]): string[] {
+    return Array.isArray(name) ? name : [name];
+}
+
+function primaryName(name: string | string[]): string {
+    return namesOf(name)[0] ?? "";
+}
+
+function normalizeSubcommands(source?: Array<string | FigSubcommandSpec>): FigSubcommandSpec[] {
+    if (!source?.length) return [];
+    return source.map(s => {
+        if (typeof s === "string") return { name: s };
+        return s;
+    });
+}
+
+function normalizeOptions(source?: Array<string | FigOptionSpec>): FigOptionSpec[] {
+    if (!source?.length) return [];
+    return source.map(s => {
+        if (typeof s === "string") return { name: s };
+        return s;
+    });
+}
+
+function optionArgCount(option: FigOptionSpec): number {
+    if (!option.args) return 0;
+    return Array.isArray(option.args) ? option.args.length : 1;
+}
+
+function firstOptionArgName(option: FigOptionSpec): string | undefined {
+    if (!option.args) return undefined;
+    return Array.isArray(option.args) ? option.args[0]?.name : option.args.name;
+}
+
+function optionDescription(option: FigOptionSpec): string | undefined {
+    const own = option.description?.trim();
+    if (own) return own;
+    const argName = firstOptionArgName(option);
+    return argName ? `arg: ${argName}` : undefined;
+}
 
 export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "spec-command";
@@ -63,18 +119,18 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
     ): Promise<AutocompleteSuggestion[]> {
         const queryLower = query.toLowerCase();
         const commands = this.commandsForShell(context);
-
-        // Build suggestions with simple scoring - no FS checks needed
         const suggestions: AutocompleteSuggestion[] = [];
+
         for (const c of commands) {
             if (queryLower && !c.lower.includes(queryLower)) continue;
-
             const starts = c.lower.startsWith(queryLower);
+            const spec = this.registry.get(c.name);
             suggestions.push({
                 label: c.name,
                 detail: "spec command",
+                description: spec?.description,
                 insertText: c.name,
-                score: starts ? 135 : 70, // Higher score for prefix matches
+                score: starts ? 135 : 70,
                 source: "spec-cmd",
                 kind: "command" as const,
                 replaceStart,
@@ -98,14 +154,30 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         const activeToken = parsed.activeValue.toLowerCase();
         const replaceStart = replaceBase + parsed.activeStart;
         const replaceEnd = replaceBase + parsed.activeEnd;
+        const allSubcommands = normalizeSubcommands(spec.subcommands);
+        const root: FigSubcommandSpec = {
+            name: ROOT_NAME,
+            description: spec.description,
+            options: normalizeOptions(spec.options),
+            subcommands: allSubcommands,
+        };
+
         const typedTokenSet = new Set(parsed.tokens.map(t => t.value.toLowerCase()));
-        const selectedSubcommand = parsed.tokens[0]?.value;
-        const selectedSubcommandOptions = selectedSubcommand
-            ? (spec.subcommandOptions?.[selectedSubcommand] ?? spec.subcommandOptions?.[selectedSubcommand.toLowerCase()] ?? [])
-            : [];
+        const traverse = this.traverseTree(root, parsed.tokens.slice(0, parsed.activeTokenIndex));
+
+        // If user is typing an argument for a preceding option, don't inject unrelated command tokens.
+        if (traverse.pendingOptionArgs > 0 && activeToken && !activeToken.startsWith("-")) {
+            return [];
+        }
 
         const suggestions: AutocompleteSuggestion[] = [];
-        const add = (label: string, source: string, baseScore: number, kind: "command" | "script" = "command") => {
+        const add = (
+            label: string,
+            source: string,
+            baseScore: number,
+            description: string | undefined,
+            kind: "command" | "script" = "command"
+        ) => {
             const labelLower = label.toLowerCase();
             if (typedTokenSet.has(labelLower)) return;
             if (activeToken && !labelLower.includes(activeToken)) return;
@@ -114,6 +186,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             suggestions.push({
                 label,
                 detail: source,
+                description,
                 insertText: label,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
                 source,
@@ -124,14 +197,31 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             });
         };
 
-        for (const sub of spec.subcommands ?? []) {
-            add(sub, "spec-sub", 45);
+        for (const sub of normalizeSubcommands(traverse.node.subcommands)) {
+            const subNames = namesOf(sub.name);
+            if (!subNames.length) continue;
+            const canonical = primaryName(sub.name).toLowerCase();
+            if (traverse.usedSubcommands.has(canonical)) continue;
+            const selected = this.pickSuggestionName(subNames, activeToken);
+            add(selected, "spec-sub", 45, sub.description);
         }
-        for (const opt of spec.options ?? []) {
-            add(opt, "spec-opt", 38);
+
+        const optionMap = new Map<string, FigOptionSpec>();
+        for (const option of [
+            ...normalizeOptions(root.options),
+            ...normalizeOptions(traverse.node.options),
+        ]) {
+            const key = primaryName(option.name).toLowerCase();
+            if (!optionMap.has(key)) optionMap.set(key, option);
         }
-        for (const opt of selectedSubcommandOptions) {
-            add(opt, "spec-sub-opt", 42);
+
+        for (const option of optionMap.values()) {
+            const aliases = namesOf(option.name).map(v => v.trim()).filter(Boolean);
+            if (!aliases.length) continue;
+            const allUsed = aliases.every(alias => traverse.usedOptionAliases.has(alias.toLowerCase()));
+            if (allUsed && !option.isRepeatable) continue;
+            const selected = this.pickSuggestionName(aliases, activeToken);
+            add(selected, "spec-opt", 38, optionDescription(option));
         }
 
         for (const binding of spec.providers ?? []) {
@@ -143,11 +233,64 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 args: parsed.tokens.map(t => t.value),
             });
             for (const value of provided) {
-                add(value, binding.source ?? binding.providerId, binding.baseScore ?? 55, binding.kind ?? "script");
+                add(value, binding.source ?? binding.providerId, binding.baseScore ?? 55, undefined, binding.kind ?? "script");
             }
         }
 
         return suggestions;
+    }
+
+    private pickSuggestionName(names: string[], activeToken: string): string {
+        if (!activeToken) return names[0];
+        const lowered = activeToken.toLowerCase();
+        return names.find(n => n.toLowerCase().startsWith(lowered))
+            ?? names.find(n => n.toLowerCase().includes(lowered))
+            ?? names[0];
+    }
+
+    private traverseTree(root: FigSubcommandSpec, committedTokens: Array<{ value: string; start: number; end: number }>): TraverseState {
+        const state: TraverseState = {
+            node: root,
+            usedSubcommands: new Set<string>(),
+            usedOptionAliases: new Set<string>(),
+            pendingOptionArgs: 0,
+        };
+
+        for (const token of committedTokens) {
+            const tokenLower = token.value.toLowerCase();
+
+            if (state.pendingOptionArgs > 0) {
+                state.pendingOptionArgs -= 1;
+                continue;
+            }
+
+            const subs = normalizeSubcommands(state.node.subcommands);
+            const matchedSub = subs.find(sub =>
+                namesOf(sub.name).some(n => n.toLowerCase() === tokenLower)
+            );
+            if (matchedSub) {
+                const canonical = primaryName(matchedSub.name).toLowerCase();
+                state.usedSubcommands.add(canonical);
+                state.node = matchedSub;
+                continue;
+            }
+
+            const options = [
+                ...normalizeOptions(root.options),
+                ...normalizeOptions(state.node.options),
+            ];
+            const matchedOption = options.find(option =>
+                namesOf(option.name).some(n => n.toLowerCase() === tokenLower)
+            );
+            if (matchedOption) {
+                for (const alias of namesOf(matchedOption.name)) {
+                    state.usedOptionAliases.add(alias.toLowerCase());
+                }
+                state.pendingOptionArgs = optionArgCount(matchedOption);
+            }
+        }
+
+        return state;
     }
 
     private matchesProviderBinding(binding: SpecProviderBinding, parsed: ParsedInput, argsInput: string): boolean {
