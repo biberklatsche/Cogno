@@ -207,6 +207,10 @@ export class SideMenuComponent implements OnDestroy {
         }
 
         const target = ev.target as Node;
+        const targetElement = target instanceof Element ? target : null;
+        const clickedInsideDialog = !!targetElement?.closest('app-dialog');
+        if (clickedInsideDialog) return;
+
         const clickedInsideAside = this.overlayAsideRef?.nativeElement.contains(target);
         const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
 

@@ -59,6 +59,7 @@ export class GridListService {
         });
 
         this.bus.onType$('TerminalCwdChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalCwdChangedEvent) => {
+
             const gridList = this._gridList.value;
             let tabId = this.determineTabId(gridList, event.payload?.terminalId);
             if(!tabId || !event.payload?.cwd) return;
