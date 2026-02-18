@@ -1,0 +1,237 @@
+{
+  "name": "codex",
+  "source": "fig",
+  "description": "Codex CLI",
+  "options": [
+    {
+      "name": [
+        "-c",
+        "--config"
+      ],
+      "description": "Override a configuration value from ~/.codex/config.toml",
+      "args": [
+        {
+          "name": "key=value"
+        }
+      ]
+    },
+    {
+      "name": "--enable",
+      "description": "Enable a feature",
+      "args": [
+        {
+          "name": "FEATURE"
+        }
+      ]
+    },
+    {
+      "name": "--disable",
+      "description": "Disable a feature",
+      "args": [
+        {
+          "name": "FEATURE"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-i",
+        "--image"
+      ],
+      "description": "Attach image(s) to the initial prompt",
+      "args": [
+        {
+          "name": "FILE"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-m",
+        "--model"
+      ],
+      "description": "Model the agent should use",
+      "args": [
+        {
+          "name": "MODEL"
+        }
+      ]
+    },
+    {
+      "name": "--oss",
+      "description": "Use the local open source model provider"
+    },
+    {
+      "name": "--local-provider",
+      "description": "Specify which local provider to use",
+      "args": [
+        {
+          "name": "OSS_PROVIDER"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-p",
+        "--profile"
+      ],
+      "description": "Configuration profile from config.toml",
+      "args": [
+        {
+          "name": "CONFIG_PROFILE"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-s",
+        "--sandbox"
+      ],
+      "description": "Sandbox policy for model-generated shell commands",
+      "args": [
+        {
+          "name": "SANDBOX_MODE"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-a",
+        "--ask-for-approval"
+      ],
+      "description": "Configure approval policy",
+      "args": [
+        {
+          "name": "APPROVAL_POLICY"
+        }
+      ]
+    },
+    {
+      "name": "--full-auto",
+      "description": "Use on-request approval with workspace-write sandbox"
+    },
+    {
+      "name": "--dangerously-bypass-approvals-and-sandbox",
+      "description": "Run without confirmations and sandboxing"
+    },
+    {
+      "name": [
+        "-C",
+        "--cd"
+      ],
+      "description": "Use the specified directory as working root",
+      "args": [
+        {
+          "name": "DIR"
+        }
+      ]
+    },
+    {
+      "name": "--search",
+      "description": "Enable live web search"
+    },
+    {
+      "name": "--add-dir",
+      "description": "Additional writable directory",
+      "args": [
+        {
+          "name": "DIR"
+        }
+      ]
+    },
+    {
+      "name": "--no-alt-screen",
+      "description": "Disable alternate screen mode"
+    },
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Print help"
+    },
+    {
+      "name": [
+        "-V",
+        "--version"
+      ],
+      "description": "Print version"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": [
+        "exec",
+        "e"
+      ],
+      "description": "Run Codex non-interactively"
+    },
+    {
+      "name": "review",
+      "description": "Run a code review non-interactively"
+    },
+    {
+      "name": "login",
+      "description": "Manage login"
+    },
+    {
+      "name": "logout",
+      "description": "Remove stored authentication credentials"
+    },
+    {
+      "name": "mcp",
+      "description": "Manage external MCP servers for Codex"
+    },
+    {
+      "name": "mcp-server",
+      "description": "Start Codex as an MCP server (stdio)"
+    },
+    {
+      "name": "app-server",
+      "description": "Run the app server or related tooling"
+    },
+    {
+      "name": "app",
+      "description": "Launch the Codex desktop app"
+    },
+    {
+      "name": "completion",
+      "description": "Generate shell completion scripts"
+    },
+    {
+      "name": "sandbox",
+      "description": "Run commands within a Codex-provided sandbox"
+    },
+    {
+      "name": "debug",
+      "description": "Debugging tools"
+    },
+    {
+      "name": [
+        "apply",
+        "a"
+      ],
+      "description": "Apply latest diff produced by Codex agent"
+    },
+    {
+      "name": "resume",
+      "description": "Resume a previous interactive session"
+    },
+    {
+      "name": "fork",
+      "description": "Fork a previous interactive session"
+    },
+    {
+      "name": "cloud",
+      "description": "Browse tasks from Codex Cloud and apply changes locally"
+    },
+    {
+      "name": "features",
+      "description": "Inspect feature flags"
+    },
+    {
+      "name": "help",
+      "description": "Print this message or the help of the given subcommand(s)"
+    }
+  ]
+}

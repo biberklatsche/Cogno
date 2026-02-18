@@ -1000,6 +1000,10 @@
     "file": "codestar-notifications.json"
   },
   {
+    "name": "codex",
+    "file": "codex.json"
+  },
+  {
     "name": "cognitiveservices",
     "file": "cognitiveservices.json"
   },
