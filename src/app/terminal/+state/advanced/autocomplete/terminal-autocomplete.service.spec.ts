@@ -158,6 +158,7 @@ describe("TerminalAutocompleteService", () => {
         // Cursor is far right, panel must clamp to right edge and stay fully visible.
         expect(view.x + view.width).toBeLessThanOrEqual(360);
         // Must be above the cursor region when there is no room below.
+        expect(view.placement).toBe("above");
         expect(view.y).toBeLessThan(24 * 18);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWidth });
@@ -331,5 +332,54 @@ describe("TerminalAutocompleteService", () => {
         expect(view.suggestions[0].label).toBe("test");
         expect(view.suggestions[0].source).toBe("npm-script + spec-sub");
         expect(view.suggestions[0].score).toBe(153);
+    });
+
+    it("keeps one full row free above cursor when panel is rendered above", () => {
+        const originalWindowHeight = window.innerHeight;
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 360 });
+        try {
+            const hostElement = document.createElement("div");
+            Object.defineProperty(hostElement, "getBoundingClientRect", {
+                configurable: true,
+                value: () => ({
+                    top: 20,
+                    left: 10,
+                    right: 730,
+                    bottom: 380,
+                    width: 720,
+                    height: 360,
+                    x: 10,
+                    y: 20,
+                    toJSON: () => ({}),
+                }),
+            });
+            service.setHostElement(hostElement);
+
+            const nearBottomState: TerminalState = {
+                ...fakeState.state,
+                cursorPosition: {
+                    ...fakeState.state.cursorPosition,
+                    viewport: { col: 10, row: 18 },
+                },
+                dimensions: {
+                    ...fakeState.state.dimensions,
+                    rows: 20,
+                    cols: 80,
+                    viewportWidth: 720,
+                    viewportHeight: 360,
+                    cellHeight: 18,
+                    cellWidth: 9,
+                },
+            };
+            const sampleSuggestions = Array.from({ length: 5 }, (_, index) => makeSuggestion(`git status ${index}`));
+            const panelPosition = (service as any).computePanelPosition(nearBottomState, sampleSuggestions, 241);
+            const topOfCursorLine = 20 + (18 - 1) * 18;
+            const expectedAnchorY = topOfCursorLine - 18;
+
+            expect(panelPosition.placement).toBe("above");
+            expect(panelPosition.y).toBe(expectedAnchorY);
+        } finally {
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: originalWindowHeight });
+        }
     });
 });

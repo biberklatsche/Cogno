@@ -4,17 +4,23 @@ import { toSignal } from "@angular/core/rxjs-interop";
 
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 import { AutocompleteSuggestion } from "./autocomplete.types";
+import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
 
 @Component({
     selector: "app-terminal-autocomplete",
     standalone: true,
-    imports: [NgStyle],
+    imports: [NgStyle, TooltipDirective],
     template: `
         @if (viewState().visible) {
             <div
                 #panel
                 class="autocomplete-panel"
-                [ngStyle]="{ left: viewState().x + 'px', top: viewState().y + 'px', width: viewState().width + 'px' }"
+                [ngStyle]="{
+                    left: viewState().x + 'px',
+                    top: viewState().y + 'px',
+                    width: viewState().width + 'px',
+                    transform: viewState().placement === 'above' ? 'translateY(-100%)' : 'none'
+                }"
             >
                 <div class="autocomplete-list">
                     @for (item of viewState().suggestions; track item.label + ':' + $index) {
@@ -35,7 +41,9 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
                         </button>
                     }
                 </div>
-                <div class="autocomplete-description">{{ selectedDescription() || ' ' }}</div>
+                <div class="autocomplete-description" [appTooltip]="selectedDescription()">
+                    {{ selectedDescription() || ' ' }}
+                </div>
             </div>
         }
     `,
@@ -110,10 +118,9 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
             font-size: 11px;
             font-style: italic;
             line-height: 1.35;
-            height: 56px;
-            overflow-y: auto;
-            white-space: normal;
-            overflow-wrap: anywhere;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,6 +138,7 @@ export class TerminalAutocompleteComponent {
             x: 0,
             y: 0,
             width: 280,
+            placement: "below",
             selectedIndex: null,
             suggestions: [],
         } });

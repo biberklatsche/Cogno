@@ -27,6 +27,7 @@ export type AutocompleteViewState = {
     x: number;
     y: number;
     width: number;
+    placement: "below" | "above";
     selectedIndex: number | null;
     suggestions: AutocompleteSuggestion[];
 };

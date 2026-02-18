@@ -18,22 +18,24 @@ import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provid
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
 const MAX_SUGGESTIONS = 20;
-const MAX_VISIBLE_SUGGESTIONS = 5;
+const PANEL_MAX_VISIBLE_ITEMS = 5;
 
 const PANEL_MIN_WIDTH = 280;
 const PANEL_MAX_WIDTH = 920;
-const PANEL_ITEM_HEIGHT = 32;
-const PANEL_VERTICAL_PADDING = 8;
 const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
 const PANEL_ITEM_GAP = 8;
 const PANEL_OUTER_PADDING_AND_BORDER = 10; // panel padding + border budget
 const LABEL_MEASURE_MAX_CHARS = 140;
+const PANEL_ITEM_HEIGHT_PX = 32;
+const PANEL_LIST_EXTRA_PX = 8;
+const PANEL_DESCRIPTION_MIN_PX = 30;
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
     x: 0,
     y: 0,
     width: PANEL_MIN_WIDTH,
+    placement: "below",
     selectedIndex: null,
     suggestions: [],
 };
@@ -210,7 +212,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         }
         const highlightedSuggestions = this.applyHighlights(suggestions, context);
 
-        const position = this.computePanelPosition(state, highlightedSuggestions);
+        const position = this.computePanelPosition(state, highlightedSuggestions, this.readRenderedPanelHeight());
         this.takeVisibleOwnership();
 
         this._viewState.next({
@@ -218,9 +220,11 @@ export class TerminalAutocompleteService implements OnDestroy {
             x: position.x,
             y: position.y,
             width: position.width,
+            placement: position.placement,
             selectedIndex: null,
             suggestions: highlightedSuggestions,
         });
+        queueMicrotask(() => this.repositionUsingRenderedPanelHeight());
     }
 
     private shouldHideForState(state: TerminalState): boolean {
@@ -292,7 +296,11 @@ export class TerminalAutocompleteService implements OnDestroy {
         this.hide();
     }
 
-    private computePanelPosition(state: TerminalState, suggestions: AutocompleteSuggestion[]): { x: number; y: number; width: number } {
+    private computePanelPosition(
+        state: TerminalState,
+        suggestions: AutocompleteSuggestion[],
+        measuredPanelHeight: number | null
+    ): { x: number; y: number; width: number; placement: "below" | "above" } {
         const col = Math.max(1, state.cursorPosition.viewport.col);
         const row = Math.max(1, state.cursorPosition.viewport.row);
         const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
@@ -326,30 +334,86 @@ export class TerminalAutocompleteService implements OnDestroy {
             Math.min(availableWidth - 8, Math.min(PANEL_MAX_WIDTH, desiredWidth))
         );
 
-        const visibleSuggestions = Math.min(suggestions.length, MAX_VISIBLE_SUGGESTIONS);
-        const estimatedPanelHeight = PANEL_VERTICAL_PADDING + visibleSuggestions * PANEL_ITEM_HEIGHT;
-
         const cursorX = (hostRect?.left ?? 0) + (col - 1) * cellWidth;
         const minX = Math.max(4, bounds.left + 4);
         const maxX = Math.max(minX, effectiveRight - estimatedPanelWidth - 4);
         const x = Math.max(minX, Math.min(cursorX, maxX));
 
-        const topOfCursorLine = (hostRect?.top ?? 0) + (row - 1) * cellHeight;
-        const belowY = topOfCursorLine + cellHeight + 4;
-        // If we cannot render below, render above so panel bottom is exactly one row-height above cursor line.
-        const aboveY = topOfCursorLine - estimatedPanelHeight - cellHeight;
-        const minY = Math.max(4, bounds.top + 4);
-        const maxY = Math.max(minY, bounds.bottom - estimatedPanelHeight - 4);
-        const hasRoomBelow = belowY + estimatedPanelHeight <= bounds.bottom - 4;
-        const y = hasRoomBelow
-            ? Math.max(minY, Math.min(belowY, maxY))
-            : Math.max(minY, Math.min(aboveY, maxY));
+        const cursorLineTop = (hostRect?.top ?? 0) + (row - 1) * cellHeight;
+        const belowY = cursorLineTop + cellHeight + 4;
+        const aboveAnchorY = cursorLineTop - cellHeight;
+        const minimumTopY = Math.max(4, bounds.top + 4);
+        const estimatedPanelHeight = this.estimatePanelHeight(suggestions.length, cellHeight);
+        const panelHeight = measuredPanelHeight ?? estimatedPanelHeight;
+        const hasRoomForBelowAnchor = belowY <= bounds.bottom - 4;
+        const hasRoomBelow = hasRoomForBelowAnchor && (belowY + panelHeight <= bounds.bottom - 4);
+        const placement: "below" | "above" = hasRoomBelow ? "below" : "above";
+
+        let y = placement === "below" ? Math.max(minimumTopY, belowY) : Math.max(minimumTopY, aboveAnchorY);
+
+        if (panelHeight > 0) {
+            if (placement === "below") {
+                const maximumBelowY = Math.max(minimumTopY, bounds.bottom - panelHeight - 4);
+                y = Math.min(y, maximumBelowY);
+            } else {
+                // Above placement uses translateY(-100%), so this anchor must keep panel top within viewport.
+                const minimumAboveAnchorY = minimumTopY + panelHeight;
+                y = Math.max(y, minimumAboveAnchorY);
+            }
+        }
 
         return {
             x,
             y,
             width: estimatedPanelWidth,
+            placement,
         };
+    }
+
+    private estimatePanelHeight(suggestionCount: number, cellHeight: number): number {
+        const rowHeight = Math.max(PANEL_ITEM_HEIGHT_PX, Math.round(cellHeight * 1.7));
+        const visibleRows = Math.max(1, Math.min(PANEL_MAX_VISIBLE_ITEMS, suggestionCount));
+        return (
+            PANEL_OUTER_PADDING_AND_BORDER +
+            PANEL_LIST_EXTRA_PX +
+            (visibleRows * rowHeight) +
+            PANEL_DESCRIPTION_MIN_PX
+        );
+    }
+
+    private repositionUsingRenderedPanelHeight(): void {
+        const view = this._viewState.value;
+        if (!view.visible) return;
+
+        const measuredPanelHeight = this.readRenderedPanelHeight();
+        if (measuredPanelHeight === null) return;
+
+        const position = this.computePanelPosition(this.stateManager.state, view.suggestions, measuredPanelHeight);
+        if (
+            position.x === view.x &&
+            position.y === view.y &&
+            position.width === view.width &&
+            position.placement === view.placement
+        ) {
+            return;
+        }
+
+        this._viewState.next({
+            ...view,
+            x: position.x,
+            y: position.y,
+            width: position.width,
+            placement: position.placement,
+        });
+    }
+
+    private readRenderedPanelHeight(): number | null {
+        const panelElement = document.querySelector<HTMLElement>(".autocomplete-panel");
+        if (!panelElement) return null;
+
+        const renderedPanelHeight = panelElement.getBoundingClientRect().height;
+        if (renderedPanelHeight <= 0) return null;
+        return renderedPanelHeight;
     }
 
     private dedupeSuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
