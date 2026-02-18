@@ -31,14 +31,6 @@
             {
               "name": "config-file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dtm-root-sub-0-sub-apply-opt-0-option---config-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -98,14 +90,6 @@
             {
               "name": "config-file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dtm-root-sub-2-sub-delete-opt-0-option---config-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -146,14 +130,6 @@
           "args": [
             {
               "name": "config-file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dtm-root-sub-3-sub-destroy-opt-0-option---config-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -261,14 +237,6 @@
             {
               "name": "config-file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dtm-root-sub-5-sub-init-opt-2-option---config-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -351,14 +319,6 @@
               "args": [
                 {
                   "name": "plugin"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-dtm-root-sub-7-sub-show-0-sub-config-opt-0-option---plugin-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -465,14 +425,6 @@
           "args": [
             {
               "name": "config-file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dtm-root-sub-9-sub-verify-opt-0-option---config-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

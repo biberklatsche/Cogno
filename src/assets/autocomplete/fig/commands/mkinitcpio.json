@@ -152,14 +152,6 @@
         {
           "name": "preset"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mkinitcpio-root-opt-14-option---preset-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

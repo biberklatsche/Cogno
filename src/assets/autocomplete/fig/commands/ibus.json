@@ -5,15 +5,7 @@
   "subcommands": [
     {
       "name": "engine",
-      "description": "Set or get engine",
-      "providers": [
-        {
-          "providerId": "fig-ibus-root-sub-0-sub-engine-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Set or get engine"
     },
     {
       "name": "exit",

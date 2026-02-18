@@ -73,14 +73,6 @@
           "name": "tasks"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-turbo-root-sub-6-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--scope",
@@ -137,14 +129,6 @@
           "args": [
             {
               "name": "branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-turbo-root-sub-6-sub-run-opt-7-option---since-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

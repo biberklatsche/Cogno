@@ -54,14 +54,6 @@
           "name": "folder",
           "description": "Smart folder in  ~/Library/Saved Searches"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mdfind-root-opt-7-option--s-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

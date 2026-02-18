@@ -208,14 +208,6 @@
           "description": "The command to run"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-sake-root-sub-5-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [

@@ -185,14 +185,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-3-sub-cancel-update-stack-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -210,14 +202,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-3-sub-cancel-update-stack-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -243,14 +227,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-4-sub-continue-update-rollback-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -260,14 +236,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-4-sub-continue-update-rollback-opt-1-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -276,14 +244,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-4-sub-continue-update-rollback-opt-2-option---resources-to-skip-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -302,14 +262,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-4-sub-continue-update-rollback-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -335,14 +287,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-5-sub-create-change-set-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -351,14 +295,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-5-sub-create-change-set-opt-1-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -413,14 +349,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-5-sub-create-change-set-opt-8-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -438,14 +366,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-5-sub-create-change-set-opt-10-option---notification-arns-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -534,14 +454,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-5-sub-create-change-set-opt-22-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -636,14 +548,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-7-sub-create-stack-opt-1-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -697,14 +601,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-7-sub-create-stack-opt-8-option---notification-arns-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -732,14 +628,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-7-sub-create-stack-opt-11-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -757,14 +645,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-7-sub-create-stack-opt-13-option---stack-policy-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -818,14 +698,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-7-sub-create-stack-opt-21-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -850,14 +722,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-8-sub-create-stack-instances-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -866,14 +730,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-8-sub-create-stack-instances-opt-1-option---accounts-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -938,14 +794,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-8-sub-create-stack-instances-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -987,14 +835,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-9-sub-create-stack-set-opt-2-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1050,14 +890,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-9-sub-create-stack-set-opt-8-option---administration-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1066,14 +898,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-9-sub-create-stack-set-opt-9-option---execution-role-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1128,14 +952,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-9-sub-create-stack-set-opt-15-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1236,14 +1052,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-12-sub-delete-change-set-opt-0-option---change-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1253,14 +1061,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-12-sub-delete-change-set-opt-1-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1269,14 +1069,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-12-sub-delete-change-set-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1335,14 +1127,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-14-sub-delete-stack-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1352,14 +1136,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-14-sub-delete-stack-opt-1-option---retain-resources-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1368,14 +1144,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-14-sub-delete-stack-opt-2-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1404,14 +1172,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-14-sub-delete-stack-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1436,14 +1196,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-15-sub-delete-stack-instances-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1452,14 +1204,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-15-sub-delete-stack-instances-opt-1-option---accounts-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1523,14 +1267,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-15-sub-delete-stack-instances-opt-9-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1555,14 +1291,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-16-sub-delete-stack-set-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1580,14 +1308,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-16-sub-delete-stack-set-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1613,14 +1333,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-17-sub-deregister-type-opt-0-option---arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1639,14 +1351,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-17-sub-deregister-type-opt-2-option---type-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1655,20 +1359,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-17-sub-deregister-type-opt-3-option---version-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-cloudformation-root-sub-17-sub-deregister-type-opt-3-option---version-id-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1712,14 +1402,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-18-sub-describe-account-limits-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1762,14 +1444,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-19-sub-describe-change-set-opt-0-option---change-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1778,14 +1452,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-19-sub-describe-change-set-opt-1-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1812,14 +1478,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-19-sub-describe-change-set-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2064,14 +1722,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-25-sub-describe-stack-drift-detection-status-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2096,14 +1746,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-26-sub-describe-stack-events-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2121,14 +1763,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-26-sub-describe-stack-events-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2172,14 +1806,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-27-sub-describe-stack-instance-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2188,14 +1814,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-27-sub-describe-stack-instance-opt-1-option---stack-instance-account-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2224,14 +1842,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-27-sub-describe-stack-instance-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2256,14 +1866,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-28-sub-describe-stack-resource-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2273,14 +1875,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-28-sub-describe-stack-resource-opt-1-option---logical-resource-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2289,14 +1883,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-28-sub-describe-stack-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2321,14 +1907,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-29-sub-describe-stack-resource-drifts-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2366,14 +1944,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-29-sub-describe-stack-resource-drifts-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2398,14 +1968,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-30-sub-describe-stack-resources-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2414,14 +1976,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-30-sub-describe-stack-resources-opt-1-option---logical-resource-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2432,14 +1986,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-30-sub-describe-stack-resources-opt-2-option---physical-resource-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2448,14 +1994,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-30-sub-describe-stack-resources-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2481,14 +2019,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-31-sub-describe-stack-set-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2506,14 +2036,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-31-sub-describe-stack-set-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2538,14 +2060,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-32-sub-describe-stack-set-operation-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2574,14 +2088,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-32-sub-describe-stack-set-operation-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2606,14 +2112,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-33-sub-describe-stacks-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2631,14 +2129,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-33-sub-describe-stacks-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2682,14 +2172,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-34-sub-describe-type-opt-0-option---type-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2698,14 +2180,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-34-sub-describe-type-opt-1-option---type-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2752,14 +2226,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-34-sub-describe-type-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2793,14 +2259,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-35-sub-describe-type-registration-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2825,14 +2283,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-36-sub-detect-stack-drift-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2842,14 +2292,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-36-sub-detect-stack-drift-opt-1-option---logical-resource-ids-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2858,14 +2300,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-36-sub-detect-stack-drift-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2891,14 +2325,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-37-sub-detect-stack-resource-drift-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2908,14 +2334,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-37-sub-detect-stack-resource-drift-opt-1-option---logical-resource-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2924,14 +2342,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-37-sub-detect-stack-resource-drift-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2956,14 +2366,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-38-sub-detect-stack-set-drift-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3001,14 +2403,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-38-sub-detect-stack-set-drift-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3032,14 +2426,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-39-sub-estimate-template-cost-opt-0-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3068,14 +2454,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-39-sub-estimate-template-cost-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3100,14 +2478,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-40-sub-execute-change-set-opt-0-option---change-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3116,14 +2486,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-40-sub-execute-change-set-opt-1-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3158,14 +2520,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-40-sub-execute-change-set-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3233,14 +2587,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-42-sub-get-stack-policy-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3249,14 +2595,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-42-sub-get-stack-policy-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3282,14 +2620,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-43-sub-get-template-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3298,14 +2628,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-43-sub-get-template-opt-1-option---change-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3324,14 +2646,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-43-sub-get-template-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3357,14 +2671,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-44-sub-get-template-summary-opt-0-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3383,14 +2689,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-44-sub-get-template-summary-opt-2-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3399,14 +2697,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-44-sub-get-template-summary-opt-3-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3434,14 +2724,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-44-sub-get-template-summary-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3554,14 +2836,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-46-sub-list-change-sets-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3579,14 +2853,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-46-sub-list-change-sets-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3638,14 +2904,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-47-sub-list-exports-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3809,14 +3067,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-50-sub-list-imports-opt-0-option---export-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3834,14 +3084,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-50-sub-list-imports-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4251,14 +3493,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-55-sub-list-stack-instances-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4295,14 +3529,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-55-sub-list-stack-instances-opt-4-option---stack-instance-account-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4329,14 +3555,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-55-sub-list-stack-instances-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4389,14 +3607,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-56-sub-list-stack-resources-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4414,14 +3624,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-56-sub-list-stack-resources-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4525,14 +3727,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-58-sub-list-stack-set-operation-results-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4587,14 +3781,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-58-sub-list-stack-set-operation-results-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4646,14 +3832,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-59-sub-list-stack-set-operations-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4689,14 +3867,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-59-sub-list-stack-set-operations-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4785,14 +3955,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-60-sub-list-stack-sets-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4862,14 +4024,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-61-sub-list-stacks-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4921,14 +4075,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-62-sub-list-type-registrations-opt-1-option---type-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4937,14 +4083,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-62-sub-list-type-registrations-opt-2-option---type-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4982,14 +4120,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-62-sub-list-type-registrations-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5023,14 +4153,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-63-sub-list-type-versions-opt-1-option---type-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5039,14 +4161,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-63-sub-list-type-versions-opt-2-option---arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5092,14 +4206,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-63-sub-list-type-versions-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5187,14 +4293,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-64-sub-list-types-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5370,14 +4468,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-66-sub-record-handler-progress-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5452,14 +4542,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-68-sub-register-type-opt-1-option---type-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5468,14 +4550,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-68-sub-register-type-opt-2-option---schema-handler-package-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5495,14 +4569,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-68-sub-register-type-opt-4-option---execution-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5520,14 +4586,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-68-sub-register-type-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5612,14 +4670,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-70-sub-set-stack-policy-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5628,14 +4678,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-70-sub-set-stack-policy-opt-1-option---stack-policy-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5654,14 +4696,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-70-sub-set-stack-policy-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5756,14 +4790,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-72-sub-set-type-default-version-opt-0-option---arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5782,14 +4808,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-72-sub-set-type-default-version-opt-2-option---type-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5799,20 +4817,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-72-sub-set-type-default-version-opt-3-option---version-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-cloudformation-root-sub-72-sub-set-type-default-version-opt-3-option---version-id-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5821,14 +4825,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-72-sub-set-type-default-version-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5854,14 +4850,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-73-sub-signal-resource-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5870,14 +4858,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-73-sub-signal-resource-opt-1-option---logical-resource-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5905,14 +4885,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-73-sub-signal-resource-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5971,14 +4943,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-75-sub-stop-stack-set-operation-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6005,14 +4969,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-75-sub-stop-stack-set-operation-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6184,14 +5140,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-0-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6200,14 +5148,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-1-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6234,14 +5174,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-5-option---stack-policy-during-update-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6288,14 +5220,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-10-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6314,14 +5238,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-12-option---stack-policy-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6339,14 +5255,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-14-option---notification-arns-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6391,14 +5299,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-78-sub-update-stack-opt-21-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6423,14 +5323,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-79-sub-update-stack-instances-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6439,14 +5331,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-79-sub-update-stack-instances-opt-1-option---accounts-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6511,14 +5395,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-79-sub-update-stack-instances-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6543,14 +5419,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-80-sub-update-stack-set-opt-0-option---stack-set-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6568,14 +5436,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-80-sub-update-stack-set-opt-2-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6639,14 +5499,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-80-sub-update-stack-set-opt-10-option---administration-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6655,14 +5507,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-80-sub-update-stack-set-opt-11-option---execution-role-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6709,14 +5553,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-80-sub-update-stack-set-opt-16-option---accounts-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6753,14 +5589,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-80-sub-update-stack-set-opt-20-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6793,14 +5621,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-81-sub-update-termination-protection-opt-2-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6809,14 +5629,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-81-sub-update-termination-protection-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6842,14 +5654,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-82-sub-validate-template-opt-0-option---template-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6867,14 +5671,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-82-sub-validate-template-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6900,14 +5696,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-83-sub-package-opt-0-option---template-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6916,14 +5704,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-83-sub-package-opt-1-option---s3-bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6942,14 +5722,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-83-sub-package-opt-3-option---kms-key-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6992,14 +5764,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-84-sub-deploy-opt-0-option---template-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7009,14 +5773,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-84-sub-deploy-opt-1-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7025,14 +5781,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-84-sub-deploy-opt-2-option---s3-bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7055,14 +5803,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-84-sub-deploy-opt-5-option---kms-key-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7103,14 +5843,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-84-sub-deploy-opt-11-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7119,14 +5851,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudformation-root-sub-84-sub-deploy-opt-12-option---notification-arns-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7299,14 +6023,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-0-sub-change-set-create-complete-opt-0-option---change-set-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7315,14 +6031,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-0-sub-change-set-create-complete-opt-1-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7349,14 +6057,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-0-sub-change-set-create-complete-opt-5-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7400,14 +6100,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-1-sub-stack-create-complete-opt-0-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7425,14 +6117,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-1-sub-stack-create-complete-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7476,14 +6160,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-2-sub-stack-delete-complete-opt-0-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7501,14 +6177,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-2-sub-stack-delete-complete-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7552,14 +6220,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-3-sub-stack-exists-opt-0-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7577,14 +6237,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-3-sub-stack-exists-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7628,14 +6280,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-4-sub-stack-import-complete-opt-0-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7653,14 +6297,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-4-sub-stack-import-complete-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7704,14 +6340,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-5-sub-stack-rollback-complete-opt-0-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7729,14 +6357,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-5-sub-stack-rollback-complete-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7780,14 +6400,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-6-sub-stack-update-complete-opt-0-option---stack-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7805,14 +6417,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-6-sub-stack-update-complete-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7864,14 +6468,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudformation-root-sub-85-sub-wait-7-sub-type-registration-complete-opt-1-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

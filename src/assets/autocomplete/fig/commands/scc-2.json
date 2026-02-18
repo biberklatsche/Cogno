@@ -41,14 +41,6 @@
         {
           "name": "string"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-scc-root-opt-5-option---count-as-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -61,14 +53,6 @@
       "args": [
         {
           "name": "strings"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-scc-root-opt-7-option---exclude-dir-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -99,14 +83,6 @@
       "args": [
         {
           "name": "string"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-scc-root-opt-10-option---format-multi-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -139,14 +115,6 @@
       "args": [
         {
           "name": "strings"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-scc-root-opt-14-option--i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -276,14 +244,6 @@
         {
           "name": "string"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-scc-root-opt-34-option---remap-all-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -292,14 +252,6 @@
       "args": [
         {
           "name": "string"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-scc-root-opt-35-option---remap-unknown-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

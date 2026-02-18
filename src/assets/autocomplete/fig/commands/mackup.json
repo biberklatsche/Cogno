@@ -57,14 +57,6 @@
         {
           "name": "application"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mackup-root-sub-3-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

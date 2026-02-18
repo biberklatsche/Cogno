@@ -119,14 +119,6 @@
         {
           "name": "value"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-dd-root-opt-12-option-conv-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

@@ -11,14 +11,6 @@
           "name": "FILE/FOLDER",
           "description": "must start with file://"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-trigger_example-root-sub-0-sub-test-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

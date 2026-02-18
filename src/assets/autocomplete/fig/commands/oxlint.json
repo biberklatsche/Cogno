@@ -14,14 +14,6 @@
         {
           "name": "file"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-oxlint-root-opt-0-option--c-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -30,14 +22,6 @@
       "args": [
         {
           "name": "file"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-oxlint-root-opt-1-option---tsconfig-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -123,20 +107,6 @@
           "name": "lint",
           "description": "Lint rule or category"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-oxlint-root-opt-17-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-oxlint-root-opt-17-option--d-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -150,20 +120,6 @@
           "name": "lint",
           "description": "Lint rule or category"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-oxlint-root-opt-18-option--w-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-oxlint-root-opt-18-option--w-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -176,20 +132,6 @@
         {
           "name": "lint",
           "description": "Lint rule or category"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-oxlint-root-opt-19-option--a-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-oxlint-root-opt-19-option--a-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

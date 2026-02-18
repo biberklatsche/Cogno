@@ -67,14 +67,6 @@
           "name": "label"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-softwareupdate-root-sub-2-sub--i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [

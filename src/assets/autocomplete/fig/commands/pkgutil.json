@@ -43,14 +43,6 @@
           "name": "package-id",
           "description": "Package ID of the receipt to modify"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-opt-4-option---edit-pkg-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -96,14 +88,6 @@
           "name": "package-id",
           "description": "The package ID to list the files of"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-2-sub---files-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -113,14 +97,6 @@
         {
           "name": "package-id",
           "description": "The package ID to export the plist of"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-3-sub---export-plist-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -132,14 +108,6 @@
           "name": "package-id",
           "description": "The package ID to verify"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-4-sub---verify-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -149,14 +117,6 @@
         {
           "name": "package-id",
           "description": "The package ID to repair"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-5-sub---repair-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -168,14 +128,6 @@
           "name": "package-id",
           "description": "The package ID to print the info of"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-6-sub---pkg-info-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -185,14 +137,6 @@
         {
           "name": "package-id",
           "description": "The package ID to print the info of"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-7-sub---pkg-info-plist-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -204,14 +148,6 @@
           "name": "package-id",
           "description": "The package ID to forget"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-8-sub---forget-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -222,14 +158,6 @@
           "name": "path",
           "description": "The path to update ACLs on"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-9-sub---learn-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -239,14 +167,6 @@
         {
           "name": "package-id",
           "description": "The package ID to list the groups of"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-10-sub---pkg-groups-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -265,14 +185,6 @@
         {
           "name": "group-id",
           "description": "The group ID to list the packages of"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-13-sub---group-pkgs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -332,14 +244,6 @@
           "name": "path",
           "description": "The path to the flat package to extract the BOM from"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-18-sub---bom-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -350,14 +254,6 @@
           "name": "path",
           "description": "The path to the flat package to list the archived files of"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-19-sub---payload-files-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -367,14 +263,6 @@
         {
           "name": "pkg-path",
           "description": "The path to the flat package to check the signature of"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pkgutil-root-sub-20-sub---check-signature-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     }

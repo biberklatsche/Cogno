@@ -25,39 +25,15 @@
     },
     {
       "name": "--linux",
-      "description": "Show command page for Linux",
-      "providers": [
-        {
-          "providerId": "fig-tldr-root-opt-2-option---linux-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Show command page for Linux"
     },
     {
       "name": "--osx",
-      "description": "Show command page for OSX",
-      "providers": [
-        {
-          "providerId": "fig-tldr-root-opt-3-option---osx-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Show command page for OSX"
     },
     {
       "name": "--sunos",
-      "description": "Show command page for SunOS",
-      "providers": [
-        {
-          "providerId": "fig-tldr-root-opt-4-option---sunos-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Show command page for SunOS"
     },
     {
       "name": [

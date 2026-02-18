@@ -46,14 +46,6 @@
         {
           "name": "model"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ollama-root-sub-2-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -62,14 +54,6 @@
       "args": [
         {
           "name": "model"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ollama-root-sub-3-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -85,14 +69,6 @@
       "args": [
         {
           "name": "model"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ollama-root-sub-4-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -122,14 +98,6 @@
         {
           "name": "SOURCE"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ollama-root-sub-9-sub-cp-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -138,14 +106,6 @@
       "args": [
         {
           "name": "model"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ollama-root-sub-10-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

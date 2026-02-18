@@ -38,14 +38,6 @@
               "name": "SPEC",
               "description": "Packages to run this command on, can be a concrete package name (`foobar`) or a prefix glob (`foo*`) [default: *]"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-scarb-root-sub-0-sub-add-opt-1-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -141,14 +133,6 @@
               "name": "SPEC",
               "description": "Packages to run this command on, can be a concrete package name (`foobar`) or a prefix glob (`foo*`) [default: *]"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-scarb-root-sub-1-sub-remove-opt-1-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -195,14 +179,6 @@
             {
               "name": "SPEC",
               "description": "Packages to run this command on, can be a concrete package name (`foobar`) or a prefix glob (`foo*`) [default: *]"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-scarb-root-sub-2-sub-build-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -437,14 +413,6 @@
               "name": "SPEC",
               "description": "Packages to run this command on, can be a concrete package name (`foobar`) or a prefix glob (`foo*`) [default: *]"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-scarb-root-sub-7-sub-fmt-opt-3-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -650,14 +618,6 @@
               "name": "SPEC",
               "description": "Packages to run this command on, can be a concrete package name (`foobar`) or a prefix glob (`foo*`) [default: *]"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-scarb-root-sub-12-sub-run-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -753,14 +713,6 @@
             {
               "name": "SPEC",
               "description": "Packages to run this command on, can be a concrete package name (`foobar`) or a prefix glob (`foo*`) [default: *]"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-scarb-root-sub-13-sub-test-opt-7-option---package-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

@@ -345,14 +345,6 @@
         {
           "name": "PATTERN"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-0-sub-list-units-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -380,14 +372,6 @@
         {
           "name": "PATTERN"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-3-sub-is-active-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -396,14 +380,6 @@
       "args": [
         {
           "name": "PATTERN"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-4-sub-is-failed-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -414,14 +390,6 @@
         {
           "name": "PATTERN or PID"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-5-sub-status-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -430,14 +398,6 @@
       "args": [
         {
           "name": "PATTERN or JOB"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-6-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -448,14 +408,6 @@
         {
           "name": "PATTERN"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-7-sub-cat-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -464,14 +416,6 @@
       "args": [
         {
           "name": "PATTERN or PID"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-8-sub-help-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -482,14 +426,6 @@
         {
           "name": "PATTERN"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-9-sub-list-dependencies-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -498,14 +434,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-10-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -516,14 +444,6 @@
         {
           "name": "UNIT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-11-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -532,14 +452,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-12-sub-reload-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -550,14 +462,6 @@
         {
           "name": "UNIT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-13-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -566,14 +470,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-14-sub-try-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -593,14 +489,6 @@
         {
           "name": "UNIT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-16-sub-try-reload-or-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -609,14 +497,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-17-sub-isolate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -627,14 +507,6 @@
         {
           "name": "UNIT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-18-sub-kill-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -643,14 +515,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-19-sub-clean-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -757,14 +621,6 @@
         {
           "name": "PATTERN"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-28-sub-list-unit-files-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -773,20 +629,6 @@
       "args": [
         {
           "name": "UNIT|PATH"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-29-sub-enable-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-systemctl-root-sub-29-sub-enable-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -797,20 +639,6 @@
         {
           "name": "UNIT|PATH"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-30-sub-disable-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-systemctl-root-sub-30-sub-disable-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -819,14 +647,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-31-sub-reenable-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -837,14 +657,6 @@
         {
           "name": "UNIT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-32-sub-preset-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -853,14 +665,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-33-sub-preset-all-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -871,14 +675,6 @@
         {
           "name": "UNIT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-34-sub-mask-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -887,14 +683,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-35-sub-unmask-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -913,14 +701,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-37-sub-revert-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -954,14 +734,6 @@
       "args": [
         {
           "name": "UNIT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-systemctl-root-sub-40-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

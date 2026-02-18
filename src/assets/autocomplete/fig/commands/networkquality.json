@@ -36,14 +36,6 @@
         {
           "name": "interface"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networkquality-root-opt-5-option--i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

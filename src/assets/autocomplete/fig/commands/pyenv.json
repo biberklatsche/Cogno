@@ -38,14 +38,6 @@
         {
           "name": "python version"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pyenv-root-sub-2-sub-global-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -68,14 +60,6 @@
       "args": [
         {
           "name": "python version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pyenv-root-sub-4-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

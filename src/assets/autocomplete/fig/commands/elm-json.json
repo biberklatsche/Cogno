@@ -175,14 +175,6 @@
           "description": "The elm.json file to upgrade [default: elm.json]"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-elm-json-root-sub-5-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [

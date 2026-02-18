@@ -78,14 +78,6 @@
           "description": "Toolchain name. For more information see `rustup help toolchain`"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rustup-root-sub-1-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--force",
@@ -134,14 +126,6 @@
         {
           "name": "toolchain",
           "description": "Toolchain name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rustup-root-sub-3-sub-default-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -196,14 +180,6 @@
               "description": "Target triple"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-4-sub-target-1-sub-add-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -225,14 +201,6 @@
                 {
                   "name": "toolchain",
                   "description": "Toolchain name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-rustup-root-sub-4-sub-target-1-sub-add-opt-2-option---toolchain-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -247,14 +215,6 @@
               "description": "Target triple"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-4-sub-target-2-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -276,14 +236,6 @@
                 {
                   "name": "toolchain",
                   "description": "Toolchain name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-rustup-root-sub-4-sub-target-2-sub-remove-opt-2-option---toolchain-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -358,14 +310,6 @@
               "description": "Toolchain name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-5-sub-toolchain-1-sub-install-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -383,14 +327,6 @@
               "args": [
                 {
                   "name": "targets"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-rustup-root-sub-5-sub-toolchain-1-sub-install-opt-1-option--t-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -435,14 +371,6 @@
             {
               "name": "toolchain",
               "description": "Toolchain name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-5-sub-toolchain-2-sub-uninstall-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -631,14 +559,6 @@
               "description": "Toolchain name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-7-sub-override-1-sub-set-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -731,14 +651,6 @@
             {
               "name": "toolchain"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-9-sub-which-opt-1-option---toolchain-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -750,14 +662,6 @@
         {
           "name": "topic",
           "description": "Topic such as 'core', 'fn', 'usize', 'eprintln!', 'core::arch', 'alloc::format!', 'std::fs', 'std::fs::read_dir', 'std::io::Bytes', 'std::iter::Sum', 'std::io::error::Result' etc"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rustup-root-sub-10-sub-doc-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -839,14 +743,6 @@
             {
               "name": "toolchain"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-10-sub-doc-opt-17-option---toolchain-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -868,14 +764,6 @@
           "args": [
             {
               "name": "toolchain"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-11-sub-man-opt-1-option---toolchain-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1008,14 +896,6 @@
           "args": [
             {
               "name": "host-triple"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rustup-root-sub-13-sub-set-1-sub-default-host-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

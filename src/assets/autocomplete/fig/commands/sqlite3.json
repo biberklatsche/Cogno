@@ -48,14 +48,6 @@
         {
           "name": "FILENAME"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-sqlite3-root-opt-8-option--init-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

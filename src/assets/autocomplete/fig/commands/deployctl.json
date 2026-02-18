@@ -28,14 +28,6 @@
           "name": "entrypoint"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-deployctl-root-sub-0-sub-deploy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--exclude",
@@ -92,14 +84,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-deployctl-root-sub-1-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     }

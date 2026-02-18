@@ -28,14 +28,6 @@
           "name": "environment"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-mamba-root-sub-0-sub-activate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--stack",
@@ -225,14 +217,6 @@
           "args": [
             {
               "name": "env"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-mamba-root-sub-4-sub-create-opt-0-option---clone-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -456,14 +440,6 @@
         {
           "name": "package spec",
           "description": "Packages to install or update in the conda environment"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mamba-root-sub-7-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -860,14 +836,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-mamba-root-sub-10-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--dev",
@@ -1004,14 +972,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mamba-root-sub-11-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1318,14 +1278,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-mamba-root-sub-14-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--file",
@@ -1517,14 +1469,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mamba-root-sub-15-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1724,14 +1668,6 @@
               "name": "package"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-mamba-root-sub-16-sub-repoquery-0-sub-search-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1825,14 +1761,6 @@
           "args": [
             {
               "name": "package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-mamba-root-sub-16-sub-repoquery-1-sub-depends-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2029,14 +1957,6 @@
           "args": [
             {
               "name": "environment"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-mamba-root-sub-17-sub-env-0-sub-list-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

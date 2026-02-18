@@ -114,14 +114,6 @@
                 {
                   "name": "org"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-1-sub-apps-0-sub-create-opt-3-option---org-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -157,14 +149,6 @@
                 {
                   "name": "org"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-1-sub-apps-3-sub-move-opt-0-option---org-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -189,14 +173,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-1-sub-apps-4-sub-open-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -228,14 +204,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-1-sub-apps-5-sub-releases-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -262,14 +230,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-1-sub-apps-6-sub-restart-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -368,14 +328,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-3-sub-autoscale-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -405,14 +357,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-3-sub-autoscale-0-sub-balanced-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -444,14 +388,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-3-sub-autoscale-1-sub-disable-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -481,14 +417,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-3-sub-autoscale-2-sub-set-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -520,14 +448,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-3-sub-autoscale-3-sub-show-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -557,14 +477,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-3-sub-autoscale-4-sub-standard-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -602,14 +514,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-4-sub-builds-0-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -641,14 +545,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-5-sub-certs-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -683,14 +579,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-5-sub-certs-0-sub-create-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -721,14 +609,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-5-sub-certs-1-sub-check-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -758,14 +638,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-5-sub-certs-2-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -799,14 +671,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-5-sub-certs-3-sub-delete-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -844,14 +708,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-5-sub-certs-4-sub-show-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -929,14 +785,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-6-sub-checks-1-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1025,14 +873,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-8-sub-config-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1062,14 +902,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-8-sub-config-0-sub-display-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1101,14 +933,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-8-sub-config-1-sub-env-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1139,14 +963,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-8-sub-config-2-sub-save-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1176,14 +992,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-8-sub-config-3-sub-validate-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1239,14 +1047,6 @@
             {
               "name": "org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-9-sub-create-opt-3-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1271,14 +1071,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-11-sub-dash-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1309,14 +1101,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-11-sub-dash-0-sub-metrics-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1349,14 +1133,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-12-sub-deploy-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1514,14 +1290,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-14-sub-dig-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1545,14 +1313,6 @@
           "args": [
             {
               "name": "org"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-14-sub-dig-opt-2-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1607,14 +1367,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-17-sub-doctor-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1644,14 +1396,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-17-sub-doctor-0-sub-diag-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1711,14 +1455,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-19-sub-history-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1756,14 +1492,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-20-sub-img-0-sub-show-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1793,14 +1521,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-20-sub-img-1-sub-update-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1845,14 +1565,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-21-sub-info-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1894,14 +1606,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-22-sub-ips-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1931,14 +1635,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-22-sub-ips-0-sub-allocate-v4-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1979,14 +1675,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-22-sub-ips-1-sub-allocate-v6-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2026,14 +1714,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-22-sub-ips-2-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2064,14 +1744,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-22-sub-ips-3-sub-private-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2101,14 +1773,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-22-sub-ips-4-sub-release-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2182,14 +1846,6 @@
             {
               "name": "org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-23-sub-launch-opt-7-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2229,14 +1885,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-24-sub-logs-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2300,14 +1948,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-0-sub-clone-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2351,14 +1991,6 @@
                 {
                   "name": "org"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-0-sub-clone-opt-4-option---org-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2389,14 +2021,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-1-sub-kill-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2426,14 +2050,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-2-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2475,14 +2091,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-3-sub-rm-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2519,14 +2127,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-4-sub-run-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2677,14 +2277,6 @@
                 {
                   "name": "org"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-4-sub-run-opt-18-option---org-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2751,14 +2343,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-5-sub-start-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2789,14 +2373,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-6-sub-status-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2826,14 +2402,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-25-sub-machines-7-sub-stop-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2888,14 +2456,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-26-sub-monitor-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2926,14 +2486,6 @@
             {
               "name": "org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-27-sub-move-opt-0-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2958,14 +2510,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-28-sub-open-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3050,14 +2594,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-30-sub-ping-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3105,14 +2641,6 @@
           "args": [
             {
               "name": "org"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-30-sub-ping-opt-4-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3168,14 +2696,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-32-sub-pg-0-sub-attach-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3242,14 +2762,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-32-sub-pg-1-sub-connect-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3399,14 +2911,6 @@
                     {
                       "name": "app"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-flyctl-root-sub-32-sub-pg-3-sub-db-0-sub-list-opt-0-option---app-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -3438,14 +2942,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-32-sub-pg-4-sub-detach-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3494,14 +2990,6 @@
                     {
                       "name": "app"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-flyctl-root-sub-32-sub-pg-6-sub-users-0-sub-list-opt-0-option---app-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -3536,14 +3024,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-33-sub-proxy-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3567,14 +3047,6 @@
           "args": [
             {
               "name": "org"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-33-sub-proxy-opt-2-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3600,14 +3072,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-34-sub-regions-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3638,14 +3102,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-34-sub-regions-0-sub-add-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3686,14 +3142,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-34-sub-regions-1-sub-backup-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3724,14 +3172,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-34-sub-regions-2-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3761,14 +3201,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-34-sub-regions-3-sub-remove-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3808,14 +3240,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-34-sub-regions-4-sub-set-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3857,14 +3281,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-35-sub-releases-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3908,14 +3324,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-38-sub-scale-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3945,14 +3353,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-38-sub-scale-0-sub-count-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3993,14 +3393,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-38-sub-scale-1-sub-memory-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4040,14 +3432,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-38-sub-scale-2-sub-show-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4077,14 +3461,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-38-sub-scale-3-sub-vm-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4136,14 +3512,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-39-sub-secrets-opt-0-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4173,14 +3541,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-39-sub-secrets-0-sub-import-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4216,14 +3576,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-39-sub-secrets-1-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4253,14 +3605,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-39-sub-secrets-2-sub-set-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4295,14 +3639,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-39-sub-secrets-3-sub-unset-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4343,14 +3679,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-40-sub-ssh-0-sub-console-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4479,14 +3807,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-41-sub-status-opt-1-option---app-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4533,14 +3853,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-41-sub-status-0-sub-instance-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4601,14 +3913,6 @@
             {
               "name": "org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flyctl-root-sub-43-sub-turboku-opt-4-option---org-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4664,14 +3968,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-45-sub-vm-0-sub-restart-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4702,14 +3998,6 @@
                 {
                   "name": "app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-45-sub-vm-1-sub-status-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4739,14 +4027,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-45-sub-vm-2-sub-stop-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4786,14 +4066,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-46-sub-vol-0-sub-create-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4869,14 +4141,6 @@
               "args": [
                 {
                   "name": "app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-flyctl-root-sub-46-sub-vol-2-sub-list-opt-0-option---app-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

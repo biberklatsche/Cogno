@@ -1659,14 +1659,6 @@
           "name": "theme"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-q-root-sub-9-sub-theme-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--list"

@@ -71,15 +71,7 @@
           "options": [
             {
               "name": "--project",
-              "description": "Project name",
-              "providers": [
-                {
-                  "providerId": "fig-ng-root-sub-1-sub-generate-1-sub-component-opt-0-option---project-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
-              ]
+              "description": "Project name"
             },
             {
               "name": [
@@ -136,15 +128,7 @@
           "options": [
             {
               "name": "--project",
-              "description": "Project name",
-              "providers": [
-                {
-                  "providerId": "fig-ng-root-sub-1-sub-generate-3-sub-class-opt-0-option---project-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
-              ]
+              "description": "Project name"
             }
           ]
         }

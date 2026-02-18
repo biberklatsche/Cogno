@@ -12,14 +12,6 @@
           "name": "paths"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-s3-root-sub-0-sub-ls-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--recursive",
@@ -60,14 +52,6 @@
       "args": [
         {
           "name": "paths"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-s3-root-sub-1-sub-website-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -174,14 +158,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-2-sub-cp-opt-10-option---sse-c-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -190,14 +166,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-2-sub-cp-opt-11-option---sse-kms-key-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -216,14 +184,6 @@
           "args": [
             {
               "name": "blob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-2-sub-cp-opt-13-option---sse-c-copy-source-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -469,14 +429,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-3-sub-mv-opt-10-option---sse-c-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -485,14 +437,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-3-sub-mv-opt-11-option---sse-kms-key-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -511,14 +455,6 @@
           "args": [
             {
               "name": "blob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-3-sub-mv-opt-13-option---sse-c-copy-source-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -680,14 +616,6 @@
           "name": "paths"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-s3-root-sub-4-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--dryrun",
@@ -827,14 +755,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-5-sub-sync-opt-10-option---sse-c-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -843,14 +763,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-5-sub-sync-opt-11-option---sse-kms-key-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -869,14 +781,6 @@
           "args": [
             {
               "name": "blob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3-root-sub-5-sub-sync-opt-13-option---sse-c-copy-source-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1034,14 +938,6 @@
           "name": "path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-s3-root-sub-6-sub-mb-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--region",
@@ -1062,14 +958,6 @@
           "name": "path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-s3-root-sub-7-sub-rb-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--force",
@@ -1083,14 +971,6 @@
       "args": [
         {
           "name": "path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-s3-root-sub-8-sub-presign-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

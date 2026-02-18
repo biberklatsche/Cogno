@@ -5,15 +5,7 @@
   "options": [
     {
       "name": "--profile",
-      "description": "Use a specific profile from your credential file",
-      "providers": [
-        {
-          "providerId": "fig-aws-root-opt-0-option---profile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Use a specific profile from your credential file"
     }
   ],
   "subcommands": [

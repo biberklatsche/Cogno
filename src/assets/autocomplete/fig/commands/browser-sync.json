@@ -362,14 +362,6 @@
           "name": "recipe-name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-browser-sync-root-sub-3-sub-recipe-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--cwd",

@@ -128,14 +128,6 @@
         {
           "name": "device"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-23-option--sources-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -144,14 +136,6 @@
       "args": [
         {
           "name": "device"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-24-option--sinks-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -473,14 +457,6 @@
         {
           "name": "device"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-74-option--filter_hw_device-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -499,14 +475,6 @@
         {
           "name": "codec"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-76-option--c-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -515,14 +483,6 @@
       "args": [
         {
           "name": "codec"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-77-option--codec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -935,14 +895,6 @@
         {
           "name": "codec"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-131-option--dcodec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1000,14 +952,6 @@
       "args": [
         {
           "name": "codec"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-138-option--vcodec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1245,14 +1189,6 @@
         {
           "name": "codec"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-167-option--acodec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1332,14 +1268,6 @@
       "args": [
         {
           "name": "codec"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ffmpeg-root-opt-177-option--scodec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

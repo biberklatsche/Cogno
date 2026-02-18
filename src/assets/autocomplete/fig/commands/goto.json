@@ -35,14 +35,6 @@
         {
           "name": "alias"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-goto-root-opt-2-option---unregister-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -75,14 +67,6 @@
       "args": [
         {
           "name": "alias"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-goto-root-opt-6-option---expand-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

@@ -35,7 +35,9 @@ import { AutocompleteSuggestion } from "./autocomplete.types";
                         </button>
                     }
                 </div>
-                <div class="autocomplete-description">{{ selectedDescription() }}</div>
+                @if (viewState().selectedIndex !== null && selectedDescription()) {
+                    <div class="autocomplete-description">{{ selectedDescription() }}</div>
+                }
             </div>
         }
     `,
@@ -182,7 +184,8 @@ export class TerminalAutocompleteComponent {
     protected selectedDescription(): string {
         const view = this.viewState();
         if (view.suggestions.length === 0) return "";
-        const index = view.selectedIndex ?? 0;
+        if (view.selectedIndex === null) return "";
+        const index = view.selectedIndex;
         return view.suggestions[index]?.description ?? "";
     }
 

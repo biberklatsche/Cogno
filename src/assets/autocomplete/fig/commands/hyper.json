@@ -91,14 +91,6 @@
           "name": "plugin",
           "description": "Plugin to uninstall"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-hyper-root-sub-6-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

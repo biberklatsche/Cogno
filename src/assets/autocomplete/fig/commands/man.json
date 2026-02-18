@@ -20,14 +20,6 @@
         {
           "name": "path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-man-root-opt-1-option--m-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -63,14 +55,6 @@
       "args": [
         {
           "name": "sections"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-man-root-opt-5-option--s-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

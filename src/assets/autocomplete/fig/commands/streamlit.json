@@ -62,14 +62,6 @@
           "name": "file",
           "description": "The Python script to run"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-streamlit-root-sub-6-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

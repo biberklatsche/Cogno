@@ -11,14 +11,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-tool-root-sub-0-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--add-source",
@@ -35,14 +27,6 @@
           "args": [
             {
               "name": "file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tool-root-sub-0-sub-install-opt-1-option---configfile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -110,14 +94,6 @@
             {
               "name": "version"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tool-root-sub-0-sub-install-opt-11-option---version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -153,14 +129,6 @@
           "args": [
             {
               "name": "file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tool-root-sub-2-sub-restore-opt-0-option---configfile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -215,14 +183,6 @@
         {
           "name": "command"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tool-root-sub-3-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -266,14 +226,6 @@
           "description": "Name/ID of the NuGet package that contains the .NET tool to uninstall. You can find the package name using the dotnet tool list command"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-tool-root-sub-5-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -296,14 +248,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-tool-root-sub-6-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--add-source",
@@ -320,14 +264,6 @@
           "args": [
             {
               "name": "file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tool-root-sub-6-sub-update-opt-1-option---configfile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -394,14 +330,6 @@
           "args": [
             {
               "name": "version"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tool-root-sub-6-sub-update-opt-11-option---version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

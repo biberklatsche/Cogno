@@ -572,14 +572,6 @@
           "name": "script",
           "description": "Name of the script to execute"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-redwood-root-sub-4-sub-exec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

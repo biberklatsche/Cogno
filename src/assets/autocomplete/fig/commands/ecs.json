@@ -42,14 +42,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-0-sub-create-capacity-provider-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -110,14 +102,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-1-sub-create-cluster-opt-4-option---capacity-providers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -145,14 +129,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-1-sub-create-cluster-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -177,14 +153,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-2-sub-create-service-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -202,14 +170,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-2-sub-create-service-opt-2-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -291,14 +251,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-2-sub-create-service-opt-11-option---role-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -433,14 +385,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-2-sub-create-service-opt-28-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -465,14 +409,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-3-sub-create-task-set-opt-0-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -481,14 +417,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-3-sub-create-task-set-opt-1-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -507,14 +435,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-3-sub-create-task-set-opt-3-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -606,14 +526,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-3-sub-create-task-set-opt-13-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -647,20 +559,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-4-sub-delete-account-setting-opt-1-option---principal-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-4-sub-delete-account-setting-opt-1-option---principal-arn-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -669,14 +567,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-4-sub-delete-account-setting-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -702,14 +592,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-5-sub-delete-attributes-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -727,14 +609,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-5-sub-delete-attributes-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -760,14 +634,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-6-sub-delete-capacity-provider-opt-0-option---capacity-provider-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -776,14 +642,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-6-sub-delete-capacity-provider-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -809,14 +667,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-7-sub-delete-cluster-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -825,14 +675,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-7-sub-delete-cluster-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -858,14 +700,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-8-sub-delete-service-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -874,14 +708,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-8-sub-delete-service-opt-1-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -899,14 +725,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-8-sub-delete-service-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -965,14 +783,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-10-sub-delete-task-set-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -982,14 +792,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-10-sub-delete-task-set-opt-1-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -998,14 +800,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-10-sub-delete-task-set-opt-2-option---task-set-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1023,14 +817,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-10-sub-delete-task-set-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1056,14 +842,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-11-sub-deregister-container-instance-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1072,14 +850,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-11-sub-deregister-container-instance-opt-1-option---container-instance-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1097,14 +867,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-11-sub-deregister-container-instance-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1130,14 +892,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-12-sub-deregister-task-definition-opt-0-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1146,14 +900,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-12-sub-deregister-task-definition-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1178,14 +924,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-13-sub-describe-capacity-providers-opt-0-option---capacity-providers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1223,14 +961,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-13-sub-describe-capacity-providers-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1255,14 +985,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-14-sub-describe-clusters-opt-0-option---clusters-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1280,14 +1002,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-14-sub-describe-clusters-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1313,14 +1027,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-15-sub-describe-container-instances-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1329,14 +1035,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-15-sub-describe-container-instances-opt-1-option---container-instances-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1355,14 +1053,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-15-sub-describe-container-instances-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1454,14 +1144,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-18-sub-describe-services-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1470,14 +1152,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-18-sub-describe-services-opt-1-option---services-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1496,14 +1170,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-18-sub-describe-services-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1529,14 +1195,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-19-sub-describe-task-definition-opt-0-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1554,14 +1212,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-19-sub-describe-task-definition-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1587,14 +1237,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-20-sub-describe-task-sets-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1604,14 +1246,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-20-sub-describe-task-sets-opt-1-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1620,14 +1254,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-20-sub-describe-task-sets-opt-2-option---task-sets-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1646,14 +1272,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-20-sub-describe-task-sets-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1679,14 +1297,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-21-sub-describe-tasks-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1695,14 +1305,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-21-sub-describe-tasks-opt-1-option---tasks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1721,14 +1323,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-21-sub-describe-tasks-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1754,14 +1348,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-22-sub-discover-poll-endpoint-opt-0-option---container-instance-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1771,14 +1357,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-22-sub-discover-poll-endpoint-opt-1-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1787,14 +1365,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-22-sub-discover-poll-endpoint-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1819,14 +1389,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-23-sub-execute-command-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1859,14 +1421,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-23-sub-execute-command-opt-4-option---task-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1879,14 +1433,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-23-sub-execute-command-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1972,20 +1518,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-25-sub-list-account-settings-opt-2-option---principal-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-25-sub-list-account-settings-opt-2-option---principal-arn-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2020,14 +1552,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-25-sub-list-account-settings-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2080,14 +1604,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-26-sub-list-attributes-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2106,14 +1622,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-26-sub-list-attributes-opt-2-option---attribute-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2122,14 +1630,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-26-sub-list-attributes-opt-3-option---attribute-value-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2157,14 +1657,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-26-sub-list-attributes-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2235,14 +1727,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-27-sub-list-clusters-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2294,14 +1778,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-28-sub-list-container-instances-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2346,14 +1822,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-28-sub-list-container-instances-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2484,14 +1952,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-30-sub-list-services-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2536,14 +1996,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-30-sub-list-services-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2674,38 +2126,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-32-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-32-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-32-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-2",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-32-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-3",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-32-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-4",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2714,14 +2134,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-32-sub-list-tags-for-resource-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2782,14 +2194,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-33-sub-list-task-definition-families-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2887,14 +2291,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-34-sub-list-task-definitions-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2946,14 +2342,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-35-sub-list-tasks-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2963,14 +2351,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-35-sub-list-tasks-opt-1-option---container-instance-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2979,14 +2359,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-35-sub-list-tasks-opt-2-option---family-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3014,14 +2386,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-35-sub-list-tasks-opt-5-option---started-by-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3058,14 +2422,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-35-sub-list-tasks-opt-9-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3136,20 +2492,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-36-sub-put-account-setting-opt-2-option---principal-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-36-sub-put-account-setting-opt-2-option---principal-arn-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3158,14 +2500,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-36-sub-put-account-setting-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3209,14 +2543,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-37-sub-put-account-setting-default-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3241,14 +2567,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-38-sub-put-attributes-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3266,14 +2584,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-38-sub-put-attributes-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3299,14 +2609,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-39-sub-put-cluster-capacity-providers-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3315,14 +2617,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-39-sub-put-cluster-capacity-providers-opt-1-option---capacity-providers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3341,14 +2635,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-39-sub-put-cluster-capacity-providers-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3373,14 +2659,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-40-sub-register-container-instance-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3427,14 +2705,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-40-sub-register-container-instance-opt-5-option---container-instance-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3471,14 +2741,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-40-sub-register-container-instance-opt-9-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3503,14 +2765,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-41-sub-register-task-definition-opt-0-option---family-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3520,14 +2774,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-41-sub-register-task-definition-opt-1-option---task-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3536,14 +2782,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-41-sub-register-task-definition-opt-2-option---execution-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3563,14 +2801,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-41-sub-register-task-definition-opt-4-option---container-definitions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3579,14 +2809,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-41-sub-register-task-definition-opt-5-option---volumes-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3696,14 +2918,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-41-sub-register-task-definition-opt-17-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3737,14 +2951,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-42-sub-run-task-opt-1-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3775,14 +2981,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-42-sub-run-task-opt-6-option---group-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3809,14 +3007,6 @@
           "args": [
             {
               "name": "structure"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-42-sub-run-task-opt-9-option---overrides-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3872,14 +3062,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-42-sub-run-task-opt-15-option---started-by-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3897,14 +3079,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-42-sub-run-task-opt-17-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3937,14 +3111,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-42-sub-run-task-opt-21-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3969,14 +3135,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3985,14 +3143,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-1-option---container-instances-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4015,14 +3165,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-5-option---group-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4040,14 +3182,6 @@
           "args": [
             {
               "name": "structure"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-7-option---overrides-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4076,14 +3210,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-10-option---started-by-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4101,14 +3227,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-12-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4131,14 +3249,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-43-sub-start-task-opt-15-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4164,14 +3274,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-44-sub-stop-task-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4180,14 +3282,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-44-sub-stop-task-opt-1-option---task-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4206,14 +3300,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-44-sub-stop-task-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4239,14 +3325,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-45-sub-submit-attachment-state-changes-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4264,14 +3342,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-45-sub-submit-attachment-state-changes-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4297,14 +3367,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-46-sub-submit-container-state-change-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4313,14 +3375,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-46-sub-submit-container-state-change-opt-1-option---task-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4385,14 +3439,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-46-sub-submit-container-state-change-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4417,14 +3463,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-47-sub-submit-task-state-change-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4433,14 +3471,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-47-sub-submit-task-state-change-opt-1-option---task-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4523,14 +3553,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-47-sub-submit-task-state-change-opt-10-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4555,38 +3577,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-48-sub-tag-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-48-sub-tag-resource-opt-0-option---resource-arn-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-48-sub-tag-resource-opt-0-option---resource-arn-gen-2",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-48-sub-tag-resource-opt-0-option---resource-arn-gen-3",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-48-sub-tag-resource-opt-0-option---resource-arn-gen-4",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4604,14 +3594,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-48-sub-tag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4637,38 +3619,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-0-option---resource-arn-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-0-option---resource-arn-gen-2",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-0-option---resource-arn-gen-3",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-0-option---resource-arn-gen-4",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4678,14 +3628,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-1-option---tag-keys-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4694,14 +3636,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-49-sub-untag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4745,14 +3679,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-50-sub-update-capacity-provider-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4776,14 +3702,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-51-sub-update-cluster-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4821,14 +3739,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-51-sub-update-cluster-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4853,14 +3763,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-52-sub-update-cluster-settings-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4878,14 +3780,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-52-sub-update-cluster-settings-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4911,14 +3805,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-53-sub-update-container-agent-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4928,14 +3814,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-53-sub-update-container-agent-opt-1-option---container-instance-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4944,14 +3822,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-53-sub-update-container-agent-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4977,14 +3847,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-54-sub-update-container-instances-state-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4993,14 +3855,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-54-sub-update-container-instances-state-opt-1-option---container-instances-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5019,14 +3873,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-54-sub-update-container-instances-state-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5052,14 +3898,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-55-sub-update-service-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5068,14 +3906,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-55-sub-update-service-opt-1-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5094,14 +3924,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-55-sub-update-service-opt-3-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5262,14 +4084,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-55-sub-update-service-opt-24-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5294,14 +4108,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-56-sub-update-service-primary-task-set-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5310,14 +4116,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-56-sub-update-service-primary-task-set-opt-1-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5328,14 +4126,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-56-sub-update-service-primary-task-set-opt-2-option---primary-task-set-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5344,14 +4134,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-56-sub-update-service-primary-task-set-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5436,14 +4218,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-58-sub-update-task-set-opt-0-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5453,14 +4227,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-58-sub-update-task-set-opt-1-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5469,14 +4235,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-58-sub-update-task-set-opt-2-option---task-set-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5495,14 +4253,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-58-sub-update-task-set-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5528,14 +4278,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-59-sub-deploy-opt-0-option---service-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5544,14 +4286,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-59-sub-deploy-opt-1-option---task-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5562,14 +4296,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-59-sub-deploy-opt-2-option---codedeploy-appspec-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5578,14 +4304,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-59-sub-deploy-opt-3-option---cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5596,14 +4314,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-59-sub-deploy-opt-4-option---codedeploy-application-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5612,14 +4322,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ecs-root-sub-59-sub-deploy-opt-5-option---codedeploy-deployment-group-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -5775,14 +4477,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-0-sub-services-inactive-opt-0-option---cluster-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5791,14 +4485,6 @@
               "args": [
                 {
                   "name": "list"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-0-sub-services-inactive-opt-1-option---services-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5817,14 +4503,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-0-sub-services-inactive-opt-3-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5850,14 +4528,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-1-sub-services-stable-opt-0-option---cluster-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5866,14 +4536,6 @@
               "args": [
                 {
                   "name": "list"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-1-sub-services-stable-opt-1-option---services-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5892,14 +4554,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-1-sub-services-stable-opt-3-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5925,14 +4579,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-2-sub-tasks-running-opt-0-option---cluster-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5941,14 +4587,6 @@
               "args": [
                 {
                   "name": "list"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-2-sub-tasks-running-opt-1-option---tasks-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5967,14 +4605,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-2-sub-tasks-running-opt-3-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -6000,14 +4630,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-3-sub-tasks-stopped-opt-0-option---cluster-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -6016,14 +4638,6 @@
               "args": [
                 {
                   "name": "list"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-3-sub-tasks-stopped-opt-1-option---tasks-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -6042,14 +4656,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-ecs-root-sub-60-sub-wait-3-sub-tasks-stopped-opt-3-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

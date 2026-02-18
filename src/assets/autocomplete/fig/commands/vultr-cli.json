@@ -546,14 +546,6 @@
             {
               "name": "instanceID"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vultr-cli-root-sub-9-sub-instance-4-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -562,14 +554,6 @@
           "args": [
             {
               "name": "instanceID"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vultr-cli-root-sub-9-sub-instance-5-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

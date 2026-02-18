@@ -361,14 +361,6 @@
         {
           "name": "name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gpg-root-opt-50-option---cipher-algo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -377,14 +369,6 @@
       "args": [
         {
           "name": "name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gpg-root-opt-51-option---digest-algo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -395,14 +379,6 @@
         {
           "name": "name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gpg-root-opt-52-option---s2k-cipher-algo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -411,14 +387,6 @@
       "args": [
         {
           "name": "name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gpg-root-opt-53-option---s2k-digest-algo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -446,14 +414,6 @@
       "args": [
         {
           "name": "name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gpg-root-opt-56-option---disable-cipher-algo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

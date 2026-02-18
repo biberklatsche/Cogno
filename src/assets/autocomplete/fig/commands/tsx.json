@@ -22,14 +22,6 @@
         {
           "name": "script path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tsx-root-opt-2-option---clear-screen-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -46,14 +38,6 @@
         {
           "name": "tsconfig.json path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tsx-root-opt-4-option---tsconfig-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ],
@@ -64,14 +48,6 @@
       "args": [
         {
           "name": "script path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tsx-root-sub-0-sub-watch-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     }

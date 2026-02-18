@@ -59,14 +59,6 @@
         {
           "name": "name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-run-root-opt-6-option---launch-profile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

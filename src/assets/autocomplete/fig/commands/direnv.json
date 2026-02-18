@@ -32,14 +32,6 @@
         {
           "name": "PATH_TO_RC"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-direnv-root-sub-0-sub-allow-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -49,14 +41,6 @@
         {
           "name": "PATH_TO_RC"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-direnv-root-sub-1-sub-deny-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -65,14 +49,6 @@
       "args": [
         {
           "name": "PATH_TO_RC"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-direnv-root-sub-2-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

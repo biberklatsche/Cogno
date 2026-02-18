@@ -1921,14 +1921,6 @@
           "name": "tool"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-go-root-sub-15-sub-tool-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-n",

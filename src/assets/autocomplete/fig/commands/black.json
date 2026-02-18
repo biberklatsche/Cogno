@@ -108,14 +108,6 @@
         {
           "name": "version"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-black-root-opt-15-option---required-version-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

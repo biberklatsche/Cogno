@@ -53,14 +53,6 @@
             {
               "name": "file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-1-sub-bundle-opt-0-option---entry-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -123,14 +115,6 @@
           "args": [
             {
               "name": "Number of workers"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-1-sub-bundle-opt-7-option---max-workers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -345,14 +329,6 @@
             {
               "name": "Number of workers"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-4-sub-start-opt-6-option---max-workers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -380,14 +356,6 @@
           "args": [
             {
               "name": "logFile"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-4-sub-start-opt-9-option---custom-log-reporter-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -449,14 +417,6 @@
           "args": [
             {
               "name": "file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-5-sub-ram-bundle-opt-0-option---entry-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -520,14 +480,6 @@
           "args": [
             {
               "name": "Number of workers"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-5-sub-ram-bundle-opt-7-option---max-workers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -865,14 +817,6 @@
             {
               "name": "deviceId"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-15-sub-run-android-opt-6-option---deviceid-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -904,14 +848,6 @@
             {
               "name": "task list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-15-sub-run-android-opt-10-option---tasks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -938,14 +874,6 @@
             {
               "name": "simulator"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-16-sub-run-ios-opt-0-option---simulator-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -955,14 +883,6 @@
             {
               "name": "config scheme"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-16-sub-run-ios-opt-1-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -971,14 +891,6 @@
           "args": [
             {
               "name": "scheme"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-16-sub-run-ios-opt-2-option---scheme-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -998,14 +910,6 @@
             {
               "name": "device name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-16-sub-run-ios-opt-4-option---device-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1014,14 +918,6 @@
           "args": [
             {
               "name": "udid"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-react-native-root-sub-16-sub-run-ios-opt-5-option---udid-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

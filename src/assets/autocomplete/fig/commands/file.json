@@ -181,14 +181,6 @@
         {
           "name": "name=value"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-file-root-opt-24-option---parameter-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

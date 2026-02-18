@@ -174,14 +174,6 @@
           "name": "INSTANCE"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-limactl-root-sub-2-sub-delete-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -310,14 +302,6 @@
           "name": "INSTANCE"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-limactl-root-sub-7-sub-show-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -352,20 +336,6 @@
           "name": "NAME|FILE.yaml|URL"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-limactl-root-sub-8-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-limactl-root-sub-8-sub-start-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -390,14 +360,6 @@
       "args": [
         {
           "name": "INSTANCE"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-limactl-root-sub-9-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -453,14 +415,6 @@
       "args": [
         {
           "name": "FILE.yaml"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-limactl-root-sub-11-sub-validate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

@@ -51,14 +51,6 @@
         {
           "name": "profile"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-opt-5-option---profile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -105,14 +97,6 @@
           "name": "services"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-0-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--build-arg",
@@ -121,14 +105,6 @@
           "args": [
             {
               "name": "key=value"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-compose-root-sub-0-sub-build-opt-0-option---build-arg-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -204,14 +180,6 @@
       "args": [
         {
           "name": "services"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-1-sub-config-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -331,14 +299,6 @@
           "name": "service"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-3-sub-create-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--build",
@@ -402,14 +362,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-5-sub-events-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -519,14 +471,6 @@
           "name": "service"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-7-sub-images-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -543,14 +487,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-8-sub-kill-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -574,14 +510,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-9-sub-logs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -681,14 +609,6 @@
         {
           "name": "service"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-11-sub-pause-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -729,14 +649,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-13-sub-ps-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -796,14 +708,6 @@
           "name": "service"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-14-sub-pull-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--ignore-pull-failures",
@@ -838,14 +742,6 @@
           "name": "service"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-15-sub-push-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--ignore-push-failures",
@@ -859,14 +755,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-16-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -890,14 +778,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-17-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1094,14 +974,6 @@
         {
           "name": "service"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-19-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1110,14 +982,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-20-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1142,14 +1006,6 @@
         {
           "name": "service"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-21-sub-top-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1159,14 +1015,6 @@
         {
           "name": "service"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-22-sub-unpause-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1175,14 +1023,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-compose-root-sub-23-sub-up-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

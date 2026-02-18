@@ -535,14 +535,6 @@
               "name": "files"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-fig-root-sub-2-sub-debug-4-sub-logs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--level",
@@ -1143,14 +1135,6 @@
           "name": "host"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-fig-root-sub-6-sub-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1162,14 +1146,6 @@
           "args": [
             {
               "name": "auth"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-fig-root-sub-6-sub-ssh-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1340,14 +1316,6 @@
       "args": [
         {
           "name": "theme"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-fig-root-sub-13-sub-theme-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1580,14 +1548,6 @@
                     {
                       "name": "team"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-fig-root-sub-19-sub-user-2-sub-tokens-0-sub-new-opt-2-option--t-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -1612,14 +1572,6 @@
                   "args": [
                     {
                       "name": "team"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-fig-root-sub-19-sub-user-2-sub-tokens-1-sub-list-opt-0-option--t-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -1651,14 +1603,6 @@
                   "name": "name"
                 }
               ],
-              "providers": [
-                {
-                  "providerId": "fig-fig-root-sub-19-sub-user-2-sub-tokens-2-sub-revoke-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
-              ],
               "options": [
                 {
                   "name": [
@@ -1670,14 +1614,6 @@
                   "args": [
                     {
                       "name": "team"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-fig-root-sub-19-sub-user-2-sub-tokens-2-sub-revoke-opt-0-option--t-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -1826,14 +1762,6 @@
               "name": "email"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-fig-root-sub-19-sub-user-6-sub-switch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1905,14 +1833,6 @@
       "args": [
         {
           "name": "team"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-fig-root-sub-20-sub-team-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -2806,14 +2726,6 @@
               "name": "plugin"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-fig-root-sub-28-sub-plugins-2-sub-add-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -2830,14 +2742,6 @@
           "args": [
             {
               "name": "plugin"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-fig-root-sub-28-sub-plugins-3-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

@@ -14,14 +14,6 @@
         {
           "name": "filename"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rollup-root-opt-0-option--c-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

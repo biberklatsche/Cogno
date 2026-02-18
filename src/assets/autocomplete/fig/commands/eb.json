@@ -68,14 +68,6 @@
           "name": "environment-name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-eb-root-sub-1-sub-deploy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -179,14 +171,6 @@
           "description": "The name of the environment to clone"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-eb-root-sub-3-sub-clone-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -256,14 +240,6 @@
           "name": "environment-name",
           "description": "The name of the environment to open"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-eb-root-sub-4-sub-open-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -294,14 +270,6 @@
           "name": "environment-name",
           "description": "The name of the environment to print"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-eb-root-sub-6-sub-printenv-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -311,14 +279,6 @@
         {
           "name": "environment-name",
           "description": "The name of the environment to connect to"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-eb-root-sub-7-sub-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -378,14 +338,6 @@
         {
           "name": "environment-name",
           "description": "The name of the environment to use"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-eb-root-sub-8-sub-use-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

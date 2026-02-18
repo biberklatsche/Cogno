@@ -538,14 +538,6 @@
         {
           "name": "label"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-launchctl-root-sub-25-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -554,14 +546,6 @@
       "args": [
         {
           "name": "label"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-launchctl-root-sub-26-sub-list-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -572,14 +556,6 @@
         {
           "name": "label"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-launchctl-root-sub-27-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -588,14 +564,6 @@
       "args": [
         {
           "name": "label"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-launchctl-root-sub-28-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

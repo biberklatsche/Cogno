@@ -96,14 +96,6 @@
         {
           "name": "PATH"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-sidekiq-root-opt-7-option---config-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

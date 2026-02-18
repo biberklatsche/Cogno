@@ -14,14 +14,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-0-sub-abort-multipart-upload-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -99,14 +91,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-1-sub-complete-multipart-upload-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -275,14 +259,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-2-sub-copy-object-opt-1-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -858,14 +834,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-5-sub-create-multipart-upload-opt-1-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1227,14 +1195,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-7-sub-delete-bucket-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1276,14 +1236,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-8-sub-delete-bucket-analytics-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1336,14 +1288,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-9-sub-delete-bucket-cors-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1385,14 +1329,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-10-sub-delete-bucket-encryption-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1436,14 +1372,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-11-sub-delete-bucket-intelligent-tiering-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1485,14 +1413,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-12-sub-delete-bucket-inventory-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1544,14 +1464,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-13-sub-delete-bucket-lifecycle-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1637,14 +1549,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-15-sub-delete-bucket-metrics-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1696,14 +1600,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-16-sub-delete-bucket-ownership-controls-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1745,14 +1641,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-17-sub-delete-bucket-policy-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1796,14 +1684,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-18-sub-delete-bucket-replication-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1845,14 +1725,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-19-sub-delete-bucket-tagging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1896,14 +1768,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-20-sub-delete-bucket-website-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1945,14 +1809,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-21-sub-delete-object-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2067,14 +1923,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-22-sub-delete-object-tagging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2134,14 +1982,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-23-sub-delete-objects-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2229,14 +2069,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-24-sub-delete-public-access-block-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2278,14 +2110,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-25-sub-get-bucket-accelerate-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2338,14 +2162,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-26-sub-get-bucket-acl-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2387,14 +2203,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-27-sub-get-bucket-analytics-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2447,14 +2255,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-28-sub-get-bucket-cors-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2496,14 +2296,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-29-sub-get-bucket-encryption-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2547,14 +2339,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-30-sub-get-bucket-intelligent-tiering-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2596,14 +2380,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-31-sub-get-bucket-inventory-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2656,14 +2432,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-32-sub-get-bucket-lifecycle-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2705,14 +2473,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-33-sub-get-bucket-lifecycle-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2756,14 +2516,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-34-sub-get-bucket-location-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2805,14 +2557,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-35-sub-get-bucket-logging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2898,14 +2642,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-37-sub-get-bucket-metrics-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2957,14 +2693,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-38-sub-get-bucket-notification-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3006,14 +2734,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-39-sub-get-bucket-notification-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3057,14 +2777,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-40-sub-get-bucket-ownership-controls-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3106,14 +2818,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-41-sub-get-bucket-policy-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3157,14 +2861,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-42-sub-get-bucket-policy-status-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3206,14 +2902,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-43-sub-get-bucket-replication-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3257,14 +2945,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-44-sub-get-bucket-request-payment-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3306,14 +2986,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-45-sub-get-bucket-tagging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3357,14 +3029,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-46-sub-get-bucket-versioning-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3407,14 +3071,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-47-sub-get-bucket-website-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3456,14 +3112,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-48-sub-get-object-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3669,14 +3317,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-49-sub-get-object-acl-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3869,14 +3509,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-51-sub-get-object-legal-hold-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3946,14 +3578,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-52-sub-get-object-lock-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3995,14 +3619,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-53-sub-get-object-retention-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4073,14 +3689,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-54-sub-get-object-tagging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4150,14 +3758,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-55-sub-get-object-torrent-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4209,14 +3809,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-56-sub-get-public-access-block-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4259,14 +3851,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-57-sub-head-bucket-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4308,14 +3892,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-58-sub-head-object-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4530,14 +4106,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-59-sub-list-bucket-analytics-configurations-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4589,14 +4157,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-60-sub-list-bucket-intelligent-tiering-configurations-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4638,14 +4198,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-61-sub-list-bucket-inventory-configurations-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4697,14 +4249,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-62-sub-list-bucket-metrics-configurations-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4913,14 +4457,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-65-sub-list-multipart-uploads-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5052,14 +4588,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-66-sub-list-object-versions-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5202,14 +4730,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-67-sub-list-objects-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5341,14 +4861,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-68-sub-list-objects-v2-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5499,14 +5011,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-69-sub-list-parts-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5648,14 +5152,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-70-sub-put-bucket-accelerate-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5733,14 +5229,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-71-sub-put-bucket-acl-opt-2-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5847,14 +5335,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-72-sub-put-bucket-analytics-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5914,14 +5394,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-73-sub-put-bucket-cors-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5992,14 +5464,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-74-sub-put-bucket-encryption-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6069,14 +5533,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-75-sub-put-bucket-intelligent-tiering-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6127,14 +5583,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-76-sub-put-bucket-inventory-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6194,14 +5642,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-77-sub-put-bucket-lifecycle-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6270,14 +5710,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-78-sub-put-bucket-lifecycle-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6348,14 +5780,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-79-sub-put-bucket-logging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6425,14 +5849,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-80-sub-put-bucket-metrics-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6492,14 +5908,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-81-sub-put-bucket-notification-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6570,14 +5978,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-82-sub-put-bucket-notification-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6636,14 +6036,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-83-sub-put-bucket-ownership-controls-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6704,14 +6096,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-84-sub-put-bucket-policy-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6789,14 +6173,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-85-sub-put-bucket-replication-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6876,14 +6252,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-86-sub-put-bucket-request-payment-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6953,14 +6321,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-87-sub-put-bucket-tagging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7029,14 +6389,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-88-sub-put-bucket-versioning-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7115,14 +6467,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-89-sub-put-bucket-website-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7210,14 +6554,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-90-sub-put-object-opt-2-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7602,14 +6938,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-91-sub-put-object-acl-opt-2-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7742,14 +7070,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-92-sub-put-object-legal-hold-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7846,14 +7166,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-93-sub-put-object-lock-configuration-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7940,14 +7252,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-94-sub-put-object-retention-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8053,14 +7357,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-95-sub-put-object-tagging-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8157,14 +7453,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-96-sub-put-public-access-block-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8233,14 +7521,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-97-sub-restore-object-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8334,14 +7614,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-98-sub-select-object-content-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8465,14 +7737,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-99-sub-upload-part-opt-1-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8641,14 +7905,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-s3api-root-sub-100-sub-upload-part-copy-opt-0-option---bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9231,14 +8487,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-s3api-root-sub-102-sub-wait-0-sub-bucket-exists-opt-0-option---bucket-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -9281,14 +8529,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-s3api-root-sub-102-sub-wait-1-sub-bucket-not-exists-opt-0-option---bucket-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -9330,14 +8570,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-s3api-root-sub-102-sub-wait-2-sub-object-exists-opt-0-option---bucket-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -9551,14 +8783,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-s3api-root-sub-102-sub-wait-3-sub-object-not-exists-opt-0-option---bucket-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

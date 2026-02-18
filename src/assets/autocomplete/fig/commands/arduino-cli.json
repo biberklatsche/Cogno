@@ -116,14 +116,6 @@
                   "name": "FQBN",
                   "description": "Fully qualified board name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-0-sub-board-0-sub-attach-opt-2-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -143,14 +135,6 @@
                 {
                   "name": "port",
                   "description": "Arduino board port connection"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-0-sub-board-0-sub-attach-opt-4-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -186,14 +170,6 @@
                 {
                   "name": "FQBN",
                   "description": "Fully qualified board name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-0-sub-board-1-sub-details-opt-1-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -248,14 +224,6 @@
                 {
                   "name": "FQBN",
                   "description": "Fully qualified board name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-0-sub-board-2-sub-list-opt-2-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -345,14 +313,6 @@
               "name": "FQBN",
               "description": "Fully qualified board name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-1-sub-burn-bootloader-opt-2-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -372,14 +332,6 @@
             {
               "name": "port",
               "description": "Arduino board port connection"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-1-sub-burn-bootloader-opt-4-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -510,14 +462,6 @@
               "name": "FQBN",
               "description": "Fully qualified board name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-3-sub-compile-opt-9-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -581,14 +525,6 @@
             {
               "name": "port",
               "description": "Arduino board port connection"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-3-sub-compile-opt-17-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1008,14 +944,6 @@
               "name": "port",
               "description": "Arduino board port connection"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-7-sub-daemon-opt-5-option---port-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1052,14 +980,6 @@
             {
               "name": "FQBN",
               "description": "Fully qualified board name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-8-sub-debug-opt-2-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1100,14 +1020,6 @@
             {
               "name": "port",
               "description": "Arduino board port connection"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-8-sub-debug-opt-7-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1155,14 +1067,6 @@
                   "name": "FQBN",
                   "description": "Fully qualified board name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-8-sub-debug-0-sub-check-opt-2-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1186,14 +1090,6 @@
                 {
                   "name": "port",
                   "description": "Arduino board port connection"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-8-sub-debug-0-sub-check-opt-5-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1291,14 +1187,6 @@
                   "name": "FQBN",
                   "description": "Fully qualified board name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-10-sub-lib-2-sub-examples-opt-1-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1365,14 +1253,6 @@
                 {
                   "name": "FQBN",
                   "description": "Fully qualified board name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-arduino-cli-root-sub-10-sub-lib-4-sub-list-opt-2-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1490,14 +1370,6 @@
               "name": "FQBN",
               "description": "Fully qualified board name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-11-sub-monitor-opt-4-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1517,14 +1389,6 @@
             {
               "name": "port",
               "description": "Arduino board port connection"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-11-sub-monitor-opt-6-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1703,14 +1567,6 @@
               "name": "FQBN",
               "description": "Fully qualified board name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-16-sub-upload-opt-2-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1751,14 +1607,6 @@
             {
               "name": "port",
               "description": "Arduino board port connection"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-arduino-cli-root-sub-16-sub-upload-opt-6-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

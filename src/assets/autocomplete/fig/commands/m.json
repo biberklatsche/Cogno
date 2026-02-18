@@ -243,20 +243,6 @@
               "name": "path",
               "description": "Path to the disk file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-5-sub-disk-0-sub-ls-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-m-root-sub-5-sub-disk-0-sub-ls-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -266,20 +252,6 @@
             {
               "name": "path",
               "description": "Path to show disk information"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-5-sub-disk-1-sub-info-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-m-root-sub-5-sub-disk-1-sub-info-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -299,20 +271,6 @@
                   "name": "path",
                   "description": "Path to verify volume"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-3-sub-verify-0-sub-volume-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-3-sub-verify-0-sub-volume-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -322,20 +280,6 @@
                 {
                   "name": "path",
                   "description": "Path to verify disk"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-3-sub-verify-1-sub-disk-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-3-sub-verify-1-sub-disk-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -353,20 +297,6 @@
                   "name": "path",
                   "description": "Path to repair volume"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-4-sub-repair-0-sub-volume-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-4-sub-repair-0-sub-volume-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -376,20 +306,6 @@
                 {
                   "name": "path",
                   "description": "Path to repair disk"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-4-sub-repair-1-sub-disk-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-m-root-sub-5-sub-disk-4-sub-repair-1-sub-disk-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -436,20 +352,6 @@
             {
               "name": "path",
               "description": "Path to reformat a volume"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-5-sub-disk-6-sub-reformat-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-m-root-sub-5-sub-disk-6-sub-reformat-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -976,14 +878,6 @@
                   "name": "name",
                   "description": "Name of the location"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-m-root-sub-20-sub-network-1-sub-location-2-sub-delete-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1024,14 +918,6 @@
                 {
                   "name": "pid",
                   "description": "Process id"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-m-root-sub-21-sub-nosleep-0-sub-until-0-sub-pid-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -1217,14 +1103,6 @@
               "name": "service",
               "description": "Service name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-28-sub-service-2-sub-start-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1234,14 +1112,6 @@
             {
               "name": "service",
               "description": "Service name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-28-sub-service-3-sub-stop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1253,14 +1123,6 @@
               "name": "service",
               "description": "Service name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-28-sub-service-4-sub-load-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1270,14 +1132,6 @@
             {
               "name": "service",
               "description": "Service name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-28-sub-service-5-sub-unload-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1389,14 +1243,6 @@
               "name": "username",
               "description": "Username"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-34-sub-user-1-sub-info-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1410,14 +1256,6 @@
             {
               "name": "username",
               "description": "Username"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-34-sub-user-3-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1558,14 +1396,6 @@
               "name": "ESSID",
               "description": "ESSID"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-38-sub-wifi-2-sub-showpassword-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1582,14 +1412,6 @@
             {
               "name": "ESSID",
               "description": "ESSID"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-m-root-sub-38-sub-wifi-4-sub-forget-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

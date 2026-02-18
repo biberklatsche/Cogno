@@ -52,14 +52,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-0-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--offline",
@@ -158,14 +150,6 @@
         {
           "name": "package"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-1-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -244,14 +228,6 @@
           "name": "Package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-3-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -323,14 +299,6 @@
       "args": [
         {
           "name": "Package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-4-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -500,14 +468,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-11-sub-patch-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -703,14 +663,6 @@
           "name": "Scripts"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-17-sub-why-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -772,14 +724,6 @@
           "name": "Scripts"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-18-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -818,14 +762,6 @@
       "args": [
         {
           "name": "Scripts"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-19-sub-exec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -870,14 +806,6 @@
       "args": [
         {
           "name": "Branch"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pnpm-root-sub-22-sub-publish-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -998,14 +926,6 @@
               "name": "package"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-0-sub-add-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--offline",
@@ -1104,14 +1024,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-1-sub-install-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1124,14 +1036,6 @@
           "args": [
             {
               "name": "Package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-2-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1205,14 +1109,6 @@
           "args": [
             {
               "name": "Package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-3-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1443,14 +1339,6 @@
               "name": "Scripts"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-8-sub-why-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1512,14 +1400,6 @@
               "name": "Scripts"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-9-sub-run-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1560,14 +1440,6 @@
               "name": "Scripts"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-10-sub-exec-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1606,14 +1478,6 @@
           "args": [
             {
               "name": "Branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pnpm-root-sub-23-sub-recursive-12-sub-publish-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

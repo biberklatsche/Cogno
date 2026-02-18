@@ -40,14 +40,6 @@
         {
           "name": "repository name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-projj-root-sub-2-sub-find-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -70,14 +62,6 @@
         {
           "name": "repository name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-projj-root-sub-5-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -87,14 +71,6 @@
         {
           "name": "hook name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-projj-root-sub-6-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -103,14 +79,6 @@
       "args": [
         {
           "name": "hook name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-projj-root-sub-7-sub-runall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

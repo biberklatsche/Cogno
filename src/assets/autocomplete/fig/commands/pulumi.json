@@ -192,14 +192,6 @@
             {
               "name": "stack-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-1-sub-cancel-opt-11-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -293,14 +285,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-2-sub-config-opt-11-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -405,14 +389,6 @@
               "args": [
                 {
                   "name": "stack-name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pulumi-root-sub-2-sub-config-0-sub-cp-opt-11-option--d-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -1041,14 +1017,6 @@
             {
               "name": "stack-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-3-sub-console-opt-10-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1135,14 +1103,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-4-sub-destroy-opt-10-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1407,14 +1367,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-5-sub-import-opt-15-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1796,14 +1748,6 @@
             {
               "name": "stack-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-8-sub-logs-opt-11-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1925,14 +1869,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-9-sub-new-opt-10-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3364,14 +3300,6 @@
             {
               "name": "stack-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-13-sub-preview-opt-10-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3674,14 +3602,6 @@
             {
               "name": "stack-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-14-sub-refresh-opt-16-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3900,14 +3820,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-16-sub-stack-opt-10-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4511,14 +4423,6 @@
                 {
                   "name": "stackName"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pulumi-root-sub-16-sub-stack-5-sub-init-opt-11-option---copy-config-from-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -4827,14 +4731,6 @@
               "name": "stack-name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-16-sub-stack-9-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--color",
@@ -4931,14 +4827,6 @@
           "args": [
             {
               "name": "stack"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-16-sub-stack-10-sub-select-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5586,14 +5474,6 @@
                 {
                   "name": "stack-name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pulumi-root-sub-17-sub-state-0-sub-delete-opt-10-option--s-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5609,14 +5489,6 @@
               "args": [
                 {
                   "name": "stack-name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pulumi-root-sub-17-sub-state-0-sub-delete-opt-12-option---force-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -5710,14 +5582,6 @@
                 {
                   "name": "stack-name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pulumi-root-sub-17-sub-state-1-sub-unprotect-opt-10-option--s-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5733,14 +5597,6 @@
               "args": [
                 {
                   "name": "stack-name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pulumi-root-sub-17-sub-state-1-sub-unprotect-opt-12-option---all-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -5835,14 +5691,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-18-sub-up-opt-10-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6232,14 +6080,6 @@
           "args": [
             {
               "name": "stack-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pulumi-root-sub-20-sub-watch-opt-14-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

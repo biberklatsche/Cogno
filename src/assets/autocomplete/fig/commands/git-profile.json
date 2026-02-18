@@ -28,14 +28,6 @@
           "name": "profile",
           "description": "Profile you want to apply in this repository"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-git-profile-root-sub-0-sub-use-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

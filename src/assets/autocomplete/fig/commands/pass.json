@@ -148,14 +148,6 @@
           "description": "The password name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pass-root-sub-7-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -228,14 +220,6 @@
           "name": "password sub-directory",
           "description": "The password sub directory you want to list"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pass-root-sub-9-sub-ls-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -255,14 +239,6 @@
         {
           "name": "pass-name",
           "description": "The password you want to show"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pass-root-sub-11-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -289,14 +265,6 @@
         {
           "name": "pass-name",
           "description": "The password you want to edit"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pass-root-sub-12-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

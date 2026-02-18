@@ -235,14 +235,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pip3-root-sub-3-sub-freeze-opt-6-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -319,14 +311,6 @@
           "args": [
             {
               "name": "package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pip3-root-sub-4-sub-list-opt-11-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

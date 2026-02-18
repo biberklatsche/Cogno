@@ -170,14 +170,6 @@
         {
           "name": "NUMBER"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-youtube-dl-root-opt-26-option---playlist-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -187,14 +179,6 @@
         {
           "name": "NUMBER"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-youtube-dl-root-opt-27-option---playlist-end-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -203,14 +187,6 @@
       "args": [
         {
           "name": "ITEM_SPEC"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-youtube-dl-root-opt-28-option---playlist-items-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -842,14 +818,6 @@
         {
           "name": "LANGS"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-youtube-dl-root-opt-127-option---sub-lang-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -910,14 +878,6 @@
       "args": [
         {
           "name": "MSO"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-youtube-dl-root-opt-133-option---ap-mso-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

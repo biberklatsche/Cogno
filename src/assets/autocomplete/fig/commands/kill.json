@@ -11,14 +11,6 @@
         {
           "name": "signal_name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kill-root-opt-0-option--s-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

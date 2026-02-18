@@ -36,14 +36,6 @@
           "name": "profile"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-aws-vault-root-sub-1-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -78,14 +70,6 @@
       "args": [
         {
           "name": "profile"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-aws-vault-root-sub-3-sub-rotate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -159,14 +143,6 @@
         {
           "name": "profile"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-aws-vault-root-sub-5-sub-export-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -176,14 +152,6 @@
         {
           "name": "profile"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-aws-vault-root-sub-6-sub-clear-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -192,14 +160,6 @@
       "args": [
         {
           "name": "profile"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-aws-vault-root-sub-7-sub-login-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

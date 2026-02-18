@@ -231,14 +231,6 @@
         {
           "name": "BUILD file"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bazel-root-sub-0-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -248,14 +240,6 @@
         {
           "name": "BUILD file"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bazel-root-sub-1-sub-test-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -264,14 +248,6 @@
       "args": [
         {
           "name": "BUILD file"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bazel-root-sub-2-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     }

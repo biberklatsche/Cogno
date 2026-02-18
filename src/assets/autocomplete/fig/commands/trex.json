@@ -92,14 +92,6 @@
         {
           "name": "package name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-trex-root-sub-1-sub-delete-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -124,14 +116,6 @@
           "name": "script alias"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-trex-root-sub-4-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -152,14 +136,6 @@
       "args": [
         {
           "name": "package | url"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-trex-root-sub-5-sub-purge-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

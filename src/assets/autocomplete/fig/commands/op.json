@@ -11,14 +11,6 @@
         {
           "name": "account"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-op-root-opt-0-option---account-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

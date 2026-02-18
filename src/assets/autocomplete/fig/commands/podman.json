@@ -82,14 +82,6 @@
           "name": "path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-1-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--add-host",
@@ -131,14 +123,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-1-sub-build-opt-4-option--f-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -258,14 +242,6 @@
           "args": [
             {
               "name": "target build stage"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-1-sub-build-opt-19-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1195,14 +1171,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-5-sub-diff-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1355,14 +1323,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-8-sub-export-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1384,14 +1344,6 @@
       "args": [
         {
           "name": "image"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-9-sub-history-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1548,26 +1500,6 @@
           "name": "Name or ID"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-13-sub-inspect-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-podman-root-sub-13-sub-inspect-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-podman-root-sub-13-sub-inspect-gen-2",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1605,14 +1537,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-14-sub-kill-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1708,14 +1632,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-18-sub-logs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--details",
@@ -1773,14 +1689,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-19-sub-pause-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1875,14 +1783,6 @@
           "name": "NAME[:TAG|@DIGEST]"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-22-sub-pull-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1962,14 +1862,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-25-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1991,14 +1883,6 @@
       "args": [
         {
           "name": "containers"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-26-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -2031,14 +1915,6 @@
       "args": [
         {
           "name": "image"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-27-sub-rmi-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -2923,14 +2799,6 @@
           "name": "image"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-29-sub-save-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -3000,14 +2868,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-31-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -3040,14 +2900,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-32-sub-stats-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -3085,14 +2937,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-33-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -3124,14 +2968,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-35-sub-top-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -3141,14 +2977,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-36-sub-unpause-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -3157,14 +2985,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-37-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -3344,14 +3164,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-podman-root-sub-39-sub-wait-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -4249,14 +4061,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-3-sub-diff-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4364,14 +4168,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-5-sub-export-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -4393,14 +4189,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-6-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4433,14 +4221,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-7-sub-kill-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -4462,14 +4242,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-8-sub-logs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4601,14 +4373,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-10-sub-pause-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4665,14 +4429,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-14-sub-restart-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -4694,14 +4450,6 @@
           "args": [
             {
               "name": "containers"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-15-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5596,14 +5344,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-17-sub-start-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -5636,14 +5376,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-18-sub-stats-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5681,14 +5413,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-19-sub-stop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -5711,14 +5435,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-20-sub-top-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5728,14 +5444,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-21-sub-unpause-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5744,14 +5452,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-22-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5905,14 +5605,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-40-sub-container-23-sub-wait-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -5927,14 +5619,6 @@
           "args": [
             {
               "name": "path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-41-sub-image-0-sub-build-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5978,14 +5662,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-podman-root-sub-41-sub-image-0-sub-build-opt-4-option--f-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -6106,14 +5782,6 @@
                 {
                   "name": "target build stage"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-podman-root-sub-41-sub-image-0-sub-build-opt-19-option---target-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -6124,14 +5792,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-41-sub-image-1-sub-history-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6214,14 +5874,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-41-sub-image-3-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6349,14 +6001,6 @@
               "name": "NAME[:TAG|@DIGEST]"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-41-sub-image-7-sub-pull-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6424,14 +6068,6 @@
               "name": "image"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-41-sub-image-9-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6452,14 +6088,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-41-sub-image-10-sub-save-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6725,14 +6353,6 @@
               "name": "NETWORK"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-42-sub-network-3-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6822,14 +6442,6 @@
             {
               "name": "NETWORK"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-42-sub-network-6-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -6893,14 +6505,6 @@
               "name": "SECRET"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-43-sub-secret-1-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6960,14 +6564,6 @@
           "args": [
             {
               "name": "SECRET"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-43-sub-secret-3-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -7153,14 +6749,6 @@
               "name": "VOLUME"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-45-sub-volume-1-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -7238,14 +6826,6 @@
           "args": [
             {
               "name": "VOLUME"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-podman-root-sub-45-sub-volume-4-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

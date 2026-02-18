@@ -325,14 +325,6 @@
             {
               "name": "path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-pipenv-root-sub-3-sub-install-opt-9-option--r-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {

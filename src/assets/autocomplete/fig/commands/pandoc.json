@@ -16,14 +16,6 @@
         {
           "name": "format"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pandoc-root-opt-0-option--f-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -37,14 +29,6 @@
       "args": [
         {
           "name": "format"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pandoc-root-opt-1-option--t-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -78,14 +62,6 @@
       "args": [
         {
           "name": "file"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pandoc-root-opt-4-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -128,20 +104,6 @@
       "args": [
         {
           "name": "format"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pandoc-root-opt-12-option---list-extensions-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-pandoc-root-opt-12-option---list-extensions-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -244,14 +206,6 @@
         {
           "name": "file"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pandoc-root-opt-24-option---metadata-file-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -337,14 +291,6 @@
       "args": [
         {
           "name": "format"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pandoc-root-opt-33-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

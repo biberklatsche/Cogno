@@ -32,14 +32,6 @@
           "name": "authname",
           "description": "The user name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-passwd-root-opt-2-option--u-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

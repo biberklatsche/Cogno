@@ -13,14 +13,6 @@
           "description": "The name of the shortcut to run"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-shortcuts-root-sub-0-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -71,14 +63,6 @@
             {
               "name": "folder-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-shortcuts-root-sub-1-sub-list-opt-0-option---folder-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -95,14 +79,6 @@
           "name": "shortcut-name",
           "description": "The name of the shortcut to view"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-shortcuts-root-sub-2-sub-view-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -118,14 +94,6 @@
           "args": [
             {
               "name": "input"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-shortcuts-root-sub-3-sub-sign-opt-0-option---input-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

@@ -141,14 +141,6 @@
           "name": "string",
           "description": "The namespace"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-k9s-root-opt-15-option--n-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

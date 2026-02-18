@@ -481,14 +481,6 @@
           "name": "address"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-terraform-root-sub-18-sub-taint-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-allow-missing",
@@ -665,14 +657,6 @@
               "name": "workspace name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-terraform-root-sub-20-sub-workspace-3-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "-lock",
@@ -718,15 +702,7 @@
         },
         {
           "name": "select",
-          "description": "Change the current working workspace",
-          "providers": [
-            {
-              "providerId": "fig-terraform-root-sub-20-sub-workspace-4-sub-select-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Change the current working workspace"
         }
       ]
     },

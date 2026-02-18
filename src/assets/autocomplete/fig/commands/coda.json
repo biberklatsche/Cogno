@@ -56,14 +56,6 @@
           "name": "path/to/pack.ts",
           "description": "The path to the pack.ts file. E.g. src/pack.ts"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-coda-root-sub-2-sub-auth-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -83,14 +75,6 @@
         {
           "name": "path/to/pack.ts",
           "description": "The path to the pack.ts file. E.g. src/pack.ts"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-coda-root-sub-4-sub-create-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -123,14 +107,6 @@
         {
           "name": "path/to/pack.ts",
           "description": "The path to the pack.ts file. E.g. src/pack.ts"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-coda-root-sub-5-sub-upload-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -190,14 +166,6 @@
           "name": "path/to/pack.ts",
           "description": "The path to the pack.ts file. E.g. src/pack.ts"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-coda-root-sub-10-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -207,14 +175,6 @@
         {
           "name": "path/to/pack.ts",
           "description": "The path to the pack.ts file. E.g. src/pack.ts"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-coda-root-sub-11-sub-validate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

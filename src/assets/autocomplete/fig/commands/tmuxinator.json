@@ -79,14 +79,6 @@
           "name": "project",
           "description": "The project name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tmuxinator-root-sub-4-sub-delete-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -159,14 +151,6 @@
           "description": "The project name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-tmuxinator-root-sub-11-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-l",
@@ -181,14 +165,6 @@
         {
           "name": "project",
           "description": "The project name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tmuxinator-root-sub-12-sub-open-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -206,14 +182,6 @@
           "name": "project",
           "description": "The project name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tmuxinator-root-sub-13-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -223,14 +191,6 @@
         {
           "name": "project",
           "description": "The project name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tmuxinator-root-sub-14-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

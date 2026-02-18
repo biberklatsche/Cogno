@@ -150,14 +150,6 @@
         {
           "name": "filePath"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mongosh-root-opt-20-option---tlscafile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -167,14 +159,6 @@
         {
           "name": "filePath"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mongosh-root-opt-21-option---tlscrlfile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -183,14 +167,6 @@
       "args": [
         {
           "name": "filePath"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mongosh-root-opt-22-option---tlscertificatekeyfile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     }

@@ -44,14 +44,6 @@
             {
               "name": "Version"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-spring-root-sub-0-sub-init-opt-1-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -72,14 +64,6 @@
           "args": [
             {
               "name": "Dependencies"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-spring-root-sub-0-sub-init-opt-3-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -129,14 +113,6 @@
           "args": [
             {
               "name": "Version"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-spring-root-sub-0-sub-init-opt-8-option--j-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

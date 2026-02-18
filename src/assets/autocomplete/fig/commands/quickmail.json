@@ -98,14 +98,6 @@
             {
               "name": "Template"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-quickmail-root-sub-2-sub-send-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -206,14 +198,6 @@
               "args": [
                 {
                   "name": "Template id"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-quickmail-root-sub-3-sub-template-2-sub-edit-opt-1-option--n-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }

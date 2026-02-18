@@ -28,14 +28,6 @@
         {
           "name": "<language>"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-2-option--l-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -89,14 +81,6 @@
         {
           "name": "<mode>"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-8-option---wrap-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -123,14 +107,6 @@
         {
           "name": "<when>"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-11-option---color-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -140,14 +116,6 @@
         {
           "name": "<when>"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-12-option---italic-text-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -156,14 +124,6 @@
       "args": [
         {
           "name": "<when>"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-13-option---decorations-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -180,14 +140,6 @@
       "args": [
         {
           "name": "<when>"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-15-option---paging-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -230,14 +182,6 @@
       "args": [
         {
           "name": "<theme>"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bat-root-opt-19-option---theme-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

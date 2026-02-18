@@ -403,14 +403,6 @@
           "description": "The command name [default: \"help\"]"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-herd-root-sub-8-sub-help-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--format",

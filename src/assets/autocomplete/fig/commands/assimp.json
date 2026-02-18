@@ -29,14 +29,6 @@
           "name": "extension",
           "description": "Check whether a particular file extension is known by us"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-assimp-root-sub-2-sub-knowext-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -46,14 +38,6 @@
         {
           "name": "extension",
           "description": "Specific file extension"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-assimp-root-sub-3-sub-exportinfo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -120,14 +104,6 @@
           "args": [
             {
               "name": "format"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-assimp-root-sub-5-sub-export-opt-0-option--f-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

@@ -67,14 +67,6 @@
               "name": "OUTPUT",
               "description": "Where to output the result. Should end in .rbxm, .rbxl, .rbxmx, or .rbxlx"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rojo-root-sub-1-sub-build-opt-0-option---output-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -163,14 +155,6 @@
             {
               "name": "OUTPUT",
               "description": "Where to output the sourcemap. Omit this to use stdout instead of writing to a file. Should end in .json"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rojo-root-sub-7-sub-sourcemap-opt-1-option---output-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

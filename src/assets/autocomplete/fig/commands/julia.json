@@ -30,14 +30,6 @@
           "name": "project folder",
           "description": "Julia project/environment"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-julia-root-opt-3-option---project-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -49,14 +41,6 @@
       "args": [
         {
           "name": "system image"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-julia-root-opt-4-option--j-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -116,14 +100,6 @@
       "args": [
         {
           "name": "julia script"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-julia-root-opt-12-option--l-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

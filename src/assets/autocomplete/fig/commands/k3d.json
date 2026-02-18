@@ -335,14 +335,6 @@
               "description": "Cluster to delete"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-0-sub-cluster-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -378,14 +370,6 @@
               "description": "Cluster to edit"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-0-sub-cluster-2-sub-edit-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--port-add",
@@ -404,14 +388,6 @@
             {
               "name": "cluster",
               "description": "Cluster to list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-0-sub-cluster-3-sub-list-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -447,14 +423,6 @@
               "description": "Cluster to start"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-0-sub-cluster-4-sub-start-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -486,14 +454,6 @@
             {
               "name": "cluster",
               "description": "Cluster to stop"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-0-sub-cluster-5-sub-stop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -570,14 +530,6 @@
               "description": "Image to import"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-3-sub-image-0-sub-import-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -589,14 +541,6 @@
                 {
                   "name": "cluster",
                   "description": "Cluster to import image(s) into"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-k3d-root-sub-3-sub-image-0-sub-import-opt-0-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -647,14 +591,6 @@
               "description": "Cluster to get kubeconfig for"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-4-sub-kubeconfig-0-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -674,14 +610,6 @@
             {
               "name": "cluster",
               "description": "Cluster to get kubeconfig for"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-4-sub-kubeconfig-1-sub-merge-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -757,14 +685,6 @@
                 {
                   "name": "cluster",
                   "description": "Cluster to connect to"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-k3d-root-sub-5-sub-node-0-sub-create-opt-0-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -890,14 +810,6 @@
               "description": "Name of the node"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-5-sub-node-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -925,14 +837,6 @@
             {
               "name": "Node Name",
               "description": "Name of the node"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-5-sub-node-2-sub-edit-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -983,14 +887,6 @@
               "name": "Node Name",
               "description": "Name of the node"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-5-sub-node-4-sub-start-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1000,14 +896,6 @@
             {
               "name": "Node Name",
               "description": "Name of the node"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-5-sub-node-5-sub-stop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1117,14 +1005,6 @@
               "description": "Name of the registry"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-6-sub-registry-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1145,14 +1025,6 @@
             {
               "name": "Registry Name",
               "description": "Name of the registry"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-k3d-root-sub-6-sub-registry-2-sub-list-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

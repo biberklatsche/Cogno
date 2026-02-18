@@ -15,14 +15,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-0-sub-add-layer-version-permission-opt-0-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -32,14 +24,6 @@
             {
               "name": "long"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-0-sub-add-layer-version-permission-opt-1-option---version-number-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -48,14 +32,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-0-sub-add-layer-version-permission-opt-2-option---statement-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -75,14 +51,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-0-sub-add-layer-version-permission-opt-4-option---principal-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -101,14 +69,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-0-sub-add-layer-version-permission-opt-6-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -117,14 +77,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-0-sub-add-layer-version-permission-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -150,14 +102,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -166,14 +110,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-1-option---statement-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -193,20 +129,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-3-option---principal-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-3-option---principal-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -224,14 +146,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-5-option---source-account-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -251,20 +165,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-7-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-7-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -273,14 +173,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-8-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -309,14 +201,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-1-sub-add-permission-opt-11-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -341,14 +225,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-2-sub-create-alias-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -366,14 +242,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-2-sub-create-alias-opt-2-option---function-version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -401,14 +269,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-2-sub-create-alias-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -470,14 +330,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-3-sub-create-code-signing-config-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -502,14 +354,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-4-sub-create-event-source-mapping-opt-0-option---event-source-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -518,14 +362,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-4-sub-create-event-source-mapping-opt-1-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -759,14 +595,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-4-sub-create-event-source-mapping-opt-29-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -808,14 +636,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-2-option---role-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -915,14 +735,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-14-option---kms-key-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -950,14 +762,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-17-option---layers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -966,14 +770,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-18-option---file-system-configs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -992,14 +788,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-20-option---code-signing-config-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1046,14 +834,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-25-option---zip-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1062,14 +842,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-5-sub-create-function-opt-26-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1164,14 +936,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-7-sub-delete-alias-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1181,14 +945,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-7-sub-delete-alias-opt-1-option---name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1197,14 +953,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-7-sub-delete-alias-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1230,14 +978,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-8-sub-delete-code-signing-config-opt-0-option---code-signing-config-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1246,14 +986,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-8-sub-delete-code-signing-config-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1279,14 +1011,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-9-sub-delete-event-source-mapping-opt-0-option---uuid-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1295,14 +1019,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-9-sub-delete-event-source-mapping-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1328,14 +1044,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-10-sub-delete-function-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1345,14 +1053,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-10-sub-delete-function-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1361,14 +1061,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-10-sub-delete-function-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1394,14 +1086,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-11-sub-delete-function-code-signing-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1410,14 +1094,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-11-sub-delete-function-code-signing-config-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1443,14 +1119,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-12-sub-delete-function-concurrency-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1459,14 +1127,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-12-sub-delete-function-concurrency-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1492,14 +1152,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-13-sub-delete-function-event-invoke-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1509,20 +1161,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-13-sub-delete-function-event-invoke-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-13-sub-delete-function-event-invoke-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1531,14 +1169,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-13-sub-delete-function-event-invoke-config-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1606,14 +1236,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-15-sub-delete-layer-version-opt-0-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1623,14 +1245,6 @@
             {
               "name": "long"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-15-sub-delete-layer-version-opt-1-option---version-number-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1639,14 +1253,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-15-sub-delete-layer-version-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1672,14 +1278,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-16-sub-delete-provisioned-concurrency-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1689,20 +1287,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-16-sub-delete-provisioned-concurrency-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-16-sub-delete-provisioned-concurrency-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1711,14 +1295,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-16-sub-delete-provisioned-concurrency-config-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1744,14 +1320,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-17-sub-get-account-settings-opt-0-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1776,14 +1344,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-18-sub-get-alias-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1793,14 +1353,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-18-sub-get-alias-opt-1-option---name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1809,14 +1361,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-18-sub-get-alias-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1842,14 +1386,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-19-sub-get-code-signing-config-opt-0-option---code-signing-config-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1858,14 +1394,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-19-sub-get-code-signing-config-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1891,14 +1419,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-20-sub-get-event-source-mapping-opt-0-option---uuid-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1907,14 +1427,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-20-sub-get-event-source-mapping-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1940,14 +1452,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-21-sub-get-function-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1957,20 +1461,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-21-sub-get-function-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-21-sub-get-function-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1979,14 +1469,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-21-sub-get-function-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2012,14 +1494,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-22-sub-get-function-code-signing-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2028,14 +1502,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-22-sub-get-function-code-signing-config-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2061,14 +1527,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-23-sub-get-function-concurrency-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2077,14 +1535,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-23-sub-get-function-concurrency-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2110,14 +1560,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-24-sub-get-function-configuration-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2127,20 +1569,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-24-sub-get-function-configuration-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-24-sub-get-function-configuration-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2149,14 +1577,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-24-sub-get-function-configuration-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2182,14 +1602,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-25-sub-get-function-event-invoke-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2199,20 +1611,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-25-sub-get-function-event-invoke-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-25-sub-get-function-event-invoke-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2221,14 +1619,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-25-sub-get-function-event-invoke-config-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2328,14 +1718,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-28-sub-get-layer-version-opt-0-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2345,14 +1727,6 @@
             {
               "name": "long"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-28-sub-get-layer-version-opt-1-option---version-number-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2361,14 +1735,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-28-sub-get-layer-version-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2394,14 +1760,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-29-sub-get-layer-version-by-arn-opt-0-option---arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2410,14 +1768,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-29-sub-get-layer-version-by-arn-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2443,14 +1793,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-30-sub-get-layer-version-policy-opt-0-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2460,14 +1802,6 @@
             {
               "name": "long"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-30-sub-get-layer-version-policy-opt-1-option---version-number-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2476,14 +1810,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-30-sub-get-layer-version-policy-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2509,14 +1835,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-31-sub-get-policy-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2526,20 +1844,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-31-sub-get-policy-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-31-sub-get-policy-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2548,14 +1852,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-31-sub-get-policy-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2581,14 +1877,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-32-sub-get-provisioned-concurrency-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2598,20 +1886,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-32-sub-get-provisioned-concurrency-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-32-sub-get-provisioned-concurrency-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2620,14 +1894,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-32-sub-get-provisioned-concurrency-config-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2695,14 +1961,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-34-sub-invoke-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2739,14 +1997,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-34-sub-invoke-opt-4-option---payload-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2755,20 +2005,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-34-sub-invoke-opt-5-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-34-sub-invoke-opt-5-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2794,14 +2030,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-35-sub-invoke-async-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2811,14 +2039,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-35-sub-invoke-async-opt-1-option---invoke-args-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2827,14 +2047,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-35-sub-invoke-async-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2860,14 +2072,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-36-sub-list-aliases-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2876,14 +2080,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-36-sub-list-aliases-opt-1-option---function-version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2911,14 +2107,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-36-sub-list-aliases-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2980,14 +2168,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-37-sub-list-code-signing-configs-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3030,14 +2210,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-38-sub-list-event-source-mappings-opt-0-option---event-source-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3046,14 +2218,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-38-sub-list-event-source-mappings-opt-1-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3081,14 +2245,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-38-sub-list-event-source-mappings-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3132,14 +2288,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-39-sub-list-function-event-invoke-configs-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3166,14 +2314,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-39-sub-list-function-event-invoke-configs-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3322,14 +2462,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-41-sub-list-functions-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3372,14 +2504,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-42-sub-list-functions-by-code-signing-config-opt-0-option---code-signing-config-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3406,14 +2530,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-42-sub-list-functions-by-code-signing-config-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3466,14 +2582,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-43-sub-list-layer-versions-opt-1-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3509,14 +2617,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-43-sub-list-layer-versions-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3596,14 +2696,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-44-sub-list-layers-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3646,14 +2738,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-45-sub-list-provisioned-concurrency-configs-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3680,14 +2764,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-45-sub-list-provisioned-concurrency-configs-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3731,14 +2807,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-46-sub-list-tags-opt-0-option---resource-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3747,14 +2815,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-46-sub-list-tags-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3779,14 +2839,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-47-sub-list-versions-by-function-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3814,14 +2866,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-47-sub-list-versions-by-function-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3864,14 +2908,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-48-sub-publish-layer-version-opt-0-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3927,14 +2963,6 @@
             {
               "name": "blob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-48-sub-publish-layer-version-opt-6-option---zip-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3943,14 +2971,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-48-sub-publish-layer-version-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3976,14 +2996,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-49-sub-publish-version-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3992,14 +3004,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-49-sub-publish-version-opt-1-option---code-sha256-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4019,14 +3023,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-49-sub-publish-version-opt-3-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4044,14 +3040,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-49-sub-publish-version-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4077,14 +3065,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-50-sub-put-function-code-signing-config-opt-0-option---code-signing-config-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4094,14 +3074,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-50-sub-put-function-code-signing-config-opt-1-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4110,14 +3082,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-50-sub-put-function-code-signing-config-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4143,14 +3107,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-51-sub-put-function-concurrency-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4168,14 +3124,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-51-sub-put-function-concurrency-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4201,14 +3149,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-52-sub-put-function-event-invoke-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4217,20 +3157,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-52-sub-put-function-event-invoke-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-52-sub-put-function-event-invoke-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4259,14 +3185,6 @@
             {
               "name": "structure"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-52-sub-put-function-event-invoke-config-opt-4-option---destination-config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4275,14 +3193,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-52-sub-put-function-event-invoke-config-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4350,14 +3260,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-54-sub-put-provisioned-concurrency-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4366,20 +3268,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-54-sub-put-provisioned-concurrency-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-54-sub-put-provisioned-concurrency-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4398,14 +3286,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-54-sub-put-provisioned-concurrency-config-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4491,14 +3371,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-56-sub-remove-layer-version-permission-opt-0-option---layer-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4507,14 +3379,6 @@
           "args": [
             {
               "name": "long"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-56-sub-remove-layer-version-permission-opt-1-option---version-number-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4525,14 +3389,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-56-sub-remove-layer-version-permission-opt-2-option---statement-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4542,14 +3398,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-56-sub-remove-layer-version-permission-opt-3-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4558,14 +3406,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-56-sub-remove-layer-version-permission-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4591,14 +3431,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-57-sub-remove-permission-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4607,14 +3439,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-57-sub-remove-permission-opt-1-option---statement-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4625,20 +3449,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-57-sub-remove-permission-opt-2-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-57-sub-remove-permission-opt-2-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4648,14 +3458,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-57-sub-remove-permission-opt-3-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4664,14 +3466,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-57-sub-remove-permission-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4697,14 +3491,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-58-sub-tag-resource-opt-0-option---resource-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4722,14 +3508,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-58-sub-tag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4755,14 +3533,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-59-sub-untag-resource-opt-0-option---resource-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4780,14 +3550,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-59-sub-untag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4813,14 +3575,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-60-sub-update-alias-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4838,14 +3592,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-60-sub-update-alias-opt-2-option---function-version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4874,14 +3620,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-60-sub-update-alias-opt-5-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4890,14 +3628,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-60-sub-update-alias-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4922,14 +3652,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-61-sub-update-code-signing-config-opt-0-option---code-signing-config-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4967,14 +3689,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-61-sub-update-code-signing-config-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4999,14 +3713,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-62-sub-update-event-source-mapping-opt-0-option---uuid-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5015,14 +3721,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-62-sub-update-event-source-mapping-opt-1-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5184,14 +3882,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-62-sub-update-event-source-mapping-opt-21-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5216,14 +3906,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5232,14 +3914,6 @@
           "args": [
             {
               "name": "blob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-1-option---zip-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5250,14 +3924,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-2-option---s3-bucket-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5267,14 +3933,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-3-option---s3-key-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5283,14 +3941,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-4-option---s3-object-version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5326,14 +3976,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-10-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5361,14 +4003,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-63-sub-update-function-code-opt-13-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5393,14 +4027,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5409,14 +4035,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-1-option---role-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5499,14 +4117,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-10-option---kms-key-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5525,14 +4135,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-12-option---revision-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5542,14 +4144,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-13-option---layers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5558,14 +4152,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-14-option---file-system-configs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5612,14 +4198,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-64-sub-update-function-configuration-opt-19-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5644,14 +4222,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-65-sub-update-function-event-invoke-config-opt-0-option---function-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5660,20 +4230,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-65-sub-update-function-event-invoke-config-opt-1-option---qualifier-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-lambda-root-sub-65-sub-update-function-event-invoke-config-opt-1-option---qualifier-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5710,14 +4266,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lambda-root-sub-65-sub-update-function-event-invoke-config-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5816,14 +4364,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-0-sub-function-active-opt-0-option---function-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5833,20 +4373,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-0-sub-function-active-opt-1-option---qualifier-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-0-sub-function-active-opt-1-option---qualifier-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5855,14 +4381,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-0-sub-function-active-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5930,14 +4448,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-2-sub-function-exists-opt-0-option---function-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5947,20 +4457,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-2-sub-function-exists-opt-1-option---qualifier-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-2-sub-function-exists-opt-1-option---qualifier-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5969,14 +4465,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-2-sub-function-exists-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -6002,14 +4490,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-3-sub-function-updated-opt-0-option---function-name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -6019,20 +4499,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-3-sub-function-updated-opt-1-option---qualifier-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                },
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-3-sub-function-updated-opt-1-option---qualifier-gen-1",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -6041,14 +4507,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-lambda-root-sub-67-sub-wait-3-sub-function-updated-opt-2-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

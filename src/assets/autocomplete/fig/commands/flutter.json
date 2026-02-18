@@ -29,14 +29,6 @@
           "name": "device id",
           "description": "Target device id or name (prefixes allowed)"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-flutter-root-opt-2-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -73,14 +65,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-0-sub-analyze-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -180,14 +164,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-1-sub-assemble-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -274,14 +250,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-2-sub-attach-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -415,14 +383,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-3-sub-bash-completion-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -472,14 +432,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-4-sub-build-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -496,14 +448,6 @@
             {
               "name": "path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-4-sub-build-opt-4-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -515,14 +459,6 @@
         {
           "name": "channel-name",
           "description": "Switch to <channel name>. Leave this blank to see available channels"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-flutter-root-sub-5-sub-channel-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -554,14 +490,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-6-sub-clean-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -599,14 +527,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-7-sub-config-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -750,14 +670,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-8-sub-create-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -887,14 +799,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-9-sub-devices-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -952,14 +856,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-10-sub-doctor-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1001,14 +897,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-11-sub-downgrade-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1045,14 +933,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-12-sub-drive-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1331,14 +1211,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-13-sub-emulators-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1351,14 +1223,6 @@
           "args": [
             {
               "name": "emulator id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-13-sub-emulators-opt-4-option---launch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1400,14 +1264,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-14-sub-format-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1470,14 +1326,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-15-sub-gen-l10n-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1597,14 +1445,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-16-sub-install-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1660,14 +1500,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-17-sub-logs-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1720,14 +1552,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-18-sub-pub-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1833,14 +1657,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-19-sub-run-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2084,14 +1900,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-20-sub-screenshot-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2168,14 +1976,6 @@
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-21-sub-symbolize-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2248,14 +2048,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-22-sub-test-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2426,14 +2218,6 @@
             {
               "name": "device id",
               "description": "Target device id or name (prefixes allowed)"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-flutter-root-sub-23-sub-upgrade-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

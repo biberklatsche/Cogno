@@ -599,14 +599,6 @@
           "name": "Running Pods"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-kubectl-root-sub-5-sub-attach-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -617,14 +609,6 @@
           "args": [
             {
               "name": "Container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-5-sub-attach-opt-0-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1124,14 +1108,6 @@
             {
               "name": "Cluster"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-11-sub-config-1-sub-delete-cluster-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1140,14 +1116,6 @@
           "args": [
             {
               "name": "Context"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-11-sub-config-2-sub-delete-context-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1161,14 +1129,6 @@
           "args": [
             {
               "name": "Context"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-11-sub-config-4-sub-get-contexts-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1275,14 +1235,6 @@
               "name": "Context"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-11-sub-config-9-sub-set-context-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--current",
@@ -1320,14 +1272,6 @@
           "args": [
             {
               "name": "Cluster"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-11-sub-config-10-sub-set-credentials-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1441,14 +1385,6 @@
           "args": [
             {
               "name": "Context"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-11-sub-config-12-sub-use-context-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1575,14 +1511,6 @@
       "args": [
         {
           "name": "Node"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kubectl-root-sub-13-sub-cordon-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1771,14 +1699,6 @@
                 {
                   "name": "Resource Type"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kubectl-root-sub-15-sub-create-0-sub-clusterrole-opt-6-option---resource-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1848,14 +1768,6 @@
               "args": [
                 {
                   "name": "Cluster Role"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kubectl-root-sub-15-sub-create-1-sub-clusterrolebinding-opt-4-option---clusterrole-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2222,14 +2134,6 @@
                 {
                   "name": "Cronjob"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kubectl-root-sub-15-sub-create-6-sub-job-opt-4-option---from-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2566,14 +2470,6 @@
                 {
                   "name": "Resource Type"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kubectl-root-sub-15-sub-create-11-sub-role-opt-4-option---resource-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2644,14 +2540,6 @@
                 {
                   "name": "Cluster Role"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kubectl-root-sub-15-sub-create-12-sub-rolebinding-opt-4-option---clusterrole-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2664,14 +2552,6 @@
               "args": [
                 {
                   "name": "Role"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kubectl-root-sub-15-sub-create-12-sub-rolebinding-opt-6-option---role-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3499,14 +3379,6 @@
           "name": "Node"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-kubectl-root-sub-19-sub-drain-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--dry-run",
@@ -3687,14 +3559,6 @@
             {
               "name": "Container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-21-sub-exec-opt-1-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3723,14 +3587,6 @@
       "args": [
         {
           "name": "Resource Type"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kubectl-root-sub-22-sub-explain-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -4576,14 +4432,6 @@
               "name": "Deployments"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-33-sub-rollout-0-sub-history-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--allow-missing-template-keys",
@@ -4650,14 +4498,6 @@
               "name": "Deployments"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-33-sub-rollout-1-sub-pause-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--allow-missing-template-keys",
@@ -4718,14 +4558,6 @@
           "args": [
             {
               "name": "Deployments"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-33-sub-rollout-2-sub-restart-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4790,14 +4622,6 @@
               "name": "Deployments"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-33-sub-rollout-3-sub-resume-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--allow-missing-template-keys",
@@ -4860,14 +4684,6 @@
               "name": "Deployments"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-33-sub-rollout-4-sub-status-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -4923,14 +4739,6 @@
           "args": [
             {
               "name": "Deployments"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-kubectl-root-sub-33-sub-rollout-5-sub-undo-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5907,14 +5715,6 @@
           "name": "Node"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-kubectl-root-sub-37-sub-taint-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--allow-missing-template-keys",
@@ -5976,14 +5776,6 @@
       "args": [
         {
           "name": "Node"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kubectl-root-sub-39-sub-uncordon-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

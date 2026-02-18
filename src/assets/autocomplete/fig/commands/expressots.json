@@ -41,14 +41,6 @@
               "name": "template",
               "description": "Choose a template"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expressots-root-sub-0-sub-new-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -61,14 +53,6 @@
             {
               "name": "package-manager",
               "description": "Choose a package manager"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expressots-root-sub-0-sub-new-opt-1-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

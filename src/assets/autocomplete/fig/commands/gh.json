@@ -21,14 +21,6 @@
             {
               "name": "alias"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-0-sub-alias-0-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -231,14 +223,6 @@
           "name": "[pr | issue | path[:line]"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-gh-root-sub-4-sub-browse-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -249,14 +233,6 @@
           "args": [
             {
               "name": "branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-4-sub-browse-opt-0-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1330,14 +1306,6 @@
               "name": "number | url | branch"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-0-sub-checkout-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--recurse-submodules",
@@ -1351,14 +1319,6 @@
           "args": [
             {
               "name": "number | url | branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-1-sub-checks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1379,14 +1339,6 @@
               "name": "number | url | branch"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-2-sub-close-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1403,14 +1355,6 @@
           "args": [
             {
               "name": "number | url | branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-3-sub-edit-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1568,14 +1512,6 @@
               "name": "number | url | branch"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-4-sub-comment-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1630,14 +1566,6 @@
               "args": [
                 {
                   "name": "branch"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-gh-root-sub-10-sub-pr-5-sub-create-opt-1-option--b-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1769,14 +1697,6 @@
               "name": "number | url | branch"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-6-sub-diff-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--color",
@@ -1875,14 +1795,6 @@
               "name": "number | url | branch"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-8-sub-merge-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1921,14 +1833,6 @@
             {
               "name": "number | url | branch"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-9-sub-ready-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1938,14 +1842,6 @@
             {
               "name": "number | url | branch"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-10-sub-reopen-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1954,14 +1850,6 @@
           "args": [
             {
               "name": "number | url | branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-11-sub-review-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2012,14 +1900,6 @@
               "name": "number | url | branch"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-10-sub-pr-13-sub-view-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -2053,14 +1933,6 @@
           "args": [
             {
               "name": "repository"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-0-sub-archive-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2335,14 +2207,6 @@
               "name": "repository"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-4-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -2359,14 +2223,6 @@
           "args": [
             {
               "name": "repository"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-5-sub-edit-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2482,20 +2338,6 @@
           "args": [
             {
               "name": "repository"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-6-sub-fork-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-6-sub-fork-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2686,20 +2528,6 @@
               "name": "repository"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-9-sub-set-default-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-9-sub-set-default-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -2762,20 +2590,6 @@
           "args": [
             {
               "name": "repository"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-11-sub-view-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            },
-            {
-              "providerId": "fig-gh-root-sub-12-sub-repo-11-sub-view-gen-1",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -3580,15 +3394,7 @@
             },
             {
               "name": "--devcontainer-path",
-              "description": "Path to the devcontainer.json file to use when creating codespace",
-              "providers": [
-                {
-                  "providerId": "fig-gh-root-sub-17-sub-codespace-2-sub-create-opt-2-option---devcontainer-path-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
-              ]
+              "description": "Path to the devcontainer.json file to use when creating codespace"
             },
             {
               "name": [
@@ -3967,14 +3773,6 @@
             {
               "name": "forward",
               "description": "Forward ports",
-              "providers": [
-                {
-                  "providerId": "fig-gh-root-sub-17-sub-codespace-8-sub-ports-0-sub-forward-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
-              ],
               "options": [
                 {
                   "name": [
@@ -3993,14 +3791,6 @@
             {
               "name": "visibility",
               "description": "Change the visibility of the forwarded port",
-              "providers": [
-                {
-                  "providerId": "fig-gh-root-sub-17-sub-codespace-8-sub-ports-1-sub-visibility-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
-              ],
               "options": [
                 {
                   "name": [

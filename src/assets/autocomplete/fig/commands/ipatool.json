@@ -116,14 +116,6 @@
             {
               "name": "identifier"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ipatool-root-sub-2-sub-download-opt-0-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -166,14 +158,6 @@
           "args": [
             {
               "name": "identifier"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ipatool-root-sub-4-sub-purchase-opt-0-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

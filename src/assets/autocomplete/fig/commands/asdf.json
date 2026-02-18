@@ -60,14 +60,6 @@
             {
               "name": "name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-asdf-root-sub-0-sub-plugin-2-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -133,14 +125,6 @@
         {
           "name": "name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-4-sub-plugin-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -192,14 +176,6 @@
         {
           "name": "name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-8-sub-current-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -220,14 +196,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-10-sub-which-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -287,14 +255,6 @@
           "name": "name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-15-sub-list-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "subcommands": [
         {
           "name": "all",
@@ -341,14 +301,6 @@
         {
           "name": "command"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-18-sub-exec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -357,14 +309,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-19-sub-env-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -395,14 +339,6 @@
             {
               "name": "command"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-asdf-root-sub-22-sub-shim-0-sub-versions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -413,14 +349,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-asdf-root-sub-23-sub-shim-versions-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

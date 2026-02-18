@@ -30,14 +30,6 @@
         {
           "name": "config"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-opt-2-option---config-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -117,14 +109,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-0-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -134,14 +118,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-1-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -153,14 +129,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-2-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -170,14 +138,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-3-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -192,14 +152,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-4-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -209,14 +161,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-5-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -249,14 +193,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-8-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -266,14 +202,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-9-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -292,14 +220,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-11-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -329,14 +249,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-0-sub-bench-opt-14-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -464,14 +376,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -481,14 +385,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -512,14 +408,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-3-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -529,14 +417,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-4-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -548,14 +428,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-5-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -565,14 +437,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-6-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -593,14 +457,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-8-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -610,14 +466,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-9-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -645,14 +493,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-12-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -682,14 +522,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-1-sub-build-opt-15-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -824,14 +656,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -841,14 +665,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -872,14 +688,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-3-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -889,14 +697,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-4-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -908,14 +708,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-5-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -925,14 +717,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-6-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -953,14 +737,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-8-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -970,14 +746,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-9-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -996,14 +764,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-11-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1033,14 +793,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-2-sub-check-opt-14-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1168,14 +920,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-3-sub-clean-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1184,14 +928,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-3-sub-clean-opt-1-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1202,14 +938,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-3-sub-clean-opt-2-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1247,14 +975,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-3-sub-clean-opt-6-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1336,14 +1056,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-4-sub-config-opt-1-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1423,14 +1135,6 @@
                 {
                   "name": "config"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cargo-root-sub-4-sub-config-0-sub-get-opt-3-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1506,14 +1210,6 @@
                 {
                   "name": "config"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cargo-root-sub-4-sub-config-1-sub-help-opt-1-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1579,14 +1275,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1596,14 +1284,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1627,14 +1307,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-3-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1644,14 +1316,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-4-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1672,14 +1336,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-6-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1689,14 +1345,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-7-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1715,14 +1363,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-9-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1752,14 +1392,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-5-sub-doc-opt-12-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1879,14 +1511,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-6-sub-fetch-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1896,14 +1520,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-6-sub-fetch-opt-1-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1923,14 +1539,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-6-sub-fetch-opt-3-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1995,14 +1603,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2012,14 +1612,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2043,14 +1635,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-3-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2060,14 +1644,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-4-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2079,14 +1655,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-5-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2096,14 +1664,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-6-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2124,14 +1684,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-8-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2141,14 +1693,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-9-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2167,14 +1711,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-11-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2204,14 +1740,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-7-sub-fix-opt-14-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2351,14 +1879,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-8-sub-generate-lockfile-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2377,14 +1897,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-8-sub-generate-lockfile-opt-2-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2454,14 +1966,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-9-sub-git-checkout-opt-1-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2566,14 +2070,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-10-sub-init-opt-5-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2636,14 +2132,6 @@
       "args": [
         {
           "name": "crate"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-sub-11-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -2721,14 +2209,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-11-sub-install-opt-7-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2748,14 +2228,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-11-sub-install-opt-9-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2766,14 +2238,6 @@
             {
               "name": "example"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-11-sub-install-opt-10-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2783,14 +2247,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-11-sub-install-opt-11-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2856,14 +2312,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-11-sub-install-opt-18-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2963,14 +2411,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-12-sub-locate-project-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2998,14 +2438,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-12-sub-locate-project-opt-3-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3094,14 +2526,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-13-sub-login-opt-2-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3180,14 +2604,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-14-sub-logout-opt-2-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3248,14 +2664,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-15-sub-metadata-opt-0-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3274,14 +2682,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-15-sub-metadata-opt-2-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3310,14 +2710,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-15-sub-metadata-opt-5-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3440,14 +2832,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-16-sub-new-opt-5-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3584,14 +2968,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-17-sub-owner-opt-6-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3659,14 +3035,6 @@
             {
               "name": "target"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-18-sub-package-opt-0-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3686,14 +3054,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-18-sub-package-opt-2-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3707,14 +3067,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-18-sub-package-opt-3-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3725,14 +3077,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-18-sub-package-opt-4-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3741,14 +3085,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-18-sub-package-opt-5-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3780,14 +3116,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-18-sub-package-opt-8-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3876,14 +3204,6 @@
           "name": "SPEC"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-sub-19-sub-pkgid-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -3895,14 +3215,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-19-sub-pkgid-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3911,14 +3223,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-19-sub-pkgid-opt-1-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3938,14 +3242,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-19-sub-pkgid-opt-3-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4025,14 +3321,6 @@
             {
               "name": "target"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-20-sub-publish-opt-2-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4054,14 +3342,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-20-sub-publish-opt-4-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4070,14 +3350,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-20-sub-publish-opt-5-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4088,14 +3360,6 @@
           "args": [
             {
               "name": "features"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-20-sub-publish-opt-6-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4136,14 +3400,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-20-sub-publish-opt-10-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4224,14 +3480,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-21-sub-read-manifest-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4250,14 +3498,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-21-sub-read-manifest-opt-2-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4328,14 +3568,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-22-sub-report-opt-1-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4400,14 +3632,6 @@
                 {
                   "name": "package"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cargo-root-sub-22-sub-report-0-sub-future-incompatibilities-opt-1-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4426,14 +3650,6 @@
               "args": [
                 {
                   "name": "config"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cargo-root-sub-22-sub-report-0-sub-future-incompatibilities-opt-3-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4506,14 +3722,6 @@
                 {
                   "name": "config"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cargo-root-sub-22-sub-report-1-sub-help-opt-1-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4581,14 +3789,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-0-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4598,14 +3798,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-1-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4618,14 +3810,6 @@
           "args": [
             {
               "name": "package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-2-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4658,14 +3842,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-5-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4675,14 +3851,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-6-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4701,14 +3869,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-8-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4738,14 +3898,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-23-sub-run-opt-11-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4841,14 +3993,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4871,14 +4015,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-2-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4888,14 +4024,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-3-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4907,14 +4035,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-4-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4924,14 +4044,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-5-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4952,14 +4064,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-7-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4969,14 +4073,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-8-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5015,14 +4111,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-12-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5051,14 +4139,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-24-sub-rustc-opt-15-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5182,14 +4262,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5212,14 +4284,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-2-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5229,14 +4293,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-3-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5248,14 +4304,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-4-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5265,14 +4313,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-5-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5293,14 +4333,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-7-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5310,14 +4342,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-8-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5336,14 +4360,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-10-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5373,14 +4389,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-25-sub-rustdoc-opt-13-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5493,14 +4501,6 @@
           "name": "query"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-sub-26-sub-search-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--index",
@@ -5545,14 +4545,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-26-sub-search-opt-4-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5625,14 +4617,6 @@
             {
               "name": "bin"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-0-option---bin-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5642,14 +4626,6 @@
           "args": [
             {
               "name": "example"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-1-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5661,14 +4637,6 @@
             {
               "name": "test"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-2-option---test-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5678,14 +4646,6 @@
           "args": [
             {
               "name": "bench"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-3-option---bench-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5700,14 +4660,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-4-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5717,14 +4669,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-5-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5757,14 +4701,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-8-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5774,14 +4710,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-9-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5800,14 +4728,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-11-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5837,14 +4757,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-27-sub-test-opt-14-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5980,14 +4892,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6001,14 +4905,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-1-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6018,14 +4914,6 @@
           "args": [
             {
               "name": "exclude"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-2-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6037,14 +4925,6 @@
             {
               "name": "features"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-3-option---features-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6054,14 +4934,6 @@
           "args": [
             {
               "name": "target"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-4-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6089,14 +4961,6 @@
             {
               "name": "invert"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-6-option--i-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6106,14 +4970,6 @@
           "args": [
             {
               "name": "prune"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-7-option---prune-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6172,14 +5028,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-28-sub-tree-opt-13-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6284,14 +5132,6 @@
           "name": "SPEC"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-sub-29-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -6341,14 +5181,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-29-sub-uninstall-opt-4-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6413,14 +5245,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-30-sub-update-opt-0-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6438,14 +5262,6 @@
           "args": [
             {
               "name": "manifest-path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-30-sub-update-opt-2-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6465,14 +5281,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-30-sub-update-opt-4-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6553,14 +5361,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-31-sub-vendor-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6592,14 +5392,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-31-sub-vendor-opt-3-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6685,14 +5477,6 @@
             {
               "name": "manifest-path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-32-sub-verify-project-opt-0-option---manifest-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6711,14 +5495,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-32-sub-verify-project-opt-2-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6788,14 +5564,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-33-sub-version-opt-1-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6907,14 +5675,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-34-sub-yank-opt-5-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6993,14 +5753,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-35-sub-help-opt-1-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7041,14 +5793,6 @@
       "args": [
         {
           "name": "DEP_ID"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-sub-36-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -7120,14 +5864,6 @@
           "args": [
             {
               "name": "SPEC"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-36-sub-add-opt-11-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7222,14 +5958,6 @@
             {
               "name": "TARGET"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-36-sub-add-opt-24-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -7243,14 +5971,6 @@
       "args": [
         {
           "name": "DEP_ID"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cargo-root-sub-37-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -7269,14 +5989,6 @@
             {
               "name": "TARGET"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-37-sub-remove-opt-2-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7288,14 +6000,6 @@
           "args": [
             {
               "name": "SPEC"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cargo-root-sub-37-sub-remove-opt-3-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

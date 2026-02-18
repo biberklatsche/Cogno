@@ -15,14 +15,6 @@
             {
               "name": "filter"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-phpunit-watcher-root-sub-0-sub-watch-opt-0-option---filter-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]

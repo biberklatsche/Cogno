@@ -125,14 +125,6 @@
         {
           "name": "mode"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-vite-root-opt-14-option--m-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

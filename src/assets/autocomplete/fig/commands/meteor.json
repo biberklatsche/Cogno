@@ -108,14 +108,6 @@
             {
               "name": "JSON File"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-meteor-root-sub-2-sub-run-opt-8-option---settings-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -201,14 +193,6 @@
             {
               "name": "example_name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-meteor-root-sub-4-sub-create-opt-2-option---example-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -265,14 +249,6 @@
           "name": "package_names"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-meteor-root-sub-5-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--packages-only",
@@ -323,14 +299,6 @@
         {
           "name": "package"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-meteor-root-sub-7-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -370,14 +338,6 @@
       "args": [
         {
           "name": "platform"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-meteor-root-sub-10-sub-remove-platform-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -437,14 +397,6 @@
           "args": [
             {
               "name": "platforms"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-meteor-root-sub-13-sub-build-opt-7-option---platforms-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -525,14 +477,6 @@
           "args": [
             {
               "name": "JSON File"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-meteor-root-sub-18-sub-deploy-opt-2-option---settings-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -706,14 +650,6 @@
             {
               "name": "JSON File"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-meteor-root-sub-23-sub-test-packages-opt-7-option---settings-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -842,14 +778,6 @@
           "args": [
             {
               "name": "JSON File"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-meteor-root-sub-24-sub-test-opt-7-option---settings-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1023,14 +951,6 @@
       "args": [
         {
           "name": "JSON File"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-meteor-root-sub-27-sub-publish-release-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

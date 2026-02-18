@@ -171,14 +171,6 @@
     {
       "name": "ip",
       "description": "Show Tailscale IP addresses",
-      "providers": [
-        {
-          "providerId": "fig-tailscale-root-sub-4-sub-ip-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--1",

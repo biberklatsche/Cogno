@@ -21,14 +21,6 @@
         {
           "name": "certificate[:password]"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-curl-root-opt-1-option--e-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

@@ -26,14 +26,6 @@
           "name": "collection:generator"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nx-root-sub-1-sub-generate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--defaults",
@@ -69,14 +61,6 @@
           "name": "project:target[:configuration]"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nx-root-sub-2-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -87,14 +71,6 @@
           "args": [
             {
               "name": "configuration"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-2-sub-run-opt-0-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -139,14 +115,6 @@
             {
               "name": "projects"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-4-sub-graph-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -159,14 +127,6 @@
           "args": [
             {
               "name": "project"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-4-sub-graph-opt-2-option---focus-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -196,14 +156,6 @@
           "args": [
             {
               "name": "targets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-4-sub-graph-opt-8-option---targets-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -239,14 +191,6 @@
             {
               "name": "configuration"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-1-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -255,14 +199,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-2-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -297,14 +233,6 @@
             {
               "name": "projects"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-9-option---projects-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -321,14 +249,6 @@
           "args": [
             {
               "name": "targets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-5-sub-run-many-opt-12-option---targets-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -364,14 +284,6 @@
             {
               "name": "configuration"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-6-sub-affected-opt-2-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -380,14 +292,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-6-sub-affected-opt-3-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -437,14 +341,6 @@
           "args": [
             {
               "name": "targets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-6-sub-affected-opt-14-option---targets-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -485,14 +381,6 @@
             {
               "name": "projects"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-7-sub-affected-graph-opt-2-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -509,14 +397,6 @@
           "args": [
             {
               "name": "project"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-7-sub-affected-graph-opt-5-option---focus-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -550,14 +430,6 @@
           "args": [
             {
               "name": "targets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-7-sub-affected-graph-opt-12-option---targets-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -605,14 +477,6 @@
             {
               "name": "configuration"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-8-sub-print-affected-opt-2-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -621,14 +485,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-8-sub-print-affected-opt-3-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -654,14 +510,6 @@
           "args": [
             {
               "name": "targets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-8-sub-print-affected-opt-8-option---targets-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -702,14 +550,6 @@
             {
               "name": "projects"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-9-sub-format-check-opt-2-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -734,14 +574,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-9-sub-format-check-opt-7-option---projects-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -778,14 +610,6 @@
             {
               "name": "projects"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-10-sub-format-write-opt-2-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -810,14 +634,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-10-sub-format-write-opt-7-option---projects-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -909,14 +725,6 @@
           "description": "The name of an installed plugin to query"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nx-root-sub-13-sub-list-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--help",
@@ -935,14 +743,6 @@
         {
           "name": "name",
           "description": "The name of your generator"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-nx-root-sub-14-sub-workspace-generator-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1020,14 +820,6 @@
             {
               "name": "configuration"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-18-sub-exec-opt-0-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1036,14 +828,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-18-sub-exec-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1077,14 +861,6 @@
           "args": [
             {
               "name": "project"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-18-sub-exec-opt-8-option---project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1128,14 +904,6 @@
           "args": [
             {
               "name": "projects"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nx-root-sub-19-sub-watch-opt-3-option---projects-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

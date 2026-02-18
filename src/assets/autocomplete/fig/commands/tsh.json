@@ -18,14 +18,6 @@
         {
           "name": "Teleport proxy address"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tsh-root-opt-1-option---proxy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -34,14 +26,6 @@
       "args": [
         {
           "name": "user"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tsh-root-opt-2-option---user-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -124,14 +108,6 @@
         {
           "name": "user@hostname",
           "description": "Address of remote machine to log into"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tsh-root-sub-1-sub-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -424,14 +400,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-2-sub-aws-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -440,14 +408,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-2-sub-aws-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -556,14 +516,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-3-sub-apps-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -572,14 +524,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-3-sub-apps-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -688,14 +632,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-0-sub-ls-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -704,14 +640,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-0-sub-ls-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -820,14 +748,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-1-sub-login-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -836,14 +756,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-1-sub-login-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -952,14 +864,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-2-sub-logout-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -968,14 +872,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-2-sub-logout-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1084,14 +980,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-3-sub-config-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1100,14 +988,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-3-sub-apps-3-sub-config-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1218,14 +1098,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-4-sub-proxy-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1234,14 +1106,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-4-sub-proxy-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1350,14 +1214,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-4-sub-proxy-0-sub-ssh-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1366,14 +1222,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-4-sub-proxy-0-sub-ssh-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1482,14 +1330,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-4-sub-proxy-1-sub-db-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1498,14 +1338,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-4-sub-proxy-1-sub-db-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1616,14 +1448,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-5-sub-db-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1632,14 +1456,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-5-sub-db-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1748,14 +1564,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-0-sub-ls-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1764,14 +1572,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-0-sub-ls-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1880,14 +1680,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-1-sub-login-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1896,14 +1688,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-1-sub-login-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2012,14 +1796,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-2-sub-logout-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2028,14 +1804,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-2-sub-logout-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2144,14 +1912,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-3-sub-env-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2160,14 +1920,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-3-sub-env-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2276,14 +2028,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-4-sub-config-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2292,14 +2036,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-4-sub-config-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2408,14 +2144,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-5-sub-connect-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2424,14 +2152,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-5-sub-db-5-sub-connect-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2542,14 +2262,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-6-sub-join-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2558,14 +2270,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-6-sub-join-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2674,14 +2378,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-7-sub-play-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2690,14 +2386,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-7-sub-play-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2806,14 +2494,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-8-sub-scp-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2822,14 +2502,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-8-sub-scp-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2938,14 +2610,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-9-sub-ls-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2954,14 +2618,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-9-sub-ls-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3070,14 +2726,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-10-sub-clusters-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3086,14 +2734,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-10-sub-clusters-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3202,14 +2842,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-11-sub-login-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3218,14 +2850,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-11-sub-login-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3334,14 +2958,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-12-sub-logout-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3350,14 +2966,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-12-sub-logout-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3466,14 +3074,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-13-sub-status-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3482,14 +3082,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-13-sub-status-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3598,14 +3190,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-14-sub-env-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3614,14 +3198,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-14-sub-env-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3730,14 +3306,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-15-sub-request-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3746,14 +3314,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-15-sub-request-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3862,14 +3422,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-0-sub-ls-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3878,14 +3430,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-0-sub-ls-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3994,14 +3538,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-1-sub-show-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4010,14 +3546,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-1-sub-show-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4126,14 +3654,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-2-sub-new-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4142,14 +3662,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-2-sub-new-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4258,14 +3770,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-3-sub-review-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4274,14 +3778,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-15-sub-request-3-sub-review-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4392,14 +3888,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-16-sub-kube-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4408,14 +3896,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-16-sub-kube-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4524,14 +4004,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-0-sub-ls-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4540,14 +4012,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-0-sub-ls-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4656,14 +4120,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-1-sub-login-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4672,14 +4128,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-1-sub-login-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4788,14 +4236,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-2-sub-sessions-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4804,14 +4244,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-2-sub-sessions-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -4920,14 +4352,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-3-sub-exec-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4936,14 +4360,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-3-sub-exec-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5052,14 +4468,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-4-sub-join-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5068,14 +4476,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-16-sub-kube-4-sub-join-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5186,14 +4586,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-17-sub-mfa-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5202,14 +4594,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-17-sub-mfa-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5318,14 +4702,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-17-sub-mfa-0-sub-ls-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5334,14 +4710,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-17-sub-mfa-0-sub-ls-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5450,14 +4818,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-17-sub-mfa-1-sub-add-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5466,14 +4826,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-17-sub-mfa-1-sub-add-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5582,14 +4934,6 @@
                 {
                   "name": "Teleport proxy address"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-17-sub-mfa-2-sub-rm-opt-1-option---proxy-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -5598,14 +4942,6 @@
               "args": [
                 {
                   "name": "user"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsh-root-sub-17-sub-mfa-2-sub-rm-opt-2-option---user-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -5716,14 +5052,6 @@
             {
               "name": "Teleport proxy address"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-18-sub-config-opt-1-option---proxy-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5732,14 +5060,6 @@
           "args": [
             {
               "name": "user"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsh-root-sub-18-sub-config-opt-2-option---user-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

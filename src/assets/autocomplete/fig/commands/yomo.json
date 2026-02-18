@@ -38,14 +38,6 @@
           "description": "The .go file to build"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-yomo-root-sub-1-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--target",
@@ -69,14 +61,6 @@
             {
               "name": "module"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-yomo-root-sub-1-sub-build-opt-1-option--m-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -88,14 +72,6 @@
         {
           "name": ".wasm file",
           "description": "The .wasm file to run"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-yomo-root-sub-2-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

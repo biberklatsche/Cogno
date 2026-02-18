@@ -76,14 +76,6 @@
             {
               "name": "target"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cap-root-sub-4-sub-run-opt-1-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]

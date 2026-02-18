@@ -126,14 +126,6 @@
     {
       "name": "help",
       "description": "Display help for V",
-      "providers": [
-        {
-          "providerId": "fig-v-root-sub-15-sub-help-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "subcommands": [
         {
           "name": "other",

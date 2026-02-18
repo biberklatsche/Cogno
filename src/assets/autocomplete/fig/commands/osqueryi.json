@@ -180,14 +180,6 @@
         {
           "name": "value"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-osqueryi-root-opt-26-option---disable_tables-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -204,14 +196,6 @@
       "args": [
         {
           "name": "value"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-osqueryi-root-opt-29-option---enable_tables-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

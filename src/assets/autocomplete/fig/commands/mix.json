@@ -72,14 +72,6 @@
           "name": "file"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-mix-root-sub-1-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--config",
@@ -114,14 +106,6 @@
               "name": "file|pattern",
               "description": "The file|pattern to execute"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-mix-root-sub-1-sub-run-opt-2-option--r-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -133,14 +117,6 @@
           "args": [
             {
               "name": "file|pattern"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-mix-root-sub-1-sub-run-opt-3-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -185,14 +161,6 @@
         {
           "name": "task",
           "description": "Prints documentation for a given task"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mix-root-sub-2-sub-help-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

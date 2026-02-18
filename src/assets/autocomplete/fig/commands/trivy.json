@@ -89,14 +89,6 @@
             {
               "name": "severity"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-0-sub-image-2-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -134,14 +126,6 @@
             {
               "name": "vulnType"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-0-sub-image-6-sub---vuln-type-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -150,14 +134,6 @@
           "args": [
             {
               "name": "securityChecks"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-0-sub-image-7-sub---security-checks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -318,14 +294,6 @@
             {
               "name": "severity"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-1-sub-filesystem-2-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -363,14 +331,6 @@
             {
               "name": "vulnType"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-1-sub-filesystem-6-sub---vuln-type-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -379,14 +339,6 @@
           "args": [
             {
               "name": "securityChecks"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-1-sub-filesystem-7-sub---security-checks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -582,14 +534,6 @@
             {
               "name": "severity"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-2-sub-rootfs-2-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -627,14 +571,6 @@
             {
               "name": "vulnType"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-2-sub-rootfs-6-sub---vuln-type-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -643,14 +579,6 @@
           "args": [
             {
               "name": "securityChecks"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-2-sub-rootfs-7-sub---security-checks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -814,14 +742,6 @@
             {
               "name": "severity"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-3-sub-sbom-4-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -913,14 +833,6 @@
             {
               "name": "severity"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-4-sub-repository-2-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -958,14 +870,6 @@
             {
               "name": "vulnType"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-4-sub-repository-6-sub---vuln-type-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -974,14 +878,6 @@
           "args": [
             {
               "name": "securityChecks"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-4-sub-repository-7-sub---security-checks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1136,14 +1032,6 @@
             {
               "name": "severity"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-5-sub-client-2-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1181,14 +1069,6 @@
             {
               "name": "vulnType"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-5-sub-client-6-sub---vuln-type-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1197,14 +1077,6 @@
           "args": [
             {
               "name": "securityChecks"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-5-sub-client-7-sub---security-checks-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1283,14 +1155,6 @@
           "args": [
             {
               "name": "severity"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-5-sub-client-17-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1495,14 +1359,6 @@
           "args": [
             {
               "name": "severity"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-trivy-root-sub-7-sub-config-2-sub---severity-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

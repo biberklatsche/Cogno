@@ -900,14 +900,6 @@
         {
           "name": "json"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pm2-root-sub-3-sub-startorrestart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -916,14 +908,6 @@
       "args": [
         {
           "name": "json"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pm2-root-sub-4-sub-startorreload-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -942,14 +926,6 @@
       "args": [
         {
           "name": "json"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pm2-root-sub-6-sub-startorgracefulreload-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

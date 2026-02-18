@@ -64,14 +64,6 @@
           "name": "point",
           "description": "Name of the warp point to be removed"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-wd-root-sub-1-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -81,14 +73,6 @@
         {
           "name": "point",
           "description": "Name of the warp point"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-wd-root-sub-2-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -104,14 +88,6 @@
           "name": "point",
           "description": "Name of the warp point"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-wd-root-sub-4-sub-ls-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -121,14 +97,6 @@
         {
           "name": "point",
           "description": "Name of the warp point"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-wd-root-sub-5-sub-path-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

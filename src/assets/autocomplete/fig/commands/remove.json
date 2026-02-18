@@ -19,14 +19,6 @@
         {
           "name": "ref"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-remove-root-sub-1-sub-reference-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

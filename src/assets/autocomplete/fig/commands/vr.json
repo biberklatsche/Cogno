@@ -27,14 +27,6 @@
         {
           "name": "script"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-vr-root-sub-0-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -43,14 +35,6 @@
       "args": [
         {
           "name": "script"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-vr-root-sub-1-sub-export-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

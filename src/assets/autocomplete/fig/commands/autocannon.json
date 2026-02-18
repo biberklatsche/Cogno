@@ -178,14 +178,6 @@
         {
           "name": "FILE"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-autocannon-root-opt-14-option--i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

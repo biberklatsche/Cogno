@@ -162,14 +162,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pipx-root-sub-2-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--include-injected",
@@ -258,14 +250,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-pipx-root-sub-4-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--verbose",
@@ -289,14 +273,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-pipx-root-sub-6-sub-reinstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

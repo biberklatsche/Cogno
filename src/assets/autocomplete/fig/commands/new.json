@@ -181,14 +181,6 @@
           "description": "The dotnet new --install command installs a template package from the PATH or NUGET_ID provided"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-new-root-sub-2-sub--i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--interactive",

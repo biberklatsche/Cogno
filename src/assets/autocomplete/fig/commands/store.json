@@ -27,14 +27,6 @@
         {
           "name": "manifest"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-store-root-opt-1-option--m-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

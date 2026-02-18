@@ -161,14 +161,6 @@
           "name": "platform",
           "description": "Platform name(s) to build. If not specified, all platforms are built"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cordova-root-sub-5-sub-requirements-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -211,14 +203,6 @@
           "args": [
             {
               "name": "platform"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cordova-root-sub-6-sub-platform-1-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -298,14 +282,6 @@
               "name": "plugin"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-cordova-root-sub-7-sub-plugin-1-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--nosave",
@@ -326,14 +302,6 @@
         {
           "name": "platform"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cordova-root-sub-8-sub-prepare-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -343,14 +311,6 @@
         {
           "name": "platform",
           "description": "Platform name(s) to build. If not specified, all platforms are built"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cordova-root-sub-9-sub-compile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -411,14 +371,6 @@
           "description": "Platform name(s) to build. If not specified, all platforms are built"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cordova-root-sub-10-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -476,14 +428,6 @@
           "name": "platform",
           "description": "Platform name(s) to build. If not specified, all platforms are built"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cordova-root-sub-11-sub-clean-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -493,14 +437,6 @@
         {
           "name": "platform",
           "description": "Platform name(s) to run. If not specified, all platforms are run"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cordova-root-sub-12-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

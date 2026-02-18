@@ -13,14 +13,6 @@
           "description": "The components to add"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-shadcn-ui-root-sub-0-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -69,14 +61,6 @@
         {
           "name": "component",
           "description": "The component name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-shadcn-ui-root-sub-1-sub-diff-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

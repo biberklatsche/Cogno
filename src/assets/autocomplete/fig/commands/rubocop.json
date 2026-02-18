@@ -29,14 +29,6 @@
         {
           "name": "COP"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rubocop-root-opt-3-option---except-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -45,14 +37,6 @@
       "args": [
         {
           "name": "COP"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rubocop-root-opt-4-option---only-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -310,14 +294,6 @@
         {
           "name": "COP"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rubocop-root-opt-49-option---show-cops-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -326,14 +302,6 @@
       "args": [
         {
           "name": "COP"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rubocop-root-opt-50-option---show-docs-url-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

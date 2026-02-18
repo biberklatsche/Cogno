@@ -212,14 +212,6 @@
         {
           "name": "workspace"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tfsec-root-opt-31-option--w-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

@@ -70,14 +70,6 @@
             {
               "name": "path"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vsce-root-sub-1-sub-package-opt-0-option--o-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -119,14 +111,6 @@
             {
               "name": "branch"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vsce-root-sub-1-sub-package-opt-5-option---githubbranch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -135,14 +119,6 @@
           "args": [
             {
               "name": "branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vsce-root-sub-1-sub-package-opt-6-option---gitlabbranch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -261,14 +237,6 @@
             {
               "name": "paths"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vsce-root-sub-2-sub-publish-opt-5-option--i-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -278,14 +246,6 @@
             {
               "name": "branch"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vsce-root-sub-2-sub-publish-opt-6-option---githubbranch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -294,14 +254,6 @@
           "args": [
             {
               "name": "branch"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-vsce-root-sub-2-sub-publish-opt-7-option---gitlabbranch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

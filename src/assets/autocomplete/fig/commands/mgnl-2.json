@@ -376,14 +376,6 @@
           "description": "At least one name of a light module to be downloaded from npm. If you are installing more than one module from the repository, separate the module names with a space"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-mgnl-root-sub-9-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -476,14 +468,6 @@
         {
           "name": "query",
           "description": "The search query sent to the npm's API. The query can contain multiple terms separated with commas and no spaces"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-mgnl-root-sub-12-sub-search-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

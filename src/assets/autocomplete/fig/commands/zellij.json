@@ -14,14 +14,6 @@
         {
           "name": "CONFIG"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-opt-0-option--c-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -30,14 +22,6 @@
       "args": [
         {
           "name": "CONFIG_DIR"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-opt-1-option---config-dir-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -54,14 +38,6 @@
       "args": [
         {
           "name": "DATA_DIR"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-opt-3-option---data-dir-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -81,14 +57,6 @@
       "args": [
         {
           "name": "LAYOUT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-opt-5-option--l-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -110,14 +78,6 @@
       "args": [
         {
           "name": "NEW_SESSION_WITH_LAYOUT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-opt-7-option--n-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -171,14 +131,6 @@
           "args": [
             {
               "name": "FILE"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-zellij-root-sub-0-sub-action-4-sub-dump-screen-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -376,14 +328,6 @@
           "description": "Name of the session to attach to"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-1-sub-attach-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -419,14 +363,6 @@
         {
           "name": "CONFIG"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-2-sub-convert-config-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -436,14 +372,6 @@
         {
           "name": "LAYOUT"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-3-sub-convert-layout-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -452,14 +380,6 @@
       "args": [
         {
           "name": "THEME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-4-sub-convert-theme-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -498,14 +418,6 @@
           "description": "Name of the session to delete"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-6-sub-delete-session-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -527,14 +439,6 @@
           "name": "FILE"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-7-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--cwd",
@@ -542,14 +446,6 @@
           "args": [
             {
               "name": "CWD"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-zellij-root-sub-7-sub-edit-opt-0-option---cwd-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -665,14 +561,6 @@
         {
           "name": "TARGET_SESSION",
           "description": "Name of the session to kill"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-zellij-root-sub-10-sub-kill-session-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -817,14 +705,6 @@
           "args": [
             {
               "name": "LAYOUT_DIR"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-zellij-root-sub-13-sub-options-opt-11-option---layout-dir-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -973,14 +853,6 @@
           "args": [
             {
               "name": "THEME_DIR"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-zellij-root-sub-13-sub-options-opt-28-option---theme-dir-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1155,14 +1027,6 @@
           "args": [
             {
               "name": "CWD"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-zellij-root-sub-16-sub-run-opt-1-option---cwd-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

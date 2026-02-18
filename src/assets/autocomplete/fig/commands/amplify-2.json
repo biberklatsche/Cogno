@@ -51,14 +51,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-0-sub-create-app-opt-4-option---iam-service-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -199,14 +191,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-0-sub-create-app-opt-24-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -231,14 +215,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-1-sub-create-backend-environment-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -248,14 +224,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-1-sub-create-backend-environment-opt-1-option---environment-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -264,14 +232,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-1-sub-create-backend-environment-opt-2-option---stack-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -290,14 +250,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-1-sub-create-backend-environment-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -322,14 +274,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-2-sub-create-branch-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -366,14 +310,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-2-sub-create-branch-opt-4-option---framework-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -443,14 +379,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-2-sub-create-branch-opt-16-option---build-spec-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -495,14 +423,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-2-sub-create-branch-opt-22-option---backend-environment-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -520,14 +440,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-2-sub-create-branch-opt-24-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -553,14 +465,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-3-sub-create-deployment-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -569,14 +473,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-3-sub-create-deployment-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -595,14 +491,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-3-sub-create-deployment-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -627,14 +515,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-4-sub-create-domain-association-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -680,14 +560,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-4-sub-create-domain-association-opt-6-option---auto-sub-domain-iam-role-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -705,14 +577,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-4-sub-create-domain-association-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -738,14 +602,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-5-sub-create-webhook-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -754,14 +610,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-5-sub-create-webhook-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -780,14 +628,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-5-sub-create-webhook-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -813,14 +653,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-6-sub-delete-app-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -829,14 +661,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-6-sub-delete-app-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -862,14 +686,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-7-sub-delete-backend-environment-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -879,14 +695,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-7-sub-delete-backend-environment-opt-1-option---environment-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -895,14 +703,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-7-sub-delete-backend-environment-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -928,14 +728,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-8-sub-delete-branch-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -945,14 +737,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-8-sub-delete-branch-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -961,14 +745,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-8-sub-delete-branch-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -994,14 +770,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-9-sub-delete-domain-association-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1011,14 +779,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-9-sub-delete-domain-association-opt-1-option---domain-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1027,14 +787,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-9-sub-delete-domain-association-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1060,14 +812,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-10-sub-delete-job-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1076,14 +820,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-10-sub-delete-job-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1094,14 +830,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-10-sub-delete-job-opt-2-option---job-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1110,14 +838,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-10-sub-delete-job-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1143,14 +863,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-11-sub-delete-webhook-opt-0-option---webhook-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1159,14 +871,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-11-sub-delete-webhook-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1210,14 +914,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-12-sub-generate-access-logs-opt-2-option---domain-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1227,14 +923,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-12-sub-generate-access-logs-opt-3-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1243,14 +931,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-12-sub-generate-access-logs-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1276,14 +956,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-13-sub-get-app-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1292,14 +964,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-13-sub-get-app-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1334,14 +998,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-14-sub-get-artifact-url-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1366,14 +1022,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-15-sub-get-backend-environment-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1383,14 +1031,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-15-sub-get-backend-environment-opt-1-option---environment-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1399,14 +1039,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-15-sub-get-backend-environment-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1432,14 +1064,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-16-sub-get-branch-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1449,14 +1073,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-16-sub-get-branch-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1465,14 +1081,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-16-sub-get-branch-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1498,14 +1106,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-17-sub-get-domain-association-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1515,14 +1115,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-17-sub-get-domain-association-opt-1-option---domain-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1531,14 +1123,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-17-sub-get-domain-association-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1564,14 +1148,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-18-sub-get-job-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1580,14 +1156,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-18-sub-get-job-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1598,14 +1166,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-18-sub-get-job-opt-2-option---job-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1614,14 +1174,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-18-sub-get-job-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1647,14 +1199,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-19-sub-get-webhook-opt-0-option---webhook-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1663,14 +1207,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-19-sub-get-webhook-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1713,14 +1249,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-20-sub-list-apps-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1773,14 +1301,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-21-sub-list-artifacts-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1790,14 +1310,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-21-sub-list-artifacts-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1806,14 +1318,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-21-sub-list-artifacts-opt-2-option---job-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1842,14 +1346,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-21-sub-list-artifacts-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1874,14 +1370,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-22-sub-list-backend-environments-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1890,14 +1378,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-22-sub-list-backend-environments-opt-1-option---environment-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1926,14 +1406,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-22-sub-list-backend-environments-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1957,14 +1429,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-23-sub-list-branches-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1992,14 +1456,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-23-sub-list-branches-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2052,14 +1508,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-24-sub-list-domain-associations-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2086,14 +1534,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-24-sub-list-domain-associations-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2146,14 +1586,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-25-sub-list-jobs-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2162,14 +1594,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-25-sub-list-jobs-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2197,14 +1621,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-25-sub-list-jobs-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2257,14 +1673,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-26-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2273,14 +1681,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-26-sub-list-tags-for-resource-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2305,14 +1705,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-27-sub-list-webhooks-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2341,14 +1733,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-27-sub-list-webhooks-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2373,14 +1757,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-28-sub-start-deployment-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2390,14 +1766,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-28-sub-start-deployment-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2406,14 +1774,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-28-sub-start-deployment-opt-2-option---job-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2442,14 +1802,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-28-sub-start-deployment-opt-5-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2474,14 +1826,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-29-sub-start-job-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2491,14 +1835,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-29-sub-start-job-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2507,14 +1843,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-29-sub-start-job-opt-2-option---job-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2570,14 +1898,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-29-sub-start-job-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2602,14 +1922,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-30-sub-stop-job-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2618,14 +1930,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-30-sub-stop-job-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2636,14 +1940,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-30-sub-stop-job-opt-2-option---job-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2652,14 +1948,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-30-sub-stop-job-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2685,14 +1973,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-31-sub-tag-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2710,14 +1990,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-31-sub-tag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2743,14 +2015,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-32-sub-untag-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2768,14 +2032,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-32-sub-untag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2800,14 +2056,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-33-sub-update-app-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2844,14 +2092,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-33-sub-update-app-opt-4-option---iam-service-role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2912,14 +2152,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-33-sub-update-app-opt-14-option---build-spec-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3001,14 +2233,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-33-sub-update-app-opt-24-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3033,14 +2257,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-34-sub-update-branch-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3049,14 +2265,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-34-sub-update-branch-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3075,14 +2283,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-34-sub-update-branch-opt-3-option---framework-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3152,14 +2352,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-34-sub-update-branch-opt-15-option---build-spec-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3204,14 +2396,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-34-sub-update-branch-opt-21-option---backend-environment-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3229,14 +2413,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-34-sub-update-branch-opt-23-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3262,14 +2438,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-35-sub-update-domain-association-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3278,14 +2446,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-35-sub-update-domain-association-opt-1-option---domain-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3322,14 +2482,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-35-sub-update-domain-association-opt-6-option---auto-sub-domain-iam-role-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3347,14 +2499,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-35-sub-update-domain-association-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3380,14 +2524,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-36-sub-update-webhook-opt-0-option---webhook-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3396,14 +2532,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-36-sub-update-webhook-opt-1-option---branch-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3422,14 +2550,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-36-sub-update-webhook-opt-3-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

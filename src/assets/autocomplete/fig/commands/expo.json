@@ -1108,14 +1108,6 @@
             {
               "name": "Number of workers"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expo-root-sub-17-sub-export-opt-13-option---max-workers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1476,14 +1468,6 @@
           "name": "packages"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-expo-root-sub-27-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1585,14 +1569,6 @@
           "args": [
             {
               "name": "Number of workers"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expo-root-sub-28-sub-publish-opt-5-option---max-workers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2095,14 +2071,6 @@
             {
               "name": "device"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expo-root-sub-37-sub-run-ios-opt-4-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2124,14 +2092,6 @@
             {
               "name": "scheme"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expo-root-sub-37-sub-run-ios-opt-6-option---scheme-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2140,14 +2100,6 @@
           "args": [
             {
               "name": "configuration"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expo-root-sub-37-sub-run-ios-opt-7-option---configuration-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2343,14 +2295,6 @@
           "args": [
             {
               "name": "Number of workers"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-expo-root-sub-39-sub-start-opt-3-option---max-workers-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

@@ -121,14 +121,6 @@
           "name": "gem"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-bundle-root-sub-1-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",
@@ -312,14 +304,6 @@
           "name": "gem"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-bundle-root-sub-9-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--paths",
@@ -406,14 +390,6 @@
       "args": [
         {
           "name": "gem"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-bundle-root-sub-12-sub-open-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

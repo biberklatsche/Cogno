@@ -110,14 +110,6 @@
                 {
                   "name": "answers-file-path"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-rancher-root-sub-0-sub-apps-2-sub-install-opt-0-option---answers-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -418,14 +410,6 @@
               "name": "SERVER_NAME",
               "description": "The name of server you want to delete"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rancher-root-sub-14-sub-server-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -439,14 +423,6 @@
             {
               "name": "SERVER_NAME",
               "description": "The name of server you want to switch to"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-rancher-root-sub-14-sub-server-3-sub-switch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

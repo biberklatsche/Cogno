@@ -11,14 +11,6 @@
         {
           "name": "file"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-restore-root-opt-0-option---configfile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

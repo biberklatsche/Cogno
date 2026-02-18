@@ -25,14 +25,6 @@
           "name": "version",
           "description": "Possible Terraform Version"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tfenv-root-sub-0-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -43,14 +35,6 @@
           "name": "version",
           "description": "Installed Terraform Version"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tfenv-root-sub-1-sub-use-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -60,14 +44,6 @@
         {
           "name": "version",
           "description": "Installed Terraform Version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tfenv-root-sub-2-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

@@ -77,14 +77,6 @@
           "name": "generator"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-ignite-cli-root-sub-2-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",

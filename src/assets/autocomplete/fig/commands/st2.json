@@ -238,14 +238,6 @@
             {
               "name": "USER"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-st2-root-sub-0-sub-run-opt-15-option--u-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -811,14 +803,6 @@
                 {
                   "name": "USER"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-1-sub-action-7-sub-execute-opt-13-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -1276,14 +1260,6 @@
                 {
                   "name": "USER"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-2-sub-action-alias-6-sub-execute-opt-5-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -1520,14 +1496,6 @@
                 {
                   "name": "USER"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-6-sub-apikey-0-sub-list-opt-7-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1661,14 +1629,6 @@
               "args": [
                 {
                   "name": "USER"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-6-sub-apikey-2-sub-create-opt-5-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2067,14 +2027,6 @@
               "args": [
                 {
                   "name": "USER"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-7-sub-execution-0-sub-list-opt-14-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -2971,14 +2923,6 @@
                 {
                   "name": "USER"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-9-sub-key-0-sub-list-opt-10-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3141,14 +3085,6 @@
                 {
                   "name": "USER"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-9-sub-key-2-sub-delete-opt-6-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -3248,14 +3184,6 @@
               "args": [
                 {
                   "name": "USER"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-9-sub-key-3-sub-set-opt-9-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -7409,14 +7337,6 @@
               "args": [
                 {
                   "name": "USER"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-st2-root-sub-25-sub-role-assignment-1-sub-get-opt-6-option--u-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

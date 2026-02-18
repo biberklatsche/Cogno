@@ -871,14 +871,6 @@
           "description": "Name of plan to run"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rugby-root-sub-7-sub-plan-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [

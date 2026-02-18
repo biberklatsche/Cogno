@@ -22,14 +22,6 @@
         {
           "name": "encoding"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-iconv-root-opt-2-option--f-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -41,14 +33,6 @@
       "args": [
         {
           "name": "encoding"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-iconv-root-opt-3-option--t-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

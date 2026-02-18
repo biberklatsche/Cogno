@@ -15,14 +15,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-0-sub-delete-alarms-opt-0-option---alarm-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -31,14 +23,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-0-sub-delete-alarms-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -64,14 +48,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-1-sub-delete-anomaly-detector-opt-0-option---namespace-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -80,14 +56,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-1-sub-delete-anomaly-detector-opt-1-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -98,14 +66,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-1-sub-delete-anomaly-detector-opt-2-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -114,14 +74,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-1-sub-delete-anomaly-detector-opt-3-option---stat-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -150,14 +102,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-1-sub-delete-anomaly-detector-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -182,14 +126,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-2-sub-delete-dashboards-opt-0-option---dashboard-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -198,14 +134,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-2-sub-delete-dashboards-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -231,14 +159,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-3-sub-delete-insight-rules-opt-0-option---rule-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -247,14 +167,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-3-sub-delete-insight-rules-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -280,14 +192,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-4-sub-delete-metric-stream-opt-0-option---name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -296,14 +200,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-4-sub-delete-metric-stream-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -328,14 +224,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-5-sub-describe-alarm-history-opt-0-option---alarm-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -409,14 +297,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-5-sub-describe-alarm-history-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -467,14 +347,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-6-sub-describe-alarms-opt-0-option---alarm-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -557,14 +429,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-6-sub-describe-alarms-opt-9-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -616,14 +480,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-7-sub-describe-alarms-for-metric-opt-0-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -632,14 +488,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-7-sub-describe-alarms-for-metric-opt-1-option---namespace-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -668,14 +516,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-7-sub-describe-alarms-for-metric-opt-4-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -702,14 +542,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-7-sub-describe-alarms-for-metric-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -753,14 +585,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-8-sub-describe-anomaly-detectors-opt-2-option---namespace-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -770,14 +594,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-8-sub-describe-anomaly-detectors-opt-3-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -786,14 +602,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-8-sub-describe-anomaly-detectors-opt-4-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -812,14 +620,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-8-sub-describe-anomaly-detectors-opt-6-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -890,14 +690,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-9-sub-describe-insight-rules-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -922,14 +714,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-10-sub-disable-alarm-actions-opt-0-option---alarm-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -938,14 +722,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-10-sub-disable-alarm-actions-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -971,14 +747,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-11-sub-disable-insight-rules-opt-0-option---rule-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -987,14 +755,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-11-sub-disable-insight-rules-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1020,14 +780,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-12-sub-enable-alarm-actions-opt-0-option---alarm-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1036,14 +788,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-12-sub-enable-alarm-actions-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1069,14 +813,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-13-sub-enable-insight-rules-opt-0-option---rule-names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1085,14 +821,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-13-sub-enable-insight-rules-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1118,14 +846,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-14-sub-get-dashboard-opt-0-option---dashboard-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1134,14 +854,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-14-sub-get-dashboard-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1166,14 +878,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-15-sub-get-insight-rule-report-opt-0-option---rule-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1237,14 +941,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-15-sub-get-insight-rule-report-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1333,14 +1029,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-16-sub-get-metric-data-opt-7-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1392,14 +1080,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-17-sub-get-metric-statistics-opt-0-option---namespace-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1409,14 +1089,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-17-sub-get-metric-statistics-opt-1-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1425,14 +1097,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-17-sub-get-metric-statistics-opt-2-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1497,14 +1161,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-17-sub-get-metric-statistics-opt-9-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1529,14 +1185,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-18-sub-get-metric-stream-opt-0-option---name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1545,14 +1193,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-18-sub-get-metric-stream-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1596,14 +1236,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-19-sub-get-metric-widget-image-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1645,14 +1277,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-20-sub-list-dashboards-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1765,14 +1389,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-22-sub-list-metric-streams-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1797,14 +1413,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-23-sub-list-metrics-opt-0-option---namespace-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1814,14 +1422,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-23-sub-list-metrics-opt-1-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1830,14 +1430,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-23-sub-list-metrics-opt-2-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1883,14 +1475,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-23-sub-list-metrics-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1933,14 +1517,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-24-sub-list-tags-for-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1949,14 +1525,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-24-sub-list-tags-for-resource-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1991,14 +1559,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-25-sub-put-anomaly-detector-opt-1-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2008,14 +1568,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-25-sub-put-anomaly-detector-opt-2-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2024,14 +1576,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-25-sub-put-anomaly-detector-opt-3-option---stat-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2078,14 +1622,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-25-sub-put-anomaly-detector-opt-8-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2117,14 +1653,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-26-sub-put-composite-alarm-opt-2-option---alarm-actions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2162,14 +1690,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-26-sub-put-composite-alarm-opt-6-option---insufficient-data-actions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2178,14 +1698,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-26-sub-put-composite-alarm-opt-7-option---ok-actions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2232,14 +1744,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-26-sub-put-composite-alarm-opt-12-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2273,14 +1777,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-27-sub-put-dashboard-opt-1-option---dashboard-body-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2289,14 +1785,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-27-sub-put-dashboard-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2340,14 +1828,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-28-sub-put-insight-rule-opt-2-option---rule-definition-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2365,14 +1845,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-28-sub-put-insight-rule-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2484,14 +1956,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-30-sub-put-metric-alarm-opt-7-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2500,14 +1964,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-30-sub-put-metric-alarm-opt-8-option---namespace-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2535,14 +1991,6 @@
           "args": [
             {
               "name": "list"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-30-sub-put-metric-alarm-opt-11-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2652,14 +2100,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-30-sub-put-metric-alarm-opt-23-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2719,14 +2159,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-31-sub-put-metric-data-opt-5-option---metric-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2763,14 +2195,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-31-sub-put-metric-data-opt-9-option---dimensions-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2797,14 +2221,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-31-sub-put-metric-data-opt-12-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2857,14 +2273,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-32-sub-put-metric-stream-opt-3-option---firehose-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2873,14 +2281,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-32-sub-put-metric-stream-opt-4-option---role-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2926,14 +2326,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-32-sub-put-metric-stream-opt-10-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2957,14 +2349,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-33-sub-set-alarm-state-opt-0-option---alarm-name-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2993,14 +2377,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-33-sub-set-alarm-state-opt-3-option---state-reason-data-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3009,14 +2385,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-33-sub-set-alarm-state-opt-4-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3042,14 +2410,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-34-sub-start-metric-streams-opt-0-option---names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3058,14 +2418,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-34-sub-start-metric-streams-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3091,14 +2443,6 @@
             {
               "name": "list"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-35-sub-stop-metric-streams-opt-0-option---names-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3107,14 +2451,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-35-sub-stop-metric-streams-opt-1-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3140,14 +2476,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-36-sub-tag-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3165,14 +2493,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-36-sub-tag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3198,14 +2518,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-37-sub-untag-resource-opt-0-option---resource-arn-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3223,14 +2535,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudwatch-root-sub-37-sub-untag-resource-opt-2-option---cli-input-json-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3259,14 +2563,6 @@
               "args": [
                 {
                   "name": "list"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudwatch-root-sub-38-sub-wait-0-sub-alarm-exists-opt-0-option---alarm-names-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3348,14 +2644,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudwatch-root-sub-38-sub-wait-0-sub-alarm-exists-opt-9-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3408,14 +2696,6 @@
                 {
                   "name": "list"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudwatch-root-sub-38-sub-wait-1-sub-composite-alarm-exists-opt-0-option---alarm-names-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3496,14 +2776,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudwatch-root-sub-38-sub-wait-1-sub-composite-alarm-exists-opt-9-option---cli-input-json-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

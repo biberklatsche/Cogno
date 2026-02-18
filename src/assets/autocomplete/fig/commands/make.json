@@ -49,14 +49,6 @@
         {
           "name": "target"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-make-root-opt-3-option--b-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -68,14 +60,6 @@
       "args": [
         {
           "name": "target"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-make-root-opt-4-option--e-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

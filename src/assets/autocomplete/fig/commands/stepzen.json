@@ -44,14 +44,6 @@
               "name": "endpoint",
               "description": "The StepZen endpoint"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-stepzen-root-sub-3-sub-start-opt-1-option---endpoint-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -73,14 +65,6 @@
         {
           "name": "name",
           "description": "The name of the generator to import"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-stepzen-root-sub-4-sub-import-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

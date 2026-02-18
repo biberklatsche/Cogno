@@ -11,14 +11,6 @@
         {
           "name": "Application"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-open-root-opt-0-option--a-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -27,14 +19,6 @@
       "args": [
         {
           "name": "Bundle Identifier"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-open-root-opt-1-option--b-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

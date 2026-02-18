@@ -103,14 +103,6 @@
           "name": "version"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-fvm-root-sub-6-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [

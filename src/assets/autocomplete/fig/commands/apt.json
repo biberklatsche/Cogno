@@ -43,14 +43,6 @@
           "description": "Package(s) to upgrade"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-1-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -121,20 +113,6 @@
           "description": "The package you want to install"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-3-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-apt-root-sub-3-sub-install-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -184,14 +162,6 @@
           "description": "The package you want to reinstall"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-4-sub-reinstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-y",
@@ -217,14 +187,6 @@
         {
           "name": "package",
           "description": "The package you want to remove"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-5-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -259,14 +221,6 @@
         {
           "name": "package",
           "description": "The package you want to purge"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-6-sub-purge-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -353,14 +307,6 @@
           "name": "package",
           "description": "The package you want to show"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-10-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -370,14 +316,6 @@
         {
           "name": "package",
           "description": "The package you want to satisfy"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-11-sub-satisfy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -453,14 +391,6 @@
           "description": "The package you want to get source files for"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-14-sub-source-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -516,14 +446,6 @@
           "description": "The package you want to build dependencies for"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-15-sub-build-dep-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -573,14 +495,6 @@
         {
           "name": "package",
           "description": "The package you want to download"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-16-sub-download-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -647,14 +561,6 @@
         {
           "name": "package",
           "description": "The package you want to show the changelog for"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-apt-root-sub-18-sub-changelog-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

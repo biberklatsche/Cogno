@@ -17,15 +17,7 @@
     },
     {
       "name": "--env",
-      "description": "Specify environments",
-      "providers": [
-        {
-          "providerId": "fig-eslint-root-opt-2-option---env-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Specify environments"
     },
     {
       "name": "--ext",
@@ -67,14 +59,6 @@
       "args": [
         {
           "name": "Plugin"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-eslint-root-opt-9-option---plugin-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

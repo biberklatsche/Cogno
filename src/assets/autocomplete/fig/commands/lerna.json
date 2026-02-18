@@ -89,14 +89,6 @@
             {
               "name": "glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-1-sub-bootstrap-opt-0-option---scope-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -105,14 +97,6 @@
           "args": [
             {
               "name": "glob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-1-sub-bootstrap-opt-1-option---ignore-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -357,14 +341,6 @@
             {
               "name": "packages"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-3-sub-publish-opt-11-option---force-publish-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -549,14 +525,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-lerna-root-sub-8-sub-changed-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--concurrency",
@@ -617,14 +585,6 @@
           "description": "Name of the npm script to run"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-lerna-root-sub-9-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--concurrency",
@@ -681,14 +641,6 @@
             {
               "name": "glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-9-sub-run-opt-8-option---scope-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -697,14 +649,6 @@
           "args": [
             {
               "name": "glob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-9-sub-run-opt-9-option---ignore-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -846,14 +790,6 @@
             {
               "name": "glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-12-sub-version-opt-0-option---allow-branch-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -899,14 +835,6 @@
           "args": [
             {
               "name": "remote"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-12-sub-version-opt-9-option---git-remote-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -998,14 +926,6 @@
         {
           "name": "package"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-lerna-root-sub-13-sub-diff-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1014,14 +934,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-lerna-root-sub-14-sub-exec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1080,14 +992,6 @@
             {
               "name": "glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-14-sub-exec-opt-8-option---scope-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1096,14 +1000,6 @@
           "args": [
             {
               "name": "glob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-14-sub-exec-opt-9-option---ignore-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1226,14 +1122,6 @@
             {
               "name": "glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-15-sub-add-opt-8-option---scope-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1242,14 +1130,6 @@
           "args": [
             {
               "name": "glob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-15-sub-add-opt-9-option---ignore-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1368,14 +1248,6 @@
             {
               "name": "glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-16-sub-clean-opt-8-option---scope-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1384,14 +1256,6 @@
           "args": [
             {
               "name": "glob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-lerna-root-sub-16-sub-clean-opt-9-option---ignore-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

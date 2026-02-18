@@ -45,14 +45,6 @@
         {
           "name": "path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-github-root-sub-1-sub-open-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

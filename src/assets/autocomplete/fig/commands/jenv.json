@@ -29,14 +29,6 @@
           "name": "COMMAND"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-1-sub-help-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--usage"
@@ -49,14 +41,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-2-sub-info-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -77,14 +61,6 @@
           "name": "pluginName",
           "description": "Plugin Name"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-4-sub-enable-plugin-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -94,14 +70,6 @@
         {
           "name": "pluginName",
           "description": "Plugin Name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-5-sub-disable-plugin-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -116,14 +84,6 @@
         {
           "name": "command"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-7-sub-exec-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -132,14 +92,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-8-sub-global-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -158,14 +110,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-10-sub-local-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -192,14 +136,6 @@
           "name": "version"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-12-sub-shell-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--unset",
@@ -222,14 +158,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-14-sub-hooks-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -281,14 +209,6 @@
         {
           "name": "version"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-22-sub-prefix-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -309,14 +229,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-26-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -360,14 +272,6 @@
           "name": "command"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-31-sub-whence-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--path"
@@ -380,14 +284,6 @@
       "args": [
         {
           "name": "command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-jenv-root-sub-32-sub-which-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     }

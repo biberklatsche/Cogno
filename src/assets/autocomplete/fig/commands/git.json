@@ -287,14 +287,6 @@
             {
               "name": "rev"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-1-sub-blame-opt-16-option---ignore-rev-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -383,14 +375,6 @@
             {
               "name": "message"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-2-sub-commit-opt-0-option--m-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -433,14 +417,6 @@
             {
               "name": "commit"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-2-sub-commit-opt-5-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -453,14 +429,6 @@
             {
               "name": "commit"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-2-sub-commit-opt-6-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -470,14 +438,6 @@
             {
               "name": "commit"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-2-sub-commit-opt-7-option---fixup-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -486,14 +446,6 @@
           "args": [
             {
               "name": "commit"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-2-sub-commit-opt-8-option---squash-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -912,14 +864,6 @@
             {
               "name": "newbase"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-4-sub-rebase-opt-0-option---onto-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1189,20 +1133,6 @@
           "name": "pathspec"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-5-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-git-root-sub-5-sub-add-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1327,14 +1257,6 @@
           "name": "pathspec"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-6-sub-stage-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1457,14 +1379,6 @@
       "args": [
         {
           "name": "pathspec"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-7-sub-status-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1649,14 +1563,6 @@
       "args": [
         {
           "name": "commit"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-9-sub-revert-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1869,14 +1775,6 @@
           "args": [
             {
               "name": "remote"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-12-sub-pull-opt-0-option---rebase-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2116,14 +2014,6 @@
             {
               "name": "commit|glob"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-12-sub-pull-opt-41-option---negotiation-tip-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2264,26 +2154,6 @@
           "name": "commit or file"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-13-sub-diff-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-git-root-sub-13-sub-diff-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-git-root-sub-13-sub-diff-gen-2",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--staged",
@@ -2332,26 +2202,6 @@
     {
       "name": "reset",
       "description": "Reset current HEAD to the specified state",
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-14-sub-reset-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-git-root-sub-14-sub-reset-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-git-root-sub-14-sub-reset-gen-2",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--keep",
@@ -2601,14 +2451,6 @@
             {
               "name": "remote"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-16-sub-remote-3-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2629,14 +2471,6 @@
           "args": [
             {
               "name": "name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-16-sub-remote-5-sub-get-url-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2687,14 +2521,6 @@
               "name": "name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-16-sub-remote-7-sub-show-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "-n",
@@ -2708,14 +2534,6 @@
           "args": [
             {
               "name": "name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-16-sub-remote-8-sub-prune-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2831,14 +2649,6 @@
           "args": [
             {
               "name": "commit|glob"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-17-sub-fetch-opt-9-option---negotiation-tip-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3124,14 +2934,6 @@
             {
               "name": "stash"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-18-sub-stash-1-sub-show-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3188,14 +2990,6 @@
               "name": "stash"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-18-sub-stash-3-sub-pop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--index",
@@ -3222,14 +3016,6 @@
               "name": "stash"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-18-sub-stash-5-sub-drop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -3250,14 +3036,6 @@
           "args": [
             {
               "name": "stash"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-18-sub-stash-7-sub-apply-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -3710,14 +3488,6 @@
     {
       "name": "rm",
       "description": "Remove files from the working tree and from the index",
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-23-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--",
@@ -3829,14 +3599,6 @@
             {
               "name": "rev"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-24-sub-bisect-1-sub-bad-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3845,14 +3607,6 @@
           "args": [
             {
               "name": "rev"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-24-sub-bisect-2-sub-new-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3863,14 +3617,6 @@
             {
               "name": "rev"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-24-sub-bisect-3-sub-old-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3879,14 +3625,6 @@
           "args": [
             {
               "name": "rev"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-24-sub-bisect-4-sub-good-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3915,14 +3653,6 @@
             {
               "name": "rev | range"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-24-sub-bisect-7-sub-skip-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3931,14 +3661,6 @@
           "args": [
             {
               "name": "commit"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-24-sub-bisect-8-sub-reset-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4005,27 +3727,11 @@
             "-d",
             "--delete"
           ],
-          "description": "Delete fully merged branch",
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-1-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Delete fully merged branch"
         },
         {
           "name": "-D",
-          "description": "Delete branch (even if not merged)",
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-2-option--d-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Delete branch (even if not merged)"
         },
         {
           "name": [
@@ -4062,15 +3768,7 @@
         },
         {
           "name": "--edit-description",
-          "description": "Edit the description for the branch",
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-9-option---edit-description-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Edit the description for the branch"
         },
         {
           "name": [
@@ -4207,14 +3905,6 @@
             {
               "name": "upstream"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-27-option--u-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4223,14 +3913,6 @@
           "args": [
             {
               "name": "upstream"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-28-option---unset-upstream-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4241,14 +3923,6 @@
             {
               "name": "commit"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-29-option---contains-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4257,14 +3931,6 @@
           "args": [
             {
               "name": "commit"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-27-sub-branch-opt-30-option---no-contains-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4462,14 +4128,6 @@
         {
           "name": "commit",
           "description": "Commits to cherry-pick"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-29-sub-cherry-pick-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -4989,14 +4647,6 @@
           "name": "branch"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-31-sub-merge-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--commit",
@@ -5236,14 +4886,6 @@
           "description": "Select a tag"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-33-sub-tag-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -5301,14 +4943,6 @@
             {
               "name": "object"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-git-root-sub-33-sub-tag-opt-6-option---points-at-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -5319,14 +4953,6 @@
       "args": [
         {
           "name": "pathspec"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-git-root-sub-34-sub-restore-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

@@ -131,14 +131,6 @@
         {
           "name": "type"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-tokei-root-opt-15-option--t-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

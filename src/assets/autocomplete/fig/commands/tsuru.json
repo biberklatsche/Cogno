@@ -32,14 +32,6 @@
                   "name": "app",
                   "description": "App name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-0-sub-build-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -95,14 +87,6 @@
                   "name": "pool",
                   "description": "Poll name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-1-sub-create-opt-0-option--o-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -116,14 +100,6 @@
                   "name": "team",
                   "description": "Pool where the app will be created"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-1-sub-create-opt-1-option--t-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -136,14 +112,6 @@
                 {
                   "name": "plan",
                   "description": "Plan to be used by the app"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-1-sub-create-opt-2-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -186,14 +154,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-2-sub-deploy-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -243,14 +203,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-2-sub-deploy-0-sub-list-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 }
               ]
@@ -269,14 +221,6 @@
                     {
                       "name": "app",
                       "description": "App name"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-2-sub-deploy-1-sub-rebuild-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -304,14 +248,6 @@
                     {
                       "name": "app",
                       "description": "App name"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-2-sub-deploy-2-sub-rollback-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -346,14 +282,6 @@
                         {
                           "name": "app",
                           "description": "App name"
-                        }
-                      ],
-                      "providers": [
-                        {
-                          "providerId": "fig-tsuru-root-sub-0-sub-app-2-sub-deploy-2-sub-rollback-0-sub-update-opt-0-option--a-gen-0",
-                          "kind": "script",
-                          "source": "fig-generator",
-                          "baseScore": 58
                         }
                       ]
                     },
@@ -393,14 +321,6 @@
               "description": "Team name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-tsuru-root-sub-0-sub-app-3-sub-grant-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -412,14 +332,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-3-sub-grant-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -439,14 +351,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-4-sub-info-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -474,14 +378,6 @@
                   "name": "pool",
                   "description": "Poll name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-5-sub-list-opt-1-option--o-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -494,14 +390,6 @@
                 {
                   "name": "platform",
                   "description": "Platform"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-5-sub-list-opt-2-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -526,14 +414,6 @@
                 {
                   "name": "team",
                   "description": "Pool where the app will be created"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-5-sub-list-opt-5-option--t-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -560,14 +440,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-6-sub-log-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -624,14 +496,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-7-sub-metadata-0-sub-get-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 }
               ]
@@ -656,14 +520,6 @@
                     {
                       "name": "app",
                       "description": "App name"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-7-sub-metadata-1-sub-set-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -700,14 +556,6 @@
                     {
                       "name": "app",
                       "description": "App name"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-7-sub-metadata-2-sub-unset-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -751,14 +599,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-8-sub-quota-0-sub-change-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 }
               ]
@@ -777,14 +617,6 @@
                     {
                       "name": "app",
                       "description": "App name"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-8-sub-quota-1-sub-view-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 }
@@ -807,14 +639,6 @@
                   "name": "app",
                   "description": "App name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-9-sub-remove-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -833,14 +657,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-10-sub-restart-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -865,14 +681,6 @@
               "description": "Team name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-tsuru-root-sub-0-sub-app-11-sub-revoke-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -884,14 +692,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-11-sub-revoke-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -922,14 +722,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-12-sub-router-0-sub-add-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -956,14 +748,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-12-sub-router-1-sub-list-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 }
               ]
@@ -989,14 +773,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-12-sub-router-2-sub-remove-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 }
               ]
@@ -1015,14 +791,6 @@
                     {
                       "name": "app",
                       "description": "App name"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-12-sub-router-3-sub-update-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 },
@@ -1059,14 +827,6 @@
                           "name": "app",
                           "description": "App name"
                         }
-                      ],
-                      "providers": [
-                        {
-                          "providerId": "fig-tsuru-root-sub-0-sub-app-12-sub-router-4-sub-version-0-sub-add-opt-0-option--a-gen-0",
-                          "kind": "script",
-                          "source": "fig-generator",
-                          "baseScore": 58
-                        }
                       ]
                     }
                   ]
@@ -1090,14 +850,6 @@
                         {
                           "name": "app",
                           "description": "App name"
-                        }
-                      ],
-                      "providers": [
-                        {
-                          "providerId": "fig-tsuru-root-sub-0-sub-app-12-sub-router-4-sub-version-1-sub-remove-opt-0-option--a-gen-0",
-                          "kind": "script",
-                          "source": "fig-generator",
-                          "baseScore": 58
                         }
                       ]
                     }
@@ -1126,14 +878,6 @@
                       "name": "app",
                       "description": "App name"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-tsuru-root-sub-0-sub-app-13-sub-routes-0-sub-rebuild-opt-0-option--a-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 }
               ]
@@ -1154,14 +898,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-14-sub-run-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1189,14 +925,6 @@
               "name": "app",
               "description": "App name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsuru-root-sub-0-sub-app-15-sub-shell-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1213,14 +941,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-16-sub-start-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1251,14 +971,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-17-sub-stop-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1310,14 +1022,6 @@
                   "name": "app",
                   "description": "App name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-19-sub-unlock-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1343,14 +1047,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-20-sub-update-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1390,14 +1086,6 @@
                   "name": "platform",
                   "description": "Platform"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-20-sub-update-opt-5-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1419,14 +1107,6 @@
                   "name": "pool",
                   "description": "Poll name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-20-sub-update-opt-8-option--o-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1440,14 +1120,6 @@
                   "name": "plan",
                   "description": "Plan to be used by the app"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-20-sub-update-opt-9-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1460,14 +1132,6 @@
                 {
                   "name": "team",
                   "description": "Pool where the app will be created"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-0-sub-app-20-sub-update-opt-10-option--t-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -1489,14 +1153,6 @@
             {
               "name": "app",
               "description": "App name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tsuru-root-sub-1-sub-env-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1528,14 +1184,6 @@
                   "name": "app",
                   "description": "App name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-1-sub-env-0-sub-get-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -1554,14 +1202,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-1-sub-env-1-sub-set-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1592,14 +1232,6 @@
                 {
                   "name": "app",
                   "description": "App name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-tsuru-root-sub-1-sub-env-2-sub-unset-opt-0-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

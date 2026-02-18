@@ -226,14 +226,6 @@
               "name": "NAME.podspec|DIRECTORY|http://PATH/NAME.podspec"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pod-root-sub-4-sub-spec-4-sub-lint-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--quick",
@@ -649,14 +641,6 @@
               "name": "PODSPEC_PATHS"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-pod-root-sub-11-sub-lib-1-sub-lint-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--quick",
@@ -737,14 +721,6 @@
                 {
                   "name": "podspec"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pod-root-sub-11-sub-lib-1-sub-lint-opt-13-option---include-podspecs-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -753,14 +729,6 @@
               "args": [
                 {
                   "name": "podspec"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-pod-root-sub-11-sub-lib-1-sub-lint-opt-14-option---external-podspecs-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

@@ -18,14 +18,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-0-sub-list-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -117,14 +109,6 @@
       "args": [
         {
           "name": "formula"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-1-sub-ls-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -283,20 +267,6 @@
           "description": "Formula or cask to summarize"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-4-sub-abv-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-brew-root-sub-4-sub-abv-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -321,15 +291,7 @@
         },
         {
           "name": "--category",
-          "description": "Which type of analytics data to retrieve",
-          "providers": [
-            {
-              "providerId": "fig-brew-root-sub-4-sub-abv-opt-3-option---category-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Which type of analytics data to retrieve"
         },
         {
           "name": "--github",
@@ -497,14 +459,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-7-sub-pin-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -544,14 +498,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-8-sub-unpin-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -589,14 +535,6 @@
       "args": [
         {
           "name": "outdated_formula|outdated_cask"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-9-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -997,14 +935,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-12-sub-postinstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1043,20 +973,6 @@
         {
           "name": "formula",
           "description": "Formula or cask to install"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-13-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-brew-root-sub-13-sub-install-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1334,14 +1250,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-14-sub-reinstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1442,14 +1350,6 @@
         {
           "name": "formula"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-15-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1458,14 +1358,6 @@
       "args": [
         {
           "name": "formula"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-16-sub---prefix-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1496,14 +1388,6 @@
         {
           "name": "uninstall",
           "description": "Uninstalls the given cask",
-          "providers": [
-            {
-              "providerId": "fig-brew-root-sub-17-sub-cask-1-sub-uninstall-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1556,14 +1440,6 @@
     {
       "name": "cleanup",
       "description": "Remove stale lock files and outdated downloads for all formulae and casks and remove old versions of installed formulae",
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-18-sub-cleanup-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1684,14 +1560,6 @@
         {
           "name": "run",
           "description": "Run the service formula without registering to launch at login (or boot)",
-          "providers": [
-            {
-              "providerId": "fig-brew-root-sub-19-sub-services-2-sub-run-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--all",
@@ -1702,14 +1570,6 @@
         {
           "name": "start",
           "description": "Start the service formula immediately and register it to launch at login",
-          "providers": [
-            {
-              "providerId": "fig-brew-root-sub-19-sub-services-3-sub-start-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--all",
@@ -1720,14 +1580,6 @@
         {
           "name": "stop",
           "description": "Stop the service formula immediately and unregister it from launching at",
-          "providers": [
-            {
-              "providerId": "fig-brew-root-sub-19-sub-services-4-sub-stop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--all",
@@ -1738,14 +1590,6 @@
         {
           "name": "restart",
           "description": "Stop (if necessary) and start the service formula immediately and register it to launch at login (or boot)",
-          "providers": [
-            {
-              "providerId": "fig-brew-root-sub-19-sub-services-5-sub-restart-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--all",
@@ -1853,14 +1697,6 @@
           "name": "repository"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-23-sub-untap-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1907,14 +1743,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-24-sub-link-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--overwrite",
@@ -1948,14 +1776,6 @@
           "name": "formula"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-25-sub-unlink-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1981,20 +1801,6 @@
         {
           "name": "formula",
           "description": "Formula or cask to install"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-28-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-brew-root-sub-28-sub-edit-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -2054,20 +1860,6 @@
           "description": "Formula or cask to open homepage for"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-29-sub-home-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-brew-root-sub-29-sub-home-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2120,14 +1912,6 @@
         {
           "name": "alias",
           "description": "Display the alias command"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-brew-root-sub-30-sub-alias-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

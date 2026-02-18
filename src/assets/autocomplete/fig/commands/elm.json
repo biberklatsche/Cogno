@@ -72,14 +72,6 @@
           "description": "The name of the package to install"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-elm-root-sub-3-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--help",

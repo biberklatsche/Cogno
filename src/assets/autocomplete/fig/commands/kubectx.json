@@ -32,14 +32,6 @@
         {
           "name": "context"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kubectx-root-opt-3-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     }
   ]

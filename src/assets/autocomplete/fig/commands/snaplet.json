@@ -129,14 +129,6 @@
               "name": "snapshot"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-snaplet-root-sub-2-sub-database-0-sub-cache-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--tags",
@@ -213,14 +205,6 @@
               "name": "database-name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-snaplet-root-sub-2-sub-database-2-sub-drop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--git",
@@ -237,14 +221,6 @@
           "args": [
             {
               "name": "database-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-snaplet-root-sub-2-sub-database-3-sub-url-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -497,14 +473,6 @@
               "name": "snapshot-name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-snaplet-root-sub-8-sub-snapshot-3-sub-restore-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -567,14 +535,6 @@
           "args": [
             {
               "name": "snapshot-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-snaplet-root-sub-8-sub-snapshot-4-sub-share-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

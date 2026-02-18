@@ -174,14 +174,6 @@
         {
           "name": "style"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rich-root-opt-23-option--s-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -190,14 +182,6 @@
       "args": [
         {
           "name": "style"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rich-root-opt-24-option---rule-style-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -219,14 +203,6 @@
       "args": [
         {
           "name": "top,right,bottom,left"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rich-root-opt-26-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -251,14 +227,6 @@
       "args": [
         {
           "name": "style"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rich-root-opt-28-option--s-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

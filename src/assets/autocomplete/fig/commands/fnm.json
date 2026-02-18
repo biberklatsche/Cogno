@@ -74,14 +74,6 @@
           "description": "A version string. Can be a partial semver or a LTS version name by the format lts/NAME"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-fnm-root-sub-0-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--lts",
@@ -157,14 +149,6 @@
           "description": "A version string. Can be a partial semver or a LTS version name by the format lts/NAME"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-fnm-root-sub-1-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--lts",
@@ -238,14 +222,6 @@
         {
           "name": "version",
           "description": "A version string. Can be a partial semver or a LTS version name by the format lts/NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-fnm-root-sub-2-sub-use-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -830,14 +806,6 @@
         {
           "name": "version",
           "description": "A version string. Can be a partial semver or a LTS version name by the format lts/NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-fnm-root-sub-10-sub-default-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

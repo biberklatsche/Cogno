@@ -489,14 +489,6 @@
         {
           "name": "delete",
           "description": "Delete a context",
-          "providers": [
-            {
-              "providerId": "fig-okteto-root-sub-3-sub-ctx-0-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -611,14 +603,6 @@
         {
           "name": "use",
           "description": "Set the default context",
-          "providers": [
-            {
-              "providerId": "fig-okteto-root-sub-3-sub-ctx-3-sub-use-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1132,14 +1116,6 @@
         {
           "name": "delete",
           "description": "Delete a namespace",
-          "providers": [
-            {
-              "providerId": "fig-okteto-root-sub-9-sub-ns-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1220,14 +1196,6 @@
             "use"
           ],
           "description": "Configure the current namespace of the okteto context",
-          "providers": [
-            {
-              "providerId": "fig-okteto-root-sub-9-sub-ns-3-sub-ns-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [

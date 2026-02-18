@@ -25,20 +25,6 @@
     {
       "name": "add",
       "description": "Add time to a project with tag(s) that was not tracked live",
-      "providers": [
-        {
-          "providerId": "fig-watson-root-sub-0-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-watson-root-sub-0-sub-add-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -129,14 +115,6 @@
             {
               "name": "PROJECT"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-1-sub-aggregate-opt-4-option---project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -148,14 +126,6 @@
           "args": [
             {
               "name": "TAG"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-1-sub-aggregate-opt-5-option---tag-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -220,14 +190,6 @@
       "args": [
         {
           "name": "FRAME ID"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-watson-root-sub-4-sub-edit-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -368,14 +330,6 @@
             {
               "name": "PROJECT"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-7-sub-log-opt-12-option---project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -388,14 +342,6 @@
             {
               "name": "TAG"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-7-sub-log-opt-13-option---tag-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -405,14 +351,6 @@
             {
               "name": "PROJECT"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-7-sub-log-opt-14-option---ignore-project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -421,14 +359,6 @@
           "args": [
             {
               "name": "TAG"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-7-sub-log-opt-15-option---ignore-tag-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -490,14 +420,6 @@
       "args": [
         {
           "name": "ID"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-watson-root-sub-10-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -613,14 +535,6 @@
             {
               "name": "PROJECT"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-12-sub-report-opt-9-option---project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -633,14 +547,6 @@
             {
               "name": "TAG"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-12-sub-report-opt-10-option---tag-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -650,14 +556,6 @@
             {
               "name": "PROJECT"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-12-sub-report-opt-11-option---ignore-project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -666,14 +564,6 @@
           "args": [
             {
               "name": "TAG"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-watson-root-sub-12-sub-report-opt-12-option---ignore-tag-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -715,14 +605,6 @@
           "name": "FRAME"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-watson-root-sub-13-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--at",
@@ -755,20 +637,6 @@
       "args": [
         {
           "name": "ARGS"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-watson-root-sub-14-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-watson-root-sub-14-sub-start-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

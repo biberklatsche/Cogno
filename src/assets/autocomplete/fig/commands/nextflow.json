@@ -81,14 +81,6 @@
           "name": "run_name|session_id"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-0-sub-clean-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-after",
@@ -96,14 +88,6 @@
           "args": [
             {
               "name": "run name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-0-sub-clean-opt-0-option--after-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -114,14 +98,6 @@
             {
               "name": "run name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-0-sub-clean-opt-1-option--before-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -130,14 +106,6 @@
           "args": [
             {
               "name": "run name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-0-sub-clean-opt-2-option--but-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -231,14 +199,6 @@
           "name": "project name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-2-sub-config-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-flat",
@@ -293,14 +253,6 @@
           "name": "name of the project to drop"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-4-sub-drop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -336,14 +288,6 @@
           "name": "project name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-6-sub-info-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -375,14 +319,6 @@
       "args": [
         {
           "name": "project name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-7-sub-kuberun-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -644,14 +580,6 @@
             {
               "name": "a docker container image"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-7-sub-kuberun-opt-37-option--with-docker-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -757,14 +685,6 @@
           "name": "run name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-9-sub-log-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-after",
@@ -772,14 +692,6 @@
           "args": [
             {
               "name": "run name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-9-sub-log-opt-0-option--after-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -790,14 +702,6 @@
             {
               "name": "run name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-9-sub-log-opt-1-option--before-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -806,14 +710,6 @@
           "args": [
             {
               "name": "run name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-9-sub-log-opt-2-option--but-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -893,14 +789,6 @@
           "name": "project name or repository url to pull"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-10-sub-pull-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-all",
@@ -936,14 +824,6 @@
       "args": [
         {
           "name": "project name, repository url, or local path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-11-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1112,14 +992,6 @@
             {
               "name": "session ID"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-11-sub-run-opt-23-option--resume-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1187,14 +1059,6 @@
           "args": [
             {
               "name": "a docker container image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-11-sub-run-opt-31-option--with-docker-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1295,14 +1159,6 @@
             {
               "name": "secret name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-12-sub-secrets-opt-1-option-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1312,14 +1168,6 @@
             {
               "name": "secret name and value"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-12-sub-secrets-opt-2-option-set-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1328,14 +1176,6 @@
           "args": [
             {
               "name": "secret name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nextflow-root-sub-12-sub-secrets-opt-3-option-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1360,14 +1200,6 @@
       "args": [
         {
           "name": "project name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-nextflow-root-sub-14-sub-view-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

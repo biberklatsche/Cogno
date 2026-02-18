@@ -397,14 +397,6 @@
           "description": "Service you want to restart"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-kool-root-sub-8-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--verbose",
@@ -434,14 +426,6 @@
         {
           "name": "script",
           "description": "Script to be executed"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kool-root-sub-9-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -541,14 +525,6 @@
           "description": "Service you want to start"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-kool-root-sub-12-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--verbose",
@@ -610,14 +586,6 @@
         {
           "name": "service",
           "description": "Service you want to stop"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-kool-root-sub-14-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

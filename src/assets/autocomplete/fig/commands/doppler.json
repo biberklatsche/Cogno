@@ -1016,14 +1016,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-3-sub-configs-opt-19-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ],
@@ -1167,14 +1159,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-0-sub-clone-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1193,14 +1177,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-0-sub-clone-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1361,14 +1337,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-1-sub-create-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1402,14 +1370,6 @@
               "name": "config"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-3-sub-configs-2-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--api-host",
@@ -1545,14 +1505,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-2-sub-delete-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1573,14 +1525,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-2-sub-delete-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1598,14 +1542,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-3-sub-configs-3-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1743,14 +1679,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-3-sub-get-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1771,14 +1699,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-3-sub-get-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -1789,14 +1709,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-3-sub-configs-4-sub-lock-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1934,14 +1846,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-4-sub-lock-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1962,14 +1866,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-4-sub-lock-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1987,14 +1883,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-3-sub-configs-5-sub-logs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -2133,14 +2021,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-5-sub-logs-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2159,14 +2039,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-5-sub-logs-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -2311,14 +2183,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2337,14 +2201,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -2503,14 +2359,6 @@
                     {
                       "name": "string"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-0-sub-get-opt-19-option--c-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -2529,14 +2377,6 @@
                   "args": [
                     {
                       "name": "string"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-0-sub-get-opt-21-option--p-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 }
@@ -2690,14 +2530,6 @@
                     {
                       "name": "string"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-1-sub-create-opt-19-option--c-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -2742,14 +2574,6 @@
                   "args": [
                     {
                       "name": "string"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-1-sub-create-opt-25-option--p-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 }
@@ -2894,14 +2718,6 @@
                     {
                       "name": "string"
                     }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-2-sub-revoke-opt-18-option--c-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
-                    }
                   ]
                 },
                 {
@@ -2920,14 +2736,6 @@
                   "args": [
                     {
                       "name": "string"
-                    }
-                  ],
-                  "providers": [
-                    {
-                      "providerId": "fig-doppler-root-sub-3-sub-configs-6-sub-tokens-2-sub-revoke-opt-20-option--p-gen-0",
-                      "kind": "script",
-                      "source": "fig-generator",
-                      "baseScore": 58
                     }
                   ]
                 }
@@ -3074,14 +2882,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-7-sub-unlock-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3100,14 +2900,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-7-sub-unlock-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3259,14 +3051,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-8-sub-update-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -3285,14 +3069,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-3-sub-configs-8-sub-update-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3461,14 +3237,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-4-sub-configure-opt-19-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -4465,14 +4233,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-5-sub-environments-opt-19-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ],
@@ -4631,14 +4391,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-5-sub-environments-0-sub-create-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -4649,14 +4401,6 @@
           "args": [
             {
               "name": "slug"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-5-sub-environments-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4802,14 +4546,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-5-sub-environments-1-sub-delete-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -4827,14 +4563,6 @@
           "args": [
             {
               "name": "environment_id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-5-sub-environments-2-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4980,14 +4708,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-5-sub-environments-2-sub-get-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -4998,14 +4718,6 @@
           "args": [
             {
               "name": "slug"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-5-sub-environments-3-sub-rename-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5150,14 +4862,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-5-sub-environments-3-sub-rename-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7206,14 +6910,6 @@
               "name": "project_id"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-12-sub-projects-1-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--api-host",
@@ -7357,14 +7053,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-12-sub-projects-1-sub-delete-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -7382,14 +7070,6 @@
           "args": [
             {
               "name": "project_id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-12-sub-projects-2-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7535,14 +7215,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-12-sub-projects-2-sub-get-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -7553,14 +7225,6 @@
           "args": [
             {
               "name": "project_id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-12-sub-projects-3-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7705,14 +7369,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-12-sub-projects-3-sub-update-opt-19-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -7889,14 +7545,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-13-sub-run-opt-18-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7953,14 +7601,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-13-sub-run-opt-27-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8279,14 +7919,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-14-sub-secrets-opt-18-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8305,14 +7937,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-14-sub-secrets-opt-20-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8337,14 +7961,6 @@
           "args": [
             {
               "name": "secrets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-14-sub-secrets-0-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -8483,14 +8099,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-0-sub-delete-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -8509,14 +8117,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-0-sub-delete-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -8682,14 +8282,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-1-sub-download-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -8765,14 +8357,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-1-sub-download-opt-29-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -8794,14 +8378,6 @@
           "args": [
             {
               "name": "secrets"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-14-sub-secrets-2-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -8940,14 +8516,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-2-sub-get-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -8966,14 +8534,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-2-sub-get-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -9013,14 +8573,6 @@
               "name": "secrets"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-14-sub-secrets-3-sub-set-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--api-host",
@@ -9157,14 +8709,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-3-sub-set-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -9183,14 +8727,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-3-sub-set-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -9217,14 +8753,6 @@
               "name": "secrets"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-14-sub-secrets-4-sub-substitute-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--api-host",
@@ -9361,14 +8889,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-4-sub-substitute-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -9387,14 +8907,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-4-sub-substitute-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -9553,14 +9065,6 @@
                 {
                   "name": "string"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-5-sub-upload-opt-18-option--c-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -9579,14 +9083,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-doppler-root-sub-14-sub-secrets-5-sub-upload-opt-20-option--p-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -10038,14 +9534,6 @@
             {
               "name": "string"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-16-sub-setup-opt-18-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10064,14 +9552,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-doppler-root-sub-16-sub-setup-opt-20-option--p-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

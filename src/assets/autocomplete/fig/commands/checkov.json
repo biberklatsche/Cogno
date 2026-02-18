@@ -191,14 +191,6 @@
         {
           "name": "BRANCH"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-checkov-root-opt-22-option---branch-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

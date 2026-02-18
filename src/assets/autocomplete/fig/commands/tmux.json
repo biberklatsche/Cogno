@@ -52,14 +52,6 @@
             {
               "name": "target-session"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-0-sub-a-opt-5-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -153,14 +145,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-2-sub-breakp-opt-5-option--n-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -170,14 +154,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-2-sub-breakp-opt-6-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -186,14 +162,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-2-sub-breakp-opt-7-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -245,14 +213,6 @@
             {
               "name": "buffer-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-3-sub-capturep-opt-8-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -279,14 +239,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-3-sub-capturep-opt-11-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -348,14 +300,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-4-sub-choose-buffer-opt-6-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -415,14 +359,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-5-sub-choose-client-opt-6-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -495,14 +431,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-6-sub-choose-tree-opt-9-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -578,14 +506,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-9-sub-command-prompt-opt-8-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -618,14 +538,6 @@
           "args": [
             {
               "name": "target-client"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-10-sub-confirm-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -662,14 +574,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-11-sub-copy-mode-opt-5-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -678,14 +582,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-11-sub-copy-mode-opt-6-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -704,14 +600,6 @@
           "args": [
             {
               "name": "buffer-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-12-sub-deleteb-opt-0-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -749,14 +637,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-13-sub-detach-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -765,14 +645,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-13-sub-detach-opt-4-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -810,14 +682,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-14-sub-menu-opt-1-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -826,14 +690,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-14-sub-menu-opt-2-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -898,14 +754,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-15-sub-display-opt-3-option--v-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -923,14 +771,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-15-sub-display-opt-5-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -972,14 +812,6 @@
           "args": [
             {
               "name": "target-client"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-16-sub-displayp-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1029,14 +861,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-17-sub-findw-opt-6-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1054,14 +878,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-18-sub-has-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1090,14 +906,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-20-sub-joinp-opt-0-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1117,14 +925,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-20-sub-joinp-opt-2-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1133,14 +933,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-20-sub-joinp-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1164,14 +956,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-21-sub-killp-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1193,14 +977,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-23-sub-kill-ses-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1232,14 +1008,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-24-sub-killw-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1270,14 +1038,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-25-sub-lastp-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1295,14 +1055,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-26-sub-last-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1338,14 +1090,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-27-sub-linkw-opt-4-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1354,14 +1098,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-27-sub-linkw-opt-5-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1397,14 +1133,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-29-sub-lsc-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1483,14 +1211,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-32-sub-lsp-opt-4-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1560,14 +1280,6 @@
             {
               "name": "target-session"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-34-sub-lsw-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1596,14 +1308,6 @@
             {
               "name": "buffer-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-35-sub-loadb-opt-1-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1612,14 +1316,6 @@
           "args": [
             {
               "name": "target-client"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-35-sub-loadb-opt-2-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1638,14 +1334,6 @@
           "args": [
             {
               "name": "target-client"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-36-sub-lockc-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1671,14 +1359,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-38-sub-locks-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1718,14 +1398,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-39-sub-movew-opt-5-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1734,14 +1406,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-39-sub-movew-opt-6-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1954,14 +1618,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-41-sub-neww-opt-10-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -1979,14 +1635,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-42-sub-nextl-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2009,14 +1657,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-43-sub-next-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2061,14 +1701,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-45-sub-pipep-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2086,14 +1718,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-46-sub-prevl-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2116,14 +1740,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-47-sub-prev-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2177,14 +1793,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-48-sub-refresh-opt-7-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2222,14 +1830,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-48-sub-refresh-opt-11-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2254,14 +1854,6 @@
             {
               "name": "target-session"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-49-sub-rename-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2285,14 +1877,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-50-sub-renamew-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2345,14 +1929,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-51-sub-resizep-opt-7-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2420,14 +1996,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-52-sub-resizew-opt-6-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2494,14 +2062,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-53-sub-respawnp-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2550,14 +2110,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-54-sub-respawnw-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2587,14 +2139,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-55-sub-rotatew-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2649,14 +2193,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-58-sub-selectl-opt-4-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2725,14 +2261,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-59-sub-selectp-opt-11-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2766,14 +2294,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-60-sub-selectw-opt-4-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -2825,14 +2345,6 @@
             {
               "name": "buffer-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-64-sub-setb-opt-2-option--b-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2841,14 +2353,6 @@
           "args": [
             {
               "name": "target-client"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-64-sub-setb-opt-3-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2909,14 +2413,6 @@
             {
               "name": "target-session"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-70-sub-showenv-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -2946,14 +2442,6 @@
           "args": [
             {
               "name": "target-client"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-72-sub-showmsgs-opt-2-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -3076,14 +2564,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-76-sub-splitw-opt-9-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3119,14 +2599,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-78-sub-suspendc-opt-0-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -3161,14 +2633,6 @@
             {
               "name": "src-pane"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-79-sub-swapp-opt-4-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3177,14 +2641,6 @@
           "args": [
             {
               "name": "src-pane"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-79-sub-swapp-opt-5-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -3208,14 +2664,6 @@
             {
               "name": "window-name"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-80-sub-swapw-opt-1-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3224,14 +2672,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-80-sub-swapw-opt-2-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -3275,14 +2715,6 @@
             {
               "name": "target-client"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-81-sub-switchc-opt-6-option--c-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3291,14 +2723,6 @@
           "args": [
             {
               "name": "target-session"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-81-sub-switchc-opt-7-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3366,14 +2790,6 @@
           "args": [
             {
               "name": "window-name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-tmux-root-sub-83-sub-unlinkw-opt-1-option--t-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

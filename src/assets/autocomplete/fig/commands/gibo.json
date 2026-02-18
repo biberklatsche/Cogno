@@ -21,14 +21,6 @@
           "name": "boilerplate",
           "description": "Name of the boilerplate to dump"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gibo-root-sub-0-sub-dump-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

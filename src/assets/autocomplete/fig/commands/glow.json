@@ -95,14 +95,6 @@
           "name": "path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-glow-root-sub-2-sub-stash-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [

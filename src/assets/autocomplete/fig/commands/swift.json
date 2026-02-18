@@ -66,14 +66,6 @@
           "name": "prefix",
           "description": "The remap source paths in coverage info"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-swift-root-opt-8-option--coverage-prefix-map-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -97,14 +89,6 @@
         {
           "name": "prefix=replacement",
           "description": "The remap source paths in debug info"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-swift-root-opt-11-option--debug-prefix-map-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -243,14 +227,6 @@
         {
           "name": "prefix",
           "description": "The remap source paths in debug, coverage, and index info"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-swift-root-opt-35-option--file-prefix-map-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -411,14 +387,6 @@
         {
           "name": "alias",
           "description": "The module alias and the contents of the file to be used"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-swift-root-opt-54-option--module-alias-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

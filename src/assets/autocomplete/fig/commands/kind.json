@@ -163,14 +163,6 @@
                 {
                   "name": "cluster name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-3-sub-delete-0-sub-cluster-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -227,14 +219,6 @@
                 {
                   "name": "cluster name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-4-sub-export-1-sub-logs-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -259,14 +243,6 @@
               "args": [
                 {
                   "name": "cluster name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-5-sub-get-1-sub-kubeconfig-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -294,14 +270,6 @@
                 {
                   "name": "cluster name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-5-sub-get-2-sub-nodes-opt-1-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -323,14 +291,6 @@
                 {
                   "name": "cluster name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-6-sub-load-0-sub-docker-image-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -339,14 +299,6 @@
               "args": [
                 {
                   "name": "nodes"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-6-sub-load-0-sub-docker-image-opt-1-option---nodes-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -363,14 +315,6 @@
                 {
                   "name": "cluster name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-6-sub-load-1-sub-image-archive-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -379,14 +323,6 @@
               "args": [
                 {
                   "name": "nodes"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-kind-root-sub-6-sub-load-1-sub-image-archive-opt-1-option---nodes-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }

@@ -225,14 +225,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-13-sub-buildpacks-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -263,14 +255,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-14-sub-buildpacks-add-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -303,14 +287,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-15-sub-buildpacks-clear-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -352,14 +328,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-17-sub-buildpacks-remove-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -422,14 +390,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-19-sub-buildpacks-set-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -472,14 +432,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-21-sub-ci-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -518,14 +470,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-22-sub-ci-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -554,14 +498,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-23-sub-ci-last-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -597,14 +533,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-24-sub-ci-rerun-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -629,14 +557,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-25-sub-ci-run-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -785,14 +705,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-32-sub-config-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -838,14 +750,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-33-sub-config-edit-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -875,14 +779,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-34-sub-config-get-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -919,14 +815,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-35-sub-config-unset-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -958,14 +846,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-36-sub-domains-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1042,14 +922,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-37-sub-domains-add-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1099,14 +971,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-38-sub-domains-clear-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1143,14 +1007,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-39-sub-domains-info-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1189,14 +1045,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-40-sub-domains-remove-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1233,14 +1081,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-41-sub-domains-update-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1283,14 +1123,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-42-sub-domains-wait-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1322,14 +1154,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-43-sub-git-clone-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1354,14 +1178,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-44-sub-git-remote-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1392,14 +1208,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-45-sub-labs-disable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1486,14 +1294,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-49-sub-logs-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1567,14 +1367,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-51-sub-pipelines-add-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1632,14 +1424,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-53-sub-pipelines-create-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1688,14 +1472,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-55-sub-pipelines-diff-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1748,14 +1524,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-58-sub-pipelines-promote-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1787,14 +1555,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-59-sub-pipelines-remove-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1890,14 +1650,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-63-sub-pipelines-update-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1930,14 +1682,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-64-sub-ps-autoscale-disable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1962,14 +1706,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-65-sub-ps-autoscale-enable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2011,14 +1747,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-66-sub-ps-wait-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2123,14 +1851,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-69-sub-reviewapps-enable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2174,14 +1894,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-70-sub-run-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2240,14 +1952,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-71-sub-run-detached-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2331,14 +2035,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-75-sub-webhooks-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2363,14 +2059,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-76-sub-webhooks-add-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2432,14 +2120,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-77-sub-webhooks-deliveries-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2477,14 +2157,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-78-sub-webhooks-deliveries-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2509,14 +2181,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-79-sub-webhooks-events-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2548,14 +2212,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-80-sub-webhooks-events-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2585,14 +2241,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-81-sub-webhooks-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2625,14 +2273,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-82-sub-webhooks-remove-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2662,14 +2302,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-83-sub-webhooks-update-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2749,14 +2381,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-84-sub-ci-config-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2801,14 +2425,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-85-sub-ci-config-get-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2841,14 +2457,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-86-sub-ci-config-set-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2880,14 +2488,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-87-sub-ci-config-unset-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2929,14 +2529,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-88-sub-ci-debug-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2973,14 +2565,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-90-sub-ci-open-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3016,14 +2600,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-91-sub-addons-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3066,14 +2642,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-92-sub-addons-attach-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3121,14 +2689,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-93-sub-addons-create-opt-4-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3171,14 +2731,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-94-sub-addons-destroy-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3208,14 +2760,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-95-sub-addons-detach-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3251,14 +2795,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-96-sub-addons-docs-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3292,14 +2828,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-97-sub-addons-downgrade-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3329,14 +2857,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-98-sub-addons-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3371,14 +2891,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-99-sub-addons-open-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3428,14 +2940,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-101-sub-addons-rename-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3479,14 +2983,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-103-sub-addons-upgrade-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3521,14 +3017,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-104-sub-addons-wait-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3553,14 +3041,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-105-sub-certs-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3599,14 +3079,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-106-sub-certs-add-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3636,14 +3108,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-107-sub-certs-auto-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3668,14 +3132,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-108-sub-certs-auto-disable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3706,14 +3162,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-109-sub-certs-auto-enable-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3739,14 +3187,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-110-sub-certs-auto-refresh-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3771,14 +3211,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-111-sub-certs-chain-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3842,14 +3274,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-112-sub-certs-generate-opt-8-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3887,14 +3311,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-113-sub-certs-info-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -3919,14 +3335,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-114-sub-certs-key-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3960,14 +3368,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-115-sub-certs-remove-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4013,14 +3413,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-116-sub-certs-update-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4081,14 +3473,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-120-sub-container-pull-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4135,14 +3519,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-121-sub-container-push-opt-4-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4174,14 +3550,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-122-sub-container-release-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4206,14 +3574,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-123-sub-container-rm-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4253,14 +3613,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-124-sub-container-run-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4291,14 +3643,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-125-sub-pg-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4323,14 +3667,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-126-sub-pg-backups-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4361,14 +3697,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-127-sub-pg-backups-cancel-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4409,14 +3737,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-128-sub-pg-backups-capture-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4452,14 +3772,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-129-sub-pg-backups-delete-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4498,14 +3810,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-130-sub-pg-backups-download-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4535,14 +3839,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-131-sub-pg-backups-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4599,14 +3895,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-132-sub-pg-backups-restore-opt-4-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4641,14 +3929,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-133-sub-pg-backups-schedule-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4673,14 +3953,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-134-sub-pg-backups-schedules-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4712,14 +3984,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-135-sub-pg-backups-unschedule-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4749,14 +4013,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-136-sub-pg-backups-url-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4788,14 +4044,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-137-sub-pg-bloat-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4825,14 +4073,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-138-sub-pg-blocking-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4867,14 +4107,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-139-sub-pg-connection-pooling-attach-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -4918,14 +4150,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-140-sub-pg-copy-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4955,14 +4179,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-141-sub-pg-credentials-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5000,14 +4216,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-142-sub-pg-credentials-create-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5052,14 +4260,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-143-sub-pg-credentials-destroy-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5095,14 +4295,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-144-sub-pg-credentials-repair-default-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5155,14 +4347,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-145-sub-pg-credentials-rotate-opt-4-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5200,14 +4384,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-146-sub-pg-credentials-url-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5242,14 +4418,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-147-sub-pg-diagnose-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5279,14 +4447,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-148-sub-pg-info-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5327,14 +4487,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-149-sub-pg-kill-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5365,14 +4517,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-150-sub-pg-killall-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5402,14 +4546,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-151-sub-pg-links-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5447,14 +4583,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-152-sub-pg-links-create-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5495,14 +4623,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-153-sub-pg-links-destroy-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5540,14 +4660,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-154-sub-pg-locks-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5577,14 +4689,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-155-sub-pg-maintenance-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5622,14 +4726,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-156-sub-pg-maintenance-run-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5662,14 +4758,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-157-sub-pg-maintenance-window-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5719,14 +4807,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-158-sub-pg-outliers-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5763,14 +4843,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-159-sub-pg-promote-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5806,14 +4878,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-160-sub-pg-ps-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -5863,14 +4927,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-161-sub-pg-psql-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5908,14 +4964,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-162-sub-pg-pull-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5952,14 +5000,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-163-sub-pg-push-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6004,14 +5044,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-164-sub-pg-reset-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6041,14 +5073,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-165-sub-pg-settings-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6083,14 +5107,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-166-sub-pg-settings-auto-explain-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6123,14 +5139,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-167-sub-pg-settings-auto-explain-log-analyze-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6165,14 +5173,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-168-sub-pg-settings-auto-explain-log-buffers-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6205,14 +5205,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-169-sub-pg-settings-auto-explain-log-min-duration-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6247,14 +5239,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-170-sub-pg-settings-auto-explain-log-nested-statements-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6287,14 +5271,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-171-sub-pg-settings-auto-explain-log-triggers-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6329,14 +5305,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-172-sub-pg-settings-auto-explain-log-verbose-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6369,14 +5337,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-173-sub-pg-settings-log-lock-waits-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6411,14 +5371,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-174-sub-pg-settings-log-min-duration-statement-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6452,14 +5404,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-175-sub-pg-settings-log-statement-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6492,14 +5436,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-176-sub-pg-settings-track-functions-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6536,14 +5472,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-177-sub-pg-unfollow-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6588,14 +5516,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-178-sub-pg-upgrade-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6625,14 +5545,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-179-sub-pg-vacuum-stats-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6671,14 +5583,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-180-sub-pg-wait-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6728,14 +5632,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-181-sub-psql-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6769,14 +5665,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-182-sub-redis-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6814,14 +5702,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-183-sub-redis-cli-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6856,14 +5736,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-184-sub-redis-credentials-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6897,14 +5769,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-185-sub-redis-info-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6942,14 +5806,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-186-sub-redis-keyspace-notifications-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -6999,14 +5855,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-187-sub-redis-maintenance-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7044,14 +5892,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-188-sub-redis-maxmemory-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7081,14 +5921,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-189-sub-redis-promote-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7126,14 +5958,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-190-sub-redis-stats-reset-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7170,14 +5994,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-191-sub-redis-timeout-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7221,14 +6037,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-192-sub-redis-upgrade-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7262,14 +6070,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-193-sub-redis-wait-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7800,14 +6600,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-217-sub-access-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7845,14 +6637,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-218-sub-access-add-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7882,14 +6666,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-219-sub-access-remove-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7928,14 +6704,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-220-sub-access-update-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7960,14 +6728,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-221-sub-apps-join-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -7994,14 +6754,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-222-sub-apps-leave-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8026,14 +6778,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-223-sub-apps-lock-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8077,14 +6821,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-224-sub-apps-transfer-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8109,14 +6845,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-225-sub-apps-unlock-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8143,14 +6871,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-226-sub-join-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8176,14 +6896,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-227-sub-leave-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8208,14 +6920,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-228-sub-lock-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8375,14 +7079,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-236-sub-unlock-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8515,14 +7211,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-239-sub-apps-destroy-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8564,14 +7252,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-240-sub-apps-errors-opt-4-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8607,14 +7287,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-242-sub-apps-favorites-add-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8639,14 +7311,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-243-sub-apps-favorites-remove-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8686,14 +7350,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-244-sub-apps-info-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8723,14 +7379,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-245-sub-apps-open-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8762,14 +7410,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-246-sub-apps-rename-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8794,14 +7434,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-247-sub-apps-stacks-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8833,14 +7465,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-248-sub-apps-stacks-set-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8865,14 +7489,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-249-sub-config-set-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8902,14 +7518,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-250-sub-drains-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -8941,14 +7549,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-251-sub-drains-add-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -8978,14 +7578,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-252-sub-drains-remove-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9017,14 +7609,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-253-sub-dyno-kill-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9049,14 +7633,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-254-sub-dyno-resize-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9088,14 +7664,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-255-sub-dyno-restart-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9120,14 +7688,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-256-sub-dyno-scale-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9159,14 +7719,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-257-sub-dyno-stop-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9195,14 +7747,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-258-sub-features-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9234,14 +7778,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-259-sub-features-disable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9271,14 +7807,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-260-sub-features-enable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9313,14 +7841,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-261-sub-features-info-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9399,14 +7919,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-266-sub-labs-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9436,14 +7948,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-267-sub-labs-enable-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9479,14 +7983,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-268-sub-labs-info-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9511,14 +8007,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-269-sub-maintenance-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9545,14 +8033,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-270-sub-maintenance-off-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9577,14 +8057,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-271-sub-maintenance-on-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9623,14 +8095,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-272-sub-notifications-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9659,14 +8123,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-273-sub-ps-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9698,14 +8154,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-274-sub-ps-kill-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9730,14 +8178,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-275-sub-ps-resize-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9769,14 +8209,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-276-sub-ps-restart-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9801,14 +8233,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-277-sub-ps-scale-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9840,14 +8264,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-278-sub-ps-stop-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -9872,14 +8288,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-279-sub-ps-type-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9916,14 +8324,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-280-sub-releases-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -9966,14 +8366,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-281-sub-releases-info-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10004,14 +8396,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-282-sub-releases-output-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10041,14 +8425,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-283-sub-releases-rollback-opt-0-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -10094,14 +8470,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-284-sub-ps-copy-opt-2-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10142,14 +8510,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-285-sub-ps-exec-opt-3-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10187,14 +8547,6 @@
             {
               "name": "app"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-286-sub-ps-forward-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10226,14 +8578,6 @@
           "args": [
             {
               "name": "app"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-heroku-root-sub-287-sub-ps-socks-opt-1-option--a-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

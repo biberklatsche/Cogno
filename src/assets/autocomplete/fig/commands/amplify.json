@@ -599,14 +599,6 @@
               "description": "Env name"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-27-sub-env-2-sub-checkout-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--restore",
@@ -640,14 +632,6 @@
                   "name": "env-name",
                   "description": "Env name"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-amplify-root-sub-27-sub-env-4-sub-get-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -663,14 +647,6 @@
                 {
                   "name": "env-name",
                   "description": "Env name"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-amplify-root-sub-27-sub-env-5-sub-import-opt-0-option---name-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -691,14 +667,6 @@
             {
               "name": "env-name",
               "description": "Env name"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-amplify-root-sub-27-sub-env-6-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

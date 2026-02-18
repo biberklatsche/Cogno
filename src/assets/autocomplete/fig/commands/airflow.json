@@ -48,14 +48,6 @@
                   "name": "basic_auth",
                   "description": "Securing Flower with Basic Authentication. Accepts user:password pairs separated by a comma. Example: flower_basic_auth = user1:password1,user2:password2"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-airflow-root-sub-0-sub-celery-0-sub-flower-opt-1-option--a-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {

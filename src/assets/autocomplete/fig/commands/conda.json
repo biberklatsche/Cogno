@@ -23,14 +23,6 @@
     {
       "name": "activate",
       "description": "Activate an environment",
-      "providers": [
-        {
-          "providerId": "fig-conda-root-sub-0-sub-activate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--stack",
@@ -234,14 +226,6 @@
             {
               "name": "Configuration values"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-conda-root-sub-4-sub-config-opt-6-option---show-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -258,14 +242,6 @@
           "args": [
             {
               "name": "Configuration values"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-conda-root-sub-4-sub-config-opt-9-option---describe-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -360,15 +336,7 @@
       "options": [
         {
           "name": "--clone",
-          "description": "Path to (or name of) existing local environment",
-          "providers": [
-            {
-              "providerId": "fig-conda-root-sub-5-sub-create-opt-0-option---clone-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Path to (or name of) existing local environment"
         },
         {
           "name": "--file",
@@ -939,14 +907,6 @@
           "name": "package name"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-conda-root-sub-12-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--dev",
@@ -1073,14 +1033,6 @@
       "args": [
         {
           "name": "package name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-conda-root-sub-13-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1357,14 +1309,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-conda-root-sub-16-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--file",
@@ -1541,14 +1485,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-conda-root-sub-17-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

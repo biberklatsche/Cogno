@@ -25,14 +25,6 @@
           "name": "remote:"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-0-sub-about-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--full",
@@ -70,14 +62,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-3-sub-cat-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -175,14 +159,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-5-sub-cleanup-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -308,14 +284,6 @@
           "name": "remote:path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-12-sub-dedupe-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--by-hash",
@@ -340,14 +308,6 @@
           "name": "remote:path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-13-sub-delete-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--rmdirs",
@@ -361,14 +321,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-14-sub-deletefile-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -461,14 +413,6 @@
           "name": "remote:path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-19-sub-link-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--expire",
@@ -502,14 +446,6 @@
         {
           "name": "remote:path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-21-sub-ls-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -518,14 +454,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-22-sub-lsd-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -543,14 +471,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-23-sub-lsf-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -627,14 +547,6 @@
           "name": "remote:path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-24-sub-lsjson-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--dirs-only",
@@ -692,14 +604,6 @@
         {
           "name": "remote:path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-25-sub-lsl-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -708,14 +612,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-26-sub-md5sum-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -744,14 +640,6 @@
       "args": [
         {
           "name": "remote:path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rclone-root-sub-27-sub-mkdir-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

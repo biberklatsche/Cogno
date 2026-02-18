@@ -71,15 +71,7 @@
     },
     {
       "name": "--deployment",
-      "description": "Deployment name [$BOSH_DEPLOYMENT]",
-      "providers": [
-        {
-          "providerId": "fig-bosh-root-opt-8-option---deployment-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ]
+      "description": "Deployment name [$BOSH_DEPLOYMENT]"
     },
     {
       "name": "--column",

@@ -211,14 +211,6 @@
         {
           "name": "recipe"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-just-root-opt-30-option--s-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

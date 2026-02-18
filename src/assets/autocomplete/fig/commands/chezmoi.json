@@ -246,14 +246,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-0-sub-manage-opt-4-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -272,14 +264,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-0-sub-manage-opt-6-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -329,14 +313,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-1-sub-apply-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -348,14 +324,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-1-sub-apply-opt-1-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -391,14 +359,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-2-sub-archive-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -429,14 +389,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-2-sub-archive-opt-3-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -533,14 +485,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-9-sub-diff-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -552,14 +496,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-9-sub-diff-opt-1-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -616,14 +552,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-11-sub-dump-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -647,14 +575,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-11-sub-dump-opt-2-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -697,14 +617,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-12-sub-edit-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -720,14 +632,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-12-sub-edit-opt-3-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -854,14 +758,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-20-sub-import-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -873,14 +769,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-20-sub-import-opt-2-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -965,14 +853,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-21-sub-init-opt-5-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1031,14 +911,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-23-sub-list-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1050,14 +922,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-23-sub-list-opt-1-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1116,14 +980,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-27-sub-re-add-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1135,14 +991,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-27-sub-re-add-opt-1-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1459,14 +1307,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-32-sub-status-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1478,14 +1318,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-32-sub-status-opt-1-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1541,14 +1373,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-35-sub-update-opt-1-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1560,14 +1384,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-35-sub-update-opt-2-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1645,14 +1461,6 @@
             {
               "name": "exclude"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-37-sub-verify-opt-0-option---exclude-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1664,14 +1472,6 @@
           "args": [
             {
               "name": "include"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-chezmoi-root-sub-37-sub-verify-opt-1-option---include-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

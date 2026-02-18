@@ -50,14 +50,6 @@
         {
           "name": "file"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-migrate-root-opt-4-option--t-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

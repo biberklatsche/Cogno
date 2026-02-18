@@ -11,14 +11,6 @@
           "name": "id"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-add-root-sub-0-sub-package-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -73,14 +65,6 @@
             {
               "name": "version"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-add-root-sub-0-sub-package-opt-6-option--v-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -91,14 +75,6 @@
       "args": [
         {
           "name": "path"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-add-root-sub-1-sub-reference-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

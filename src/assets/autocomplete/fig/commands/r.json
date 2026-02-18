@@ -185,14 +185,6 @@
           "name": "file",
           "description": "File to run"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-r-root-opt-26-option---file-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -262,14 +254,6 @@
               "description": "Source files to be compiled"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-1-sub-compile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -294,14 +278,6 @@
             {
               "name": "files",
               "description": "The object files to be included in the shared object/DLL"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-2-sub-shlib-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -376,14 +352,6 @@
               "description": "Directories with the package sources"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-3-sub-install-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -427,14 +395,6 @@
                 {
                   "name": "LIB",
                   "description": "Path to the R library tree to install to"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-r-root-sub-1-sub-cmd-3-sub-install-opt-5-option---library-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -683,14 +643,6 @@
                   "name": "LIB",
                   "description": "Library tree"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-r-root-sub-1-sub-cmd-4-sub-remove-opt-2-option---library-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -702,14 +654,6 @@
             {
               "name": "pakgdirs",
               "description": "Package directories"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-5-sub-build-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -793,14 +737,6 @@
               "description": "Packages to check"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-6-sub-check-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -827,14 +763,6 @@
                   "name": "LIB",
                   "description": "Library tree"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-r-root-sub-1-sub-cmd-6-sub-check-opt-2-option---library-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -847,14 +775,6 @@
                 {
                   "name": "directory",
                   "description": "Directory for output"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-r-root-sub-1-sub-cmd-6-sub-check-opt-3-option---output-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -932,14 +852,6 @@
                   "name": "directory",
                   "description": "Directory with the tests directory"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-r-root-sub-1-sub-cmd-6-sub-check-opt-19-option---test-dir-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1013,14 +925,6 @@
               "description": "File generated by `Rprof()`"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-8-sub-rprof-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1081,14 +985,6 @@
             {
               "name": "file",
               "description": "R doc file to convert"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-9-sub-rdconv-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1184,14 +1080,6 @@
             {
               "name": "files or pkgs",
               "description": "Rd files, or a directory with the sources of a pkg, or an installed pkg"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-10-sub-rd2pdf-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1301,14 +1189,6 @@
                   "name": "working dir",
                   "description": "Working directory for the build"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-r-root-sub-1-sub-cmd-10-sub-rd2pdf-opt-14-option---build_dir-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1330,14 +1210,6 @@
             {
               "name": "file",
               "description": "R doc file to convert"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-11-sub-rd2txt-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -1435,14 +1307,6 @@
               "description": "File to process"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-12-sub-stangle-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -1497,14 +1361,6 @@
             {
               "name": "file",
               "description": "Vignette to build"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-r-root-sub-1-sub-cmd-13-sub-sweave-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

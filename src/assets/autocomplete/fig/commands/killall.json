@@ -163,14 +163,6 @@
         {
           "name": "user"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-killall-root-opt-38-option--u-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

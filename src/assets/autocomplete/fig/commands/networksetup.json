@@ -27,14 +27,6 @@
         {
           "name": "hardwareport"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-4-sub--getmacaddress-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -57,14 +49,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-7-sub--getinfo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -109,14 +93,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-10-sub--setbootp-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -138,14 +114,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-12-sub--getadditionalroutes-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -169,14 +137,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-14-sub--setv4off-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -185,14 +145,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-15-sub--setv6off-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -203,14 +155,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-16-sub--setv6automatic-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -219,14 +163,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-17-sub--setv6linklocal-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -255,14 +191,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-19-sub--getv6additionalroutes-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -285,14 +213,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-21-sub--getdnsservers-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -314,14 +234,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-23-sub--getsearchdomains-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -379,14 +291,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-28-sub--getwebproxy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -436,14 +340,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-31-sub--getsecurewebproxy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -495,14 +391,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-34-sub--getsocksfirewallproxy-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -553,14 +441,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-37-sub--getproxybypassdomains-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -582,14 +462,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-39-sub--getproxyautodiscovery-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -625,14 +497,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-42-sub--getautoproxyurl-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -641,14 +505,6 @@
       "args": [
         {
           "name": "hardwareport"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-43-sub--getairportnetwork-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -676,14 +532,6 @@
         {
           "name": "hardwareport"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-45-sub--getairportpower-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -704,14 +552,6 @@
       "args": [
         {
           "name": "hardwareport"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-47-sub--listpreferredwirelessnetworks-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -760,14 +600,6 @@
         {
           "name": "hardwareport"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-50-sub--removeallpreferredwirelessnetworks-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -776,14 +608,6 @@
       "args": [
         {
           "name": "networkservice"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-51-sub--getnetworkserviceenabled-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -845,14 +669,6 @@
         {
           "name": "networkservice"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-56-sub--removenetworkservice-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -861,14 +677,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-57-sub--ordernetworkservices-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -879,14 +687,6 @@
         {
           "name": "hardwarePort"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-58-sub--setmtuandmediaautomatically-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -895,14 +695,6 @@
       "args": [
         {
           "name": "hardwarePort"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-59-sub--getmtu-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -926,14 +718,6 @@
         {
           "name": "hardwareport"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-61-sub--listvalidmturange-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -942,14 +726,6 @@
       "args": [
         {
           "name": "hardwareport"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-62-sub--getmedia-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -976,14 +752,6 @@
       "args": [
         {
           "name": "hardwareport"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-64-sub--listvalidmedia-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1038,14 +806,6 @@
         {
           "name": "device"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-69-sub--isbondsupported-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1068,14 +828,6 @@
       "args": [
         {
           "name": "bond"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-71-sub--deletebond-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1114,14 +866,6 @@
         {
           "name": "bond"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-75-sub--showbondstatus-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1134,14 +878,6 @@
       "args": [
         {
           "name": "name"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-77-sub--showpppoestatus-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1178,14 +914,6 @@
         {
           "name": "service"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-79-sub--deletepppoeservice-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1221,14 +949,6 @@
         {
           "name": "service"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-82-sub--connectpppoeservice-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1237,14 +957,6 @@
       "args": [
         {
           "name": "service"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-83-sub--disconnectpppoeservice-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1277,14 +989,6 @@
         {
           "name": "location"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-87-sub--deletelocation-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1293,14 +997,6 @@
       "args": [
         {
           "name": "location"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-networksetup-root-sub-88-sub--switchtolocation-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

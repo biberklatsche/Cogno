@@ -126,14 +126,6 @@
         {
           "name": "port or path"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-firefox-root-opt-19-option---start-debugger-server-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

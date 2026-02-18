@@ -1623,14 +1623,6 @@
           "name": "alias or project id"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-firebase-root-sub-67-sub-use-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--add",

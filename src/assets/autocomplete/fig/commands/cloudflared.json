@@ -692,14 +692,6 @@
               "name": "value",
               "description": "Config file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-opt-0-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1096,14 +1088,6 @@
                 {
                   "name": "value",
                   "description": "Config file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-1-sub-create-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1609,14 +1593,6 @@
                   "name": "value",
                   "description": "Config file in YAML"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-4-sub-run-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1887,14 +1863,6 @@
                   "name": "value",
                   "description": "Config file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-5-sub-list-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2114,14 +2082,6 @@
                   "name": "value",
                   "description": "Config file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-6-sub-info-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2275,14 +2235,6 @@
                   "name": "value",
                   "description": "Config file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-7-sub-delete-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2422,14 +2374,6 @@
                   "name": "value",
                   "description": "Config file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-8-sub-cleanup-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -2568,14 +2512,6 @@
                 {
                   "name": "value",
                   "description": "Config file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-cloudflared-root-sub-6-sub-tunnel-9-sub-token-opt-0-option---config-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

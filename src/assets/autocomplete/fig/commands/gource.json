@@ -33,14 +33,6 @@
           "name": "screen",
           "description": "The number of the screen to display on"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-gource-root-opt-3-option---screen-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

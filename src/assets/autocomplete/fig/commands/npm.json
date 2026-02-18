@@ -16,14 +16,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-0-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -149,14 +141,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-0-sub-install-opt-20-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -180,14 +164,6 @@
           "description": "Script to run from your package.json"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-1-sub-run-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -198,14 +174,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-1-sub-run-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -244,6 +212,14 @@
               "name": "args"
             }
           ]
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "npm-scripts",
+          "kind": "script",
+          "source": "npm-script",
+          "baseScore": 60
         }
       ]
     },
@@ -315,14 +291,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-5-sub-audit-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -386,14 +354,6 @@
                 {
                   "name": "workspace"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-npm-root-sub-5-sub-audit-0-sub-fix-opt-2-option--w-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -429,14 +389,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-7-sub-bugs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -676,14 +628,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-18-sub-docs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -694,14 +638,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-18-sub-docs-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -767,14 +703,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-21-sub-explore-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -965,14 +893,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-33-sub-ls-opt-10-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1154,14 +1074,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-35-sub-outdated-opt-5-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1293,14 +1205,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-37-sub-pack-opt-2-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1364,14 +1268,6 @@
                 {
                   "name": "workspace"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-npm-root-sub-39-sub-pkg-0-sub-get-opt-1-option--w-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1406,14 +1302,6 @@
               "args": [
                 {
                   "name": "workspace"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-npm-root-sub-39-sub-pkg-1-sub-set-opt-1-option--w-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1452,14 +1340,6 @@
               "args": [
                 {
                   "name": "workspace"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-npm-root-sub-39-sub-pkg-2-sub-delete-opt-0-option--w-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1687,14 +1567,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-42-sub-prune-opt-4-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1734,14 +1606,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-43-sub-publish-opt-1-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1800,14 +1664,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-44-sub-rebuild-opt-1-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1835,14 +1691,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-45-sub-repo-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1853,14 +1701,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-45-sub-repo-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2045,14 +1885,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-50-sub-set-script-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2428,14 +2260,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-59-sub-uninstall-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2475,14 +2299,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-59-sub-uninstall-opt-5-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2506,14 +2322,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-60-sub-r-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2553,14 +2361,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-60-sub-r-opt-5-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2581,14 +2381,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-61-sub-un-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2628,14 +2420,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-61-sub-un-opt-5-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2656,14 +2440,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-62-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2703,14 +2479,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-62-sub-remove-opt-5-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2731,14 +2499,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-npm-root-sub-63-sub-unlink-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2778,14 +2538,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-63-sub-unlink-opt-5-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2827,14 +2579,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-64-sub-unpublish-opt-2-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -2953,14 +2697,6 @@
             {
               "name": "workspace"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-66-sub-update-opt-12-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -2985,14 +2721,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-67-sub-version-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -3052,14 +2780,6 @@
           "args": [
             {
               "name": "workspace"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-npm-root-sub-68-sub-view-opt-0-option--w-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

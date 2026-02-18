@@ -35,14 +35,6 @@
           "name": "path"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-1-sub-build-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--add-host",
@@ -84,14 +76,6 @@
           "args": [
             {
               "name": "string"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-1-sub-build-opt-4-option--f-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -211,14 +195,6 @@
           "args": [
             {
               "name": "target build stage"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-1-sub-build-opt-19-option---target-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -1148,14 +1124,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-5-sub-diff-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1308,14 +1276,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-8-sub-export-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1337,14 +1297,6 @@
       "args": [
         {
           "name": "image"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-9-sub-history-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1501,26 +1453,6 @@
           "name": "Name or ID"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-13-sub-inspect-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-docker-root-sub-13-sub-inspect-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-docker-root-sub-13-sub-inspect-gen-2",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1558,14 +1490,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-14-sub-kill-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1661,14 +1585,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-18-sub-logs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--details",
@@ -1726,14 +1642,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-19-sub-pause-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1828,14 +1736,6 @@
           "name": "NAME[:TAG|@DIGEST]"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-22-sub-pull-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1915,14 +1815,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-25-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1944,14 +1836,6 @@
       "args": [
         {
           "name": "containers"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-26-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1984,14 +1868,6 @@
       "args": [
         {
           "name": "image"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-27-sub-rmi-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -2876,14 +2752,6 @@
           "name": "image"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-29-sub-save-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -2951,14 +2819,6 @@
       "args": [
         {
           "name": "image"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-31-sub-sbom-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -3038,14 +2898,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-32-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -3078,14 +2930,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-33-sub-stats-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -3123,14 +2967,6 @@
           "name": "container"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-34-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -3162,14 +2998,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-36-sub-top-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -3179,14 +3007,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-37-sub-unpause-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -3195,14 +3015,6 @@
       "args": [
         {
           "name": "container"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-38-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -3383,14 +3195,6 @@
         {
           "name": "container"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-docker-root-sub-40-sub-wait-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -3403,14 +3207,6 @@
           "args": [
             {
               "name": "path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-41-sub-builder-0-sub-build-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -3454,14 +3250,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-docker-root-sub-41-sub-builder-0-sub-build-opt-4-option--f-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -3581,14 +3369,6 @@
               "args": [
                 {
                   "name": "target build stage"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-docker-root-sub-41-sub-builder-0-sub-build-opt-19-option---target-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             }
@@ -4627,14 +4407,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-3-sub-diff-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -4742,14 +4514,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-5-sub-export-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -4771,14 +4535,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-6-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4811,14 +4567,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-7-sub-kill-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -4840,14 +4588,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-8-sub-logs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -4979,14 +4719,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-10-sub-pause-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -5043,14 +4775,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-14-sub-restart-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -5072,14 +4796,6 @@
           "args": [
             {
               "name": "containers"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-15-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -5974,14 +5690,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-17-sub-start-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6014,14 +5722,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-18-sub-stats-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6059,14 +5759,6 @@
               "name": "container"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-19-sub-stop-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6089,14 +5781,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-20-sub-top-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6106,14 +5790,6 @@
             {
               "name": "container"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-21-sub-unpause-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -6122,14 +5798,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-22-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6282,14 +5950,6 @@
           "args": [
             {
               "name": "container"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-43-sub-container-23-sub-wait-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -6529,14 +6189,6 @@
               "name": "CONTEXT"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-44-sub-context-3-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "-f",
@@ -6593,14 +6245,6 @@
               "name": "CONTEXT"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-44-sub-context-5-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6637,14 +6281,6 @@
           "args": [
             {
               "name": "CONTEXT"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-44-sub-context-7-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6701,14 +6337,6 @@
               "name": "CONTEXT"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-44-sub-context-8-sub-use-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -6731,14 +6359,6 @@
           "args": [
             {
               "name": "path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-45-sub-image-0-sub-build-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -6782,14 +6402,6 @@
               "args": [
                 {
                   "name": "string"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-docker-root-sub-45-sub-image-0-sub-build-opt-4-option--f-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -6910,14 +6522,6 @@
                 {
                   "name": "target build stage"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-docker-root-sub-45-sub-image-0-sub-build-opt-19-option---target-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -6928,14 +6532,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-45-sub-image-1-sub-history-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7018,14 +6614,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-45-sub-image-3-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7153,14 +6741,6 @@
               "name": "NAME[:TAG|@DIGEST]"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-45-sub-image-7-sub-pull-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -7228,14 +6808,6 @@
               "name": "image"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-45-sub-image-9-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -7256,14 +6828,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-45-sub-image-10-sub-save-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7529,14 +7093,6 @@
               "name": "NETWORK"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-46-sub-network-3-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -7626,14 +7182,6 @@
             {
               "name": "NETWORK"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-46-sub-network-6-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]
@@ -7649,14 +7197,6 @@
             {
               "name": "NODE"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-47-sub-node-0-sub-demote-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7665,14 +7205,6 @@
           "args": [
             {
               "name": "NODE"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-47-sub-node-1-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7735,14 +7267,6 @@
             {
               "name": "NODE"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-47-sub-node-3-sub-promote-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -7751,14 +7275,6 @@
           "args": [
             {
               "name": "NODE"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-47-sub-node-4-sub-ps-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -7808,14 +7324,6 @@
               "name": "NODE"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-47-sub-node-5-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -7832,14 +7340,6 @@
           "args": [
             {
               "name": "NODE"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-47-sub-node-6-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -8844,14 +8344,6 @@
               "name": "PLUGIN"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-49-sub-plugin-1-sub-disable-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -8868,14 +8360,6 @@
           "args": [
             {
               "name": "PLUGIN"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-49-sub-plugin-2-sub-enable-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -8896,14 +8380,6 @@
           "args": [
             {
               "name": "PLUGIN"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-49-sub-plugin-3-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -9017,14 +8493,6 @@
               "name": "PLUGIN"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-49-sub-plugin-7-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -9134,14 +8602,6 @@
               "name": "SECRET"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-50-sub-secret-1-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -9201,14 +8661,6 @@
           "args": [
             {
               "name": "SECRET"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-50-sub-secret-3-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -9863,14 +9315,6 @@
               "name": "SERVICE"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-1-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -9896,14 +9340,6 @@
           "args": [
             {
               "name": "SERVICE OR TASK"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-2-sub-logs-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -10006,14 +9442,6 @@
               "name": "SERVICE"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-4-sub-ps-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -10060,14 +9488,6 @@
             {
               "name": "SERVICE"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-5-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -10076,14 +9496,6 @@
           "args": [
             {
               "name": "SERVICE"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-6-sub-rollback-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -10111,14 +9523,6 @@
               "name": "SERVICE=REPLICAS"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-7-sub-scale-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -10135,14 +9539,6 @@
           "args": [
             {
               "name": "SERVICE"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-51-sub-service-8-sub-update-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -11010,14 +10406,6 @@
               "name": "STACK"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-52-sub-stack-2-sub-ps-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -11074,14 +10462,6 @@
               "name": "STACK"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-52-sub-stack-3-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--orchestrator",
@@ -11100,14 +10480,6 @@
           "args": [
             {
               "name": "STACK"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-52-sub-stack-4-sub-services-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -11676,14 +11048,6 @@
               "name": "image"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-55-sub-trust-1-sub-revoke-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": [
@@ -11700,14 +11064,6 @@
           "args": [
             {
               "name": "image"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-55-sub-trust-2-sub-sign-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -11773,14 +11129,6 @@
           "args": [
             {
               "name": "VOLUME"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-56-sub-volume-1-sub-inspect-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -11860,14 +11208,6 @@
           "args": [
             {
               "name": "VOLUME"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-docker-root-sub-56-sub-volume-4-sub-rm-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

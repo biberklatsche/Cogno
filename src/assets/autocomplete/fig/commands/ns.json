@@ -237,14 +237,6 @@
             {
               "name": "template"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ns-root-sub-9-sub-create-opt-0-option---template-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {

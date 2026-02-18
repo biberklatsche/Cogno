@@ -29,14 +29,6 @@
           "description": "The app you want to get health and status for"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-0-sub-app-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--guid",
@@ -53,14 +45,6 @@
           "description": "The app you want to ssh into"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-1-sub-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-v",
@@ -75,14 +59,6 @@
         {
           "name": "APP_NAME",
           "description": "The app you want to get env vars for"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-2-sub-env-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -118,14 +94,6 @@
             {
               "name": "Org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-5-sub-login-opt-1-option--o-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -134,14 +102,6 @@
           "args": [
             {
               "name": "Space"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-5-sub-login-opt-2-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -184,14 +144,6 @@
             {
               "name": "Org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-8-sub-target-opt-0-option--o-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -200,14 +152,6 @@
           "args": [
             {
               "name": "Space"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-8-sub-target-opt-1-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }
@@ -388,14 +332,6 @@
           "description": "The app you want to get health and status for"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-14-sub-delete-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-f",
@@ -426,14 +362,6 @@
         {
           "name": "APP_NAME"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-16-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -442,14 +370,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-17-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -460,14 +380,6 @@
         {
           "name": "APP_NAME"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-18-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -476,14 +388,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-19-sub-restage-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -547,14 +451,6 @@
         {
           "name": "APP_NAME"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-22-sub-tasks-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -575,14 +471,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-24-sub-events-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -615,14 +503,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-26-sub-logs-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -682,14 +562,6 @@
             {
               "name": "space"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-30-sub-copy-source-opt-0-option--s-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -698,14 +570,6 @@
           "args": [
             {
               "name": "org"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-30-sub-copy-source-opt-1-option--o-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -721,14 +585,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-31-sub-create-app-manifest-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -749,14 +605,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-32-sub-get-health-check-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -780,14 +628,6 @@
         {
           "name": "APP_NAME"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-34-sub-enable-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -797,14 +637,6 @@
         {
           "name": "APP_NAME"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-35-sub-disable-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -813,14 +645,6 @@
       "args": [
         {
           "name": "APP_NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-36-sub-ssh-enabled-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -889,14 +713,6 @@
           "name": "service"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-40-sub-update-service-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-c",
@@ -933,14 +749,6 @@
       "args": [
         {
           "name": "service instance"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-41-sub-delete-service-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -991,14 +799,6 @@
       "args": [
         {
           "name": "service instance"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-44-sub-service-keys-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1234,14 +1034,6 @@
           "name": "org"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-53-sub-org-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--guid",
@@ -1277,14 +1069,6 @@
           "name": "org"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-55-sub-delete-org-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-f",
@@ -1316,14 +1100,6 @@
           "name": "space"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-58-sub-space-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--guid",
@@ -1351,14 +1127,6 @@
             {
               "name": "org"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-59-sub-create-space-opt-0-option--o-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1380,14 +1148,6 @@
           "name": "space"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-60-sub-delete-space-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "-o",
@@ -1395,14 +1155,6 @@
           "args": [
             {
               "name": "org"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-cf-root-sub-60-sub-delete-space-opt-0-option--o-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1431,14 +1183,6 @@
         {
           "name": "space"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-62-sub-allow-space-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1448,14 +1192,6 @@
         {
           "name": "space"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-63-sub-disallow-space-ssh-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -1464,14 +1200,6 @@
       "args": [
         {
           "name": "space"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-64-sub-space-ssh-allowed-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -1497,14 +1225,6 @@
       "args": [
         {
           "name": "space"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-67-sub-delete-domain-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1820,14 +1540,6 @@
       "args": [
         {
           "name": "org"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-cf-root-sub-80-sub-org-users-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

@@ -113,32 +113,6 @@
         {
           "name": "options"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-lsof-root-opt-13-option--i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-lsof-root-opt-13-option--i-gen-1",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-lsof-root-opt-13-option--i-gen-2",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        },
-        {
-          "providerId": "fig-lsof-root-opt-13-option--i-gen-3",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {

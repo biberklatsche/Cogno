@@ -79,14 +79,6 @@
         {
           "name": "version"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-n-root-sub-0-sub-i-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -98,14 +90,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-n-root-sub-1-sub-rm-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -140,14 +124,6 @@
           "name": "version"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-n-root-sub-6-sub-lsr-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",
@@ -164,14 +140,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-n-root-sub-7-sub-which-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

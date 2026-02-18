@@ -481,14 +481,6 @@
           "name": "package"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-yarn-root-sub-0-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -1179,27 +1171,11 @@
         },
         {
           "name": "get",
-          "description": "Print the value for a given key",
-          "providers": [
-            {
-              "providerId": "fig-yarn-root-sub-5-sub-config-1-sub-get-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Print the value for a given key"
         },
         {
           "name": "delete",
-          "description": "Deletes a given key from the config",
-          "providers": [
-            {
-              "providerId": "fig-yarn-root-sub-5-sub-config-2-sub-delete-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ]
+          "description": "Deletes a given key from the config"
         },
         {
           "name": "list",
@@ -1213,14 +1189,6 @@
       "args": [
         {
           "name": "cli"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-yarn-root-sub-6-sub-create-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -1790,14 +1758,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-yarn-root-sub-9-sub-global-0-sub-add-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1822,14 +1782,6 @@
           "args": [
             {
               "name": "package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-yarn-root-sub-9-sub-global-5-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [
@@ -3949,14 +3901,6 @@
     {
       "name": "remove",
       "description": "Remove installed package",
-      "providers": [
-        {
-          "providerId": "fig-yarn-root-sub-26-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -4559,14 +4503,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-yarn-root-sub-32-sub-upgrade-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -5242,14 +5178,6 @@
       "args": [
         {
           "name": "package"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-yarn-root-sub-36-sub-why-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [

@@ -224,14 +224,6 @@
               "name": "profile name",
               "description": "The name of the AWS profile"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-1-sub-validate-opt-4-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -317,14 +309,6 @@
             {
               "name": "profile name",
               "description": "The name of the AWS profile"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-2-sub-build-opt-6-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -675,14 +659,6 @@
                 {
                   "name": "profile name",
                   "description": "The name of the AWS profile"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-sam-root-sub-3-sub-local-1-sub-invoke-opt-18-option---profile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -1188,14 +1164,6 @@
                   "name": "profile name",
                   "description": "The name of the AWS profile"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-sam-root-sub-3-sub-local-3-sub-start-lambda-opt-21-option---profile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -1327,14 +1295,6 @@
             {
               "name": "profile name",
               "description": "The name of the AWS profile"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-4-sub-package-opt-10-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1560,14 +1520,6 @@
               "name": "profile name",
               "description": "The name of the AWS profile"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-5-sub-deploy-opt-17-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1632,14 +1584,6 @@
             {
               "name": "profile name",
               "description": "The name of the AWS profile"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-6-sub-delete-opt-4-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1710,14 +1654,6 @@
               "name": "profile name",
               "description": "The name of the AWS profile"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-7-sub-logs-opt-4-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1778,14 +1714,6 @@
             {
               "name": "profile name",
               "description": "The name of the AWS profile"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-sam-root-sub-8-sub-publish-opt-4-option---profile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

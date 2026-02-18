@@ -66,14 +66,6 @@
           "name": "PROJECT"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-xcodeproj-root-sub-2-sub-show-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--format",
@@ -92,14 +84,6 @@
       "args": [
         {
           "name": "PROJECT"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-xcodeproj-root-sub-3-sub-sort-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -132,14 +116,6 @@
           "args": [
             {
               "name": "PATH"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-xcodeproj-root-sub-4-sub-target-diff-opt-0-option---project-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

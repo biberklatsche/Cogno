@@ -48,14 +48,6 @@
         {
           "name": "module"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ts-node-root-opt-4-option--r-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -108,14 +100,6 @@
       "args": [
         {
           "name": "project"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ts-node-root-opt-11-option--p-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -171,14 +155,6 @@
         {
           "name": "cwd"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ts-node-root-opt-16-option---cwd-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -203,14 +179,6 @@
       "args": [
         {
           "name": "directory"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ts-node-root-opt-21-option---scope-dir-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

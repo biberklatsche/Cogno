@@ -41,14 +41,6 @@
           "name": "config"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-dapr-root-sub-0-sub-annotate-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--api-token-secret",
@@ -68,14 +60,6 @@
           "args": [
             {
               "name": "app-id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-0-sub-annotate-opt-1-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -131,14 +115,6 @@
           "args": [
             {
               "name": "config"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-0-sub-annotate-opt-7-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -812,14 +788,6 @@
             {
               "name": "runtime-version"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-6-sub-init-opt-15-option---runtime-version-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -867,14 +835,6 @@
           "args": [
             {
               "name": "app-id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-7-sub-invoke-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1008,14 +968,6 @@
           "args": [
             {
               "name": "app-id"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-9-sub-logs-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -1411,14 +1363,6 @@
             {
               "name": "config"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-12-sub-run-opt-11-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1569,14 +1513,6 @@
             {
               "name": "run-file"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-12-sub-run-opt-28-option---run-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1627,14 +1563,6 @@
             {
               "name": "app-id"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-14-sub-stop-opt-0-option---app-id-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -1660,14 +1588,6 @@
           "args": [
             {
               "name": "run-file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-dapr-root-sub-14-sub-stop-opt-3-option---run-file-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

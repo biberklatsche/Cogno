@@ -302,14 +302,6 @@
               "name": "configuration",
               "description": "Configuration file in standard property list format"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-asr-root-sub-4-sub-server-opt-2-option---config-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         }
       ]

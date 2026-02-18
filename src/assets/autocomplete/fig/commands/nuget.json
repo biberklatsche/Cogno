@@ -93,14 +93,6 @@
           "description": "Specifies the file path to the package to be pushed"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nuget-root-sub-2-sub-push-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -214,14 +206,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-3-sub-add-0-sub-source-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -302,14 +286,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-4-sub-disable-0-sub-source-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -336,14 +312,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-5-sub-enable-0-sub-source-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -359,14 +327,6 @@
           "args": [
             {
               "name": "file"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nuget-root-sub-6-sub-list-opt-0-option---configfile-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },
@@ -407,14 +367,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-7-sub-remove-0-sub-source-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             }
           ]
@@ -440,14 +392,6 @@
               "args": [
                 {
                   "name": "file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-8-sub-update-0-sub-source-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -518,14 +462,6 @@
           "description": "Specifies the file path to the package(s) to be verified. Multiple position arguments can be passed in to verify multiple packages"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-nuget-root-sub-9-sub-verify-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",
@@ -569,14 +505,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-0-sub-list-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -603,14 +531,6 @@
               "args": [
                 {
                   "name": "file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-1-sub-sync-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -644,14 +564,6 @@
               "args": [
                 {
                   "name": "file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-2-sub-remove-opt-0-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -693,14 +605,6 @@
               "args": [
                 {
                   "name": "file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-3-sub-author-opt-1-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -747,14 +651,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-4-sub-repository-opt-2-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -795,14 +691,6 @@
               "args": [
                 {
                   "name": "file"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-5-sub-certificate-opt-1-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },
@@ -849,14 +737,6 @@
                 {
                   "name": "file"
                 }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-nuget-root-sub-10-sub-trust-6-sub-source-opt-2-option---configfile-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
-                }
               ]
             },
             {
@@ -891,14 +771,6 @@
           "args": [
             {
               "name": "path"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-nuget-root-sub-11-sub-sign-opt-0-option---certificate-path-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         },

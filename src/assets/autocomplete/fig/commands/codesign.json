@@ -92,14 +92,6 @@
         {
           "name": "version-string"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-codesign-root-opt-10-option--o-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -224,14 +216,6 @@
       "args": [
         {
           "name": "file"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-codesign-root-opt-25-option---resource-rules-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

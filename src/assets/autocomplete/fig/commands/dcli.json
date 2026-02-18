@@ -201,14 +201,6 @@
               "description": "Ids of the devices to remove"
             }
           ],
-          "providers": [
-            {
-              "providerId": "fig-dcli-root-sub-8-sub-devices-1-sub-remove-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
-          ],
           "options": [
             {
               "name": "--all",
@@ -288,14 +280,6 @@
                 {
                   "name": "accessKey",
                   "description": "Access key of the credentials to revoke"
-                }
-              ],
-              "providers": [
-                {
-                  "providerId": "fig-dcli-root-sub-9-sub-team-0-sub-credentials-2-sub-revoke-gen-0",
-                  "kind": "script",
-                  "source": "fig-generator",
-                  "baseScore": 58
                 }
               ]
             },

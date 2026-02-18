@@ -315,14 +315,6 @@
           "name": "command"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-valet-root-sub-4-sub-help-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--format",

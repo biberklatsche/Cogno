@@ -61,14 +61,6 @@
           "description": "The package you want to add"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-yalc-root-sub-2-sub-add-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--link",
@@ -104,14 +96,6 @@
           "description": "The package to update"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-yalc-root-sub-4-sub-update-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": [
@@ -132,14 +116,6 @@
           "description": "The package you want to remove"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-yalc-root-sub-5-sub-remove-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",
@@ -157,14 +133,6 @@
             {
               "name": "package"
             }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-yalc-root-sub-6-sub-installations-0-sub-clean-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
-            }
           ]
         },
         {
@@ -173,14 +141,6 @@
           "args": [
             {
               "name": "package"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-yalc-root-sub-6-sub-installations-1-sub-show-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ]
         }

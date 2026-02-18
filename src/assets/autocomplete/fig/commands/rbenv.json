@@ -24,14 +24,6 @@
           "name": "version"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rbenv-root-sub-1-sub-global-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--unset"
@@ -44,14 +36,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rbenv-root-sub-2-sub-install-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -74,14 +58,6 @@
           "name": "version"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-rbenv-root-sub-3-sub-local-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--unset"
@@ -98,14 +74,6 @@
       "args": [
         {
           "name": "version"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-rbenv-root-sub-5-sub-shell-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },

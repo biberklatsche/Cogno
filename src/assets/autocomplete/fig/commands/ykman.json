@@ -14,14 +14,6 @@
         {
           "name": "SERIAL"
         }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ykman-root-opt-0-option--d-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
       ]
     },
     {
@@ -33,14 +25,6 @@
       "args": [
         {
           "name": "NAME"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-ykman-root-opt-1-option--r-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ]
     },
@@ -156,14 +140,6 @@
             {
               "name": "MODE",
               "description": "MODE can be a string, such as 'OTP+FIDO+CCID', or a shortened form: 'o+f+c'. It can also be a mode number"
-            }
-          ],
-          "providers": [
-            {
-              "providerId": "fig-ykman-root-sub-2-sub-config-0-sub-mode-gen-0",
-              "kind": "script",
-              "source": "fig-generator",
-              "baseScore": 58
             }
           ],
           "options": [

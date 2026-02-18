@@ -65,14 +65,6 @@
           "description": "Name of instances to delete"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-2-sub-delete-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",
@@ -161,14 +153,6 @@
           "description": "Names of instances to display information about"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-7-sub-info-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--format",
@@ -192,14 +176,6 @@
         {
           "name": "image",
           "description": "Optional image to launch. If omitted, then the default Ubuntu LTS will be used"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-8-sub-launch-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -367,14 +343,6 @@
           "description": "Names of instances to recover"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-13-sub-recover-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--all",
@@ -389,14 +357,6 @@
         {
           "name": "name",
           "description": "Names of instances to restart. If omitted, and without the --all option, 'primary' will be assumed"
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-14-sub-restart-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -434,14 +394,6 @@
           "description": "Name of the instance to open a shell on. If omitted, 'primary' (the configured primary instance name) will be assumed. If the instance is not running, an attempt is made to start it (see `start` for more info)"
         }
       ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-16-sub-shell-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
-        }
-      ],
       "options": [
         {
           "name": "--timeout",
@@ -461,14 +413,6 @@
         {
           "name": "name",
           "description": "Names of instances to start. If omitted, and without the --all option, 'primary' (the configured primary instance name) will be assumed. If 'primary' does not exist but is included in a successful start command either implicitly or explicitly), it is launched automatically (see`launch` for more info)."
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-17-sub-start-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -494,14 +438,6 @@
         {
           "name": "name",
           "description": "Names of instances to stop. If omitted, and without the --all option, 'primary' will be assumed."
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-18-sub-stop-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
@@ -537,14 +473,6 @@
         {
           "name": "name",
           "description": "Names of instances to suspend. If omitted, and without the --all option, 'primary' will be assumed."
-        }
-      ],
-      "providers": [
-        {
-          "providerId": "fig-multipass-root-sub-19-sub-suspend-gen-0",
-          "kind": "script",
-          "source": "fig-generator",
-          "baseScore": 58
         }
       ],
       "options": [
