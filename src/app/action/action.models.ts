@@ -26,6 +26,7 @@ export const ACTION_NAMES = [
     'minimize_window',
     'open_config',
     'load_config',
+    'cycle_completion_mode',
     'clear_line',
     'clear_line_to_end',
     'clear_line_to_start',

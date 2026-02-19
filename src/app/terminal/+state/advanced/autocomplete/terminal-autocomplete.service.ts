@@ -2,6 +2,7 @@ import { Injectable, OnDestroy } from "@angular/core";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 
+import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
@@ -30,7 +31,7 @@ const LABEL_MEASURE_MAX_CHARS = 140;
 const PANEL_ITEM_HEIGHT_PX = 25;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
-type SuggestionFilterMode = "all" | "history-only" | "command-only";
+export type SuggestionFilterMode = "all" | "history-only" | "command-only";
 const FILTER_MODE_STORAGE_KEY = "terminal.autocomplete.filterMode";
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
@@ -57,11 +58,15 @@ export class TerminalAutocompleteService implements OnDestroy {
     private readonly _keydownHandler: (event: KeyboardEvent) => void;
     private _hostElement?: HTMLElement;
     private _lastInputSignature: string;
-    private _filterMode: SuggestionFilterMode = "all";
+    private readonly _filterMode = new BehaviorSubject<SuggestionFilterMode>("all");
     private _latestHighlightedSuggestions: AutocompleteSuggestion[] = [];
 
     get viewState$() {
         return this._viewState.asObservable();
+    }
+
+    get filterMode$() {
+        return this._filterMode.asObservable();
     }
 
     constructor(
@@ -69,7 +74,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         private readonly persistence: TerminalHistoryPersistenceService,
         private readonly bus: AppBus,
     ) {
-        this._filterMode = this.loadFilterMode();
+        this._filterMode.next(this.loadFilterMode());
         this._lastInputSignature = this.inputSignature(this.stateManager.state);
         this.registerDefaultSuggestors();
         this.subscribeStateChanges();
@@ -106,11 +111,6 @@ export class TerminalAutocompleteService implements OnDestroy {
         this._viewState.next({ ...view, selectedIndex: index });
     }
 
-    descriptionHint(): string {
-        const modeLabel = this.filterModeLabel(this._filterMode);
-        return `Mode: ${modeLabel} [⇥]`;
-    }
-
     private registerDefaultSuggestors(): void {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
         this.registerSuggestor(new FilesystemDirectorySuggestor());
@@ -134,6 +134,21 @@ export class TerminalAutocompleteService implements OnDestroy {
                     this._viewState.next({ ...viewState, selectedIndex: null });
                     this._lastInputSignature = this.inputSignature(terminalState);
                     void this.refreshSuggestions(terminalState);
+                })
+        );
+
+        this._subscription.add(
+            this.bus.on$(ActionFired.listener())
+                .subscribe((event: ActionFiredEvent) => {
+                    if (event.payload !== "cycle_completion_mode") return;
+
+                    const view = this._viewState.value;
+                    if (!view.visible) return;
+
+                    this.cycleFilterMode();
+                    event.performed = true;
+                    event.defaultPrevented = true;
+                    event.propagationStopped = true;
                 })
         );
     }
@@ -168,12 +183,6 @@ export class TerminalAutocompleteService implements OnDestroy {
                     ? view.suggestions.length - 1
                     : (view.selectedIndex <= 0 ? view.suggestions.length - 1 : view.selectedIndex - 1);
                 this.setSelectedIndex(next);
-                return;
-            }
-            case "Tab": {
-                event.preventDefault();
-                event.stopPropagation();
-                this.cycleFilterMode();
                 return;
             }
             case "Enter": {
@@ -228,7 +237,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         const highlightedSuggestions = this.suggestionHighlighter.apply(suggestions, context);
         this._latestHighlightedSuggestions = highlightedSuggestions;
 
-        const visibleSuggestions = this.applyFilterMode(highlightedSuggestions, this._filterMode);
+        const visibleSuggestions = this.applyFilterMode(highlightedSuggestions, this._filterMode.value);
         if (visibleSuggestions.length === 0) {
             this.hide();
             return;
@@ -535,8 +544,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private cycleFilterMode(): void {
-        const nextMode = this.nextFilterMode(this._filterMode);
-        this._filterMode = nextMode;
+        const nextMode = this.nextFilterMode(this._filterMode.value);
+        this._filterMode.next(nextMode);
         this.saveFilterMode(nextMode);
 
         const view = this._viewState.value;
@@ -563,12 +572,6 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (mode === "all") return "command-only";
         if (mode === "command-only") return "history-only";
         return "all";
-    }
-
-    private filterModeLabel(mode: SuggestionFilterMode): string {
-        if (mode === "all") return "All";
-        if (mode === "history-only") return "History";
-        return "Other";
     }
 
     private loadFilterMode(): SuggestionFilterMode {

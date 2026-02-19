@@ -1,6 +1,7 @@
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 
+import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalState } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
@@ -79,6 +80,7 @@ describe("TerminalAutocompleteService", () => {
     let fakeState: FakeStateManager;
     let bus: AppBus;
     let service: TerminalAutocompleteService;
+    const currentFilterMode = (target: TerminalAutocompleteService) => (target as any)._filterMode.value;
 
     beforeEach(() => {
         vi.useFakeTimers();
@@ -145,7 +147,7 @@ describe("TerminalAutocompleteService", () => {
         expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(true);
     });
 
-    it("Tab cycles filter modes and does not apply suggestion", async () => {
+    it("cycles filter mode via action and does not apply suggestion", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [
             makeSuggestionWithSource("git status", "history-cmd", 90),
             makeSuggestionWithSource("git stash", "spec-cmd", 80),
@@ -155,18 +157,18 @@ describe("TerminalAutocompleteService", () => {
         await vi.advanceTimersByTimeAsync(400);
 
         expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd", "spec-cmd"]);
-        expect(service.descriptionHint()).toContain("Mode: All");
+        expect(currentFilterMode(service)).toBe("all");
 
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true }));
         expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
-        expect(service.descriptionHint()).toContain("Mode: Other");
+        expect(currentFilterMode(service)).toBe("command-only");
 
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true }));
         expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd"]);
-        expect(service.descriptionHint()).toContain("Mode: History");
+        expect(currentFilterMode(service)).toBe("history-only");
 
         window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true }));
         expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(false);
     });
 
@@ -178,8 +180,8 @@ describe("TerminalAutocompleteService", () => {
         fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
         await vi.advanceTimersByTimeAsync(400);
 
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })); // command-only
-        expect(service.descriptionHint()).toContain("Mode: Other");
+        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true })); // command-only
+        expect(currentFilterMode(service)).toBe("command-only");
 
         service.ngOnDestroy();
 
@@ -202,9 +204,22 @@ describe("TerminalAutocompleteService", () => {
         fakeState.emit({ ...fakeState.state, input: { text: "git sta", cursorIndex: 7, maxCursorIndex: 7 } });
         await vi.advanceTimersByTimeAsync(400);
 
-        expect(second.descriptionHint()).toContain("Mode: Other");
+        expect(currentFilterMode(second)).toBe("command-only");
         expect((second as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
         second.ngOnDestroy();
+    });
+
+    it("does not cycle mode when autocomplete is hidden", () => {
+        expect(currentFilterMode(service)).toBe("all");
+
+        const result = bus.publish(ActionFired.create("cycle_completion_mode", {
+            all: false,
+            unconsumed: false,
+            performable: true,
+        }));
+
+        expect(currentFilterMode(service)).toBe("all");
+        expect(result.performed).not.toBe(true);
     });
 
     it("in all mode puts top history first, then top non-history in visible rows", async () => {

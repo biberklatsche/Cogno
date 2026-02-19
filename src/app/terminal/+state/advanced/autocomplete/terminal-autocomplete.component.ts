@@ -1,15 +1,16 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, ViewChild } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, ViewChild } from "@angular/core";
 import { NgStyle } from "@angular/common";
 import { toSignal } from "@angular/core/rxjs-interop";
 
-import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
+import { SuggestionFilterMode, TerminalAutocompleteService } from "./terminal-autocomplete.service";
 import { AutocompleteSuggestion } from "./autocomplete.types";
 import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
+import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 
 @Component({
     selector: "app-terminal-autocomplete",
     standalone: true,
-    imports: [NgStyle, TooltipDirective],
+    imports: [NgStyle, TooltipDirective, ActionKeybindingPipe],
     template: `
         @if (viewState().visible) {
             <div
@@ -46,7 +47,7 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
                         {{ selectedDescription() || ' ' }}
                     </span>
                     <span class="description-hint">
-                        {{ descriptionHint() }}
+                        Mode: {{ filterModeLabel() }} <i>{{ 'cycle_completion_mode' | actionkeybinding }}</i>
                     </span>
                 </div>
             </div>
@@ -56,7 +57,7 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
         .autocomplete-panel {
             position: fixed;
             box-sizing: border-box;
-            min-width: 160px;
+            min-width: 460px;
             max-width: 920px;
             overflow: hidden;
             background: rgba(19, 29, 41, 0.97);
@@ -146,8 +147,11 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
             flex: 0 0 auto;
             text-align: right;
             white-space: nowrap;
-            opacity: 0.55;
+            opacity: 0.7;
             font-style: normal;
+            i {
+                opacity: 0.5;
+            }
         }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -170,6 +174,13 @@ export class TerminalAutocompleteComponent {
             selectedIndex: null,
             suggestions: [],
         } });
+    protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" as SuggestionFilterMode });
+    protected readonly filterModeLabel = computed(() => {
+        const mode = this.filterMode();
+        if (mode === "command-only") return "Cmd";
+        if (mode === "history-only") return "Hst";
+        return "All";
+    });
 
     constructor(private readonly autocomplete: TerminalAutocompleteService) {
         effect(() => {
@@ -220,10 +231,6 @@ export class TerminalAutocompleteComponent {
         if (view.selectedIndex === null) return "";
         const index = view.selectedIndex;
         return view.suggestions[index]?.description ?? "";
-    }
-
-    protected descriptionHint(): string {
-        return this.autocomplete.descriptionHint();
     }
 
     private truncateForDisplay(
