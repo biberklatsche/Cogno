@@ -41,8 +41,13 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
                         </button>
                     }
                 </div>
-                <div class="autocomplete-description" [appTooltip]="selectedDescription()">
-                    {{ selectedDescription() || ' ' }}
+                <div class="autocomplete-description">
+                    <span class="description-text" [appTooltip]="selectedDescription()">
+                        {{ selectedDescription() || ' ' }}
+                    </span>
+                    <span class="description-hint">
+                        {{ descriptionHint() }}
+                    </span>
                 </div>
             </div>
         }
@@ -71,11 +76,10 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
         .autocomplete-item {
             display: flex;
             width: 100%;
-            min-height: 32px;
             background: transparent;
             color: var(--foreground-color);
             border: none;
-            border-radius: 6px;
+            border-radius: var(--button-border-radius);
             text-align: left;
             align-items: baseline;
             justify-content: space-between;
@@ -87,7 +91,8 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
         }
 
         .autocomplete-item.active {
-            background: rgba(52, 187, 254, 0.22);
+            background: var(--highlight-color);
+            color: var(--background-color);
         }
 
         .autocomplete-item .label {
@@ -116,11 +121,29 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
             border-top: 1px solid rgba(255, 255, 255, 0.12);
             color: rgba(255, 255, 255, 0.82);
             font-size: 11px;
-            font-style: italic;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
             line-height: 1.35;
+        }
+
+        .autocomplete-description .description-text {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: left;
+            font-style: italic;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .autocomplete-description .description-hint {
+            flex: 0 0 auto;
+            text-align: right;
+            white-space: nowrap;
+            opacity: 0.55;
+            font-style: normal;
         }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -193,6 +216,10 @@ export class TerminalAutocompleteComponent {
         if (view.selectedIndex === null) return "";
         const index = view.selectedIndex;
         return view.suggestions[index]?.description ?? "";
+    }
+
+    protected descriptionHint(): string {
+        return this.autocomplete.descriptionHint();
     }
 
     private truncateForDisplay(

@@ -30,6 +30,9 @@ const LABEL_MEASURE_MAX_CHARS = 140;
 const PANEL_ITEM_HEIGHT_PX = 32;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
+const MAX_VISIBLE_HISTORY_IN_MIXED = Math.floor(PANEL_MAX_VISIBLE_ITEMS / 2);
+
+type SuggestionFilterMode = "all" | "history-only" | "non-history-only";
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
@@ -55,6 +58,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     private readonly _keydownHandler: (event: KeyboardEvent) => void;
     private _hostElement?: HTMLElement;
     private _lastInputSignature: string;
+    private _filterMode: SuggestionFilterMode = "all";
+    private _latestHighlightedSuggestions: AutocompleteSuggestion[] = [];
 
     get viewState$() {
         return this._viewState.asObservable();
@@ -101,6 +106,11 @@ export class TerminalAutocompleteService implements OnDestroy {
         this._viewState.next({ ...view, selectedIndex: index });
     }
 
+    descriptionHint(): string {
+        const modeLabel = this.filterModeLabel(this._filterMode);
+        return `Mode: ${modeLabel} [⇥]`;
+    }
+
     private registerDefaultSuggestors(): void {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
         this.registerSuggestor(new FilesystemDirectorySuggestor());
@@ -130,7 +140,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (!this.stateManager.isFocused) return;
 
         const view = this._viewState.value;
-        if (!view.visible || view.suggestions.length === 0) {
+        if (!view.visible) {
             if (this.isArrowKey(event.key)) {
                 this._suppressUntilTyping = true;
                 return;
@@ -158,8 +168,13 @@ export class TerminalAutocompleteService implements OnDestroy {
                 this.setSelectedIndex(next);
                 return;
             }
-            case "Enter":
             case "Tab": {
+                event.preventDefault();
+                event.stopPropagation();
+                this.cycleFilterMode();
+                return;
+            }
+            case "Enter": {
                 if (view.selectedIndex === null) {
                     if (event.key === "Enter") {
                         this.hide();
@@ -208,13 +223,16 @@ export class TerminalAutocompleteService implements OnDestroy {
         }
 
         const suggestions = this.rankAndTrimSuggestions(settled, state);
-        if (suggestions.length === 0) {
+        const highlightedSuggestions = this.suggestionHighlighter.apply(suggestions, context);
+        this._latestHighlightedSuggestions = highlightedSuggestions;
+
+        const visibleSuggestions = this.applyFilterMode(highlightedSuggestions, this._filterMode);
+        if (visibleSuggestions.length === 0) {
             this.hide();
             return;
         }
-        const highlightedSuggestions = this.suggestionHighlighter.apply(suggestions, context);
 
-        const position = this.computePanelPosition(state, highlightedSuggestions, this.readRenderedPanelHeight());
+        const position = this.computePanelPosition(state, visibleSuggestions, this.readRenderedPanelHeight());
         this.takeVisibleOwnership();
 
         this._viewState.next({
@@ -224,7 +242,7 @@ export class TerminalAutocompleteService implements OnDestroy {
             width: position.width,
             placement: position.placement,
             selectedIndex: null,
-            suggestions: highlightedSuggestions,
+            suggestions: visibleSuggestions,
         });
         queueMicrotask(() => this.repositionUsingRenderedPanelHeight());
     }
@@ -263,6 +281,55 @@ export class TerminalAutocompleteService implements OnDestroy {
             .filter(s => !this.suggestionEqualsCurrentInput(s, state.input.text))
             .sort((a, b) => b.score - a.score)
             .slice(0, MAX_SUGGESTIONS);
+    }
+
+    private applyFilterMode(items: AutocompleteSuggestion[], mode: SuggestionFilterMode): AutocompleteSuggestion[] {
+        if (mode === "history-only") {
+            return items.filter(item => this.isHistorySuggestion(item));
+        }
+        if (mode === "non-history-only") {
+            return items.filter(item => !this.isHistorySuggestion(item));
+        }
+        return this.limitVisibleHistoryShare(items);
+    }
+
+    private limitVisibleHistoryShare(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
+        if (items.length <= 1) return items;
+
+        const visibleCap = Math.min(PANEL_MAX_VISIBLE_ITEMS, items.length);
+        let usedHistory = 0;
+        const reordered: AutocompleteSuggestion[] = [];
+        const deferredHistory: AutocompleteSuggestion[] = [];
+
+        for (const item of items) {
+            const isHistory = this.isHistorySuggestion(item);
+            if (!isHistory) {
+                reordered.push(item);
+                continue;
+            }
+
+            if (reordered.length < visibleCap) {
+                if (usedHistory < MAX_VISIBLE_HISTORY_IN_MIXED) {
+                    reordered.push(item);
+                    usedHistory += 1;
+                } else {
+                    deferredHistory.push(item);
+                }
+                continue;
+            }
+
+            reordered.push(item);
+        }
+
+        if (deferredHistory.length === 0) return reordered;
+
+        const fillFrom = Math.max(reordered.length, visibleCap);
+        if (reordered.length < fillFrom) {
+            reordered.push(...deferredHistory);
+            return reordered;
+        }
+
+        return [...reordered, ...deferredHistory];
     }
 
     private applySelectedSuggestion(index: number): void {
@@ -478,7 +545,53 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (TerminalAutocompleteService.visibleOwner === this) {
             TerminalAutocompleteService.visibleOwner = null;
         }
+        this._latestHighlightedSuggestions = [];
+        this._filterMode = "all";
         this._viewState.next(INITIAL_VIEW_STATE);
+    }
+
+    private cycleFilterMode(): void {
+        const nextMode = this.nextFilterMode(this._filterMode);
+        this._filterMode = nextMode;
+
+        const view = this._viewState.value;
+        if (!view.visible) return;
+
+        const filtered = this.applyFilterMode(this._latestHighlightedSuggestions, nextMode);
+        if (filtered.length === 0) {
+            this._viewState.next({
+                ...view,
+                selectedIndex: null,
+                suggestions: [],
+            });
+            return;
+        }
+
+        this._viewState.next({
+            ...view,
+            selectedIndex: null,
+            suggestions: filtered,
+        });
+    }
+
+    private nextFilterMode(mode: SuggestionFilterMode): SuggestionFilterMode {
+        if (mode === "all") return "history-only";
+        if (mode === "history-only") return "non-history-only";
+        return "all";
+    }
+
+    private filterModeLabel(mode: SuggestionFilterMode): string {
+        if (mode === "all") return "All";
+        if (mode === "history-only") return "History";
+        return "Other";
+    }
+
+    private isHistorySuggestion(item: AutocompleteSuggestion): boolean {
+        const parts = item.source
+            .split("+")
+            .map(v => v.trim().toLowerCase())
+            .filter(Boolean);
+        return parts.some(part => part.includes("history"));
     }
 
     private takeVisibleOwnership(): void {

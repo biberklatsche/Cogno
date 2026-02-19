@@ -45,6 +45,23 @@ function makeSuggestion(label: string): AutocompleteSuggestion {
     };
 }
 
+function makeSuggestionWithSource(
+    label: string,
+    source: string,
+    score: number,
+): AutocompleteSuggestion {
+    return {
+        label,
+        insertText: label,
+        detail: "",
+        score,
+        source,
+        kind: "command",
+        replaceStart: 0,
+        replaceEnd: 5,
+    };
+}
+
 class DummySuggestor implements TerminalAutocompleteSuggestor {
     id: string;
     inputPattern = /.+/;
@@ -125,6 +142,50 @@ describe("TerminalAutocompleteService", () => {
         window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
 
         expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(true);
+    });
+
+    it("Tab cycles filter modes and does not apply suggestion", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [
+            makeSuggestionWithSource("git status", "history-cmd", 90),
+            makeSuggestionWithSource("git stash", "spec-cmd", 80),
+        ]));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd", "spec-cmd"]);
+        expect(service.descriptionHint()).toContain("Mode: All");
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd"]);
+        expect(service.descriptionHint()).toContain("Mode: History");
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
+        expect(service.descriptionHint()).toContain("Mode: Other");
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(false);
+    });
+
+    it("limits mixed mode to max half history suggestions in first visible rows", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [
+            makeSuggestionWithSource("h1", "history-cmd", 100),
+            makeSuggestionWithSource("h2", "history-cmd", 99),
+            makeSuggestionWithSource("h3", "history-cmd", 98),
+            makeSuggestionWithSource("h4", "history-cmd", 97),
+            makeSuggestionWithSource("n1", "spec-cmd", 96),
+            makeSuggestionWithSource("n2", "spec-cmd", 95),
+            makeSuggestionWithSource("n3", "spec-cmd", 94),
+        ]));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "x", cursorIndex: 1, maxCursorIndex: 1 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const firstFive = (service as any)._viewState.value.suggestions.slice(0, 5);
+        const historyCount = firstFive.filter((s: any) => String(s.source).includes("history")).length;
+        expect(historyCount).toBeLessThanOrEqual(2);
     });
 
     it("positions panel above cursor near bottom and keeps it in viewport", async () => {
