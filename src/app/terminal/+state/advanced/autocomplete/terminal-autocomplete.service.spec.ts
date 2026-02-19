@@ -82,6 +82,7 @@ describe("TerminalAutocompleteService", () => {
 
     beforeEach(() => {
         vi.useFakeTimers();
+        window.localStorage.clear();
         fakeState = new FakeStateManager();
         bus = new AppBus();
         vi.spyOn(bus, "publish");
@@ -157,16 +158,53 @@ describe("TerminalAutocompleteService", () => {
         expect(service.descriptionHint()).toContain("Mode: All");
 
         window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
-        expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd"]);
-        expect(service.descriptionHint()).toContain("Mode: History");
-
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
         expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
         expect(service.descriptionHint()).toContain("Mode: Other");
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+        expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd"]);
+        expect(service.descriptionHint()).toContain("Mode: History");
 
         window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
         window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
         expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(false);
+    });
+
+    it("restores previously selected filter mode from storage", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [
+            makeSuggestionWithSource("git status", "history-cmd", 90),
+            makeSuggestionWithSource("git stash", "spec-cmd", 80),
+        ]));
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })); // command-only
+        expect(service.descriptionHint()).toContain("Mode: Other");
+
+        service.ngOnDestroy();
+
+        const persistence = {
+            searchDirectories: vi.fn().mockResolvedValue([]),
+            searchCommands: vi.fn().mockResolvedValue([]),
+            markDirectorySelected: vi.fn(),
+            markCommandSelected: vi.fn(),
+        } as unknown as TerminalHistoryPersistenceService;
+        const second = new TerminalAutocompleteService(
+            fakeState as unknown as any,
+            persistence,
+            new AppBus()
+        );
+        (second as any)._suggestors = [];
+        second.registerSuggestor(new DummySuggestor(async () => [
+            makeSuggestionWithSource("git status", "history-cmd", 90),
+            makeSuggestionWithSource("git stash", "spec-cmd", 80),
+        ]));
+        fakeState.emit({ ...fakeState.state, input: { text: "git sta", cursorIndex: 7, maxCursorIndex: 7 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect(second.descriptionHint()).toContain("Mode: Other");
+        expect((second as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
+        second.ngOnDestroy();
     });
 
     it("in all mode puts top history first, then top non-history in visible rows", async () => {
@@ -183,9 +221,9 @@ describe("TerminalAutocompleteService", () => {
         fakeState.emit({ ...fakeState.state, input: { text: "x", cursorIndex: 1, maxCursorIndex: 1 } });
         await vi.advanceTimersByTimeAsync(400);
 
-        const firstFive = (service as any)._viewState.value.suggestions.slice(0, 5);
-        expect(firstFive.slice(0, 2).map((s: any) => s.label)).toEqual(["h1", "h2"]);
-        expect(firstFive.slice(2, 5).map((s: any) => s.label)).toEqual(["n1", "n2", "n3"]);
+        const firstSix = (service as any)._viewState.value.suggestions.slice(0, 6);
+        expect(firstSix.slice(0, 3).map((s: any) => s.label)).toEqual(["h1", "h2", "h3"]);
+        expect(firstSix.slice(3, 6).map((s: any) => s.label)).toEqual(["n1", "n2", "n3"]);
     });
 
     it("positions panel above cursor near bottom and keeps it in viewport", async () => {

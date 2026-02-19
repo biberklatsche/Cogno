@@ -104,10 +104,13 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
         }
 
         .autocomplete-item .label .match {
-            color: #9ddcff;
-            font-weight: 700;
+            color: var(--highlight-color);
             text-decoration: underline;
             text-underline-offset: 2px;
+        }
+
+        .autocomplete-item.active .label .match {
+            color: var(--foreground-color);
         }
 
         .autocomplete-item .meta {

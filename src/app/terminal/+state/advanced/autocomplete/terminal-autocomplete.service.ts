@@ -31,6 +31,7 @@ const PANEL_ITEM_HEIGHT_PX = 25;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
 type SuggestionFilterMode = "all" | "history-only" | "command-only";
+const FILTER_MODE_STORAGE_KEY = "terminal.autocomplete.filterMode";
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
@@ -68,6 +69,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         private readonly persistence: TerminalHistoryPersistenceService,
         private readonly bus: AppBus,
     ) {
+        this._filterMode = this.loadFilterMode();
         this._lastInputSignature = this.inputSignature(this.stateManager.state);
         this.registerDefaultSuggestors();
         this.subscribeStateChanges();
@@ -122,12 +124,14 @@ export class TerminalAutocompleteService implements OnDestroy {
             this.stateManager.state$
                 .pipe(debounceTime(REFRESH_DEBOUNCE_MS))
                 .subscribe(terminalState => {
+                    const viewState = this._viewState.value;
                     if (!this.hasInputChanged(terminalState)) {
-                        if (this._viewState.value.visible && (!terminalState.isFocused || terminalState.isCommandRunning)) {
+                        if (viewState.visible && (!terminalState.isFocused || terminalState.isCommandRunning)) {
                             this.hide();
                         }
                         return;
                     }
+                    this._viewState.next({ ...viewState, selectedIndex: null });
                     this._lastInputSignature = this.inputSignature(terminalState);
                     void this.refreshSuggestions(terminalState);
                 })
@@ -527,13 +531,13 @@ export class TerminalAutocompleteService implements OnDestroy {
             TerminalAutocompleteService.visibleOwner = null;
         }
         this._latestHighlightedSuggestions = [];
-        this._filterMode = "all";
         this._viewState.next(INITIAL_VIEW_STATE);
     }
 
     private cycleFilterMode(): void {
         const nextMode = this.nextFilterMode(this._filterMode);
         this._filterMode = nextMode;
+        this.saveFilterMode(nextMode);
 
         const view = this._viewState.value;
         if (!view.visible) return;
@@ -557,14 +561,34 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     private nextFilterMode(mode: SuggestionFilterMode): SuggestionFilterMode {
         if (mode === "all") return "command-only";
-        if (mode === "non-history-only") return "history-only";
+        if (mode === "command-only") return "history-only";
         return "all";
     }
 
     private filterModeLabel(mode: SuggestionFilterMode): string {
         if (mode === "all") return "All";
         if (mode === "history-only") return "History";
-        return "Command";
+        return "Other";
+    }
+
+    private loadFilterMode(): SuggestionFilterMode {
+        try {
+            const raw = window.localStorage.getItem(FILTER_MODE_STORAGE_KEY);
+            if (raw === "all" || raw === "history-only" || raw === "command-only") {
+                return raw;
+            }
+        } catch {
+            // ignore storage access errors
+        }
+        return "all";
+    }
+
+    private saveFilterMode(mode: SuggestionFilterMode): void {
+        try {
+            window.localStorage.setItem(FILTER_MODE_STORAGE_KEY, mode);
+        } catch {
+            // ignore storage access errors
+        }
     }
 
     private isHistorySuggestion(item: AutocompleteSuggestion): boolean {
