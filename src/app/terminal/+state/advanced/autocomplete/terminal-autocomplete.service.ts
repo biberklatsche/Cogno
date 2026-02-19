@@ -14,6 +14,7 @@ import { SpecCommandSuggestor } from "./suggestors/spec-command.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { AssetCommandSpecRegistry } from "./spec/asset-command-spec.registry";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
+import { SuggestionHighlighter } from "./suggestion-highlighter";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
@@ -43,6 +44,7 @@ const INITIAL_VIEW_STATE: AutocompleteViewState = {
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
     private static visibleOwner: TerminalAutocompleteService | null = null;
+    private readonly suggestionHighlighter = new SuggestionHighlighter();
 
     private readonly _viewState = new BehaviorSubject<AutocompleteViewState>(INITIAL_VIEW_STATE);
     private readonly _subscription = new Subscription();
@@ -210,7 +212,7 @@ export class TerminalAutocompleteService implements OnDestroy {
             this.hide();
             return;
         }
-        const highlightedSuggestions = this.applyHighlights(suggestions, context);
+        const highlightedSuggestions = this.suggestionHighlighter.apply(suggestions, context);
 
         const position = this.computePanelPosition(state, highlightedSuggestions, this.readRenderedPanelHeight());
         this.takeVisibleOwnership();
@@ -436,10 +438,14 @@ export class TerminalAutocompleteService implements OnDestroy {
                     ...item,
                     source: existing.suggestion.source,
                     score: item.score,
+                    description: item.description ?? existing.suggestion.description,
                 };
             } else {
                 if (!existing.suggestion.detail && item.detail) {
                     existing.suggestion.detail = item.detail;
+                }
+                if (!existing.suggestion.description && item.description) {
+                    existing.suggestion.description = item.description;
                 }
                 if (!existing.suggestion.selectedPath && item.selectedPath) {
                     existing.suggestion.selectedPath = item.selectedPath;
@@ -530,38 +536,6 @@ export class TerminalAutocompleteService implements OnDestroy {
     private inputSignature(state: TerminalState): string {
         const input = state.input;
         return `${input.text}\u0000${input.cursorIndex}\u0000${input.maxCursorIndex}`;
-    }
-
-    private applyHighlights(items: AutocompleteSuggestion[], context: QueryContext): AutocompleteSuggestion[] {
-        const needle = this.highlightNeedle(context);
-        if (!needle) return items;
-
-        return items.map(item => ({
-            ...item,
-            matchRanges: this.findMatchRanges(item.label, needle),
-        }));
-    }
-
-    private highlightNeedle(context: QueryContext): string {
-        if (context.mode === "command") {
-            return context.query.trim();
-        }
-        return context.fragment.trim();
-    }
-
-    private findMatchRanges(label: string, needle: string): Array<{ start: number; end: number }> {
-        if (!label || !needle) return [];
-        const ranges: Array<{ start: number; end: number }> = [];
-        const haystack = label.toLowerCase();
-        const query = needle.toLowerCase();
-        let from = 0;
-        while (from < haystack.length) {
-            const idx = haystack.indexOf(query, from);
-            if (idx < 0) break;
-            ranges.push({ start: idx, end: idx + query.length });
-            from = idx + query.length;
-        }
-        return ranges;
     }
 
     private isArrowKey(key: string): boolean {

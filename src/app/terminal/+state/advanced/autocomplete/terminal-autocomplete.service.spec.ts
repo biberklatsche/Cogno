@@ -301,6 +301,40 @@ describe("TerminalAutocompleteService", () => {
         expect(view.suggestions[0].score).toBe(58);
     });
 
+    it("keeps description when higher-scored duplicate has none", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "rails",
+            insertText: "rails",
+            detail: "from history",
+            score: 80,
+            source: "history-cmd",
+            kind: "command",
+            replaceStart: 0,
+            replaceEnd: 2,
+            selectedCommand: "rails",
+        }], "dummy-history"));
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "rails",
+            insertText: "rails",
+            detail: "from spec",
+            description: "Ruby on Rails CLI",
+            score: 40,
+            source: "spec-cmd",
+            kind: "command",
+            replaceStart: 0,
+            replaceEnd: 2,
+            selectedCommand: "rails",
+        }], "dummy-spec"));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "ra", cursorIndex: 2, maxCursorIndex: 2 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const view = (service as any)._viewState.value;
+        expect(view.suggestions).toHaveLength(1);
+        expect(view.suggestions[0].label).toBe("rails");
+        expect(view.suggestions[0].description).toBe("Ruby on Rails CLI");
+    });
+
     it("merges same label from npm-script and spec-sub into one suggestion", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "test",

@@ -130,6 +130,7 @@ export class TerminalAutocompleteComponent {
     private static readonly MIN_LABEL_CHARS = 12;
     private static readonly APPROX_CHAR_PX = 8;
     private static readonly META_RESERVE_PX = 132;
+    private static readonly TRUNCATION_PREFIX = "…";
 
     @ViewChild("panel") private panelRef?: ElementRef<HTMLDivElement>;
 
@@ -210,7 +211,8 @@ export class TerminalAutocompleteComponent {
             return { label: item.label, ranges };
         }
 
-        const keep = Math.max(1, maxChars - 3);
+        const prefixLength = TerminalAutocompleteComponent.TRUNCATION_PREFIX.length;
+        const keep = Math.max(1, maxChars - prefixLength);
         let cutStart = Math.max(0, item.label.length - keep);
         // Preserve dotfiles when truncation starts at segment boundary (e.g. "/.nvm").
         if (
@@ -221,12 +223,12 @@ export class TerminalAutocompleteComponent {
         ) {
             cutStart -= 1;
         }
-        const label = `…${item.label.slice(cutStart)}`;
+        const label = `${TerminalAutocompleteComponent.TRUNCATION_PREFIX}${item.label.slice(cutStart)}`;
         const mappedRanges = ranges
-            .map(r => ({ start: r.start - cutStart + 3, end: r.end - cutStart + 3 }))
+            .map(r => ({ start: r.start - cutStart + prefixLength, end: r.end - cutStart + prefixLength }))
             .map(r => ({
-                start: Math.max(3, Math.min(r.start, label.length)),
-                end: Math.max(3, Math.min(r.end, label.length)),
+                start: Math.max(prefixLength, Math.min(r.start, label.length)),
+                end: Math.max(prefixLength, Math.min(r.end, label.length)),
             }))
             .filter(r => r.end > r.start);
 
