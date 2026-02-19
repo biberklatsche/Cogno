@@ -161,7 +161,7 @@ describe("TerminalAutocompleteService", () => {
 
         bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true }));
         expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
-        expect(currentFilterMode(service)).toBe("command-only");
+        expect(currentFilterMode(service)).toBe("context-only");
 
         bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true }));
         expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["history-cmd"]);
@@ -180,8 +180,8 @@ describe("TerminalAutocompleteService", () => {
         fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
         await vi.advanceTimersByTimeAsync(400);
 
-        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true })); // command-only
-        expect(currentFilterMode(service)).toBe("command-only");
+        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true })); // context-only
+        expect(currentFilterMode(service)).toBe("context-only");
 
         service.ngOnDestroy();
 
@@ -204,7 +204,7 @@ describe("TerminalAutocompleteService", () => {
         fakeState.emit({ ...fakeState.state, input: { text: "git sta", cursorIndex: 7, maxCursorIndex: 7 } });
         await vi.advanceTimersByTimeAsync(400);
 
-        expect(currentFilterMode(second)).toBe("command-only");
+        expect(currentFilterMode(second)).toBe("context-only");
         expect((second as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual(["spec-cmd"]);
         second.ngOnDestroy();
     });
@@ -531,3 +531,4 @@ describe("TerminalAutocompleteService", () => {
         }
     });
 });
+
