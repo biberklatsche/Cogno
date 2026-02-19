@@ -61,6 +61,7 @@ export class StyleService {
         document.documentElement.style.setProperty('--foreground-color-30d', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * -30)}`);
         document.documentElement.style.setProperty('--foreground-color-40d', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * -40)}`);
         document.documentElement.style.setProperty('--highlight-color', `#${config.color!.highlight}`);
+        document.documentElement.style.setProperty('--highlight-color-ct2', `#${config.color!.highlight}${opacityDouble}`);
         document.documentElement.style.setProperty('--highlight-color-10l', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * 10)}`);
         document.documentElement.style.setProperty('--highlight-color-20l', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * 20)}`);
         document.documentElement.style.setProperty('--highlight-color-30l', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * 30)}`);

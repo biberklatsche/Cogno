@@ -31,7 +31,7 @@ const LABEL_MEASURE_MAX_CHARS = 140;
 const PANEL_ITEM_HEIGHT_PX = 25;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
-export type SuggestionFilterMode = "all" | "history-only" | "command-only";
+export type SuggestionFilterMode = "all" | "history-only" | "context-only";
 const FILTER_MODE_STORAGE_KEY = "terminal.autocomplete.filterMode";
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
@@ -298,7 +298,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (mode === "history-only") {
             return items.filter(item => this.isHistorySuggestion(item));
         }
-        if (mode === "command-only") {
+        if (mode === "context-only") {
             return items.filter(item => !this.isHistorySuggestion(item));
         }
         return this.balanceVisibleTopInAllMode(items);
@@ -569,15 +569,15 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private nextFilterMode(mode: SuggestionFilterMode): SuggestionFilterMode {
-        if (mode === "all") return "command-only";
-        if (mode === "command-only") return "history-only";
+        if (mode === "all") return "context-only";
+        if (mode === "context-only") return "history-only";
         return "all";
     }
 
     private loadFilterMode(): SuggestionFilterMode {
         try {
             const raw = window.localStorage.getItem(FILTER_MODE_STORAGE_KEY);
-            if (raw === "all" || raw === "history-only" || raw === "command-only") {
+            if (raw === "all" || raw === "history-only" || raw === "context-only") {
                 return raw;
             }
         } catch {

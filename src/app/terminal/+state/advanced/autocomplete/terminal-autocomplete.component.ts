@@ -38,7 +38,13 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
                                     <span [class.match]="part.match">{{ part.text }}</span>
                                 }
                             </span>
-                            <span class="meta">{{ item.source }} · {{ item.score }}</span>
+                            <span class="meta" appTooltip="{{ item.source }} &middot; {{ item.score }}">
+                                <span
+                                    class="source-dot"
+                                    [class.history]="isHistorySuggestion(item)"
+                                    [class.context]="!isHistorySuggestion(item)"
+                                ></span>
+                            </span>
                         </button>
                     }
                 </div>
@@ -47,7 +53,17 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
                         {{ selectedDescription() || ' ' }}
                     </span>
                     <span class="description-hint">
-                        Mode: {{ filterModeLabel() }} <i>{{ 'cycle_completion_mode' | actionkeybinding }}</i>
+                        <span class="mode-badge"
+                              appTooltip="Current completion mode: {{filterMode().toUpperCase()}}"
+                              [class.mode-all]="filterMode() === 'all'"
+                              [class.mode-history]="filterMode() === 'history-only'"
+                              [class.mode-context]="filterMode() === 'context-only'"
+                        >
+                            {{ filterModeLabel() }}     
+                        </span>
+                        <i>
+                            {{ 'cycle_completion_mode' | actionkeybinding }}
+                        </i>
                     </span>
                 </div>
             </div>
@@ -93,7 +109,7 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
         }
 
         .autocomplete-item.active {
-            background: var(--highlight-color);
+            background: var(--highlight-color-ct2);
             color: var(--background-color);
         }
 
@@ -118,6 +134,24 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
             opacity: 0.7;
             font-size: 11px;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .autocomplete-item .meta .source-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            flex: 0 0 auto;
+        }
+
+        .autocomplete-item .meta .source-dot.history {
+            background: var(--color-green);
+        }
+
+        .autocomplete-item .meta .source-dot.context {
+            background: var(--color-blue);
         }
 
         .autocomplete-description {
@@ -149,9 +183,30 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
             white-space: nowrap;
             opacity: 0.7;
             font-style: normal;
-            i {
-                opacity: 0.5;
-            }
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .autocomplete-description .description-hint .mode-badge {
+            border-radius: 999px;
+            padding: 1px 8px;
+            font-size: 10px;
+            line-height: 1.5;
+            color: var(--background-color);
+            opacity: 1;
+        }
+
+        .autocomplete-description .description-hint .mode-badge.mode-all {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .autocomplete-description .description-hint .mode-badge.mode-history {
+            background: var(--color-green);
+        }
+
+        .autocomplete-description .description-hint .mode-badge.mode-context {
+            background: var(--color-blue);
         }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -174,10 +229,10 @@ export class TerminalAutocompleteComponent {
             selectedIndex: null,
             suggestions: [],
         } });
-    protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" as SuggestionFilterMode });
+    protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" });
     protected readonly filterModeLabel = computed(() => {
         const mode = this.filterMode();
-        if (mode === "command-only") return "Cmd";
+        if (mode === "context-only") return "Ctx";
         if (mode === "history-only") return "Hst";
         return "All";
     });
@@ -231,6 +286,14 @@ export class TerminalAutocompleteComponent {
         if (view.selectedIndex === null) return "";
         const index = view.selectedIndex;
         return view.suggestions[index]?.description ?? "";
+    }
+
+    protected isHistorySuggestion(item: AutocompleteSuggestion): boolean {
+        const parts = item.source
+            .split("+")
+            .map(v => v.trim().toLowerCase())
+            .filter(Boolean);
+        return parts.some(part => part.includes("history"));
     }
 
     private truncateForDisplay(
