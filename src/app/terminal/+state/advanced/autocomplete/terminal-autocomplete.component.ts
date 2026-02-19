@@ -84,6 +84,7 @@ import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
             align-items: baseline;
             justify-content: space-between;
             gap: 8px;
+            min-height: 25px;
             padding: 6px 8px;
             cursor: default;
             font-family: var(--font-family);

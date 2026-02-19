@@ -169,7 +169,7 @@ describe("TerminalAutocompleteService", () => {
         expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(false);
     });
 
-    it("limits mixed mode to max half history suggestions in first visible rows", async () => {
+    it("in all mode puts top history first, then top non-history in visible rows", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [
             makeSuggestionWithSource("h1", "history-cmd", 100),
             makeSuggestionWithSource("h2", "history-cmd", 99),
@@ -184,8 +184,8 @@ describe("TerminalAutocompleteService", () => {
         await vi.advanceTimersByTimeAsync(400);
 
         const firstFive = (service as any)._viewState.value.suggestions.slice(0, 5);
-        const historyCount = firstFive.filter((s: any) => String(s.source).includes("history")).length;
-        expect(historyCount).toBeLessThanOrEqual(2);
+        expect(firstFive.slice(0, 2).map((s: any) => s.label)).toEqual(["h1", "h2"]);
+        expect(firstFive.slice(2, 5).map((s: any) => s.label)).toEqual(["n1", "n2", "n3"]);
     });
 
     it("positions panel above cursor near bottom and keeps it in viewport", async () => {

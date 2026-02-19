@@ -19,7 +19,7 @@ import { SuggestionHighlighter } from "./suggestion-highlighter";
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
 const MAX_SUGGESTIONS = 20;
-const PANEL_MAX_VISIBLE_ITEMS = 5;
+const PANEL_MAX_VISIBLE_ITEMS = 6;
 
 const PANEL_MIN_WIDTH = 280;
 const PANEL_MAX_WIDTH = 920;
@@ -27,12 +27,10 @@ const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
 const PANEL_ITEM_GAP = 8;
 const PANEL_OUTER_PADDING_AND_BORDER = 10; // panel padding + border budget
 const LABEL_MEASURE_MAX_CHARS = 140;
-const PANEL_ITEM_HEIGHT_PX = 32;
+const PANEL_ITEM_HEIGHT_PX = 25;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
-const MAX_VISIBLE_HISTORY_IN_MIXED = Math.floor(PANEL_MAX_VISIBLE_ITEMS / 2);
-
-type SuggestionFilterMode = "all" | "history-only" | "non-history-only";
+type SuggestionFilterMode = "all" | "history-only" | "command-only";
 
 const INITIAL_VIEW_STATE: AutocompleteViewState = {
     visible: false,
@@ -287,49 +285,32 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (mode === "history-only") {
             return items.filter(item => this.isHistorySuggestion(item));
         }
-        if (mode === "non-history-only") {
+        if (mode === "command-only") {
             return items.filter(item => !this.isHistorySuggestion(item));
         }
-        return this.limitVisibleHistoryShare(items);
+        return this.balanceVisibleTopInAllMode(items);
     }
 
-    private limitVisibleHistoryShare(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
+    private balanceVisibleTopInAllMode(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
         if (items.length <= 1) return items;
 
         const visibleCap = Math.min(PANEL_MAX_VISIBLE_ITEMS, items.length);
-        let usedHistory = 0;
-        const reordered: AutocompleteSuggestion[] = [];
-        const deferredHistory: AutocompleteSuggestion[] = [];
+        const history = items.filter(item => this.isHistorySuggestion(item));
+        const nonHistory = items.filter(item => !this.isHistorySuggestion(item));
 
-        for (const item of items) {
-            const isHistory = this.isHistorySuggestion(item);
-            if (!isHistory) {
-                reordered.push(item);
-                continue;
-            }
+        const targetHistory = Math.min(Math.floor(visibleCap / 2), history.length);
+        const targetNonHistory = Math.min(visibleCap - targetHistory, nonHistory.length);
 
-            if (reordered.length < visibleCap) {
-                if (usedHistory < MAX_VISIBLE_HISTORY_IN_MIXED) {
-                    reordered.push(item);
-                    usedHistory += 1;
-                } else {
-                    deferredHistory.push(item);
-                }
-                continue;
-            }
+        const topHistory = history.slice(0, targetHistory);
+        const topNonHistory = nonHistory.slice(0, targetNonHistory);
+        const top = [...topHistory, ...topNonHistory];
 
-            reordered.push(item);
-        }
+        const used = new Set(top);
+        const rest = items
+            .filter(item => !used.has(item))
+            .sort((a, b) => b.score - a.score);
 
-        if (deferredHistory.length === 0) return reordered;
-
-        const fillFrom = Math.max(reordered.length, visibleCap);
-        if (reordered.length < fillFrom) {
-            reordered.push(...deferredHistory);
-            return reordered;
-        }
-
-        return [...reordered, ...deferredHistory];
+        return [...top, ...rest];
     }
 
     private applySelectedSuggestion(index: number): void {
@@ -575,15 +556,15 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     private nextFilterMode(mode: SuggestionFilterMode): SuggestionFilterMode {
-        if (mode === "all") return "history-only";
-        if (mode === "history-only") return "non-history-only";
+        if (mode === "all") return "command-only";
+        if (mode === "non-history-only") return "history-only";
         return "all";
     }
 
     private filterModeLabel(mode: SuggestionFilterMode): string {
         if (mode === "all") return "All";
         if (mode === "history-only") return "History";
-        return "Other";
+        return "Command";
     }
 
     private isHistorySuggestion(item: AutocompleteSuggestion): boolean {
