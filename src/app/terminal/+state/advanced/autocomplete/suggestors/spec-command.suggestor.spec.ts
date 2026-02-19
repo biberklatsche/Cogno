@@ -35,6 +35,19 @@ describe("SpecCommandSuggestor", () => {
         expect(result.some(v => v.label === "npm")).toBe(true);
     });
 
+    it("includes top-level command description from spec metadata", async () => {
+        const railsSpec: CommandSpec = {
+            name: "rails",
+            source: "fig",
+            sourceUrl: "https://github.com/withfig/autocomplete/tree/master/src/rails.ts",
+            description: "Ruby on Rails CLI",
+        };
+        const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry([...defaults, railsSpec]), []);
+
+        const result = await suggestor.suggest(commandContext("ra"));
+        expect(result.find(v => v.label === "rails")?.description).toBe("Ruby on Rails CLI");
+    });
+
     it("suggests npm scripts via provider for npm run", async () => {
         vi.spyOn(Fs, "exists").mockResolvedValue(true);
         vi.spyOn(Fs, "readTextFile").mockResolvedValue(JSON.stringify({

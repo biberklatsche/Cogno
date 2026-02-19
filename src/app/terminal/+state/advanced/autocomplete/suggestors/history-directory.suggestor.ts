@@ -19,19 +19,27 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
     }
 
     private async suggestDirectories(context: CdQueryContext): Promise<AutocompleteSuggestion[]> {
-        const rows = await this.persistence.searchDirectories(context.fragment, 100);
+        const tokens = this.extractTokens(context.fragment);
+        const lookupFragment = tokens[0] ?? context.fragment;
+        const rows = await this.persistence.searchDirectories(lookupFragment, 100);
         const cwdNorm = AutocompletePathUtil.normalizeCwd(context.cwd, context.shellContext);
 
         const result: AutocompleteSuggestion[] = [];
         for (const row of rows) {
+            const pathLower = row.path.toLowerCase();
+            const basenameLower = row.basename.toLowerCase();
+            const matchesAllTokens = tokens.every(token => pathLower.includes(token) || basenameLower.includes(token));
+            if (!matchesAllTokens) continue;
+
             const relative = AutocompletePathUtil.toRelativePath(row.path, cwdNorm);
             if (relative === ".") continue;
 
             const displayPath = AutocompletePathUtil.toDisplayPath(row.path, cwdNorm, context.shellContext);
             if (displayPath === "." || displayPath === ".." || AutocompletePathUtil.isParentTraversalOnly(displayPath)) continue;
 
-            const starts = row.basename.toLowerCase().startsWith(context.fragment.toLowerCase());
-            const contains = row.basename.toLowerCase().includes(context.fragment.toLowerCase());
+            const primaryToken = tokens.length > 0 ? tokens[0] : context.fragment.toLowerCase();
+            const starts = basenameLower.startsWith(primaryToken);
+            const contains = basenameLower.includes(primaryToken);
             const score = row.selectCount * 30 + row.visitCount * 5 + (starts ? 80 : contains ? 25 : 0);
 
             result.push({
@@ -47,5 +55,14 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
             });
         }
         return result;
+    }
+
+    private extractTokens(fragment: string): string[] {
+        if (!fragment) return [];
+        return fragment
+            .trim()
+            .split(/\s+/)
+            .map(t => t.toLowerCase())
+            .filter(Boolean);
     }
 }

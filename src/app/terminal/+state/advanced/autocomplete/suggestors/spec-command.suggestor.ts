@@ -20,6 +20,7 @@ type ParsedInput = {
 type ShellScopedCommand = {
     name: string;
     lower: string;
+    description?: string;
 };
 
 type PreparedOption = {
@@ -244,7 +245,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             suggestions.push({
                 label: c.name,
                 detail: "spec command",
-                description: undefined,
+                description: c.description,
                 insertText: c.name,
                 score: starts ? 135 : 70,
                 source: "spec-cmd",
@@ -539,13 +540,14 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             .then(async names => {
                 const scoped: ShellScopedCommand[] = [];
                 for (const name of names) {
-                    const constraints = await Promise.resolve(this.registry.getConstraints(name));
-                    if (constraints?.shells?.length && !constraints.shells.includes(shell)) continue;
-                    if (constraints?.excludeShells?.includes(shell)) continue;
-                    scoped.push({ name, lower: name.toLowerCase() });
-                }
-                return scoped;
-            });
+                const constraints = await Promise.resolve(this.registry.getConstraints(name));
+                if (constraints?.shells?.length && !constraints.shells.includes(shell)) continue;
+                if (constraints?.excludeShells?.includes(shell)) continue;
+                const description = (await Promise.resolve(this.registry.get(name)))?.description;
+                scoped.push({ name, lower: name.toLowerCase(), description });
+            }
+            return scoped;
+        });
         this._commandNamesByShell.set(shell, next);
         return next;
     }

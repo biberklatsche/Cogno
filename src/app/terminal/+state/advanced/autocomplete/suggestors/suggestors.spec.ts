@@ -52,6 +52,22 @@ describe("Autocomplete Suggestors", () => {
         expect(result.some(r => r.label === "/Users")).toBe(true);
     });
 
+    it("HistoryDirectorySuggestor matches multi-token fragments against visited paths", async () => {
+        const persistence = {
+            searchDirectories: vi.fn().mockResolvedValue([
+                { path: "/c/projects/grimace-tracker/src", basename: "src", visitCount: 10, selectCount: 2, lastVisitAt: 1 },
+                { path: "/c/projects/grimace-tools", basename: "grimace-tools", visitCount: 10, selectCount: 2, lastVisitAt: 1 },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryDirectorySuggestor(persistence);
+        const result = await suggestor.suggest(cdContext("gr tr"));
+
+        expect(persistence.searchDirectories).toHaveBeenCalledWith("gr", 100);
+        expect(result.map(r => r.detail)).toContain("/c/projects/grimace-tracker/src");
+        expect(result.map(r => r.detail)).not.toContain("/c/projects/grimace-tools");
+    });
+
     it("FilesystemDirectorySuggestor returns directory matches and excludes parent traversals", async () => {
         readDirMock.mockResolvedValue([
             { name: "Users", isDirectory: true, isFile: false, isSymlink: false },
