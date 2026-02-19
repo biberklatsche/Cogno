@@ -2,23 +2,20 @@
   display: flex;
   height: var(--header-height);
   align-items: stretch;
-  /* Allow the tab list area to take available space but also shrink when needed */
   flex: 9999 1 auto;
-  min-width: 0; /* critical so the flex item can shrink and not push siblings */
+  min-width: 0;
 }
 
 .tab-list {
   display: flex;
-  flex-direction: row;
   align-items: center;
   gap: 6px;
-  overflow-x: auto;   /* ← horizontal scroll if it doesn't fit anymore */
+  overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
   flex-wrap: nowrap;
   height: var(--header-height);
   padding: 0 2rem 0 6px;
-  /* Ensure the inner scroller stretches to the host width and scrolls instead of growing */
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
@@ -34,34 +31,34 @@
   font-size: 1rem;
   gap: 6px;
   height: 26px;
+  min-height: 26px;
   padding: 0 8px;
-  border: 1px solid;
-  border-color: var(--background-color-10l-ct2);
+  border: 1px solid var(--background-color-10l-ct2);
   border-radius: var(--button-border-radius);
   background: var(--background-color-10l-ct2);
   color: var(--foreground-color-10t);
-  /* size logic: intrinsic width by title, but shrink if needed, and cap at max */
-  min-height: 26px;
-  /* size logic */
   flex: 0 1 240px;
   max-width: 240px;
-  min-width: max( calc(16px + 2 * 8px), var(--tab-min, 32px) ); /* 16px close + Padding */
-  /* important for container queries */
+  min-width: max(calc(16px + 2 * 8px), var(--tab-min, 32px));
   container-type: inline-size;
+
   &.is-active {
     color: var(--foreground-color);
     border-color: var(--background-color-30l);
     background: var(--background-color-20l-ct);
+
     &:hover {
       color: var(--foreground-color);
       border-color: var(--background-color-40l);
       background: var(--background-color-30l);
     }
   }
+
   &:hover {
     color: var(--foreground-color);
     border-color: var(--background-color-40l);
     background: var(--background-color-30l);
+
     .close {
       color: var(--foreground-color-40d);
       background: var(--background-color-20l);
@@ -70,17 +67,18 @@
   }
 }
 
-.animate-tab-enter{
+.animate-tab-enter {
   animation: slide-in 100ms;
 }
 
-.animate-tab-leave{
+.animate-tab-leave {
   animation: slide-out 100ms;
 }
 
 .close {
   position: absolute;
   right: 2px;
+  flex: 0 0 16px;
   padding: 2px;
   display: inline-flex;
   align-items: center;
@@ -90,6 +88,7 @@
   cursor: default;
   background-color: var(--background-color-20l-ct);
   opacity: 0;
+
   &:hover {
     opacity: 1 !important;
     color: var(--foreground-color) !important;
@@ -102,21 +101,25 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px; /* keep some space for icons and padding */
+  max-width: 180px;
   text-align: left;
   flex-shrink: 10;
 }
 
-.icon  { flex: 0 1 auto;  flex-shrink: 1; }
-.close { flex: 0 0 16px;   flex-shrink: 0; } /* remains always visible */
-
-@container (max-width: 20px) {
-  .title { display: none; }
+.icon {
+  flex: 0 1 auto;
 }
 
-/* 2) Even narrower: hide icon, close remains */
+@container (max-width: 20px) {
+  .title {
+    display: none;
+  }
+}
+
 @container (max-width: 50px) {
-  .icon { display: none; }
+  .icon {
+    display: none;
+  }
 }
 
 .tab:focus-visible {
@@ -130,6 +133,7 @@
     width: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -141,6 +145,7 @@
     opacity: 1;
     transform: translateX(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(-20px);
@@ -149,6 +154,5 @@
 
 .tab-list-btns {
   display: flex;
-  flex-direction: row;
   gap: 1px;
 }
