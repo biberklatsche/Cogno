@@ -50,9 +50,9 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
                     <span class="description-text" [appTooltip]="selectedDescription()">
                         {{ selectedDescription() || ' ' }}
                     </span>
-                    <span class="description-hint">
+                        <span class="description-hint">
                         <span class="mode-badge"
-                              appTooltip="Current completion mode: {{filterMode().toUpperCase()}}"
+                              [appTooltip]="filterModeTooltip()"
                               [class.mode-all]="filterMode() === 'all'"
                               [class.mode-history]="filterMode() === 'history-only'"
                               [class.mode-context]="filterMode() === 'context-only'"
@@ -230,9 +230,15 @@ export class TerminalAutocompleteComponent {
     protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" });
     protected readonly filterModeLabel = computed(() => {
         const mode = this.filterMode();
-        if (mode === "context-only") return "Ctx";
-        if (mode === "history-only") return "Hst";
+        if (mode === "context-only") return "Context";
+        if (mode === "history-only") return "History";
         return "All";
+    });
+    protected readonly filterModeTooltip = computed(() => {
+        const mode = this.filterMode();
+        if (mode === "context-only") return "Suggestions based on the current context";
+        if (mode === "history-only") return "Suggestions from your command history";
+        return "Suggestions from history and the current context";
     });
 
     constructor(private readonly autocomplete: TerminalAutocompleteService) {
