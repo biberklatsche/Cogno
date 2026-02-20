@@ -23,4 +23,8 @@ describe('GitBashPathAdapter', () => {
     it('should render Windows path in Git Bash', () => {
         expect(adapter.render('/c/server/share/file', { purpose: 'backend_fs'})).toBe('C:\\server\\share\\file');
     });
+
+    it('should render Windows path in Git Bash only drive', () => {
+        expect(adapter.render('/c/', { purpose: 'backend_fs'})).toBe('C:\\');
+    });
 });

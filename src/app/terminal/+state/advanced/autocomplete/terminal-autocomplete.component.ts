@@ -29,8 +29,6 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
                             [attr.data-index]="$index"
                             class="autocomplete-item"
                             [class.active]="$index === viewState().selectedIndex"
-                            (mouseenter)="preview($index)"
-                            (mousedown)="apply($event, $index)"
                             type="button"
                         >
                             <span class="label">
@@ -243,16 +241,6 @@ export class TerminalAutocompleteComponent {
             if (!view.visible || view.selectedIndex === null) return;
             queueMicrotask(() => this.scrollSelectedIntoView(view.selectedIndex!));
         });
-    }
-
-    protected apply(event: MouseEvent, index: number): void {
-        event.preventDefault();
-        event.stopPropagation();
-        this.autocomplete.selectSuggestion(index);
-    }
-
-    protected preview(index: number): void {
-        this.autocomplete.setSelectedIndex(index);
     }
 
     protected labelParts(item: AutocompleteSuggestion, panelWidth: number): Array<{ text: string; match: boolean }> {

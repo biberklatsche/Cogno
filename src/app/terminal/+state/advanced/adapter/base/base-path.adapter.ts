@@ -53,7 +53,6 @@ export abstract class BasePathAdapter implements IPathAdapter {
 
     render(cognoPath: string, ctx: RenderContext): string | undefined {
         const p = this.normalizeCognoAbs(cognoPath);
-
         const backendOs = this.ctx.backendOs ?? OS.platform();
         const quoteMode = ctx.quoteMode ?? (ctx.purpose === "insert_arg" ? "if-needed" : "never");
 
@@ -83,7 +82,7 @@ export abstract class BasePathAdapter implements IPathAdapter {
     }
 
     protected toWindowsBackendPath(p: string): string | undefined {
-        const mDrive = /^\/([a-z])\/(.*)$/.exec(p);
+        const mDrive = /^\/([a-z])(?:\/(.*))?$/.exec(p);
         if (mDrive) {
             const drive = mDrive[1].toUpperCase();
             const rest = (mDrive[2] ?? "").split("/").join("\\");
