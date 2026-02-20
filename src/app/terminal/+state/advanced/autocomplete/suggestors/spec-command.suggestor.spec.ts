@@ -205,7 +205,7 @@ describe("SpecCommandSuggestor", () => {
                 {
                     name: "run",
                     args: { name: "script" },
-                    providers: [{ providerId: "scripts-provider", kind: "script", source: "xpm-script", baseScore: 60 }],
+                    providers: [{ providerId: "scripts-provider", source: "xpm-script", baseScore: 60 }],
                 },
             ],
             options: [

@@ -24,7 +24,6 @@ function makeSuggestion(label: string): AutocompleteSuggestion {
         detail: "",
         score: 1,
         source: "test",
-        kind: "command",
         replaceStart: 0,
         replaceEnd: label.length,
     };

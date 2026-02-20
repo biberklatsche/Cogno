@@ -40,7 +40,6 @@ function makeSuggestion(label: string): AutocompleteSuggestion {
         detail: "",
         score: 10,
         source: "test",
-        kind: "command",
         replaceStart: 0,
         replaceEnd: 5,
     };
@@ -57,7 +56,6 @@ function makeSuggestionWithSource(
         detail: "",
         score,
         source,
-        kind: "command",
         replaceStart: 0,
         replaceEnd: 5,
     };
@@ -318,7 +316,6 @@ describe("TerminalAutocompleteService", () => {
             detail: "",
             score: 10,
             source: "test",
-            kind: "directory",
             replaceStart: 3,
             replaceEnd: 6,
         }]));
@@ -341,7 +338,6 @@ describe("TerminalAutocompleteService", () => {
             detail: "",
             score: 10,
             source: "test",
-            kind: "directory",
             replaceStart: 3,
             replaceEnd: 3,
             selectedPath: "/Users/larswolfram/projects",
@@ -388,7 +384,6 @@ describe("TerminalAutocompleteService", () => {
             detail: "from history",
             score: 40,
             source: "history-cmd",
-            kind: "command",
             replaceStart: 0,
             replaceEnd: 6,
             selectedCommand: "git status",
@@ -399,10 +394,8 @@ describe("TerminalAutocompleteService", () => {
             detail: "from spec",
             score: 50,
             source: "spec-cmd",
-            kind: "command",
             replaceStart: 0,
             replaceEnd: 6,
-            selectedCommand: "git status",
         }], "dummy-spec"));
 
         fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
@@ -422,7 +415,6 @@ describe("TerminalAutocompleteService", () => {
             detail: "from history",
             score: 80,
             source: "history-cmd",
-            kind: "command",
             replaceStart: 0,
             replaceEnd: 2,
             selectedCommand: "rails",
@@ -434,10 +426,8 @@ describe("TerminalAutocompleteService", () => {
             description: "Ruby on Rails CLI",
             score: 40,
             source: "spec-cmd",
-            kind: "command",
             replaceStart: 0,
             replaceEnd: 2,
-            selectedCommand: "rails",
         }], "dummy-spec"));
 
         fakeState.emit({ ...fakeState.state, input: { text: "ra", cursorIndex: 2, maxCursorIndex: 2 } });
@@ -456,10 +446,8 @@ describe("TerminalAutocompleteService", () => {
             detail: "spec subcommand",
             score: 135,
             source: "spec-sub",
-            kind: "command",
             replaceStart: 8,
             replaceEnd: 10,
-            selectedCommand: "npm test",
         }], "dummy-spec-sub"));
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "test",
@@ -467,7 +455,6 @@ describe("TerminalAutocompleteService", () => {
             detail: "npm script",
             score: 145,
             source: "npm-script",
-            kind: "script",
             replaceStart: 8,
             replaceEnd: 10,
         }], "dummy-npm-script"));

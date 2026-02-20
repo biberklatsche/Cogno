@@ -338,10 +338,10 @@ export class TerminalAutocompleteService implements OnDestroy {
         const inputText = paddedInputText.slice(0, start) + suggestion.insertText + paddedInputText.slice(end);
         const cursorIndex = start + suggestion.insertText.length;
 
-        if (suggestion.kind === "directory" && suggestion.selectedPath) {
+        if (suggestion.selectedPath) {
             this.persistence.markDirectorySelected(suggestion.selectedPath);
         }
-        if (suggestion.kind === "command" && suggestion.selectedCommand && this.stateManager.state.cwd) {
+        if (suggestion.selectedCommand && this.stateManager.state.cwd) {
             this.persistence.markCommandSelected(suggestion.selectedCommand, this.stateManager.state.cwd);
         }
 
@@ -500,6 +500,8 @@ export class TerminalAutocompleteService implements OnDestroy {
                     source: existing.suggestion.source,
                     score: item.score,
                     description: item.description ?? existing.suggestion.description,
+                    selectedPath: item.selectedPath ?? existing.suggestion.selectedPath,
+                    selectedCommand: item.selectedCommand ?? existing.suggestion.selectedCommand,
                 };
             } else {
                 if (!existing.suggestion.detail && item.detail) {

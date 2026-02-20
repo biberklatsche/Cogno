@@ -57,7 +57,6 @@ function sanitizeProviders(source?: SpecProviderBinding[]): SpecProviderBinding[
 
         const normalized: SpecProviderBinding = {
             providerId,
-            kind: provider.kind ?? "script",
             source: provider.source?.trim() || undefined,
             baseScore: provider.baseScore,
             when: firstArgIn.length || argsRegex || minArgs !== undefined || maxArgs !== undefined

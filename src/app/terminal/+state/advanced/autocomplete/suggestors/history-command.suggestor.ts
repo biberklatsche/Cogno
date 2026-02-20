@@ -62,7 +62,6 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
                 insertText: row.command,
                 score,
                 source: "history-cmd",
-                kind: "command",
                 // History commands must replace the entire terminal input.
                 replaceStart: 0,
                 replaceEnd: context.inputText.length,

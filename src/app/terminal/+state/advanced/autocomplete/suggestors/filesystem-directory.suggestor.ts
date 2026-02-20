@@ -64,7 +64,6 @@ export class FilesystemDirectorySuggestor implements TerminalAutocompleteSuggest
                 insertText: candidate.displayPath,
                 score,
                 source: "fs-dir",
-                kind: "directory",
                 replaceStart: context.replaceStart,
                 replaceEnd: context.replaceEnd,
                 selectedPath: candidate.childNorm,

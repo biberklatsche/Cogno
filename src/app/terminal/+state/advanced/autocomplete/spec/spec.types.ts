@@ -47,7 +47,6 @@ export type SpecProviderWhen = {
 export type SpecProviderBinding = {
     providerId: string;
     when?: SpecProviderWhen;
-    kind?: "command" | "script";
     source?: string;
     baseScore?: number;
 };

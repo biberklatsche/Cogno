@@ -134,7 +134,6 @@ describe("Autocomplete Suggestors", () => {
         const result = await suggestor.suggest(ctx);
 
         expect(result.length).toBe(2);
-        expect(result[0].kind).toBe("command");
     });
 
     it("HistoryCommandSuggestor boosts only same command token over general matches", async () => {

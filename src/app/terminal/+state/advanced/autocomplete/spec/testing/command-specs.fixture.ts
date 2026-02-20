@@ -9,7 +9,7 @@ export function createCommandSpecsFixture(): CommandSpec[] {
                 {
                     name: "run",
                     args: { name: "script" },
-                    providers: [{ providerId: "npm-scripts", kind: "script", source: "npm-script", baseScore: 60 }],
+                    providers: [{ providerId: "npm-scripts", source: "npm-script", baseScore: 60 }],
                 },
             ],
         },

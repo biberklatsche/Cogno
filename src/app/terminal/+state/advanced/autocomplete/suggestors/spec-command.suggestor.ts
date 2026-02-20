@@ -249,7 +249,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 insertText: c.name,
                 score: starts ? 135 : 70,
                 source: "spec-cmd",
-                kind: "command",
                 replaceStart,
                 replaceEnd,
             });
@@ -300,8 +299,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
             label: string,
             source: string,
             baseScore: number,
-            description: string | undefined,
-            kind: "command" | "script" = "command"
+            description: string | undefined
         ) => {
             const labelLower = label.toLowerCase();
             if (typedTokenSet.has(labelLower)) return;
@@ -315,10 +313,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 insertText: `${insertPrefix}${label}`,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
                 source,
-                kind,
                 replaceStart,
                 replaceEnd,
-                selectedCommand: kind === "command" ? `${command} ${label}` : undefined,
             });
         };
 
@@ -411,8 +407,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
         const add = (
             label: string,
             source: string,
-            baseScore: number,
-            kind: "command" | "script" = "script"
+            baseScore: number
         ) => {
             const labelLower = label.toLowerCase();
             if (typedTokenSet.has(labelLower)) return;
@@ -425,10 +420,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 insertText: `${insertPrefix}${label}`,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
                 source,
-                kind,
                 replaceStart,
                 replaceEnd,
-                selectedCommand: kind === "command" ? `${command} ${label}` : undefined,
             });
         };
 
@@ -441,7 +434,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
                 args: parsed.tokens.map(t => t.value),
             });
             for (const value of provided) {
-                add(value, binding.source ?? binding.providerId, binding.baseScore ?? 55, binding.kind ?? "script");
+                add(value, binding.source ?? binding.providerId, binding.baseScore ?? 55);
             }
         }
 

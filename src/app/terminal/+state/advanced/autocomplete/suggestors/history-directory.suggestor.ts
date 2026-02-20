@@ -48,7 +48,6 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
                 insertText: displayPath,
                 score,
                 source: "history-dir",
-                kind: "directory",
                 replaceStart: context.replaceStart,
                 replaceEnd: context.replaceEnd,
                 selectedPath: row.path,
