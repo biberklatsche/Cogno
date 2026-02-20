@@ -6,11 +6,12 @@ import { SuggestionFilterMode, TerminalAutocompleteService } from "./terminal-au
 import { AutocompleteSuggestion } from "./autocomplete.types";
 import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
+import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
 
 @Component({
     selector: "app-terminal-autocomplete",
     standalone: true,
-    imports: [NgStyle, TooltipDirective, ActionKeybindingPipe],
+    imports: [NgStyle, TooltipDirective, ActionKeybindingPipe, StartEllipsisDirective],
     template: `
         @if (viewState().visible) {
             <div
@@ -31,11 +32,12 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
                             [class.active]="$index === viewState().selectedIndex"
                             type="button"
                         >
-                            <span class="label">
-                                @for (part of labelParts(item, viewState().width); track $index) {
-                                    <span [class.match]="part.match">{{ part.text }}</span>
-                                }
-                            </span>
+                            <span
+                                class="label"
+                                appStartEllipsis
+                                [appStartEllipsis]="item.label"
+                                [appStartEllipsisMatches]="item.matchRanges"
+                            ></span>
                             <span class="meta" appTooltip="{{ item.source }} &middot; {{ item.score }}">
                                 <span
                                     class="source-dot"
@@ -71,7 +73,7 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
         .autocomplete-panel {
             position: fixed;
             box-sizing: border-box;
-            min-width: 460px;
+            min-width: 0;
             max-width: 920px;
             overflow: hidden;
             background: rgba(19, 29, 41, 0.97);
@@ -210,12 +212,6 @@ import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pip
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TerminalAutocompleteComponent {
-    private static readonly MAX_LABEL_CHARS = 96;
-    private static readonly MIN_LABEL_CHARS = 12;
-    private static readonly APPROX_CHAR_PX = 8;
-    private static readonly META_RESERVE_PX = 132;
-    private static readonly TRUNCATION_PREFIX = "…";
-
     @ViewChild("panel") private panelRef?: ElementRef<HTMLDivElement>;
 
     protected readonly viewState = toSignal(this.autocomplete.viewState$, { initialValue: {
@@ -249,31 +245,6 @@ export class TerminalAutocompleteComponent {
         });
     }
 
-    protected labelParts(item: AutocompleteSuggestion, panelWidth: number): Array<{ text: string; match: boolean }> {
-        const { label, ranges } = this.truncateForDisplay(item, panelWidth);
-        if (ranges.length === 0) return [{ text: label, match: false }];
-
-        const parts: Array<{ text: string; match: boolean }> = [];
-        let pos = 0;
-
-        for (const range of ranges) {
-            const start = Math.max(pos, Math.max(0, Math.min(range.start, label.length)));
-            const end = Math.max(start, Math.max(0, Math.min(range.end, label.length)));
-            if (start > pos) {
-                parts.push({ text: label.slice(pos, start), match: false });
-            }
-            if (end > start) {
-                parts.push({ text: label.slice(start, end), match: true });
-            }
-            pos = end;
-        }
-
-        if (pos < label.length) {
-            parts.push({ text: label.slice(pos), match: false });
-        }
-        return parts.length > 0 ? parts : [{ text: label, match: false }];
-    }
-
     protected selectedDescription(): string {
         const view = this.viewState();
         if (view.suggestions.length === 0) return "";
@@ -288,46 +259,6 @@ export class TerminalAutocompleteComponent {
             .map(v => v.trim().toLowerCase())
             .filter(Boolean);
         return parts.some(part => part.includes("history"));
-    }
-
-    private truncateForDisplay(
-        item: AutocompleteSuggestion,
-        panelWidth: number
-    ): { label: string; ranges: Array<{ start: number; end: number }> } {
-        const ranges = [...(item.matchRanges ?? [])].sort((a, b) => a.start - b.start);
-        const availableLabelPx = Math.max(80, panelWidth - TerminalAutocompleteComponent.META_RESERVE_PX);
-        const dynamicChars = Math.floor(availableLabelPx / TerminalAutocompleteComponent.APPROX_CHAR_PX);
-        const maxChars = Math.max(
-            TerminalAutocompleteComponent.MIN_LABEL_CHARS,
-            Math.min(TerminalAutocompleteComponent.MAX_LABEL_CHARS, dynamicChars)
-        );
-
-        if (item.label.length <= maxChars) {
-            return { label: item.label, ranges };
-        }
-
-        const prefixLength = TerminalAutocompleteComponent.TRUNCATION_PREFIX.length;
-        const keep = Math.max(1, maxChars - prefixLength);
-        let cutStart = Math.max(0, item.label.length - keep);
-        // Preserve dotfiles when truncation starts at segment boundary (e.g. "/.nvm").
-        if (
-            cutStart > 1 &&
-            item.label[cutStart - 1] === "." &&
-            item.label[cutStart] !== "." &&
-            (item.label[cutStart - 2] === "/" || item.label[cutStart - 2] === "\\")
-        ) {
-            cutStart -= 1;
-        }
-        const label = `${TerminalAutocompleteComponent.TRUNCATION_PREFIX}${item.label.slice(cutStart)}`;
-        const mappedRanges = ranges
-            .map(r => ({ start: r.start - cutStart + prefixLength, end: r.end - cutStart + prefixLength }))
-            .map(r => ({
-                start: Math.max(prefixLength, Math.min(r.start, label.length)),
-                end: Math.max(prefixLength, Math.min(r.end, label.length)),
-            }))
-            .filter(r => r.end > r.start);
-
-        return { label, ranges: mappedRanges };
     }
 
     private scrollSelectedIntoView(index: number): void {
