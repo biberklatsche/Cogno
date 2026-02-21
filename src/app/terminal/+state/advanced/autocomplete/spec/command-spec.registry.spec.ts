@@ -26,8 +26,8 @@ describe("CommandSpecRegistry defaults/importer", () => {
     it("keeps secondary options from command specs", () => {
         const git = createCommandSpecsFixture().find(v => v.name === "git");
         expect(git).toBeDefined();
-        expect(git!.subcommandOptions?.commit).toContain("-a");
-        expect(git!.subcommandOptions?.commit).toContain("-m");
+        expect(git!.subcommandOptions?.["commit"]).toContain("-a");
+        expect(git!.subcommandOptions?.["commit"]).toContain("-m");
     });
 
     it("keeps provider bindings from specs", () => {

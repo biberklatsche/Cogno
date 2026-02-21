@@ -11,10 +11,8 @@ import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./a
 import { FilesystemDirectorySuggestor } from "./suggestors/filesystem-directory.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
-import { SpecCommandSuggestor } from "./suggestors/spec-command.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
-import { AssetCommandSpecRegistry } from "./spec/asset-command-spec.registry";
-import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
+import { SpecCommandSuggestorService } from "./spec/spec-command-suggestor.service";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
 
 const REFRESH_DEBOUNCE_MS = 80;
@@ -73,6 +71,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         private readonly stateManager: TerminalStateManager,
         private readonly persistence: TerminalHistoryPersistenceService,
         private readonly bus: AppBus,
+        private readonly sharedSpecCommandSuggestorService: SpecCommandSuggestorService,
     ) {
         this._filterMode.next(this.loadFilterMode());
         this._lastInputSignature = this.inputSignature(this.stateManager.state);
@@ -115,8 +114,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
         this.registerSuggestor(new FilesystemDirectorySuggestor());
         this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
-        const registry = new AssetCommandSpecRegistry();
-        this.registerSuggestor(new SpecCommandSuggestor(registry, [new NpmScriptsSpecProvider()]));
+        this.registerSuggestor(this.sharedSpecCommandSuggestorService.getSharedSuggestor());
     }
 
     private subscribeStateChanges(): void {
