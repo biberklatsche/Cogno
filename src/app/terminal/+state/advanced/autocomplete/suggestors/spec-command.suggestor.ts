@@ -5,6 +5,7 @@ import {
     CommandSpec,
     FigOptionSpec,
     FigSubcommandSpec,
+    ShellConstraint,
     SpecProviderBinding,
     SpecSuggestionProvider
 } from "../spec/spec.types";
@@ -206,6 +207,10 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
 
     matches(context: QueryContext): boolean {
         return (context.mode === "command" || context.mode === "npm-script") && this.inputPattern.test(context.beforeCursor);
+    }
+
+    async warmUpCommandDefinitionsForShell(shellType: ShellConstraint): Promise<void> {
+        await this.commandsForShellType(shellType);
     }
 
     async suggest(context: QueryContext): Promise<AutocompleteSuggestion[]> {
@@ -525,7 +530,11 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestor {
     }
 
     private commandsForShell(context: QueryContext): Promise<ShellScopedCommand[]> {
-        const shell = context.shellContext.shellType;
+        return this.commandsForShellType(context.shellContext.shellType);
+    }
+
+    private commandsForShellType(shellType: ShellConstraint): Promise<ShellScopedCommand[]> {
+        const shell = shellType;
         const cached = this._commandNamesByShell.get(shell);
         if (cached) return cached;
 

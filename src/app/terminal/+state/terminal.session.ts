@@ -23,6 +23,7 @@ import {TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
+import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 
 @Injectable()
 export class TerminalSession {
@@ -44,7 +45,8 @@ export class TerminalSession {
     constructor(
         private configService: ConfigService,
         private bus: AppBus,
-        private stateManager: TerminalStateManager
+        private stateManager: TerminalStateManager,
+        private specCommandSuggestorService: SpecCommandSuggestorService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -79,6 +81,7 @@ export class TerminalSession {
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
 
         if(this.shellProfile.enable_shell_integration) {
+            this.specCommandSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
             this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.stateManager)));
         }
