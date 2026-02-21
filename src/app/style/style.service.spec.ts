@@ -5,11 +5,18 @@ import { getDestroyRef } from '../../__test__/test-factory';
 import { Config } from '../config/+models/config';
 import { Fs } from '../_tauri/fs';
 import { Logger } from '../_tauri/logger';
+import { Path } from '../_tauri/path';
 
 // Mocking dependencies
 vi.mock('../_tauri/fs', () => ({
   Fs: {
     convertFileSrc: vi.fn((path: string) => `mock-url://${path}`)
+  }
+}));
+
+vi.mock('../_tauri/path', () => ({
+  Path: {
+    homeDir: vi.fn(async () => '/Users/tester')
   }
 }));
 
@@ -69,6 +76,11 @@ describe('StyleService', () => {
     vi.spyOn(document.body.classList, 'add');
     vi.spyOn(document.body.classList, 'remove');
   });
+
+  const waitForAsyncEffects = async (): Promise<void> => {
+    await Promise.resolve();
+    await Promise.resolve();
+  };
 
   it('should initialize and subscribe to config changes', () => {
     styleService = new StyleService(configService, destroyRef);
@@ -147,7 +159,7 @@ describe('StyleService', () => {
   });
 
   describe('Background Image', () => {
-    it('should set background image properties when path is provided', () => {
+    it('should set background image properties when path is provided', async () => {
       const configWithImage = {
         ...baseConfig,
         allow_transparency: true,
@@ -159,6 +171,7 @@ describe('StyleService', () => {
       };
       styleService = new StyleService(configService, destroyRef);
       configService.setConfig(configWithImage);
+      await waitForAsyncEffects();
 
       expect(Fs.convertFileSrc).toHaveBeenCalledWith('/path/to/image.png');
       expect(document.body.style.setProperty).toHaveBeenCalledWith('--background-image', 'url("mock-url:///path/to/image.png")');
@@ -166,7 +179,25 @@ describe('StyleService', () => {
       expect(document.body.classList.add).toHaveBeenCalledWith('has-background');
     });
 
-    it('should remove background image properties when path is missing', () => {
+    it('should resolve ~/ paths for background images', async () => {
+      const configWithTildePath = {
+        ...baseConfig,
+        allow_transparency: true,
+        background_image: {
+          path: '~/.cogno2-dev/background-image.png',
+          opacity: 50,
+          blur: 0
+        }
+      };
+      styleService = new StyleService(configService, destroyRef);
+      configService.setConfig(configWithTildePath);
+      await waitForAsyncEffects();
+
+      expect(Path.homeDir).toHaveBeenCalled();
+      expect(Fs.convertFileSrc).toHaveBeenCalledWith('/Users/tester/.cogno2-dev/background-image.png');
+    });
+
+    it('should remove background image properties when path is missing', async () => {
       styleService = new StyleService(configService, destroyRef);
       
       // Start with image
@@ -174,12 +205,14 @@ describe('StyleService', () => {
         ...baseConfig,
         background_image: { path: '/some/path.png', opacity: 100, blur: 0 }
       });
+      await waitForAsyncEffects();
 
       // Then remove it
       configService.setConfig({
         ...baseConfig,
         background_image: undefined
       });
+      await waitForAsyncEffects();
 
       expect(document.body.classList.remove).toHaveBeenCalledWith('has-background');
       expect(document.body.style.removeProperty).toHaveBeenCalledWith('--background-image');
