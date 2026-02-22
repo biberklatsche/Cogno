@@ -5,12 +5,15 @@ import {ConfigService} from "../../config/+state/config.service";
 import {ShellProfile} from "../../config/+models/shell-config";
 import {PaneHeaderComponent} from "./pane-header.component";
 import {GridListService} from "../+state/grid-list.service";
+import {toSignal} from "@angular/core/rxjs-interop";
 
 @Component({
   selector: 'app-pane',
   imports: [PaneHeaderComponent],
   host: {
-      '(mouseenter)': 'updatePaneSwapTarget()'
+      '(mouseenter)': 'updatePaneSwapTarget()',
+      '[class.is-maximized]': 'isMaximizedPane()',
+      '[class.is-hidden-during-maximize]': 'isHiddenDuringMaximize()'
   },
   template: `
       @if (pane().terminalId) {
@@ -23,6 +26,20 @@ import {GridListService} from "../+state/grid-list.service";
       flex-direction: column;
       height: 100%;
       width: 100%;
+  }
+
+  :host.is-maximized {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      background: color-mix(in srgb, var(--background-color) 50%, transparent);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+  }
+
+  :host.is-hidden-during-maximize {
+      visibility: hidden;
+      pointer-events: none;
   }
 
   .dock {
@@ -38,8 +55,14 @@ export class PaneComponent implements AfterViewInit {
 
     private _attachedTerminalId?: TerminalId;
     private _viewReady = signal(false);
+    private maximizedTerminalId = toSignal(this.gridListService.maximizedTerminalId$, { initialValue: undefined });
 
     cwd = computed(() => this.pane().workingDir || '');
+    isMaximizedPane = computed(() => this.maximizedTerminalId() === this.pane().terminalId);
+    isHiddenDuringMaximize = computed(() => {
+        const maximizedTerminalId = this.maximizedTerminalId();
+        return !!maximizedTerminalId && maximizedTerminalId !== this.pane().terminalId;
+    });
 
     constructor(
         private _terminalComponents: TerminalComponentFactory,

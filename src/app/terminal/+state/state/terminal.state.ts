@@ -34,8 +34,10 @@ export type TerminalState = {
     mousePosition: TerminalMousePosition;
     dimensions: TerminalDimensions;
     isFocused: boolean;
+    hasSelection: boolean;
     isCommandRunning: boolean;
     isInFullScreenMode: boolean;
+    isPaneMaximized: boolean;
     commandStartTime: number | undefined;
     input: TerminalInput;
     cwd: string;
@@ -57,8 +59,10 @@ export const INITIAL_STATE: TerminalState = {
     },
     dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0, viewportWidth: 0, viewportHeight: 0},
     isFocused: false,
+    hasSelection: false,
     isCommandRunning: false,
     isInFullScreenMode: false,
+    isPaneMaximized: false,
     commandStartTime: undefined,
     input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
 }

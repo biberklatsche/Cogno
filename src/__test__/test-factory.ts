@@ -157,7 +157,7 @@ export function getFocusHandler(terminalId: TerminalId): FocusHandler {
 
 export function getSelectionHandler(terminalId: TerminalId): SelectionHandler {
     if(!selectionHandler) {
-        selectionHandler = new SelectionHandler(getAppBus(), getConfigService(), terminalId);
+        selectionHandler = new SelectionHandler(getAppBus(), getConfigService(), terminalId, getStateManager());
     }
     return selectionHandler;
 }

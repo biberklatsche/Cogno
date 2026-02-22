@@ -12,6 +12,8 @@ export const ACTION_NAMES = [
     'split_left',
     'split_down',
     'split_up',
+    'maximize_pane',
+    'minimize_pane',
     'close_terminal',
     'clear_buffer',
     'close_other_tabs',

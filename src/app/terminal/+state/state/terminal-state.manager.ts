@@ -68,7 +68,7 @@ export class TerminalStateManager {
         const shellContext: ShellContext = deriveShellContext(shellType, shellProfile, OS.platform());
         this._pathAdapter = PathFactory.createAdapter(shellContext);
         this._historyPersistence.initialize(shellContext, this._pathAdapter);
-        this.updateState({ terminalId, shellContext });
+        this.updateState({ terminalId, shellContext, isPaneMaximized: false, hasSelection: false, isFocused: false });
     }
 
     private updateState(updates: Partial<TerminalState>): void {
@@ -128,12 +128,36 @@ export class TerminalStateManager {
         this.updateState({ isFocused: focused });
     }
 
+    get hasSelection(): boolean {
+        return this._stateSubject.value.hasSelection;
+    }
+
+    get hasSelection$(): Observable<boolean> {
+        return this._stateSubject.pipe(map(s => s.hasSelection));
+    }
+
+    setHasSelection(hasSelection: boolean): void {
+        this.updateState({ hasSelection });
+    }
+
     get isInFullScreenMode$(): Observable<boolean> {
         return this._stateSubject.pipe(map(s => s.isInFullScreenMode));
     }
 
     setInFullScreenMode(fullSizeMode: boolean): void {
         this.updateState({ isInFullScreenMode: fullSizeMode });
+    }
+
+    get isPaneMaximized(): boolean {
+        return this._stateSubject.value.isPaneMaximized;
+    }
+
+    get isPaneMaximized$(): Observable<boolean> {
+        return this._stateSubject.pipe(map(s => s.isPaneMaximized));
+    }
+
+    setPaneMaximized(isPaneMaximized: boolean): void {
+        this.updateState({ isPaneMaximized });
     }
 
     get isCommandRunning(): boolean {

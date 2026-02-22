@@ -9,7 +9,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
-import {FocusActiveTerminalAction} from "../+bus/actions";
+import {FocusActiveTerminalAction, MaximizePaneAction, MinimizePaneAction} from "../+bus/actions";
 import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal/+bus/events";
 
 
@@ -17,6 +17,7 @@ import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal
 export class GridListService {
 
     private _gridList: BehaviorSubject<GridList> = new BehaviorSubject<GridList>({});
+    private _maximizedTerminalId: BehaviorSubject<TerminalId | undefined> = new BehaviorSubject<TerminalId | undefined>(undefined);
     private paneSwapDragSourceTerminalId: TerminalId | undefined;
     private paneSwapDragTargetTerminalId: TerminalId | undefined;
     get grids$(): Observable<Grid[]> {
@@ -25,6 +26,9 @@ export class GridListService {
     private _activeTabId: BehaviorSubject<TabId | undefined> = new BehaviorSubject<TabId | undefined>(undefined);
     get activeTabId$(): Observable<TabId | undefined> {
         return this._activeTabId.asObservable();
+    }
+    get maximizedTerminalId$(): Observable<TerminalId | undefined> {
+        return this._maximizedTerminalId.asObservable();
     }
 
     get activeGridIsSplit$(): Observable<boolean> {
@@ -123,12 +127,27 @@ export class GridListService {
             this.split(event.payload!,'horizontal', 'l');
             event.propagationStopped = true;
         });
+
+        this.bus.onType$('MaximizePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: MaximizePaneAction) => {
+            if (!event.payload) return;
+            this.togglePaneMaximize(event.payload);
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('MinimizePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: MinimizePaneAction) => {
+            if (event.payload && this._maximizedTerminalId.value !== event.payload) return;
+            this.minimizePane();
+            event.propagationStopped = true;
+        });
     }
 
     removePane(terminalId: TerminalId) {
         const gridList = this._gridList.value;
         let gridAndNode = this.determineGrid(gridList, terminalId);
         if (!gridAndNode) return;
+        if (this._maximizedTerminalId.value === terminalId) {
+            this.minimizePane();
+        }
         if(gridAndNode.node.isRoot) {
             this.bus.publish({path: ['app', 'terminal'], type: "RemoveTab", payload: gridAndNode.grid.tabId});
         } else {
@@ -178,6 +197,9 @@ export class GridListService {
 
         const sourceTerminalId = this.paneSwapDragSourceTerminalId;
         const gridList = this._gridList.value;
+        if (this._maximizedTerminalId.value === sourceTerminalId) {
+            this.minimizePane();
+        }
         const sourceGridAndNode = this.determineGrid(gridList, sourceTerminalId);
         if (!sourceGridAndNode || sourceGridAndNode.node.isRoot || !sourceGridAndNode.node.data) {
             this.cancelPaneSwapDrag();
@@ -316,6 +338,7 @@ export class GridListService {
 
     selectGrid(tab?: TabId) {
         if(tab === undefined) return;
+        this.minimizePane();
         this._activeTabId.next(tab);
         const grid = this._gridList.value[tab];
         const terminalId = this.getFirstTerminalId(grid.tree.root);
@@ -338,6 +361,25 @@ export class GridListService {
 
     focusActiveTerminal(): void {
         this.bus.publish({type: 'FocusActiveTerminal', path: ['app', 'grid']});
+    }
+
+    private maximizePane(terminalId: TerminalId): void {
+        this._maximizedTerminalId.next(terminalId);
+        this.bus.publish({type: 'PaneMaximizedChanged', payload: {terminalId}});
+    }
+
+    private togglePaneMaximize(terminalId: TerminalId): void {
+        if (this._maximizedTerminalId.value === terminalId) {
+            this.minimizePane();
+            return;
+        }
+        this.maximizePane(terminalId);
+    }
+
+    private minimizePane(): void {
+        if (!this._maximizedTerminalId.value) return;
+        this._maximizedTerminalId.next(undefined);
+        this.bus.publish({type: 'PaneMaximizedChanged', payload: {terminalId: undefined}});
     }
 
     private getActiveGrid(): Grid | undefined {

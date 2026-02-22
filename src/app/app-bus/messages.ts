@@ -21,6 +21,8 @@ import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+
 import {TerminalBlurredEvent, TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
 import {
     FocusActiveTerminalAction,
+    MaximizePaneAction,
+    MinimizePaneAction,
     RemovePaneAction, SplitPaneDownAction,
     SplitPaneLeftAction,
     SplitPaneRightAction,
@@ -30,7 +32,7 @@ import {InspectorEvent} from "../inspector/+bus/events";
 import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
-import {TabTitleChangedEvent} from "../grid-list/+bus/events";
+import {PaneMaximizedChangedEvent, TabTitleChangedEvent} from "../grid-list/+bus/events";
 
 export type TerminalCommandType = AppMessage['type']
 
@@ -83,10 +85,13 @@ export type AppMessage =
     | SplitPaneLeftAction
     | SplitPaneUpAction
     | SplitPaneDownAction
+    | MaximizePaneAction
+    | MinimizePaneAction
     | ClearBufferAction
     | FocusActiveTerminalAction
     | InspectorEvent
     | NotificationEvent
     | SideMenuEvent
     | TabTitleChangedEvent
+    | PaneMaximizedChangedEvent
     ;

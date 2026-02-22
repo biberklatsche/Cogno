@@ -9,6 +9,8 @@ import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+
 import {Grid} from "../+model/model";
 import {
     FocusActiveTerminalAction,
+    MaximizePaneAction,
+    MinimizePaneAction,
     RemovePaneAction,
     SplitPaneDownAction,
     SplitPaneRightAction
@@ -301,6 +303,35 @@ describe('GridListService', () => {
     });
 
     describe('Focus Management', () => {
+        it('should toggle maximize state when MaximizePane is fired repeatedly', () => {
+            const tabId = 'tab-1';
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-1');
+            bus.publish({
+                type: 'TabAdded',
+                payload: { tabId, isActive: true }
+            } as TabAddedEvent);
+
+            let maximizedTerminalId: string | undefined;
+            service.maximizedTerminalId$.subscribe(value => maximizedTerminalId = value);
+            bus.publish({
+                type: 'MaximizePane',
+                payload: 'term-1'
+            } as MaximizePaneAction);
+            expect(maximizedTerminalId).toBe('term-1');
+
+            bus.publish({
+                type: 'MaximizePane',
+                payload: 'term-1'
+            } as MaximizePaneAction);
+            expect(maximizedTerminalId).toBeUndefined();
+
+            bus.publish({
+                type: 'MinimizePane',
+                payload: 'term-1'
+            } as MinimizePaneAction);
+            expect(maximizedTerminalId).toBeUndefined();
+        });
+
         it('should handle TerminalFocused event', () => {
             const tabId = 'tab-1';
             vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-1');

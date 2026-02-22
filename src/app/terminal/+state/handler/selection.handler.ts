@@ -6,13 +6,19 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Clipboard} from "../../../_tauri/clipboard";
 import {ConfigService} from "../../../config/+state/config.service";
+import {TerminalStateManager} from "../state";
 
 export class SelectionHandler implements ITerminalHandler {
 
     private subscription: Subscription = new Subscription();
     private _terminal?: Terminal;
 
-    constructor(private _bus: AppBus, private _configService: ConfigService, private _terminalId: TerminalId) {
+    constructor(
+        private _bus: AppBus,
+        private _configService: ConfigService,
+        private _terminalId: TerminalId,
+        private _stateManager: TerminalStateManager
+    ) {
 
     }
 
@@ -22,6 +28,11 @@ export class SelectionHandler implements ITerminalHandler {
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._terminal = terminal;
+        this._stateManager.setHasSelection(this.hasSelection());
+        const selectionDisposable = this._terminal.onSelectionChange(() => {
+            this._stateManager.setHasSelection(this.hasSelection());
+        });
+        this.subscription.add(() => selectionDisposable.dispose());
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Copy'}).subscribe(async event => {
             if(event.payload !== this._terminalId || !this.hasSelection()) return;
             await Clipboard.writeText(this.getSelection());
@@ -42,5 +53,6 @@ export class SelectionHandler implements ITerminalHandler {
 
     clearSelection(): void {
         this._terminal?.clearSelection();
+        this._stateManager.setHasSelection(this.hasSelection());
     }
 }
