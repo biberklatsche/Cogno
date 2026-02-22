@@ -231,6 +231,18 @@ describe('TabListService', () => {
             expect(currentTabs.length).toBe(1);
             expect(currentTabs[0].id).toBe('t1');
         });
+
+        it('should reorder tabs', () => {
+            service.addTab({ id: 't1', title: 'T1', isActive: true, activeShellType: 'unknown' });
+            service.addTab({ id: 't2', title: 'T2', isActive: false, activeShellType: 'unknown' });
+            service.addTab({ id: 't3', title: 'T3', isActive: false, activeShellType: 'unknown' });
+
+            service.reorderTabs('t1', 't3');
+
+            let currentTabs: Tab[] = [];
+            service.tabs$.subscribe(tabs => currentTabs = tabs);
+            expect(currentTabs.map(tab => tab.id)).toEqual(['t2', 't3', 't1']);
+        });
     });
 
     describe('Rename Logic', () => {

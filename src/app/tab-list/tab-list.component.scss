@@ -65,6 +65,10 @@
       opacity: 1;
     }
   }
+
+  &.is-preview-dragged {
+    border-style: dashed;
+  }
 }
 
 .animate-tab-enter {

@@ -4,11 +4,13 @@
                 type="button"
                 class="tab"
                 [class.is-active] = tab.isActive
+                [class.is-preview-dragged]="isPreviewDragging && draggedTabIdentifier === tab.id"
                 [style.background-color]="tab.color ? `var(--color-${tab.color}-ct2)` : undefined"
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
                 [attr.data-tab-id]="tab.id"
-                (click)="selectTab(tab.id)"
+                (mousedown)="startTabReorderInteraction($event, tab.id)"
+                (mouseenter)="reorderWhileDragging(tab.id, $event)"
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
