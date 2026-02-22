@@ -183,6 +183,40 @@ describe('GridListService', () => {
             expect(root.right!.data!.terminalId).toBe('term-2');
         });
 
+        it('should swap panes', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            service.swapPanes(initialTerminalId, 'term-2');
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            const root = grids[0].tree.root;
+            expect(root.left!.data!.terminalId).toBe('term-2');
+            expect(root.right!.data!.terminalId).toBe(initialTerminalId);
+        });
+
+        it('should swap panes when pane swap drag is finished', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            service.startPaneSwapDrag(initialTerminalId);
+            service.updatePaneSwapTarget('term-2');
+            service.finishPaneSwapDrag();
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            const root = grids[0].tree.root;
+            expect(root.left!.data!.terminalId).toBe('term-2');
+            expect(root.right!.data!.terminalId).toBe(initialTerminalId);
+        });
+
         it('should handle TerminalTitleChanged event', () => {
             const publishSpy = vi.spyOn(bus, 'publish');
             bus.publish({

@@ -1,4 +1,4 @@
-import {Component, input} from '@angular/core';
+import {Component, OnDestroy, input} from '@angular/core';
 import {IconComponent} from "../../icons/icon/icon.component";
 import {GridListService} from "../+state/grid-list.service";
 import {toSignal} from "@angular/core/rxjs-interop";
@@ -9,9 +9,9 @@ import {toSignal} from "@angular/core/rxjs-interop";
   imports: [IconComponent],
   template: `
     @if (shouldShow()) {
-      <div class="pane-header">
+      <div class="pane-header" (mousedown)="startPaneSwapDrag($event)" (mouseenter)="updatePaneSwapTarget()">
         <span class="cwd">{{cwd()}}</span>
-        <button class="close" type="button" (click)="$event.stopPropagation(); closePane()">
+        <button class="close" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
           <app-icon name="mdiClose"></app-icon>
         </button>
       </div>
@@ -33,6 +33,10 @@ import {toSignal} from "@angular/core/rxjs-interop";
 
       &:hover .close {
         opacity: 0.5;
+      }
+      
+      &:active {
+        cursor: pointer;
       }
     }
 
@@ -66,7 +70,9 @@ import {toSignal} from "@angular/core/rxjs-interop";
     }
   `
 })
-export class PaneHeaderComponent {
+export class PaneHeaderComponent implements OnDestroy {
+  private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
+
   cwd = input.required<string>();
   terminalId = input.required<string>();
 
@@ -74,7 +80,43 @@ export class PaneHeaderComponent {
 
   constructor(private gridListService: GridListService) {}
 
+  ngOnDestroy(): void {
+    this.removeWindowMouseUpListener();
+  }
+
+  startPaneSwapDrag(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.gridListService.startPaneSwapDrag(this.terminalId());
+    this.gridListService.focusActiveTerminal();
+    this.addWindowMouseUpListener();
+  }
+
+  updatePaneSwapTarget(): void {
+    if (!this.gridListService.isPaneSwapDragActive()) return;
+    this.gridListService.updatePaneSwapTarget(this.terminalId());
+  }
+
   closePane() {
     this.gridListService.removePane(this.terminalId());
+  }
+
+  private onWindowMouseUp(event: MouseEvent): void {
+    if (event.button === 0 && this.gridListService.isPaneSwapDragActive()) {
+      this.gridListService.finishPaneSwapDrag();
+      this.gridListService.focusActiveTerminal();
+    } else {
+      this.gridListService.cancelPaneSwapDrag();
+    }
+    this.removeWindowMouseUpListener();
+  }
+
+  private addWindowMouseUpListener(): void {
+    window.addEventListener('mouseup', this.handleWindowMouseUp, true);
+  }
+
+  private removeWindowMouseUpListener(): void {
+    window.removeEventListener('mouseup', this.handleWindowMouseUp, true);
   }
 }

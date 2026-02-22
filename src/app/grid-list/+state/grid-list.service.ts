@@ -17,6 +17,8 @@ import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal
 export class GridListService {
 
     private _gridList: BehaviorSubject<GridList> = new BehaviorSubject<GridList>({});
+    private paneSwapDragSourceTerminalId: TerminalId | undefined;
+    private paneSwapDragTargetTerminalId: TerminalId | undefined;
     get grids$(): Observable<Grid[]> {
         return this._gridList.pipe(map(g => Object.values(g)));
     }
@@ -136,6 +138,51 @@ export class GridListService {
         this._gridList.next(gridList);
     }
 
+    startPaneSwapDrag(sourceTerminalId: TerminalId): void {
+        this.paneSwapDragSourceTerminalId = sourceTerminalId;
+        this.paneSwapDragTargetTerminalId = sourceTerminalId;
+    }
+
+    updatePaneSwapTarget(targetTerminalId: TerminalId): void {
+        if (!this.paneSwapDragSourceTerminalId) return;
+        this.paneSwapDragTargetTerminalId = targetTerminalId;
+    }
+
+    finishPaneSwapDrag(): void {
+        if (!this.paneSwapDragSourceTerminalId || !this.paneSwapDragTargetTerminalId) {
+            this.cancelPaneSwapDrag();
+            return;
+        }
+        this.swapPanes(this.paneSwapDragSourceTerminalId, this.paneSwapDragTargetTerminalId);
+        this.cancelPaneSwapDrag();
+    }
+
+    cancelPaneSwapDrag(): void {
+        this.paneSwapDragSourceTerminalId = undefined;
+        this.paneSwapDragTargetTerminalId = undefined;
+    }
+
+    isPaneSwapDragActive(): boolean {
+        return this.paneSwapDragSourceTerminalId !== undefined;
+    }
+
+    swapPanes(sourceTerminalId: TerminalId, targetTerminalId: TerminalId): void {
+        if (sourceTerminalId === targetTerminalId) return;
+        const gridList = this._gridList.value;
+        const sourceGridAndNode = this.determineGrid(gridList, sourceTerminalId);
+        const targetGridAndNode = this.determineGrid(gridList, targetTerminalId);
+        if (!sourceGridAndNode || !targetGridAndNode) return;
+        if (sourceGridAndNode.grid.tabId !== targetGridAndNode.grid.tabId) return;
+
+        const sourcePane = sourceGridAndNode.node.data;
+        const targetPane = targetGridAndNode.node.data;
+        if (!sourcePane || !targetPane) return;
+
+        sourceGridAndNode.node.data = targetPane;
+        targetGridAndNode.node.data = sourcePane;
+        this._gridList.next({...gridList});
+    }
+
     private split(terminalId: TerminalId, splitDirection: SplitDirection, side: 'l' | 'r') {
         if (!this._activeTabId.value) throw new Error("No active tab id found.");
         const gridList = this._gridList.value;
@@ -250,6 +297,10 @@ export class GridListService {
         const focusedNode = activeGrid.tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false);
         if(!focusedNode) return;
         return focusedNode.data!.terminalId!;
+    }
+
+    focusActiveTerminal(): void {
+        this.bus.publish({type: 'FocusActiveTerminal', path: ['app', 'grid']});
     }
 
     private getActiveGrid(): Grid | undefined {
