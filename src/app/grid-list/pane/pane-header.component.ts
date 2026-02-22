@@ -2,6 +2,7 @@ import {Component, OnDestroy, input} from '@angular/core';
 import {IconComponent} from "../../icons/icon/icon.component";
 import {GridListService} from "../+state/grid-list.service";
 import {toSignal} from "@angular/core/rxjs-interop";
+import {DragPreviewService} from "../../common/drag-preview/drag-preview.service";
 
 @Component({
   selector: 'app-pane-header',
@@ -9,7 +10,7 @@ import {toSignal} from "@angular/core/rxjs-interop";
   imports: [IconComponent],
   template: `
     @if (shouldShow()) {
-      <div class="pane-header" (mousedown)="startPaneSwapDrag($event)" (mouseenter)="updatePaneSwapTarget()">
+      <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
         <span class="cwd">{{cwd()}}</span>
         <button class="close" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
           <app-icon name="mdiClose"></app-icon>
@@ -71,31 +72,47 @@ import {toSignal} from "@angular/core/rxjs-interop";
   `
 })
 export class PaneHeaderComponent implements OnDestroy {
+  private static readonly minimumDragStartDistanceInPixels = 4;
+
   private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
+  private readonly handleWindowMouseMove = (event: MouseEvent): void => this.onWindowMouseMove(event);
+  private dragStartClientX = 0;
+  private dragStartClientY = 0;
+  private dragSourceRectangle: DOMRect | undefined;
+  private hasExceededDragThreshold = false;
 
   cwd = input.required<string>();
   terminalId = input.required<string>();
 
   shouldShow = toSignal(this.gridListService.activeGridIsSplit$, { initialValue: false });
 
-  constructor(private gridListService: GridListService) {}
+  constructor(
+    private gridListService: GridListService,
+    private dragPreviewService: DragPreviewService
+  ) {}
 
   ngOnDestroy(): void {
     this.removeWindowMouseUpListener();
+    this.removeWindowMouseMoveListener();
+    this.gridListService.cancelPaneSwapDrag();
+    this.dragPreviewService.stopDragPreview();
   }
 
   startPaneSwapDrag(event: MouseEvent): void {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
+    this.dragStartClientX = event.clientX;
+    this.dragStartClientY = event.clientY;
+    this.hasExceededDragThreshold = false;
+    const currentTargetElement = event.currentTarget;
+    this.dragSourceRectangle = currentTargetElement instanceof HTMLElement
+      ? currentTargetElement.getBoundingClientRect()
+      : undefined;
     this.gridListService.startPaneSwapDrag(this.terminalId());
     this.gridListService.focusActiveTerminal();
     this.addWindowMouseUpListener();
-  }
-
-  updatePaneSwapTarget(): void {
-    if (!this.gridListService.isPaneSwapDragActive()) return;
-    this.gridListService.updatePaneSwapTarget(this.terminalId());
+    this.addWindowMouseMoveListener();
   }
 
   closePane() {
@@ -109,14 +126,43 @@ export class PaneHeaderComponent implements OnDestroy {
     } else {
       this.gridListService.cancelPaneSwapDrag();
     }
+    this.hasExceededDragThreshold = false;
+    this.dragSourceRectangle = undefined;
     this.removeWindowMouseUpListener();
+    this.removeWindowMouseMoveListener();
+    this.dragPreviewService.stopDragPreview();
+  }
+
+  private onWindowMouseMove(event: MouseEvent): void {
+    if (!this.gridListService.isPaneSwapDragActive()) return;
+    if (!this.hasExceededDragThreshold) {
+      const horizontalDistanceInPixels = Math.abs(event.clientX - this.dragStartClientX);
+      const verticalDistanceInPixels = Math.abs(event.clientY - this.dragStartClientY);
+      this.hasExceededDragThreshold =
+        horizontalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels
+        || verticalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels;
+      if (this.hasExceededDragThreshold && this.dragSourceRectangle) {
+        this.dragPreviewService.startDragPreview(this.dragSourceRectangle, event.clientX, event.clientY);
+      }
+    }
+    if (this.hasExceededDragThreshold) {
+      this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
+    }
   }
 
   private addWindowMouseUpListener(): void {
     window.addEventListener('mouseup', this.handleWindowMouseUp, true);
   }
 
+  private addWindowMouseMoveListener(): void {
+    window.addEventListener('mousemove', this.handleWindowMouseMove, true);
+  }
+
   private removeWindowMouseUpListener(): void {
     window.removeEventListener('mouseup', this.handleWindowMouseUp, true);
+  }
+
+  private removeWindowMouseMoveListener(): void {
+    window.removeEventListener('mousemove', this.handleWindowMouseMove, true);
   }
 }

@@ -14,6 +14,7 @@ import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component
 import {TooltipDirective} from "../common/tooltip/tooltip.directive";
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
 import {StartEllipsisDirective} from "../common/text/start-ellipsis.directive";
+import {DragPreviewService} from "../common/drag-preview/drag-preview.service";
 
 @Component({
   selector: 'app-tab-list',
@@ -28,12 +29,13 @@ export class TabListComponent implements OnDestroy {
 
     tabs: Observable<Tab[]>;
     readonly showRename: Signal<TabId | undefined>;
-    isPreviewDragging = false;
+    isDraggingTab = false;
     draggedTabIdentifier: TabId | undefined;
 
     private mouseDownTabIdentifier: TabId | undefined;
     private mouseDownClientX = 0;
     private mouseDownClientY = 0;
+    private mouseDownTabRectangle: DOMRect | undefined;
 
     private readonly handleWindowMouseMove = (event: MouseEvent): void => this.onWindowMouseMove(event);
     private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
@@ -41,7 +43,8 @@ export class TabListComponent implements OnDestroy {
 
     constructor(
         private tabListService: TabListService,
-        private menu: ContextMenuOverlayService
+        private menu: ContextMenuOverlayService,
+        private dragPreviewService: DragPreviewService
     ) {
         this.tabs = this.tabListService.tabs$;
         this.showRename = this.tabListService.showRename$;
@@ -68,6 +71,7 @@ export class TabListComponent implements OnDestroy {
 
     ngOnDestroy(): void {
         this.removeWindowPointerListeners();
+        this.dragPreviewService.stopDragPreview();
     }
 
     closeTab(tabId: TabId): void {
@@ -95,17 +99,21 @@ export class TabListComponent implements OnDestroy {
         if (this.isInsideNonDraggableTabControl(event.target)) return;
         // Keep terminal focus while pressing and dragging a tab.
         event.preventDefault();
-        this.isPreviewDragging = false;
+        this.isDraggingTab = false;
         this.draggedTabIdentifier = undefined;
         this.mouseDownTabIdentifier = tabId;
         this.mouseDownClientX = event.clientX;
         this.mouseDownClientY = event.clientY;
+        const currentTargetElement = event.currentTarget;
+        this.mouseDownTabRectangle = currentTargetElement instanceof HTMLElement
+            ? currentTargetElement.getBoundingClientRect()
+            : undefined;
         this.tabListService.focusActiveTerminal();
         this.addWindowPointerListeners();
     }
 
     reorderWhileDragging(targetTabIdentifier: TabId, event: MouseEvent): void {
-        if (!this.isPreviewDragging || event.buttons === 0 || !this.draggedTabIdentifier) return;
+        if (!this.isDraggingTab || event.buttons === 0 || !this.draggedTabIdentifier) return;
         if (this.draggedTabIdentifier === targetTabIdentifier) return;
         this.tabListService.reorderTabs(this.draggedTabIdentifier, targetTabIdentifier);
     }
@@ -132,7 +140,11 @@ export class TabListComponent implements OnDestroy {
     }
 
     private onWindowMouseMove(event: MouseEvent): void {
-        if (!this.mouseDownTabIdentifier || this.isPreviewDragging) return;
+        if (this.isDraggingTab) {
+            this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
+            return;
+        }
+        if (!this.mouseDownTabIdentifier) return;
         const horizontalDistanceInPixels = Math.abs(event.clientX - this.mouseDownClientX);
         const verticalDistanceInPixels = Math.abs(event.clientY - this.mouseDownClientY);
         if (
@@ -142,20 +154,26 @@ export class TabListComponent implements OnDestroy {
             return;
         }
 
-        this.isPreviewDragging = true;
+        this.isDraggingTab = true;
         this.draggedTabIdentifier = this.mouseDownTabIdentifier;
+        if (this.mouseDownTabRectangle) {
+            this.dragPreviewService.startDragPreview(this.mouseDownTabRectangle, event.clientX, event.clientY);
+        }
+        this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
     }
 
     private onWindowMouseUp(event: MouseEvent): void {
         if (event.button !== 0) {
             this.mouseDownTabIdentifier = undefined;
+            this.mouseDownTabRectangle = undefined;
             this.removeWindowPointerListeners();
+            this.dragPreviewService.stopDragPreview();
             return;
         }
 
         const mouseDownTabIdentifier = this.mouseDownTabIdentifier;
-        if (this.isPreviewDragging) {
-            this.isPreviewDragging = false;
+        if (this.isDraggingTab) {
+            this.isDraggingTab = false;
             this.draggedTabIdentifier = undefined;
             this.tabListService.focusActiveTerminal();
         } else if (mouseDownTabIdentifier) {
@@ -163,7 +181,9 @@ export class TabListComponent implements OnDestroy {
             this.tabListService.focusActiveTerminal();
         }
         this.mouseDownTabIdentifier = undefined;
+        this.mouseDownTabRectangle = undefined;
         this.removeWindowPointerListeners();
+        this.dragPreviewService.stopDragPreview();
     }
 
     private addWindowPointerListeners(): void {

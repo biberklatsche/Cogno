@@ -4,10 +4,14 @@ import {Pane, TerminalId} from "../+model/model";
 import {ConfigService} from "../../config/+state/config.service";
 import {ShellProfile} from "../../config/+models/shell-config";
 import {PaneHeaderComponent} from "./pane-header.component";
+import {GridListService} from "../+state/grid-list.service";
 
 @Component({
   selector: 'app-pane',
   imports: [PaneHeaderComponent],
+  host: {
+      '(mouseenter)': 'updatePaneSwapTarget()'
+  },
   template: `
       @if (pane().terminalId) {
           <app-pane-header [cwd]="cwd()" [terminalId]="pane().terminalId!"></app-pane-header>
@@ -39,7 +43,8 @@ export class PaneComponent implements AfterViewInit {
 
     constructor(
         private _terminalComponents: TerminalComponentFactory,
-        private _configService: ConfigService
+        private _configService: ConfigService,
+        private gridListService: GridListService
     ) {
         // Create the effect within an injection context (constructor)
         effect(() => {
@@ -68,5 +73,11 @@ export class PaneComponent implements AfterViewInit {
     ngAfterViewInit() {
         this._viewReady.set(true);
     }
-}
 
+    updatePaneSwapTarget(): void {
+        if (!this.gridListService.isPaneSwapDragActive()) return;
+        const terminalId = this.pane().terminalId;
+        if (!terminalId) return;
+        this.gridListService.updatePaneSwapTarget(terminalId);
+    }
+}
