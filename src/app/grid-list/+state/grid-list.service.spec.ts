@@ -217,6 +217,27 @@ describe('GridListService', () => {
             expect(root.right!.data!.terminalId).toBe(initialTerminalId);
         });
 
+        it('should move pane swap source into a new tab', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            vi.spyOn(IdCreator, 'newTabId').mockReturnValue('tab-moved');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            service.startPaneSwapDrag('term-2');
+            service.movePaneSwapSourceToNewTab();
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            expect(grids.length).toBe(2);
+            const sourceGrid = grids.find(g => g.tabId === tabId)!;
+            const movedGrid = grids.find(g => g.tabId === 'tab-moved')!;
+            expect(sourceGrid.tree.root.isLeaf).toBe(true);
+            expect(sourceGrid.tree.root.data!.terminalId).toBe(initialTerminalId);
+            expect(movedGrid.tree.root.data!.terminalId).toBe('term-2');
+        });
+
         it('should handle TerminalTitleChanged event', () => {
             const publishSpy = vi.spyOn(bus, 'publish');
             bus.publish({

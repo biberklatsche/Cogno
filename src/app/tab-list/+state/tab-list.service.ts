@@ -4,7 +4,7 @@ import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {TabConfig, TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
+import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
 import {IdCreator} from "../../common/id-creator/id-creator";
@@ -35,6 +35,16 @@ export class TabListService {
         });
         this.bus.onType$('RemoveTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: RemoveTabAction) => {
             this.removeTab(event.payload);
+            event.propagationStopped = true;
+        });
+        this.bus.onType$('CreateTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: CreateTabAction) => {
+            if (!event.payload?.tabId) return;
+            this.addTab({
+                id: event.payload.tabId,
+                title: event.payload.title ?? 'Shell',
+                activeShellType: 'unknown',
+                isActive: event.payload.isActive ?? true
+            });
             event.propagationStopped = true;
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {

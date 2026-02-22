@@ -39,6 +39,22 @@ describe('TabListService', () => {
     });
 
     describe('Event Handling', () => {
+        it('should handle CreateTab event', () => {
+            const event = {
+                type: 'CreateTab',
+                payload: { tabId: 'created-tab', title: 'Moved Pane', isActive: true }
+            } as any;
+            bus.publish(event);
+
+            let currentTabs: Tab[] = [];
+            service.tabs$.subscribe(tabs => currentTabs = tabs);
+            expect(currentTabs.length).toBe(1);
+            expect(currentTabs[0].id).toBe('created-tab');
+            expect(currentTabs[0].title).toBe('Moved Pane');
+            expect(currentTabs[0].isActive).toBe(true);
+            expect(event.propagationStopped).toBe(true);
+        });
+
         it('should handle SelectTab event', () => {
             const tab: Tab = { id: 't1', title: 'T1', isActive: false, activeShellType: 'unknown' };
             service.addTab(tab);

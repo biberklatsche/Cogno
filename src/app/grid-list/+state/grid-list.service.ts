@@ -37,7 +37,11 @@ export class GridListService {
         );
     }
 
-    constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
+    constructor(
+        private bus: AppBus,
+        private componentFactory: TerminalComponentFactory,
+        destroyRef: DestroyRef
+    ) {
         this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
         });
@@ -164,6 +168,39 @@ export class GridListService {
 
     isPaneSwapDragActive(): boolean {
         return this.paneSwapDragSourceTerminalId !== undefined;
+    }
+
+    movePaneSwapSourceToNewTab(): void {
+        if (!this.paneSwapDragSourceTerminalId) {
+            this.cancelPaneSwapDrag();
+            return;
+        }
+
+        const sourceTerminalId = this.paneSwapDragSourceTerminalId;
+        const gridList = this._gridList.value;
+        const sourceGridAndNode = this.determineGrid(gridList, sourceTerminalId);
+        if (!sourceGridAndNode || sourceGridAndNode.node.isRoot || !sourceGridAndNode.node.data) {
+            this.cancelPaneSwapDrag();
+            return;
+        }
+
+        const sourcePaneData: Pane = {...sourceGridAndNode.node.data, isFocused: true};
+        const promotedNode = sourceGridAndNode.grid.tree.remove(sourceGridAndNode.node.key);
+        if (promotedNode?.data) {
+            promotedNode.data = {...promotedNode.data, isFocused: false};
+        }
+
+        const newTabId = IdCreator.newTabId();
+        const movedPaneRootNode = new BinaryNode<Pane>({...sourcePaneData});
+        gridList[newTabId] = {tabId: newTabId, tree: new BinaryTree<Pane>(movedPaneRootNode)};
+        this._gridList.next({...gridList});
+
+        this.bus.publish({
+            type: 'CreateTab',
+            payload: {tabId: newTabId, title: sourcePaneData.workingDir ?? 'Shell', isActive: true}
+        });
+
+        this.cancelPaneSwapDrag();
     }
 
     swapPanes(sourceTerminalId: TerminalId, targetTerminalId: TerminalId): void {

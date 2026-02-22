@@ -16,7 +16,7 @@ import {
     TerminalThemePaddingAddedEvent,
     TerminalThemePaddingRemovedEvent
 } from "../terminal/+state/handler/theme.handler";
-import {RemoveTabAction, SelectTabAction} from "../tab-list/+bus/actions";
+import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../tab-list/+bus/actions";
 import {FullScreenAppEnteredEvent, FullScreenAppLeavedEvent} from "../terminal/+state/handler/full-screen-app.handler";
 import {TerminalBlurredEvent, TerminalFocusedEvent} from "../terminal/+state/handler/focus.handler";
 import {
@@ -37,6 +37,7 @@ export type TerminalCommandType = AppMessage['type']
 export type AppMessage =
     | TabRemovedEvent
     | RemoveTabAction
+    | CreateTabAction
     | TabAddedEvent
     | TabSelectedEvent
     | TabRenamedEvent

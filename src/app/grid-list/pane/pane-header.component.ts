@@ -1,4 +1,5 @@
-import {Component, OnDestroy, input} from '@angular/core';
+import {DOCUMENT} from "@angular/common";
+import {Component, Inject, OnDestroy, input} from '@angular/core';
 import {IconComponent} from "../../icons/icon/icon.component";
 import {GridListService} from "../+state/grid-list.service";
 import {toSignal} from "@angular/core/rxjs-interop";
@@ -88,7 +89,8 @@ export class PaneHeaderComponent implements OnDestroy {
 
   constructor(
     private gridListService: GridListService,
-    private dragPreviewService: DragPreviewService
+    private dragPreviewService: DragPreviewService,
+    @Inject(DOCUMENT) private readonly document: Document
   ) {}
 
   ngOnDestroy(): void {
@@ -121,7 +123,11 @@ export class PaneHeaderComponent implements OnDestroy {
 
   private onWindowMouseUp(event: MouseEvent): void {
     if (event.button === 0 && this.gridListService.isPaneSwapDragActive()) {
-      this.gridListService.finishPaneSwapDrag();
+      if (this.isPointerOverTabList(event.clientX, event.clientY)) {
+        this.gridListService.movePaneSwapSourceToNewTab();
+      } else {
+        this.gridListService.finishPaneSwapDrag();
+      }
       this.gridListService.focusActiveTerminal();
     } else {
       this.gridListService.cancelPaneSwapDrag();
@@ -164,5 +170,11 @@ export class PaneHeaderComponent implements OnDestroy {
 
   private removeWindowMouseMoveListener(): void {
     window.removeEventListener('mousemove', this.handleWindowMouseMove, true);
+  }
+
+  private isPointerOverTabList(pointerClientX: number, pointerClientY: number): boolean {
+    const elementUnderPointer = this.document.elementFromPoint(pointerClientX, pointerClientY);
+    if (!(elementUnderPointer instanceof HTMLElement)) return false;
+    return !!elementUnderPointer.closest('.tab-list, app-tab-list');
   }
 }
