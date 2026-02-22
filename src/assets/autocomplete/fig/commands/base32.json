@@ -1,0 +1,45 @@
+{
+  "name": "base32",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/base32.ts",
+  "description": "Base32 encode/decode data and print to standard output",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Display this help and exit"
+    },
+    {
+      "name": [
+        "--decode",
+        "-d"
+      ],
+      "description": "Decode data"
+    },
+    {
+      "name": [
+        "--ignore-garbage",
+        "-i"
+      ],
+      "description": "When decoding, ignore non-alphabet characters"
+    },
+    {
+      "name": [
+        "--wrap",
+        "-w"
+      ],
+      "description": "Wrap encoded lines after COLS character (default 76).  Use 0 to disable line wrapping",
+      "args": [
+        {
+          "name": "COLS"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "description": "Output version information and exit"
+    }
+  ]
+}

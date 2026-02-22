@@ -1,0 +1,45 @@
+{
+  "name": "degit",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/degit.ts",
+  "description": "Straightforward project scaffolding",
+  "options": [
+    {
+      "name": "--help",
+      "description": "Print help"
+    },
+    {
+      "name": [
+        "-f",
+        "--force"
+      ],
+      "description": "Overwrite existing files"
+    },
+    {
+      "name": [
+        "-c",
+        "--cache"
+      ],
+      "description": "Use a cache"
+    },
+    {
+      "name": [
+        "-v",
+        "--verbose"
+      ],
+      "description": "Be verbose?"
+    },
+    {
+      "name": [
+        "-m",
+        "--mode"
+      ],
+      "description": "Clone mode",
+      "args": [
+        {
+          "name": "mode"
+        }
+      ]
+    }
+  ]
+}

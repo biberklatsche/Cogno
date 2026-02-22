@@ -18,7 +18,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render default label when no segments are provided', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const renderer = new PromptMarkerRenderer(stateManager, []);
         renderer.render(hostElement, 0);
@@ -29,7 +29,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render text segments', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [
             { text: 'Hello ' },
@@ -45,7 +45,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should render field segments from command', () => {
-        stateManager.updateCommandList({
+        stateManager.updateCommand({
             id: 'cmd-1',
             user: 'tester',
             machine: 'localhost',
@@ -67,7 +67,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should apply styles correctly', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [{
             text: 'Styled',
@@ -102,12 +102,12 @@ describe('PromptMarkerRenderer', () => {
 
     it('should evaluate "when" conditions correctly', () => {
         // Create first command
-        stateManager.updateCommandList({
+        stateManager.updateCommand({
             id: 'cmd-1',
             user: 'tester'
         });
         // Add second command, which updates first command with data (returnCode=0)
-        stateManager.updateCommandList({
+        stateManager.updateCommand({
             id: 'cmd-2',
             returnCode: '0'
         });
@@ -132,7 +132,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should format values correctly', () => {
-        stateManager.updateCommandList({
+        stateManager.updateCommand({
             id: 'cmd-1',
             user: 'john'
         });
@@ -149,7 +149,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should add "input" class for the last command', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }]);
         renderer.render(hostElement, 0);
@@ -159,7 +159,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should handle missing fields with fallback', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [
             { field: 'nonexistent', fallback: 'MISSING' }
@@ -171,7 +171,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should handle undefined commandId gracefully', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [{ field: 'user', fallback: 'anonymous' }];
         const renderer = new PromptMarkerRenderer(stateManager, segments);
@@ -181,7 +181,7 @@ describe('PromptMarkerRenderer', () => {
     });
 
     it('should not render segments with false "when" condition', () => {
-        stateManager.updateCommandList({ id: 'cmd-1' });
+        stateManager.updateCommand({ id: 'cmd-1' });
 
         const segments: PromptSegment[] = [
             { text: 'Hidden', when: 'isInput == true' },

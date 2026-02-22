@@ -15,6 +15,10 @@ import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overl
 import {ShellProfile} from "../config/+models/shell-config";
 import {TerminalStateManager} from "./+state/state";
 import {toSignal} from "@angular/core/rxjs-interop";
+import {TerminalCommandHistoryStore} from "./+state/advanced/history/terminal-command-history.store";
+import {TerminalHistoryPersistenceService} from "./+state/advanced/history/terminal-history-persistence.service";
+import {TerminalAutocompleteService} from "./+state/advanced/autocomplete/terminal-autocomplete.service";
+import {TerminalAutocompleteComponent} from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 
 @Component({
     selector: 'app-terminal',
@@ -23,9 +27,13 @@ import {toSignal} from "@angular/core/rxjs-interop";
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        TerminalHeaderComponent
+        TerminalHeaderComponent,
+        TerminalAutocompleteComponent
     ],
     providers: [
+        TerminalCommandHistoryStore,
+        TerminalHistoryPersistenceService,
+        TerminalAutocompleteService,
         TerminalSession,
         TerminalStateManager
     ],
@@ -43,7 +51,8 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         private destroyRef: DestroyRef,
         private menu: ContextMenuOverlayService,
         private terminalSession: TerminalSession,
-        private terminalStateManager: TerminalStateManager
+        private terminalStateManager: TerminalStateManager,
+        private terminalAutocomplete: TerminalAutocompleteService
     ) {
         this.isFocused = toSignal(this.terminalStateManager.isFocused$);
     }
@@ -56,6 +65,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
+        this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
         this.terminalSession.initializeTerminal(this.terminalContainer.nativeElement);
     }
 

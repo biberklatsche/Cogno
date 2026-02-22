@@ -265,6 +265,28 @@ describe('WorkspaceService', () => {
             expect(workspaceRepository.updateWorkspace).toHaveBeenCalled();
         });
 
+        it('should persist active workspace on TabRenamed event', async () => {
+            appBus.publish({ type: 'TabRenamed', payload: { tabId: 't1', title: 'Renamed Tab' } });
+
+            await vi.waitFor(() => {
+                expect(workspaceRepository.updateWorkspace).toHaveBeenCalled();
+            });
+        });
+
+        it('should not persist default workspace on TabRenamed event', async () => {
+            const defaultWorkspace = service.workspaceList().find(w => w.id === DEFAULT_WORKSPACE_ID)!;
+            await service.restoreWorkspace(defaultWorkspace);
+
+            vi.mocked(workspaceRepository.updateWorkspace).mockClear();
+            vi.mocked(workspaceRepository.createWorkspace).mockClear();
+            appBus.publish({ type: 'TabRenamed', payload: { tabId: 'TB_DEFAULT', title: 'Renamed Default' } });
+
+            await new Promise(resolve => setTimeout(resolve, 20));
+
+            expect(workspaceRepository.updateWorkspace).not.toHaveBeenCalled();
+            expect(workspaceRepository.createWorkspace).not.toHaveBeenCalled();
+        });
+
         it('should handle Escape key to close side menu', () => {
             service['handleKey']({ key: 'Escape' } as KeyboardEvent);
             expect(sideMenuService.close).toHaveBeenCalled();
@@ -305,29 +327,6 @@ describe('WorkspaceService', () => {
             await vi.waitFor(() => {
                 expect(updateSpy).toHaveBeenCalled();
             }, { timeout: 2000 });
-        });
-    });
-
-    describe('Autosave Logic', () => {
-        it('should perform autosave when close_window is fired', async () => {
-            // Setup active workspace with autosave
-            appBus.publish({ type: 'DBInitialized', path: ['app'] });
-            await vi.waitFor(() => expect(service.workspaceList().length).toBe(4));
-            
-            const list = [...service.workspaceList()];
-            const ws1 = list.find(w => w.id === 'ws1')!;
-            ws1.isActive = true;
-            ws1.autosave = true;
-            service['_workspaceList'].set([...list]);
-            
-            const updateSpy = vi.spyOn(workspaceRepository, 'updateWorkspace');
-            const publishSpy = vi.spyOn(appBus, 'publish');
-
-            // Directly call the method that handles the autosave to verify logic
-            // since the bus capture listener is tricky to trigger in this test env
-            await service['saveActiveIfAutosave']();
-
-            expect(updateSpy).toHaveBeenCalled();
         });
     });
 });

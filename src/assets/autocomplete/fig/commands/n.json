@@ -1,0 +1,263 @@
+{
+  "name": "n",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/n.ts",
+  "description": "Node version management",
+  "options": [
+    {
+      "name": [
+        "-V",
+        "--version"
+      ],
+      "description": "Output version of n"
+    },
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Display help information"
+    },
+    {
+      "name": [
+        "-p",
+        "--preserve"
+      ],
+      "description": "Preserve npm and npx during install of Node.js"
+    },
+    {
+      "name": "--no-preserve",
+      "description": "Do not preserve npm and npx during install of Node.js"
+    },
+    {
+      "name": [
+        "-q",
+        "--quiet"
+      ],
+      "description": "Disable curl output. Disable log messages processing \"auto\" and \"engine\" labels"
+    },
+    {
+      "name": [
+        "-d",
+        "--download"
+      ],
+      "description": "Download only"
+    },
+    {
+      "name": [
+        "-a",
+        "--arch"
+      ],
+      "description": "Override system architecture",
+      "args": [
+        {
+          "name": "Architecture"
+        }
+      ]
+    },
+    {
+      "name": "--insecure",
+      "description": "Turn off certificate checking for https requests (may be needed from behind a proxy server)"
+    },
+    {
+      "name": "--use-xz",
+      "description": "Override automatic detection of xz support and enable use of xz compressed node downloads"
+    },
+    {
+      "name": "--no-use-xz",
+      "description": "Override automatic detection of xz support and disable use of xz compressed node downloads"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": [
+        "i",
+        "install"
+      ],
+      "description": "Install a Node.js version",
+      "args": [
+        {
+          "name": "version"
+        }
+      ]
+    },
+    {
+      "name": [
+        "rm",
+        "–"
+      ],
+      "description": "Remove a Node.js version",
+      "args": [
+        {
+          "name": "version"
+        }
+      ]
+    },
+    {
+      "name": "prune",
+      "description": "Remove all cached Node.js versions except the installed version"
+    },
+    {
+      "name": "doctor",
+      "description": "Display diagnostics to help resolve problems"
+    },
+    {
+      "name": "uninstall",
+      "description": "Remove the installed Node.js"
+    },
+    {
+      "name": [
+        "ls",
+        "list"
+      ],
+      "description": "Output downloaded versions"
+    },
+    {
+      "name": [
+        "lsr",
+        "ls-remote",
+        "list-remote"
+      ],
+      "description": "Output matching versions available for download",
+      "args": [
+        {
+          "name": "version"
+        }
+      ],
+      "options": [
+        {
+          "name": "--all",
+          "description": "Ls-remote displays all matches instead of last 20"
+        }
+      ]
+    },
+    {
+      "name": [
+        "which",
+        "bin"
+      ],
+      "description": "Output path for downloaded node version",
+      "args": [
+        {
+          "name": "version"
+        }
+      ]
+    },
+    {
+      "name": [
+        "run",
+        "use",
+        "as"
+      ],
+      "description": "Execute downloaded Node.js version with args",
+      "args": [
+        {
+          "name": "version"
+        },
+        {
+          "name": "node script"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-e",
+            "--eval=..."
+          ],
+          "description": "Evaluate script"
+        },
+        {
+          "name": "--watch",
+          "description": "Watch input files"
+        },
+        {
+          "name": "--watch-path",
+          "description": "Specify a watch directory or file",
+          "isRepeatable": true,
+          "args": [
+            {
+              "name": "path"
+            }
+          ]
+        },
+        {
+          "name": "--watch-preserve-output",
+          "description": "Disable the clearing of the console when watch mode restarts the process"
+        },
+        {
+          "name": "--env-file",
+          "description": "Specify a file containing environment variables",
+          "isRepeatable": true,
+          "args": [
+            {
+              "name": "path"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-p",
+            "--print"
+          ],
+          "description": "Evaluate script and print result"
+        },
+        {
+          "name": [
+            "-c",
+            "--check"
+          ],
+          "description": "Syntax check script without executing"
+        },
+        {
+          "name": [
+            "-v",
+            "--version"
+          ],
+          "description": "Print Node.js version"
+        },
+        {
+          "name": [
+            "-i",
+            "--interactive"
+          ],
+          "description": "Always enter the REPL even if stdin does not appear to be a terminal"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print node command line options (currently set)"
+        },
+        {
+          "name": "--inspect",
+          "description": "Activate inspector on host:port (default: 127.0.0.1:9229)",
+          "args": [
+            {
+              "name": "[host:]port"
+            }
+          ]
+        },
+        {
+          "name": "--preserve-symlinks",
+          "description": "Follows symlinks to directories when examining source code and templates for translation strings"
+        }
+      ]
+    },
+    {
+      "name": "exec",
+      "description": "Execute command with modified PATH, so downloaded node version and npm first",
+      "args": [
+        {
+          "name": "version"
+        },
+        {
+          "name": "cmd"
+        },
+        {
+          "name": "args"
+        }
+      ]
+    }
+  ]
+}

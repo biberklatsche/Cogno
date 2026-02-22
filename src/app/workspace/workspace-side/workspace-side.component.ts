@@ -1,4 +1,4 @@
-import {Component, Signal} from '@angular/core';
+import {Component, OnDestroy, OnInit, Signal} from '@angular/core';
 import {DEFAULT_WORKSPACE_ID, WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";
@@ -21,7 +21,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
                                  [style.background-color]="workspace.color ? 'var(--color-' + workspace.color + ')' : 'var(--color-green)'">
                                 {{ (workspace.name || '')[0] || '?' }}
                             </div>
-                            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center">
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; overflow: hidden">
                                 <div class="workspace-name" [appTooltip]="workspace.name">{{ workspace.name }}</div>
                                 @if(workspace.autosave) {
                                     <small class="workspace-autosave" >Auto Save</small>
@@ -122,6 +122,7 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            width: 100%;
         }
         
         .workspace-autosave {
@@ -134,11 +135,15 @@ import {WorkspaceEditDialogComponent} from "./workspace-edit-dialog.component";
         
     `]
 })
-export class WorkspaceSideComponent {
+export class WorkspaceSideComponent implements OnDestroy {
 
     workspaceList: Signal<WorkspaceConfigUi[]> = this.workspaceService.workspaceList;
 
     constructor(public workspaceService: WorkspaceService, private readonly dialog: DialogService) {
+    }
+
+    ngOnDestroy(): void {
+        this.workspaceService.unregisterKeybindListener();
     }
 
     addWorkspace() {

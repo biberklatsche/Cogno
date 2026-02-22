@@ -1,6 +1,7 @@
 <app-terminal-header></app-terminal-header>
-<div class="terminal-container" #terminalContainer (click)="focus($event)" (contextmenu)="onContextMenu($event)"></div>
+<div class="terminal-container" #terminalContainer (click)="focus($event)" (contextmenu)="onContextMenu($event)">
+    <app-terminal-autocomplete></app-terminal-autocomplete>
+</div>
 @if (!isFocused()) {
     <div class="inactive-overlay"></div>
 }
-

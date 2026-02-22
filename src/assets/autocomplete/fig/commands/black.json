@@ -1,0 +1,205 @@
+{
+  "name": "black",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/black.ts",
+  "description": "Python code formatter",
+  "options": [
+    {
+      "name": [
+        "--code",
+        "-c"
+      ],
+      "description": "Format the code passed in as a string",
+      "args": [
+        {
+          "name": "string"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--line-length",
+        "-l"
+      ],
+      "description": "How many characters per line to allow",
+      "args": [
+        {
+          "name": "line length"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--target-version",
+        "-t"
+      ],
+      "description": "Python versions that should be supported",
+      "isRepeatable": true,
+      "args": [
+        {
+          "name": "python version"
+        }
+      ]
+    },
+    {
+      "name": "--pyi",
+      "description": "Format all input files regardless of file extension"
+    },
+    {
+      "name": "--ipynb",
+      "description": "Format all input files like Jupyter Notebooks regardless of file extension"
+    },
+    {
+      "name": "--python-cell-magics",
+      "description": "Add the given magic to the list of known python-magics",
+      "isRepeatable": true,
+      "args": [
+        {
+          "name": "python-magic"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--skip-string-normalization",
+        "-S"
+      ],
+      "description": "Don't normalize string quotes or prefixes"
+    },
+    {
+      "name": [
+        "--skip-magic-trailing-comma",
+        "-C"
+      ],
+      "description": "Don't use trailing commas as a reason to split lines"
+    },
+    {
+      "name": "--preview",
+      "description": "Enable potentially disruptive style changes"
+    },
+    {
+      "name": "--check",
+      "description": "Don't write the files back, just return the status"
+    },
+    {
+      "name": "--diff",
+      "description": "Don't write the files back, just output a diff for each file on stdout"
+    },
+    {
+      "name": "--color",
+      "description": "Show colored diff"
+    },
+    {
+      "name": "--no-color",
+      "description": "Show uncolored diff"
+    },
+    {
+      "name": "--fast",
+      "description": "Skip temporary sanity checks"
+    },
+    {
+      "name": "--safe",
+      "description": "Run temporary sanity checks"
+    },
+    {
+      "name": "--required-version",
+      "description": "Require a specific version of Black",
+      "args": [
+        {
+          "name": "version"
+        }
+      ]
+    },
+    {
+      "name": "--include",
+      "description": "Regex that matches files and directories that should be included on recursive searches",
+      "args": [
+        {
+          "name": "Regex"
+        }
+      ]
+    },
+    {
+      "name": "--exclude",
+      "description": "Regex that matches files and directories that should be excluded on recursive searches",
+      "args": [
+        {
+          "name": "Regex"
+        }
+      ]
+    },
+    {
+      "name": "--extend-exclude",
+      "description": "Additional exlusions",
+      "args": [
+        {
+          "name": "Regex"
+        }
+      ]
+    },
+    {
+      "name": "--force-exclude",
+      "description": "Exlude matching files and folders even when passed explicitly",
+      "args": [
+        {
+          "name": "Regex"
+        }
+      ]
+    },
+    {
+      "name": "--stdin-filename",
+      "description": "The name of the file when passing it through stdin",
+      "args": [
+        {
+          "name": "file"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--workers",
+        "-W"
+      ],
+      "description": "Number of parallel workers",
+      "args": [
+        {
+          "name": "integer"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--quiet",
+        "-q"
+      ],
+      "description": "Don't emit non-error messages to stderr"
+    },
+    {
+      "name": [
+        "--verbose",
+        "-v"
+      ],
+      "description": "Also emit messages about files that were not changed or were ignored due to exclusion patterns"
+    },
+    {
+      "name": "--version",
+      "description": "Show the version"
+    },
+    {
+      "name": "--config",
+      "description": "Read configuration from filepath",
+      "args": [
+        {
+          "name": "file"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show usage information"
+    }
+  ]
+}

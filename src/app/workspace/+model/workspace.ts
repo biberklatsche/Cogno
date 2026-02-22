@@ -20,6 +20,7 @@ export type TabConfig = {
     isActive?: boolean;
     color?: ColorName;
     title?: string;
+    isTitleLocked?: boolean;
 }
 
 export type GridConfig = {

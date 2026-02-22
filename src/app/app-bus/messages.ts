@@ -1,7 +1,8 @@
 import {ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent} from "../config/+bus/events";
 import {InitConfigAction} from "../config/+bus/actions";
-import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
+import {TabAddedEvent, TabRemovedEvent, TabRenamedEvent, TabSelectedEvent} from "../tab-list/+bus/events";
 import {
+    ApplyAutocompleteSuggestionAction,
     BlurTerminalAction, ClearBufferAction, ClearLineAction,
     ClearLineToEndAction, ClearLineToStartAction, DeletePreviousWordAction,
     DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
@@ -38,6 +39,7 @@ export type AppMessage =
     | RemoveTabAction
     | TabAddedEvent
     | TabSelectedEvent
+    | TabRenamedEvent
     | SelectTabAction
     | ConfigLoadedEvent
     | DBInitializedEvent
@@ -68,6 +70,7 @@ export type AppMessage =
     | SelectWordLeftAction
     | SelectTextToEndOfLineAction
     | SelectTextToStartOfLineAction
+    | ApplyAutocompleteSuggestionAction
     | ActionFiredEvent
     | FullScreenAppEnteredEvent
     | FullScreenAppLeavedEvent

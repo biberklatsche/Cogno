@@ -1,0 +1,459 @@
+{
+  "name": "pip3",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pip3.ts",
+  "description": "Python package manager",
+  "subcommands": [
+    {
+      "name": "install",
+      "description": "Install packages",
+      "args": [
+        {
+          "name": "package",
+          "description": "Package to install"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-r",
+            "--requirement"
+          ],
+          "description": "Install from the given requirements file. This option can be used multiple times",
+          "isRepeatable": true,
+          "args": [
+            {
+              "name": "requirements file"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "download",
+      "description": "Download packages",
+      "args": [
+        {
+          "name": "path"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-c",
+            "--constraint"
+          ],
+          "description": "Constrain versions using the given constraints file. This option can be used multiple times",
+          "isRepeatable": true
+        },
+        {
+          "name": [
+            "-r",
+            "--requirement"
+          ],
+          "description": "Install from the given requirements file. This option can be used multiple times",
+          "isRepeatable": true
+        },
+        {
+          "name": "--no-deps",
+          "description": "Don’t install package dependencies"
+        },
+        {
+          "name": "--global-option",
+          "description": "Extra global options to be supplied to the setup.py call before the install command"
+        },
+        {
+          "name": "--no-binary",
+          "description": "Constrain versions using the given constraints file. This option can be used multiple times",
+          "isRepeatable": true
+        },
+        {
+          "name": "--only-binary",
+          "description": "Do not use source packages"
+        },
+        {
+          "name": "--prefer-binary",
+          "description": "Prefer older binary packages over newer source packages"
+        },
+        {
+          "name": "--src",
+          "description": "Directory to check out editable projects into",
+          "args": [
+            {
+              "name": "source folder"
+            }
+          ]
+        },
+        {
+          "name": "--pre",
+          "description": "Include pre-release and development versions. By default, pip only finds stable versions"
+        },
+        {
+          "name": "--require-hashes",
+          "description": "Require a hash to check each requirement against, for repeatable installs"
+        },
+        {
+          "name": "--progress-bar",
+          "description": "Specify type of progress to be displayed"
+        },
+        {
+          "name": "--no-build-isolation",
+          "description": "Disable isolation when building a modern source distribution"
+        },
+        {
+          "name": "--use-pep517",
+          "description": "Use PEP 517 for building source distributions"
+        },
+        {
+          "name": "--ignore-requires-python",
+          "description": "Ignore the Requires-Python information"
+        },
+        {
+          "name": [
+            "-d",
+            "--dest"
+          ],
+          "description": "Require a hash to check each requirement against, for repeatable installs",
+          "args": [
+            {
+              "name": "dir"
+            }
+          ]
+        },
+        {
+          "name": "--platform",
+          "description": "Only use wheels compatible with platform",
+          "args": [
+            {
+              "name": "platform"
+            }
+          ]
+        },
+        {
+          "name": "--python-version",
+          "description": "The Python interpreter version to use for wheel and “Requires-Python” compatibility checks"
+        },
+        {
+          "name": "--implementation",
+          "description": "Only use wheels compatible with Python implementation",
+          "args": [
+            {
+              "name": "implementation"
+            }
+          ]
+        },
+        {
+          "name": "--abi",
+          "description": "Only use wheels compatible with Python abi <abi>, e.g. ‘pypy_41’",
+          "args": [
+            {
+              "name": "abi"
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "description": "Don’t clean up build directories"
+        },
+        {
+          "name": [
+            "-i",
+            "--index-url"
+          ],
+          "description": "Base URL of the Python Package Index",
+          "args": [
+            {
+              "name": "url"
+            }
+          ]
+        },
+        {
+          "name": "--no-index",
+          "description": "Ignore package index (only looking at --find-links URLs instead)"
+        },
+        {
+          "name": "--extra-index-url",
+          "description": "Extra URLs of package indexes to use in addition to --index-url. Should follow the same rules as --index-url"
+        },
+        {
+          "name": [
+            "-f",
+            "--find-links"
+          ],
+          "description": "Look for archives in the directory listing",
+          "args": [
+            {
+              "name": "url"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "uninstall",
+      "description": "Uninstall packages"
+    },
+    {
+      "name": "freeze",
+      "description": "Output installed packages in requirements format",
+      "options": [
+        {
+          "name": [
+            "-r",
+            "--requirement"
+          ],
+          "description": "Use the order in the given requirements file and its comments when generating output"
+        },
+        {
+          "name": [
+            "-l",
+            "--local"
+          ],
+          "description": "If in a virtualenv that has global access, do not output globally-installed packages"
+        },
+        {
+          "name": "--user",
+          "description": "Only output packages installed in user-site"
+        },
+        {
+          "name": "--path",
+          "description": "Restrict to the specified installation path for listing packages (can be used multiple times)",
+          "isRepeatable": true
+        },
+        {
+          "name": "--all",
+          "description": "Do not skip these packages in the output: setuptools, distribute, pip, wheel"
+        },
+        {
+          "name": "--exclude-editable",
+          "description": "Exclude editable package from output"
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude specified package from the output",
+          "args": [
+            {
+              "name": "package"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List installed packages",
+      "options": [
+        {
+          "name": [
+            "-o",
+            "--outdated"
+          ],
+          "description": "List outdated packages"
+        },
+        {
+          "name": [
+            "-u",
+            "--uptodate"
+          ],
+          "description": "List uptodate packages"
+        },
+        {
+          "name": [
+            "-e",
+            "--editable"
+          ],
+          "description": "List editable projects"
+        },
+        {
+          "name": [
+            "-l",
+            "--local"
+          ],
+          "description": "If in a virtualenv that has global access, do not list globally-installed packages"
+        },
+        {
+          "name": "--user",
+          "description": "Only output packages installed in user-site"
+        },
+        {
+          "name": "--path",
+          "description": "Restrict to the specified installation path for listing packages (can be used multiple times)",
+          "isRepeatable": true,
+          "args": [
+            {
+              "name": "path"
+            }
+          ]
+        },
+        {
+          "name": "--pre",
+          "description": "Include pre-release and development versions. By default, pip only finds stable versions"
+        },
+        {
+          "name": "--format",
+          "description": "Select the output format among: columns (default), freeze, or json"
+        },
+        {
+          "name": "--not-required",
+          "description": "List packages that are not dependencies of installed packages"
+        },
+        {
+          "name": "--exclude-editable",
+          "description": "Exclude editable package from output"
+        },
+        {
+          "name": "--include-editable",
+          "description": "Include editable package from output"
+        },
+        {
+          "name": "--exclude",
+          "description": "Exclude specified package from the output",
+          "args": [
+            {
+              "name": "package"
+            }
+          ]
+        },
+        {
+          "name": [
+            "-i",
+            "--index-url"
+          ],
+          "description": "Base URL of the Python Package Index (default https://pypi.org/simple)"
+        },
+        {
+          "name": "--extra-index-url",
+          "description": "Include pre-release and development versions. By default, pip only finds stable versions"
+        },
+        {
+          "name": "--no-index",
+          "description": "Ignore package index (only looking at --find-links URLs instead)"
+        },
+        {
+          "name": [
+            "-f",
+            "--find-links"
+          ],
+          "description": "If a URL or path to an html file, then parse for links to archives such as sdist (.tar.gz) or wheel (.whl) files",
+          "args": [
+            {
+              "name": "url"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Show information about installed packages",
+      "options": [
+        {
+          "name": [
+            "-f",
+            "--files"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "description": "Verify installed packages have compatible dependencies"
+    },
+    {
+      "name": "config",
+      "description": "Manage local and global configuration",
+      "options": [
+        {
+          "name": "--editor",
+          "description": "Editor to use to edit the file. Uses VISUAL or EDITOR environment variables if not provided"
+        },
+        {
+          "name": "--global",
+          "description": "Use the system-wide configuration file only"
+        },
+        {
+          "name": "--user",
+          "description": "Use the user configuration file only"
+        },
+        {
+          "name": "--site",
+          "description": "Use the current environment configuration file only"
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Search PyPI for packages",
+      "options": [
+        {
+          "name": [
+            "-i",
+            "--index"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cache",
+      "description": "Inspect and manage pip's wheel cache"
+    },
+    {
+      "name": "wheel",
+      "description": "Build wheels from your requirements"
+    },
+    {
+      "name": "hash",
+      "description": "Compute hashes of package archives",
+      "options": [
+        {
+          "name": [
+            "-a",
+            "--algorithm"
+          ],
+          "description": "The hash algorithm to use"
+        }
+      ]
+    },
+    {
+      "name": "completion",
+      "description": "A helper command used for command completion"
+    },
+    {
+      "name": "debug",
+      "description": "Show information useful for debugging",
+      "options": [
+        {
+          "name": "--platform",
+          "description": "Only use wheels compatible with platform",
+          "args": [
+            {
+              "name": "platform"
+            }
+          ]
+        },
+        {
+          "name": "--python-version",
+          "description": "The Python interpreter version to use for wheel and “Requires-Python” compatibility checks",
+          "args": [
+            {
+              "name": "python version"
+            }
+          ]
+        },
+        {
+          "name": "--implementation",
+          "description": "Only use wheels compatible with Python implementation",
+          "args": [
+            {
+              "name": "implementation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "description": "Show help for commands"
+    }
+  ]
+}

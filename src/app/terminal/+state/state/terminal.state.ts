@@ -1,4 +1,5 @@
-import {ShellType} from "../../../config/+models/config";
+import {OS} from "../../../_tauri/os";
+import {ShellContext} from "../advanced/model/models";
 
 export type Position = { col: number, row: number };
 export type TerminalCursorPosition = Position & {
@@ -11,7 +12,14 @@ export type TerminalMousePosition = Position & {
     char: string,
 }
 
-export type TerminalDimensions = { rows: number; cols: number; cellHeight: number; cellWidth: number };
+export type TerminalDimensions = {
+    rows: number;
+    cols: number;
+    cellHeight: number;
+    cellWidth: number;
+    viewportWidth?: number;
+    viewportHeight?: number;
+};
 
 export type TerminalInput = {
     cursorIndex: number,
@@ -21,7 +29,7 @@ export type TerminalInput = {
 
 export type TerminalState = {
     terminalId: string;
-    shellType: ShellType;
+    shellContext: ShellContext;
     cursorPosition: TerminalCursorPosition;
     mousePosition: TerminalMousePosition;
     dimensions: TerminalDimensions;
@@ -36,7 +44,7 @@ export type TerminalState = {
 export const INITIAL_STATE: TerminalState = {
     terminalId: '',
     cwd: '',
-    shellType: 'Bash',
+    shellContext: {shellType: 'Bash', backendOs: OS.platform()},
     cursorPosition: {
         viewport: {col: 1, row: 1},
         col: 1, row: 1,
@@ -47,7 +55,7 @@ export const INITIAL_STATE: TerminalState = {
         col: 1, row: 1,
         char: ''
     },
-    dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0},
+    dimensions: {rows: 0, cols: 0, cellHeight: 0, cellWidth: 0, viewportWidth: 0, viewportHeight: 0},
     isFocused: false,
     isCommandRunning: false,
     isInFullScreenMode: false,

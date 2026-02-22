@@ -5,6 +5,7 @@ import {Color} from "../common/color/color";
 import {Fs} from "../_tauri/fs";
 import {Logger} from "../_tauri/logger";
 import {Config} from "../config/+models/config";
+import {Path} from "../_tauri/path";
 
 @Injectable({
   providedIn: 'root'
@@ -15,10 +16,10 @@ export class StyleService {
       Logger.info('StyleService constructor');
       configService.config$
           .pipe(takeUntilDestroyed(destroyRef))
-          .subscribe(config => this.setStyle(config));
+          .subscribe(config => void this.setStyle(config));
   }
 
-    private setStyle(config: Config): void {
+    private async setStyle(config: Config): Promise<void> {
         Logger.info('Set Css-Variables...');
         const isLightTheme = Color.isLight(`#${config.color!.background!}`);
         const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
@@ -61,6 +62,7 @@ export class StyleService {
         document.documentElement.style.setProperty('--foreground-color-30d', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * -30)}`);
         document.documentElement.style.setProperty('--foreground-color-40d', `${Color.lightenDarkenColor(`#${config.color!.foreground}`, factor * -40)}`);
         document.documentElement.style.setProperty('--highlight-color', `#${config.color!.highlight}`);
+        document.documentElement.style.setProperty('--highlight-color-ct2', `#${config.color!.highlight}${opacityDouble}`);
         document.documentElement.style.setProperty('--highlight-color-10l', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * 10)}`);
         document.documentElement.style.setProperty('--highlight-color-20l', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * 20)}`);
         document.documentElement.style.setProperty('--highlight-color-30l', `${Color.lightenDarkenColor(`#${config.color!.highlight}`, factor * 30)}`);
@@ -111,7 +113,8 @@ export class StyleService {
         document.documentElement.style.setProperty('--padding-xterm', `${config.padding!.top}rem ${config.padding!.right}rem ${config.padding!.bottom}rem ${config.padding!.left}rem`);
         document.documentElement.style.setProperty('--inactive-overlay-opacity', `${inactiveOpacity}`);
         if (config.allow_transparency && config.background_image?.path) {
-            const url = Fs.convertFileSrc(config.background_image.path);
+            const resolvedBackgroundImagePath = await this.resolveBackgroundImagePath(config.background_image.path);
+            const url = Fs.convertFileSrc(resolvedBackgroundImagePath);
             const color = `#${config.color!.background}` + Color.getHexOpacity(config.background_image.opacity);
 
             // separate variables, no shorthand "fixed" tokens in the CSS variable
@@ -130,6 +133,19 @@ export class StyleService {
             // if you want a plain color surface:
             document.body.style.setProperty("--background-color", `#${config.color!.background!}`);
         }
+    }
+
+    private async resolveBackgroundImagePath(backgroundImagePath: string): Promise<string> {
+        if (!backgroundImagePath.startsWith("~/")) {
+            return backgroundImagePath;
+        }
+
+        const homeDirectoryPath = await Path.homeDir();
+        const normalizedHomeDirectoryPath = homeDirectoryPath.endsWith("/")
+            ? homeDirectoryPath.slice(0, -1)
+            : homeDirectoryPath;
+        const relativePathWithoutTilde = backgroundImagePath.slice(2);
+        return `${normalizedHomeDirectoryPath}/${relativePathWithoutTilde}`;
     }
 
     private getShadowFactor(isLightTheme: boolean): number {

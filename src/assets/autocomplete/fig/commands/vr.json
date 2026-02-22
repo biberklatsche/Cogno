@@ -1,0 +1,65 @@
+{
+  "name": "vr",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vr.ts",
+  "description": "The npm-style script runner for Deno",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show help for Velociraptor"
+    },
+    {
+      "name": [
+        "-V",
+        "--version"
+      ],
+      "description": "Show the version number for Velociraptor"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "run",
+      "description": "Run a script",
+      "args": [
+        {
+          "name": "script"
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Export one or more scripts as standalone executable files",
+      "args": [
+        {
+          "name": "script"
+        }
+      ]
+    },
+    {
+      "name": "upgrade",
+      "description": "Upgrade Velociraptor to the latest version or to a specific one",
+      "args": [
+        {
+          "name": "version"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-o",
+            "--out-dir"
+          ],
+          "description": "The folder where the scripts will be exported",
+          "args": [
+            {
+              "name": "dir"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -33,6 +33,12 @@
           "path": "$HOME/.cogno2-dev/**"
         },
         {
+          "path": "/"
+        },
+        {
+          "path": "/**"
+        },
+        {
           "path": "$HOME/.cogno2/shell-integration/zsh/.zshrc"
         },
         {

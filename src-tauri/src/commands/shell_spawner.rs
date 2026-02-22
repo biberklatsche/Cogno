@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +15,8 @@ pub struct ShellProfile {
     pub env: Option<HashMap<String, String>>,
     pub working_dir: Option<String>,
     pub enable_shell_integration: Option<bool>,
-    pub inject_path: Option<bool>,
+    #[serde(alias = "inject_path")]
+    pub inject_cogno_cli: Option<bool>,
     pub load_user_rc: Option<bool>,
 }
 
@@ -39,18 +43,35 @@ impl ShellSpawner {
             .ok_or("Shell path not specified in profile")?;
 
         let enable_integration = profile.enable_shell_integration.unwrap_or(true);
-        let inject_path = profile.inject_path.unwrap_or(true);
-        let load_user_rc = profile.load_user_rc.unwrap_or(false);
+        let inject_cogno_cli = profile.inject_cogno_cli.unwrap_or(true);
+        // With shell integration enabled we rely on user rc files to reconstruct
+        // the same PATH/toolchain environment as a normal interactive shell.
+        let load_user_rc = if enable_integration {
+            true
+        } else {
+            profile.load_user_rc.unwrap_or(false)
+        };
         let working_dir = profile
             .working_dir
             .clone()
             .unwrap_or_else(|| "~".to_string());
 
-        // Build argv based on shell type and integration settings
+        // Build argv based on integration settings
         let argv = if enable_integration {
-            self.build_integration_argv(&profile.shell_type, &shell_path, &profile.args)?
+            // Integration mode: filter incompatible args and add integration-specific args
+            let mut args = profile.args.clone().unwrap_or_default();
+
+            // For Bash/GitBash: remove incompatible flags
+            // -l/--login conflicts with --rcfile
+            // -i is redundant as --rcfile implies interactive mode
+            if matches!(profile.shell_type.as_str(), "Bash" | "GitBash") {
+                args.retain(|arg| arg != "-l" && arg != "--login" && arg != "-i");
+            }
+
+            args.extend(self.get_integration_args(&profile.shell_type)?);
+            args
         } else {
-            // Use user-provided args or defaults
+            // No integration: use profile args as-is
             profile.args.clone().unwrap_or_default()
         };
 
@@ -62,57 +83,44 @@ impl ShellSpawner {
             self.integration_root.clone(),
             log_dir,
             load_user_rc,
+            enable_integration,
         )
-        .with_path_injection(inject_path, cogno_paths)
-        .with_shell_specific_env(&profile.shell_type, &working_dir);
+        .with_path_injection(inject_cogno_cli, cogno_paths)
+        .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);
 
-        let env_builder = if let Some(custom_env) = &profile.env {
-            env_builder.with_custom_env(custom_env.clone())
-        } else {
-            env_builder
-        };
+        let merged_custom_env = profile.env.clone().unwrap_or_default();
+        let env_builder = env_builder.with_custom_env(merged_custom_env);
 
         let shell_env = env_builder.build();
+
+        // Debug logging
+        println!("Shell spawn - Type: {}, Path: {}", profile.shell_type, shell_path);
+        println!("Shell spawn - Args: {:?}", argv);
 
         Ok((shell_path, argv, shell_env.env, working_dir))
     }
 
-    fn build_integration_argv(
-        &self,
-        shell_type: &str,
-        _shell_path: &str,
-        user_args: &Option<Vec<String>>,
-    ) -> Result<Vec<String>, String> {
+    fn get_integration_args(&self, shell_type: &str) -> Result<Vec<String>, String> {
         match shell_type {
             "Bash" | "GitBash" => {
                 let rcfile = self.integration_root.join("bash").join("cogno.bashrc");
-
-                // Use --rcfile to load our integration
-                // --rcfile requires the file path to exist
+                // Add --rcfile to load our integration
                 Ok(vec![
                     "--rcfile".to_string(),
                     rcfile.to_string_lossy().to_string(),
                 ])
             }
             "ZSH" => {
-                // Zsh looks for .zshrc in ZDOTDIR (set in environment_builder)
-                // Just start interactive shell, ZDOTDIR/.zshrc will be loaded automatically
-                Ok(vec!["-i".to_string()])
+                // ZDOTDIR is set in environment, .zshrc loaded automatically
+                Ok(vec![])
             }
             "Fish" => {
                 // XDG_CONFIG_HOME is set in environment
-                // Use user-provided args or default to [-i]
-                if let Some(args) = user_args {
-                    Ok(args.clone())
-                } else {
-                    Ok(vec!["-i".to_string()])
-                }
+                Ok(vec![])
             }
             "PowerShell" => {
                 let integration_script = self.integration_root.join("pwsh").join("integration.ps1");
-
                 Ok(vec![
-                    "-NoLogo".to_string(),
                     "-NoExit".to_string(),
                     "-NoProfile".to_string(),
                     "-Command".to_string(),
@@ -126,7 +134,15 @@ impl ShellSpawner {
     fn get_cogno_paths(&self) -> Vec<PathBuf> {
         let mut paths = Vec::new();
 
-        // Add Cogno bin directory if it exists
+        if let Some(cogno_bin_dir) = self.get_cogno_bin_dir() {
+            if let Err(error) = self.ensure_cogno_command_in_bin_dir(&cogno_bin_dir) {
+                eprintln!("Failed to ensure cogno launcher: {}", error);
+            }
+            paths.push(cogno_bin_dir);
+        }
+
+        // Add Cogno executable directory if it exists.
+        // This is controlled by profile.inject_cogno_cli.
         if let Ok(exe_path) = std::env::current_exe() {
             if let Some(exe_dir) = exe_path.parent() {
                 paths.push(exe_dir.to_path_buf());
@@ -138,4 +154,45 @@ impl ShellSpawner {
 
         paths
     }
+
+    fn get_cogno_bin_dir(&self) -> Option<PathBuf> {
+        self.integration_root
+            .parent()
+            .map(|cogno_home_dir| cogno_home_dir.join("bin"))
+    }
+
+    fn ensure_cogno_command_in_bin_dir(&self, cogno_bin_dir: &PathBuf) -> Result<(), String> {
+        let executable_path = std::env::current_exe().map_err(|error| error.to_string())?;
+        fs::create_dir_all(cogno_bin_dir).map_err(|error| error.to_string())?;
+
+        #[cfg(windows)]
+        {
+            let launcher_path = cogno_bin_dir.join("cogno.cmd");
+            let launcher_script = format!(
+                "@echo off\r\n\"{}\" %*\r\n",
+                executable_path.display()
+            );
+            fs::write(&launcher_path, launcher_script).map_err(|error| error.to_string())?;
+            return Ok(());
+        }
+
+        #[cfg(not(windows))]
+        {
+            let launcher_path = cogno_bin_dir.join("cogno");
+            let launcher_script = format!(
+                "#!/usr/bin/env sh\n\"{}\" \"$@\"\n",
+                executable_path.display()
+            );
+            fs::write(&launcher_path, launcher_script).map_err(|error| error.to_string())?;
+
+            #[cfg(unix)]
+            {
+                let permissions = fs::Permissions::from_mode(0o755);
+                fs::set_permissions(&launcher_path, permissions).map_err(|error| error.to_string())?;
+            }
+
+            return Ok(());
+        }
+    }
+
 }

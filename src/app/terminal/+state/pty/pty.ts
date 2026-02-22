@@ -18,6 +18,8 @@ export interface IPty extends IDisposable{
 export class Pty implements IPty {
 
     private _terminalId: string | undefined = undefined;
+    private _spawned = false;
+    private _pendingResize?: TerminalDimensions;
     private _dataUnlisten: UnlistenFn | undefined = undefined;
     private _exitUnlisten: UnlistenFn | undefined = undefined;
 
@@ -26,7 +28,11 @@ export class Pty implements IPty {
 
     async spawn(terminalId: string, shellProfile: ShellProfile, dimensions: TerminalDimensions): Promise<void> {
         this._terminalId = terminalId;
+        this._spawned = false;
+        this._pendingResize = undefined;
         await TauriPty.spawn(this._terminalId, shellProfile, dimensions);
+        this._spawned = true;
+        this.flushPendingResize();
     }
 
     kill(signal?: string): void {
@@ -37,6 +43,10 @@ export class Pty implements IPty {
 
     resize(dimensions: TerminalDimensions) {
         if(!this._terminalId) throw Error('Please spawn Pty before resize.');
+        if(!this._spawned) {
+            this._pendingResize = dimensions;
+            return;
+        }
         TauriPty.resize(this._terminalId, dimensions.cols, dimensions.rows).catch(err => Logger.error('Failed to resize PTY:', err));
     }
 
@@ -75,11 +85,21 @@ export class Pty implements IPty {
     }
 
     dispose(): void {
+        this._spawned = false;
+        this._pendingResize = undefined;
         this.kill();
         this._dataUnlisten?.();
         this._exitUnlisten?.();
         this._dataUnlisten = undefined;
         this._exitUnlisten = undefined;
         this._terminalId = undefined;
+    }
+
+    private flushPendingResize() {
+        if(!this._terminalId || !this._spawned || !this._pendingResize) return;
+        const pendingResize = this._pendingResize;
+        this._pendingResize = undefined;
+        TauriPty.resize(this._terminalId, pendingResize.cols, pendingResize.rows)
+            .catch(err => Logger.error('Failed to resize PTY:', err));
     }
 }

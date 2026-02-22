@@ -1,5 +1,7 @@
+import {OscDataType} from "../advanced/model/models";
+
 export class Command {
-    private data: Record<string, string> = {};
+    private data: Record<OscDataType, string> = {};
     public isInViewport: boolean = false;
     public isFirstCommandOutOfViewport: boolean = false;
 
@@ -10,7 +12,7 @@ export class Command {
         private _user: string) {
     }
 
-    setData(data: Record<string, string>) {
+    setData(data: Record<OscDataType, string>) {
         this.data = data;
     }
 

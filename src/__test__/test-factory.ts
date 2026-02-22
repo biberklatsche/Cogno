@@ -16,6 +16,7 @@ import {TerminalId} from "../app/grid-list/+model/model";
 import {TerminalStateManager} from "../app/terminal/+state/state";
 import {ShellType} from "../app/config/+models/config";
 import {TerminalSession} from "../app/terminal/+state/terminal.session";
+import { SpecCommandSuggestorService } from "../app/terminal/+state/advanced/autocomplete/spec/spec-command-suggestor.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -31,6 +32,7 @@ let focusHandler: FocusHandler | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let stateManager: TerminalStateManager | undefined;
 let terminalSession: TerminalSession | undefined;
+let specCommandSuggestorService: SpecCommandSuggestorService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -52,9 +54,19 @@ export function getSideMenuService(): SideMenuService {
 
 export function getTerminalSession(): TerminalSession {
     if(!terminalSession) {
-        terminalSession = new TerminalSession(getConfigService(), getAppBus(), getStateManager());
+        terminalSession = new TerminalSession(getConfigService(), getAppBus(), getStateManager(), getSpecCommandSuggestorService());
     }
     return terminalSession;
+}
+
+export function getSpecCommandSuggestorService(): SpecCommandSuggestorService {
+    if (!specCommandSuggestorService) {
+        specCommandSuggestorService = {
+            getSharedSuggestor: vi.fn(),
+            preloadForShellIntegration: vi.fn(),
+        } as unknown as SpecCommandSuggestorService;
+    }
+    return specCommandSuggestorService;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -165,4 +177,5 @@ export function clear() {
     focusHandler = undefined;
     selectionHandler = undefined;
     stateManager = undefined;
+    specCommandSuggestorService = undefined;
 }

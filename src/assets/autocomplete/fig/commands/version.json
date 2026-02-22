@@ -1,0 +1,6 @@
+{
+  "name": "version",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/version.ts",
+  "description": "Show the versions of Azure CLI modules and extensions in JSON format by default or format configured by --output"
+}

@@ -1,0 +1,30 @@
+{
+  "name": "create-completion-spec",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-completion-spec.ts",
+  "description": "Setup fig folder and create spec with the given name",
+  "options": [
+    {
+      "name": "--here",
+      "description": "Set if the spec should be created in the current folder"
+    },
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Display help for command"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "help",
+      "description": "Display help for command",
+      "args": [
+        {
+          "name": "command"
+        }
+      ]
+    }
+  ]
+}

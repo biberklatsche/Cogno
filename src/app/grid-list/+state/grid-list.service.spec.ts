@@ -264,6 +264,36 @@ describe('GridListService', () => {
             expect(grids[0].tree.root.data!.isFocused).toBe(true);
         });
 
+        it('should ignore TerminalFocused events from inactive tabs', () => {
+            vi.spyOn(IdCreator, 'newTerminalId')
+                .mockReturnValueOnce('term-1')
+                .mockReturnValueOnce('term-2');
+
+            bus.publish({
+                type: 'TabAdded',
+                payload: { tabId: 'tab-1', isActive: true }
+            } as TabAddedEvent);
+            bus.publish({
+                type: 'TabAdded',
+                payload: { tabId: 'tab-2', isActive: false }
+            } as TabAddedEvent);
+
+            bus.publish({
+                type: 'TerminalFocused',
+                payload: 'term-1'
+            } as TerminalFocusedEvent);
+
+            bus.publish({
+                type: 'TerminalFocused',
+                payload: 'term-2'
+            } as TerminalFocusedEvent);
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            const activeGrid = grids.find(g => g.tabId === 'tab-1')!;
+            expect(activeGrid.tree.root.data!.isFocused).toBe(true);
+        });
+
         it('should handle FocusActiveTerminal action', () => {
             const tabId = 'tab-1';
             vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-1');

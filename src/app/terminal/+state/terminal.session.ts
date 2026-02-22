@@ -1,6 +1,6 @@
 import {ConfigService} from "../../config/+state/config.service";
 import {IRenderer, Renderer} from "./renderer/renderer";
-import {Observable, Subscription} from "rxjs";
+import {Subscription} from "rxjs";
 import {AppBus} from "../../app-bus/app-bus";
 import {TerminalId} from "../../grid-list/+model/model";
 import {TerminalTitleHandler} from "./handler/terminal-title.handler";
@@ -18,11 +18,12 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
-import {CommandLineObserver} from "./advanced/command-line.observer";
-import {Command, TerminalState, TerminalStateManager} from "./state";
-import {CommandLineEditor} from './advanced/command-line.editor';
+import {CommandLineObserver} from "./advanced/ui/command-line.observer";
+import {TerminalStateManager} from "./state";
+import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
+import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 
 @Injectable()
 export class TerminalSession {
@@ -44,7 +45,8 @@ export class TerminalSession {
     constructor(
         private configService: ConfigService,
         private bus: AppBus,
-        private stateManager: TerminalStateManager
+        private stateManager: TerminalStateManager,
+        private specCommandSuggestorService: SpecCommandSuggestorService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -56,7 +58,7 @@ export class TerminalSession {
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
-        this.stateManager.initialize(terminalId, shellProfile.shell_type!);
+        this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
@@ -79,6 +81,7 @@ export class TerminalSession {
         this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
 
         if(this.shellProfile.enable_shell_integration) {
+            this.specCommandSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
             this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.stateManager)));
         }

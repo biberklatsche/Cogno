@@ -20,6 +20,7 @@ export interface TabEntity {
     workspace_id: string;
     tab_id: string;
     is_active: number;
+    is_title_locked?: number;
     color?: string;
     title?: string;
     position?: number;
@@ -57,6 +58,7 @@ export class WorkspaceRepository {
                 tabs: tabs.map(t => ({
                     tabId: t.tab_id,
                     isActive: t.is_active === 1,
+                    isTitleLocked: t.is_title_locked === 1,
                     color: this.toColorName(t.color),
                     title: t.title
                 })),
@@ -86,8 +88,7 @@ export class WorkspaceRepository {
     }
 
     async createWorkspace(config: WorkspaceConfig): Promise<void> {
-        await DB.execute("BEGIN;");
-        try {
+        await DB.transaction(async () => {
             await DB.execute(
                 "INSERT INTO workspaces (id, name, color, autosave) VALUES (?, ?, ?, ?)",
                 [config.id, config.name, config.color, config.autosave ? 1 : 0]
@@ -101,17 +102,11 @@ export class WorkspaceRepository {
             for (const grid of config.grids) {
                 await this.insertGrid(config.id, grid);
             }
-
-            await DB.execute("COMMIT;");
-        } catch (e) {
-            await DB.execute("ROLLBACK;");
-            throw e;
-        }
+        });
     }
 
     async updateWorkspace(config: WorkspaceConfig): Promise<void> {
-        await DB.execute("BEGIN;");
-        try {
+        await DB.transaction(async () => {
             await DB.execute(
                 "UPDATE workspaces SET name = ?, color = ?, autosave = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                 [config.name, config.color, config.autosave ? 1 : 0, config.id]
@@ -128,12 +123,7 @@ export class WorkspaceRepository {
             for (const grid of config.grids) {
                 await this.insertGrid(config.id, grid);
             }
-
-            await DB.execute("COMMIT;");
-        } catch (e) {
-            await DB.execute("ROLLBACK;");
-            throw e;
-        }
+        });
     }
 
     async deleteWorkspace(id: string): Promise<void> {
@@ -142,8 +132,8 @@ export class WorkspaceRepository {
 
     private async insertTab(workspaceId: WorkspaceId, tab: TabConfig, position?: number): Promise<void> {
         await DB.execute(
-            "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, color, title, position) VALUES (?, ?, ?, ?, ?, ?)",
-            [workspaceId, tab.tabId, tab.isActive ? 1 : 0, tab.color, tab.title, position]
+            "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, is_title_locked, color, title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [workspaceId, tab.tabId, tab.isActive ? 1 : 0, tab.isTitleLocked ? 1 : 0, tab.color, tab.title, position]
         );
     }
 

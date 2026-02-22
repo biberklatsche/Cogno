@@ -44,6 +44,22 @@ describe('Pty', () => {
         expect(TauriPty.resize).toHaveBeenCalledWith(terminalId, 100, 30);
     });
 
+    it('should buffer resize until spawn is finished', async () => {
+        let resolveSpawn!: () => void;
+        vi.mocked(TauriPty.spawn).mockImplementationOnce(() => new Promise<void>(resolve => {
+            resolveSpawn = resolve;
+        }));
+
+        const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions);
+        pty.resize({ cols: 120, rows: 40 });
+        expect(TauriPty.resize).not.toHaveBeenCalled();
+
+        resolveSpawn();
+        await spawnPromise;
+
+        expect(TauriPty.resize).toHaveBeenCalledWith(terminalId, 120, 40);
+    });
+
     it('should write to pty if spawned', async () => {
         await pty.spawn(terminalId, shellConfig, dimensions);
         pty.write('ls\n');

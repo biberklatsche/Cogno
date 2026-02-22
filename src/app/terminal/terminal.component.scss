@@ -18,6 +18,7 @@ app-terminal {
     }
 
     .terminal-container {
+        position: relative;
         flex: 1;
         width: 100%;
         overflow: auto; /* Scrollbar am Container statt im xterm-Viewport */

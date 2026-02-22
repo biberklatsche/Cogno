@@ -13,11 +13,12 @@ import {Tab} from "./+model/tab";
 import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
 import {TooltipDirective} from "../common/tooltip/tooltip.directive";
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
+import {StartEllipsisDirective} from "../common/text/start-ellipsis.directive";
 
 @Component({
   selector: 'app-tab-list',
   standalone: true,
-    imports: [CommonModule, IconComponent, AppMenuButtonComponent, TooltipDirective, ActionKeybindingPipe],
+    imports: [CommonModule, IconComponent, AppMenuButtonComponent, TooltipDirective, ActionKeybindingPipe, StartEllipsisDirective],
   templateUrl: './tab-list.component.html',
   styleUrl: './tab-list.component.scss'
 })

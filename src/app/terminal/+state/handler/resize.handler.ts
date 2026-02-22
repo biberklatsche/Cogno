@@ -78,14 +78,27 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         const currentDimensions: TerminalDimensions = {cols: this._terminal.cols, rows: this._terminal.rows};
         const newRendererDimensions = this._fitAddon.proposeDimensions();
         if(!newRendererDimensions) return;
+        const coreBeforeFit = (this._terminal as any)._core;
+        const cellHeightBeforeFit = coreBeforeFit?._renderService?._charSizeService?.height;
+        const cellWidthBeforeFit = coreBeforeFit?._renderService?._charSizeService?.width;
+        const viewportWidth = this._terminalContainer.clientWidth;
+        const viewportHeight = this._terminalContainer.clientHeight;
+
         if(!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
             this._pty.resize(newRendererDimensions);
             this._fitAddon.fit();
-            const core = (this._terminal as any)._core;
-            const cellHeight = core?._renderService?._charSizeService?.height;
-            const cellWidth = core?._renderService?._charSizeService?.width;
-            this._stateManager.updateDimensions({ cols: newRendererDimensions.cols, rows: newRendererDimensions.rows, cellHeight, cellWidth });
         }
+        const core = (this._terminal as any)._core;
+        const cellHeight = core?._renderService?._charSizeService?.height ?? cellHeightBeforeFit;
+        const cellWidth = core?._renderService?._charSizeService?.width ?? cellWidthBeforeFit;
+        this._stateManager.updateDimensions({
+            cols: this._terminal.cols,
+            rows: this._terminal.rows,
+            cellHeight,
+            cellWidth,
+            viewportWidth,
+            viewportHeight,
+        });
     }
 
     private areDimensionsEqual(a?: TerminalDimensions, b?: TerminalDimensions) {

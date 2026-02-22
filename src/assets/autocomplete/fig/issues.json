@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/@usermn/sdc/index.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module '@fig/autocomplete-helpers'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/@usermn/sdc/index.ts:5:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "skip",
+    "file": "scripts/fig-commands/aws/regions.ts",
+    "message": "No Fig spec export found"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/az/index.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module '@fig/autocomplete-helpers'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/az/index.ts:5:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/copilot.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module 'yaml'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/copilot.ts:7:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/deno.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module 'strip-json-comments'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/deno/generators.ts:11:47\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "skip",
+    "file": "scripts/fig-commands/deno/generators.ts",
+    "message": "No Fig spec export found"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/fig/index.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module '@fig/autocomplete-helpers'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/fig/index.ts:5:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "skip",
+    "file": "scripts/fig-commands/fig/shared.ts",
+    "message": "No Fig spec export found"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/heroku/index.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module '@fig/autocomplete-helpers'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/heroku/index.ts:5:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "skip",
+    "file": "scripts/fig-commands/heroku/shared.ts",
+    "message": "No Fig spec export found"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/infracost/index.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module '@fig/autocomplete-helpers'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/infracost/index.ts:5:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/pre-commit.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module 'yaml'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/pre-commit.ts:7:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/rush.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module 'strip-json-comments'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/rush.ts:7:47\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/serverless.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module 'yaml'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/serverless.ts:7:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  },
+  {
+    "kind": "error",
+    "file": "scripts/fig-commands/shopify/index.ts",
+    "message": "Import failed",
+    "extra": "Error: Cannot find module '@fig/autocomplete-helpers'\nRequire stack:\n- /Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1244:15)\n    at Function._load (node:internal/modules/cjs/loader:1070:27)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:217:24)\n    at Module.require (node:internal/modules/cjs/loader:1335:12)\n    at require (node:internal/modules/helpers:136:16)\n    at resolveRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:115:10)\n    at localRequire (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:132:37)\n    at /Users/larswolfram/projects/cogno2/scripts/fig-commands/shopify/index.ts:5:32\n    at loadTsModule (file:///Users/larswolfram/projects/cogno2/scripts/import-fig-specs.mjs:133:3)"
+  }
+]

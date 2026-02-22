@@ -1,0 +1,114 @@
+{
+  "name": "glow",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/glow.ts",
+  "description": "Render markdown on the CLI, with pizzazz!",
+  "options": [
+    {
+      "name": [
+        "-a",
+        "--all"
+      ],
+      "description": "Show system files and directories (TUI-mode only)"
+    },
+    {
+      "name": "--config",
+      "description": "Config file",
+      "args": [
+        {
+          "name": "path"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Help for glow"
+    },
+    {
+      "name": [
+        "-l",
+        "--local"
+      ],
+      "description": "Show local files only; no network (TUI-mode only)"
+    },
+    {
+      "name": [
+        "-p",
+        "--pager"
+      ],
+      "description": "Display with pager"
+    },
+    {
+      "name": [
+        "-s",
+        "--style"
+      ],
+      "description": "Style name or JSON path (default 'auto')",
+      "args": [
+        {
+          "name": "name"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-v",
+        "--version"
+      ],
+      "description": "Version for glow"
+    },
+    {
+      "name": [
+        "-w",
+        "--width"
+      ],
+      "description": "Word-wrap at width",
+      "args": [
+        {
+          "name": "column"
+        }
+      ]
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "config",
+      "description": "Edit the glow config file"
+    },
+    {
+      "name": "help",
+      "description": "Help about any command",
+      "args": [
+        {
+          "name": "command"
+        }
+      ]
+    },
+    {
+      "name": "stash",
+      "description": "Manage your stash of markdown files",
+      "args": [
+        {
+          "name": "path"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-m",
+            "--memo"
+          ],
+          "description": "Memo/note for stashing",
+          "args": [
+            {
+              "name": "note"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

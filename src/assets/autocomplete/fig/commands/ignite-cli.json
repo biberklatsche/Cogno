@@ -1,0 +1,92 @@
+{
+  "name": "ignite-cli",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ignite-cli.ts",
+  "description": "Ignite is a CLI that helps you spin up a new React Native app using a battle-tested tech stack",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Output usage information"
+    },
+    {
+      "name": [
+        "-v",
+        "--version"
+      ],
+      "description": "Output the version number"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "new",
+      "description": "Create a new React Native app",
+      "args": [
+        {
+          "name": "name"
+        }
+      ],
+      "options": [
+        {
+          "name": "--expo",
+          "description": "Use Expo"
+        },
+        {
+          "name": "--bundle",
+          "description": "Set the bundle ID of the app",
+          "args": [
+            {
+              "name": "bundle"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": [
+        "g",
+        "generate"
+      ],
+      "description": "Generate components and other app features",
+      "args": [
+        {
+          "name": "generator"
+        },
+        {
+          "name": "name"
+        }
+      ],
+      "options": [
+        {
+          "name": "--list",
+          "description": "List installed generators"
+        },
+        {
+          "name": "--update",
+          "description": "Update installed generators"
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "description": "Update installed generators",
+      "args": [
+        {
+          "name": "generator"
+        }
+      ],
+      "options": [
+        {
+          "name": "--all",
+          "description": "Update all installed generators"
+        }
+      ]
+    },
+    {
+      "name": "doctor",
+      "description": "Check your environment & display versions of installed dependencies"
+    }
+  ]
+}

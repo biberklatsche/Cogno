@@ -1,4 +1,4 @@
-import {IFitHandler, ITerminalHandler} from "./handler";
+import {ITerminalHandler} from "./handler";
 import {Terminal} from "@xterm/xterm";
 import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
@@ -6,7 +6,6 @@ import {ConfigService} from "../../../config/+state/config.service";
 import {AppBus, MessageBase} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Config} from "../../../config/+models/config";
-import { FitAddon } from "@xterm/addon-fit";
 
 export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
 export type TerminalThemePaddingAddedEvent = MessageBase<"TerminalThemePaddingAdded", TerminalId>;

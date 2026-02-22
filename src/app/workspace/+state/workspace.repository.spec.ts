@@ -8,6 +8,7 @@ vi.mock('../../_tauri/db', () => ({
     select: vi.fn(),
     execute: vi.fn(),
     load: vi.fn(),
+    transaction: vi.fn(async (fn: () => Promise<unknown>) => fn()),
   }
 }));
 
@@ -25,7 +26,7 @@ describe('WorkspaceRepository', () => {
         { id: 'ws1', name: 'Workspace 1', color: 'blue', autosave: 1 }
       ];
       const mockTabs = [
-        { workspace_id: 'ws1', tab_id: 't1', is_active: 1, color: 'blue', title: 'Tab 1', position: 0 }
+        { workspace_id: 'ws1', tab_id: 't1', is_active: 1, is_title_locked: 1, color: 'blue', title: 'Tab 1', position: 0 }
       ];
       const mockGrids = [
         { workspace_id: 'ws1', tab_id: 't1', pane_json: JSON.stringify({ pane: { type: 'terminal', id: 'term1' } }) }
@@ -43,6 +44,7 @@ describe('WorkspaceRepository', () => {
       expect(result[0].id).toBe('ws1');
       expect(result[0].tabs).toHaveLength(1);
       expect(result[0].tabs[0].tabId).toBe('t1');
+      expect(result[0].tabs[0].isTitleLocked).toBe(true);
       expect(result[0].grids).toHaveLength(1);
     });
   });
@@ -54,18 +56,21 @@ describe('WorkspaceRepository', () => {
         name: 'Workspace 1',
         color: 'blue',
         autosave: true,
-        tabs: [{ tabId: 't1', isActive: true, title: 'Tab 1', color: 'blue' }],
+        tabs: [{ tabId: 't1', isActive: true, isTitleLocked: true, title: 'Tab 1', color: 'blue' }],
         grids: [{ tabId: 't1', pane: { type: 'terminal', id: 'term1' } as any }]
       };
 
       await repository.createWorkspace(config);
 
-      expect(DB.execute).toHaveBeenCalledWith('BEGIN;');
+      expect(DB.transaction).toHaveBeenCalled();
       expect(DB.execute).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO workspaces'),
         ['ws1', 'Workspace 1', 'blue', 1]
       );
-      expect(DB.execute).toHaveBeenCalledWith('COMMIT;');
+      expect(DB.execute).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO workspace_tabs'),
+        ['ws1', 't1', 1, 1, 'blue', 'Tab 1', 0]
+      );
     });
 
     it('should rollback on error', async () => {
@@ -78,12 +83,15 @@ describe('WorkspaceRepository', () => {
         grids: []
       };
 
+      vi.mocked(DB.transaction).mockImplementation(async (fn: () => Promise<unknown>) => {
+        await fn();
+      });
       vi.mocked(DB.execute).mockImplementation(async (q) => {
-        if (q.includes('INSERT INTO workspaces')) throw new Error('DB Error');
+        if ((q as string).includes('INSERT INTO workspaces')) throw new Error('DB Error');
       });
 
       await expect(repository.createWorkspace(config)).rejects.toThrow('DB Error');
-      expect(DB.execute).toHaveBeenCalledWith('ROLLBACK;');
+      expect(DB.transaction).toHaveBeenCalled();
     });
   });
 
@@ -101,20 +109,23 @@ describe('WorkspaceRepository', () => {
         name: 'Updated WS',
         color: 'green',
         autosave: false,
-        tabs: [{ tabId: 't2', isActive: true, title: 'Tab 2', color: 'green' }],
+        tabs: [{ tabId: 't2', isActive: true, isTitleLocked: true, title: 'Tab 2', color: 'green' }],
         grids: []
       };
 
       await repository.updateWorkspace(config);
 
-      expect(DB.execute).toHaveBeenCalledWith('BEGIN;');
+      expect(DB.transaction).toHaveBeenCalled();
       expect(DB.execute).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE workspaces SET name = ?'),
         ['Updated WS', 'green', 0, 'ws1']
       );
       expect(DB.execute).toHaveBeenCalledWith('DELETE FROM workspace_tabs WHERE workspace_id = ?', ['ws1']);
       expect(DB.execute).toHaveBeenCalledWith('DELETE FROM workspace_grids WHERE workspace_id = ?', ['ws1']);
-      expect(DB.execute).toHaveBeenCalledWith('COMMIT;');
+      expect(DB.execute).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO workspace_tabs'),
+        ['ws1', 't2', 1, 1, 'green', 'Tab 2', 0]
+      );
     });
   });
 

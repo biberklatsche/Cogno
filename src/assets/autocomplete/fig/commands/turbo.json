@@ -1,0 +1,210 @@
+{
+  "name": "turbo",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/turbo.ts",
+  "description": "Turborepo is a high-performance build system for JavaScript and TypeScript codebases",
+  "options": [
+    {
+      "name": "--version",
+      "description": "Print the version"
+    },
+    {
+      "name": "--help",
+      "description": "Print a help message"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "bin",
+      "description": "Get the path to the turbo binary"
+    },
+    {
+      "name": "link",
+      "description": "Link your local directory to a Vercel organization and enable remote caching",
+      "options": [
+        {
+          "name": "--no-gitignore",
+          "description": "Do not create or modify .gitignore"
+        }
+      ]
+    },
+    {
+      "name": "login",
+      "description": "Login to your Vercel account",
+      "options": [
+        {
+          "name": "--sso-team",
+          "description": "Attempt to authenticate to the specified team using SSO"
+        }
+      ]
+    },
+    {
+      "name": "logout",
+      "description": "Logout of your Vercel account"
+    },
+    {
+      "name": "prune",
+      "description": "Prepare a subset of your monorepo",
+      "options": [
+        {
+          "name": "--scope",
+          "description": "Specify package to act as entry point for pruned monorepo",
+          "args": [
+            {
+              "name": "package"
+            }
+          ]
+        },
+        {
+          "name": "--docker",
+          "description": "Output pruned workspace into 'fill' and 'json' directories optimized for Docker layer caching"
+        }
+      ]
+    },
+    {
+      "name": "unlink",
+      "description": "Unlink the current directory from your Vercel organization and disable remote caching"
+    },
+    {
+      "name": "run",
+      "description": "Run tasks in your monorepo",
+      "args": [
+        {
+          "name": "tasks"
+        }
+      ],
+      "options": [
+        {
+          "name": "--scope",
+          "description": "Specify packages to act as entry points for task execution",
+          "args": [
+            {
+              "name": "package"
+            }
+          ]
+        },
+        {
+          "name": "--cache-dir",
+          "description": "Specify local filesystem cache directory",
+          "args": [
+            {
+              "name": "dir"
+            }
+          ]
+        },
+        {
+          "name": "--concurrency",
+          "description": "Limit the concurrency of task execution (use `1` for serial)",
+          "args": [
+            {
+              "name": "limit"
+            }
+          ]
+        },
+        {
+          "name": "--continue",
+          "description": "Continue execution even if a task exits with an error"
+        },
+        {
+          "name": "--force",
+          "description": "Ignore the existing cache"
+        },
+        {
+          "name": "--graph",
+          "description": "Generate a Dot graph of the task execution"
+        },
+        {
+          "name": "--global-deps",
+          "description": "Specify glob of global filesystem dependencies to be hashed (useful for .env and files in the root directory)",
+          "isRepeatable": true,
+          "args": [
+            {
+              "name": "glob"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "description": "Limit/set scope to changed packages since a mergebase",
+          "args": [
+            {
+              "name": "branch"
+            }
+          ]
+        },
+        {
+          "name": "--team",
+          "description": "The slug of a turborepo.com team",
+          "args": [
+            {
+              "name": "slug"
+            }
+          ]
+        },
+        {
+          "name": "--token",
+          "description": "A turborepo.com access token",
+          "args": [
+            {
+              "name": "token"
+            }
+          ]
+        },
+        {
+          "name": "--ignore",
+          "description": "Files to ignore when calculating changed files (supports globs)",
+          "args": [
+            {
+              "name": "files"
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "description": "File to write turbo's performance profile into",
+          "args": [
+            {
+              "name": "file"
+            }
+          ]
+        },
+        {
+          "name": "--parallel",
+          "description": "Execute all tasks in parallel"
+        },
+        {
+          "name": "--include-dependencies",
+          "description": "Include the dependencies of tasks in execution"
+        },
+        {
+          "name": "--no-deps",
+          "description": "Exclude dependent task consumers from execution"
+        },
+        {
+          "name": "--no-cache",
+          "description": "Avoid saving task results to the cache (useful for development/watch tasks)"
+        },
+        {
+          "name": "--output-logs",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--dry",
+            "--dry-run"
+          ],
+          "description": "List the packages in scope and the tasks that would be run",
+          "args": [
+            {
+              "name": "format"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

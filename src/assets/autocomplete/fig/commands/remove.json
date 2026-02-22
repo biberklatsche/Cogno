@@ -1,0 +1,25 @@
+{
+  "name": "remove",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-remove.ts",
+  "subcommands": [
+    {
+      "name": "package",
+      "description": "The dotnet remove package command provides a convenient option to remove a NuGet package reference from a project",
+      "args": [
+        {
+          "name": "id"
+        }
+      ]
+    },
+    {
+      "name": "reference",
+      "description": "The dotnet remove reference command provides a convenient option to remove project references from a project",
+      "args": [
+        {
+          "name": "ref"
+        }
+      ]
+    }
+  ]
+}

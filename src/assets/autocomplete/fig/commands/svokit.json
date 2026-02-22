@@ -1,0 +1,25 @@
+{
+  "name": "svokit",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/svokit.ts",
+  "description": "Runs built svokit project",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show help for svokit"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "setup",
+      "description": "Creates svokit config (experimental)"
+    },
+    {
+      "name": "run",
+      "description": "Runs build svokit project"
+    }
+  ]
+}

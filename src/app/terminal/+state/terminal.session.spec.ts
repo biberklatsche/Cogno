@@ -5,6 +5,7 @@ import { Renderer } from './renderer/renderer';
 import {getStateManager, getConfigService, getAppBus} from "../../../__test__/test-factory";
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
+import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -36,6 +37,7 @@ describe('TerminalSession', () => {
     let mockConfigService: ConfigService;
     let mockBus: AppBus;
     let mockShellProfile: ShellProfile;
+    let mockSpecCommandSuggestorService: SpecCommandSuggestorService;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -45,17 +47,22 @@ describe('TerminalSession', () => {
         
         mockShellProfile = {
             shell_type: 'Bash',
-            inject_path: false,
+            inject_cogno_cli: false,
             enable_shell_integration: false
         };
 
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager());
+        mockSpecCommandSuggestorService = {
+            getSharedSuggestor: vi.fn(),
+            preloadForShellIntegration: vi.fn(),
+        } as unknown as SpecCommandSuggestorService;
+
+        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService);
     });
 
     it('should initialize with correct renderer settings based on config', () => {
         const config = { enable_webgl: true, font: { family: 'Fira Code' } } as any;
         (mockConfigService as any).setConfig(config);
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager());
+        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService);
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
     });
@@ -84,6 +91,7 @@ describe('TerminalSession', () => {
         const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
         // Handlers: 10 base + CognoOsc (handled by CommandLineObserver), CommandLineObserver, CommandLineEditor = 12
         expect(rendererInstance.register).toHaveBeenCalledTimes(12);
+        expect(mockSpecCommandSuggestorService.preloadForShellIntegration).toHaveBeenCalledWith('Bash');
     });
 
     it('should build context menu', () => {

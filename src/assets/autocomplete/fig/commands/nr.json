@@ -1,0 +1,15 @@
+{
+  "name": "nr",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nr.ts",
+  "description": "Use the right package manager - run",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Output usage information"
+    }
+  ]
+}

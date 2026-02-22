@@ -1,5 +1,5 @@
 {
-  "name": "cogno",
+  "name": "cogno2",
   "version": "0.1.0",
   "license": "FSL-1.1-MIT",
   "licenseText": "SEE LICENSE IN LICENSE",
@@ -11,7 +11,9 @@
     "test:coverage": "vitest run --coverage",
     "watch": "ng build --watch --configuration development",
     "tauri": "tauri",
-    "generate-icon": "tauri icon ./icon/icon.png"
+    "tauri:build:macos:signed-notarized": "node ./scripts/build-tauri-macos-signed-notarized.mjs",
+    "generate-icon": "tauri icon ./icon/icon.png",
+    "import:fig": "node scripts/import-fig-specs.mjs"
   },
   "private": true,
   "dependencies": {

@@ -1,0 +1,43 @@
+{
+  "name": "yo",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/yo.ts",
+  "description": "Yeoman generator",
+  "options": [
+    {
+      "name": "--help",
+      "description": "Print info and generator's options and usage"
+    },
+    {
+      "name": [
+        "-f",
+        "--force"
+      ],
+      "description": "Overwrite files that already exist"
+    },
+    {
+      "name": "--version",
+      "description": "Print version"
+    },
+    {
+      "name": "--no-color",
+      "description": "Disable color"
+    },
+    {
+      "name": "--insight",
+      "description": "Enable anonymous tracking"
+    },
+    {
+      "name": "--no-insight",
+      "description": "Disable anonymous tracking"
+    },
+    {
+      "name": "--generators",
+      "description": "Print available generators"
+    },
+    {
+      "name": "--local-only",
+      "description": "Disable lookup of globally-installed generators"
+    }
+  ]
+}

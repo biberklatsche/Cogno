@@ -24,7 +24,7 @@
                     (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
                     (blur)="commitRename(renameInput.value);">
             } @else {
-                <span class="title" appTooltip="{{tab.title}}">{{ tab.title }}</span>
+                <span class="title" appTooltip="{{tab.title}}" [appStartEllipsis]="tab.title"></span>
             }
 
             <span class="close" (click)="$event.stopPropagation(); closeTab(tab.id)">

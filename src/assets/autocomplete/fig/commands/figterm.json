@@ -1,0 +1,22 @@
+{
+  "name": "figterm",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/figterm.ts",
+  "description": "Fig's terminal layer",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Print help information"
+    },
+    {
+      "name": [
+        "--version",
+        "-V"
+      ],
+      "description": "Print version information"
+    }
+  ]
+}

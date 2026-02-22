@@ -1,0 +1,276 @@
+{
+  "name": "lsof",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lsof.ts",
+  "description": "List open files",
+  "options": [
+    {
+      "name": [
+        "-?",
+        "-h",
+        "--help"
+      ],
+      "description": "Help"
+    },
+    {
+      "name": "-a",
+      "description": "Apply AND to the selections (defaults to OR)"
+    },
+    {
+      "name": "-b",
+      "description": "Avoid kernel blocks"
+    },
+    {
+      "name": "-c",
+      "description": "Select the listing of files for processes executing a command",
+      "args": [
+        {
+          "name": "string or regexp (optional ending with /i /b /x)"
+        }
+      ]
+    },
+    {
+      "name": "+c",
+      "description": "COMMAND width (9)",
+      "args": [
+        {
+          "name": "number"
+        }
+      ]
+    },
+    {
+      "name": "+d",
+      "description": "Search for all open instances/files/directories of directory",
+      "args": [
+        {
+          "name": "file"
+        }
+      ]
+    },
+    {
+      "name": "-d",
+      "description": "Specify a list of file descriptors (FDs) to exclude from or include in the output listing",
+      "args": [
+        {
+          "name": "File descriptor number"
+        }
+      ]
+    },
+    {
+      "name": "+D",
+      "description": "Search tree for all open instances/files/directories of directory. *SLOW?*",
+      "args": [
+        {
+          "name": "file"
+        }
+      ]
+    },
+    {
+      "name": "+f",
+      "description": "Enable path name arguments to be interpreted",
+      "args": [
+        {
+          "name": "flags"
+        }
+      ]
+    },
+    {
+      "name": "-f",
+      "description": "Inhibit path name arguments to be interpreted",
+      "args": [
+        {
+          "name": "flags"
+        }
+      ]
+    },
+    {
+      "name": "-F",
+      "description": "Select fields to output",
+      "args": [
+        {
+          "name": "options"
+        }
+      ]
+    },
+    {
+      "name": "-F?",
+      "description": "Show fields for -F"
+    },
+    {
+      "name": "-g",
+      "description": "Exclude or select by process group IDs (PGID)",
+      "args": [
+        {
+          "name": "PGID",
+          "description": "Process Group ID (comma separated)"
+        }
+      ]
+    },
+    {
+      "name": "-i",
+      "description": "Selects files by [46][protocol][@hostname|hostaddr][:service|port]",
+      "args": [
+        {
+          "name": "options"
+        }
+      ]
+    },
+    {
+      "name": "-l",
+      "description": "Inhibit conversion of user IDs to login names"
+    },
+    {
+      "name": "+L",
+      "description": "Enable listing of file link counts",
+      "args": [
+        {
+          "name": "number"
+        }
+      ]
+    },
+    {
+      "name": "-L",
+      "description": "Disable listing of file link counts",
+      "args": [
+        {
+          "name": "number"
+        }
+      ]
+    },
+    {
+      "name": "+M",
+      "description": "Enable portMap registration"
+    },
+    {
+      "name": "-M",
+      "description": "Disable portMap registration"
+    },
+    {
+      "name": "-n",
+      "description": "No host names"
+    },
+    {
+      "name": "-N",
+      "description": "Select NFS files"
+    },
+    {
+      "name": "-o",
+      "description": "List file offset"
+    },
+    {
+      "name": "-O",
+      "description": "No overhead *RISKY*"
+    },
+    {
+      "name": "-p",
+      "description": "Exclude or select process identification numbers (PIDs)",
+      "args": [
+        {
+          "name": "PIDs",
+          "description": "PIDs to select or exclude ( with ^)"
+        }
+      ]
+    },
+    {
+      "name": "-P",
+      "description": "No port names"
+    },
+    {
+      "name": "+r",
+      "description": "Repeat every t seconds (15) until no files",
+      "args": [
+        {
+          "name": "time (seconds)",
+          "description": "Time per repeat"
+        }
+      ]
+    },
+    {
+      "name": "-r",
+      "description": "Repeat every t seconds (15) forever",
+      "args": [
+        {
+          "name": "time (seconds)",
+          "description": "Time per repeat"
+        }
+      ]
+    },
+    {
+      "name": "-R",
+      "description": "List parent PID"
+    },
+    {
+      "name": "-s",
+      "description": "List file size or exclude/select protocol",
+      "args": [
+        {
+          "name": "protocol:state"
+        }
+      ]
+    },
+    {
+      "name": "-S",
+      "description": "Stat timeout in seconds (lstat/readlink/stat)",
+      "args": [
+        {
+          "name": "timeout (seconds)"
+        }
+      ]
+    },
+    {
+      "name": "-T",
+      "description": "Disable TCP/TPI info",
+      "args": [
+        {
+          "name": "info"
+        }
+      ]
+    },
+    {
+      "name": "-t",
+      "description": "Specify terse listing"
+    },
+    {
+      "name": "-u",
+      "description": "Exclude/select login|UID set",
+      "args": [
+        {
+          "name": "UIDs"
+        }
+      ]
+    },
+    {
+      "name": "-U",
+      "description": "Select Unix socket"
+    },
+    {
+      "name": "-v",
+      "description": "List version info"
+    },
+    {
+      "name": "-V",
+      "description": "Verbose search"
+    },
+    {
+      "name": "+w",
+      "description": "Enable warnings"
+    },
+    {
+      "name": "-w",
+      "description": "Disable warnings"
+    },
+    {
+      "name": "-x",
+      "description": "Cross over +d|+D File systems or symbolic links",
+      "args": [
+        {
+          "name": "cross-over option"
+        }
+      ]
+    },
+    {
+      "name": "-X",
+      "description": "File descriptor table only"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "until",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/until.ts",
+  "description": "Repeat a command until this is true"
+}

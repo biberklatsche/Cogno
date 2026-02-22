@@ -1,0 +1,6 @@
+{
+  "name": "if",
+  "source": "fig",
+  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/if.ts",
+  "description": "Conditionally execute based on the return value of a command"
+}

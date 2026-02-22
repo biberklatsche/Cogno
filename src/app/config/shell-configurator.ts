@@ -80,20 +80,38 @@ export class ShellConfigurator {
     }
 
     private createShellConfig(sh: Shell): ShellProfile {
+        // Determine default args based on shell type for login shell + integration
+        let args: string[] = [];
+
+        switch (sh.shell_type) {
+            case 'Bash':
+            case 'GitBash':
+                // Note: --rcfile (added by integration) implies interactive mode
+                // Don't add -i here, it will be automatically interactive
+                args = [];
+                break;
+            case 'ZSH':
+                args = ['-l', '-i'];
+                break;
+            case 'Fish':
+                args = ['-l'];
+                break;
+            case 'PowerShell':
+                args = ['-NoLogo'];
+                break;
+        }
+
         const base: ShellProfile = {
             shell_type: sh.shell_type,
             path: sh.path,
-            args: [],
+            args: args,
             env: {},
             working_dir: '~',
-            load_user_rc: false,
+            load_user_rc: true,
             enable_shell_integration: true,
-            inject_path: true,
+            inject_cogno_cli: true,
         };
 
-        // Note: When enable_shell_integration is true (default),
-        // shell args are automatically determined by the integration system.
-        // Users can set custom args by disabling shell integration.
         // TERM is set globally in environment_builder.rs for all shells.
 
         return base;

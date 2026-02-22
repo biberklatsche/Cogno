@@ -46,12 +46,8 @@
           </div>
         `
       })
-      export class WorkspaceEditDialogComponent implements OnInit, OnDestroy {
+      export class WorkspaceEditDialogComponent implements OnInit {
         constructor(public workspaceService: WorkspaceService, private readonly dialogRef: DialogRef<void>) {}
-      
-          ngOnDestroy(): void {
-              this.workspaceService.registerKeybindListener();
-          }
       
           ngOnInit(): void {
               this.workspaceService.unregisterKeybindListener();
@@ -79,11 +75,13 @@
           this.workspace.autosave = this.autosave();
           // Persist via service
           void this.workspaceService.save(this.workspace);
+          this.workspaceService.registerKeybindListener();
           this.dialogRef.close();
         }
       
         onCancel() {
-          this.dialogRef.close();
+            this.workspaceService.registerKeybindListener();
+            this.dialogRef.close();
         }
       
           selectColor(color: ColorName) {
