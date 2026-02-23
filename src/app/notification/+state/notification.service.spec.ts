@@ -103,8 +103,8 @@ describe('NotificationService', () => {
             expect(sideMenuService.updateIcon).toHaveBeenCalledWith('Notification', 'mdiBell');
         });
 
-        it('should register Escape key when opened', () => {
-            appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Notification' } });
+        it('should register Escape key when focused', () => {
+            appBus.publish({ type: 'SideMenuViewFocused', payload: { label: 'Notification' } });
             expect(keybindService.registerListener).toHaveBeenCalledWith(
                 'notification',
                 ['Escape'],
@@ -112,8 +112,8 @@ describe('NotificationService', () => {
             );
         });
 
-        it('should unregister keybind listener when closed', () => {
-            appBus.publish({ type: 'SideMenuViewClosed', payload: { label: 'Notification' } });
+        it('should unregister keybind listener when blurred', () => {
+            appBus.publish({ type: 'SideMenuViewBlurred', payload: { label: 'Notification' } });
             expect(keybindService.unregisterListener).toHaveBeenCalledWith('notification');
         });
 

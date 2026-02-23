@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit, Signal} from '@angular/core';
+import {Component, OnDestroy, Signal} from '@angular/core';
 import {DEFAULT_WORKSPACE_ID, WorkspaceConfigUi, WorkspaceService} from "../+state/workspace.service";
 import {IconComponent} from "../../icons/icon/icon.component";
 import {CopyEditDeleteComponent} from "../../common/copy-edit-delete/copy-edit-delete.component";

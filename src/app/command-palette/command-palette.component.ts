@@ -1,11 +1,9 @@
 import {
     Component,
-    computed,
     effect,
-    signal,
     viewChild,
-    DestroyRef,
-    ElementRef, Signal, WritableSignal, AfterViewInit, OnDestroy
+    ElementRef,
+    Signal
 } from '@angular/core';
 
 import {CommandEntry, CommandPaletteService} from './command-palette.service';

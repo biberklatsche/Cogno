@@ -49,7 +49,8 @@ export class WorkspaceService {
             },
             {
                 onModeChange: (mode) => this.onModeChange(mode),
-                onOpen: () => this.registerKeybindListener(),
+                onBlur: () => this.unregisterKeybindListener(),
+                onFocus: () => this.registerKeybindListener(),
                 onClose: () => this.unregisterKeybindListener(),
             },
             { sideMenuService: this.sideMenuService, bus, configService: config, keybinds, destroyRef }

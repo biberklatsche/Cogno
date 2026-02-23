@@ -113,8 +113,8 @@ describe('WorkspaceService', () => {
     });
 
     describe('Lifecycle and Keybindings', () => {
-        it('should register keybind listeners when opened', () => {
-            appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Workspace' } });
+        it('should register keybind listeners when focused', () => {
+            appBus.publish({ type: 'SideMenuViewFocused', payload: { label: 'Workspace' } });
             expect(keybindService.registerListener).toHaveBeenCalledWith(
                 'workspace',
                 ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
@@ -122,8 +122,8 @@ describe('WorkspaceService', () => {
             );
         });
 
-        it('should unregister keybind listeners when closed', () => {
-            appBus.publish({ type: 'SideMenuViewClosed', payload: { label: 'Workspace' } });
+        it('should unregister keybind listeners when blurred', () => {
+            appBus.publish({ type: 'SideMenuViewBlurred', payload: { label: 'Workspace' } });
             expect(keybindService.unregisterListener).toHaveBeenCalledWith('workspace');
         });
     });

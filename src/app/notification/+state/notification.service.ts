@@ -50,6 +50,8 @@ export class NotificationService {
             {
                 onModeChange: (mode) => this.handleModeChange(mode),
                 onOpen: () => this.handleOpen(),
+                onFocus: () => this.registerKeybindListener(),
+                onBlur: () => this.unregisterKeybindListener(),
                 onClose: () => this.handleClose(),
             },
             { sideMenuService, bus, configService: config, keybinds, destroyRef }
@@ -71,15 +73,20 @@ export class NotificationService {
     private handleOpen(): void {
         // Reset icon to normal bell (clear badge indicator)
         this.feature.updateIcon('mdiBell');
+    }
 
-        // Register Escape key to close
+    private handleClose(): void {
+        this.unregisterKeybindListener();
+    }
+
+    private registerKeybindListener(): void {
         this.feature.registerKeybindListener(
             ['Escape'],
             () => this.feature.close()
         );
     }
 
-    private handleClose(): void {
+    private unregisterKeybindListener(): void {
         this.feature.unregisterKeybindListener();
     }
 

@@ -32,6 +32,8 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
                [class.shift-left]="visibleItems().length > 0"
+               tabindex="-1"
+               (pointerdown)="focus()"
         >
             <header>
                 <div class="btn-list">
@@ -169,6 +171,7 @@ export class SideMenuComponent implements OnDestroy {
     visibleItems: Signal<SideMenuItem[]> = computed(() => this.menuItems().filter(i => !i.hidden));
     selectedItem = this.menuItemService.selectedItem;
     overlay = this.menuItemService.displacement;
+    focused = this.menuItemService.isFocused;
 
     @ViewChild('overlayAside', {static: false}) overlayAsideRef?: ElementRef<HTMLElement>;
     @ViewChild('menuCol', {static: false}) menuColRef?: ElementRef<HTMLElement>;
@@ -179,15 +182,21 @@ export class SideMenuComponent implements OnDestroy {
     constructor(private menuItemService: SideMenuService) {
         this.clickOutsideEffect = effect(() => {
             const isOpen = !!this.selectedItem();
-            const isOverlay = !this.overlay();
-            const isPinned = this.selectedItem()?.pinned;
+            const isFocused = this.focused();
 
-            if (isOpen && isOverlay && !isPinned) {
+            if (isOpen && isFocused) {
                 this.lastOpenTimestamp = performance.now();
                 document.addEventListener('pointerdown', this.onPointerDown, true);
             } else {
                 document.removeEventListener('pointerdown', this.onPointerDown, true);
             }
+        });
+
+        effect(() => {
+            const isOpen = !!this.selectedItem();
+            const isFocused = this.focused();
+            if (!isOpen || !isFocused) return;
+            queueMicrotask(() => this.overlayAsideRef?.nativeElement.focus());
         });
     }
 
@@ -200,12 +209,6 @@ export class SideMenuComponent implements OnDestroy {
         // Ignore the very event that triggered open
         if (Math.abs(ev.timeStamp - this.lastOpenTimestamp) < 10) return;
 
-        // Double check pinned status in case effect didn't run yet or listener persists
-        if (this.selectedItem()?.pinned) {
-            document.removeEventListener('pointerdown', this.onPointerDown, true);
-            return;
-        }
-
         const target = ev.target as Node;
         const targetElement = target instanceof Element ? target : null;
         const clickedInsideDialog = !!targetElement?.closest('app-dialog');
@@ -215,6 +218,10 @@ export class SideMenuComponent implements OnDestroy {
         const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
 
         if (!clickedInsideAside && !clickedInsideMenu) {
+            if (this.selectedItem()?.pinned) {
+                this.menuItemService.blur();
+                return;
+            }
             this.close();
         }
     };
@@ -224,7 +231,11 @@ export class SideMenuComponent implements OnDestroy {
     }
 
     close() {
-        this.menuItemService.close();
+        this.menuItemService.close(true);
+    }
+
+    focus() {
+        this.menuItemService.focus();
     }
 
     toggleDisplacement() {

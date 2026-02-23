@@ -22,6 +22,7 @@ export class SideMenuService {
     private _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
     private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<SideMenuItem | undefined>(undefined);
     private _displacement: WritableSignal<boolean> = signal<boolean>(false);
+    private _isFocused: WritableSignal<boolean> = signal<boolean>(false);
     private _pinnedStack: string[] = [];
 
     get menu(): Signal<SideMenuItem[]> {
@@ -34,6 +35,10 @@ export class SideMenuService {
 
     get displacement(): Signal<boolean> {
         return this._displacement.asReadonly();
+    }
+
+    get isFocused(): Signal<boolean> {
+        return this._isFocused.asReadonly();
     }
 
     constructor(private bus: AppBus) {
@@ -65,7 +70,10 @@ export class SideMenuService {
 
     open(label: string): void {
         const current = this._selectedItem();
-        if (current?.label === label) return;
+        if (current?.label === label) {
+            this.focus();
+            return;
+        }
 
         if (current) {
             this.bus.publish({type: 'SideMenuViewClosed', payload: {label: current.label}});
@@ -76,15 +84,24 @@ export class SideMenuService {
 
         if (item) {
             this.bus.publish({type: 'SideMenuViewOpened', payload: {label: item.label}});
+            this.focus();
+        } else {
+            this.blur();
         }
     }
 
-    close() {
+    close(force = false) {
         const current = this._selectedItem();
         if(!current) return;
+        if (current.pinned && !force) {
+            this.blur();
+            this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
+            return;
+        }
 
         this.bus.publish({type: 'SideMenuViewClosed', payload: {label: current.label}});
 
+        this.blur();
         this._selectedItem.set(undefined);
         
         // Update the item in the menu list to be unpinned
@@ -101,6 +118,22 @@ export class SideMenuService {
             this.open(pinnedItemLabel);
         }
         this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
+    }
+
+    focus() {
+        const current = this._selectedItem();
+        if (!current || this._isFocused()) return;
+
+        this._isFocused.set(true);
+        this.bus.publish({type: 'SideMenuViewFocused', payload: {label: current.label}});
+    }
+
+    blur() {
+        const current = this._selectedItem();
+        if (!current || !this._isFocused()) return;
+
+        this._isFocused.set(false);
+        this.bus.publish({type: 'SideMenuViewBlurred', payload: {label: current.label}});
     }
 
     toggleDisplacement() {

@@ -159,7 +159,7 @@ describe('CommandPaletteService', () => {
 
         beforeEach(() => {
             vi.useFakeTimers();
-            appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Command Palette' } });
+            sideMenuService.open('Command Palette');
             keyHandler = vi.mocked(keybindService.registerListener).mock.calls.find(
                 (call: any) => call[0] === 'command_palette'
             )![2];
