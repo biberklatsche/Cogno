@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit, Signal} from '@angular/core';
+import {Component, Signal} from '@angular/core';
 
 import {
     Notification, NotificationId,
@@ -7,7 +7,6 @@ import {
 import {IconComponent} from '../../icons/icon/icon.component';
 import {Icon} from '../../icons/+model/icon';
 import {TimeAgoPipe} from '../../common/time-ago/time-ago.pipe';
-import {remove} from '@tauri-apps/plugin-fs';
 
 @Component({
   selector: 'app-notification-side',

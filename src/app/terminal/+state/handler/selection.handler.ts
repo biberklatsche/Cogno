@@ -6,13 +6,19 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Clipboard} from "../../../_tauri/clipboard";
 import {ConfigService} from "../../../config/+state/config.service";
+import {TerminalStateManager} from "../state";
 
 export class SelectionHandler implements ITerminalHandler {
 
     private subscription: Subscription = new Subscription();
-    private _terminal?: Terminal;
+    private terminal?: Terminal;
 
-    constructor(private _bus: AppBus, private _configService: ConfigService, private _terminalId: TerminalId) {
+    constructor(
+        private bus: AppBus,
+        private configService: ConfigService,
+        private terminalId: TerminalId,
+        private terminalStateManager: TerminalStateManager
+    ) {
 
     }
 
@@ -21,11 +27,16 @@ export class SelectionHandler implements ITerminalHandler {
     }
 
     registerTerminal(terminal: Terminal): IDisposable {
-        this._terminal = terminal;
-        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Copy'}).subscribe(async event => {
-            if(event.payload !== this._terminalId || !this.hasSelection()) return;
+        this.terminal = terminal;
+        this.syncSelectionState();
+        const selectionDisposable = this.terminal.onSelectionChange(() => {
+            this.syncSelectionState();
+        });
+        this.subscription.add(() => selectionDisposable.dispose());
+        this.subscription.add(this.bus.on$({path: ['app', 'terminal'], type: 'Copy'}).subscribe(async event => {
+            if(event.payload !== this.terminalId || !this.hasSelection()) return;
             await Clipboard.writeText(this.getSelection());
-            if (this._configService.config.selection?.clear_on_copy) {
+            if (this.configService.config.selection?.clear_on_copy) {
                 this.clearSelection();
             }
         }));
@@ -33,14 +44,19 @@ export class SelectionHandler implements ITerminalHandler {
     }
 
     hasSelection(): boolean {
-        return this._terminal?.hasSelection() ?? false;
+        return this.terminal?.hasSelection() ?? false;
     }
 
     getSelection(): string {
-        return this._terminal?.getSelection() ?? '';
+        return this.terminal?.getSelection() ?? '';
     }
 
     clearSelection(): void {
-        this._terminal?.clearSelection();
+        this.terminal?.clearSelection();
+        this.syncSelectionState();
+    }
+
+    private syncSelectionState(): void {
+        this.terminalStateManager.setHasSelection(this.hasSelection());
     }
 }

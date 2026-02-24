@@ -1,8 +1,10 @@
 import {MessageBase} from "../../app-bus/app-bus";
 import {TabId} from "../../workspace/+model/workspace";
+import {TerminalId} from "../+model/model";
 
 export type TabTitle = {
     tabId: TabId;
     title: string;
 }
 export type TabTitleChangedEvent = MessageBase<"TabTitleChanged", TabTitle>;
+export type PaneMaximizedChangedEvent = MessageBase<"PaneMaximizedChanged", { terminalId?: TerminalId }>;

@@ -62,6 +62,7 @@ describe('InspectorService', () => {
         beforeEach(() => {
             // Open the inspector
             appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Inspector' } });
+            appBus.publish({ type: 'SideMenuViewFocused', payload: { label: 'Inspector' } });
         });
 
         it('should update firedKeybinding on keybind event', () => {
@@ -129,9 +130,10 @@ describe('InspectorService', () => {
     });
 
     describe('Lifecycle and Modes', () => {
-        it('should unregister listeners when closed', () => {
+        it('should unregister keybind listeners when blurred', () => {
             appBus.publish({ type: 'SideMenuViewOpened', payload: { label: 'Inspector' } });
-            appBus.publish({ type: 'SideMenuViewClosed', payload: { label: 'Inspector' } });
+            appBus.publish({ type: 'SideMenuViewFocused', payload: { label: 'Inspector' } });
+            appBus.publish({ type: 'SideMenuViewBlurred', payload: { label: 'Inspector' } });
 
             expect(keybindService.unregisterListener).toHaveBeenCalledWith('inspector');
         });

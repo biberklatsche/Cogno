@@ -4,7 +4,7 @@ import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
 import {TabConfig, TabId} from "../../workspace/+model/workspace";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {RemoveTabAction, SelectTabAction} from "../+bus/actions";
+import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {ConfigService} from "../../config/+state/config.service";
 import {IdCreator} from "../../common/id-creator/id-creator";
@@ -35,6 +35,16 @@ export class TabListService {
         });
         this.bus.onType$('RemoveTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: RemoveTabAction) => {
             this.removeTab(event.payload);
+            event.propagationStopped = true;
+        });
+        this.bus.onType$('CreateTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: CreateTabAction) => {
+            if (!event.payload?.tabId) return;
+            this.addTab({
+                id: event.payload.tabId,
+                title: event.payload.title ?? 'Shell',
+                activeShellType: 'unknown',
+                isActive: event.payload.isActive ?? true
+            });
             event.propagationStopped = true;
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
@@ -139,6 +149,18 @@ export class TabListService {
         }
     }
 
+    reorderTabs(sourceTabId: TabId, destinationTabId: TabId) {
+        if (sourceTabId === destinationTabId) return;
+        const reorderedTabList = [...this._tabList.value];
+        const sourceTabIndex = reorderedTabList.findIndex(tab => tab.id === sourceTabId);
+        const destinationTabIndex = reorderedTabList.findIndex(tab => tab.id === destinationTabId);
+        if (sourceTabIndex === -1 || destinationTabIndex === -1) return;
+
+        const [sourceTab] = reorderedTabList.splice(sourceTabIndex, 1);
+        reorderedTabList.splice(destinationTabIndex, 0, sourceTab);
+        this._tabList.next(reorderedTabList);
+    }
+
     selectTab(tabId: TabId) {
         if(this._showRename()) return;
         const tabList = [...this._tabList.value];
@@ -154,10 +176,7 @@ export class TabListService {
 
     closeRename() {
         this._showRename.set(undefined);
-        const activeTab = this._tabList.value.find(s => s.isActive);
-        if(activeTab) {
-            this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
-        }
+        this.focusActiveTerminal();
     }
 
     commitRename(value: string) {
@@ -210,5 +229,12 @@ export class TabListService {
             title: tab.title,
             isTitleLocked: tab.isTitleLocked ?? false
         }));
+    }
+
+    focusActiveTerminal() {
+        const activeTab = this._tabList.value.find(s => s.isActive);
+        if(activeTab) {
+            this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
+        }
     }
 }

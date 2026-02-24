@@ -49,6 +49,8 @@ export class CommandPaletteService {
             {
                 onModeChange: (mode) => this.handleModeChange(mode),
                 onOpen: () => this.handleOpen(),
+                onFocus: () => this.registerKeybindListener(),
+                onBlur: () => this.unregisterKeybindListener(),
                 onClose: () => this.handleClose(),
             },
             { sideMenuService, bus, configService: config, keybinds, destroyRef }
@@ -65,7 +67,9 @@ export class CommandPaletteService {
         this.initCommands();
         this.initConfigListener();
         this.filterCommands('');
+    }
 
+    private registerKeybindListener(): void {
         this.feature.registerKeybindListener(
             ['Escape', 'Enter', 'ArrowDown', 'ArrowUp'],
             (evt) => this.handleKey(evt.key)
@@ -77,6 +81,10 @@ export class CommandPaletteService {
         this._filteredCommandList.set([]);
         this.configSubscription?.unsubscribe();
         this.configSubscription = undefined;
+        this.unregisterKeybindListener();
+    }
+
+    private unregisterKeybindListener(): void {
         this.feature.unregisterKeybindListener();
     }
 

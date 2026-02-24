@@ -1,33 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { KeybindExecutor } from './keybind.executor';
 import { AppBus } from '../../../app-bus/app-bus';
-import { FocusHandler } from '../handler/focus.handler';
-import { SelectionHandler } from '../handler/selection.handler';
-import { clear, getAppBus, getFocusHandler, getSelectionHandler } from '../../../../__test__/test-factory';
+import { TerminalStateManager } from '../state';
+import { clear, getAppBus } from '../../../../__test__/test-factory';
 
 describe('KeybindExecutor', () => {
     let executor: KeybindExecutor;
     let mockBus: AppBus;
-    let mockFocusHandler: FocusHandler;
-    let mockSelectionHandler: SelectionHandler;
+    let terminalStateManager: TerminalStateManager;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
         clear();
         mockBus = getAppBus();
-        
-        mockFocusHandler = getFocusHandler(terminalId);
-        vi.spyOn(mockFocusHandler, 'hasFocus').mockReturnValue(true);
-        
-        mockSelectionHandler = getSelectionHandler(terminalId);
-        vi.spyOn(mockSelectionHandler, 'hasSelection').mockReturnValue(true);
 
-        executor = new KeybindExecutor(
-            mockBus,
-            mockFocusHandler,
-            mockSelectionHandler,
-            terminalId
-        );
+        terminalStateManager = new TerminalStateManager(mockBus);
+        terminalStateManager.initialize(terminalId, 'Bash');
+        terminalStateManager.setFocus(true);
+        terminalStateManager.setHasSelection(true);
+
+        executor = new KeybindExecutor(mockBus, terminalStateManager);
     });
 
     it('should publish SplitPaneRight when split_right action is fired', async () => {
@@ -127,7 +119,7 @@ describe('KeybindExecutor', () => {
     });
 
     it('should NOT publish Copy when copy action is fired but NO selection', async () => {
-        vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(false);
+        terminalStateManager.setHasSelection(false);
         const publishSpy = vi.spyOn(mockBus, 'publish');
         const event: any = {
             path: ['app', 'action'],
@@ -202,8 +194,68 @@ describe('KeybindExecutor', () => {
         expect(event.performed).toBe(true);
     });
 
+    it('should maximize pane when maximize_pane action is fired and pane is not maximized', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'maximize_pane',
+            performed: false,
+            trigger: { performable: true }
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'MaximizePane',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
+    it('should request pane toggle when maximize_pane action is fired and pane is already maximized', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'maximize_pane',
+            performed: false,
+            trigger: { performable: true }
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'MaximizePane',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
+    it('should request pane toggle when minimize_pane action is fired', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'minimize_pane',
+            performed: false,
+            trigger: { performable: true }
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'MaximizePane',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
     it('should ignore events if terminal has no focus', async () => {
-        vi.mocked(mockFocusHandler.hasFocus).mockReturnValue(false);
+        terminalStateManager.setFocus(false);
         const publishSpy = vi.spyOn(mockBus, 'publish');
         const event: any = {
             path: ['app', 'action'],
@@ -220,7 +272,7 @@ describe('KeybindExecutor', () => {
     });
 
     it('should NOT ignore events if trigger.all is true even without focus', async () => {
-        vi.mocked(mockFocusHandler.hasFocus).mockReturnValue(false);
+        terminalStateManager.setFocus(false);
         const publishSpy = vi.spyOn(mockBus, 'publish');
         const event: any = {
             path: ['app', 'action'],

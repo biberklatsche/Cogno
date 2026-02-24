@@ -9,7 +9,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
-import {FocusActiveTerminalAction} from "../+bus/actions";
+import {FocusActiveTerminalAction, MaximizePaneAction, MinimizePaneAction} from "../+bus/actions";
 import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal/+bus/events";
 
 
@@ -17,12 +17,18 @@ import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal
 export class GridListService {
 
     private _gridList: BehaviorSubject<GridList> = new BehaviorSubject<GridList>({});
+    private _maximizedTerminalId: BehaviorSubject<TerminalId | undefined> = new BehaviorSubject<TerminalId | undefined>(undefined);
+    private paneSwapDragSourceTerminalId: TerminalId | undefined;
+    private paneSwapDragTargetTerminalId: TerminalId | undefined;
     get grids$(): Observable<Grid[]> {
         return this._gridList.pipe(map(g => Object.values(g)));
     }
     private _activeTabId: BehaviorSubject<TabId | undefined> = new BehaviorSubject<TabId | undefined>(undefined);
     get activeTabId$(): Observable<TabId | undefined> {
         return this._activeTabId.asObservable();
+    }
+    get maximizedTerminalId$(): Observable<TerminalId | undefined> {
+        return this._maximizedTerminalId.asObservable();
     }
 
     get activeGridIsSplit$(): Observable<boolean> {
@@ -35,7 +41,11 @@ export class GridListService {
         );
     }
 
-    constructor(private bus: AppBus, private componentFactory: TerminalComponentFactory, destroyRef: DestroyRef) {
+    constructor(
+        private bus: AppBus,
+        private componentFactory: TerminalComponentFactory,
+        destroyRef: DestroyRef
+    ) {
         this.bus.onType$('TabRemoved').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabRemovedEvent) => {
             this.removeGrid(event.payload);
         });
@@ -117,12 +127,27 @@ export class GridListService {
             this.split(event.payload!,'horizontal', 'l');
             event.propagationStopped = true;
         });
+
+        this.bus.onType$('MaximizePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: MaximizePaneAction) => {
+            if (!event.payload) return;
+            this.togglePaneMaximize(event.payload);
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('MinimizePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: MinimizePaneAction) => {
+            if (event.payload && this._maximizedTerminalId.value !== event.payload) return;
+            this.minimizePane();
+            event.propagationStopped = true;
+        });
     }
 
     removePane(terminalId: TerminalId) {
         const gridList = this._gridList.value;
         let gridAndNode = this.determineGrid(gridList, terminalId);
         if (!gridAndNode) return;
+        if (this._maximizedTerminalId.value === terminalId) {
+            this.minimizePane();
+        }
         if(gridAndNode.node.isRoot) {
             this.bus.publish({path: ['app', 'terminal'], type: "RemoveTab", payload: gridAndNode.grid.tabId});
         } else {
@@ -134,6 +159,87 @@ export class GridListService {
         }
         this.componentFactory.destroy(terminalId);
         this._gridList.next(gridList);
+    }
+
+    startPaneSwapDrag(sourceTerminalId: TerminalId): void {
+        this.paneSwapDragSourceTerminalId = sourceTerminalId;
+        this.paneSwapDragTargetTerminalId = sourceTerminalId;
+    }
+
+    updatePaneSwapTarget(targetTerminalId: TerminalId): void {
+        if (!this.paneSwapDragSourceTerminalId) return;
+        this.paneSwapDragTargetTerminalId = targetTerminalId;
+    }
+
+    finishPaneSwapDrag(): void {
+        if (!this.paneSwapDragSourceTerminalId || !this.paneSwapDragTargetTerminalId) {
+            this.cancelPaneSwapDrag();
+            return;
+        }
+        this.swapPanes(this.paneSwapDragSourceTerminalId, this.paneSwapDragTargetTerminalId);
+        this.cancelPaneSwapDrag();
+    }
+
+    cancelPaneSwapDrag(): void {
+        this.paneSwapDragSourceTerminalId = undefined;
+        this.paneSwapDragTargetTerminalId = undefined;
+    }
+
+    isPaneSwapDragActive(): boolean {
+        return this.paneSwapDragSourceTerminalId !== undefined;
+    }
+
+    movePaneSwapSourceToNewTab(): void {
+        if (!this.paneSwapDragSourceTerminalId) {
+            this.cancelPaneSwapDrag();
+            return;
+        }
+
+        const sourceTerminalId = this.paneSwapDragSourceTerminalId;
+        const gridList = this._gridList.value;
+        if (this._maximizedTerminalId.value === sourceTerminalId) {
+            this.minimizePane();
+        }
+        const sourceGridAndNode = this.determineGrid(gridList, sourceTerminalId);
+        if (!sourceGridAndNode || sourceGridAndNode.node.isRoot || !sourceGridAndNode.node.data) {
+            this.cancelPaneSwapDrag();
+            return;
+        }
+
+        const sourcePaneData: Pane = {...sourceGridAndNode.node.data, isFocused: true};
+        const promotedNode = sourceGridAndNode.grid.tree.remove(sourceGridAndNode.node.key);
+        if (promotedNode?.data) {
+            promotedNode.data = {...promotedNode.data, isFocused: false};
+        }
+
+        const newTabId = IdCreator.newTabId();
+        const movedPaneRootNode = new BinaryNode<Pane>({...sourcePaneData});
+        gridList[newTabId] = {tabId: newTabId, tree: new BinaryTree<Pane>(movedPaneRootNode)};
+        this._gridList.next({...gridList});
+
+        this.bus.publish({
+            type: 'CreateTab',
+            payload: {tabId: newTabId, title: sourcePaneData.workingDir ?? 'Shell', isActive: true}
+        });
+
+        this.cancelPaneSwapDrag();
+    }
+
+    swapPanes(sourceTerminalId: TerminalId, targetTerminalId: TerminalId): void {
+        if (sourceTerminalId === targetTerminalId) return;
+        const gridList = this._gridList.value;
+        const sourceGridAndNode = this.determineGrid(gridList, sourceTerminalId);
+        const targetGridAndNode = this.determineGrid(gridList, targetTerminalId);
+        if (!sourceGridAndNode || !targetGridAndNode) return;
+        if (sourceGridAndNode.grid.tabId !== targetGridAndNode.grid.tabId) return;
+
+        const sourcePane = sourceGridAndNode.node.data;
+        const targetPane = targetGridAndNode.node.data;
+        if (!sourcePane || !targetPane) return;
+
+        sourceGridAndNode.node.data = targetPane;
+        targetGridAndNode.node.data = sourcePane;
+        this._gridList.next({...gridList});
     }
 
     private split(terminalId: TerminalId, splitDirection: SplitDirection, side: 'l' | 'r') {
@@ -232,6 +338,7 @@ export class GridListService {
 
     selectGrid(tab?: TabId) {
         if(tab === undefined) return;
+        this.minimizePane();
         this._activeTabId.next(tab);
         const grid = this._gridList.value[tab];
         const terminalId = this.getFirstTerminalId(grid.tree.root);
@@ -250,6 +357,29 @@ export class GridListService {
         const focusedNode = activeGrid.tree.first(s => (s.isLeaf && s.data?.isFocused) ?? false);
         if(!focusedNode) return;
         return focusedNode.data!.terminalId!;
+    }
+
+    focusActiveTerminal(): void {
+        this.bus.publish({type: 'FocusActiveTerminal', path: ['app', 'grid']});
+    }
+
+    private maximizePane(terminalId: TerminalId): void {
+        this._maximizedTerminalId.next(terminalId);
+        this.bus.publish({type: 'PaneMaximizedChanged', payload: {terminalId}});
+    }
+
+    private togglePaneMaximize(terminalId: TerminalId): void {
+        if (this._maximizedTerminalId.value === terminalId) {
+            this.minimizePane();
+            return;
+        }
+        this.maximizePane(terminalId);
+    }
+
+    private minimizePane(): void {
+        if (!this._maximizedTerminalId.value) return;
+        this._maximizedTerminalId.next(undefined);
+        this.bus.publish({type: 'PaneMaximizedChanged', payload: {terminalId: undefined}});
     }
 
     private getActiveGrid(): Grid | undefined {

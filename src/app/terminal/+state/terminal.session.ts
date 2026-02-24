@@ -24,6 +24,7 @@ import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
+import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 
 @Injectable()
 export class TerminalSession {
@@ -32,7 +33,6 @@ export class TerminalSession {
     private pty: IPty = new Pty();
 
     private focusHandler?: FocusHandler = undefined;
-    private selectionHandler?: SelectionHandler = undefined;
 
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[];
@@ -59,6 +59,11 @@ export class TerminalSession {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
         this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
+        this.subscription.add(
+            this.bus.onType$('PaneMaximizedChanged').subscribe((event: PaneMaximizedChangedEvent) => {
+                this.stateManager.setPaneMaximized(event.payload?.terminalId === this.terminalId);
+            })
+        );
     }
 
     initializeTerminal(terminalContainer: HTMLDivElement): void {
@@ -67,18 +72,17 @@ export class TerminalSession {
         }
         this.renderer.open(terminalContainer, this.configService.config.font?.enable_ligatures ?? false);
         this.focusHandler = new FocusHandler(this.terminalId, this.bus, this.stateManager);
-        this.selectionHandler = new SelectionHandler(this.bus, this.configService, this.terminalId);
         this.disposables.push(this.renderer.register(new ResizeHandler(this.terminalId, this.pty, this.bus, terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
-        this.disposables.push(this.renderer.register(this.selectionHandler));
+        this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
-        this.disposables.push(new KeybindExecutor(this.bus, this.focusHandler, this.selectionHandler, this.terminalId))
+        this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))
 
         if(this.shellProfile.enable_shell_integration) {
             this.specCommandSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
@@ -108,6 +112,14 @@ export class TerminalSession {
                     this.bus.publish({path: ['app', 'terminal'], type: 'SplitPaneUp', payload: this.terminalId});
                 }, actionName: "split_up"  },
             { separator: true },
+            this.stateManager.isPaneMaximized
+                ? { label: 'Minimize', action: () => {
+                        this.bus.publish({path: ['app', 'terminal'], type: 'MinimizePane', payload: this.terminalId});
+                    }, actionName: "minimize_pane" }
+                : { label: 'Maximize', action: () => {
+                        this.bus.publish({path: ['app', 'terminal'], type: 'MaximizePane', payload: this.terminalId});
+                    }, actionName: "maximize_pane" },
+            { separator: true },
             { label: 'Clear', action: () => {
                     this.focusHandler?.focus();
                     this.bus.publish({path: ['app', 'terminal'], type: 'ClearBuffer', payload: this.terminalId});
@@ -116,7 +128,7 @@ export class TerminalSession {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
                 }, actionName: "close_terminal"  },
         ];
-        if(this.selectionHandler?.hasSelection()){
+        if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
                     this.bus.publish({path: ['app', 'action'], type: 'ActionFired', payload: 'copy'});

@@ -99,6 +99,19 @@ describe('TerminalSession', () => {
         const items = session.buildContextMenu();
         expect(items.length).toBeGreaterThan(0);
         expect(items.find(i => i.label === 'Paste')).toBeDefined();
+        expect(items.find(i => i.label === 'Maximize')).toBeDefined();
+    });
+
+    it('should show Minimize when pane is maximized', () => {
+        session.initialize(terminalId, mockShellProfile);
+        mockBus.publish({
+            type: 'PaneMaximizedChanged',
+            payload: { terminalId }
+        } as any);
+
+        const items = session.buildContextMenu();
+        expect(items.find(i => i.label === 'Minimize')).toBeDefined();
+        expect(items.find(i => i.label === 'Maximize')).toBeUndefined();
     });
 
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {

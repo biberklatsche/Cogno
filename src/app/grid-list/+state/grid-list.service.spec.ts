@@ -9,6 +9,8 @@ import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+
 import {Grid} from "../+model/model";
 import {
     FocusActiveTerminalAction,
+    MaximizePaneAction,
+    MinimizePaneAction,
     RemovePaneAction,
     SplitPaneDownAction,
     SplitPaneRightAction
@@ -183,6 +185,61 @@ describe('GridListService', () => {
             expect(root.right!.data!.terminalId).toBe('term-2');
         });
 
+        it('should swap panes', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            service.swapPanes(initialTerminalId, 'term-2');
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            const root = grids[0].tree.root;
+            expect(root.left!.data!.terminalId).toBe('term-2');
+            expect(root.right!.data!.terminalId).toBe(initialTerminalId);
+        });
+
+        it('should swap panes when pane swap drag is finished', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            service.startPaneSwapDrag(initialTerminalId);
+            service.updatePaneSwapTarget('term-2');
+            service.finishPaneSwapDrag();
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            const root = grids[0].tree.root;
+            expect(root.left!.data!.terminalId).toBe('term-2');
+            expect(root.right!.data!.terminalId).toBe(initialTerminalId);
+        });
+
+        it('should move pane swap source into a new tab', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            vi.spyOn(IdCreator, 'newTabId').mockReturnValue('tab-moved');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            service.startPaneSwapDrag('term-2');
+            service.movePaneSwapSourceToNewTab();
+
+            let grids: Grid[] = [];
+            service.grids$.subscribe(g => grids = g);
+            expect(grids.length).toBe(2);
+            const sourceGrid = grids.find(g => g.tabId === tabId)!;
+            const movedGrid = grids.find(g => g.tabId === 'tab-moved')!;
+            expect(sourceGrid.tree.root.isLeaf).toBe(true);
+            expect(sourceGrid.tree.root.data!.terminalId).toBe(initialTerminalId);
+            expect(movedGrid.tree.root.data!.terminalId).toBe('term-2');
+        });
+
         it('should handle TerminalTitleChanged event', () => {
             const publishSpy = vi.spyOn(bus, 'publish');
             bus.publish({
@@ -246,6 +303,35 @@ describe('GridListService', () => {
     });
 
     describe('Focus Management', () => {
+        it('should toggle maximize state when MaximizePane is fired repeatedly', () => {
+            const tabId = 'tab-1';
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-1');
+            bus.publish({
+                type: 'TabAdded',
+                payload: { tabId, isActive: true }
+            } as TabAddedEvent);
+
+            let maximizedTerminalId: string | undefined;
+            service.maximizedTerminalId$.subscribe(value => maximizedTerminalId = value);
+            bus.publish({
+                type: 'MaximizePane',
+                payload: 'term-1'
+            } as MaximizePaneAction);
+            expect(maximizedTerminalId).toBe('term-1');
+
+            bus.publish({
+                type: 'MaximizePane',
+                payload: 'term-1'
+            } as MaximizePaneAction);
+            expect(maximizedTerminalId).toBeUndefined();
+
+            bus.publish({
+                type: 'MinimizePane',
+                payload: 'term-1'
+            } as MinimizePaneAction);
+            expect(maximizedTerminalId).toBeUndefined();
+        });
+
         it('should handle TerminalFocused event', () => {
             const tabId = 'tab-1';
             vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-1');

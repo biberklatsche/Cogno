@@ -36,6 +36,10 @@ export interface SideMenuFeatureLifecycle {
     onOpen?(): void;
     /** Called when side menu is closed */
     onClose?(): void;
+    /** Called when side menu gains focus */
+    onFocus?(): void;
+    /** Called when side menu loses focus */
+    onBlur?(): void;
 }
 
 /**
@@ -92,8 +96,22 @@ export class SideMenuFeature {
             }
         });
 
+        const focusSub = this.bus.onType$('SideMenuViewFocused').subscribe((event) => {
+            if (event.payload?.label === this.config.label) {
+                this.lifecycle.onFocus?.();
+            }
+        });
+
+        const blurSub = this.bus.onType$('SideMenuViewBlurred').subscribe((event) => {
+            if (event.payload?.label === this.config.label) {
+                this.lifecycle.onBlur?.();
+            }
+        });
+
         this.subscriptions.add(openSub);
         this.subscriptions.add(closeSub);
+        this.subscriptions.add(focusSub);
+        this.subscriptions.add(blurSub);
     }
 
     private getFeatureMode(cfg: any): FeatureMode {

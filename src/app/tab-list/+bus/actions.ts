@@ -3,3 +3,4 @@ import {TabId} from "../../workspace/+model/workspace";
 
 export type SelectTabAction = ActionBase<"SelectTab", TabId>
 export type RemoveTabAction = ActionBase<"RemoveTab", TabId>
+export type CreateTabAction = ActionBase<"CreateTab", { tabId: TabId; title?: string; isActive?: boolean }>

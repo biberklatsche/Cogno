@@ -5,7 +5,7 @@ import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { Clipboard } from '../../../_tauri/clipboard';
 import { ConfigServiceMock } from '../../../../__test__/mocks/config-service.mock';
-import { clear, getAppBus, getConfigService, getSelectionHandler } from '../../../../__test__/test-factory';
+import { clear, getAppBus, getConfigService, getSelectionHandler, getStateManager } from '../../../../__test__/test-factory';
 
 vi.mock('../../../_tauri/clipboard', () => ({
   Clipboard: {
@@ -52,6 +52,16 @@ describe('SelectionHandler', () => {
     it('should proxy clearSelection', () => {
       handler.clearSelection();
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should report selection changes to terminal state', () => {
+      const stateManager = getStateManager();
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+
+      const selectionChangeCallback = vi.mocked(mockTerminal.onSelectionChange).mock.calls[0]?.[0] as (() => void);
+      selectionChangeCallback();
+
+      expect(stateManager.hasSelection).toBe(true);
     });
   });
 

@@ -49,7 +49,8 @@ export class WorkspaceService {
             },
             {
                 onModeChange: (mode) => this.onModeChange(mode),
-                onOpen: () => this.registerKeybindListener(),
+                onBlur: () => this.unregisterKeybindListener(),
+                onFocus: () => this.registerKeybindListener(),
                 onClose: () => this.unregisterKeybindListener(),
             },
             { sideMenuService: this.sideMenuService, bus, configService: config, keybinds, destroyRef }
@@ -231,6 +232,7 @@ export class WorkspaceService {
             for (const ws of list) { ws.isActive = false; ws.isSelected = false; }
             const ui: WorkspaceConfigUi = { ...workspace, id, isSelected: true, isActive: true };
             list.push(ui);
+            this.sideMenuService.updateBadgeColor('Workspace', workspace.color);
         }
         this._workspaceList.set(list);
         return id;

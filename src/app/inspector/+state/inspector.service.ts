@@ -74,6 +74,8 @@ export class InspectorService {
             {
                 onModeChange: (mode: FeatureMode) => this.handleModeChange(mode),
                 onOpen: () => this.handleOpen(),
+                onFocus: () => this.registerKeybindListener(),
+                onBlur: () => this.unregisterKeybindListener(),
                 onClose: () => this.handleClose(),
             },
             { sideMenuService, bus, configService: config, keybinds, destroyRef }
@@ -111,16 +113,22 @@ export class InspectorService {
             })
         );
 
-        // Register keyboard listener for Escape key
+    }
+
+    private handleClose(): void {
+        this.subscription?.unsubscribe();
+        this.subscription = undefined;
+        this.unregisterKeybindListener();
+    }
+
+    private registerKeybindListener(): void {
         this.feature.registerKeybindListener(
             ['Escape'],
             () => this.feature.close()
         );
     }
 
-    private handleClose(): void {
-        this.subscription?.unsubscribe();
-        this.subscription = undefined;
+    private unregisterKeybindListener(): void {
         this.feature.unregisterKeybindListener();
     }
 

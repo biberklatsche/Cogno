@@ -65,6 +65,14 @@
       opacity: 1;
     }
   }
+
+  &:active {
+    cursor: pointer;
+  }
+
+  &.is-dragging {
+    border-style: dashed;
+  }
 }
 
 .animate-tab-enter {
