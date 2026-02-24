@@ -14,6 +14,7 @@ import {KeybindService} from "../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../menu/side-menu/+state/side-menu-feature";
 import {TerminalId} from "../grid-list/+model/model";
 import {TerminalSearchSideComponent} from "./terminal-search-side.component";
+import {Color} from "../common/color/color";
 
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
@@ -45,7 +46,7 @@ export class TerminalSearchService {
         this.feature = createSideMenuFeature(
             {
                 label: "Terminal Search",
-                icon: "mdiFormatLetterMatches",
+                icon: "mdiFilter",
                 actionName: "open_terminal_search",
                 component: TerminalSearchSideComponent,
                 configPath: "terminal_search",
@@ -230,14 +231,9 @@ export class TerminalSearchService {
     }
 
     private updateSearchColors(matchBackgroundColor?: string, matchBorderColor?: string): void {
-        this.matchBackgroundColorSignal.set(this.toCssColor(matchBackgroundColor));
-        this.matchBorderColorSignal.set(this.toCssColor(matchBorderColor));
+        this.matchBackgroundColorSignal.set(Color.toHexColor(matchBackgroundColor));
+        this.matchBorderColorSignal.set(Color.toHexColor(matchBorderColor));
     }
 
-    private toCssColor(hexColor?: string): string {
-        if (!hexColor) {
-            return "";
-        }
-        return `#${hexColor}`;
-    }
+
 }

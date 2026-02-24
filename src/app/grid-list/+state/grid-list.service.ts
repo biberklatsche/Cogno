@@ -384,17 +384,17 @@ export class GridListService {
     private focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {
         const activeGrid = this.getActiveGrid();
         if (!activeGrid) return;
+        console.log('#############################', terminalId, direction);
+        const currentLeaf = activeGrid.tree.first(node => node.isLeaf && node.data?.terminalId === terminalId);
+        if (!currentLeaf) return;
 
-        const terminals = activeGrid.tree
-            .find(node => node.isLeaf && !!node.data?.terminalId)
-            .map(node => node.data!.terminalId!);
-        if (terminals.length < 2) return;
+        const adjacentLeaf = direction === 1
+            ? activeGrid.tree.getNextLeaf(currentLeaf.key)
+            : activeGrid.tree.getPreviousLeaf(currentLeaf.key);
+        const adjacentTerminalId = adjacentLeaf?.data?.terminalId;
+        if (!adjacentTerminalId || adjacentTerminalId === terminalId) return;
 
-        const currentIndex = terminals.indexOf(terminalId);
-        if (currentIndex < 0) return;
-
-        const nextIndex = (currentIndex + direction + terminals.length) % terminals.length;
-        this.bus.publish({type: 'FocusTerminal', payload: terminals[nextIndex], path: ['app', 'terminal']});
+        this.bus.publish({type: 'FocusTerminal', payload: adjacentTerminalId, path: ['app', 'terminal']});
     }
 
     private maximizePane(terminalId: TerminalId): void {
