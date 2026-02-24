@@ -26,6 +26,7 @@ import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
+import {LinkHandler} from "./handler/link.handler";
 
 @Injectable()
 export class TerminalSession {
@@ -84,6 +85,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
+        this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))
 
         if(this.shellProfile.enable_shell_integration) {

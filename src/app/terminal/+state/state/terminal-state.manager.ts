@@ -205,6 +205,10 @@ export class TerminalStateManager {
         return this._stateSubject.value.terminalId;
     }
 
+    get pathAdapter(): IPathAdapter | undefined {
+        return this._pathAdapter;
+    }
+
     // ---- History Zugriff ----
 
     get commands$(): Observable<Command[]> {
@@ -247,4 +251,5 @@ export class TerminalStateManager {
             type: "TerminalCwdChanged"
         });
     }
+
 }
