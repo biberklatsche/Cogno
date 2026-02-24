@@ -30,12 +30,16 @@ export class TerminalSearchService {
     private readonly searchResultsSignal = signal<TerminalSearchLineResult[]>([]);
     private readonly caseSensitiveSignal = signal<boolean>(false);
     private readonly regularExpressionSignal = signal<boolean>(false);
+    private readonly matchBackgroundColorSignal = signal<string>("");
+    private readonly matchBorderColorSignal = signal<string>("");
     private readonly activeTerminalIdSignal = signal<TerminalId | undefined>(undefined);
 
     readonly searchQuery: Signal<string> = this.searchQuerySignal.asReadonly();
     readonly searchResults: Signal<TerminalSearchLineResult[]> = this.searchResultsSignal.asReadonly();
     readonly caseSensitive: Signal<boolean> = this.caseSensitiveSignal.asReadonly();
     readonly regularExpression: Signal<boolean> = this.regularExpressionSignal.asReadonly();
+    readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
+    readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
 
     constructor() {
         this.feature = createSideMenuFeature(
@@ -67,6 +71,12 @@ export class TerminalSearchService {
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((event: TerminalSearchResultEvent) => {
                 this.handleSearchResult(event);
+            });
+
+        this.configService.config$
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((config) => {
+                this.updateSearchColors(config.terminal_search?.match_background_color, config.terminal_search?.match_border_color);
             });
     }
 
@@ -103,6 +113,8 @@ export class TerminalSearchService {
         const revealPayload: TerminalSearchRevealPayload = {
             terminalId: activeTerminalId,
             query: this.searchQuerySignal().trim(),
+            caseSensitive: this.caseSensitiveSignal(),
+            regularExpression: this.regularExpressionSignal(),
             lineNumber: searchLine.lineNumber,
             matchStartIndex: firstLineMatch.startIndex,
             matchLength: firstLineMatch.endIndex - firstLineMatch.startIndex,
@@ -215,5 +227,17 @@ export class TerminalSearchService {
         }
 
         this.searchResultsSignal.set(payload.lines);
+    }
+
+    private updateSearchColors(matchBackgroundColor?: string, matchBorderColor?: string): void {
+        this.matchBackgroundColorSignal.set(this.toCssColor(matchBackgroundColor));
+        this.matchBorderColorSignal.set(this.toCssColor(matchBorderColor));
+    }
+
+    private toCssColor(hexColor?: string): string {
+        if (!hexColor) {
+            return "";
+        }
+        return `#${hexColor}`;
     }
 }

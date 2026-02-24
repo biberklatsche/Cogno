@@ -22,6 +22,8 @@ export type TerminalSearchLineResult = {
 export type TerminalSearchRevealPayload = {
     terminalId: TerminalId;
     query: string;
+    caseSensitive: boolean;
+    regularExpression: boolean;
     lineNumber: number;
     matchStartIndex: number;
     matchLength: number;

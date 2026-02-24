@@ -32,6 +32,8 @@ type SearchTextSegment = {
                 type="button"
                 class="search-option-button"
                 [class.is-active]="caseSensitive()"
+                [style.background-color]="caseSensitive() ? matchBackgroundColor() : null"
+                [style.border-color]="caseSensitive() ? matchBorderColor() : null"
                 title="Case sensitive"
                 (click)="$event.stopPropagation(); toggleCaseSensitive()"
             >
@@ -41,6 +43,8 @@ type SearchTextSegment = {
                 type="button"
                 class="search-option-button"
                 [class.is-active]="regularExpression()"
+                [style.background-color]="regularExpression() ? matchBackgroundColor() : null"
+                [style.border-color]="regularExpression() ? matchBorderColor() : null"
                 title="Regular expression"
                 (click)="$event.stopPropagation(); toggleRegularExpression()"
             >
@@ -59,7 +63,7 @@ type SearchTextSegment = {
                             <span class="line-number">{{ searchLine.lineNumber }}</span>
                             <span class="line-content">
                                 @for (segment of buildSegments(searchLine); track trackSegment(segment, $index)) {
-                                    <span [class.match]="segment.isMatch">{{ segment.text }}</span>
+                                    <span [class.match]="segment.isMatch" [style.background-color]="segment.isMatch ? matchBackgroundColor() : null" [style.border]="segment.isMatch ? '1px solid ' + matchBorderColor() : null">{{ segment.text }}</span>
                                 }
                             </span>
                         </li>
@@ -111,8 +115,7 @@ type SearchTextSegment = {
             }
 
             .search-option-button.is-active {
-                background: #2f8fda33;
-                border-color: #2f8fda;
+                font-weight: 600;
             }
 
             .result-header,
@@ -159,7 +162,6 @@ type SearchTextSegment = {
             }
 
             .match {
-                background: #f5e66366;
                 border-radius: 2px;
             }
         `,
@@ -172,12 +174,16 @@ export class TerminalSearchSideComponent {
     readonly searchResults: Signal<TerminalSearchLineResult[]>;
     readonly caseSensitive: Signal<boolean>;
     readonly regularExpression: Signal<boolean>;
+    readonly matchBackgroundColor: Signal<string>;
+    readonly matchBorderColor: Signal<string>;
 
     constructor() {
         this.searchQuery = this.terminalSearchService.searchQuery;
         this.searchResults = this.terminalSearchService.searchResults;
         this.caseSensitive = this.terminalSearchService.caseSensitive;
         this.regularExpression = this.terminalSearchService.regularExpression;
+        this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
+        this.matchBorderColor = this.terminalSearchService.matchBorderColor;
     }
 
     updateSearchQuery(event: Event): void {

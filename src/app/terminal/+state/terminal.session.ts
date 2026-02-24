@@ -81,7 +81,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
-        this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId)));
+        this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))

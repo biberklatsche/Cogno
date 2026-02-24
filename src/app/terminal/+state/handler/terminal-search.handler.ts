@@ -5,6 +5,7 @@ import {TerminalId} from "../../../grid-list/+model/model";
 import {AppBus} from "../../../app-bus/app-bus";
 import {IDisposable} from "../../../common/models/models";
 import {ITerminalHandler} from "./handler";
+import {ConfigService} from "../../../config/+state/config.service";
 import {
     TerminalSearchLineMatch,
     TerminalSearchLineResult,
@@ -18,18 +19,12 @@ export class TerminalSearchHandler implements ITerminalHandler {
     private terminal?: Terminal;
     private searchAddon?: SearchAddon;
 
-    private readonly searchDecorationOptions: NonNullable<ISearchOptions["decorations"]> = {
-        matchBackground: "#2f8fda55",
-        matchBorder: "#2f8fda",
-        matchOverviewRuler: "#2f8fda",
-        activeMatchBackground: "#f5e66399",
-        activeMatchBorder: "#f5e663",
-        activeMatchColorOverviewRuler: "#f5e663"
-    };
+    private searchDecorationOptions: ISearchOptions["decorations"];
 
     constructor(
         private readonly bus: AppBus,
         private readonly terminalId: TerminalId,
+        private readonly configService: ConfigService,
     ) {
     }
 
@@ -48,6 +43,18 @@ export class TerminalSearchHandler implements ITerminalHandler {
         this.subscription.add(
             this.bus.on$({path: ["app", "terminal"], type: "TerminalSearchRevealRequested"}).subscribe((event) => {
                 this.handleSearchRevealRequest(event);
+            })
+        );
+        this.subscription.add(
+            this.configService.config$.subscribe((config) => {
+                this.updateSearchDecorationOptions(
+                    config.terminal_search?.match_background_color,
+                    config.terminal_search?.match_border_color,
+                    config.terminal_search?.match_overview_ruler_color,
+                    config.terminal_search?.active_match_background_color,
+                    config.terminal_search?.active_match_border_color,
+                    config.terminal_search?.active_match_overview_ruler_color,
+                );
             })
         );
 
@@ -112,8 +119,18 @@ export class TerminalSearchHandler implements ITerminalHandler {
             return;
         }
 
-        const safeMatchLength = Math.max(1, revealPayload.matchLength);
-        this.terminal?.select(revealPayload.matchStartIndex, bufferLineIndex, safeMatchLength);
+        const revealSucceeded = this.activateSearchMatch(
+            revealPayload.query,
+            revealPayload.caseSensitive,
+            revealPayload.regularExpression,
+            bufferLineIndex,
+            revealPayload.matchStartIndex,
+        );
+        if (!revealSucceeded) {
+            const safeMatchLength = Math.max(1, revealPayload.matchLength);
+            this.terminal?.select(revealPayload.matchStartIndex, bufferLineIndex, safeMatchLength);
+        }
+
         this.scrollToBufferLine(bufferLineIndex);
     }
 
@@ -204,8 +221,114 @@ export class TerminalSearchHandler implements ITerminalHandler {
         };
     }
 
+    private activateSearchMatch(
+        query: string,
+        caseSensitive: boolean,
+        regularExpression: boolean,
+        targetBufferLineIndex: number,
+        targetMatchStartIndex: number,
+    ): boolean {
+        if (!this.searchAddon || !this.terminal) {
+            return false;
+        }
+
+        const searchExpression = this.createSearchExpression(query, caseSensitive, regularExpression);
+        if (!searchExpression) {
+            return false;
+        }
+
+        const searchOptions = this.createSearchOptions(caseSensitive, regularExpression);
+        const searchAddonWithInternalOptions = this.searchAddon as unknown as SearchAddonWithInternalOptions;
+
+        this.terminal.clearSelection();
+        const firstFindSucceeded = searchAddonWithInternalOptions.findNext(query, searchOptions, {noScroll: true});
+        if (!firstFindSucceeded) {
+            return false;
+        }
+
+        const maxIterations = this.terminal.buffer.active.length + this.terminal.rows;
+        let firstSelectionKey: string | undefined;
+
+        for (let iteration = 0; iteration < maxIterations; iteration++) {
+            const currentSelection = this.terminal.getSelectionPosition();
+            if (this.matchesTargetSelection(currentSelection, targetBufferLineIndex, targetMatchStartIndex)) {
+                return true;
+            }
+
+            const currentSelectionKey = this.selectionKey(currentSelection);
+            if (!currentSelectionKey) {
+                return false;
+            }
+
+            if (!firstSelectionKey) {
+                firstSelectionKey = currentSelectionKey;
+            } else if (currentSelectionKey === firstSelectionKey) {
+                return false;
+            }
+
+            const movedToNextMatch = searchAddonWithInternalOptions.findNext(query, searchOptions, {noScroll: true});
+            if (!movedToNextMatch) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    private updateSearchDecorationOptions(
+        matchBackgroundColor?: string,
+        matchBorderColor?: string,
+        matchOverviewRulerColor?: string,
+        activeMatchBackgroundColor?: string,
+        activeMatchBorderColor?: string,
+        activeMatchOverviewRulerColor?: string,
+    ): void {
+        const matchOverviewRuler = this.toCssColor(matchOverviewRulerColor);
+        const activeMatchColorOverviewRuler = this.toCssColor(activeMatchOverviewRulerColor);
+        if (!matchOverviewRuler || !activeMatchColorOverviewRuler) {
+            this.searchDecorationOptions = undefined;
+            return;
+        }
+
+        this.searchDecorationOptions = {
+            matchBackground: this.toCssColor(matchBackgroundColor),
+            matchBorder: this.toCssColor(matchBorderColor),
+            matchOverviewRuler,
+            activeMatchBackground: this.toCssColor(activeMatchBackgroundColor),
+            activeMatchBorder: this.toCssColor(activeMatchBorderColor),
+            activeMatchColorOverviewRuler,
+        };
+    }
+
     private escapeRegExp(value: string): string {
         return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    private toCssColor(hexColor?: string): string | undefined {
+        if (!hexColor) {
+            return undefined;
+        }
+        return `#${hexColor}`;
+    }
+
+    private matchesTargetSelection(
+        selection: TerminalSelectionRange | undefined,
+        targetBufferLineIndex: number,
+        targetMatchStartIndex: number,
+    ): boolean {
+        if (!selection) {
+            return false;
+        }
+
+        return selection.start.y === targetBufferLineIndex && selection.start.x === targetMatchStartIndex;
+    }
+
+    private selectionKey(selection: TerminalSelectionRange | undefined): string | undefined {
+        if (!selection) {
+            return undefined;
+        }
+
+        return `${selection.start.y}:${selection.start.x}:${selection.end.y}:${selection.end.x}`;
     }
 
     private scrollToBufferLine(bufferLineIndex: number): void {
@@ -220,3 +343,23 @@ export class TerminalSearchHandler implements ITerminalHandler {
         this.terminal.scrollLines(desiredScrollDistance);
     }
 }
+
+type TerminalSelectionPoint = {
+    x: number;
+    y: number;
+};
+
+type TerminalSelectionRange = {
+    start: TerminalSelectionPoint;
+    end: TerminalSelectionPoint;
+};
+
+type SearchAddonWithInternalOptions = SearchAddon & {
+    findNext(
+        term: string,
+        searchOptions?: ISearchOptions,
+        internalSearchOptions?: {
+            noScroll?: boolean;
+        },
+    ): boolean;
+};
