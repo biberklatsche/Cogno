@@ -98,6 +98,44 @@ describe('KeybindExecutor', () => {
         expect(event.performed).toBe(true);
     });
 
+    it('should publish SelectNextPane when select_next_pane action is fired', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'select_next_pane',
+            performed: false
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'SelectNextPane',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
+    it('should publish SelectPreviousPane when select_previous_pane action is fired', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'select_previous_pane',
+            performed: false
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'SelectPreviousPane',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
     it('should publish Copy when copy action is fired and has selection', async () => {
         const publishSpy = vi.spyOn(mockBus, 'publish');
         const event: any = {

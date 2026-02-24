@@ -31,6 +31,8 @@ import {
     MaximizePaneAction,
     MinimizePaneAction,
     RemovePaneAction, SplitPaneDownAction,
+    SelectNextPaneAction,
+    SelectPreviousPaneAction,
     SplitPaneLeftAction,
     SplitPaneRightAction,
     SplitPaneUpAction
@@ -95,6 +97,8 @@ export type AppMessage =
     | SplitPaneLeftAction
     | SplitPaneUpAction
     | SplitPaneDownAction
+    | SelectNextPaneAction
+    | SelectPreviousPaneAction
     | MaximizePaneAction
     | MinimizePaneAction
     | ClearBufferAction

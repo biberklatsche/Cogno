@@ -38,6 +38,16 @@ export class KeybindExecutor implements IDisposable  {
                     event.performed = true;
                     break;
                 }
+                case 'select_next_pane': {
+                    this._bus.publish({type: 'SelectNextPane', payload: this._stateManager.terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'select_previous_pane': {
+                    this._bus.publish({type: 'SelectPreviousPane', payload: this._stateManager.terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
                 case 'copy': {
                     const isPerformable = this.calcPreventDefault(event.trigger?.performable, () => this._stateManager.hasSelection);
                     if (isPerformable) {

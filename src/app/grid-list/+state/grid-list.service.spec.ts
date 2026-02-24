@@ -12,6 +12,8 @@ import {
     MaximizePaneAction,
     MinimizePaneAction,
     RemovePaneAction,
+    SelectNextPaneAction,
+    SelectPreviousPaneAction,
     SplitPaneDownAction,
     SplitPaneRightAction
 } from "../+bus/actions";
@@ -183,6 +185,44 @@ describe('GridListService', () => {
             expect(root.data!.splitDirection).toBe('horizontal');
             expect(root.left!.data!.terminalId).toBe(initialTerminalId);
             expect(root.right!.data!.terminalId).toBe('term-2');
+        });
+
+        it('should focus next pane on SelectNextPane', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            const publishSpy = vi.spyOn(bus, 'publish');
+            bus.publish({
+                type: 'SelectNextPane',
+                payload: initialTerminalId
+            } as SelectNextPaneAction);
+
+            expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'FocusTerminal',
+                payload: 'term-2'
+            }));
+        });
+
+        it('should focus previous pane on SelectPreviousPane', () => {
+            vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
+            bus.publish({
+                type: 'SplitPaneRight',
+                payload: initialTerminalId
+            } as SplitPaneRightAction);
+
+            const publishSpy = vi.spyOn(bus, 'publish');
+            bus.publish({
+                type: 'SelectPreviousPane',
+                payload: 'term-2'
+            } as SelectPreviousPaneAction);
+
+            expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'FocusTerminal',
+                payload: initialTerminalId
+            }));
         });
 
         it('should swap panes', () => {

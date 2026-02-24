@@ -9,7 +9,13 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {TerminalComponentFactory} from "./terminal-component.factory";
 import {TerminalFocusedEvent} from "../../terminal/+state/handler/focus.handler";
-import {FocusActiveTerminalAction, MaximizePaneAction, MinimizePaneAction} from "../+bus/actions";
+import {
+    FocusActiveTerminalAction,
+    MaximizePaneAction,
+    MinimizePaneAction,
+    SelectNextPaneAction,
+    SelectPreviousPaneAction
+} from "../+bus/actions";
 import {TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../../terminal/+bus/events";
 
 
@@ -125,6 +131,18 @@ export class GridListService {
 
         this.bus.onType$('SplitPaneUp').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
             this.split(event.payload!,'horizontal', 'l');
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('SelectNextPane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectNextPaneAction) => {
+            if (!event.payload) return;
+            this.focusAdjacentPane(event.payload, 1);
+            event.propagationStopped = true;
+        });
+
+        this.bus.onType$('SelectPreviousPane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectPreviousPaneAction) => {
+            if (!event.payload) return;
+            this.focusAdjacentPane(event.payload, -1);
             event.propagationStopped = true;
         });
 
@@ -361,6 +379,22 @@ export class GridListService {
 
     focusActiveTerminal(): void {
         this.bus.publish({type: 'FocusActiveTerminal', path: ['app', 'grid']});
+    }
+
+    private focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {
+        const activeGrid = this.getActiveGrid();
+        if (!activeGrid) return;
+
+        const terminals = activeGrid.tree
+            .find(node => node.isLeaf && !!node.data?.terminalId)
+            .map(node => node.data!.terminalId!);
+        if (terminals.length < 2) return;
+
+        const currentIndex = terminals.indexOf(terminalId);
+        if (currentIndex < 0) return;
+
+        const nextIndex = (currentIndex + direction + terminals.length) % terminals.length;
+        this.bus.publish({type: 'FocusTerminal', payload: terminals[nextIndex], path: ['app', 'terminal']});
     }
 
     private maximizePane(terminalId: TerminalId): void {
