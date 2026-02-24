@@ -16,6 +16,7 @@ import {InspectorService} from "./inspector/+state/inspector.service";
 import {NotificationService} from "./notification/+state/notification.service";
 import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
+import {TerminalSearchService} from "./terminal-search/terminal-search.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,6 +28,7 @@ export const appConfig: ApplicationConfig = {
           inject(NotificationService);
           inject(WorkspaceService);
           inject(CommandPaletteService);
+          inject(TerminalSearchService);
           inject(InspectorService);
           inject(KeybindService);
           inject(CliActionService);

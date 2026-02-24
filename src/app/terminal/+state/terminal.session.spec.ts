@@ -76,8 +76,8 @@ describe('TerminalSession', () => {
 
         const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
         expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-        // Handlers: Pty, Resize, Theme, Title, FullScreen, Focus, Selection, Input, Mouse, Cursor = 10
-        expect(rendererInstance.register).toHaveBeenCalledTimes(10);
+        // Handlers: Pty, Resize, Theme, Title, FullScreen, Focus, Selection, Input, Search, Mouse, Cursor = 11
+        expect(rendererInstance.register).toHaveBeenCalledTimes(11);
     });
 
     it('should enable shell integration features if configured', () => {
@@ -89,8 +89,8 @@ describe('TerminalSession', () => {
         session.initializeTerminal(mockElement);
 
         const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-        // Handlers: 10 base + CognoOsc (handled by CommandLineObserver), CommandLineObserver, CommandLineEditor = 12
-        expect(rendererInstance.register).toHaveBeenCalledTimes(12);
+        // Handlers: 11 base + CommandLineObserver + CommandLineEditor = 13
+        expect(rendererInstance.register).toHaveBeenCalledTimes(13);
         expect(mockSpecCommandSuggestorService.preloadForShellIntegration).toHaveBeenCalledWith('Bash');
     });
 

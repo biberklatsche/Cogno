@@ -6,7 +6,14 @@ import {Unicode11Addon} from "@xterm/addon-unicode11";
 import {LigaturesAddon} from "@xterm/addon-ligatures";
 import {WebglAddon} from "@xterm/addon-webgl";
 import {IDisposable} from "../../../common/models/models";
-import {IFitHandler, isFitHandler, isTerminalHandler, ITerminalHandler} from "../handler/handler";
+import {
+    IFitHandler,
+    ISearchHandler,
+    isFitHandler,
+    isSearchHandler,
+    isTerminalHandler,
+    ITerminalHandler
+} from "../handler/handler";
 import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
@@ -14,7 +21,7 @@ export interface IRenderer {
 
     dispose(): void;
 
-    register(handler: ITerminalHandler): IDisposable;
+    register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable;
 }
 
 export class Renderer implements IRenderer, IDisposable {
@@ -68,9 +75,12 @@ export class Renderer implements IRenderer, IDisposable {
         }
     }
 
-    register(handler: ITerminalHandler | IFitHandler): IDisposable {
+    register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable {
         if(isFitHandler(handler)) {
             handler.registerFitAddon(this._fitAddon)
+        }
+        if (isSearchHandler(handler)) {
+            handler.registerSearchAddon(this._searchAddon);
         }
         if(isTerminalHandler(handler)) {
             return handler.registerTerminal(this._terminal);

@@ -10,7 +10,14 @@ import {
     SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
     CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction, SelectAllAction,
 } from '../terminal/+bus/actions';
-import {PtyInitializedEvent, TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../terminal/+bus/events";
+import {
+    PtyInitializedEvent,
+    TerminalCwdChangedEvent,
+    TerminalSearchRevealRequestedEvent,
+    TerminalSearchRequestedEvent,
+    TerminalSearchResultEvent,
+    TerminalTitleChangedEvent
+} from "../terminal/+bus/events";
 import {
     TerminalThemeChangedEvent,
     TerminalThemePaddingAddedEvent,
@@ -51,6 +58,9 @@ export type AppMessage =
     | PtyInitializedEvent
     | TerminalCwdChangedEvent
     | TerminalTitleChangedEvent
+    | TerminalSearchRequestedEvent
+    | TerminalSearchResultEvent
+    | TerminalSearchRevealRequestedEvent
     | TerminalThemeChangedEvent
     | TerminalThemePaddingAddedEvent
     | TerminalThemePaddingRemovedEvent

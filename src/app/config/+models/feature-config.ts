@@ -16,3 +16,7 @@ export const FeatureNotificationSchema = z.object({
 export const FeatureCommandPaletteSchema = z.object({
     mode: FeatureModeEnum.optional(),
 });
+
+export const FeatureTerminalSearchSchema = z.object({
+    mode: FeatureModeEnum.optional(),
+});

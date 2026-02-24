@@ -21,6 +21,7 @@ export const ACTION_NAMES = [
     'open_inspector',
     'open_workspace',
     'open_command_palette',
+    'open_terminal_search',
     'open_notification',
     'quit',
     'new_window',
