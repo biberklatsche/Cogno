@@ -59,7 +59,7 @@ export class FilesystemDirectorySuggestor implements TerminalAutocompleteSuggest
             const contains = candidate.entryNameLower.includes(query);
             const score = (starts ? 70 : contains ? 20 : 0) + 20;
             return {
-                label: candidate.displayPath,
+                label: AutocompletePathUtil.shortenParentTraversalDisplay(candidate.displayPath),
                 detail: candidate.childNorm,
                 insertText: candidate.displayPath,
                 score,

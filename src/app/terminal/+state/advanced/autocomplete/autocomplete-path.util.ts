@@ -2,6 +2,8 @@ import { TerminalState } from "../../state";
 import { PathFactory } from "../adapter/path.factory";
 
 export class AutocompletePathUtil {
+    private static readonly PARENT_TRAVERSAL_PREFIX_RE = /^(?:\.\.\/){2,}/;
+
     static normalizeCwd(cwd: string, shellContext: TerminalState["shellContext"]): string {
         const adapter = PathFactory.createAdapter(shellContext);
         if (!cwd) return "/";
@@ -57,6 +59,11 @@ export class AutocompletePathUtil {
         candidates.push(absolute);
 
         return candidates.reduce((best, cur) => (cur.length < best.length ? cur : best), candidates[0]);
+    }
+
+    static shortenParentTraversalDisplay(path: string): string {
+        if (!path) return path;
+        return path.replace(this.PARENT_TRAVERSAL_PREFIX_RE, ".../");
     }
 
     private static isDrivePath(path: string): boolean {

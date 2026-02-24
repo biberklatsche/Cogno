@@ -58,7 +58,7 @@ type SearchTextSegment = {
             <div class="result-header">{{ searchResults().length }} matching lines</div>
             @if (searchResults().length > 0) {
                 <ul class="result-list">
-                    @for (searchLine of searchResults(); track trackSearchLine(searchLine)) {
+                    @for (searchLine of searchResults().reverse(); track trackSearchLine(searchLine)) {
                         <li class="result-line" (click)="revealSearchResult(searchLine)">
                             <span class="line-number">{{ searchLine.lineNumber }}</span>
                             <span class="line-content">
