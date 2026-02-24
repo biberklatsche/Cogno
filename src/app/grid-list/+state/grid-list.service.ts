@@ -384,7 +384,6 @@ export class GridListService {
     private focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {
         const activeGrid = this.getActiveGrid();
         if (!activeGrid) return;
-        console.log('#############################', terminalId, direction);
         const currentLeaf = activeGrid.tree.first(node => node.isLeaf && node.data?.terminalId === terminalId);
         if (!currentLeaf) return;
 

@@ -16,6 +16,7 @@ export class KeybindExecutor implements IDisposable  {
             path: ['app', 'action'],
             type: 'ActionFired'
         }).subscribe(async event => {
+            if (event.performed) return;
             if(!this._stateManager.isFocused && !event.trigger?.all) return;
             switch (event.payload) {
                 case 'split_right': {

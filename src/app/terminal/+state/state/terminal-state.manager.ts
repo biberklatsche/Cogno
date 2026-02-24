@@ -1,8 +1,9 @@
-import { ShellType } from "../../../config/+models/config";
-import { BehaviorSubject, debounceTime, map, Observable, skip } from "rxjs";
-import { Injectable } from "@angular/core";
+import {ShellType} from "../../../config/+models/config";
+import {BehaviorSubject, debounceTime, map, Observable, skip} from "rxjs";
+import {DestroyRef, Injectable} from "@angular/core";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
-import { AppBus } from "../../../app-bus/app-bus";
+import {AppBus} from "../../../app-bus/app-bus";
 import {
     INITIAL_STATE,
     TerminalCursorPosition,
@@ -11,17 +12,17 @@ import {
     TerminalMousePosition,
     TerminalState
 } from "./terminal.state";
-import { Command } from "./command.model";
-import { TerminalId } from "../../../grid-list/+model/model";
+import {Command} from "./command.model";
+import {TerminalId} from "../../../grid-list/+model/model";
 
-import { OS } from "../../../_tauri/os";
-import { IPathAdapter } from "../advanced/adapter/base/path-adapter.interface";
-import { PathFactory } from "../advanced/adapter/path.factory";
-import { ShellContext } from "../advanced/model/models";
-import { TerminalCommandHistoryStore } from "../advanced/history/terminal-command-history.store";
-import { TerminalHistoryPersistenceService } from "../advanced/history/terminal-history-persistence.service";
-import { ShellProfile } from "../../../config/+models/shell-config";
-import { deriveShellContext } from "./terminal-shell-context.util";
+import {OS} from "../../../_tauri/os";
+import {IPathAdapter} from "../advanced/adapter/base/path-adapter.interface";
+import {PathFactory} from "../advanced/adapter/path.factory";
+import {ShellContext} from "../advanced/model/models";
+import {TerminalCommandHistoryStore} from "../advanced/history/terminal-command-history.store";
+import {TerminalHistoryPersistenceService} from "../advanced/history/terminal-history-persistence.service";
+import {ShellProfile} from "../../../config/+models/shell-config";
+import {deriveShellContext} from "./terminal-shell-context.util";
 
 @Injectable()
 export class TerminalStateManager {
@@ -31,24 +32,25 @@ export class TerminalStateManager {
     constructor(
         private _bus: AppBus,
         private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
-        private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService()
+        private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService(),
+        destroyRef: DestroyRef
     ) {
         this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
 
         // Inspector: terminal-state
         this._stateSubject
-            .pipe(skip(1), debounceTime(10))
+            .pipe(skip(1), debounceTime(10), takeUntilDestroyed(destroyRef))
             .subscribe(state => {
                 this._bus.publish({
                     path: ["inspector"],
                     type: "Inspector",
-                    payload: { type: "terminal-state", data: { ...state } }
+                    payload: {type: "terminal-state", data: {...state}}
                 });
             });
 
         // Inspector: terminal-history
         this._historyStore.commands$
-            .pipe(skip(1), debounceTime(10))
+            .pipe(skip(1), debounceTime(10), takeUntilDestroyed(destroyRef))
             .subscribe(history => {
                 this._bus.publish({
                     path: ["inspector"],
@@ -62,13 +64,23 @@ export class TerminalStateManager {
                     }
                 });
             });
+
+        this._bus
+            .onType$('FocusTerminal', {path: ["app", "terminal"]})
+            .pipe(takeUntilDestroyed(destroyRef))
+            .subscribe(event => {
+                const ownTerminalId = this._stateSubject.value.terminalId;
+                const focusedTerminalId = event.payload;
+                if (!ownTerminalId || !focusedTerminalId) return;
+                this.updateState({isFocused: ownTerminalId === focusedTerminalId});
+            });
     }
 
     initialize(terminalId: string, shellType: ShellType, shellProfile?: ShellProfile): void {
         const shellContext: ShellContext = deriveShellContext(shellType, shellProfile, OS.platform());
         this._pathAdapter = PathFactory.createAdapter(shellContext);
         this._historyPersistence.initialize(shellContext, this._pathAdapter);
-        this.updateState({ terminalId, shellContext, isPaneMaximized: false, hasSelection: false, isFocused: false });
+        this.updateState({terminalId, shellContext, isPaneMaximized: false, hasSelection: false, isFocused: false});
     }
 
     private updateState(updates: Partial<TerminalState>): void {
@@ -97,7 +109,7 @@ export class TerminalStateManager {
     }
 
     updateCursorPosition(position: TerminalCursorPosition): void {
-        this.updateState({ cursorPosition: position });
+        this.updateState({cursorPosition: position});
     }
 
     get mousePosition(): TerminalMousePosition {
@@ -105,7 +117,7 @@ export class TerminalStateManager {
     }
 
     updateMousePosition(position: TerminalMousePosition): void {
-        this.updateState({ mousePosition: position });
+        this.updateState({mousePosition: position});
     }
 
     get dimensions(): TerminalDimensions {
@@ -113,7 +125,7 @@ export class TerminalStateManager {
     }
 
     updateDimensions(dimensions: TerminalDimensions): void {
-        this.updateState({ dimensions });
+        this.updateState({dimensions});
     }
 
     get isFocused(): boolean {
@@ -125,7 +137,7 @@ export class TerminalStateManager {
     }
 
     setFocus(focused: boolean): void {
-        this.updateState({ isFocused: focused });
+        this.updateState({isFocused: focused});
     }
 
     get hasSelection(): boolean {
@@ -137,7 +149,7 @@ export class TerminalStateManager {
     }
 
     setHasSelection(hasSelection: boolean): void {
-        this.updateState({ hasSelection });
+        this.updateState({hasSelection});
     }
 
     get isInFullScreenMode$(): Observable<boolean> {
@@ -145,7 +157,7 @@ export class TerminalStateManager {
     }
 
     setInFullScreenMode(fullSizeMode: boolean): void {
-        this.updateState({ isInFullScreenMode: fullSizeMode });
+        this.updateState({isInFullScreenMode: fullSizeMode});
     }
 
     get isPaneMaximized(): boolean {
@@ -157,7 +169,7 @@ export class TerminalStateManager {
     }
 
     setPaneMaximized(isPaneMaximized: boolean): void {
-        this.updateState({ isPaneMaximized });
+        this.updateState({isPaneMaximized});
     }
 
     get isCommandRunning(): boolean {
@@ -176,12 +188,12 @@ export class TerminalStateManager {
         this.updateState({
             isCommandRunning: true,
             commandStartTime: Date.now(),
-            input: { text: "", maxCursorIndex: 0, cursorIndex: 0 }
+            input: {text: "", maxCursorIndex: 0, cursorIndex: 0}
         });
     }
 
     endCommand(): void {
-        this.updateState({ isCommandRunning: false });
+        this.updateState({isCommandRunning: false});
     }
 
     getCommandDuration(): number | undefined {
@@ -198,7 +210,7 @@ export class TerminalStateManager {
     }
 
     updateInput(input: TerminalInput): void {
-        this.updateState({ input });
+        this.updateState({input});
     }
 
     get terminalId(): TerminalId {
@@ -236,9 +248,9 @@ export class TerminalStateManager {
         const normalizedPrevPath = prevCwd ? this._pathAdapter!.normalize(prevCwd) : "";
         const cwdChanged = normalizedPath !== normalizedPrevPath;
 
-        this.updateState({ cwd });
+        this.updateState({cwd});
 
-        const backendOsPath = this._pathAdapter!.render(normalizedPath, { purpose: "backend_fs" });
+        const backendOsPath = this._pathAdapter!.render(normalizedPath, {purpose: "backend_fs"});
         if (!backendOsPath) return;
 
         if (cwdChanged) {
@@ -247,7 +259,7 @@ export class TerminalStateManager {
 
         this._bus.publish({
             path: ["app", "terminal", this._stateSubject.value.terminalId],
-            payload: { cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId },
+            payload: {cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId},
             type: "TerminalCwdChanged"
         });
     }
