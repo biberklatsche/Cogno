@@ -23,8 +23,8 @@ pub fn list_shells() -> Vec<ShellInfo> {
         let known_shells = [
             ("PowerShell", "powershell.exe", "PowerShell"),
             ("PowerShell Core", "pwsh.exe", "PowerShell"),
-            ("WSL", "wsl.exe", "Bash"),
-            ("Fish", "fish.exe", "Fish"),
+            //("WSL", "wsl.exe", "Bash"),
+            //("Fish", "fish.exe", "Fish"),
         ];
 
         for (name, binary, shell_type) in known_shells {
