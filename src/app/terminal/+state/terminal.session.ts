@@ -131,6 +131,10 @@ export class TerminalSession {
             { label: 'Close', action: () => {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
                 }, actionName: "close_terminal"  },
+            { separator: true },
+            { label: 'Process Info', action: () => {
+                    this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
+                }, actionName: "close_terminal"  },
         ];
         if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {
