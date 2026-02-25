@@ -8,6 +8,12 @@ export interface DialogConfig<TData = unknown, TContext = unknown> {
 
   // Behavior
   hasBackdrop?: boolean; // default true
+  position?: {
+    top?: string;
+    right?: string;
+    bottom?: string;
+    left?: string;
+  };
 
   // Sizing / classes
   width?: string;

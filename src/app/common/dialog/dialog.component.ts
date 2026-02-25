@@ -84,12 +84,7 @@ import {IconComponent} from "../../icons/icon/icon.component";
     }
     <div
       class="panel base-overlay"
-      [ngStyle]="{
-        width: config().width ?? 'auto',
-        height: config().height ?? 'auto',
-        maxWidth: config().maxWidth ?? '90vw',
-        maxHeight: config().maxHeight ?? '90vh'
-      }"
+      [ngStyle]="panelStyle()"
       [ngClass]="config().panelClass">
         <div class="header">
           <div class="title">{{ config().title }}</div>
@@ -137,5 +132,28 @@ export class DialogComponent<TData = unknown> implements OnInit {
 
   close() {
     this.dialogRef().close();
+  }
+
+  panelStyle() {
+    const config = this.config();
+    const position = config.position;
+    const hasPosition =
+      !!position &&
+      (position.top !== undefined ||
+        position.right !== undefined ||
+        position.bottom !== undefined ||
+        position.left !== undefined);
+
+    return {
+      width: config.width ?? 'auto',
+      height: config.height ?? 'auto',
+      maxWidth: config.maxWidth ?? '90vw',
+      maxHeight: config.maxHeight ?? '90vh',
+      top: hasPosition ? position?.top : '50%',
+      left: hasPosition ? position?.left : '50%',
+      right: hasPosition ? position?.right : undefined,
+      bottom: hasPosition ? position?.bottom : undefined,
+      transform: hasPosition ? 'none' : 'translate(-50%, -50%)',
+    };
   }
 }

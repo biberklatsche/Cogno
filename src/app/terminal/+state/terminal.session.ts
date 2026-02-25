@@ -27,6 +27,8 @@ import {Injectable} from "@angular/core";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
+import {DialogService} from "../../common/dialog";
+import {TerminalSystemInfoDialogComponent} from "../system-info/terminal-system-info-dialog.component";
 
 @Injectable()
 export class TerminalSession {
@@ -49,6 +51,7 @@ export class TerminalSession {
         private bus: AppBus,
         private stateManager: TerminalStateManager,
         private specCommandSuggestorService: SpecCommandSuggestorService,
+        private dialog: DialogService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -133,8 +136,16 @@ export class TerminalSession {
                 }, actionName: "close_terminal"  },
             { separator: true },
             { label: 'Process Info', action: () => {
-                    this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
-                }, actionName: "close_terminal"  },
+                    if (!this.terminalId) return;
+                    this.dialog.open(TerminalSystemInfoDialogComponent, {
+                        title: 'Terminal System Info',
+                        maxWidth: '600px',
+                        hasBackdrop: false,
+                        showCloseButton: true,
+                        position: { right: '16px', bottom: '16px' },
+                        data: { terminalId: this.terminalId }
+                    });
+                } },
         ];
         if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {

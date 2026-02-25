@@ -6,6 +6,7 @@ import {getStateManager, getConfigService, getAppBus} from "../../../__test__/te
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
+import {DialogService} from "../../common/dialog";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -38,6 +39,7 @@ describe('TerminalSession', () => {
     let mockBus: AppBus;
     let mockShellProfile: ShellProfile;
     let mockSpecCommandSuggestorService: SpecCommandSuggestorService;
+    let mockDialogService: DialogService;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -56,13 +58,17 @@ describe('TerminalSession', () => {
             preloadForShellIntegration: vi.fn(),
         } as unknown as SpecCommandSuggestorService;
 
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService);
+        mockDialogService = {
+            open: vi.fn()
+        } as unknown as DialogService;
+
+        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService, mockDialogService);
     });
 
     it('should initialize with correct renderer settings based on config', () => {
         const config = { enable_webgl: true, font: { family: 'Fira Code' } } as any;
         (mockConfigService as any).setConfig(config);
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService);
+        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService, mockDialogService);
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
     });

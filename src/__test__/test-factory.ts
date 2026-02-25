@@ -54,7 +54,13 @@ export function getSideMenuService(): SideMenuService {
 
 export function getTerminalSession(): TerminalSession {
     if(!terminalSession) {
-        terminalSession = new TerminalSession(getConfigService(), getAppBus(), getStateManager(), getSpecCommandSuggestorService());
+        terminalSession = new TerminalSession(
+            getConfigService(),
+            getAppBus(),
+            getStateManager(),
+            getSpecCommandSuggestorService(),
+            { open: () => ({ close: () => undefined }) } as any
+        );
     }
     return terminalSession;
 }
