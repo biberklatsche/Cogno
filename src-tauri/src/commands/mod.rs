@@ -1,10 +1,11 @@
 pub mod config;
 pub mod crypto;
+pub mod environment;
+pub mod environment_builder;
 pub mod fonts;
 pub mod keyboard;
-pub mod shells;
+pub mod processes;
 pub mod pty;
-pub mod environment;
-pub mod window;
-pub mod environment_builder;
 pub mod shell_spawner;
+pub mod shells;
+pub mod window;
