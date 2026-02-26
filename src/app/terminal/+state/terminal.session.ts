@@ -33,7 +33,6 @@ import {
     TerminalSystemInfoDialogData,
     TerminalSystemInfoSource
 } from "../system-info/terminal-system-info-dialog.component";
-import {KeybindService} from "../../keybinding/keybind.service";
 
 @Injectable()
 export class TerminalSession {
@@ -58,7 +57,6 @@ export class TerminalSession {
         private stateManager: TerminalStateManager,
         private specCommandSuggestorService: SpecCommandSuggestorService,
         private dialog: DialogService,
-        private keybindService: KeybindService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -199,10 +197,7 @@ export class TerminalSession {
     private getSystemInfoSource(): TerminalSystemInfoSource {
         return {
             state$: this.stateManager.state$,
-            getState: () => this.stateManager.state,
-            lastKeybinding: this.keybindService.lastFiredKeybinding,
             commands$: this.stateManager.commands$,
-            getCommands: () => this.stateManager.commands
         };
     }
 }

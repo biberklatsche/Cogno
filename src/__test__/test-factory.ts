@@ -59,8 +59,7 @@ export function getTerminalSession(): TerminalSession {
             getAppBus(),
             getStateManager(),
             getSpecCommandSuggestorService(),
-            { open: () => ({ close: () => undefined }) } as any,
-            getKeybindService()
+            { open: () => ({ close: () => undefined }) } as any
         );
     }
     return terminalSession;

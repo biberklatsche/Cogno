@@ -7,13 +7,11 @@ import {TerminalId} from '../../grid-list/+model/model';
 import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '../../_tauri/pty';
 import {Logger} from '../../_tauri/logger';
 import {Command, TerminalState} from '../+state/state';
+import {KeybindService} from '../../keybinding/keybind.service';
 
 export type TerminalSystemInfoSource = {
   state$: Observable<TerminalState>;
-  getState: () => TerminalState;
-  lastKeybinding: Signal<string | undefined>;
   commands$: Observable<Command[]>;
-  getCommands: () => Command[];
 };
 
 export type TerminalSystemInfoDialogData = {
@@ -344,15 +342,15 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   private readonly data = inject<TerminalSystemInfoDialogData>(DIALOG_DATA);
   private refreshTimer?: number;
   private refreshInFlight = false;
+  private readonly keybindService = inject(KeybindService);
 
   readonly activeTab = signal<'process' | 'terminal'>('process');
-  readonly terminalState = toSignal(this.data.systemInfo.state$, {
-    initialValue: this.data.systemInfo.getState()
-  });
-  readonly lastKeybinding = this.data.systemInfo.lastKeybinding;
-  readonly terminalCommands = toSignal(this.data.systemInfo.commands$, {
-    initialValue: this.data.systemInfo.getCommands()
-  });
+  readonly terminalState: Signal<TerminalState | null> = toSignal(
+    this.data.systemInfo.state$,
+    { initialValue: null }
+  );
+  readonly lastKeybinding = this.keybindService.lastFiredKeybinding;
+  readonly terminalCommands = toSignal(this.data.systemInfo.commands$, { initialValue: [] });
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly snapshot = signal<ProcessTreeSnapshot | null>(null);

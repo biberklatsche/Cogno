@@ -86,7 +86,7 @@ export class ConfigReader {
                 }
                 return {config, diagnostics};
             }
-            const changed = this.applyDiagnosticsAndStrip(candidate, result.error, diagnostics);
+            const changed = this.applyDiagnosticsAndStrip(candidate, defaultConfig ?? {}, result.error, diagnostics);
             if (!changed) {
                 break;
             }
@@ -158,7 +158,12 @@ export class ConfigReader {
         return JSON.parse(JSON.stringify(v));
     }
 
-    private static applyDiagnosticsAndStrip(target: Record<string, unknown>, error: z.ZodError, diagnostics: ConfigDiagnostic[]): boolean {
+    private static applyDiagnosticsAndStrip(
+        target: Record<string, unknown>,
+        defaults: Record<string, unknown>,
+        error: z.ZodError,
+        diagnostics: ConfigDiagnostic[]
+    ): boolean {
         let changed = false;
         for (const issue of error.issues) {
             const path = issue.path.filter(part => typeof part === 'string' || typeof part === 'number') as (string | number)[];
@@ -186,7 +191,12 @@ export class ConfigReader {
                 message: `${pathLabel}: ${issue.message}`
             });
             if (path.length > 0) {
-                if (this.deleteByPath(target, path)) {
+                const fallback = this.getByPath(defaults, path);
+                if (fallback !== undefined) {
+                    if (this.setByPath(target, path, this.clone(fallback))) {
+                        changed = true;
+                    }
+                } else if (this.deleteByPath(target, path)) {
                     changed = true;
                 }
             }
@@ -230,6 +240,32 @@ export class ConfigReader {
             return true;
         }
         return false;
+    }
+
+    private static setByPath(target: Record<string, unknown>, path: (string | number)[], value: unknown): boolean {
+        if (path.length === 0) return false;
+        let cur: any = target;
+        for (let i = 0; i < path.length - 1; i++) {
+            const part = path[i];
+            if (typeof part === 'number') {
+                if (!Array.isArray(cur)) return false;
+                cur[part] ??= {};
+                cur = cur[part];
+            } else {
+                if (typeof cur !== 'object' || cur === null) return false;
+                cur[part] ??= {};
+                cur = cur[part];
+            }
+        }
+        const last = path[path.length - 1];
+        if (typeof last === 'number') {
+            if (!Array.isArray(cur)) return false;
+            cur[last] = value;
+            return true;
+        }
+        if (typeof cur !== 'object' || cur === null) return false;
+        cur[last] = value;
+        return true;
     }
 
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */
