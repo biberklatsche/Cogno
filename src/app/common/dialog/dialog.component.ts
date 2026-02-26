@@ -1,28 +1,17 @@
 import {CommonModule} from '@angular/common';
 import {
     Component,
-    DestroyRef,
-    EffectRef,
     ElementRef,
-    EventEmitter,
     HostListener,
     Injector,
-    Input,
+    OnDestroy,
     OnInit,
-    Output,
-    Signal,
-    WritableSignal,
-    computed,
-    createComponent,
-    effect,
     inject,
     input,
-    runInInjectionContext,
-    signal,
-    viewChild,
-    Type
+    Type,
+    viewChild
 } from '@angular/core';
-import {NgComponentOutlet, NgTemplateOutlet} from '@angular/common';
+import {NgComponentOutlet} from '@angular/common';
 import {DialogConfig} from './dialog-config';
 import {DialogRef} from './dialog-ref';
 import {DIALOG_DATA} from './dialog.tokens';
@@ -52,6 +41,7 @@ import {IconComponent} from "../../icons/icon/icon.component";
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
+        box-sizing: border-box;
         background: var(--background-color);
         color: var(--foreground-color);
         border: 1px solid var(--background-color-20l);
@@ -72,9 +62,23 @@ import {IconComponent} from "../../icons/icon/icon.component";
         border-bottom: 1px solid var(--background-color-20l);
       }
 
+      .header.movable {
+        cursor: move;
+        user-select: none;
+      }
+
       .content {
         padding: 12px 6px;
         overflow: auto;
+      }
+
+      .resize-handle {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 12px;
+        height: 12px;
+        cursor: nwse-resize;
       }
     `
   ],
@@ -83,10 +87,11 @@ import {IconComponent} from "../../icons/icon/icon.component";
       <div class="backdrop" [ngClass]="config().backdropClass" (click)="onBackdropClick()"></div>
     }
     <div
+      #panelElement
       class="panel base-overlay"
       [ngStyle]="panelStyle()"
       [ngClass]="config().panelClass">
-        <div class="header">
+        <div class="header" [class.movable]="config().movable" (mousedown)="startMove($event)">
           <div class="title">{{ config().title }}</div>
             @if (config().showCloseButton) {
           <button class="button icon-button" (click)="close()"><app-icon name="mdiClose"></app-icon></button>
@@ -96,18 +101,34 @@ import {IconComponent} from "../../icons/icon/icon.component";
       <div class="content" tabindex="0" #contentEl>
           <ng-container *ngComponentOutlet="component(); injector: contentInjector"></ng-container>
       </div>
+      @if (config().resizable) {
+        <div class="resize-handle" (mousedown)="startResize($event)"></div>
+      }
     </div>
   `
 })
-export class DialogComponent<TData = unknown> implements OnInit {
+export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   config = input.required<DialogConfig<TData>>();
   dialogRef = input.required<DialogRef<any>>();
 
   component = input.required<Type<any>>();
+  panelElementRef = viewChild<ElementRef<HTMLElement>>('panelElement');
 
   contentInjector?: Injector;
 
   private readonly injector = inject(Injector);
+  private isMoveActive = false;
+  private isResizeActive = false;
+  private moveMouseOffsetX = 0;
+  private moveMouseOffsetY = 0;
+  private resizeStartMouseX = 0;
+  private resizeStartMouseY = 0;
+  private resizeStartWidthPixels = 0;
+  private resizeStartHeightPixels = 0;
+  private positionTopOverride: string | null = null;
+  private positionLeftOverride: string | null = null;
+  private widthOverride: string | null = null;
+  private heightOverride: string | null = null;
 
   ngOnInit(): void {
     // Create child injector to provide dialog data and ref
@@ -120,6 +141,11 @@ export class DialogComponent<TData = unknown> implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.isMoveActive = false;
+    this.isResizeActive = false;
+  }
+
   onBackdropClick() {
     this.close();
   }
@@ -128,6 +154,63 @@ export class DialogComponent<TData = unknown> implements OnInit {
   onEsc(e: Event) {
     e.stopPropagation();
     this.close();
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onDocumentMouseMove(event: MouseEvent): void {
+    if (this.isMoveActive) {
+      this.updatePanelPositionFromMouse(event);
+      return;
+    }
+
+    if (this.isResizeActive) {
+      this.updatePanelSizeFromMouse(event);
+    }
+  }
+
+  @HostListener('document:mouseup')
+  onDocumentMouseUp(): void {
+    this.isMoveActive = false;
+    this.isResizeActive = false;
+  }
+
+  startMove(mouseEvent: MouseEvent): void {
+    if (!this.config().movable) return;
+    if (mouseEvent.button !== 0) return;
+
+    const targetElement = mouseEvent.target as HTMLElement | null;
+    if (targetElement?.closest('button') !== null) return;
+
+    const panelElement = this.getPanelElement();
+    if (panelElement === null) return;
+
+    const panelRect = panelElement.getBoundingClientRect();
+    this.positionTopOverride = `${panelRect.top}px`;
+    this.positionLeftOverride = `${panelRect.left}px`;
+    this.widthOverride = `${panelRect.width}px`;
+    this.heightOverride = `${panelRect.height}px`;
+    this.moveMouseOffsetX = mouseEvent.clientX - panelRect.left;
+    this.moveMouseOffsetY = mouseEvent.clientY - panelRect.top;
+    this.isMoveActive = true;
+    mouseEvent.preventDefault();
+  }
+
+  startResize(mouseEvent: MouseEvent): void {
+    if (!this.config().resizable) return;
+    if (mouseEvent.button !== 0) return;
+
+    const panelElement = this.getPanelElement();
+    if (panelElement === null) return;
+
+    const panelRect = panelElement.getBoundingClientRect();
+    this.positionTopOverride = `${panelRect.top}px`;
+    this.positionLeftOverride = `${panelRect.left}px`;
+    this.resizeStartMouseX = mouseEvent.clientX;
+    this.resizeStartMouseY = mouseEvent.clientY;
+    this.resizeStartWidthPixels = panelRect.width;
+    this.resizeStartHeightPixels = panelRect.height;
+    this.isResizeActive = true;
+    mouseEvent.preventDefault();
   }
 
   close() {
@@ -143,17 +226,34 @@ export class DialogComponent<TData = unknown> implements OnInit {
         position.right !== undefined ||
         position.bottom !== undefined ||
         position.left !== undefined);
+    const hasPositionOverride = this.positionTopOverride !== null || this.positionLeftOverride !== null;
 
     return {
-      width: config.width ?? 'auto',
-      height: config.height ?? 'auto',
+      width: this.widthOverride ?? config.width ?? 'auto',
+      height: this.heightOverride ?? config.height ?? 'auto',
       maxWidth: config.maxWidth ?? '90vw',
       maxHeight: config.maxHeight ?? '90vh',
-      top: hasPosition ? position?.top : '50%',
-      left: hasPosition ? position?.left : '50%',
-      right: hasPosition ? position?.right : undefined,
-      bottom: hasPosition ? position?.bottom : undefined,
-      transform: hasPosition ? 'none' : 'translate(-50%, -50%)',
+      top: this.positionTopOverride ?? (hasPosition ? position?.top : '50%'),
+      left: this.positionLeftOverride ?? (hasPosition ? position?.left : '50%'),
+      right: hasPosition && !hasPositionOverride ? position?.right : undefined,
+      bottom: hasPosition && !hasPositionOverride ? position?.bottom : undefined,
+      transform: hasPosition || hasPositionOverride ? 'none' : 'translate(-50%, -50%)',
     };
+  }
+
+  private updatePanelPositionFromMouse(mouseEvent: MouseEvent): void {
+    this.positionLeftOverride = `${mouseEvent.clientX - this.moveMouseOffsetX}px`;
+    this.positionTopOverride = `${mouseEvent.clientY - this.moveMouseOffsetY}px`;
+  }
+
+  private updatePanelSizeFromMouse(mouseEvent: MouseEvent): void {
+    const widthPixels = Math.max(320, this.resizeStartWidthPixels + mouseEvent.clientX - this.resizeStartMouseX);
+    const heightPixels = Math.max(220, this.resizeStartHeightPixels + mouseEvent.clientY - this.resizeStartMouseY);
+    this.widthOverride = `${widthPixels}px`;
+    this.heightOverride = `${heightPixels}px`;
+  }
+
+  private getPanelElement(): HTMLElement | null {
+    return this.panelElementRef()?.nativeElement ?? null;
   }
 }

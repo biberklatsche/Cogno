@@ -141,6 +141,8 @@ export class TerminalSession {
                         title: 'Terminal System Info',
                         maxWidth: '600px',
                         hasBackdrop: false,
+                        movable: true,
+                        resizable: true,
                         showCloseButton: true,
                         position: { right: '16px', bottom: '16px' },
                         data: { terminalId: this.terminalId }

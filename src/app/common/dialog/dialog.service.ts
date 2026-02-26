@@ -27,6 +27,8 @@ export class DialogService {
     // Defaults
     const merged: DialogConfig<TData, TContext> = {
       hasBackdrop: true,
+      movable: false,
+      resizable: false,
       ...config,
     };
 

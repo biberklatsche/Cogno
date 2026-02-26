@@ -8,6 +8,8 @@ export interface DialogConfig<TData = unknown, TContext = unknown> {
 
   // Behavior
   hasBackdrop?: boolean; // default true
+  movable?: boolean; // default false
+  resizable?: boolean; // default false
   position?: {
     top?: string;
     right?: string;

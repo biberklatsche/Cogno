@@ -1,6 +1,6 @@
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal} from '@angular/core';
-import {DIALOG_DATA, DialogRef} from '../../common/dialog';
+import {DIALOG_DATA} from '../../common/dialog';
 import {TerminalId} from '../../grid-list/+model/model';
 import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '../../_tauri/pty';
 import {Logger} from '../../_tauri/logger';
@@ -51,11 +51,6 @@ type ProcessTreeNode = {
     .status {
       opacity: 0.7;
       font-size: 0.9rem;
-    }
-
-    .actions {
-      display: flex;
-      justify-content: flex-end;
     }
 
     .process-tree {
@@ -118,9 +113,6 @@ type ProcessTreeNode = {
           }
         </div>
       }
-      <div class="actions">
-        <button type="button" class="button" (click)="close()">Close</button>
-      </div>
     </div>
     <ng-template #processTreeNodeTemplate let-processTreeNode>
       <li class="process-node">
@@ -164,7 +156,6 @@ type ProcessTreeNode = {
   `
 })
 export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
-  private readonly dialogRef = inject(DialogRef<void>);
   private readonly data = inject<TerminalSystemInfoDialogData>(DIALOG_DATA);
   private refreshTimer?: number;
   private refreshInFlight = false;
@@ -227,10 +218,6 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     }
 
     return rootChildProcessNodes;
-  }
-
-  close() {
-    this.dialogRef.close();
   }
 
   private async load(showLoading: boolean): Promise<void> {
