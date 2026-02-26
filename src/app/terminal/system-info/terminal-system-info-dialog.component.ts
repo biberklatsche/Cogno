@@ -84,10 +84,6 @@ type ProcessTreeNode = {
             <div class="value">{{ rootProcessDetails()?.status ?? '-' }}</div>
           </div>
           <div class="row">
-            <div class="label">CPU</div>
-            <div class="value">{{ formatPercent(rootProcessDetails()?.cpuUsagePercent) }}</div>
-          </div>
-          <div class="row">
             <div class="label">Memory</div>
             <div class="value">{{ formatBytes(rootProcessDetails()?.memoryBytes) }}</div>
           </div>
@@ -127,10 +123,6 @@ type ProcessTreeNode = {
         <div class="row">
           <div class="label">Status</div>
           <div class="value">{{ processTreeNode.processDetails.status ?? '-' }}</div>
-        </div>
-        <div class="row">
-          <div class="label">CPU</div>
-          <div class="value">{{ formatPercent(processTreeNode.processDetails.cpuUsagePercent) }}</div>
         </div>
         <div class="row">
           <div class="label">Memory</div>
@@ -258,10 +250,5 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
     if (minutes > 0) return `${minutes}m ${secs}s`;
     return `${secs}s`;
-  }
-
-  formatPercent(value?: number | null): string {
-    if (value === null || value === undefined) return '-';
-    return `${value.toFixed(1)}%`;
   }
 }

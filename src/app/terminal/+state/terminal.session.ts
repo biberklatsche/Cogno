@@ -27,8 +27,11 @@ import {Injectable} from "@angular/core";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
-import {DialogService} from "../../common/dialog";
-import {TerminalSystemInfoDialogComponent} from "../system-info/terminal-system-info-dialog.component";
+import {DialogRef, DialogService} from "../../common/dialog";
+import {
+    TerminalSystemInfoDialogComponent,
+    TerminalSystemInfoDialogData
+} from "../system-info/terminal-system-info-dialog.component";
 
 @Injectable()
 export class TerminalSession {
@@ -41,6 +44,7 @@ export class TerminalSession {
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[];
     private disposed: boolean = false;
+    private processInfoDialogReference?: DialogRef<void>;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -136,17 +140,7 @@ export class TerminalSession {
                 }, actionName: "close_terminal"  },
             { separator: true },
             { label: 'Process Info', action: () => {
-                    if (!this.terminalId) return;
-                    this.dialog.open(TerminalSystemInfoDialogComponent, {
-                        title: 'Terminal System Info',
-                        maxWidth: '600px',
-                        hasBackdrop: false,
-                        movable: true,
-                        resizable: true,
-                        showCloseButton: true,
-                        position: { right: '16px', bottom: '16px' },
-                        data: { terminalId: this.terminalId }
-                    });
+                    this.openProcessInfoDialog();
                 } },
         ];
         if(this.stateManager.hasSelection){
@@ -161,6 +155,8 @@ export class TerminalSession {
 
     dispose() {
         if (this.disposed) return;
+        this.processInfoDialogReference?.close();
+        this.processInfoDialogReference = undefined;
         this.bus.publish({type: 'TerminalRemoved', path: ['app', 'terminal'], payload: this.terminalId});
         this.disposed = true;
         this.renderer.dispose();
@@ -171,5 +167,26 @@ export class TerminalSession {
 
     focus(): void{
         this.focusHandler?.focus();
+    }
+
+    private openProcessInfoDialog(): void {
+        if (!this.terminalId) {
+            return;
+        }
+
+        this.processInfoDialogReference?.close();
+        this.processInfoDialogReference = this.dialog.open<TerminalSystemInfoDialogData, void>(
+            TerminalSystemInfoDialogComponent,
+            {
+                title: 'Terminal System Info',
+                maxWidth: '600px',
+                hasBackdrop: false,
+                movable: true,
+                resizable: true,
+                showCloseButton: true,
+                position: { right: '16px', bottom: '16px' },
+                data: { terminalId: this.terminalId }
+            }
+        );
     }
 }

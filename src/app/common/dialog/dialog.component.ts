@@ -174,6 +174,13 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     this.isResizeActive = false;
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    const panelElement = this.getPanelElement();
+    if (panelElement === null) return;
+    this.keepPanelWithinViewport(panelElement);
+  }
+
   startMove(mouseEvent: MouseEvent): void {
     if (!this.config().movable) return;
     if (mouseEvent.button !== 0) return;
@@ -242,18 +249,67 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   }
 
   private updatePanelPositionFromMouse(mouseEvent: MouseEvent): void {
-    this.positionLeftOverride = `${mouseEvent.clientX - this.moveMouseOffsetX}px`;
-    this.positionTopOverride = `${mouseEvent.clientY - this.moveMouseOffsetY}px`;
+    const panelElement = this.getPanelElement();
+    if (panelElement === null) return;
+
+    const panelRect = panelElement.getBoundingClientRect();
+    const maximumLeftPixels = Math.max(0, window.innerWidth - panelRect.width);
+    const maximumTopPixels = Math.max(0, window.innerHeight - panelRect.height);
+    const leftPixels = this.clampNumber(mouseEvent.clientX - this.moveMouseOffsetX, 0, maximumLeftPixels);
+    const topPixels = this.clampNumber(mouseEvent.clientY - this.moveMouseOffsetY, 0, maximumTopPixels);
+
+    this.positionLeftOverride = `${leftPixels}px`;
+    this.positionTopOverride = `${topPixels}px`;
   }
 
   private updatePanelSizeFromMouse(mouseEvent: MouseEvent): void {
-    const widthPixels = Math.max(320, this.resizeStartWidthPixels + mouseEvent.clientX - this.resizeStartMouseX);
-    const heightPixels = Math.max(220, this.resizeStartHeightPixels + mouseEvent.clientY - this.resizeStartMouseY);
+    const panelElement = this.getPanelElement();
+    if (panelElement === null) return;
+
+    const panelRect = panelElement.getBoundingClientRect();
+    const panelLeftPixels = this.parsePixelValue(this.positionLeftOverride) ?? panelRect.left;
+    const panelTopPixels = this.parsePixelValue(this.positionTopOverride) ?? panelRect.top;
+
+    const maximumWidthPixels = Math.max(0, window.innerWidth - panelLeftPixels);
+    const maximumHeightPixels = Math.max(0, window.innerHeight - panelTopPixels);
+    const minimumWidthPixels = Math.min(320, maximumWidthPixels);
+    const minimumHeightPixels = Math.min(220, maximumHeightPixels);
+    const widthPixels = this.clampNumber(
+      this.resizeStartWidthPixels + mouseEvent.clientX - this.resizeStartMouseX,
+      minimumWidthPixels,
+      maximumWidthPixels
+    );
+    const heightPixels = this.clampNumber(
+      this.resizeStartHeightPixels + mouseEvent.clientY - this.resizeStartMouseY,
+      minimumHeightPixels,
+      maximumHeightPixels
+    );
+
     this.widthOverride = `${widthPixels}px`;
     this.heightOverride = `${heightPixels}px`;
   }
 
   private getPanelElement(): HTMLElement | null {
     return this.panelElementRef()?.nativeElement ?? null;
+  }
+
+  private keepPanelWithinViewport(panelElement: HTMLElement): void {
+    const panelRect = panelElement.getBoundingClientRect();
+    const maximumLeftPixels = Math.max(0, window.innerWidth - panelRect.width);
+    const maximumTopPixels = Math.max(0, window.innerHeight - panelRect.height);
+    const leftPixels = this.clampNumber(panelRect.left, 0, maximumLeftPixels);
+    const topPixels = this.clampNumber(panelRect.top, 0, maximumTopPixels);
+    this.positionLeftOverride = `${leftPixels}px`;
+    this.positionTopOverride = `${topPixels}px`;
+  }
+
+  private parsePixelValue(pixelValue: string | null): number | undefined {
+    if (pixelValue === null) return undefined;
+    const parsedValue = Number.parseFloat(pixelValue);
+    return Number.isFinite(parsedValue) ? parsedValue : undefined;
+  }
+
+  private clampNumber(value: number, minimum: number, maximum: number): number {
+    return Math.min(Math.max(value, minimum), maximum);
   }
 }

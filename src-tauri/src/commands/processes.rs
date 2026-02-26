@@ -1,32 +1,11 @@
-use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
-use sysinfo::{Pid, Process, ProcessesToUpdate, System};
+use sysinfo::{Pid, Process, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 use tauri::State;
 
 use super::pty::PtyState;
-
-#[derive(Clone)]
-pub struct ProcessMonitoringState {
-    systems_by_terminal_identifier: Arc<Mutex<HashMap<String, System>>>,
-}
-
-impl ProcessMonitoringState {
-    pub fn new() -> Self {
-        Self {
-            systems_by_terminal_identifier: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    pub fn remove_terminal_cache(&self, terminal_identifier: &str) {
-        if let Ok(mut systems_by_terminal_identifier) = self.systems_by_terminal_identifier.lock() {
-            systems_by_terminal_identifier.remove(terminal_identifier);
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,27 +51,16 @@ pub fn pty_get_process_tree_by_pid(process_id: u32) -> Result<ProcessTreeSnapsho
 #[tauri::command]
 pub fn pty_get_process_tree_by_terminal_id(
     state: State<'_, PtyState>,
-    process_monitoring_state: State<'_, ProcessMonitoringState>,
     terminal_id: String,
 ) -> Result<ProcessTreeSnapshot, String> {
     let shell_process_id = state.get_shell_process_id(&terminal_id).ok_or_else(|| {
-        process_monitoring_state.remove_terminal_cache(&terminal_id);
         format!(
             "No shell process id found for terminal session: {}",
             terminal_id
         )
     })?;
 
-    let mut systems_by_terminal_identifier = process_monitoring_state
-        .systems_by_terminal_identifier
-        .lock()
-        .map_err(|_| "Failed to lock process monitoring state".to_string())?;
-
-    let system = systems_by_terminal_identifier
-        .entry(terminal_id)
-        .or_insert_with(System::new_all);
-
-    get_process_tree_snapshot_with_system(shell_process_id, system)
+    get_process_tree_snapshot(shell_process_id)
 }
 
 fn get_process_tree_snapshot(root_process_id: u32) -> Result<ProcessTreeSnapshot, String> {
@@ -105,7 +73,17 @@ fn get_process_tree_snapshot_with_system(
     system: &mut System,
 ) -> Result<ProcessTreeSnapshot, String> {
     system.refresh_all();
-    system.refresh_processes(ProcessesToUpdate::All, true);
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::everything()
+            .with_user(UpdateKind::Always)
+            .with_cwd(UpdateKind::Always)
+            .with_root(UpdateKind::Always)
+            .with_environ(UpdateKind::Always)
+            .with_cmd(UpdateKind::Always)
+            .with_exe(UpdateKind::Always),
+    );
 
     let root_pid = Pid::from_u32(root_process_id);
     let root_process = system

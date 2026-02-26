@@ -12,9 +12,7 @@ use commands::environment::{
 };
 use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
-use commands::processes::{
-    pty_get_process_tree_by_pid, pty_get_process_tree_by_terminal_id, ProcessMonitoringState,
-};
+use commands::processes::{pty_get_process_tree_by_pid, pty_get_process_tree_by_terminal_id};
 use commands::pty::{pty_kill, pty_resize, pty_spawn, pty_write, PtyState};
 use commands::shells::list_shells;
 use commands::window::new_window;
@@ -47,7 +45,6 @@ pub fn run(cli: Cli) {
             }
         }))
         .manage(PtyState::new())
-        .manage(ProcessMonitoringState::new())
         .invoke_handler(tauri::generate_handler![
             get_default_config,
             list_fonts,
