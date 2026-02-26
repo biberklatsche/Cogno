@@ -37,7 +37,6 @@ import {
     SplitPaneRightAction,
     SplitPaneUpAction
 } from "../grid-list/+bus/actions";
-import {InspectorEvent} from "../inspector/+bus/events";
 import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
@@ -103,7 +102,6 @@ export type AppMessage =
     | MinimizePaneAction
     | ClearBufferAction
     | FocusActiveTerminalAction
-    | InspectorEvent
     | NotificationEvent
     | SideMenuEvent
     | TabTitleChangedEvent

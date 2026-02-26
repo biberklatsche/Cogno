@@ -8,6 +8,8 @@ import {ConfigService} from "../../config/+state/config.service";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
+import {KeybindService} from "../../keybinding/keybind.service";
+import {signal} from "@angular/core";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -42,6 +44,7 @@ describe('TerminalSession', () => {
     let mockSpecCommandSuggestorService: SpecCommandSuggestorService;
     let mockDialogService: DialogService;
     let mockProcessInfoDialogReference: DialogRef<void>;
+    let mockKeybindService: KeybindService;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -70,13 +73,31 @@ describe('TerminalSession', () => {
             open: vi.fn().mockReturnValue(mockProcessInfoDialogReference)
         } as unknown as DialogService;
 
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService, mockDialogService);
+        mockKeybindService = {
+            lastFiredKeybinding: signal<string | undefined>(undefined)
+        } as unknown as KeybindService;
+
+        session = new TerminalSession(
+            mockConfigService,
+            mockBus,
+            getStateManager(),
+            mockSpecCommandSuggestorService,
+            mockDialogService,
+            mockKeybindService
+        );
     });
 
     it('should initialize with correct renderer settings based on config', () => {
         const config = { enable_webgl: true, font: { family: 'Fira Code' } } as any;
         (mockConfigService as any).setConfig(config);
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService, mockDialogService);
+        session = new TerminalSession(
+            mockConfigService,
+            mockBus,
+            getStateManager(),
+            mockSpecCommandSuggestorService,
+            mockDialogService,
+            mockKeybindService
+        );
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
     });

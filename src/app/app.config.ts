@@ -12,7 +12,6 @@ import {KeybindService} from "./keybinding/keybind.service";
 import {CliActionService} from "./cli-command/cli-action.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
-import {InspectorService} from "./inspector/+state/inspector.service";
 import {NotificationService} from "./notification/+state/notification.service";
 import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
@@ -29,7 +28,6 @@ export const appConfig: ApplicationConfig = {
           inject(WorkspaceService);
           inject(CommandPaletteService);
           inject(TerminalSearchService);
-          inject(InspectorService);
           inject(KeybindService);
           inject(CliActionService);
           inject(NativeMenuService);

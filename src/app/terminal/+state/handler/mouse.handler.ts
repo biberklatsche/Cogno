@@ -4,7 +4,7 @@ import {IDisposable} from "../../../common/models/models";
 import {TerminalStateManager} from "../state";
 
 /**
- * Publishes inspector events with the current terminal cell (col,row)
+ * Tracks the current terminal cell (col,row)
  * under the mouse while moving over the terminal container.
  */
 export class MouseHandler implements ITerminalHandler {

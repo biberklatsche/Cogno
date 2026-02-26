@@ -39,34 +39,6 @@ export class TerminalStateManager {
         destroyRef?.onDestroy(() => this.dispose());
         this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
 
-        // Inspector: terminal-state
-        this._stateSubject
-            .pipe(skip(1), debounceTime(10), takeUntil(this.disposeSignal))
-            .subscribe(state => {
-                this._bus.publish({
-                    path: ["inspector"],
-                    type: "Inspector",
-                    payload: {type: "terminal-state", data: {...state}}
-                });
-            });
-
-        // Inspector: terminal-history
-        this._historyStore.commands$
-            .pipe(skip(1), debounceTime(10), takeUntil(this.disposeSignal))
-            .subscribe(history => {
-                this._bus.publish({
-                    path: ["inspector"],
-                    type: "Inspector",
-                    payload: {
-                        type: "terminal-history",
-                        data: {
-                            terminalId: this._stateSubject.value.terminalId,
-                            commands: history
-                        }
-                    }
-                });
-            });
-
         this._bus
             .onType$('FocusTerminal', {path: ["app", "terminal"]})
             .pipe(takeUntil(this.disposeSignal))

@@ -22,7 +22,6 @@ export const ACTION_NAMES = [
     'clear_buffer',
     'close_other_tabs',
     'close_all_tabs',
-    'open_inspector',
     'open_workspace',
     'open_command_palette',
     'open_terminal_search',

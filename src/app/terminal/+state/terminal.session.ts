@@ -30,8 +30,10 @@ import {LinkHandler} from "./handler/link.handler";
 import {DialogRef, DialogService} from "../../common/dialog";
 import {
     TerminalSystemInfoDialogComponent,
-    TerminalSystemInfoDialogData
+    TerminalSystemInfoDialogData,
+    TerminalSystemInfoSource
 } from "../system-info/terminal-system-info-dialog.component";
+import {KeybindService} from "../../keybinding/keybind.service";
 
 @Injectable()
 export class TerminalSession {
@@ -56,6 +58,7 @@ export class TerminalSession {
         private stateManager: TerminalStateManager,
         private specCommandSuggestorService: SpecCommandSuggestorService,
         private dialog: DialogService,
+        private keybindService: KeybindService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -185,8 +188,21 @@ export class TerminalSession {
                 resizable: true,
                 showCloseButton: true,
                 position: { right: '16px', bottom: '16px' },
-                data: { terminalId: this.terminalId }
+                data: {
+                    terminalId: this.terminalId,
+                    systemInfo: this.getSystemInfoSource()
+                }
             }
         );
+    }
+
+    private getSystemInfoSource(): TerminalSystemInfoSource {
+        return {
+            state$: this.stateManager.state$,
+            getState: () => this.stateManager.state,
+            lastKeybinding: this.keybindService.lastFiredKeybinding,
+            commands$: this.stateManager.commands$,
+            getCommands: () => this.stateManager.commands
+        };
     }
 }

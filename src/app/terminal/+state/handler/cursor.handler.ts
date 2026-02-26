@@ -40,7 +40,7 @@ export class CursorHandler implements ITerminalHandler {
                 const viewportY = buffer.viewportY; // top of viewport absolute 0-based
                 const cursorYAbsolute = cursorYViewport + viewportY; // absolute row in buffer
 
-                col = cursorX + 1; // 1-based for inspector
+                col = cursorX + 1; // 1-based for display
                 viewportRow = cursorYViewport + 1; // 1-based within viewport
                 row = cursorYAbsolute + 1; // 1-based within viewport
 

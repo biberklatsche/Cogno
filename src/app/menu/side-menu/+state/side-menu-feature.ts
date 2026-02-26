@@ -20,7 +20,7 @@ export interface SideMenuFeatureConfig {
     actionName: ActionName;
     /** Component to render in side menu */
     component: any;
-    /** Path in config object, e.g., 'workspace', 'inspector' */
+    /** Path in config object, e.g., 'workspace', 'notification' */
     configPath: string;
     /** Whether the feature should be pinned by default */
     pinned?: boolean;

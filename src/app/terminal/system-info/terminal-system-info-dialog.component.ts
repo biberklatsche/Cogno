@@ -1,12 +1,24 @@
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, Signal, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {Observable} from 'rxjs';
 import {DIALOG_DATA} from '../../common/dialog';
 import {TerminalId} from '../../grid-list/+model/model';
 import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '../../_tauri/pty';
 import {Logger} from '../../_tauri/logger';
+import {Command, TerminalState} from '../+state/state';
+
+export type TerminalSystemInfoSource = {
+  state$: Observable<TerminalState>;
+  getState: () => TerminalState;
+  lastKeybinding: Signal<string | undefined>;
+  commands$: Observable<Command[]>;
+  getCommands: () => Command[];
+};
 
 export type TerminalSystemInfoDialogData = {
   terminalId: TerminalId;
+  systemInfo: TerminalSystemInfoSource;
 };
 
 type ProcessTreeNode = {
@@ -25,6 +37,31 @@ type ProcessTreeNode = {
       flex-direction: column;
       gap: 12px;
       min-width: 320px;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 6px;
+      padding: 2px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      align-self: flex-start;
+    }
+
+    .tab {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      opacity: 0.7;
+      cursor: pointer;
+    }
+
+    .tab.is-active {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .row {
@@ -103,7 +140,113 @@ type ProcessTreeNode = {
       } @else if (error()) {
         <div class="status">{{ error() }}</div>
       } @else if (snapshot()) {
-        <div>
+        <div class="tabs" role="tablist" aria-label="System Info Tabs">
+          <button
+            type="button"
+            role="tab"
+            class="tab"
+            [class.is-active]="activeTab() === 'process'"
+            [attr.aria-selected]="activeTab() === 'process'"
+            (click)="activeTab.set('process')">
+            Process
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="tab"
+            [class.is-active]="activeTab() === 'terminal'"
+            [attr.aria-selected]="activeTab() === 'terminal'"
+            (click)="activeTab.set('terminal')">
+            Terminal Session
+          </button>
+        </div>
+
+        @if (activeTab() === 'terminal') {
+          <div>
+          <div class="section-title">Terminal Session</div>
+          @if (terminalState(); as state) {
+            <div class="row">
+              <div class="label">Keybinding</div>
+              <div class="value">
+                @if (lastKeybinding()) {
+                  {{ lastKeybinding() }}
+                } @else {
+                  -
+                }
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Mouse (Viewport)</div>
+              <div class="value">
+                {{ state.mousePosition.viewport.col }}, {{ state.mousePosition.viewport.row }}, '{{ state.mousePosition.char || ' ' }}'
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Mouse (Absolute)</div>
+              <div class="value">
+                {{ state.mousePosition.col }}, {{ state.mousePosition.row }}, '{{ state.mousePosition.char || ' ' }}'
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Cursor (Viewport)</div>
+              <div class="value">
+                {{ state.cursorPosition.viewport.col }}, {{ state.cursorPosition.viewport.row }}, '{{ state.cursorPosition.char || ' ' }}'
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Cursor (Absolute)</div>
+              <div class="value">
+                {{ state.cursorPosition.col }}, {{ state.cursorPosition.row }}, '{{ state.cursorPosition.char || ' ' }}'
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Terminal Size</div>
+              <div class="value">
+                {{ state.dimensions.cols }} x {{ state.dimensions.rows }}
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Cell Size</div>
+              <div class="value">
+                {{ state.dimensions.cellHeight }} x {{ state.dimensions.cellWidth }}
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Input</div>
+              <div class="value">
+                @if (state.input.text) {
+                  {{ state.input.text }}
+                } @else {
+                  -
+                }
+              </div>
+            </div>
+            <div class="row">
+              <div class="label">Busy</div>
+              <div class="value">{{ state.isCommandRunning }}</div>
+            </div>
+            <div class="row">
+              <div class="label">Full Screen</div>
+              <div class="value">{{ state.isInFullScreenMode }}</div>
+            </div>
+            <div class="row">
+              <div class="label">Last Commands</div>
+              <div class="value">
+                @if ((terminalCommands() ?? []).length > 0) {
+                  @for (cmd of lastCommands(terminalCommands()); track cmd.id) {
+                    <div>{{ cmd.id }} {{ cmd.command ?? '-' }}</div>
+                  }
+                } @else {
+                  -
+                }
+              </div>
+            </div>
+          }
+        </div>
+        }
+
+        @if (activeTab() === 'process') {
+          <div>
           <div class="section-title">Process</div>
           <div class="row">
             <div class="label">Name</div>
@@ -146,6 +289,7 @@ type ProcessTreeNode = {
             </ul>
           }
         </div>
+        }
       }
     </div>
     <ng-template #processTreeNodeTemplate let-processTreeNode>
@@ -201,6 +345,14 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   private refreshTimer?: number;
   private refreshInFlight = false;
 
+  readonly activeTab = signal<'process' | 'terminal'>('process');
+  readonly terminalState = toSignal(this.data.systemInfo.state$, {
+    initialValue: this.data.systemInfo.getState()
+  });
+  readonly lastKeybinding = this.data.systemInfo.lastKeybinding;
+  readonly terminalCommands = toSignal(this.data.systemInfo.commands$, {
+    initialValue: this.data.systemInfo.getCommands()
+  });
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly snapshot = signal<ProcessTreeSnapshot | null>(null);
@@ -340,5 +492,10 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
       }
       return nextCollapsedProcessIdentifiers;
     });
+  }
+
+  lastCommands(commands: Command[]): Command[] {
+    if (!commands?.length) return [];
+    return commands.slice(-5).reverse();
   }
 }
