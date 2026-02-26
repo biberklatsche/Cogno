@@ -179,7 +179,7 @@ export class TerminalSession {
             TerminalSystemInfoDialogComponent,
             {
                 title: 'Terminal System Info',
-                maxWidth: '600px',
+                maxWidth: '100vw',
                 hasBackdrop: false,
                 movable: true,
                 resizable: true,

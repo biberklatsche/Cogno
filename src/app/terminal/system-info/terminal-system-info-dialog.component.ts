@@ -54,12 +54,46 @@ type ProcessTreeNode = {
     }
 
     .process-tree {
-      margin: 6px 0 0 16px;
-      padding-left: 14px;
+      list-style: none;
+      margin: 6px 0 0 0;
+      padding-left: 0;
     }
 
     .process-node {
       margin-bottom: 10px;
+    }
+
+    .process-name-row {
+      grid-template-columns: 18px 148px 1fr;
+      column-gap: 0;
+    }
+
+    .process-node > .row:not(.process-name-row) {
+      margin-left: 18px;
+    }
+
+    .node-toggle-cell {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      min-height: 1px;
+    }
+
+    .node-toggle {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      width: 14px;
+      text-align: center;
+      line-height: 1;
+      opacity: 0.8;
+    }
+
+    .process-node > .process-tree {
+      margin-left: 18px;
     }
   `],
   template: `
@@ -88,6 +122,10 @@ type ProcessTreeNode = {
             <div class="value">{{ formatBytes(rootProcessDetails()?.memoryBytes) }}</div>
           </div>
           <div class="row">
+            <div class="label">Memory (Total)</div>
+            <div class="value">{{ formatBytes(totalMemoryBytes()) }}</div>
+          </div>
+          <div class="row">
             <div class="label">CWD</div>
             <div class="value">{{ rootProcessDetails()?.currentWorkingDirectory ?? '-' }}</div>
           </div>
@@ -112,7 +150,18 @@ type ProcessTreeNode = {
     </div>
     <ng-template #processTreeNodeTemplate let-processTreeNode>
       <li class="process-node">
-        <div class="row">
+        <div class="row process-name-row">
+          <div class="node-toggle-cell">
+            @if (hasChildren(processTreeNode)) {
+              <button
+                type="button"
+                class="node-toggle"
+                (click)="toggleExpanded(processTreeNode)"
+                [attr.aria-label]="isExpanded(processTreeNode) ? 'Collapse child processes' : 'Expand child processes'">
+                {{ isExpanded(processTreeNode) ? '&#9662;' : '&#9656;' }}
+              </button>
+            }
+          </div>
           <div class="label">Name</div>
           <div class="value">{{ processTreeNode.processDetails.name ?? '-' }}</div>
         </div>
@@ -136,7 +185,7 @@ type ProcessTreeNode = {
           <div class="label">Runtime</div>
           <div class="value">{{ formatSeconds(processTreeNode.processDetails.runTimeSeconds) }}</div>
         </div>
-        @if (processTreeNode.childProcessNodes.length > 0) {
+        @if (hasChildren(processTreeNode) && isExpanded(processTreeNode)) {
           <ul class="process-tree">
             @for (childProcessTreeNode of processTreeNode.childProcessNodes; track childProcessTreeNode.processDetails.processId) {
               <ng-container *ngTemplateOutlet="processTreeNodeTemplate; context: {$implicit: childProcessTreeNode}"></ng-container>
@@ -155,6 +204,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly snapshot = signal<ProcessTreeSnapshot | null>(null);
+  readonly collapsedProcessIdentifiers = signal<Set<number>>(new Set<number>());
 
   ngOnInit(): void {
     void this.load(true);
@@ -250,5 +300,45 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
     if (minutes > 0) return `${minutes}m ${secs}s`;
     return `${secs}s`;
+  }
+
+  totalMemoryBytes(): number | null {
+    const processTreeSnapshot = this.snapshot();
+    if (processTreeSnapshot === null) {
+      return null;
+    }
+
+    const rootMemoryBytes = processTreeSnapshot.rootProcess.memoryBytes ?? 0;
+    const descendantsMemoryBytes = processTreeSnapshot.descendants.reduce(
+      (sum, processDetails) => sum + (processDetails.memoryBytes ?? 0),
+      0
+    );
+
+    return rootMemoryBytes + descendantsMemoryBytes;
+  }
+
+  hasChildren(processTreeNode: ProcessTreeNode): boolean {
+    return processTreeNode.childProcessNodes.length > 0;
+  }
+
+  isExpanded(processTreeNode: ProcessTreeNode): boolean {
+    return !this.collapsedProcessIdentifiers().has(processTreeNode.processDetails.processId);
+  }
+
+  toggleExpanded(processTreeNode: ProcessTreeNode): void {
+    if (!this.hasChildren(processTreeNode)) {
+      return;
+    }
+
+    const processIdentifier = processTreeNode.processDetails.processId;
+    this.collapsedProcessIdentifiers.update((collapsedProcessIdentifiers) => {
+      const nextCollapsedProcessIdentifiers = new Set<number>(collapsedProcessIdentifiers);
+      if (nextCollapsedProcessIdentifiers.has(processIdentifier)) {
+        nextCollapsedProcessIdentifiers.delete(processIdentifier);
+      } else {
+        nextCollapsedProcessIdentifiers.add(processIdentifier);
+      }
+      return nextCollapsedProcessIdentifiers;
+    });
   }
 }
