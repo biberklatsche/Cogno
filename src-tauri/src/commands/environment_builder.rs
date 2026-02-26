@@ -95,10 +95,8 @@ impl EnvironmentBuilder {
                     // ZSH looks for .zshrc in ZDOTDIR
                     // Point ZDOTDIR to our zsh directory
                     let zsh_dir = self.integration_root.join("zsh");
-                    self.env.insert(
-                        "ZDOTDIR".to_string(),
-                        zsh_dir.to_string_lossy().to_string(),
-                    );
+                    self.env
+                        .insert("ZDOTDIR".to_string(), zsh_dir.to_string_lossy().to_string());
                 }
                 "Fish" => {
                     // Fish expects XDG_CONFIG_HOME/fish/config.fish

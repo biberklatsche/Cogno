@@ -32,7 +32,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 shells.push(ShellInfo {
                     name: name.to_string(),
                     path: path.display().to_string(),
-                    shell_type: shell_type.to_string()
+                    shell_type: shell_type.to_string(),
                 });
             }
         }
@@ -53,7 +53,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
                         shells.push(ShellInfo {
                             name: "Git Bash".to_string(),
                             path: bash_path,
-                            shell_type: "GitBash".to_string()
+                            shell_type: "GitBash".to_string(),
                         });
                     }
                 }
@@ -75,14 +75,26 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 .to_ascii_lowercase();
 
             // exact names first
-            if fname == "bash" { return Some("Bash"); }
-            if fname == "zsh"  { return Some("ZSH"); }
-            if fname == "fish" { return Some("Fish"); }
+            if fname == "bash" {
+                return Some("Bash");
+            }
+            if fname == "zsh" {
+                return Some("ZSH");
+            }
+            if fname == "fish" {
+                return Some("Fish");
+            }
 
             // optional: more tolerant for variants like bash5, zsh-5.9, fish-3.6
-            if fname.contains("bash") { return Some("Bash"); }
-            if fname.contains("zsh")  { return Some("ZSH"); }
-            if fname.contains("fish") { return Some("Fish"); }
+            if fname.contains("bash") {
+                return Some("Bash");
+            }
+            if fname.contains("zsh") {
+                return Some("ZSH");
+            }
+            if fname.contains("fish") {
+                return Some("Fish");
+            }
 
             None
         }

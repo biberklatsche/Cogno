@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, State};
 
+use super::processes::ProcessMonitoringState;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +54,7 @@ pub struct PtySpawnResult {
 pub async fn pty_spawn(
     app: AppHandle,
     state: State<'_, PtyState>,
+    process_monitoring_state: State<'_, ProcessMonitoringState>,
     options: SpawnOptions,
 ) -> Result<PtySpawnResult, String> {
     let terminal_id = options.name.clone();
@@ -127,6 +129,7 @@ pub async fn pty_spawn(
     let terminal_id_for_child = terminal_id.clone();
     let app_for_child = app.clone();
     let sessions_for_child = state.sessions.clone();
+    let process_monitoring_state_for_child = process_monitoring_state.inner().clone();
 
     std::thread::spawn(move || {
         let exit_code = match child.wait() {
@@ -145,6 +148,7 @@ pub async fn pty_spawn(
 
         let mut sessions = sessions_for_child.lock().unwrap();
         sessions.remove(&terminal_id_for_child);
+        process_monitoring_state_for_child.remove_terminal_cache(&terminal_id_for_child);
     });
 
     // Thread that reads PTY output
@@ -270,15 +274,21 @@ pub fn pty_resize(
 }
 
 #[tauri::command]
-pub fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), String> {
+pub fn pty_kill(
+    state: State<'_, PtyState>,
+    process_monitoring_state: State<'_, ProcessMonitoringState>,
+    terminal_id: String,
+) -> Result<(), String> {
     let mut sessions = state.sessions.lock().unwrap();
 
     if let Some(session) = sessions.remove(&terminal_id) {
         session.should_exit.store(true, Ordering::Relaxed);
         drop(session.master);
         drop(session.writer);
+        process_monitoring_state.remove_terminal_cache(&terminal_id);
         Ok(())
     } else {
+        process_monitoring_state.remove_terminal_cache(&terminal_id);
         Err(format!("Session not found: {}", terminal_id))
     }
 }

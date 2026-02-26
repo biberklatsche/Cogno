@@ -1,7 +1,6 @@
 import {ShellType} from "../../../config/+models/config";
-import {BehaviorSubject, debounceTime, map, Observable, skip} from "rxjs";
+import {BehaviorSubject, debounceTime, map, Observable, skip, Subject, takeUntil} from "rxjs";
 import {DestroyRef, Injectable} from "@angular/core";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 import {AppBus} from "../../../app-bus/app-bus";
 import {
@@ -27,19 +26,22 @@ import {deriveShellContext} from "./terminal-shell-context.util";
 @Injectable()
 export class TerminalStateManager {
     private readonly _stateSubject: BehaviorSubject<TerminalState>;
+    private readonly disposeSignal: Subject<void> = new Subject<void>();
     private _pathAdapter?: IPathAdapter;
+    private isDisposed = false;
 
     constructor(
         private _bus: AppBus,
         private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
         private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService(),
-        destroyRef: DestroyRef
+        destroyRef?: DestroyRef
     ) {
+        destroyRef?.onDestroy(() => this.dispose());
         this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
 
         // Inspector: terminal-state
         this._stateSubject
-            .pipe(skip(1), debounceTime(10), takeUntilDestroyed(destroyRef))
+            .pipe(skip(1), debounceTime(10), takeUntil(this.disposeSignal))
             .subscribe(state => {
                 this._bus.publish({
                     path: ["inspector"],
@@ -50,7 +52,7 @@ export class TerminalStateManager {
 
         // Inspector: terminal-history
         this._historyStore.commands$
-            .pipe(skip(1), debounceTime(10), takeUntilDestroyed(destroyRef))
+            .pipe(skip(1), debounceTime(10), takeUntil(this.disposeSignal))
             .subscribe(history => {
                 this._bus.publish({
                     path: ["inspector"],
@@ -67,13 +69,23 @@ export class TerminalStateManager {
 
         this._bus
             .onType$('FocusTerminal', {path: ["app", "terminal"]})
-            .pipe(takeUntilDestroyed(destroyRef))
+            .pipe(takeUntil(this.disposeSignal))
             .subscribe(event => {
                 const ownTerminalId = this._stateSubject.value.terminalId;
                 const focusedTerminalId = event.payload;
                 if (!ownTerminalId || !focusedTerminalId) return;
                 this.updateState({isFocused: ownTerminalId === focusedTerminalId});
             });
+    }
+
+    dispose(): void {
+        if (this.isDisposed) {
+            return;
+        }
+
+        this.isDisposed = true;
+        this.disposeSignal.next();
+        this.disposeSignal.complete();
     }
 
     initialize(terminalId: string, shellType: ShellType, shellProfile?: ShellProfile): void {

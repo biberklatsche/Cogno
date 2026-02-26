@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {Component, OnDestroy, OnInit, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal} from '@angular/core';
 import {DIALOG_DATA, DialogRef} from '../../common/dialog';
 import {TerminalId} from '../../grid-list/+model/model';
 import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '../../_tauri/pty';
@@ -9,10 +9,16 @@ export type TerminalSystemInfoDialogData = {
   terminalId: TerminalId;
 };
 
+type ProcessTreeNode = {
+  readonly processDetails: ProcessDetails;
+  readonly childProcessNodes: ProcessTreeNode[];
+};
+
 @Component({
   selector: 'app-terminal-system-info-dialog',
   standalone: true,
   imports: [CommonModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     .container {
       display: flex;
@@ -51,6 +57,15 @@ export type TerminalSystemInfoDialogData = {
       display: flex;
       justify-content: flex-end;
     }
+
+    .process-tree {
+      margin: 6px 0 0 16px;
+      padding-left: 14px;
+    }
+
+    .process-node {
+      margin-bottom: 10px;
+    }
   `],
   template: `
     <div class="container">
@@ -63,58 +78,89 @@ export type TerminalSystemInfoDialogData = {
           <div class="section-title">Process</div>
           <div class="row">
             <div class="label">Name</div>
-            <div class="value">{{ root()?.name ?? '-' }}</div>
+            <div class="value">{{ rootProcessDetails()?.name ?? '-' }}</div>
           </div>
           <div class="row">
             <div class="label">PID</div>
-            <div class="value">{{ root()?.processId ?? '-' }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Command</div>
-            <div class="value">{{ rootCommand() }}</div>
-          </div>
-          <div class="row">
-            <div class="label">CWD</div>
-            <div class="value">{{ root()?.currentWorkingDirectory ?? '-' }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Executable</div>
-            <div class="value">{{ root()?.executablePath ?? '-' }}</div>
+            <div class="value">{{ rootProcessDetails()?.processId ?? '-' }}</div>
           </div>
           <div class="row">
             <div class="label">Status</div>
-            <div class="value">{{ root()?.status ?? '-' }}</div>
+            <div class="value">{{ rootProcessDetails()?.status ?? '-' }}</div>
           </div>
           <div class="row">
             <div class="label">CPU</div>
-            <div class="value">{{ formatPercent(root()?.cpuUsagePercent) }}</div>
+            <div class="value">{{ formatPercent(rootProcessDetails()?.cpuUsagePercent) }}</div>
           </div>
           <div class="row">
             <div class="label">Memory</div>
-            <div class="value">{{ formatBytes(root()?.memoryBytes) }}</div>
+            <div class="value">{{ formatBytes(rootProcessDetails()?.memoryBytes) }}</div>
           </div>
           <div class="row">
-            <div class="label">Virtual Memory</div>
-            <div class="value">{{ formatBytes(root()?.virtualMemoryBytes) }}</div>
+            <div class="label">CWD</div>
+            <div class="value">{{ rootProcessDetails()?.currentWorkingDirectory ?? '-' }}</div>
           </div>
           <div class="row">
             <div class="label">Runtime</div>
-            <div class="value">{{ formatSeconds(root()?.runTimeSeconds) }}</div>
+            <div class="value">{{ formatSeconds(rootProcessDetails()?.runTimeSeconds) }}</div>
           </div>
-          <div class="row">
-            <div class="label">Children</div>
-            <div class="value">{{ childrenCount() }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Child PIDs</div>
-            <div class="value">{{ childPids() }}</div>
-          </div>
+        </div>
+        <div>
+          <div class="section-title">Child Processes</div>
+          @if (rootChildProcessNodes().length === 0) {
+            <div class="status">No child processes.</div>
+          } @else {
+            <ul class="process-tree">
+              @for (processTreeNode of rootChildProcessNodes(); track processTreeNode.processDetails.processId) {
+                <ng-container *ngTemplateOutlet="processTreeNodeTemplate; context: {$implicit: processTreeNode}"></ng-container>
+              }
+            </ul>
+          }
         </div>
       }
       <div class="actions">
         <button type="button" class="button" (click)="close()">Close</button>
       </div>
     </div>
+    <ng-template #processTreeNodeTemplate let-processTreeNode>
+      <li class="process-node">
+        <div class="row">
+          <div class="label">Name</div>
+          <div class="value">{{ processTreeNode.processDetails.name ?? '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">PID</div>
+          <div class="value">{{ processTreeNode.processDetails.processId ?? '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Status</div>
+          <div class="value">{{ processTreeNode.processDetails.status ?? '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">CPU</div>
+          <div class="value">{{ formatPercent(processTreeNode.processDetails.cpuUsagePercent) }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Memory</div>
+          <div class="value">{{ formatBytes(processTreeNode.processDetails.memoryBytes) }}</div>
+        </div>
+        <div class="row">
+          <div class="label">CWD</div>
+          <div class="value">{{ processTreeNode.processDetails.currentWorkingDirectory ?? '-' }}</div>
+        </div>
+        <div class="row">
+          <div class="label">Runtime</div>
+          <div class="value">{{ formatSeconds(processTreeNode.processDetails.runTimeSeconds) }}</div>
+        </div>
+        @if (processTreeNode.childProcessNodes.length > 0) {
+          <ul class="process-tree">
+            @for (childProcessTreeNode of processTreeNode.childProcessNodes; track childProcessTreeNode.processDetails.processId) {
+              <ng-container *ngTemplateOutlet="processTreeNodeTemplate; context: {$implicit: childProcessTreeNode}"></ng-container>
+            }
+          </ul>
+        }
+      </li>
+    </ng-template>
   `
 })
 export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
@@ -141,26 +187,46 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  root(): ProcessDetails | null {
+  rootProcessDetails(): ProcessDetails | null {
     return this.snapshot()?.rootProcess ?? null;
   }
 
-  rootCommand(): string {
-    const command = this.root()?.command ?? [];
-    return command.length ? command.join(' ') : '-';
-  }
+  rootChildProcessNodes(): ProcessTreeNode[] {
+    const processTreeSnapshot = this.snapshot();
+    if (processTreeSnapshot === null) {
+      return [];
+    }
 
-  childrenCount(): number {
-    const snapshot = this.snapshot();
-    if (!snapshot) return 0;
-    return snapshot.directChildren.length;
-  }
+    const processNodeByProcessIdentifier: Map<number, ProcessTreeNode> = new Map<number, ProcessTreeNode>();
+    for (const processDetails of processTreeSnapshot.descendants) {
+      processNodeByProcessIdentifier.set(processDetails.processId, {
+        processDetails,
+        childProcessNodes: []
+      });
+    }
 
-  childPids(): string {
-    const snapshot = this.snapshot();
-    if (!snapshot) return '-';
-    const ids = snapshot.directChildProcessIds ?? [];
-    return ids.length ? ids.join(', ') : '-';
+    const rootChildProcessNodes: ProcessTreeNode[] = [];
+    for (const processDetails of processTreeSnapshot.descendants) {
+      const processNode = processNodeByProcessIdentifier.get(processDetails.processId);
+      if (processNode === undefined) {
+        continue;
+      }
+
+      if (processDetails.parentProcessId === processTreeSnapshot.rootProcessId) {
+        rootChildProcessNodes.push(processNode);
+        continue;
+      }
+
+      const parentProcessIdentifier = processDetails.parentProcessId;
+      if (parentProcessIdentifier === null) {
+        continue;
+      }
+
+      const parentProcessNode = processNodeByProcessIdentifier.get(parentProcessIdentifier);
+      parentProcessNode?.childProcessNodes.push(processNode);
+    }
+
+    return rootChildProcessNodes;
   }
 
   close() {
@@ -175,7 +241,6 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
         this.loading.set(true);
       }
       const snapshot = await TauriPty.getProcessTreeByTerminalId(this.data.terminalId);
-      console.log('##############snapshot', snapshot);
       this.snapshot.set(snapshot);
     } catch (err) {
       Logger.error(`Failed to load terminal system info: ${String(err)}`);

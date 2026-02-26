@@ -1,9 +1,9 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 
 use super::environment_builder::EnvironmentBuilder;
 
@@ -94,7 +94,10 @@ impl ShellSpawner {
         let shell_env = env_builder.build();
 
         // Debug logging
-        println!("Shell spawn - Type: {}, Path: {}", profile.shell_type, shell_path);
+        println!(
+            "Shell spawn - Type: {}, Path: {}",
+            profile.shell_type, shell_path
+        );
         println!("Shell spawn - Args: {:?}", argv);
 
         Ok((shell_path, argv, shell_env.env, working_dir))
@@ -168,10 +171,7 @@ impl ShellSpawner {
         #[cfg(windows)]
         {
             let launcher_path = cogno_bin_dir.join("cogno.cmd");
-            let launcher_script = format!(
-                "@echo off\r\n\"{}\" %*\r\n",
-                executable_path.display()
-            );
+            let launcher_script = format!("@echo off\r\n\"{}\" %*\r\n", executable_path.display());
             fs::write(&launcher_path, launcher_script).map_err(|error| error.to_string())?;
             return Ok(());
         }
@@ -188,11 +188,11 @@ impl ShellSpawner {
             #[cfg(unix)]
             {
                 let permissions = fs::Permissions::from_mode(0o755);
-                fs::set_permissions(&launcher_path, permissions).map_err(|error| error.to_string())?;
+                fs::set_permissions(&launcher_path, permissions)
+                    .map_err(|error| error.to_string())?;
             }
 
             return Ok(());
         }
     }
-
 }
