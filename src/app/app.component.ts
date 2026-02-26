@@ -58,6 +58,9 @@ import {migrate} from "./migrations/migrate";
 export class AppComponent {
     os = OS.platform();
     constructor(bus: AppBus) {
+        window.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+        });
         bus.onceType$('ConfigLoaded').subscribe(async e => {
             await DB.load(`sqlite:${Environment.dbFilePath()}`);
             await migrate();

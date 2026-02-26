@@ -77,7 +77,7 @@ export class ConfigReader {
         const diagnostics: ConfigDiagnostic[] = [];
         let candidate: Record<string, unknown> = this.clone(merged) ?? {};
 
-        for (let attempt = 0; attempt < 3; attempt++) {
+        for (let attempt = 0; attempt < 10; attempt++) {
             const result = ConfigSchema.safeParse(candidate);
             if (result.success) {
                 const config = result.data;
@@ -197,6 +197,10 @@ export class ConfigReader {
                         changed = true;
                     }
                 } else if (this.deleteByPath(target, path)) {
+                    diagnostics.push({
+                        level: 'warning',
+                        message: `${pathLabel}: Removed setting (no default available).`
+                    });
                     changed = true;
                 }
             }

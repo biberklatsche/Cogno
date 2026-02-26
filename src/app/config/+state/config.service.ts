@@ -15,6 +15,7 @@ import {Opener} from "../../_tauri/opener";
 import {ShellProfile} from "../+models/shell-config";
 import {PromptSegment} from "../+models/prompt-config";
 import {ShellIntegrationWriter} from "../shell-integration.writer";
+import {Hash} from "../../common/hash/hash";
 
 
 export abstract class ConfigService {
@@ -35,6 +36,7 @@ export abstract class ConfigService {
 export class RealConfigService extends ConfigService {
     private _config = new BehaviorSubject<Config | undefined>(undefined);
     private _unwatch: Subscription | undefined;
+    private lastDiagnosticsHash?: number;
 
     get config(): Config {
         if (!this._config.value) {
@@ -192,6 +194,11 @@ export class RealConfigService extends ConfigService {
         Logger.info('Config loaded...');
 
         if (diagnostics.length > 0) {
+            const diagnosticsHash = Hash.create(JSON.stringify(diagnostics));
+            if (this.lastDiagnosticsHash === diagnosticsHash) {
+                return;
+            }
+            this.lastDiagnosticsHash = diagnosticsHash;
             const errors = diagnostics.filter(d => d.level === 'error');
             const warnings = diagnostics.filter(d => d.level === 'warning');
             const header = errors.length > 0 ? 'Config errors' : 'Config warnings';
@@ -212,6 +219,8 @@ export class RealConfigService extends ConfigService {
                     type: errors.length > 0 ? 'error' : 'warning'
                 },
             });
+        } else {
+            this.lastDiagnosticsHash = undefined;
         }
     }
 }
