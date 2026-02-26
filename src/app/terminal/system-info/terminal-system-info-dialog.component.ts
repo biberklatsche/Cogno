@@ -232,7 +232,7 @@ type ProcessTreeNode = {
             <div class="row">
               <div class="label">Last Commands</div>
               <div class="value">
-                @if ((terminalCommands() ?? []).length > 0) {
+                @if (terminalCommands().length > 0) {
                   @for (cmd of lastCommands(terminalCommands()); track cmd.id) {
                     <div>{{ cmd.id }} {{ cmd.command ?? '-' }}</div>
                   }

@@ -173,7 +173,7 @@ export class RealConfigService extends ConfigService {
 
         const defaultConfigString = await DefaultConfig.read();
         const userConfigString = await Fs.readTextFile(path);
-        const config = ConfigReader.fromStringToConfig(
+        const {config, diagnostics} = ConfigReader.fromStringToConfigWithDiagnostics(
             defaultConfigString,
             userConfigString
         );
@@ -190,6 +190,29 @@ export class RealConfigService extends ConfigService {
         this._config.next(config);
         this.appBus.publish({ type: 'ConfigLoaded', path: ['app', 'settings'] });
         Logger.info('Config loaded...');
+
+        if (diagnostics.length > 0) {
+            const errors = diagnostics.filter(d => d.level === 'error');
+            const warnings = diagnostics.filter(d => d.level === 'warning');
+            const header = errors.length > 0 ? 'Config errors' : 'Config warnings';
+            const lines: string[] = [];
+            if (errors.length > 0) lines.push(`Errors: ${errors.length}`);
+            if (warnings.length > 0) lines.push(`Warnings: ${warnings.length}`);
+            const detailLines = diagnostics.slice(0, 6).map(d => `- ${d.message}`);
+            if (diagnostics.length > 6) {
+                detailLines.push(`- ...and ${diagnostics.length - 6} more`);
+            }
+            const body = [...lines, ...detailLines].join('\n');
+            this.appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: {
+                    header,
+                    body,
+                    type: errors.length > 0 ? 'error' : 'warning'
+                },
+            });
+        }
     }
 }
 
