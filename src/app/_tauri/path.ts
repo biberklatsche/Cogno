@@ -1,9 +1,10 @@
-import { join as tauriJoin, homeDir as tauriHomeDir } from '@tauri-apps/api/path';
+import { dirname as tauriDirname, join as tauriJoin, homeDir as tauriHomeDir } from '@tauri-apps/api/path';
 import {invoke} from "@tauri-apps/api/core";
 
 export const Path = {
 
     join(...paths: string[]): Promise<string> { return tauriJoin(...paths)},
+    dirname(path: string): Promise<string> { return tauriDirname(path)},
 
     homeDir():Promise<string>{return tauriHomeDir()},
 

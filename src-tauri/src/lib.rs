@@ -7,8 +7,8 @@ use commands::config::get_default_config;
 use commands::crypto::decrypt;
 use commands::crypto::encrypt;
 use commands::environment::{
-    get_cogno_config_file_path, get_cogno_db_file_path, get_cogno_home_dir, get_exe_dir,
-    get_exe_path, get_macos_app_bundle, get_system_path,
+    get_cli_config_set_overrides, get_cogno_config_file_path, get_cogno_db_file_path,
+    get_cogno_home_dir, get_exe_dir, get_exe_path, get_macos_app_bundle, get_system_path,
 };
 use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
@@ -39,8 +39,8 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
             if let Ok(cli) = Cli::try_parse_from(argv) {
-                if let Some(cmd) = cli.action {
-                    let _ = app.emit("cli-action", &cmd);
+                if let Some(action_payload) = cli.action_payload() {
+                    let _ = app.emit("cli-action", &action_payload);
                 }
             }
         }))
@@ -65,6 +65,7 @@ pub fn run(cli: Cli) {
             get_cogno_config_file_path,
             get_cogno_db_file_path,
             get_system_path,
+            get_cli_config_set_overrides,
             new_window
         ])
         .setup(move |app| {
@@ -84,8 +85,8 @@ pub fn run(cli: Cli) {
             window.show().unwrap();
 
             // Beim ersten Start: ggf. gewünschten Command ausführen
-            if let Some(cmd) = cli.action.clone() {
-                let _ = app.emit("cli-action", &cmd);
+            if let Some(action_payload) = cli.action_payload() {
+                let _ = app.emit("cli-action", &action_payload);
             }
 
             #[cfg(debug_assertions)] // only include this code on debug builds
