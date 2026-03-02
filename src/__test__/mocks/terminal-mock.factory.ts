@@ -89,6 +89,7 @@ export class TerminalMockFactory {
       clearSelection: vi.fn(),
       select: vi.fn(),
       attachCustomKeyEventHandler: vi.fn(),
+      registerLinkProvider: vi.fn().mockReturnValue({ dispose: vi.fn() }),
       options: {},
       element: document.createElement('div'),
       textarea: {

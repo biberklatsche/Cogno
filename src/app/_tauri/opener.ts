@@ -5,4 +5,8 @@ export const Opener = {
   openPath(path: string): Promise<void> {
     return tauriOpenPath(path);
   },
+
+  openUrl(url: string): Promise<void> {
+    return tauriOpenUrl(url);
+  },
 };

@@ -74,6 +74,11 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             min-height: 0;
         }
 
+        h3 {
+            font-weight: normal;
+            opacity: 0.7;
+        }
+
         menu {
             display: flex;
             flex-direction: column;

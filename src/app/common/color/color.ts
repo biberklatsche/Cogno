@@ -98,4 +98,10 @@ export const Color = {
       default: return 'grey';
     }
   },
+
+
+  toHexColor(configColor: string | undefined): string {
+    if(!configColor) return '#000';
+    return `#${configColor}`;
+  }
 }

@@ -52,9 +52,18 @@ impl EnvironmentBuilder {
         }
     }
 
-    pub fn with_path_injection(mut self, inject_path: bool, cogno_paths: Vec<PathBuf>) -> Self {
+    pub fn with_path_injection(
+        mut self,
+        inject_path: bool,
+        cogno_paths: Vec<PathBuf>,
+        shell_type: &str,
+    ) -> Self {
         if inject_path && !cogno_paths.is_empty() {
-            let separator = if cfg!(windows) { ";" } else { ":" };
+            let separator = if cfg!(windows) && shell_type == "PowerShell" {
+                ";"
+            } else {
+                ":"
+            };
 
             let path_prefix = cogno_paths
                 .iter()
@@ -68,7 +77,11 @@ impl EnvironmentBuilder {
             // Only set PATH directly when shell integration is disabled.
             // With integration enabled, bootstrap scripts apply COGNO_PATH_PREFIX.
             // Setting both would prepend the same prefix twice.
-            if !self.env.contains_key("COGNO_INTEGRATION_ROOT") {
+            let has_integration = self.env.contains_key("COGNO_INTEGRATION_ROOT");
+            let should_set_path_directly =
+                !has_integration || (cfg!(windows) && shell_type == "PowerShell");
+
+            if should_set_path_directly {
                 if let Ok(system_path) = std::env::var("PATH") {
                     let new_path = format!("{}{}{}", path_prefix, separator, system_path);
                     self.env.insert("PATH".to_string(), new_path);
@@ -95,10 +108,8 @@ impl EnvironmentBuilder {
                     // ZSH looks for .zshrc in ZDOTDIR
                     // Point ZDOTDIR to our zsh directory
                     let zsh_dir = self.integration_root.join("zsh");
-                    self.env.insert(
-                        "ZDOTDIR".to_string(),
-                        zsh_dir.to_string_lossy().to_string(),
-                    );
+                    self.env
+                        .insert("ZDOTDIR".to_string(), zsh_dir.to_string_lossy().to_string());
                 }
                 "Fish" => {
                     // Fish expects XDG_CONFIG_HOME/fish/config.fish

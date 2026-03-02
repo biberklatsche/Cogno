@@ -76,4 +76,5 @@ export type Icon =
     | 'mdiAlphaIBox'
     | 'mdiPaletteSwatch'
     | 'mdiBell'
-    | 'mdiBellBadge';
+    | 'mdiBellBadge'
+    | 'mdiFilter';

@@ -18,6 +18,7 @@ import {KeybindExecutor} from "./keybind/keybind.executor";
 import {FullScreenAppHandler} from "./handler/full-screen-app.handler";
 import {MouseHandler} from "./handler/mouse.handler";
 import {CursorHandler} from "./handler/cursor.handler";
+import {TerminalSearchHandler} from "./handler/terminal-search.handler";
 import {CommandLineObserver} from "./advanced/ui/command-line.observer";
 import {TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/ui/command-line.editor';
@@ -25,6 +26,13 @@ import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
+import {LinkHandler} from "./handler/link.handler";
+import {DialogRef, DialogService} from "../../common/dialog";
+import {
+    TerminalSystemInfoDialogComponent,
+    TerminalSystemInfoDialogData,
+    TerminalSystemInfoSource
+} from "../system-info/terminal-system-info-dialog.component";
 
 @Injectable()
 export class TerminalSession {
@@ -37,6 +45,7 @@ export class TerminalSession {
     private subscription: Subscription = new Subscription();
     private readonly disposables: IDisposable[];
     private disposed: boolean = false;
+    private processInfoDialogReference?: DialogRef<void>;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -47,6 +56,7 @@ export class TerminalSession {
         private bus: AppBus,
         private stateManager: TerminalStateManager,
         private specCommandSuggestorService: SpecCommandSuggestorService,
+        private dialog: DialogService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -80,8 +90,10 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
         this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId)));
+        this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
+        this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))
 
         if(this.shellProfile.enable_shell_integration) {
@@ -127,6 +139,10 @@ export class TerminalSession {
             { label: 'Close', action: () => {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
                 }, actionName: "close_terminal"  },
+            { separator: true },
+            { label: 'Process Info', action: () => {
+                    this.openProcessInfoDialog();
+                } },
         ];
         if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {
@@ -140,6 +156,8 @@ export class TerminalSession {
 
     dispose() {
         if (this.disposed) return;
+        this.processInfoDialogReference?.close();
+        this.processInfoDialogReference = undefined;
         this.bus.publish({type: 'TerminalRemoved', path: ['app', 'terminal'], payload: this.terminalId});
         this.disposed = true;
         this.renderer.dispose();
@@ -150,5 +168,36 @@ export class TerminalSession {
 
     focus(): void{
         this.focusHandler?.focus();
+    }
+
+    private openProcessInfoDialog(): void {
+        if (!this.terminalId) {
+            return;
+        }
+
+        this.processInfoDialogReference?.close();
+        this.processInfoDialogReference = this.dialog.open<TerminalSystemInfoDialogData, void>(
+            TerminalSystemInfoDialogComponent,
+            {
+                title: 'Terminal System Info',
+                maxWidth: '100vw',
+                hasBackdrop: false,
+                movable: true,
+                resizable: true,
+                showCloseButton: true,
+                position: { right: '16px', bottom: '16px' },
+                data: {
+                    terminalId: this.terminalId,
+                    systemInfo: this.getSystemInfoSource()
+                }
+            }
+        );
+    }
+
+    private getSystemInfoSource(): TerminalSystemInfoSource {
+        return {
+            state$: this.stateManager.state$,
+            commands$: this.stateManager.commands$,
+        };
     }
 }

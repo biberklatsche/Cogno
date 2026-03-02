@@ -73,18 +73,13 @@
     {
       "identifier": "opener:allow-open-path",
       "allow": [
-        {
-          "path": "$HOME/.cogno2-dev"
-        },
-        {
-          "path": "$HOME/.cogno2-dev/**"
-        },
-        {
-          "path": "$HOME/.cogno2"
-        },
-        {
-          "path": "$HOME/.cogno2/**"
-        }
+        { "path": "**/*" },
+        { "path": "$HOME/.cogno2" },
+        { "path": "$HOME/.cogno2/**" },
+        { "path": "$HOME/.cogno2/cogno.config" },
+        { "path": "$HOME/.cogno2-dev" },
+        { "path": "$HOME/.cogno2-dev/**" },
+        { "path": "$HOME/.cogno2-dev/cogno.config" }
       ]
     }
   ]

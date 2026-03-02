@@ -43,7 +43,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
             const score = row.selectCount * 30 + row.visitCount * 5 + (starts ? 80 : contains ? 25 : 0);
 
             result.push({
-                label: displayPath,
+                label: AutocompletePathUtil.shortenParentTraversalDisplay(displayPath),
                 detail: row.path,
                 insertText: displayPath,
                 score,

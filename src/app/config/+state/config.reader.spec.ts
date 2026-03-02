@@ -58,11 +58,24 @@ describe('ConfigReader', () => {
         expect(settings.font!.size).toBe(14);
     });
 
-    it('throws on invalid values (e.g., negative scrollback_lines)', () => {
+    it('collects errors on invalid values (e.g., negative scrollback_lines) and ignores them', () => {
         const text = `
       scrollbar.scrollback_lines=-1
     `;
-        expect(() => ConfigReader.fromStringToConfig(defaultText, text)).toThrowError();
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+        expect(result.diagnostics.length).toBeGreaterThan(0);
+        expect(result.diagnostics.some(d => d.level === 'error')).toBe(true);
+        expect(result.config.scrollbar!.scrollback_lines).toBe(100000);
+    });
+
+    it('ignores unknown settings and reports warnings', () => {
+        const text = `
+      unknown_key=123
+      font.size=13
+    `;
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+        expect(result.config.font!.size).toBe(13);
+        expect(result.diagnostics.some(d => d.level === 'warning')).toBe(true);
     });
 
     it('single-arg overload still works (no defaults)', () => {

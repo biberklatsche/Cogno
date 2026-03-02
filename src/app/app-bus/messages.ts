@@ -10,7 +10,14 @@ import {
     SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
     CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction, SelectAllAction,
 } from '../terminal/+bus/actions';
-import {PtyInitializedEvent, TerminalCwdChangedEvent, TerminalTitleChangedEvent} from "../terminal/+bus/events";
+import {
+    PtyInitializedEvent,
+    TerminalCwdChangedEvent,
+    TerminalSearchRevealRequestedEvent,
+    TerminalSearchRequestedEvent,
+    TerminalSearchResultEvent,
+    TerminalTitleChangedEvent
+} from "../terminal/+bus/events";
 import {
     TerminalThemeChangedEvent,
     TerminalThemePaddingAddedEvent,
@@ -24,11 +31,12 @@ import {
     MaximizePaneAction,
     MinimizePaneAction,
     RemovePaneAction, SplitPaneDownAction,
+    SelectNextPaneAction,
+    SelectPreviousPaneAction,
     SplitPaneLeftAction,
     SplitPaneRightAction,
     SplitPaneUpAction
 } from "../grid-list/+bus/actions";
-import {InspectorEvent} from "../inspector/+bus/events";
 import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
@@ -51,6 +59,9 @@ export type AppMessage =
     | PtyInitializedEvent
     | TerminalCwdChangedEvent
     | TerminalTitleChangedEvent
+    | TerminalSearchRequestedEvent
+    | TerminalSearchResultEvent
+    | TerminalSearchRevealRequestedEvent
     | TerminalThemeChangedEvent
     | TerminalThemePaddingAddedEvent
     | TerminalThemePaddingRemovedEvent
@@ -85,11 +96,12 @@ export type AppMessage =
     | SplitPaneLeftAction
     | SplitPaneUpAction
     | SplitPaneDownAction
+    | SelectNextPaneAction
+    | SelectPreviousPaneAction
     | MaximizePaneAction
     | MinimizePaneAction
     | ClearBufferAction
     | FocusActiveTerminalAction
-    | InspectorEvent
     | NotificationEvent
     | SideMenuEvent
     | TabTitleChangedEvent

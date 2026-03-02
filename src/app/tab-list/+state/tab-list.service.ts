@@ -70,6 +70,16 @@ export class TabListService {
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
+                    case 'select_next_tab':
+                        this.selectAdjacentTab(1);
+                        event.performed = !event.trigger?.all;
+                        event.defaultPrevented = true;
+                        break;
+                    case 'select_previous_tab':
+                        this.selectAdjacentTab(-1);
+                        event.performed = !event.trigger?.all;
+                        event.defaultPrevented = true;
+                        break;
                     case 'close_other_tabs':
                         const activeTab = this._tabList.value.find(s => s.isActive);
                         this.removeAllTabs(activeTab?.id);
@@ -236,5 +246,15 @@ export class TabListService {
         if(activeTab) {
             this.bus.publish({type: "FocusActiveTerminal", path: ['app', 'terminal']});
         }
+    }
+
+    private selectAdjacentTab(direction: 1 | -1): void {
+        const tabs = this._tabList.value;
+        if (tabs.length < 2) return;
+
+        const currentIndex = tabs.findIndex(tab => tab.isActive);
+        const safeIndex = currentIndex >= 0 ? currentIndex : 0;
+        const nextIndex = (safeIndex + direction + tabs.length) % tabs.length;
+        this.selectTab(tabs[nextIndex].id);
     }
 }

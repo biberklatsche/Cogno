@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { KeybindExecutor } from './keybind.executor';
 import { AppBus } from '../../../app-bus/app-bus';
 import { TerminalStateManager } from '../state';
-import { clear, getAppBus } from '../../../../__test__/test-factory';
+import { clear, getAppBus, getDestroyRef } from '../../../../__test__/test-factory';
 
 describe('KeybindExecutor', () => {
     let executor: KeybindExecutor;
@@ -92,6 +92,44 @@ describe('KeybindExecutor', () => {
 
         expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
             type: 'SplitPaneUp',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
+    it('should publish SelectNextPane when select_next_pane action is fired', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'select_next_pane',
+            performed: false
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'SelectNextPane',
+            payload: terminalId,
+            path: ['app', 'terminal']
+        }));
+        expect(event.performed).toBe(true);
+    });
+
+    it('should publish SelectPreviousPane when select_previous_pane action is fired', async () => {
+        const publishSpy = vi.spyOn(mockBus, 'publish');
+        const event: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'select_previous_pane',
+            performed: false
+        };
+
+        mockBus.publish(event);
+
+        expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'SelectPreviousPane',
             payload: terminalId,
             path: ['app', 'terminal']
         }));
@@ -308,5 +346,40 @@ describe('KeybindExecutor', () => {
         const splitPublish = publishSpy.mock.calls.find(call => call[0].type === 'SplitPaneRight');
         expect(splitPublish).toBeUndefined();
         expect(event.performed).toBe(false);
+    });
+
+    it('should handle ActionFired only once even if focus changes during handling', async () => {
+        const bus = new AppBus();
+        const firstTerminalStateManager = new TerminalStateManager(bus, undefined, undefined, getDestroyRef());
+        const secondTerminalStateManager = new TerminalStateManager(bus, undefined, undefined, getDestroyRef());
+        firstTerminalStateManager.initialize('terminal-1', 'Bash');
+        secondTerminalStateManager.initialize('terminal-2', 'Bash');
+        firstTerminalStateManager.setFocus(true);
+        secondTerminalStateManager.setFocus(false);
+
+        const firstExecutor = new KeybindExecutor(bus, firstTerminalStateManager);
+        const secondExecutor = new KeybindExecutor(bus, secondTerminalStateManager);
+
+        const selectNextPanePayloads: string[] = [];
+        bus.on$({ path: ['app', 'terminal'], type: 'SelectNextPane' }).subscribe(event => {
+            if (!event.payload) return;
+            selectNextPanePayloads.push(event.payload);
+            if (event.payload === 'terminal-1') {
+                bus.publish({ type: 'FocusTerminal', payload: 'terminal-2', path: ['app', 'terminal'] });
+            }
+        });
+
+        const actionFiredEvent: any = {
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'select_next_pane',
+            performed: false
+        };
+        bus.publish(actionFiredEvent);
+
+        expect(selectNextPanePayloads).toEqual(['terminal-1']);
+
+        firstExecutor.dispose();
+        secondExecutor.dispose();
     });
 });

@@ -1,5 +1,5 @@
 import {KeyboardMappingService} from "./keyboard/keyboard-layout.loader";
-import {DestroyRef, Injectable} from "@angular/core";
+import {DestroyRef, Injectable, Signal, signal} from "@angular/core";
 import {ConfigService} from "../config/+state/config.service";
 import {KeybindingMatcher} from "./keybind.matcher";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -25,6 +25,7 @@ export class KeybindService {
     private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher();
     // simple registry for component-specific key listeners
     private readonly listeners = new Map<Key, ListenerStack>();
+    private readonly _lastFiredKeybinding = signal<string | undefined>(undefined);
 
     constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, bus: AppBus, ref: DestroyRef) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
@@ -40,14 +41,18 @@ export class KeybindService {
             }
             const ActionFiredEvent = this._keybindMatcher.match(e);
             if (!ActionFiredEvent) return;
+            this._lastFiredKeybinding.set(ActionFiredEvent.eventKey);
             Logger.info('Action fired' + ActionFiredEvent.event.payload);
             const result = bus.publish(ActionFiredEvent.event);
-            bus.publish({type: "Inspector", path: ['inspector'], payload: {type: 'keybind', data: ActionFiredEvent.eventKey}});
             if(ActionFiredEvent.event.trigger?.unconsumed) return;
             if(ActionFiredEvent.event.trigger?.performable && !result.performed) return;
             e.preventDefault();
             e.stopPropagation();
         }, {capture: true});
+    }
+
+    get lastFiredKeybinding(): Signal<string | undefined> {
+        return this._lastFiredKeybinding.asReadonly();
     }
 
     private getStack(key: Key): ListenerStack {

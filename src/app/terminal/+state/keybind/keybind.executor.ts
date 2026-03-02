@@ -16,6 +16,7 @@ export class KeybindExecutor implements IDisposable  {
             path: ['app', 'action'],
             type: 'ActionFired'
         }).subscribe(async event => {
+            if (event.performed) return;
             if(!this._stateManager.isFocused && !event.trigger?.all) return;
             switch (event.payload) {
                 case 'split_right': {
@@ -35,6 +36,16 @@ export class KeybindExecutor implements IDisposable  {
                 }
                 case 'split_up': {
                     this._bus.publish({type: 'SplitPaneUp', payload: this._stateManager.terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'select_next_pane': {
+                    this._bus.publish({type: 'SelectNextPane', payload: this._stateManager.terminalId, path: ['app', 'terminal']});
+                    event.performed = true;
+                    break;
+                }
+                case 'select_previous_pane': {
+                    this._bus.publish({type: 'SelectPreviousPane', payload: this._stateManager.terminalId, path: ['app', 'terminal']});
                     event.performed = true;
                     break;
                 }

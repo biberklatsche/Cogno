@@ -1,5 +1,5 @@
-use tauri::{WebviewUrl, WebviewWindowBuilder};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[tauri::command]
 pub async fn new_window(app: tauri::AppHandle) -> Result<(), String> {

@@ -23,7 +23,11 @@ pub fn list_fonts() -> Vec<FontInfo> {
                     // nur wenn neu
                     let is_monospace = font.is_monospace();
                     let postscript = font.postscript_name();
-                    fonts.push(FontInfo { name, postscript, is_monospace });
+                    fonts.push(FontInfo {
+                        name,
+                        postscript,
+                        is_monospace,
+                    });
                 }
             }
         }

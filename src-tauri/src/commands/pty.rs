@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use std::io::Write;
-use std::sync::{Arc, Mutex};
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, State};
+use std::collections::HashMap;
+use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter, State};
 
 use super::shell_spawner::{ShellProfile, ShellSpawner};
 
@@ -21,6 +21,7 @@ struct Session {
     master: Box<dyn portable_pty::MasterPty + Send>,
     writer: Box<dyn Write + Send>,
     should_exit: Arc<AtomicBool>,
+    shell_process_id: Option<u32>,
 }
 
 pub struct PtyState {
@@ -33,6 +34,19 @@ impl PtyState {
             sessions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
+
+    pub fn get_shell_process_id(&self, terminal_id: &str) -> Option<u32> {
+        let sessions = self.sessions.lock().ok()?;
+        sessions
+            .get(terminal_id)
+            .and_then(|session| session.shell_process_id)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PtySpawnResult {
+    pub shell_process_id: Option<u32>,
 }
 
 #[tauri::command]
@@ -40,7 +54,7 @@ pub async fn pty_spawn(
     app: AppHandle,
     state: State<'_, PtyState>,
     options: SpawnOptions,
-) -> Result<(), String> {
+) -> Result<PtySpawnResult, String> {
     let terminal_id = options.name.clone();
 
     // Prepare shell spawn with integration
@@ -83,6 +97,7 @@ pub async fn pty_spawn(
         .slave
         .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn command: {}", e))?;
+    let shell_process_id = child.process_id();
 
     let reader = pair
         .master
@@ -100,6 +115,7 @@ pub async fn pty_spawn(
         master: pair.master,
         writer,
         should_exit: should_exit.clone(),
+        shell_process_id,
     };
 
     {
@@ -166,7 +182,8 @@ pub async fn pty_spawn(
                     match String::from_utf8(utf8_buffer.clone()) {
                         Ok(text) => {
                             // All data is valid UTF-8, emit it
-                            let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                            let _ =
+                                app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
                             utf8_buffer.clear();
                         }
                         Err(e) => {
@@ -174,15 +191,18 @@ pub async fn pty_spawn(
                             let valid_up_to = e.utf8_error().valid_up_to();
                             if valid_up_to > 0 {
                                 // Emit the valid prefix
-                                let text = String::from_utf8_lossy(&utf8_buffer[..valid_up_to]).to_string();
-                                let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                                let text = String::from_utf8_lossy(&utf8_buffer[..valid_up_to])
+                                    .to_string();
+                                let _ = app_clone
+                                    .emit(&format!("pty-data:{}", terminal_id_clone), text);
                                 // Keep only the invalid suffix (might be incomplete multi-byte char)
                                 utf8_buffer.drain(..valid_up_to);
                             }
                             // If buffer gets too large with invalid data, force flush
                             if utf8_buffer.len() > 16 {
                                 let text = String::from_utf8_lossy(&utf8_buffer).to_string();
-                                let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
+                                let _ = app_clone
+                                    .emit(&format!("pty-data:{}", terminal_id_clone), text);
                                 utf8_buffer.clear();
                             }
                         }
@@ -195,7 +215,7 @@ pub async fn pty_spawn(
         }
     });
 
-    Ok(())
+    Ok(PtySpawnResult { shell_process_id })
 }
 
 #[tauri::command]

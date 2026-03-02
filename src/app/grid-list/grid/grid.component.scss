@@ -52,6 +52,7 @@ app-pane {
     bottom: 0;
     background: rgba(0,0,0,0.3);
     pointer-events: none;
+    z-index: 100;
   }
 }
 

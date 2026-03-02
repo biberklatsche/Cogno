@@ -1,5 +1,11 @@
 import {Config, ConfigSchema} from "../+models/config";
 import {OS, OsType} from "../../_tauri/os";
+import {z} from "zod";
+
+export type ConfigDiagnostic = {
+    level: 'warning' | 'error';
+    message: string;
+};
 
 /**
  * Reader class for reading/validating the configuration.
@@ -17,14 +23,25 @@ export class ConfigReader {
       const userConfigString = b === undefined ? a : b;
       const userConfig = this.parseConfigString(userConfigString || "");
       const defaultConfig = this.parseConfigString(defaultConfigString || "");
-      return this.toConfig(defaultConfig, userConfig);
+      return this.toConfigWithDiagnostics(defaultConfig, userConfig).config;
   }
+
+    /** Same as fromStringToConfig, but also returns diagnostics for unknown/invalid settings. */
+    static fromStringToConfigWithDiagnostics(defaultConfigString: string, userConfigString: string): {config: Config; diagnostics: ConfigDiagnostic[]};
+    static fromStringToConfigWithDiagnostics(userConfigStringOnly: string): {config: Config; diagnostics: ConfigDiagnostic[]};
+    static fromStringToConfigWithDiagnostics(a: string, b?: string): {config: Config; diagnostics: ConfigDiagnostic[]} {
+        const defaultConfigString = b === undefined ? "" : a;
+        const userConfigString = b === undefined ? a : b;
+        const userConfig = this.parseConfigString(userConfigString || "");
+        const defaultConfig = this.parseConfigString(defaultConfigString || "");
+        return this.toConfigWithDiagnostics(defaultConfig, userConfig);
+    }
 
     /** Merges default values with user overrides and validates.
      *  Rule: All keys are replaced (user overrides default), except for 'keybind': there arrays
      *  are merged: first default entries, then user entries. Other arrays are replaced.
      */
-    private static toConfig(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): Config {
+    private static toConfigWithDiagnostics(defaultConfig: Record<string, unknown>, userConfig: Record<string, unknown>): {config: Config; diagnostics: ConfigDiagnostic[]} {
         const merge = (defs: any, usr: any): any => {
             // If user is not set: take defaults completely
             if (usr === undefined) return this.clone(defs);
@@ -57,14 +74,36 @@ export class ConfigReader {
         };
 
         const merged = merge(defaultConfig ?? {}, userConfig ?? {});
-        const config = ConfigSchema.parse(merged);
+        const diagnostics: ConfigDiagnostic[] = [];
+        let candidate: Record<string, unknown> = this.clone(merged) ?? {};
 
-        // Add platform-specific font fallbacks
-        if (config.font?.family) {
-            config.font.family = this.addFontFallbacks(config.font.family);
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const result = ConfigSchema.safeParse(candidate);
+            if (result.success) {
+                const config = result.data;
+                if (config.font?.family) {
+                    config.font.family = this.addFontFallbacks(config.font.family);
+                }
+                return {config, diagnostics};
+            }
+            const changed = this.applyDiagnosticsAndStrip(candidate, defaultConfig ?? {}, result.error, diagnostics);
+            if (!changed) {
+                break;
+            }
+            candidate = this.clone(candidate) ?? {};
         }
 
-        return config;
+        const fallbackResult = ConfigSchema.safeParse(defaultConfig ?? {});
+        const emptyResult = fallbackResult.success ? fallbackResult : ConfigSchema.safeParse({});
+        const fallback = emptyResult.success ? emptyResult.data : ({} as Config);
+        if (fallback.font?.family) {
+            fallback.font.family = this.addFontFallbacks(fallback.font.family);
+        }
+        diagnostics.push({
+            level: 'error',
+            message: 'Invalid configuration entries were ignored. Defaults were used where needed.'
+        });
+        return {config: fallback, diagnostics};
     }
 
     /**
@@ -117,6 +156,120 @@ export class ConfigReader {
     private static clone<T>(v: T): T | undefined {
         if(v === undefined) return undefined
         return JSON.parse(JSON.stringify(v));
+    }
+
+    private static applyDiagnosticsAndStrip(
+        target: Record<string, unknown>,
+        defaults: Record<string, unknown>,
+        error: z.ZodError,
+        diagnostics: ConfigDiagnostic[]
+    ): boolean {
+        let changed = false;
+        for (const issue of error.issues) {
+            const path = issue.path.filter(part => typeof part === 'string' || typeof part === 'number') as (string | number)[];
+            if (issue.code === 'unrecognized_keys') {
+                const pathLabel = this.pathToString(path);
+                diagnostics.push({
+                    level: 'warning',
+                    message: `Unknown setting(s) at ${pathLabel}: ${issue.keys.join(', ')}`
+                });
+                const parent = this.getByPath(target, path);
+                if (parent && typeof parent === 'object') {
+                    for (const key of issue.keys) {
+                        if (key in parent) {
+                            delete (parent as Record<string, unknown>)[key];
+                            changed = true;
+                        }
+                    }
+                }
+                continue;
+            }
+
+            const pathLabel = this.pathToString(path);
+            diagnostics.push({
+                level: 'error',
+                message: `${pathLabel}: ${issue.message}`
+            });
+            if (path.length > 0) {
+                const fallback = this.getByPath(defaults, path);
+                if (fallback !== undefined) {
+                    if (this.setByPath(target, path, this.clone(fallback))) {
+                        changed = true;
+                    }
+                } else if (this.deleteByPath(target, path)) {
+                    diagnostics.push({
+                        level: 'warning',
+                        message: `${pathLabel}: Removed setting (no default available).`
+                    });
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
+
+    private static pathToString(path: (string | number)[]): string {
+        if (path.length === 0) return '<root>';
+        return path.map(part => typeof part === 'number' ? `[${part}]` : part).join('.');
+    }
+
+    private static getByPath(target: Record<string, unknown>, path: (string | number)[]): unknown {
+        let cur: any = target;
+        for (const part of path) {
+            if (cur === undefined || cur === null) return undefined;
+            if (typeof part === 'number') {
+                if (!Array.isArray(cur)) return undefined;
+                cur = cur[part];
+            } else {
+                if (typeof cur !== 'object') return undefined;
+                cur = cur[part];
+            }
+        }
+        return cur;
+    }
+
+    private static deleteByPath(target: Record<string, unknown>, path: (string | number)[]): boolean {
+        if (path.length === 0) return false;
+        const parentPath = path.slice(0, -1);
+        const key = path[path.length - 1];
+        const parent = parentPath.length === 0 ? target : this.getByPath(target, parentPath);
+        if (parent === undefined || parent === null) return false;
+        if (typeof key === 'number' && Array.isArray(parent)) {
+            if (key < 0 || key >= parent.length) return false;
+            parent.splice(key, 1);
+            return true;
+        }
+        if (typeof parent === 'object' && key in (parent as Record<string, unknown>)) {
+            delete (parent as Record<string, unknown>)[key as string];
+            return true;
+        }
+        return false;
+    }
+
+    private static setByPath(target: Record<string, unknown>, path: (string | number)[], value: unknown): boolean {
+        if (path.length === 0) return false;
+        let cur: any = target;
+        for (let i = 0; i < path.length - 1; i++) {
+            const part = path[i];
+            if (typeof part === 'number') {
+                if (!Array.isArray(cur)) return false;
+                cur[part] ??= {};
+                cur = cur[part];
+            } else {
+                if (typeof cur !== 'object' || cur === null) return false;
+                cur[part] ??= {};
+                cur = cur[part];
+            }
+        }
+        const last = path[path.length - 1];
+        if (typeof last === 'number') {
+            if (!Array.isArray(cur)) return false;
+            cur[last] = value;
+            return true;
+        }
+        if (typeof cur !== 'object' || cur === null) return false;
+        cur[last] = value;
+        return true;
     }
 
     /** Liest einen User-Settings-String (key=value, Dot-Pfade) in ein verschachteltes Objekt ein. */

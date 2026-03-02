@@ -6,6 +6,8 @@ import {getStateManager, getConfigService, getAppBus} from "../../../__test__/te
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
 import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
+import {DialogService} from "../../common/dialog";
+import {DialogRef} from "../../common/dialog/dialog-ref";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -38,6 +40,8 @@ describe('TerminalSession', () => {
     let mockBus: AppBus;
     let mockShellProfile: ShellProfile;
     let mockSpecCommandSuggestorService: SpecCommandSuggestorService;
+    let mockDialogService: DialogService;
+    let mockProcessInfoDialogReference: DialogRef<void>;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -56,13 +60,35 @@ describe('TerminalSession', () => {
             preloadForShellIntegration: vi.fn(),
         } as unknown as SpecCommandSuggestorService;
 
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService);
+        mockProcessInfoDialogReference = {
+            id: 1,
+            closed: vi.fn() as unknown as DialogRef<void>['closed'],
+            close: vi.fn()
+        } as unknown as DialogRef<void>;
+
+        mockDialogService = {
+            open: vi.fn().mockReturnValue(mockProcessInfoDialogReference)
+        } as unknown as DialogService;
+
+        session = new TerminalSession(
+            mockConfigService,
+            mockBus,
+            getStateManager(),
+            mockSpecCommandSuggestorService,
+            mockDialogService
+        );
     });
 
     it('should initialize with correct renderer settings based on config', () => {
         const config = { enable_webgl: true, font: { family: 'Fira Code' } } as any;
         (mockConfigService as any).setConfig(config);
-        session = new TerminalSession(mockConfigService, mockBus, getStateManager(), mockSpecCommandSuggestorService);
+        session = new TerminalSession(
+            mockConfigService,
+            mockBus,
+            getStateManager(),
+            mockSpecCommandSuggestorService,
+            mockDialogService
+        );
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
     });
@@ -76,8 +102,7 @@ describe('TerminalSession', () => {
 
         const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
         expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-        // Handlers: Pty, Resize, Theme, Title, FullScreen, Focus, Selection, Input, Mouse, Cursor = 10
-        expect(rendererInstance.register).toHaveBeenCalledTimes(10);
+        expect(rendererInstance.register).toHaveBeenCalledTimes(12);
     });
 
     it('should enable shell integration features if configured', () => {
@@ -89,8 +114,7 @@ describe('TerminalSession', () => {
         session.initializeTerminal(mockElement);
 
         const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-        // Handlers: 10 base + CognoOsc (handled by CommandLineObserver), CommandLineObserver, CommandLineEditor = 12
-        expect(rendererInstance.register).toHaveBeenCalledTimes(12);
+        expect(rendererInstance.register).toHaveBeenCalledTimes(14);
         expect(mockSpecCommandSuggestorService.preloadForShellIntegration).toHaveBeenCalledWith('Bash');
     });
 
@@ -135,5 +159,16 @@ describe('TerminalSession', () => {
         vi.clearAllMocks();
         session.dispose();
         expect(mockBus.publish).not.toHaveBeenCalled();
+    });
+
+    it('should close process info dialog when terminal session is disposed', () => {
+        session.initialize(terminalId, mockShellProfile);
+        const processInfoItem = session.buildContextMenu().find(item => item.label === 'Process Info');
+
+        processInfoItem?.action?.();
+        expect(mockDialogService.open).toHaveBeenCalledTimes(1);
+
+        session.dispose();
+        expect(mockProcessInfoDialogReference.close).toHaveBeenCalledTimes(1);
     });
 });

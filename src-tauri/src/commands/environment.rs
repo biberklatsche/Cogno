@@ -20,7 +20,8 @@ pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
     {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?;
         // .../MyApp.app/Contents/MacOS/MyApp  ->  .../MyApp.app
-        if let Some(mac_os) = exe.parent()
+        if let Some(mac_os) = exe
+            .parent()
             .and_then(|p| p.parent())
             .and_then(|p| p.parent())
         {
@@ -31,7 +32,9 @@ pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
         Ok(None)
     }
     #[cfg(not(target_os = "macos"))]
-    { Ok(None) }
+    {
+        Ok(None)
+    }
 }
 
 /// Returns the cogno home directory path (.cogno or .cogno-dev based on dev_mode)

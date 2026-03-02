@@ -1,10 +1,36 @@
 import { Injectable } from '@angular/core';
-import { Config, ShellConfig, ShellType } from './+models/config';
+import { Config, ShellType } from './+models/config';
 import { Shell, Shells } from '../_tauri/shells';
 import {ShellProfile} from "./+models/shell-config";
+import {OS, OsType} from "../_tauri/os";
 
 @Injectable({ providedIn: 'root' })
 export class ShellConfigurator {
+
+    private readonly shellOrderPerOs: Record<OsType, Record<ShellType, number>> = {
+        macos: {
+            Fish: 1,
+            ZSH: 2,
+            Bash: 3,
+            PowerShell: 4,
+            GitBash: 5,
+        },
+        windows: {
+            PowerShell: 1,
+            GitBash: 2,
+            Bash: 3,
+            ZSH: 4,
+            Fish: 5,
+        },
+        linux: {
+            Fish: 1,
+            ZSH: 2,
+            Bash: 3,
+            PowerShell: 4,
+            GitBash: 5,
+        },
+    };
+
     /**
      * Detects available shells and writes them into config.shell.profiles
      * and sets config.shell.default + (optional) config.shell.order.
@@ -12,14 +38,7 @@ export class ShellConfigurator {
     async apply(config: Config): Promise<void> {
         const installedShells = await Shells.load();
 
-        // Stable sort order preference
-        const weight: Record<ShellType, number> = {
-            Fish: 1,
-            GitBash: 2,
-            PowerShell: 3,
-            ZSH: 4,
-            Bash: 5,
-        };
+        const weight: Record<ShellType, number> = this.shellOrderPerOs[OS.platform()];
 
         const sortedShells = installedShells.sort((a, b) => {
             const wa = weight[a.shell_type] ?? 99;

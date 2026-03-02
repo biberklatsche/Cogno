@@ -1,4 +1,4 @@
-use clap::{Parser};
+use clap::Parser;
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "cogno", version, about = "Cogno CLI")]

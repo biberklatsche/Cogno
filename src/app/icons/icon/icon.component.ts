@@ -28,7 +28,7 @@ import {
     mdiConsole,
     mdiContentCopy, mdiCropSquare,
     mdiDesktopClassic, mdiDotsSquare,
-    mdiDotsVertical, mdiFitToPageOutline,
+    mdiDotsVertical, mdiFilter, mdiFitToPageOutline,
     mdiFolderMove,
     mdiFormatLetterCase,
     mdiFormatLetterMatches,
@@ -332,6 +332,9 @@ export class IconComponent {
             break;
         case('mdiPaletteSwatch'):
             this.icon = mdiPaletteSwatch;
+            break;
+        case('mdiFilter'):
+            this.icon = mdiFilter;
             break;
       default:
         this.icon = mdiAbTesting;

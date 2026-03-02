@@ -119,6 +119,7 @@ export class TauriMockFactory {
   static createOpener() {
     return {
       openPath: vi.fn().mockResolvedValue(undefined),
+      openUrl: vi.fn().mockResolvedValue(undefined),
     };
   }
 
