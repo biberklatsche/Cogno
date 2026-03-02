@@ -85,7 +85,7 @@ impl ShellSpawner {
             load_user_rc,
             enable_integration,
         )
-        .with_path_injection(inject_cogno_cli, cogno_paths)
+        .with_path_injection(inject_cogno_cli, cogno_paths, &profile.shell_type)
         .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);
 
         let merged_custom_env = profile.env.clone().unwrap_or_default();
@@ -126,6 +126,8 @@ impl ShellSpawner {
                 Ok(vec![
                     "-NoExit".to_string(),
                     "-NoProfile".to_string(),
+                    "-ExecutionPolicy".to_string(),
+                    "Bypass".to_string(),
                     "-Command".to_string(),
                     format!(". '{}'", integration_script.to_string_lossy()),
                 ])
