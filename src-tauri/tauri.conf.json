@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Cogno2",
+  "productName": "cogno",
   "version": "0.1.0",
-  "identifier": "Cogno2",
+  "identifier": "rocks.cogno",
   "build": {
     "beforeDevCommand": "npm run start",
     "devUrl": "http://localhost:1420",

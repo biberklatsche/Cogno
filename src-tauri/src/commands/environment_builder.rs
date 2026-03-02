@@ -67,7 +67,7 @@ impl EnvironmentBuilder {
 
             let path_prefix = cogno_paths
                 .iter()
-                .map(|p| p.to_string_lossy().to_string())
+                .map(|p| Self::format_path_for_shell(p, shell_type))
                 .collect::<Vec<_>>()
                 .join(separator);
 
@@ -90,6 +90,33 @@ impl EnvironmentBuilder {
         }
 
         self
+    }
+
+    fn format_path_for_shell(path: &PathBuf, shell_type: &str) -> String {
+        let raw = path.to_string_lossy().to_string();
+
+        if cfg!(windows) && shell_type == "GitBash" {
+            return Self::to_git_bash_path(&raw);
+        }
+
+        raw
+    }
+
+    fn to_git_bash_path(path: &str) -> String {
+        let normalized = path.replace('\\', "/");
+        let bytes = normalized.as_bytes();
+
+        if bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic() {
+            let drive = (bytes[0] as char).to_ascii_lowercase();
+            let rest = normalized[2..].trim_start_matches('/');
+            if rest.is_empty() {
+                format!("/{drive}")
+            } else {
+                format!("/{drive}/{rest}")
+            }
+        } else {
+            normalized
+        }
     }
 
     pub fn with_shell_specific_env(

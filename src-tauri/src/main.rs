@@ -21,7 +21,7 @@ fn main() {
     }
 
     // Start Tauri App
-    cogno_lib::run(cli)
+    cogno_lib::run(cli);
 }
 
 fn apply_cli_environment(cli: &Cli) -> Result<(), String> {

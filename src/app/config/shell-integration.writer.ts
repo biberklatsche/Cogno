@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.22";
+const INTEGRATION_VERSION = "1.0.23";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -224,6 +224,14 @@ if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
     export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
 fi
 
+# Ensure "cogno" command resolves directly to the current executable path.
+if [[ -n "\${COGNO_CLI_PATH}" ]] && ! command -v cogno >/dev/null 2>&1; then
+    _cogno_log "Installing cogno function for \${COGNO_CLI_PATH}"
+    cogno() {
+        "\${COGNO_CLI_PATH}" "$@"
+    }
+fi
+
 # Load Cogno integration
 if [[ -n "\${COGNO_INTEGRATION_ROOT}" ]]; then
     _cogno_integration_script="\${COGNO_INTEGRATION_ROOT}/bash/integration.bash"
@@ -366,6 +374,14 @@ if [[ -n "\${COGNO_PATH_PREFIX}" ]]; then
     export PATH="\${COGNO_PATH_PREFIX}:\${PATH}"
 fi
 
+# Ensure "cogno" command resolves directly to the current executable path.
+if [[ -n "\${COGNO_CLI_PATH}" ]] && ! command -v cogno >/dev/null 2>&1; then
+    _cogno_log "Installing cogno function for \${COGNO_CLI_PATH}"
+    cogno() {
+        "\${COGNO_CLI_PATH}" "$@"
+    }
+fi
+
 # Load Cogno integration
 if [[ -n "\${COGNO_INTEGRATION_ROOT}" ]]; then
     _cogno_integration_script="\${COGNO_INTEGRATION_ROOT}/zsh/integration.zsh"
@@ -474,6 +490,16 @@ if set -q COGNO_PATH_PREFIX
     end
 end
 
+# Ensure "cogno" command resolves directly to the current executable path.
+if set -q COGNO_CLI_PATH
+    if not type -q cogno
+        _cogno_log "Installing cogno function for $COGNO_CLI_PATH"
+        function cogno
+            $COGNO_CLI_PATH $argv
+        end
+    end
+end
+
 # Load Cogno integration
 if set -q COGNO_INTEGRATION_ROOT
     set -l integration_script "$COGNO_INTEGRATION_ROOT/fish/integration.fish"
@@ -576,6 +602,14 @@ if ($env:COGNO_ALLOW_USER_RC -eq "1") {
 if ($env:COGNO_PATH_PREFIX) {
     Write-CognoLog "Applying PATH prefix: $($env:COGNO_PATH_PREFIX)"
     $env:Path = "$($env:COGNO_PATH_PREFIX);$($env:Path)"
+}
+
+# Ensure "cogno" command resolves directly to the current executable path.
+if ($env:COGNO_CLI_PATH -and -not (Get-Command cogno -ErrorAction SilentlyContinue)) {
+    Write-CognoLog "Installing cogno function for $($env:COGNO_CLI_PATH)"
+    function global:cogno {
+        & $env:COGNO_CLI_PATH @args
+    }
 }
 
 $esc = [char]27
