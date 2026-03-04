@@ -22,6 +22,7 @@ import {TerminalCommandHistoryStore} from "../advanced/history/terminal-command-
 import {TerminalHistoryPersistenceService} from "../advanced/history/terminal-history-persistence.service";
 import {ShellProfile} from "../../../config/+models/shell-config";
 import {deriveShellContext} from "./terminal-shell-context.util";
+import {ConfigService} from "../../../config/+state/config.service";
 
 @Injectable()
 export class TerminalStateManager {
@@ -34,7 +35,8 @@ export class TerminalStateManager {
         private _bus: AppBus,
         private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
         private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService(),
-        destroyRef?: DestroyRef
+        destroyRef?: DestroyRef,
+        private configService?: ConfigService
     ) {
         destroyRef?.onDestroy(() => this.dispose());
         this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
@@ -47,6 +49,15 @@ export class TerminalStateManager {
                 const focusedTerminalId = event.payload;
                 if (!ownTerminalId || !focusedTerminalId) return;
                 this.updateState({isFocused: ownTerminalId === focusedTerminalId});
+            });
+
+        this._bus
+            .onType$('ConfigLoaded', {path: ['app', 'settings']})
+            .pipe(takeUntil(this.disposeSignal))
+            .subscribe(() => {
+                if (!this.isTerminalNotificationBadgeEnabled()) {
+                    this.clearUnreadNotification();
+                }
             });
     }
 
@@ -154,6 +165,36 @@ export class TerminalStateManager {
 
     setPaneMaximized(isPaneMaximized: boolean): void {
         this.updateState({isPaneMaximized});
+    }
+
+    get hasUnreadNotification(): boolean {
+        return this._stateSubject.value.hasUnreadNotification;
+    }
+
+    get hasUnreadNotification$(): Observable<boolean> {
+        return this._stateSubject.pipe(map(s => s.hasUnreadNotification));
+    }
+
+    markUnreadNotification(): void {
+        if (!this.isTerminalNotificationBadgeEnabled()) {
+            return;
+        }
+        this.updateState({hasUnreadNotification: true});
+    }
+
+    clearUnreadNotification(): void {
+        this.updateState({hasUnreadNotification: false});
+    }
+
+    private isTerminalNotificationBadgeEnabled(): boolean {
+        if (!this.configService) {
+            return true;
+        }
+        try {
+            return this.configService.config.notification?.mark_terminal ?? true;
+        } catch {
+            return true;
+        }
     }
 
     get isCommandRunning(): boolean {

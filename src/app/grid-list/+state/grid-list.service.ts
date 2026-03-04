@@ -94,6 +94,7 @@ export class GridListService {
         });
 
         this.bus.onType$('TerminalFocused').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalFocusedEvent) => {
+            if (!event.payload) return;
             if(!this._activeTabId.value) throw new Error("No active tab id found.");
             const gridList = this._gridList.value;
             const focusedTabId = this.determineTabId(gridList, event.payload);
@@ -346,9 +347,11 @@ export class GridListService {
         if(tab === undefined) return;
         const gridList = this._gridList.value;
         const grid = gridList[tab];
+        if (!grid) return;
         const terminalIds = grid.tree.find(s => s.isLeaf).map(s => s.data?.terminalId);
         delete gridList[tab];
         for (let terminalId of terminalIds) {
+            if (!terminalId) continue;
             this.componentFactory.destroy(terminalId);
         }
         this._gridList.next(gridList);
@@ -441,4 +444,5 @@ export class GridListService {
         }
         return;
     }
+
 }

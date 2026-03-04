@@ -3,15 +3,20 @@ import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { TerminalNotificationHandler } from "./terminal-notification.handler";
+import {TerminalStateManager} from "../state";
 
 describe("TerminalNotificationHandler", () => {
     let handler: TerminalNotificationHandler;
     let mockTerminal: Terminal;
     let mockBus: AppBus;
+    let mockStateManager: Pick<TerminalStateManager, 'markUnreadNotification'>;
 
     beforeEach(() => {
         mockBus = new AppBus();
-        handler = new TerminalNotificationHandler(mockBus);
+        mockStateManager = {
+            markUnreadNotification: vi.fn()
+        };
+        handler = new TerminalNotificationHandler(mockBus, mockStateManager as TerminalStateManager);
         mockTerminal = TerminalMockFactory.createTerminal();
     });
 
@@ -40,6 +45,7 @@ describe("TerminalNotificationHandler", () => {
                 type: "info",
             })
         }));
+        expect(mockStateManager.markUnreadNotification).toHaveBeenCalledTimes(1);
     });
 
     it("ignores empty OSC 9 payloads", () => {

@@ -54,6 +54,7 @@ export class FocusHandler implements ITerminalHandler {
         const textarea = terminal.textarea;
         textarea?.addEventListener("focus", () => {
             this.stateManager.setFocus(true);
+            this.stateManager.clearUnreadNotification();
         });
         textarea?.addEventListener("blur", () => {
             this.stateManager.setFocus(false)
@@ -65,6 +66,7 @@ export class FocusHandler implements ITerminalHandler {
     focus() {
         this._terminal?.focus();
         this.stateManager.setFocus(true);
+        this.stateManager.clearUnreadNotification();
         this._bus.publish({type: "TerminalFocused", payload: this._terminalId});
     }
 

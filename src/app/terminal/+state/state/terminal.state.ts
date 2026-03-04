@@ -38,6 +38,7 @@ export type TerminalState = {
     isCommandRunning: boolean;
     isInFullScreenMode: boolean;
     isPaneMaximized: boolean;
+    hasUnreadNotification: boolean;
     commandStartTime: number | undefined;
     input: TerminalInput;
     cwd: string;
@@ -63,6 +64,7 @@ export const INITIAL_STATE: TerminalState = {
     isCommandRunning: false,
     isInFullScreenMode: false,
     isPaneMaximized: false,
+    hasUnreadNotification: false,
     commandStartTime: undefined,
     input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
 }
