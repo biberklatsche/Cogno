@@ -34,7 +34,7 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
         const corpusSize = Math.max(rows.length, 1);
         const docFreq = HistoryCommandScorer.buildDocFreq(rows, queryTokens);
 
-        return rows
+        const suggestions: Array<AutocompleteSuggestion | null> = rows
             .filter(row => !consistsOnlyOfPromptWords(row.command, promptWords))
             .map(row => {
                 const score = HistoryCommandScorer.scoreRow(
@@ -58,7 +58,8 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
                     replaceEnd: context.inputText.length,
                     selectedCommand: row.command,
                 } satisfies AutocompleteSuggestion;
-            })
-            .filter((item): item is AutocompleteSuggestion => item !== null);
+            });
+
+        return suggestions.filter((item): item is AutocompleteSuggestion => item !== null);
     }
 }

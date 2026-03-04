@@ -33,6 +33,7 @@ import {
     TerminalSystemInfoDialogData,
     TerminalSystemInfoSource
 } from "../system-info/terminal-system-info-dialog.component";
+import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
 
 @Injectable()
 export class TerminalSession {
@@ -86,6 +87,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
+        this.disposables.push(this.renderer.register(new TerminalNotificationHandler(this.bus)));
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
