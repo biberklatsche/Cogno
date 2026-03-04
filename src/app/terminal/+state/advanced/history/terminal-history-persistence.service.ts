@@ -6,6 +6,7 @@ import { Logger } from "../../../../_tauri/logger";
 import { IPathAdapter } from "../adapter/base/path-adapter.interface";
 import { ShellContext } from "../model/models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
+import {ExecutedCommand} from "./terminal-command-history.store";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
 type ReturnCodePolicy = {
@@ -63,12 +64,9 @@ export class TerminalHistoryPersistenceService {
         this.enqueue(repo => repo.upsertWorkingDirectory(cwdRaw));
     }
 
-    onCommandExecuted(commandRaw: string, cwdRaw: string, returnCode?: number): void {
-        const command = commandRaw.trim();
-        if (!command) return;
-        if (!this.shouldPersistCommand(command, returnCode)) return;
-
-        this.enqueue(repo => repo.upsertCommandExecution(command, cwdRaw));
+    onCommandExecuted(executedCommand: ExecutedCommand | undefined): void {
+        if (!this.shouldPersistCommand(executedCommand)) return;
+        this.enqueue(repo => repo.upsertCommandExecution(executedCommand!.command, executedCommand!.directory));
     }
 
     setDefaultAllowedReturnCodes(codes: number[]): void {
@@ -115,15 +113,24 @@ export class TerminalHistoryPersistenceService {
         this.enqueue(repo => repo.markCommandSelected(commandRaw, cwdRaw));
     }
 
-    private shouldPersistCommand(command: string, returnCode?: number): boolean {
+    private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
+        if(executedCommand === undefined) return false;
+        if(executedCommand.commandExists === false) return false;
+        if(executedCommand.command === undefined) return false;
+        const command = executedCommand.command.trim();
+        if(command.length === 0) return false;
+        if(command === ':') return false;
+        if(command === 'true') return false;
+        if(command === 'false') return false;
+        if(command.startsWith(' '))return false;
         const token = firstToken(command);
         if (!token) return false;
         if (token === "cd") return false;
-        if (returnCode === undefined || !Number.isFinite(returnCode)) return false;
+        if(executedCommand.returnCode === undefined || !Number.isFinite(executedCommand.returnCode)) return false;
 
         const allowed = this._returnCodePolicy.perCommandAllowedCodes.get(token)
             ?? this._returnCodePolicy.defaultAllowedCodes;
-        return allowed.has(returnCode);
+        return allowed.has(executedCommand.returnCode);
     }
 
     private enqueue(action: PersistenceAction): void {

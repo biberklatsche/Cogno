@@ -22,5 +22,5 @@ export function isWslContext(ctx: ShellContext): ctx is WslShellContext {
         && 'wslDistroName' in ctx;
 }
 
-export type CognoOscDataType = 'id' | 'directory' | 'user' | 'machine' | 'returnCode';
+export type CognoOscDataType = 'id' | 'directory' | 'user' | 'machine' | 'returnCode' | 'commandExists';
 export type OscDataType = CognoOscDataType | string;

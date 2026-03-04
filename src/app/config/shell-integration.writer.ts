@@ -3,7 +3,7 @@ import {Environment} from "../common/environment/environment";
 import {Logger} from "../_tauri/logger";
 import {Shells} from "../_tauri/shells";
 
-const INTEGRATION_VERSION = "1.0.23";
+const INTEGRATION_VERSION = "1.0.24";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration
@@ -250,6 +250,11 @@ const BASH_INTEGRATION = `#!/bin/bash
 # Cogno2 Integration Script for Bash
 # Provides OSC markers, prompt hooks, and shell integration features
 
+if [[ -n "\${COGNO_BASH_INTEGRATION_LOADED}" ]]; then
+  return 0
+fi
+export COGNO_BASH_INTEGRATION_LOADED=1
+
 # State variables
 COGNO_COUNT=0
 COGNO_LAST_CMD=""
@@ -271,11 +276,33 @@ _cogno_sanitize_cmd() {
   echo "$s"
 }
 
+# Extract command name: trim, drop leading KEY=VALUE prefixes, take first token
+_cogno_extract_command_name() {
+  local line="$1"
+  line="\${line#"\${line%%[![:space:]]*}"}"
+
+  local assignment_re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+'
+  while [[ "$line" =~ $assignment_re ]]; do
+    line="\${line#\${BASH_REMATCH[0]}}"
+  done
+
+  line="\${line#"\${line%%[![:space:]]*}"}"
+  if [[ -z "$line" ]]; then
+    echo ""
+    return
+  fi
+
+  echo "\${line%%[[:space:]]*}"
+}
+
 # Preexec equivalent - capture command before execution
 _cogno_preexec() {
   # Get the actual input from history
   local actual_input
   actual_input=$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+  if [[ -z "$actual_input" ]]; then
+    actual_input="$BASH_COMMAND"
+  fi
 
   # Filter internal commands
   if [[ "$actual_input" != "_cogno_precmd"* &&
@@ -300,13 +327,19 @@ _cogno_precmd() {
   local cwd="$PWD"
 
   local cmd=""
+  local command_exists="false"
   if [ "$COGNO_CMD_SEEN" -eq 1 ]; then
     cmd="$(_cogno_sanitize_cmd "$COGNO_LAST_CMD")"
+    local command_name
+    command_name="$(_cogno_extract_command_name "$COGNO_LAST_CMD")"
+    if [[ -n "$command_name" ]] && [[ -n "$(type -t -- "$command_name" 2>/dev/null)" ]]; then
+      command_exists="true"
+    fi
   fi
 
-  # OSC payload - use printf for better Bash 3.2 compatibility
-  printf '\\033]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;\\033\\\\' \\
-    "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd"
+  # Compute and insert commandExists into the existing OSC payload
+  printf '\\033]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;commandExists=%s;\\033\\\\' \\
+    "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd" "$command_exists"
 
   # Reset for next prompt
   COGNO_CMD_SEEN=0
@@ -400,6 +433,11 @@ const ZSH_INTEGRATION = `#!/bin/zsh
 # Cogno2 Integration Script for Zsh
 # Provides OSC markers, prompt hooks, and shell integration features
 
+if [[ -n "\${COGNO_ZSH_INTEGRATION_LOADED}" ]]; then
+  return 0
+fi
+typeset -g COGNO_ZSH_INTEGRATION_LOADED=1
+
 setopt PROMPT_SUBST
 autoload -Uz add-zsh-hook
 
@@ -407,6 +445,25 @@ autoload -Uz add-zsh-hook
 typeset -g COGNO_COUNT=0
 typeset -g COGNO_LAST_CMD=""
 typeset -g COGNO_CMD_SEEN=0
+
+# Extract command name: trim, drop leading KEY=VALUE prefixes, take first token
+_cogno_extract_command_name() {
+  local line="$1"
+  line="\${line#\${line%%[![:space:]]*}}"
+
+  local assignment_re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+'
+  while [[ "$line" =~ $assignment_re ]]; do
+    line="\${line#\${MATCH}}"
+  done
+
+  line="\${line#\${line%%[![:space:]]*}}"
+  if [[ -z "$line" ]]; then
+    print -r -- ""
+    return
+  fi
+
+  print -r -- "\${line%%[[:space:]]*}"
+}
 
 _cogno_preexec() {
   # $1 = command line as entered
@@ -425,8 +482,14 @@ _cogno_precmd() {
   local cwd="$PWD"
 
   local cmd=""
+  local command_exists="false"
   if (( COGNO_CMD_SEEN )); then
     cmd="$COGNO_LAST_CMD"
+    local command_name
+    command_name="$(_cogno_extract_command_name "$COGNO_LAST_CMD")"
+    if [[ -n "$command_name" ]] && whence -w -- "$command_name" >/dev/null 2>&1; then
+      command_exists="true"
+    fi
   fi
 
   # Sanitize command for OSC payload
@@ -437,8 +500,8 @@ _cogno_precmd() {
   cmd="\${cmd//;/\\\\;}"
   cmd="\${cmd//|/\\\\|}"
 
-  # OSC payload (cmd is empty if no command was entered)
-  local osc=$'\\e]733;COGNO:PROMPT;'"returnCode=\${last_ec};user=\${USER};machine=\${host};directory=\${cwd};id=\${ts};command=\${cmd};"$'\\e\\\\'
+  # Compute and insert commandExists into the existing OSC payload
+  local osc=$'\\e]733;COGNO:PROMPT;'"returnCode=\${last_ec};user=\${USER};machine=\${host};directory=\${cwd};id=\${ts};command=\${cmd};commandExists=\${command_exists};"$'\\e\\\\'
 
   print -n -r -- "$osc"
 
@@ -518,6 +581,11 @@ const FISH_INTEGRATION = `#!/usr/bin/env fish
 # Cogno2 Integration Script for Fish
 # Provides OSC markers, prompt hooks, and shell integration features
 
+if set -q COGNO_FISH_INTEGRATION_LOADED
+    return
+end
+set -g COGNO_FISH_INTEGRATION_LOADED 1
+
 # State
 set -g COGNO_COUNT 0
 set -g COGNO_LAST_CMD ""
@@ -538,6 +606,24 @@ function _cogno_preexec --on-event fish_preexec
     set -g COGNO_LAST_CMD $argv[1]
 end
 
+# Extract command name: trim, drop leading KEY=VALUE prefixes, take first token
+function _cogno_extract_command_name
+    set -l line $argv[1]
+    set line (string trim -l -- $line)
+
+    while string match -rq '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+' -- $line
+        set line (string replace -r '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+' '' -- $line)
+        set line (string trim -l -- $line)
+    end
+
+    if test -z "$line"
+        echo ""
+        return
+    end
+
+    string match -r '^[^[:space:]]+' -- $line
+end
+
 function fish_prompt
     # Save exit status first
     set -l last_ec $status
@@ -551,13 +637,20 @@ function fish_prompt
     set -l cwd $PWD
 
     set -l cmd ""
+    set -l command_exists false
     if test -n "$COGNO_LAST_CMD"
         set cmd (_cogno_sanitize_cmd "$COGNO_LAST_CMD")
+        set -l command_name (_cogno_extract_command_name "$COGNO_LAST_CMD")
+        if test -n "$command_name"
+            if type -q -- $command_name
+                set command_exists true
+            end
+        end
     end
 
-    # OSC payload
-    printf '\\e]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;\\e\\\\' \\
-        $last_ec $user $host $cwd $ts $cmd
+    # Compute and insert commandExists into the existing OSC payload
+    printf '\\e]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;commandExists=%s;\\e\\\\' \\
+        $last_ec $user $host $cwd $ts $cmd $command_exists
 
     # Reset for next prompt
     set -g COGNO_LAST_CMD ""
@@ -618,6 +711,8 @@ $bel = [char]7
 # State
 $global:COGNO_COUNT = 0
 $global:COGNO_LAST_CMD = ""
+$global:COGNO_CMD_SEEN = $false
+$global:COGNO_LAST_HISTORY_ID = -1
 
 function Sanitize-CognoCommand {
     param([string]$Command)
@@ -631,6 +726,23 @@ function Sanitize-CognoCommand {
     $s = $s -replace "\\|", "\\|"
 
     return $s
+}
+
+function Get-CognoCommandName {
+    param([string]$CommandLine)
+
+    $line = [string]$CommandLine
+    $line = $line -replace '^\\s+', ''
+    while ($line -match '^[A-Za-z_][A-Za-z0-9_]*=[^\\s]+\\s+') {
+        $line = $line -replace '^[A-Za-z_][A-Za-z0-9_]*=[^\\s]+\\s+', ''
+        $line = $line -replace '^\\s+', ''
+    }
+
+    if ([string]::IsNullOrWhiteSpace($line)) {
+        return ""
+    }
+
+    return ($line -split '\\s+', 2)[0]
 }
 
 # Pre-Execution Hook via PSReadLine
@@ -661,16 +773,35 @@ function prompt {
     $cwd = $PWD.Path
 
     $cmd = ""
-    if ($global:COGNO_LAST_CMD) {
-        $cmd = Sanitize-CognoCommand $global:COGNO_LAST_CMD
+    if (-not $global:COGNO_CMD_SEEN) {
+        $historyEntry = Get-History -Count 1 -ErrorAction SilentlyContinue
+        if ($historyEntry -and $historyEntry.Id -ne $global:COGNO_LAST_HISTORY_ID) {
+            $global:COGNO_LAST_CMD = [string]$historyEntry.CommandLine
+            if (-not [string]::IsNullOrWhiteSpace($global:COGNO_LAST_CMD)) {
+                $global:COGNO_CMD_SEEN = $true
+            }
+            $global:COGNO_LAST_HISTORY_ID = $historyEntry.Id
+        }
     }
 
-    # OSC payload
-    $osc = "\${esc}]733;COGNO:PROMPT;returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;\${bel}"
+    $commandExists = "false"
+    if ($global:COGNO_LAST_CMD) {
+        $cmd = Sanitize-CognoCommand $global:COGNO_LAST_CMD
+        $commandName = Get-CognoCommandName $global:COGNO_LAST_CMD
+        if (-not [string]::IsNullOrWhiteSpace($commandName)) {
+            if ($null -ne (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
+                $commandExists = "true"
+            }
+        }
+    }
+
+    # Compute and insert commandExists into the existing OSC payload
+    $osc = "\${esc}]733;COGNO:PROMPT;returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;commandExists=$commandExists;\${bel}"
     Write-Host -NoNewline $osc
 
     # Reset for next prompt
     $global:COGNO_LAST_CMD = ""
+    $global:COGNO_CMD_SEEN = $false
 
     # Return prompt string
     return "\`n^^#$ts\`n"

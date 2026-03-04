@@ -13,7 +13,6 @@ export class CommandLineObserver implements ITerminalHandler {
     private _terminal?: Terminal;
     private _markerManager: MarkerManager;
     private _refreshMarkerSubject = new Subject<void>();
-    private readonly KEYSTROKE_DEBOUNCE_MS = 100;
 
     constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
         this._markerManager = new MarkerManager(stateManager, promptSegments);

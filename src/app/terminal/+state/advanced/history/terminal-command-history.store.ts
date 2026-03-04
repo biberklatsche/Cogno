@@ -8,6 +8,7 @@ export type ExecutedCommand = {
     command: string;
     directory: string;
     returnCode?: number;
+    commandExists?: boolean;
 };
 
 @Injectable()
@@ -33,17 +34,18 @@ export class TerminalCommandHistoryStore {
         }
 
         const commands = [...this._historySubject.value];
-        let executed: ExecutedCommand | undefined;
+        let executedCommand: ExecutedCommand | undefined;
 
         if (commands.length > 0) {
             const lastCommand = commands[commands.length - 1];
             lastCommand.setData(data);
 
             if (lastCommand.command && lastCommand.directory) {
-                executed = {
+                executedCommand = {
                     command: lastCommand.command,
                     directory: lastCommand.directory,
                     returnCode: lastCommand.returnCode,
+                    commandExists: lastCommand.commandExists,
                 };
             }
         }
@@ -51,8 +53,7 @@ export class TerminalCommandHistoryStore {
         const command = new Command(id, directory, machine, user);
         commands.push(command);
         this._historySubject.next(commands);
-
-        return executed;
+        return executedCommand;
     }
 
     startCommand(currentInputText: string): void {
