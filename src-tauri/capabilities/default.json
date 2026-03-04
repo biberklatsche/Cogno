@@ -62,6 +62,7 @@
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "process:default",
+    "notification:default",
     {
       "identifier": "opener:allow-open-url",
       "allow": [

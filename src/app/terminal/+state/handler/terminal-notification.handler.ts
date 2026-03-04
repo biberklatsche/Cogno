@@ -11,7 +11,6 @@ export class TerminalNotificationHandler implements ITerminalHandler {
     registerTerminal(terminal: Terminal): IDisposable {
         this._disposables = [];
         this._disposables.push(terminal.parser.registerOscHandler(9, (data: string) => {
-            console.log('################### TerminalNotificationHandler9', {data});
             const message = (data ?? "").replace(/\r/g, "").replace(/\n+/g, " ").trim();
             if (!message) return true;
 

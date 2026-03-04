@@ -8,6 +8,7 @@ import {NotificationSideComponent} from "../notification-side/notification-side.
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
+import {NotificationOs} from "../../_tauri/notification";
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
@@ -29,13 +30,15 @@ export class NotificationService {
     private _notifications: WritableSignal<Record<NotificationId, Notification>> = signal({});
 
     readonly notifications: Signal<Notification[]> = computed(() => {
-        return Object.values(this._notifications());
+        return Object
+            .values(this._notifications())
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     });
 
     constructor(
         private sideMenuService: SideMenuService,
         private bus: AppBus,
-        config: ConfigService,
+        private config: ConfigService,
         keybinds: KeybindService,
         destroyRef: DestroyRef,
     ) {
@@ -54,7 +57,7 @@ export class NotificationService {
                 onBlur: () => this.unregisterKeybindListener(),
                 onClose: () => this.handleClose(),
             },
-            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+            { sideMenuService, bus, configService: this.config, keybinds, destroyRef }
         );
 
         // Start listening to notifications immediately (even when side menu is closed)
@@ -134,6 +137,18 @@ export class NotificationService {
             }
             return {...notifications};
         });
+
+        if (this.isOsNotificationEnabled()) {
+            void NotificationOs.send(event.payload!.header, event.payload!.body);
+        }
+    }
+
+    private isOsNotificationEnabled(): boolean {
+        try {
+            return this.config.config.notification?.os_notification === true;
+        } catch {
+            return false;
+        }
     }
 
     // Public API

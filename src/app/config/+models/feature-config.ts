@@ -7,6 +7,7 @@ export const FeatureWorkspaceSchema = z.object({
 
 export const FeatureNotificationSchema = z.object({
     mode: FeatureModeEnum.optional(),
+    os_notification: z.boolean().optional(),
 });
 
 export const FeatureCommandPaletteSchema = z.object({

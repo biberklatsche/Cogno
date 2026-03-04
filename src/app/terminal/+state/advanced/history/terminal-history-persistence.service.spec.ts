@@ -30,8 +30,8 @@ describe("TerminalHistoryPersistenceService", () => {
         };
         (service as any)._repo$.next(repo);
 
-        service.onCommandExecuted("npm test", "/tmp", 1);
-        service.onCommandExecuted("npm test", "/tmp", 0);
+        service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 1 });
+        service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 0 });
         await flushActions();
 
         expect(repo.upsertCommandExecution).toHaveBeenCalledTimes(1);
@@ -46,7 +46,7 @@ describe("TerminalHistoryPersistenceService", () => {
         (service as any)._repo$.next(repo);
 
         service.setAllowedReturnCodesForCommand("cd", [0, 1, 2]);
-        service.onCommandExecuted("cd ..", "/tmp", 0);
+        service.onCommandExecuted({ command: "cd ..", directory: "/tmp", returnCode: 0 });
         await flushActions();
 
         expect(repo.upsertCommandExecution).not.toHaveBeenCalled();
@@ -60,8 +60,8 @@ describe("TerminalHistoryPersistenceService", () => {
         (service as any)._repo$.next(repo);
 
         service.setAllowedReturnCodesForCommand("grep", [0, 1]);
-        service.onCommandExecuted("grep foo file.txt", "/tmp", 1);
-        service.onCommandExecuted("grep foo file.txt", "/tmp", 2);
+        service.onCommandExecuted({ command: "grep foo file.txt", directory: "/tmp", returnCode: 1 });
+        service.onCommandExecuted({ command: "grep foo file.txt", directory: "/tmp", returnCode: 2 });
         await flushActions();
 
         expect(repo.upsertCommandExecution).toHaveBeenCalledTimes(1);

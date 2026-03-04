@@ -12,6 +12,7 @@ import {
     getKeybindService, getSideMenuService
 } from "../../../__test__/test-factory";
 import {ConfigServiceMock} from "../../../__test__/mocks/config-service.mock";
+import {NotificationOs} from "../../_tauri/notification";
 
 describe('NotificationService', () => {
     let service: NotificationService;
@@ -47,6 +48,8 @@ describe('NotificationService', () => {
             keybindService,
             destroyRef
         );
+
+        vi.spyOn(NotificationOs, 'send').mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -81,6 +84,35 @@ describe('NotificationService', () => {
             expect(notifications[0].count).toBe(2);
         });
 
+        it('should keep newest notification on top and reorder when duplicate timestamp updates', () => {
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: { header: 'Older', body: 'A', timestamp: new Date('2026-01-01T10:00:00Z') }
+            });
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: { header: 'Newer', body: 'B', timestamp: new Date('2026-01-01T11:00:00Z') }
+            });
+
+            let notifications = service.notifications();
+            expect(notifications[0].header).toBe('Newer');
+            expect(notifications[1].header).toBe('Older');
+
+            // Duplicate "Older" arrives later -> count++ and timestamp update -> must move to top.
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: { header: 'Older', body: 'A', timestamp: new Date('2026-01-01T12:00:00Z') }
+            });
+
+            notifications = service.notifications();
+            expect(notifications[0].header).toBe('Older');
+            expect(notifications[0].count).toBe(2);
+            expect(notifications[1].header).toBe('Newer');
+        });
+
         it('should update icon to mdiBellBadge when a notification arrives', () => {
             const payload = { header: 'Test Header', body: 'Test Body' };
             appBus.publish({ type: 'Notification', path: ['notification'], payload });
@@ -94,6 +126,28 @@ describe('NotificationService', () => {
 
             const notifications = service.notifications();
             expect(notifications[0].type).toBe('info');
+        });
+
+        it('should send OS notification when notification.os_notification is enabled', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', os_notification: true }
+            } as any);
+
+            const payload = { header: 'OS Header', body: 'OS Body' };
+            appBus.publish({ type: 'Notification', path: ['notification'], payload });
+
+            expect(NotificationOs.send).toHaveBeenCalledWith('OS Header', 'OS Body');
+        });
+
+        it('should not send OS notification when notification.os_notification is disabled', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', os_notification: false }
+            } as any);
+
+            const payload = { header: 'No OS Header', body: 'No OS Body' };
+            appBus.publish({ type: 'Notification', path: ['notification'], payload });
+
+            expect(NotificationOs.send).not.toHaveBeenCalled();
         });
     });
 
