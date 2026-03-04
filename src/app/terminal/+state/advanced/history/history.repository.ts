@@ -18,12 +18,18 @@ export type DirectoryHistoryRow = {
     visitCount: number;
     selectCount: number;
     lastVisitAt: number;
+    lastSelectAt: number;
 };
 export type CommandHistoryRow = {
     command: string;
     execCount: number;
     selectCount: number;
     lastExecAt: number;
+    lastSelectAt: number;
+    cwdExecCount: number;
+    cwdSelectCount: number;
+    cwdLastExecAt: number;
+    cwdLastSelectAt: number;
 };
 
 function nowMs(): number { return Date.now(); }
@@ -222,7 +228,8 @@ export class HistoryRepository {
                  p.basename AS basename,
                  ds.visit_count AS visitCount,
                  ds.select_count AS selectCount,
-                 ds.last_visit_at AS lastVisitAt
+                 ds.last_visit_at AS lastVisitAt,
+                 COALESCE(ds.last_select_at, 0) AS lastSelectAt
              FROM dir_stat ds
                       JOIN path p ON p.id = ds.to_path_id
              WHERE ds.context_id = ?
@@ -238,17 +245,24 @@ export class HistoryRepository {
         );
     }
 
-    async searchCommands(fragmentRaw: string, limit: number = 50): Promise<CommandHistoryRow[]> {
+    async searchCommands(fragmentRaw: string, cwdRaw: string, limit: number = 50): Promise<CommandHistoryRow[]> {
         const fragment = fragmentRaw.trim().toLowerCase();
         const q = `%${fragment}%`;
+        const cwd = safeNormalize(this.adapter, cwdRaw) ?? "";
         return this.sel<CommandHistoryRow[]>(
             `SELECT
                  c.command_text AS command,
                  CAST(SUM(cs.exec_count) AS INTEGER) AS execCount,
                  CAST(SUM(cs.select_count) AS INTEGER) AS selectCount,
-                 CAST(MAX(cs.last_exec_at) AS INTEGER) AS lastExecAt
+                 CAST(MAX(cs.last_exec_at) AS INTEGER) AS lastExecAt,
+                 CAST(MAX(COALESCE(cs.last_select_at, 0)) AS INTEGER) AS lastSelectAt,
+                 CAST(COALESCE(SUM(CASE WHEN p.path = ? THEN cs.exec_count ELSE 0 END), 0) AS INTEGER) AS cwdExecCount,
+                 CAST(COALESCE(SUM(CASE WHEN p.path = ? THEN cs.select_count ELSE 0 END), 0) AS INTEGER) AS cwdSelectCount,
+                 CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_exec_at ELSE 0 END), 0) AS INTEGER) AS cwdLastExecAt,
+                 CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_select_at ELSE 0 END), 0) AS INTEGER) AS cwdLastSelectAt
              FROM command_stat cs
                       JOIN command c ON c.id = cs.command_id
+                      JOIN path p ON p.id = cs.cwd_path_id
              WHERE cs.context_id = ?
                AND cs.deleted_at IS NULL
                AND c.deleted_at IS NULL
@@ -256,7 +270,7 @@ export class HistoryRepository {
              GROUP BY c.id
              ORDER BY SUM(cs.select_count) DESC, SUM(cs.exec_count) DESC, MAX(cs.last_exec_at) DESC
              LIMIT ?`,
-            [this.contextId, q, limit]
+            [cwd, cwd, cwd, cwd, this.contextId, q, limit]
         );
     }
 

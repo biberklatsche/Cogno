@@ -97,10 +97,10 @@ export class TerminalHistoryPersistenceService {
         return repo.searchDirectories(fragment, limit);
     }
 
-    async searchCommands(fragment: string, limit: number = 50): Promise<CommandHistoryRow[]> {
+    async searchCommands(fragment: string, cwdRaw: string, limit: number = 50): Promise<CommandHistoryRow[]> {
         const repo = this._repo$.value;
         if (!repo) return [];
-        return repo.searchCommands(fragment, limit);
+        return repo.searchCommands(fragment, cwdRaw, limit);
     }
 
     markDirectorySelected(pathRaw: string): void {

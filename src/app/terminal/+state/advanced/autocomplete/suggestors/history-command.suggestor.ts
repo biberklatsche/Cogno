@@ -1,26 +1,10 @@
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
+import { HistoryCommandScorer } from "./scoring/history-command.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
 
-const SAME_COMMAND_TOKEN_BOOST = 120;
-
-function firstToken(input: string): string {
-    const trimmed = input.trim();
-    if (!trimmed) return "";
-    const idx = trimmed.search(/\s/);
-    return (idx === -1 ? trimmed : trimmed.slice(0, idx)).toLowerCase();
-}
-
-function tokenizeWords(input: string): string[] {
-    return input
-        .toLowerCase()
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
-}
-
 function consistsOnlyOfPromptWords(command: string, promptWords: Set<string>): boolean {
-    const words = tokenizeWords(command);
+    const words = HistoryCommandScorer.tokenizeWords(command);
     return words.length > 0 && words.every(word => promptWords.has(word));
 }
 
@@ -37,36 +21,44 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
     async suggest(context: QueryContext): Promise<AutocompleteSuggestion[]> {
         const query = context.mode === "npm-script" ? "npm" : context.mode === "command" ? context.query : "";
         if (!query) return [];
+        const queryTokens = HistoryCommandScorer.uniqueTokens(query);
+        if (queryTokens.length === 0) return [];
 
-        const rows = await this.persistence.searchCommands(query, 100);
-        const queryLower = query.toLowerCase();
-        const inputCommandToken = firstToken(context.inputText);
-        const promptWords = new Set(tokenizeWords(context.inputText));
+        // Seed lookup with first token to also support multi-token queries like "gi pu".
+        const repoSeed = queryTokens[0];
+        const rows = await this.persistence.searchCommands(repoSeed, context.cwd, 250);
+        const now = Date.now();
+
+        const inputCommandToken = HistoryCommandScorer.firstToken(context.inputText);
+        const promptWords = new Set(HistoryCommandScorer.tokenizeWords(context.inputText));
+        const corpusSize = Math.max(rows.length, 1);
+        const docFreq = HistoryCommandScorer.buildDocFreq(rows, queryTokens);
 
         return rows
             .filter(row => !consistsOnlyOfPromptWords(row.command, promptWords))
             .map(row => {
-            const textLower = row.command.toLowerCase();
-            const starts = textLower.startsWith(queryLower);
-            const contains = textLower.includes(queryLower);
-            const rowCommandToken = firstToken(row.command);
-            const sameCommand = !!inputCommandToken && rowCommandToken === inputCommandToken;
-            const score = row.selectCount * 25
-                + row.execCount * 8
-                + (starts ? 70 : contains ? 20 : 0)
-                + (sameCommand ? SAME_COMMAND_TOKEN_BOOST : 0);
+                const score = HistoryCommandScorer.scoreRow(
+                    row,
+                    queryTokens,
+                    docFreq,
+                    corpusSize,
+                    inputCommandToken,
+                    now
+                );
+                if (score === null) return null;
 
-            return {
-                label: row.command,
-                detail: `exec: ${row.execCount}, selected: ${row.selectCount}`,
-                insertText: row.command,
-                score,
-                source: "history-cmd",
-                // History commands must replace the entire terminal input.
-                replaceStart: 0,
-                replaceEnd: context.inputText.length,
-                selectedCommand: row.command,
-            };
-            });
+                return {
+                    label: row.command,
+                    detail: `exec: ${row.execCount}, selected: ${row.selectCount}`,
+                    insertText: row.command,
+                    score,
+                    source: "history-cmd",
+                    // History commands must replace the entire terminal input.
+                    replaceStart: 0,
+                    replaceEnd: context.inputText.length,
+                    selectedCommand: row.command,
+                } satisfies AutocompleteSuggestion;
+            })
+            .filter((item): item is AutocompleteSuggestion => item !== null);
     }
 }
