@@ -41,4 +41,8 @@ export class NotificationSideComponent {
     remove(notificationId: NotificationId) {
         this.notificationService.remove(notificationId);
     }
+
+    clearAll(): void {
+        this.notificationService.clear();
+    }
 }

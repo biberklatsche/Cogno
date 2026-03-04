@@ -1,13 +1,19 @@
 import {z} from 'zod';
 import {FeatureModeEnum, HexColorSchema} from "./shared";
 
+export const NotificationDeliveryModeSchema = z.enum(['app', 'os', 'off']);
+export type NotificationDeliveryMode = z.infer<typeof NotificationDeliveryModeSchema>;
+
 export const FeatureWorkspaceSchema = z.object({
     mode: FeatureModeEnum.optional(),
 });
 
 export const FeatureNotificationSchema = z.object({
     mode: FeatureModeEnum.optional(),
-    os_notification: z.boolean().optional(),
+    notification_type: NotificationDeliveryModeSchema.optional(),
+    // deprecated: keep for backward compatibility with existing configs
+    os_notification: z.union([z.boolean(), NotificationDeliveryModeSchema]).optional(),
+    app_notification_duration_seconds: z.number().int().min(0).optional(),
 });
 
 export const FeatureCommandPaletteSchema = z.object({

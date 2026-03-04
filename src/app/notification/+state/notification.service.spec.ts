@@ -1,4 +1,4 @@
-import {describe, it, expect, vi, beforeEach, afterEach, Mocked, Mock} from 'vitest';
+import {describe, it, expect, vi, beforeEach, afterEach} from 'vitest';
 import { NotificationService } from './notification.service';
 import { AppBus } from '../../app-bus/app-bus';
 import { KeybindService } from '../../keybinding/keybind.service';
@@ -28,7 +28,7 @@ describe('NotificationService', () => {
         sideMenuService = getSideMenuService();
         configService = getConfigService();
         configService.setConfig({
-            notification: { mode: 'visible' }
+            notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 5 }
         });
 
         keybindService = getKeybindService();
@@ -53,6 +53,7 @@ describe('NotificationService', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         clear();
     });
 
@@ -128,26 +129,82 @@ describe('NotificationService', () => {
             expect(notifications[0].type).toBe('info');
         });
 
-        it('should send OS notification when notification.os_notification is enabled', () => {
+        it('should send OS notification when notification.notification_type is set to os', () => {
             configService.setConfig({
-                notification: { mode: 'visible', os_notification: true }
+                notification: { mode: 'visible', notification_type: 'os' }
             } as any);
 
             const payload = { header: 'OS Header', body: 'OS Body' };
             appBus.publish({ type: 'Notification', path: ['notification'], payload });
 
             expect(NotificationOs.send).toHaveBeenCalledWith('OS Header', 'OS Body');
+            expect(service.appNotificationToasts().length).toBe(0);
         });
 
-        it('should not send OS notification when notification.os_notification is disabled', () => {
+        it('should not send OS notification when notification.notification_type is set to app', () => {
             configService.setConfig({
-                notification: { mode: 'visible', os_notification: false }
+                notification: { mode: 'visible', notification_type: 'app' }
             } as any);
 
             const payload = { header: 'No OS Header', body: 'No OS Body' };
             appBus.publish({ type: 'Notification', path: ['notification'], payload });
 
             expect(NotificationOs.send).not.toHaveBeenCalled();
+            expect(service.appNotificationToasts().length).toBe(1);
+        });
+
+        it('should not show app notification when duration is set to 0', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 0 }
+            } as any);
+
+            const payload = { header: 'No Toast', body: 'Duration zero' };
+            appBus.publish({ type: 'Notification', path: ['notification'], payload });
+
+            expect(service.notifications().length).toBe(1);
+            expect(service.appNotificationToasts().length).toBe(0);
+        });
+
+        it('should not process notifications when notification.notification_type is set to off', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', notification_type: 'off' }
+            } as any);
+
+            const payload = { header: 'Disabled', body: 'Ignored' };
+            appBus.publish({ type: 'Notification', path: ['notification'], payload });
+
+            expect(service.notifications().length).toBe(0);
+            expect(service.appNotificationToasts().length).toBe(0);
+            expect(NotificationOs.send).not.toHaveBeenCalled();
+        });
+
+        it('should remove app toast automatically after configured duration', () => {
+            vi.useFakeTimers();
+            configService.setConfig({
+                notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 1 }
+            } as any);
+
+            appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: 'Toast', body: 'Body' } });
+            expect(service.appNotificationToasts().length).toBe(1);
+
+            vi.advanceTimersByTime(1000);
+            expect(service.appNotificationToasts().length).toBe(0);
+            vi.useRealTimers();
+        });
+
+        it('should keep at most 3 app notifications and remove oldest first', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 60 }
+            } as any);
+
+            appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: '1', body: 'a' } });
+            appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: '2', body: 'b' } });
+            appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: '3', body: 'c' } });
+            appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: '4', body: 'd' } });
+
+            const toasts = service.appNotificationToasts();
+            expect(toasts.length).toBe(3);
+            expect(toasts.map((toast) => toast.header)).toEqual(['2', '3', '4']);
         });
     });
 

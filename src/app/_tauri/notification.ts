@@ -9,7 +9,15 @@ export class NotificationOs {
     static async send(title: string, body?: string): Promise<void> {
         if (!title?.trim()) return;
         try {
-            const plugin = await import("@tauri-apps/plugin-notification");
+            const notificationPluginModuleName = "@tauri-apps/plugin-notification";
+            const plugin = await import(
+                /* @vite-ignore */
+                notificationPluginModuleName
+            ) as {
+                isPermissionGranted: () => Promise<boolean>;
+                requestPermission: () => Promise<PermissionState>;
+                sendNotification: (notification: { title: string; body?: string }) => void;
+            };
             const allowed = await this.ensurePermission(plugin);
             if (!allowed) return;
             plugin.sendNotification({
