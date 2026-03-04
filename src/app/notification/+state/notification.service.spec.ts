@@ -28,7 +28,12 @@ describe('NotificationService', () => {
         sideMenuService = getSideMenuService();
         configService = getConfigService();
         configService.setConfig({
-            notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 5 }
+            notification: {
+                mode: 'visible',
+                notification_type: 'app',
+                app_notification_duration_seconds: 5,
+                max_notifications: 30,
+            }
         });
 
         keybindService = getKeybindService();
@@ -205,6 +210,54 @@ describe('NotificationService', () => {
             const toasts = service.appNotificationToasts();
             expect(toasts.length).toBe(3);
             expect(toasts.map((toast) => toast.header)).toEqual(['2', '3', '4']);
+        });
+
+        it('should keep at most 30 notifications by default', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', notification_type: 'app' }
+            } as any);
+
+            for (let index = 1; index <= 31; index++) {
+                appBus.publish({
+                    type: 'Notification',
+                    path: ['notification'],
+                    payload: {
+                        header: `N${index}`,
+                        body: `Body ${index}`,
+                        timestamp: new Date(2026, 0, 1, 0, 0, index),
+                    }
+                });
+            }
+
+            const notifications = service.notifications();
+            expect(notifications.length).toBe(30);
+            expect(notifications.some((notification) => notification.header === 'N1')).toBe(false);
+        });
+
+        it('should respect configured max_notifications limit', () => {
+            configService.setConfig({
+                notification: { mode: 'visible', notification_type: 'app', max_notifications: 2 }
+            } as any);
+
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: { header: 'A', body: '1', timestamp: new Date('2026-01-01T10:00:00Z') }
+            });
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: { header: 'B', body: '2', timestamp: new Date('2026-01-01T11:00:00Z') }
+            });
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: { header: 'C', body: '3', timestamp: new Date('2026-01-01T12:00:00Z') }
+            });
+
+            const notifications = service.notifications();
+            expect(notifications.length).toBe(2);
+            expect(notifications.map((notification) => notification.header)).toEqual(['C', 'B']);
         });
     });
 

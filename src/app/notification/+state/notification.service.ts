@@ -132,31 +132,35 @@ export class NotificationService {
         if (notificationDeliveryMode === 'off') {
             return;
         }
+        const maxNotifications = this.getMaxNotifications();
 
         const id = Hash.create(payload.header + payload.body);
 
         // Update icon to show badge
         this.feature.updateIcon('mdiBellBadge');
 
-        this._notifications.update(notifications => {
-            if (!notifications[id]) {
+        this._notifications.update((currentNotifications) => {
+            const nextNotifications = {...currentNotifications};
+
+            if (!nextNotifications[id]) {
                 // New notification
-                    notifications[id] = {
-                        id: id,
-                        body: payload.body,
-                        header: payload.header,
-                        type: payload.type ?? 'info',
-                        count: 1,
-                        timestamp: payload.timestamp ?? new Date()
-                    };
+                nextNotifications[id] = {
+                    id: id,
+                    body: payload.body,
+                    header: payload.header,
+                    type: payload.type ?? 'info',
+                    count: 1,
+                    timestamp: payload.timestamp ?? new Date()
+                };
             } else {
                 // Duplicate notification - increment count
-                const notification = notifications[id];
+                const notification = nextNotifications[id];
                 notification.count++;
                 notification.timestamp = payload.timestamp ?? new Date();
-                notifications[id] = notification;
+                nextNotifications[id] = notification;
             }
-            return {...notifications};
+
+            return this.trimNotificationList(nextNotifications, maxNotifications);
         });
 
         if (notificationDeliveryMode === 'os') {
@@ -205,6 +209,33 @@ export class NotificationService {
         } catch {
             return 5;
         }
+    }
+
+    private getMaxNotifications(): number {
+        try {
+            const configuredLimit = this.configService.config.notification?.max_notifications;
+            return configuredLimit ?? 30;
+        } catch {
+            return 30;
+        }
+    }
+
+    private trimNotificationList(notifications: Record<NotificationId, Notification>, maxNotifications: number): Record<NotificationId, Notification> {
+        const notificationList = Object.values(notifications);
+        if (notificationList.length <= maxNotifications) {
+            return notifications;
+        }
+
+        const sortedByAgeAscending = [...notificationList].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime());
+        const overflowCount = sortedByAgeAscending.length - maxNotifications;
+        const nextNotifications = {...notifications};
+
+        for (let index = 0; index < overflowCount; index++) {
+            const notificationToRemove = sortedByAgeAscending[index];
+            delete nextNotifications[notificationToRemove.id];
+        }
+
+        return nextNotifications;
     }
 
     private showAppNotificationToast(toast: Omit<AppNotificationToast, 'id'>): AppNotificationToastId {

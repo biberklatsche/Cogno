@@ -14,6 +14,7 @@ export const FeatureNotificationSchema = z.object({
     // deprecated: keep for backward compatibility with existing configs
     os_notification: z.union([z.boolean(), NotificationDeliveryModeSchema]).optional(),
     app_notification_duration_seconds: z.number().int().min(0).optional(),
+    max_notifications: z.number().int().min(0).optional(),
 });
 
 export const FeatureCommandPaletteSchema = z.object({
