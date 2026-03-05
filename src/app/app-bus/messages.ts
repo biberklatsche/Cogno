@@ -6,6 +6,7 @@ import {
     BlurTerminalAction, ClearBufferAction, ClearLineAction,
     ClearLineToEndAction, ClearLineToStartAction, DeletePreviousWordAction,
     DeleteNextWordAction, GoToNextWordAction, GoToPreviousWordAction,
+    InjectTerminalInputAction,
     SelectTextRightAction, SelectTextLeftAction, SelectWordRightAction,
     SelectWordLeftAction, SelectTextToEndOfLineAction, SelectTextToStartOfLineAction,
     CopyAction, FocusTerminalAction, PasteAction, TerminalRemovedAction, CutAction, SelectAllAction,
@@ -84,6 +85,7 @@ export type AppMessage =
     | SelectWordLeftAction
     | SelectTextToEndOfLineAction
     | SelectTextToStartOfLineAction
+    | InjectTerminalInputAction
     | ApplyAutocompleteSuggestionAction
     | ActionFiredEvent
     | FullScreenAppEnteredEvent

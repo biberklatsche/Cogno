@@ -88,6 +88,35 @@ describe('InputHandler', () => {
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(inputSpy).not.toHaveBeenCalled();
     });
+
+    it('should inject terminal input when InjectTerminalInput event for this id is received', () => {
+      const inputSpy = vi.spyOn(mockTerminal, 'input');
+      mockBus.publish({
+        type: 'InjectTerminalInput',
+        path: ['app', 'terminal'],
+        payload: {
+          terminalId,
+          text: 'hello from telegram'
+        }
+      });
+
+      expect(inputSpy).toHaveBeenCalledWith('hello from telegram');
+    });
+
+    it('should append newline when InjectTerminalInput event requests execution', () => {
+      const inputSpy = vi.spyOn(mockTerminal, 'input');
+      mockBus.publish({
+        type: 'InjectTerminalInput',
+        path: ['app', 'terminal'],
+        payload: {
+          terminalId,
+          text: 'run this',
+          appendNewline: true
+        }
+      });
+
+      expect(inputSpy).toHaveBeenCalledWith('run this\n');
+    });
   });
 
   describe('Lifecycle', () => {

@@ -13,6 +13,7 @@ import {CliActionService} from "./cli-command/cli-action.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
 import {NotificationService} from "./notification/+state/notification.service";
+import {TelegramBotRelayService} from "./notification/+state/telegram-bot-relay.service";
 import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
 import {TerminalSearchService} from "./terminal-search/terminal-search.service";
@@ -25,6 +26,7 @@ export const appConfig: ApplicationConfig = {
       provideEnvironmentInitializer(() => {
           inject(StyleService);
           inject(NotificationService);
+          inject(TelegramBotRelayService);
           inject(WorkspaceService);
           inject(CommandPaletteService);
           inject(TerminalSearchService);

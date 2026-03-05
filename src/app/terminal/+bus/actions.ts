@@ -27,3 +27,8 @@ export type ApplyAutocompleteSuggestionAction = ActionBase<"ApplyAutocompleteSug
     inputText: string;
     cursorIndex: number;
 }>
+export type InjectTerminalInputAction = ActionBase<"InjectTerminalInput", {
+    terminalId: TerminalId;
+    text: string;
+    appendNewline?: boolean;
+}>

@@ -16,6 +16,14 @@ export const FeatureNotificationSchema = z.object({
     os_notification: z.union([z.boolean(), NotificationDeliveryModeSchema]).optional(),
     app_notification_duration_seconds: z.number().int().min(0).optional(),
     max_notifications: z.number().int().min(0).optional(),
+    telegram: z.object({
+        enabled: z.boolean().optional(),
+        bot_token: z.string().min(1).optional(),
+        chat_id: z.string().min(1).optional(),
+        poll_interval_seconds: z.number().int().min(1).max(300).optional(),
+        forward_notifications: z.boolean().optional(),
+        forward_replies_to_terminal: z.boolean().optional(),
+    }).optional(),
 });
 
 export const FeatureCommandPaletteSchema = z.object({

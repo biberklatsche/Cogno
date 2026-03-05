@@ -35,6 +35,11 @@ export class InputHandler implements ITerminalHandler {
             if(event.payload !== this._terminalId) return;
             this._terminal?.input(await Clipboard.readText());
         }));
+        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'InjectTerminalInput'}).subscribe(event => {
+            if(event.payload?.terminalId !== this._terminalId) return;
+            const textToInject = event.payload.appendNewline ? `${event.payload.text}\n` : event.payload.text;
+            this._terminal?.input(textToInject);
+        }));
         this.terminalInputDisposable = terminal.onData(() => {
             this.stateManager.clearUnreadNotification();
         });
