@@ -20,7 +20,6 @@ export const FeatureNotificationSchema = z.object({
         enabled: z.boolean().optional(),
         bot_token: z.string().min(1).optional(),
         chat_id: z.string().min(1).optional(),
-        poll_interval_seconds: z.number().int().min(1).max(300).optional(),
         forward_notifications: z.boolean().optional(),
         forward_replies_to_terminal: z.boolean().optional(),
     }).optional(),

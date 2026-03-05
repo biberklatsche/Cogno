@@ -23,7 +23,8 @@ export class TerminalNotificationHandler implements ITerminalHandler {
                     header: "Terminal Notification",
                     body: message,
                     type: "info",
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    terminalId: this.stateManager.terminalId,
                 }
             });
             return true;

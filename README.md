@@ -135,7 +135,6 @@ Config keys:
 notification.telegram.enabled = true
 notification.telegram.bot_token = <your_bot_token>
 notification.telegram.chat_id = <your_chat_id>
-notification.telegram.poll_interval_seconds = 10
 notification.telegram.forward_notifications = true
 notification.telegram.forward_replies_to_terminal = true
 ```

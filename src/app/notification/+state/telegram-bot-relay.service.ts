@@ -1,17 +1,16 @@
 import {DestroyRef, inject, Injectable} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {Bot, GrammyError, HttpError} from "grammy";
+import {Bot, Context, GrammyError, HttpError} from "grammy";
 import {AppBus} from "../../app-bus/app-bus";
 import {ConfigService} from "../../config/+state/config.service";
 import {NotificationEvent} from "../+bus/events";
-import {GridListService} from "../../grid-list/+state/grid-list.service";
+import {TerminalId} from "../../grid-list/+model/model";
 import {Logger} from "../../_tauri/logger";
 
 type TelegramConfiguration = {
     enabled: boolean;
     botToken: string;
     chatIdentifier: string;
-    pollIntervalSeconds: number;
     forwardNotifications: boolean;
     forwardRepliesToTerminal: boolean;
 };
@@ -20,14 +19,13 @@ type TelegramConfiguration = {
 export class TelegramBotRelayService {
     private readonly appBus = inject(AppBus);
     private readonly configService = inject(ConfigService);
-    private readonly gridListService = inject(GridListService);
     private readonly destroyReference = inject(DestroyRef);
 
-    private nextUpdateOffset: number = 0;
-    private pollTimerHandle?: ReturnType<typeof setTimeout>;
-    private activePollIntervalSeconds: number = 10;
-    private isPollingInProgress = false;
     private readonly botByToken: Map<string, Bot> = new Map();
+    private readonly incomingHandlerRegisteredForToken: Set<string> = new Set();
+    private readonly terminalIdByReplyKey: Map<string, TerminalId> = new Map();
+    private readonly maxMappedReplies = 500;
+    private activeReceivingBotToken?: string;
 
     constructor() {
         this.appBus.on$({type: "Notification", path: ["notification"]})
@@ -38,95 +36,108 @@ export class TelegramBotRelayService {
                 });
             });
 
-        this.startPollingLoop();
-        this.destroyReference.onDestroy(() => this.stopPollingLoop());
+        this.configService.config$
+            .pipe(takeUntilDestroyed(this.destroyReference))
+            .subscribe(() => this.reconcileIncomingTelegramRelay());
+
+        this.destroyReference.onDestroy(() => this.stopIncomingTelegramRelay());
     }
 
-    private startPollingLoop(): void {
-        this.stopPollingLoop();
-        void this.pollTelegramUpdates();
-    }
-
-    private stopPollingLoop(): void {
-        if (!this.pollTimerHandle) {
+    private reconcileIncomingTelegramRelay(): void {
+        const telegramConfiguration = this.readTelegramConfiguration();
+        if (
+            !telegramConfiguration.enabled
+            || !telegramConfiguration.forwardRepliesToTerminal
+            || !this.isTelegramConfigurationUsable(telegramConfiguration)
+        ) {
+            this.stopIncomingTelegramRelay();
             return;
         }
-        clearTimeout(this.pollTimerHandle);
-        this.pollTimerHandle = undefined;
-    }
 
-    private scheduleNextPoll(delayMilliseconds: number): void {
-        this.stopPollingLoop();
-        this.pollTimerHandle = setTimeout(() => {
-            void this.pollTelegramUpdates();
-        }, delayMilliseconds);
-    }
-
-    private async pollTelegramUpdates(): Promise<void> {
-        if (this.isPollingInProgress) {
+        if (this.activeReceivingBotToken === telegramConfiguration.botToken) {
             return;
         }
-        this.isPollingInProgress = true;
 
-        try {
-            const telegramConfiguration = this.readTelegramConfiguration();
-            if (
-                !telegramConfiguration.enabled
-                || !telegramConfiguration.forwardRepliesToTerminal
-                || !this.isTelegramConfigurationUsable(telegramConfiguration)
-            ) {
-                this.scheduleNextPoll(5000);
-                return;
+        this.stopIncomingTelegramRelay();
+        const telegramBot = this.getTelegramBot(telegramConfiguration.botToken);
+        this.ensureIncomingHandlerRegistered(telegramConfiguration.botToken, telegramBot);
+        void telegramBot.start({allowed_updates: ["message"]}).catch((error: unknown) => {
+            Logger.warn(`[TelegramBotRelayService] receiver failed: ${this.describeTelegramError(error)}`);
+        });
+        this.activeReceivingBotToken = telegramConfiguration.botToken;
+    }
+
+    private stopIncomingTelegramRelay(): void {
+        if (!this.activeReceivingBotToken) {
+            return;
+        }
+
+        const activeBot = this.botByToken.get(this.activeReceivingBotToken);
+        if (activeBot) {
+            try {
+                activeBot.stop();
+            } catch (error: unknown) {
+                Logger.warn(`[TelegramBotRelayService] stop receiver failed: ${this.describeTelegramError(error)}`);
             }
+        }
 
-            this.activePollIntervalSeconds = telegramConfiguration.pollIntervalSeconds;
-            const telegramBot = this.getTelegramBot(telegramConfiguration.botToken);
-            const telegramUpdates = await telegramBot.api.getUpdates({
-                offset: this.nextUpdateOffset,
-                timeout: 0,
-                allowed_updates: ["message"],
+        this.activeReceivingBotToken = undefined;
+    }
+
+    private ensureIncomingHandlerRegistered(botToken: string, telegramBot: Bot): void {
+        if (this.incomingHandlerRegisteredForToken.has(botToken)) {
+            return;
+        }
+
+        telegramBot.on("message:text", (context: Context) => {
+            void this.handleIncomingTextMessage(context).catch((error: unknown) => {
+                Logger.warn(`[TelegramBotRelayService] handling incoming message failed: ${String(error)}`);
             });
+        });
 
-            for (const telegramUpdate of telegramUpdates) {
-                const updateIdentifier = telegramUpdate.update_id;
-                if (updateIdentifier >= this.nextUpdateOffset) {
-                    this.nextUpdateOffset = updateIdentifier + 1;
-                }
-                await this.handleTelegramUpdate(telegramConfiguration, telegramUpdate);
-            }
-        } catch (error: unknown) {
-            Logger.warn(`[TelegramBotRelayService] polling failed: ${this.describeTelegramError(error)}`);
-        } finally {
-            this.isPollingInProgress = false;
-            this.scheduleNextPoll(this.activePollIntervalSeconds * 1000);
-        }
+        telegramBot.catch((error: unknown) => {
+            const botError = error as {error?: unknown};
+            Logger.warn(`[TelegramBotRelayService] bot error: ${this.describeTelegramError(botError.error ?? error)}`);
+        });
+
+        this.incomingHandlerRegisteredForToken.add(botToken);
     }
 
-    private async handleTelegramUpdate(
-        telegramConfiguration: TelegramConfiguration,
-        telegramUpdate: Awaited<ReturnType<Bot["api"]["getUpdates"]>>[number]
-    ): Promise<void> {
-        const messageText = telegramUpdate.message?.text?.trim();
+    private async handleIncomingTextMessage(context: Context): Promise<void> {
+        const messageText = context.message?.text?.trim();
         if (!messageText) {
             return;
         }
-        if (telegramUpdate.message?.from?.is_bot) {
+        if (context.from?.is_bot) {
             return;
         }
 
-        const incomingChatIdentifier = String(telegramUpdate.message?.chat?.id ?? "");
+        const telegramConfiguration = this.readTelegramConfiguration();
+        if (
+            !telegramConfiguration.enabled
+            || !telegramConfiguration.forwardRepliesToTerminal
+            || !this.isTelegramConfigurationUsable(telegramConfiguration)
+        ) {
+            return;
+        }
+
+        const incomingChatIdentifier = String(context.chat?.id ?? "");
         if (incomingChatIdentifier !== telegramConfiguration.chatIdentifier) {
             return;
         }
 
-        const focusedTerminalIdentifier = this.gridListService.getFocusedTerminalId();
-        if (!focusedTerminalIdentifier) {
+        const replyMessageIdentifier = context.message?.reply_to_message?.message_id;
+        const targetTerminalIdentifier = this.resolveTerminalIdForIncomingReply(
+            incomingChatIdentifier,
+            replyMessageIdentifier
+        );
+        if (!targetTerminalIdentifier) {
             this.appBus.publish({
                 type: "Notification",
                 path: ["notification"],
                 payload: {
                     header: "Telegram Reply",
-                    body: `No focused terminal to forward: ${messageText}`,
+                    body: "No terminal mapping found. Reply directly to a forwarded terminal notification.",
                     type: "warning",
                     timestamp: new Date(),
                     source: "telegram",
@@ -139,7 +150,7 @@ export class TelegramBotRelayService {
             type: "InjectTerminalInput",
             path: ["app", "terminal"],
             payload: {
-                terminalId: focusedTerminalIdentifier,
+                terminalId: targetTerminalIdentifier,
                 text: messageText,
                 appendNewline: true,
             }
@@ -182,7 +193,12 @@ export class TelegramBotRelayService {
             : `[Notification] ${notificationPayload.header}`;
 
         const telegramBot = this.getTelegramBot(telegramConfiguration.botToken);
-        await telegramBot.api.sendMessage(telegramConfiguration.chatIdentifier, text);
+        const sentMessage = await telegramBot.api.sendMessage(telegramConfiguration.chatIdentifier, text);
+        this.rememberReplyMapping(
+            telegramConfiguration.chatIdentifier,
+            sentMessage.message_id,
+            notificationPayload.terminalId
+        );
     }
 
     private readTelegramConfiguration(): TelegramConfiguration {
@@ -191,7 +207,6 @@ export class TelegramBotRelayService {
             enabled: telegramConfiguration?.enabled ?? false,
             botToken: telegramConfiguration?.bot_token ?? "",
             chatIdentifier: telegramConfiguration?.chat_id ?? "",
-            pollIntervalSeconds: telegramConfiguration?.poll_interval_seconds ?? 10,
             forwardNotifications: telegramConfiguration?.forward_notifications ?? true,
             forwardRepliesToTerminal: telegramConfiguration?.forward_replies_to_terminal ?? true,
         };
@@ -209,6 +224,34 @@ export class TelegramBotRelayService {
         const createdBot = new Bot(botToken);
         this.botByToken.set(botToken, createdBot);
         return createdBot;
+    }
+
+    private resolveTerminalIdForIncomingReply(chatIdentifier: string, replyMessageIdentifier?: number): TerminalId | undefined {
+        if (replyMessageIdentifier == null) {
+            return undefined;
+        }
+        return this.terminalIdByReplyKey.get(this.buildReplyKey(chatIdentifier, replyMessageIdentifier));
+    }
+
+    private rememberReplyMapping(chatIdentifier: string, messageIdentifier: number, terminalId?: TerminalId): void {
+        if (!terminalId) {
+            return;
+        }
+
+        const replyKey = this.buildReplyKey(chatIdentifier, messageIdentifier);
+        this.terminalIdByReplyKey.set(replyKey, terminalId);
+
+        while (this.terminalIdByReplyKey.size > this.maxMappedReplies) {
+            const firstKey = this.terminalIdByReplyKey.keys().next().value as string | undefined;
+            if (!firstKey) {
+                break;
+            }
+            this.terminalIdByReplyKey.delete(firstKey);
+        }
+    }
+
+    private buildReplyKey(chatIdentifier: string, messageIdentifier: number): string {
+        return `${chatIdentifier}:${messageIdentifier}`;
     }
 
     private describeTelegramError(error: unknown): string {
