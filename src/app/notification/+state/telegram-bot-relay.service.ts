@@ -31,6 +31,7 @@ export class TelegramBotRelayService {
         this.appBus.on$({type: "Notification", path: ["notification"]})
             .pipe(takeUntilDestroyed(this.destroyReference))
             .subscribe((notificationEvent) => {
+                console.log("##############NotificationEvent", notificationEvent);
                 void this.forwardNotificationToTelegramIfNeeded(notificationEvent).catch((error: unknown) => {
                     Logger.warn(`[TelegramBotRelayService] forwarding failed: ${String(error)}`);
                 });
@@ -164,7 +165,7 @@ export class TelegramBotRelayService {
                 body: messageText,
                 type: "info",
                 timestamp: new Date(),
-                source: "telegram",
+                source: "telegram"
             }
         });
     }

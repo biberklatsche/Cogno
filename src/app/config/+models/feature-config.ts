@@ -19,7 +19,7 @@ export const FeatureNotificationSchema = z.object({
     telegram: z.object({
         enabled: z.boolean().optional(),
         bot_token: z.string().min(1).optional(),
-        chat_id: z.string().min(1).optional(),
+        chat_id: z.union([z.string().min(1), z.number().int()]).transform(v => String(v)).optional(),
         forward_notifications: z.boolean().optional(),
         forward_replies_to_terminal: z.boolean().optional(),
     }).optional(),

@@ -154,4 +154,16 @@ describe('ConfigReader', () => {
         expect(config.font!.family).toMatch(/^Fira Code,/);
         expect(config.font!.family).toContain('ui-monospace');
     });
+
+    it('accepts numeric telegram chat_id and normalizes it to string', () => {
+        const text = `
+      notification.telegram.enabled=true
+      notification.telegram.bot_token=test-token
+      notification.telegram.chat_id=184274027
+    `;
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+
+        expect(result.diagnostics.some(d => d.message.includes('notification.telegram.chat_id'))).toBe(false);
+        expect(result.config.notification?.telegram?.chat_id).toBe('184274027');
+    });
 });

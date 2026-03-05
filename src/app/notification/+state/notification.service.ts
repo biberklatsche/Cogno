@@ -51,7 +51,7 @@ export class NotificationService {
     readonly appNotificationToasts: Signal<AppNotificationToast[]> = this._appNotificationToasts.asReadonly();
 
     constructor(
-        private sideMenuService: SideMenuService,
+        sideMenuService: SideMenuService,
         private bus: AppBus,
         private configService: ConfigService,
         keybinds: KeybindService,
