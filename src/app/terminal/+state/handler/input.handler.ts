@@ -5,17 +5,22 @@ import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {Clipboard} from "../../../_tauri/clipboard";
+import {IDisposable as IXtermDisposable} from "@xterm/xterm";
+import {TerminalStateManager} from "../state";
 
 export class InputHandler implements ITerminalHandler {
 
     private _terminal?: Terminal;
     private subscription: Subscription = new Subscription();
+    private terminalInputDisposable?: IXtermDisposable;
 
-    constructor(private _bus: AppBus, private _terminalId: TerminalId) {
+    constructor(private _bus: AppBus, private _terminalId: TerminalId, private stateManager: TerminalStateManager) {
 
     }
 
     dispose(): void {
+        this.terminalInputDisposable?.dispose();
+        this.terminalInputDisposable = undefined;
         if(!this.subscription) return;
         this.subscription.unsubscribe();
     }
@@ -30,6 +35,9 @@ export class InputHandler implements ITerminalHandler {
             if(event.payload !== this._terminalId) return;
             this._terminal?.input(await Clipboard.readText());
         }));
+        this.terminalInputDisposable = terminal.onData(() => {
+            this.stateManager.clearUnreadNotification();
+        });
         return this;
     }
 }

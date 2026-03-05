@@ -30,6 +30,11 @@ export class Command {
         return rc !== undefined ? Number.parseInt(rc) : undefined;
     }
 
+    get commandExists(): boolean {
+        const rc = this.data['commandExists'];
+        return rc !== undefined ? rc === 'true' : false;
+    }
+
     get id(): string { return this._id;}
 
     get(key: string): string | undefined {

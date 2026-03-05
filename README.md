@@ -75,6 +75,56 @@ New features and improvements will primarily land here going forward.
 
 ---
 
+## 🧩 CLI usage
+
+The `cogno` binary supports running the app, reading config, and triggering actions.
+
+```bash
+cogno [--config <path>] [--set k=v ...]
+  run
+  action
+    list
+    run <name> [args...]
+  config
+    show [--defaults]
+    get <key>
+    path
+```
+
+### Options
+
+- `--config <path>`: Use a different config file for this process.
+- `--set k=v`: Override config key `k` with value `v` for this process only. You can pass `--set` multiple times.
+
+### Commands
+
+- `run`: Starts Cogno normally. This is optional because it is the default command.
+- `action list`: Prints all supported `ACTION_NAMES`.
+- `action run <name> [args...]`: Runs an action by name. Extra args are forwarded to the action.
+- `config path`: Prints the path of the active config file.
+- `config get <key>`: Prints one resolved config value by key.
+- `config show`: Prints the active config content.
+- `config show --defaults`: Prints bundled default config content.
+
+### Examples
+
+```bash
+# Start with the default config
+cogno
+
+# Start with a custom config file
+cogno --config /tmp/cogno.config
+
+# Read one config key with a temporary override
+cogno --set shell.default=PowerShell config get shell.default
+
+# List and run actions
+cogno action list
+cogno action run open_config
+```
+
+---
+
 ## 🛠️ Build instructions
 
 Tauri requires Rust and a working build toolchain, see [Tauri V2](https://v2.tauri.app/)

@@ -16,6 +16,8 @@ import {ShellProfile} from "../+models/shell-config";
 import {PromptSegment} from "../+models/prompt-config";
 import {ShellIntegrationWriter} from "../shell-integration.writer";
 import {Hash} from "../../common/hash/hash";
+import {Path} from "../../_tauri/path";
+import {CliConfigOverrides} from "../../_tauri/cli-config-overrides";
 
 
 export abstract class ConfigService {
@@ -158,6 +160,10 @@ export class RealConfigService extends ConfigService {
         }
 
         const path = Environment.configFilePath();
+        const configFileDirectoryPath = await Path.dirname(path);
+        if (!await Fs.exists(configFileDirectoryPath)) {
+            await Fs.mkdir(configFileDirectoryPath, {recursive: true});
+        }
 
         if (!await Fs.exists(path)) {
             // Initial config in new format
@@ -174,7 +180,8 @@ export class RealConfigService extends ConfigService {
         }
 
         const defaultConfigString = await DefaultConfig.read();
-        const userConfigString = await Fs.readTextFile(path);
+        let userConfigString = await Fs.readTextFile(path);
+        userConfigString = await this.applyCliSetOverrides(userConfigString);
         const {config, diagnostics} = ConfigReader.fromStringToConfigWithDiagnostics(
             defaultConfigString,
             userConfigString
@@ -223,6 +230,20 @@ export class RealConfigService extends ConfigService {
             this.lastDiagnosticsHash = undefined;
         }
     }
-}
 
+    private async applyCliSetOverrides(userConfigString: string): Promise<string> {
+        const serializedCliOverrides = await CliConfigOverrides.getSerializedOverrides();
+        if (!serializedCliOverrides || serializedCliOverrides.trim().length === 0) {
+            return userConfigString;
+        }
+
+        const normalizedUserConfig = userConfigString.trimEnd();
+        const normalizedOverrides = serializedCliOverrides.trim();
+        if (normalizedUserConfig.length === 0) {
+            return normalizedOverrides;
+        }
+
+        return `${normalizedUserConfig}\n${normalizedOverrides}`;
+    }
+}
 

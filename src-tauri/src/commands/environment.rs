@@ -49,6 +49,13 @@ pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
 /// Returns the cogno config file path
 #[tauri::command]
 pub fn get_cogno_config_file_path(dev_mode: bool) -> Result<String, String> {
+    if let Ok(config_path_override) = std::env::var("COGNO_CONFIG_PATH") {
+        let trimmed_path = config_path_override.trim();
+        if !trimmed_path.is_empty() {
+            return Ok(trimmed_path.to_string());
+        }
+    }
+
     let cogno_home = get_cogno_home_dir(dev_mode)?;
     let config_path = PathBuf::from(cogno_home).join("cogno.config");
     Ok(config_path.display().to_string())
@@ -65,4 +72,9 @@ pub fn get_cogno_db_file_path(dev_mode: bool) -> Result<String, String> {
 #[tauri::command]
 pub fn get_system_path() -> Result<Option<String>, String> {
     Ok(std::env::var("PATH").ok())
+}
+
+#[tauri::command]
+pub fn get_cli_config_set_overrides() -> Result<Option<String>, String> {
+    Ok(std::env::var("COGNO_CONFIG_SET_OVERRIDES").ok())
 }

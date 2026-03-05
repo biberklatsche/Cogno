@@ -16,7 +16,7 @@ export const Fs = {
     readTextFile(path: string): Promise<string> {return tauriReadTextFile(path)},
     writeTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data)},
     appendTextFile(path: string, data: string): Promise<void> {return tauriWriteTextFile(path, data, {append: true})},
-    mkdir(path: string): Promise<void> {return tauriMkdir(path)},
+    mkdir(path: string, options?: {recursive?: boolean}): Promise<void> {return tauriMkdir(path, options)},
 
     watchChanges$(path: string, opts?: { recursive?: boolean, delayMs?: number }): Observable<void> {
         return new Observable<void>((subscriber) => {

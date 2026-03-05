@@ -10,16 +10,19 @@ import {KeybindService} from "../../keybinding/keybind.service";
 import {AppBus} from "../../app-bus/app-bus";
 import {AppWindow} from "../../_tauri/window";
 import {ActionFired, ActionName} from "../../action/action.models";
+import {Config, FeatureMode} from "../../config/+models/config";
 
 @Injectable({
   providedIn: 'root'
 })
 export class NativeMenuService {
+  private latestConfig?: Config;
 
 
   constructor(private bus: AppBus, private keybindService: KeybindService, configService: ConfigService, ref: DestroyRef) {
       if(OS.platform() === 'macos') {
-          configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(async () => {
+          configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(async (config) => {
+              this.latestConfig = config;
               await this.buildMenu();
           });
           AppWindow.onFocusChanged$.subscribe(async (focus) => {
@@ -32,6 +35,11 @@ export class NativeMenuService {
   }
 
   private async buildMenu() {
+      const isWorkspaceEnabled = this.isFeatureEnabled(this.latestConfig?.workspace?.mode);
+      const isTerminalSearchEnabled = this.isFeatureEnabled(this.latestConfig?.terminal_search?.mode);
+      const isNotificationEnabled = this.isFeatureEnabled(this.latestConfig?.notification?.mode);
+      const isCommandPaletteEnabled = this.isFeatureEnabled(this.latestConfig?.command_palette?.mode);
+
       const aboutSubmenu = await Submenu.new({
           id: 'cogno',
           text: 'Cogno',
@@ -47,6 +55,7 @@ export class NativeMenuService {
                   item: 'Separator',
               }),
               await this.buildMenuItem('open_config', 'Settings...'),
+              await this.buildMenuItem('load_config', 'Reload Config'),
               await PredefinedMenuItem.new({
                   item: 'Separator',
               }),
@@ -71,20 +80,32 @@ export class NativeMenuService {
               }),
               await this.buildMenuItem('close_tab', 'Close Tab'),
               await this.buildMenuItem('close_other_tabs', 'Close Other Tabs'),
+              await this.buildMenuItem('close_all_tabs', 'Close All Tabs'),
+          ],
+      });
+
+      const viewSubmenu = await Submenu.new({
+          text: 'View',
+          items: [
+              await this.buildMenuItem('open_workspace', 'Workspace', isWorkspaceEnabled),
+              await this.buildMenuItem('open_terminal_search', 'Terminal Search', isTerminalSearchEnabled),
+              await this.buildMenuItem('open_notification', 'Notifications', isNotificationEnabled),
+              await this.buildMenuItem('open_command_palette', 'Command Palette', isCommandPaletteEnabled),
           ],
       });
 
       const menu = await Menu.new({
-          items: [aboutSubmenu, fileSubmenu],
+          items: [aboutSubmenu, fileSubmenu, viewSubmenu],
       });
 
       await menu.setAsAppMenu();
   }
 
-  private async buildMenuItem(actionName: ActionName, text: string): Promise<MenuItem> {
+  private async buildMenuItem(actionName: ActionName, text: string, enabled: boolean = true): Promise<MenuItem> {
       return await MenuItem.new({
           id: actionName,
           text: text,
+          enabled: enabled,
           accelerator: this.keybindService.getKeybinding(actionName),
           action: () => {
               const actionDef = this.keybindService.getActionDefinition(actionName);
@@ -92,5 +113,9 @@ export class NativeMenuService {
               this.bus.publish(ActionFired.createFromDefinition(actionDef));
           },
       })
+  }
+
+  private isFeatureEnabled(mode: FeatureMode | undefined): boolean {
+      return mode !== 'off';
   }
 }

@@ -4,6 +4,7 @@ import { InputHandler } from './input.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { Clipboard } from '../../../_tauri/clipboard';
+import {TerminalStateManager} from "../state";
 
 vi.mock('../../../_tauri/clipboard', () => ({
   Clipboard: {
@@ -15,11 +16,15 @@ describe('InputHandler', () => {
   let handler: InputHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
+  let mockStateManager: Pick<TerminalStateManager, 'clearUnreadNotification'>;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
-    handler = new InputHandler(mockBus, terminalId);
+    mockStateManager = {
+      clearUnreadNotification: vi.fn()
+    };
+    handler = new InputHandler(mockBus, terminalId, mockStateManager as TerminalStateManager);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -28,6 +33,21 @@ describe('InputHandler', () => {
       const subscribeSpy = vi.spyOn(mockBus, 'on$');
       handler.registerTerminal(mockTerminal);
       expect(subscribeSpy).toHaveBeenCalled();
+    });
+
+    it('should clear unread notification when terminal data is entered', () => {
+      let terminalOnDataCallback: ((data: string) => void) | undefined;
+      mockTerminal = TerminalMockFactory.createTerminal({
+        onData: (callback) => {
+          terminalOnDataCallback = callback;
+          return { dispose: vi.fn() };
+        }
+      });
+
+      handler.registerTerminal(mockTerminal);
+      terminalOnDataCallback?.('ls');
+
+      expect(mockStateManager.clearUnreadNotification).toHaveBeenCalled();
     });
   });
 

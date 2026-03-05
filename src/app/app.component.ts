@@ -8,10 +8,11 @@ import {AppBus} from "./app-bus/app-bus";
 import {DB} from "./_tauri/db";
 import {Environment} from "./common/environment/environment";
 import {migrate} from "./migrations/migrate";
+import {AppNotificationToastStackComponent} from "./notification/app-notification-toast-stack.component";
 
 @Component({
     selector: 'app-root',
-    imports: [GridListComponent, AppButtonsComponent, TabListComponent],
+    imports: [GridListComponent, AppButtonsComponent, TabListComponent, AppNotificationToastStackComponent],
     template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>
@@ -19,6 +20,7 @@ import {migrate} from "./migrations/migrate";
     </header>
     <main>
         <app-grid-list></app-grid-list>
+        <app-notification-toast-stack></app-notification-toast-stack>
     </main>
     `,
     styles: [

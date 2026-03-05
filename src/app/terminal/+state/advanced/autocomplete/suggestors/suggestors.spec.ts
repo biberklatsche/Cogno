@@ -16,6 +16,17 @@ vi.mock("@tauri-apps/plugin-fs", () => ({
     readDir: (...args: any[]) => readDirMock(...args),
 }));
 
+const baseHistoryRow = {
+    lastSelectAt: 0,
+    cwdExecCount: 0,
+    cwdSelectCount: 0,
+    cwdLastExecAt: 0,
+    cwdLastSelectAt: 0,
+};
+const baseDirHistoryRow = {
+    lastSelectAt: 0,
+};
+
 function cdContext(fragment: string): QueryContext {
     return {
         mode: "cd",
@@ -38,9 +49,9 @@ describe("Autocomplete Suggestors", () => {
     it("HistoryDirectorySuggestor filters current dir and parent traversal suggestions", async () => {
         const persistence = {
             searchDirectories: vi.fn().mockResolvedValue([
-                { path: "/Users/larswolfram/projects", basename: "projects", visitCount: 10, selectCount: 1, lastVisitAt: 1 },
-                { path: "/Users", basename: "Users", visitCount: 5, selectCount: 1, lastVisitAt: 1 },
-                { path: "/Users/larswolfram/projects/app", basename: "app", visitCount: 5, selectCount: 1, lastVisitAt: 1 },
+                { path: "/Users/larswolfram/projects", basename: "projects", visitCount: 10, selectCount: 1, lastVisitAt: 1, ...baseDirHistoryRow },
+                { path: "/Users", basename: "Users", visitCount: 5, selectCount: 1, lastVisitAt: 1, ...baseDirHistoryRow },
+                { path: "/Users/larswolfram/projects/app", basename: "app", visitCount: 5, selectCount: 1, lastVisitAt: 1, ...baseDirHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
@@ -55,8 +66,8 @@ describe("Autocomplete Suggestors", () => {
     it("HistoryDirectorySuggestor matches multi-token fragments against visited paths", async () => {
         const persistence = {
             searchDirectories: vi.fn().mockResolvedValue([
-                { path: "/c/projects/grimace-tracker/src", basename: "src", visitCount: 10, selectCount: 2, lastVisitAt: 1 },
-                { path: "/c/projects/grimace-tools", basename: "grimace-tools", visitCount: 10, selectCount: 2, lastVisitAt: 1 },
+                { path: "/c/projects/grimace-tracker/src", basename: "src", visitCount: 10, selectCount: 2, lastVisitAt: 1, ...baseDirHistoryRow },
+                { path: "/c/projects/grimace-tools", basename: "grimace-tools", visitCount: 10, selectCount: 2, lastVisitAt: 1, ...baseDirHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
@@ -66,6 +77,37 @@ describe("Autocomplete Suggestors", () => {
         expect(persistence.searchDirectories).toHaveBeenCalledWith("gr", 100);
         expect(result.map(r => r.detail)).toContain("/c/projects/grimace-tracker/src");
         expect(result.map(r => r.detail)).not.toContain("/c/projects/grimace-tools");
+    });
+
+    it("HistoryDirectorySuggestor ranks multi-token ba src and prefers recently selected backend/src", async () => {
+        const now = Date.now();
+        const persistence = {
+            searchDirectories: vi.fn().mockResolvedValue([
+                {
+                    path: "/work/backend/src",
+                    basename: "src",
+                    visitCount: 8,
+                    selectCount: 7,
+                    lastVisitAt: now - 120_000,
+                    lastSelectAt: now - 30_000,
+                },
+                {
+                    path: "/work/bar/src",
+                    basename: "src",
+                    visitCount: 8,
+                    selectCount: 2,
+                    lastVisitAt: now - (14 * 24 * 60 * 60 * 1000),
+                    lastSelectAt: now - (20 * 24 * 60 * 60 * 1000),
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryDirectorySuggestor(persistence);
+        const result = await suggestor.suggest(cdContext("ba src"));
+
+        expect(result.length).toBeGreaterThan(0);
+        expect(result[0].detail).toBe("/work/backend/src");
+        expect(result.map(r => r.detail)).toContain("/work/backend/src");
     });
 
     it("FilesystemDirectorySuggestor returns directory matches and excludes parent traversals", async () => {
@@ -114,8 +156,8 @@ describe("Autocomplete Suggestors", () => {
     it("HistoryCommandSuggestor returns ranked command suggestions", async () => {
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([
-                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: 1 },
-                { command: "npm run build", execCount: 2, selectCount: 1, lastExecAt: 1 },
+                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: 1, ...baseHistoryRow },
+                { command: "npm run build", execCount: 2, selectCount: 1, lastExecAt: 1, ...baseHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
@@ -139,22 +181,22 @@ describe("Autocomplete Suggestors", () => {
     it("HistoryCommandSuggestor boosts only same command token over general matches", async () => {
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([
-                { command: "npm test", execCount: 0, selectCount: 0, lastExecAt: 1 },
-                { command: "git npm helper", execCount: 0, selectCount: 0, lastExecAt: 1 },
+                { command: "npm test", execCount: 0, selectCount: 0, lastExecAt: 1, ...baseHistoryRow },
+                { command: "git npm helper", execCount: 0, selectCount: 0, lastExecAt: 1, ...baseHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
         const suggestor = new HistoryCommandSuggestor(persistence);
         const ctx: QueryContext = {
             mode: "command",
-            beforeCursor: "npm te",
-            inputText: "npm te",
-            cursorIndex: 6,
+            beforeCursor: "npm",
+            inputText: "npm",
+            cursorIndex: 3,
             replaceStart: 0,
-            replaceEnd: 6,
+            replaceEnd: 3,
             cwd: "/Users/larswolfram/projects",
             shellContext: { shellType: "Bash", backendOs: "macos" } as any,
-            query: "npm te",
+            query: "npm",
         };
         const result = await suggestor.suggest(ctx);
 
@@ -165,7 +207,7 @@ describe("Autocomplete Suggestors", () => {
     it("HistoryCommandSuggestor replaces full input in npm-script mode", async () => {
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([
-                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: 1 },
+                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: 1, ...baseHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
@@ -191,23 +233,23 @@ describe("Autocomplete Suggestors", () => {
     it("HistoryCommandSuggestor filters suggestions made only from words already in prompt", async () => {
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([
-                { command: "npm", execCount: 10, selectCount: 5, lastExecAt: 1 },
-                { command: "npm run", execCount: 8, selectCount: 4, lastExecAt: 1 },
-                { command: "npm test", execCount: 6, selectCount: 3, lastExecAt: 1 },
+                { command: "npm", execCount: 10, selectCount: 5, lastExecAt: 1, ...baseHistoryRow },
+                { command: "npm run", execCount: 8, selectCount: 4, lastExecAt: 1, ...baseHistoryRow },
+                { command: "npm test", execCount: 6, selectCount: 3, lastExecAt: 1, ...baseHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
         const suggestor = new HistoryCommandSuggestor(persistence);
         const ctx: QueryContext = {
             mode: "command",
-            beforeCursor: "npm run t",
-            inputText: "npm run t",
-            cursorIndex: 9,
+            beforeCursor: "npm t",
+            inputText: "npm t",
+            cursorIndex: 5,
             replaceStart: 0,
-            replaceEnd: 9,
+            replaceEnd: 5,
             cwd: "/Users/larswolfram/projects",
             shellContext: { shellType: "Bash", backendOs: "macos" } as any,
-            query: "npm run t",
+            query: "npm t",
         };
 
         const result = await suggestor.suggest(ctx);
@@ -216,6 +258,52 @@ describe("Autocomplete Suggestors", () => {
         expect(labels).not.toContain("npm");
         expect(labels).not.toContain("npm run");
         expect(labels).toContain("npm test");
+    });
+
+    it("HistoryCommandSuggestor matches multi-token input like gi pu to git push", async () => {
+        const now = Date.now();
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                {
+                    command: "git push",
+                    execCount: 10,
+                    selectCount: 7,
+                    lastExecAt: now - 60_000,
+                    lastSelectAt: now - 30_000,
+                    cwdExecCount: 4,
+                    cwdSelectCount: 3,
+                    cwdLastExecAt: now - 60_000,
+                    cwdLastSelectAt: now - 30_000,
+                },
+                {
+                    command: "git pull",
+                    execCount: 20,
+                    selectCount: 9,
+                    lastExecAt: now - 60_000,
+                    lastSelectAt: now - 30_000,
+                    cwdExecCount: 5,
+                    cwdSelectCount: 4,
+                    cwdLastExecAt: now - 60_000,
+                    cwdLastSelectAt: now - 30_000,
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "gi pu",
+            inputText: "gi pu",
+            cursorIndex: 5,
+            replaceStart: 0,
+            replaceEnd: 5,
+            cwd: "/Users/larswolfram/projects",
+            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            query: "gi pu",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        expect(result[0].label).toBe("git push");
     });
 
     it("SpecCommandSuggestor returns npm scripts when package.json exists", async () => {

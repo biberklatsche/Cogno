@@ -8,9 +8,13 @@ import {NotificationSideComponent} from "../notification-side/notification-side.
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
+import {NotificationOs} from "../../_tauri/notification";
+import {NotificationEvent} from "../+bus/events";
+import {NotificationDeliveryMode} from "../../config/+models/feature-config";
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
+export type AppNotificationToastId = number;
 
 export type Notification = {
     id: NotificationId;
@@ -21,21 +25,35 @@ export type Notification = {
     timestamp: Date;
 }
 
+export type AppNotificationToast = {
+    id: AppNotificationToastId;
+    header: string;
+    body?: string;
+    type: NotificationType;
+    timestamp: Date;
+};
+
 @Injectable({providedIn: 'root'})
 export class NotificationService {
     private readonly feature: SideMenuFeature;
     private notificationSubscription?: Subscription;
+    private appNotificationToastIdCounter: AppNotificationToastId = 0;
+    private readonly appNotificationToastTimerById: Map<AppNotificationToastId, ReturnType<typeof setTimeout>> = new Map();
 
     private _notifications: WritableSignal<Record<NotificationId, Notification>> = signal({});
+    private _appNotificationToasts: WritableSignal<AppNotificationToast[]> = signal([]);
 
     readonly notifications: Signal<Notification[]> = computed(() => {
-        return Object.values(this._notifications());
+        return Object
+            .values(this._notifications())
+            .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     });
+    readonly appNotificationToasts: Signal<AppNotificationToast[]> = this._appNotificationToasts.asReadonly();
 
     constructor(
         private sideMenuService: SideMenuService,
         private bus: AppBus,
-        config: ConfigService,
+        private configService: ConfigService,
         keybinds: KeybindService,
         destroyRef: DestroyRef,
     ) {
@@ -54,11 +72,12 @@ export class NotificationService {
                 onBlur: () => this.unregisterKeybindListener(),
                 onClose: () => this.handleClose(),
             },
-            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+            { sideMenuService, bus, configService: this.configService, keybinds, destroyRef }
         );
 
         // Start listening to notifications immediately (even when side menu is closed)
         this.initNotificationListener();
+        destroyRef.onDestroy(() => this.clearAllAppNotificationToasts());
     }
 
     private handleModeChange(mode: FeatureMode): void {
@@ -96,7 +115,7 @@ export class NotificationService {
 
         this.notificationSubscription = this.bus
             .on$({type: 'Notification', path: ['notification']})
-            .subscribe(event => {
+            .subscribe((event: NotificationEvent) => {
                 this.handleNotificationEvent(event);
             });
     }
@@ -106,34 +125,155 @@ export class NotificationService {
         this.notificationSubscription = undefined;
     }
 
-    private handleNotificationEvent(event: any): void {
+    private handleNotificationEvent(event: NotificationEvent): void {
         if (!event.payload) return;
+        const payload = event.payload;
+        const notificationDeliveryMode = this.getNotificationDeliveryMode();
+        if (notificationDeliveryMode === 'off') {
+            return;
+        }
+        const maxNotifications = this.getMaxNotifications();
 
-        const id = Hash.create(event.payload.header + event.payload.body);
+        const id = Hash.create(payload.header + payload.body);
 
         // Update icon to show badge
         this.feature.updateIcon('mdiBellBadge');
 
-        this._notifications.update(notifications => {
-            if (!notifications[id]) {
+        this._notifications.update((currentNotifications) => {
+            const nextNotifications = {...currentNotifications};
+
+            if (!nextNotifications[id]) {
                 // New notification
-                notifications[id] = {
+                nextNotifications[id] = {
                     id: id,
-                    body: event.payload!.body,
-                    header: event.payload!.header,
-                    type: (event.payload as any).type ?? 'info',
+                    body: payload.body,
+                    header: payload.header,
+                    type: payload.type ?? 'info',
                     count: 1,
-                    timestamp: event.payload!.timestamp ?? new Date()
+                    timestamp: payload.timestamp ?? new Date()
                 };
             } else {
                 // Duplicate notification - increment count
-                const notification = notifications[id];
+                const notification = nextNotifications[id];
                 notification.count++;
-                notification.timestamp = event.payload!.timestamp ?? new Date();
-                notifications[id] = notification;
+                notification.timestamp = payload.timestamp ?? new Date();
+                nextNotifications[id] = notification;
             }
-            return {...notifications};
+
+            return this.trimNotificationList(nextNotifications, maxNotifications);
         });
+
+        if (notificationDeliveryMode === 'os') {
+            void NotificationOs.send(payload.header, payload.body);
+            return;
+        }
+
+        const appNotificationDurationSeconds = this.getAppNotificationDurationSeconds();
+        if (appNotificationDurationSeconds > 0) {
+            const toastId = this.showAppNotificationToast({
+                header: payload.header,
+                body: payload.body,
+                type: payload.type ?? 'info',
+                timestamp: payload.timestamp ?? new Date(),
+            });
+
+            const timer = setTimeout(() => {
+                this.dismissAppNotificationToast(toastId);
+            }, appNotificationDurationSeconds * 1000);
+            this.appNotificationToastTimerById.set(toastId, timer);
+        }
+    }
+
+    private getNotificationDeliveryMode(): NotificationDeliveryMode {
+        try {
+            const notificationConfig = this.configService.config.notification;
+            const configuredMode = notificationConfig?.notification_type;
+            if (configuredMode) {
+                return configuredMode;
+            }
+
+            // fallback for legacy config key `notification.os_notification`
+            const legacyMode = notificationConfig?.os_notification;
+            if (legacyMode === 'off') return 'off';
+            if (legacyMode === 'os' || legacyMode === true) return 'os';
+            return 'app';
+        } catch {
+            return 'app';
+        }
+    }
+
+    private getAppNotificationDurationSeconds(): number {
+        try {
+            const configuredDuration = this.configService.config.notification?.app_notification_duration_seconds;
+            return configuredDuration ?? 5;
+        } catch {
+            return 5;
+        }
+    }
+
+    private getMaxNotifications(): number {
+        try {
+            const configuredLimit = this.configService.config.notification?.max_notifications;
+            return configuredLimit ?? 30;
+        } catch {
+            return 30;
+        }
+    }
+
+    private trimNotificationList(notifications: Record<NotificationId, Notification>, maxNotifications: number): Record<NotificationId, Notification> {
+        const notificationList = Object.values(notifications);
+        if (notificationList.length <= maxNotifications) {
+            return notifications;
+        }
+
+        const sortedByAgeAscending = [...notificationList].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime());
+        const overflowCount = sortedByAgeAscending.length - maxNotifications;
+        const nextNotifications = {...notifications};
+
+        for (let index = 0; index < overflowCount; index++) {
+            const notificationToRemove = sortedByAgeAscending[index];
+            delete nextNotifications[notificationToRemove.id];
+        }
+
+        return nextNotifications;
+    }
+
+    private showAppNotificationToast(toast: Omit<AppNotificationToast, 'id'>): AppNotificationToastId {
+        const toastId = this.nextAppNotificationToastId();
+        const nextToast: AppNotificationToast = {...toast, id: toastId};
+
+        this._appNotificationToasts.update((currentToasts) => {
+            const toastList = [...currentToasts, nextToast];
+            while (toastList.length > 3) {
+                const removedToast = toastList.shift();
+                if (removedToast) {
+                    this.clearAppNotificationToastTimer(removedToast.id);
+                }
+            }
+            return toastList;
+        });
+
+        return toastId;
+    }
+
+    private nextAppNotificationToastId(): AppNotificationToastId {
+        this.appNotificationToastIdCounter += 1;
+        return this.appNotificationToastIdCounter;
+    }
+
+    private clearAppNotificationToastTimer(toastId: AppNotificationToastId): void {
+        const timer = this.appNotificationToastTimerById.get(toastId);
+        if (!timer) return;
+        clearTimeout(timer);
+        this.appNotificationToastTimerById.delete(toastId);
+    }
+
+    private clearAllAppNotificationToasts(): void {
+        for (const timer of this.appNotificationToastTimerById.values()) {
+            clearTimeout(timer);
+        }
+        this.appNotificationToastTimerById.clear();
+        this._appNotificationToasts.set([]);
     }
 
     // Public API
@@ -148,7 +288,15 @@ export class NotificationService {
 
     public clear(): void {
         this._notifications.set({});
+        this.clearAllAppNotificationToasts();
         this.feature.updateIcon('mdiBell');
+    }
+
+    public dismissAppNotificationToast(toastId: AppNotificationToastId): void {
+        this.clearAppNotificationToastTimer(toastId);
+        this._appNotificationToasts.update((currentToasts) => {
+            return currentToasts.filter((toast) => toast.id !== toastId);
+        });
     }
 
     public getNotificationCount(): number {
