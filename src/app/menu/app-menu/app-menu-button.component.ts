@@ -18,7 +18,7 @@ import {ContextMenuItem} from "../context-menu-overlay/context-menu-overlay.type
 })
 export class AppMenuButtonComponent {
 
-    constructor(private appMenuService: AppMenuService, private  menu: ContextMenuOverlayService) {
+    constructor(private appMenuService: AppMenuService, private menu: ContextMenuOverlayService) {
     }
 
     openMenu(event: Event) {

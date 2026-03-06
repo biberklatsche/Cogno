@@ -3,15 +3,15 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Bot, Context, GrammyError, HttpError} from "grammy";
 import {AppBus} from "../../app-bus/app-bus";
 import {ConfigService} from "../../config/+state/config.service";
-import {NotificationEvent} from "../+bus/events";
+import {NotificationChannels, NotificationEvent} from "../+bus/events";
 import {TerminalId} from "../../grid-list/+model/model";
 import {Logger} from "../../_tauri/logger";
 
 type TelegramConfiguration = {
+    available: boolean;
     enabled: boolean;
     botToken: string;
     chatIdentifier: string;
-    forwardNotifications: boolean;
     forwardRepliesToTerminal: boolean;
 };
 
@@ -31,7 +31,6 @@ export class TelegramBotRelayService {
         this.appBus.on$({type: "Notification", path: ["notification"]})
             .pipe(takeUntilDestroyed(this.destroyReference))
             .subscribe((notificationEvent) => {
-                console.log("##############NotificationEvent", notificationEvent);
                 void this.forwardNotificationToTelegramIfNeeded(notificationEvent).catch((error: unknown) => {
                     Logger.warn(`[TelegramBotRelayService] forwarding failed: ${String(error)}`);
                 });
@@ -47,7 +46,8 @@ export class TelegramBotRelayService {
     private reconcileIncomingTelegramRelay(): void {
         const telegramConfiguration = this.readTelegramConfiguration();
         if (
-            !telegramConfiguration.enabled
+            !telegramConfiguration.available
+            || !telegramConfiguration.enabled
             || !telegramConfiguration.forwardRepliesToTerminal
             || !this.isTelegramConfigurationUsable(telegramConfiguration)
         ) {
@@ -115,7 +115,8 @@ export class TelegramBotRelayService {
 
         const telegramConfiguration = this.readTelegramConfiguration();
         if (
-            !telegramConfiguration.enabled
+            !telegramConfiguration.available
+            || !telegramConfiguration.enabled
             || !telegramConfiguration.forwardRepliesToTerminal
             || !this.isTelegramConfigurationUsable(telegramConfiguration)
         ) {
@@ -181,9 +182,10 @@ export class TelegramBotRelayService {
 
         const telegramConfiguration = this.readTelegramConfiguration();
         if (
-            !telegramConfiguration.enabled
-            || !telegramConfiguration.forwardNotifications
+            !telegramConfiguration.available
+            || !telegramConfiguration.enabled
             || !this.isTelegramConfigurationUsable(telegramConfiguration)
+            || !this.isTelegramChannelEnabledForNotification(notificationPayload.channels)
         ) {
             return;
         }
@@ -205,12 +207,19 @@ export class TelegramBotRelayService {
     private readTelegramConfiguration(): TelegramConfiguration {
         const telegramConfiguration = this.configService.config.notification?.telegram;
         return {
+            available: telegramConfiguration?.available ?? true,
             enabled: telegramConfiguration?.enabled ?? false,
             botToken: telegramConfiguration?.bot_token ?? "",
             chatIdentifier: telegramConfiguration?.chat_id ?? "",
-            forwardNotifications: telegramConfiguration?.forward_notifications ?? true,
             forwardRepliesToTerminal: telegramConfiguration?.forward_replies_to_terminal ?? true,
         };
+    }
+
+    private isTelegramChannelEnabledForNotification(notificationChannels?: Partial<NotificationChannels>): boolean {
+        if (!notificationChannels || notificationChannels.telegram == null) {
+            return true;
+        }
+        return notificationChannels.telegram;
     }
 
     private isTelegramConfigurationUsable(telegramConfiguration: TelegramConfiguration): boolean {

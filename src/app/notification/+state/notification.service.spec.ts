@@ -30,7 +30,8 @@ describe('NotificationService', () => {
         configService.setConfig({
             notification: {
                 mode: 'visible',
-                notification_type: 'app',
+                app: { enabled: true },
+                os: { enabled: false },
                 app_notification_duration_seconds: 5,
                 max_notifications: 30,
             }
@@ -134,9 +135,9 @@ describe('NotificationService', () => {
             expect(notifications[0].type).toBe('info');
         });
 
-        it('should send OS notification when notification.notification_type is set to os', () => {
+        it('should send OS notification when notification.os.enabled is true', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'os' }
+                notification: { mode: 'visible', app: { enabled: false }, os: { enabled: true } }
             } as any);
 
             const payload = { header: 'OS Header', body: 'OS Body' };
@@ -146,9 +147,9 @@ describe('NotificationService', () => {
             expect(service.appNotificationToasts().length).toBe(0);
         });
 
-        it('should not send OS notification when notification.notification_type is set to app', () => {
+        it('should not send OS notification when notification.os.enabled is false', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'app' }
+                notification: { mode: 'visible', app: { enabled: true }, os: { enabled: false } }
             } as any);
 
             const payload = { header: 'No OS Header', body: 'No OS Body' };
@@ -160,7 +161,7 @@ describe('NotificationService', () => {
 
         it('should not show app notification when duration is set to 0', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 0 }
+                notification: { mode: 'visible', app: { enabled: true }, os: { enabled: false }, app_notification_duration_seconds: 0 }
             } as any);
 
             const payload = { header: 'No Toast', body: 'Duration zero' };
@@ -170,9 +171,14 @@ describe('NotificationService', () => {
             expect(service.appNotificationToasts().length).toBe(0);
         });
 
-        it('should not process notifications when notification.notification_type is set to off', () => {
+        it('should not process notifications when all notification channels are disabled', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'off' }
+                notification: {
+                    mode: 'visible',
+                    app: { enabled: false },
+                    os: { enabled: false },
+                    telegram: { enabled: false }
+                }
             } as any);
 
             const payload = { header: 'Disabled', body: 'Ignored' };
@@ -183,10 +189,53 @@ describe('NotificationService', () => {
             expect(NotificationOs.send).not.toHaveBeenCalled();
         });
 
+        it('should honor notification channel defaults from notification.app/os.enabled', () => {
+            configService.setConfig({
+                notification: {
+                    mode: 'visible',
+                    app: { enabled: false },
+                    os: { enabled: true },
+                }
+            } as any);
+
+            appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: 'OS Only', body: 'Body' } });
+
+            expect(NotificationOs.send).toHaveBeenCalledWith('OS Only', 'Body');
+            expect(service.appNotificationToasts().length).toBe(0);
+        });
+
+        it('should honor per-event notification channel overrides', () => {
+            configService.setConfig({
+                notification: {
+                    mode: 'visible',
+                    app: { enabled: true },
+                    os: { enabled: false },
+                    telegram: { enabled: false },
+                }
+            } as any);
+
+            appBus.publish({
+                type: 'Notification',
+                path: ['notification'],
+                payload: {
+                    header: 'Override',
+                    body: 'Only OS',
+                    channels: {
+                        app: false,
+                        os: true,
+                        telegram: false,
+                    }
+                }
+            });
+
+            expect(NotificationOs.send).toHaveBeenCalledWith('Override', 'Only OS');
+            expect(service.appNotificationToasts().length).toBe(0);
+        });
+
         it('should remove app toast automatically after configured duration', () => {
             vi.useFakeTimers();
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 1 }
+                notification: { mode: 'visible', app: { enabled: true }, os: { enabled: false }, app_notification_duration_seconds: 1 }
             } as any);
 
             appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: 'Toast', body: 'Body' } });
@@ -199,7 +248,7 @@ describe('NotificationService', () => {
 
         it('should keep at most 3 app notifications and remove oldest first', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'app', app_notification_duration_seconds: 60 }
+                notification: { mode: 'visible', app: { enabled: true }, os: { enabled: false }, app_notification_duration_seconds: 60 }
             } as any);
 
             appBus.publish({ type: 'Notification', path: ['notification'], payload: { header: '1', body: 'a' } });
@@ -214,7 +263,7 @@ describe('NotificationService', () => {
 
         it('should keep at most 30 notifications by default', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'app' }
+                notification: { mode: 'visible', app: { enabled: true }, os: { enabled: false } }
             } as any);
 
             for (let index = 1; index <= 31; index++) {
@@ -236,7 +285,7 @@ describe('NotificationService', () => {
 
         it('should respect configured max_notifications limit', () => {
             configService.setConfig({
-                notification: { mode: 'visible', notification_type: 'app', max_notifications: 2 }
+                notification: { mode: 'visible', app: { enabled: true }, os: { enabled: false }, max_notifications: 2 }
             } as any);
 
             appBus.publish({

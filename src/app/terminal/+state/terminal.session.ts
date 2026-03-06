@@ -34,6 +34,9 @@ import {
     TerminalSystemInfoSource
 } from "../system-info/terminal-system-info-dialog.component";
 import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
+import {NotificationChannels} from "../../notification/+bus/events";
+
+type NotificationChannel = keyof NotificationChannels;
 
 @Injectable()
 export class TerminalSession {
@@ -47,6 +50,7 @@ export class TerminalSession {
     private readonly disposables: IDisposable[];
     private disposed: boolean = false;
     private processInfoDialogReference?: DialogRef<void>;
+    private sessionNotificationChannels?: NotificationChannels;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -69,6 +73,7 @@ export class TerminalSession {
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
+        this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
         this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
         this.subscription.add(
             this.bus.onType$('PaneMaximizedChanged').subscribe((event: PaneMaximizedChangedEvent) => {
@@ -87,7 +92,11 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
-        this.disposables.push(this.renderer.register(new TerminalNotificationHandler(this.bus, this.stateManager)));
+        this.disposables.push(this.renderer.register(new TerminalNotificationHandler(
+            this.bus,
+            this.stateManager,
+            () => ({...this.getSessionNotificationChannels()})
+        )));
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
@@ -146,6 +155,14 @@ export class TerminalSession {
                     this.openProcessInfoDialog();
                 } },
         ];
+
+        const notificationItems = this.buildNotificationContextMenuItems();
+        if (notificationItems.length > 0) {
+            const insertIndex = Math.max(items.length - 1, 0);
+            items.splice(insertIndex, 0, ...notificationItems);
+            items.push({separator: true});
+        }
+
         if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
@@ -200,6 +217,85 @@ export class TerminalSession {
         return {
             state$: this.stateManager.state$,
             commands$: this.stateManager.commands$,
+        };
+    }
+
+    private buildNotificationContextMenuItems(): ContextMenuItem[] {
+        const availability = this.getNotificationAvailability();
+        const hasAnyAvailableChannel = availability.app || availability.os || availability.telegram;
+        if (!hasAnyAvailableChannel) {
+            return [];
+        }
+
+        const channels = this.getSessionNotificationChannels();
+        const items: ContextMenuItem[] = [];
+
+        if (availability.app) {
+            items.push({
+                label: `${channels.app ? 'Disable' : 'Enable'} App Notifications`,
+                action: () => this.toggleSessionNotificationChannel('app'),
+            });
+        }
+        if (availability.os) {
+            items.push({
+                label: `${channels.os ? 'Disable' : 'Enable'} OS Notifications`,
+                action: () => this.toggleSessionNotificationChannel('os'),
+            });
+        }
+        if (availability.telegram) {
+            items.push({
+                label: `${channels.telegram ? 'Disable' : 'Enable'} Telegram Notifications`,
+                action: () => this.toggleSessionNotificationChannel('telegram'),
+            });
+        }
+        return items;
+    }
+
+    private getSessionNotificationChannels(): NotificationChannels {
+        if (!this.sessionNotificationChannels) {
+            this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
+        }
+        return this.sessionNotificationChannels;
+    }
+
+    private toggleSessionNotificationChannel(channel: NotificationChannel): void {
+        const availability = this.getNotificationAvailability();
+        if (!availability[channel]) {
+            return;
+        }
+
+        const channels = this.getSessionNotificationChannels();
+        this.sessionNotificationChannels = {
+            ...channels,
+            [channel]: !channels[channel],
+        };
+    }
+
+    private getDefaultSessionNotificationChannels(): NotificationChannels {
+        const availability = this.getNotificationAvailability();
+        const defaults = this.getNotificationDefaults();
+        return {
+            app: availability.app && defaults.app,
+            os: availability.os && defaults.os,
+            telegram: availability.telegram && defaults.telegram,
+        };
+    }
+
+    private getNotificationAvailability(): NotificationChannels {
+        const notificationConfig = this.configService.config.notification;
+        return {
+            app: notificationConfig?.app?.available ?? true,
+            os: notificationConfig?.os?.available ?? true,
+            telegram: notificationConfig?.telegram?.available ?? true,
+        };
+    }
+
+    private getNotificationDefaults(): NotificationChannels {
+        const notificationConfig = this.configService.config.notification;
+        return {
+            app: notificationConfig?.app?.enabled ?? true,
+            os: notificationConfig?.os?.enabled ?? false,
+            telegram: notificationConfig?.telegram?.enabled ?? false,
         };
     }
 }

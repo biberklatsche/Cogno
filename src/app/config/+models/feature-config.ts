@@ -1,28 +1,36 @@
 import {z} from 'zod';
 import {FeatureModeEnum, HexColorSchema} from "./shared";
 
-export const NotificationDeliveryModeSchema = z.enum(['app', 'os', 'off']);
-export type NotificationDeliveryMode = z.infer<typeof NotificationDeliveryModeSchema>;
-
 export const FeatureWorkspaceSchema = z.object({
     mode: FeatureModeEnum.optional(),
 });
 
 export const FeatureNotificationSchema = z.object({
     mode: FeatureModeEnum.optional(),
-    notification_type: NotificationDeliveryModeSchema.optional(),
-    mark_terminal: z.boolean().optional(),
-    // deprecated: keep for backward compatibility with existing configs
-    os_notification: z.union([z.boolean(), NotificationDeliveryModeSchema]).optional(),
-    app_notification_duration_seconds: z.number().int().min(0).optional(),
-    max_notifications: z.number().int().min(0).optional(),
+    highlight_terminal_on_activity: z.boolean().optional(),
+    max_notifications_in_overview: z.number().int().min(0).optional(),
+    app: z.object({
+        available: z.boolean().optional(),
+        enabled: z.boolean().optional(),
+        notification_duration_seconds: z.number().int().min(0).optional(),
+    }).optional(),
+    os: z.object({
+        available: z.boolean().optional(),
+        enabled: z.boolean().optional(),
+    }).optional(),
     telegram: z.object({
+        available: z.boolean().optional(),
         enabled: z.boolean().optional(),
         bot_token: z.string().min(1).optional(),
         chat_id: z.union([z.string().min(1), z.number().int()]).transform(v => String(v)).optional(),
+        // deprecated: replaced by notification.telegram.enabled
         forward_notifications: z.boolean().optional(),
         forward_replies_to_terminal: z.boolean().optional(),
     }).optional(),
+    mark_terminal_on_notification: z.boolean().optional(),
+    mark_terminal: z.boolean().optional(),
+    app_notification_duration_seconds: z.number().int().min(0).optional(),
+    max_notifications: z.number().int().min(0).optional(),
 });
 
 export const FeatureCommandPaletteSchema = z.object({

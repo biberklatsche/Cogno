@@ -138,6 +138,22 @@ describe('TerminalSession', () => {
         expect(items.find(i => i.label === 'Maximize')).toBeUndefined();
     });
 
+    it('should only show available notification channels in context menu', () => {
+        (mockConfigService as any).setConfig({
+            notification: {
+                app: { available: true, enabled: false },
+                os: { available: false, enabled: false },
+                telegram: { available: false, enabled: false },
+            }
+        });
+        session.initialize(terminalId, mockShellProfile);
+
+        const items = session.buildContextMenu();
+        expect(items.find(i => i.label === 'Enable App Notifications')).toBeDefined();
+        expect(items.find(i => i.label?.includes('OS Notifications'))).toBeUndefined();
+        expect(items.find(i => i.label?.includes('Telegram Notifications'))).toBeUndefined();
+    });
+
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {
         session.initialize(terminalId, mockShellProfile);
         session.dispose();

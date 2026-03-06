@@ -3,6 +3,11 @@ import {NotificationType} from "../+state/notification.service";
 import {TerminalId} from "../../grid-list/+model/model";
 
 export type NotificationSource = 'local' | 'telegram';
+export type NotificationChannels = {
+    app: boolean;
+    os: boolean;
+    telegram: boolean;
+};
 
 export type NotificationEvent = MessageBase<"Notification", {
     header: string;
@@ -11,4 +16,5 @@ export type NotificationEvent = MessageBase<"Notification", {
     type?: NotificationType;
     source?: NotificationSource;
     terminalId?: TerminalId;
+    channels?: Partial<NotificationChannels>;
 }>
