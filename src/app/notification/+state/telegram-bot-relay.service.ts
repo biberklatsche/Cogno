@@ -1,4 +1,4 @@
-import {DestroyRef, inject, Injectable} from "@angular/core";
+import {DestroyRef, Injectable} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Bot, Context, GrammyError, HttpError} from "grammy";
 import {AppBus} from "../../app-bus/app-bus";
@@ -17,17 +17,15 @@ type TelegramConfiguration = {
 
 @Injectable({providedIn: "root"})
 export class TelegramBotRelayService {
-    private readonly appBus = inject(AppBus);
-    private readonly configService = inject(ConfigService);
-    private readonly destroyReference = inject(DestroyRef);
 
     private readonly botByToken: Map<string, Bot> = new Map();
     private readonly incomingHandlerRegisteredForToken: Set<string> = new Set();
     private readonly terminalIdByReplyKey: Map<string, TerminalId> = new Map();
-    private readonly maxMappedReplies = 500;
-    private activeReceivingBotToken?: string;
+    private readonly terminalIdsWithOpenChannel: Set<TerminalId> = new Set();
+    private readonly maxMappedReplies = 50;
+    private receivingBot?: Bot;
 
-    constructor() {
+    constructor(private appBus: AppBus, private configService: ConfigService, private destroyReference: DestroyRef,) {
         this.appBus.on$({type: "Notification", path: ["notification"]})
             .pipe(takeUntilDestroyed(this.destroyReference))
             .subscribe((notificationEvent) => {
@@ -55,34 +53,34 @@ export class TelegramBotRelayService {
             return;
         }
 
-        if (this.activeReceivingBotToken === telegramConfiguration.botToken) {
-            return;
-        }
-
-        this.stopIncomingTelegramRelay();
         const telegramBot = this.getTelegramBot(telegramConfiguration.botToken);
         this.ensureIncomingHandlerRegistered(telegramConfiguration.botToken, telegramBot);
-        void telegramBot.start({allowed_updates: ["message"]}).catch((error: unknown) => {
-            Logger.warn(`[TelegramBotRelayService] receiver failed: ${this.describeTelegramError(error)}`);
-        });
-        this.activeReceivingBotToken = telegramConfiguration.botToken;
-    }
-
-    private stopIncomingTelegramRelay(): void {
-        if (!this.activeReceivingBotToken) {
+        if (this.receivingBot === telegramBot) {
             return;
         }
 
-        const activeBot = this.botByToken.get(this.activeReceivingBotToken);
-        if (activeBot) {
+        this.stopIncomingTelegramRelay(telegramBot);
+        void telegramBot.start({allowed_updates: ["message"]}).catch((error: unknown) => {
+            Logger.warn(`[TelegramBotRelayService] receiver failed: ${this.describeTelegramError(error)}`);
+            if (this.receivingBot === telegramBot) {
+                this.receivingBot = undefined;
+            }
+        });
+        this.receivingBot = telegramBot;
+    }
+
+    private stopIncomingTelegramRelay(keepBot?: Bot): void {
+        for (const bot of this.botByToken.values()) {
+            if (keepBot && bot === keepBot) {
+                continue;
+            }
             try {
-                activeBot.stop();
+                bot.stop();
             } catch (error: unknown) {
                 Logger.warn(`[TelegramBotRelayService] stop receiver failed: ${this.describeTelegramError(error)}`);
             }
         }
-
-        this.activeReceivingBotToken = undefined;
+        this.receivingBot = keepBot;
     }
 
     private ensureIncomingHandlerRegistered(botToken: string, telegramBot: Bot): void {
@@ -124,7 +122,10 @@ export class TelegramBotRelayService {
         }
 
         const incomingChatIdentifier = String(context.chat?.id ?? "");
-        if (incomingChatIdentifier !== telegramConfiguration.chatIdentifier) {
+        if (
+            incomingChatIdentifier.length > 0
+            && incomingChatIdentifier !== telegramConfiguration.chatIdentifier
+        ) {
             return;
         }
 
@@ -132,7 +133,7 @@ export class TelegramBotRelayService {
         const targetTerminalIdentifier = this.resolveTerminalIdForIncomingReply(
             incomingChatIdentifier,
             replyMessageIdentifier
-        );
+        ) ?? this.resolveSingleTerminalFallback(incomingChatIdentifier);
         if (!targetTerminalIdentifier) {
             this.appBus.publish({
                 type: "Notification",
@@ -176,6 +177,7 @@ export class TelegramBotRelayService {
         if (!notificationPayload) {
             return;
         }
+        this.rememberTerminalIdWithOpenChannel(notificationPayload.terminalId, notificationPayload.channels);
         if (notificationPayload.source === "telegram") {
             return;
         }
@@ -258,6 +260,36 @@ export class TelegramBotRelayService {
             }
             this.terminalIdByReplyKey.delete(firstKey);
         }
+    }
+
+    private rememberTerminalIdWithOpenChannel(
+        terminalId?: TerminalId,
+        notificationChannels?: Partial<NotificationChannels>
+    ): void {
+        if (!terminalId || !notificationChannels) {
+            return;
+        }
+
+        const hasOpenChannel = Boolean(
+            notificationChannels.app
+            || notificationChannels.os
+            || notificationChannels.telegram
+        );
+        if (hasOpenChannel) {
+            this.terminalIdsWithOpenChannel.add(terminalId);
+            return;
+        }
+        this.terminalIdsWithOpenChannel.delete(terminalId);
+    }
+
+    private resolveSingleTerminalFallback(incomingChatIdentifier: string): TerminalId | undefined {
+        if (incomingChatIdentifier.length > 0) {
+            return undefined;
+        }
+        if (this.terminalIdsWithOpenChannel.size !== 1) {
+            return undefined;
+        }
+        return this.terminalIdsWithOpenChannel.values().next().value as TerminalId | undefined;
     }
 
     private buildReplyKey(chatIdentifier: string, messageIdentifier: number): string {
