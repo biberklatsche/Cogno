@@ -9,12 +9,13 @@ describe("TerminalNotificationHandler", () => {
     let handler: TerminalNotificationHandler;
     let mockTerminal: Terminal;
     let mockBus: AppBus;
-    let mockStateManager: Pick<TerminalStateManager, 'markUnreadNotification'>;
+    let mockStateManager: Pick<TerminalStateManager, 'markUnreadNotification' | 'terminalId'>;
 
     beforeEach(() => {
         mockBus = new AppBus();
         mockStateManager = {
-            markUnreadNotification: vi.fn()
+            markUnreadNotification: vi.fn(),
+            terminalId: "test-terminal-id"
         };
         handler = new TerminalNotificationHandler(mockBus, mockStateManager as TerminalStateManager);
         mockTerminal = TerminalMockFactory.createTerminal();
@@ -43,6 +44,7 @@ describe("TerminalNotificationHandler", () => {
                 header: "Terminal Notification",
                 body: "Build completed successfully",
                 type: "info",
+                terminalId: "test-terminal-id",
             })
         }));
         expect(mockStateManager.markUnreadNotification).toHaveBeenCalledTimes(1);

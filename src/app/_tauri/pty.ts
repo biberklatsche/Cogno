@@ -81,6 +81,7 @@ export const TauriPty = {
     },
 
     write(terminalId: TerminalId, data: string) {
+        console.log(`[Pty] write: ${data}, {${data.charCodeAt(0)}`);
         return invoke('pty_write', {
             terminalId: terminalId,
             data

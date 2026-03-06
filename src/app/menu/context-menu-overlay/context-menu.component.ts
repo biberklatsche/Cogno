@@ -12,11 +12,29 @@ import {ColorName} from "../../common/color/color";
         <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
                 @if (item.separator) {
-                    <div class="sep" role="separator"></div>
+                    <div class="sep"></div>
                 } @else if (item.colorpicker) {
-                    <div class="embed" role="none">
+                    <div class="embed">
                         <app-color-select (colorSelected)="onColorPick(item, $event)" [selectedColorName]="item.selectedColorName"></app-color-select>
                     </div>
+                }@else if (item.header) {
+                    <div class="header">
+                        {{item.label}}
+                    </div>
+                } @else if (item.toggle) {
+                    <button
+                            class="item toggle-item"
+                            type="button"
+                            [disabled]="item.disabled"
+                            (click)="onItemClick(item)"
+                            role="menuitemcheckbox"
+                            [attr.aria-checked]="item.toggled ?? false">
+                        <span>{{ item.label }}</span>
+                        <span class="toggle-meta">
+                            <span class="toggle-state">{{ item.toggled ? 'On' : 'Off' }}</span>
+                            <span class="toggle-switch" [class.on]="item.toggled"></span>
+                        </span>
+                    </button>
                 } @else {
                     <button
                             class="item"
@@ -67,6 +85,52 @@ import {ColorName} from "../../common/color/color";
                 }
             }
 
+            .toggle-item {
+                .toggle-meta {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .toggle-state {
+                    opacity: 0.55;
+                    font-size: .8rem;
+                    min-width: 1.5rem;
+                    text-align: right;
+                }
+
+                .toggle-switch {
+                    width: 1.8rem;
+                    height: 1rem;
+                    border-radius: 999px;
+                    background: var(--background-color-20l);
+                    border: 1px solid var(--background-color-40l);
+                    position: relative;
+                    transition: background-color .12s ease;
+
+                    &::after {
+                        content: "";
+                        position: absolute;
+                        left: 2px;
+                        top: 50%;
+                        width: 0.74rem;
+                        height: 0.74rem;
+                        border-radius: 50%;
+                        transform: translateY(-50%);
+                        background: var(--foreground-color);
+                        transition: left .12s ease;
+                    }
+
+                    &.on {
+                        background: var(--highlight-color);
+                    }
+
+                    &.on::after {
+                        left: calc(100% - 0.74rem - 2px);
+                    }
+                }
+            }
+
             .item:hover:enabled, .item:focus-visible:enabled {
                 background: var(--background-color-20l);
                 outline: none;
@@ -77,6 +141,11 @@ import {ColorName} from "../../common/color/color";
                 cursor: default;
             }
 
+            .header {
+                margin: 4px;
+                opacity: 0.5;
+            }
+            
             .sep {
                 height: 1px;
                 background: var(--background-color-20l);
@@ -96,9 +165,11 @@ export class ContextMenuComponent implements ContextMenuOverlayComponent {
   onItemClick(item: ContextMenuItem) {
     if (item.disabled) return;
     try {
-      item.action?.();
+      item.action?.(item);
     } finally {
-      this.close?.();
+      if (item.closeOnSelect !== false) {
+        this.close?.();
+      }
     }
   }
 

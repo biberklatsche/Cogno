@@ -191,7 +191,8 @@ export class TerminalStateManager {
             return true;
         }
         try {
-            return this.configService.config.notification?.mark_terminal ?? true;
+            const notificationConfig = this.configService.config.notification;
+            return notificationConfig?.highlight_terminal_on_activity ?? true;
         } catch {
             return true;
         }

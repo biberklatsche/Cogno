@@ -15,9 +15,15 @@ export type ContextMenuItem = {
   actionName?: ActionName;
   action?: (arg?: any) => void;
   disabled?: boolean;
+  closeOnSelect?: boolean;
   separator?: boolean;
+  header?: boolean;
 
   // Fixed color picker embedding
   colorpicker?: boolean;
   selectedColorName?: ColorName;
+
+  // Toggle item
+  toggle?: boolean;
+  toggled?: boolean;
 };

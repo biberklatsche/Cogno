@@ -10,7 +10,12 @@ import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 import {NotificationOs} from "../../_tauri/notification";
 import {NotificationEvent} from "../+bus/events";
-import {NotificationDeliveryMode} from "../../config/+models/feature-config";
+
+type NotificationChannels = {
+    app: boolean;
+    os: boolean;
+    telegram: boolean;
+};
 
 export type NotificationId = number;
 export type NotificationType = 'error' | 'success' | 'warning' | 'info';
@@ -51,7 +56,7 @@ export class NotificationService {
     readonly appNotificationToasts: Signal<AppNotificationToast[]> = this._appNotificationToasts.asReadonly();
 
     constructor(
-        private sideMenuService: SideMenuService,
+        sideMenuService: SideMenuService,
         private bus: AppBus,
         private configService: ConfigService,
         keybinds: KeybindService,
@@ -128,8 +133,8 @@ export class NotificationService {
     private handleNotificationEvent(event: NotificationEvent): void {
         if (!event.payload) return;
         const payload = event.payload;
-        const notificationDeliveryMode = this.getNotificationDeliveryMode();
-        if (notificationDeliveryMode === 'off') {
+        const notificationChannels = this.getEffectiveNotificationChannels(payload.channels);
+        if (!notificationChannels.app && !notificationChannels.os && !notificationChannels.telegram) {
             return;
         }
         const maxNotifications = this.getMaxNotifications();
@@ -163,13 +168,16 @@ export class NotificationService {
             return this.trimNotificationList(nextNotifications, maxNotifications);
         });
 
-        if (notificationDeliveryMode === 'os') {
+        if (notificationChannels.os) {
             void NotificationOs.send(payload.header, payload.body);
-            return;
         }
 
-        const appNotificationDurationSeconds = this.getAppNotificationDurationSeconds();
-        if (appNotificationDurationSeconds > 0) {
+        if (notificationChannels.app) {
+            const appNotificationDurationSeconds = this.getAppNotificationDurationSeconds();
+            if (appNotificationDurationSeconds <= 0) {
+                return;
+            }
+
             const toastId = this.showAppNotificationToast({
                 header: payload.header,
                 body: payload.body,
@@ -184,27 +192,52 @@ export class NotificationService {
         }
     }
 
-    private getNotificationDeliveryMode(): NotificationDeliveryMode {
+    private getEffectiveNotificationChannels(eventChannels?: Partial<NotificationChannels>): NotificationChannels {
+        const defaults = this.getDefaultNotificationChannels();
+        const availability = this.getAvailableNotificationChannels();
+
+        return {
+            app: availability.app && (eventChannels?.app ?? defaults.app),
+            os: availability.os && (eventChannels?.os ?? defaults.os),
+            telegram: availability.telegram && (eventChannels?.telegram ?? defaults.telegram),
+        };
+    }
+
+    private getAvailableNotificationChannels(): NotificationChannels {
         try {
             const notificationConfig = this.configService.config.notification;
-            const configuredMode = notificationConfig?.notification_type;
-            if (configuredMode) {
-                return configuredMode;
-            }
-
-            // fallback for legacy config key `notification.os_notification`
-            const legacyMode = notificationConfig?.os_notification;
-            if (legacyMode === 'off') return 'off';
-            if (legacyMode === 'os' || legacyMode === true) return 'os';
-            return 'app';
+            return {
+                app: notificationConfig?.app?.available ?? true,
+                os: notificationConfig?.os?.available ?? true,
+                telegram: notificationConfig?.telegram?.available ?? true,
+            };
         } catch {
-            return 'app';
+            return {
+                app: true,
+                os: true,
+                telegram: true,
+            };
+        }
+    }
+
+    private getDefaultNotificationChannels(): NotificationChannels {
+        try {
+            const notificationConfig = this.configService.config.notification;
+            const appEnabled = notificationConfig?.app?.enabled ?? true;
+            const osEnabled = notificationConfig?.os?.enabled ?? false;
+            const telegramEnabled = notificationConfig?.telegram?.enabled ?? false;
+
+            return {app: appEnabled, os: osEnabled, telegram: telegramEnabled};
+        } catch {
+            return {app: true, os: false, telegram: false};
         }
     }
 
     private getAppNotificationDurationSeconds(): number {
         try {
-            const configuredDuration = this.configService.config.notification?.app_notification_duration_seconds;
+            const notificationConfig = this.configService.config.notification;
+            const configuredDuration = notificationConfig?.app?.notification_duration_seconds
+                ?? notificationConfig?.app_notification_duration_seconds;
             return configuredDuration ?? 5;
         } catch {
             return 5;
@@ -213,7 +246,9 @@ export class NotificationService {
 
     private getMaxNotifications(): number {
         try {
-            const configuredLimit = this.configService.config.notification?.max_notifications;
+            const notificationConfig = this.configService.config.notification;
+            const configuredLimit = notificationConfig?.max_notifications_in_overview
+                ?? notificationConfig?.max_notifications;
             return configuredLimit ?? 30;
         } catch {
             return 30;

@@ -12,7 +12,7 @@ import {ActionFired, ActionName} from "../../action/action.models";
 export class AppMenuService {
 
 
-    constructor(private bus: AppBus, private keybindService: KeybindService, configService: ConfigService, ref: DestroyRef) {
+    constructor(private bus: AppBus, private keybindService: KeybindService) {
 
     }
 

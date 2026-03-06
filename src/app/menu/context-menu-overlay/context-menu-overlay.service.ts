@@ -3,6 +3,10 @@ import { ContextMenuOverlayComponent } from './context-menu-overlay.types';
 import { ContextMenuComponent } from './context-menu.component';
 
 export type Point = { x: number; y: number };
+export type ContextMenuHorizontalAlign = 'left' | 'right';
+export type ContextMenuOpenOptions = {
+  horizontalAlign?: ContextMenuHorizontalAlign;
+};
 
 export interface ContextMenuOverlayRef {
   close: () => void;
@@ -23,9 +27,15 @@ export class ContextMenuOverlayService {
 
   constructor(private appRef: ApplicationRef, private env: EnvironmentInjector) {}
 
-  openAt<T extends ContextMenuOverlayComponent>(pointOrEvent: Point | MouseEvent, component: Type<T>, inputs?: Partial<T>): ContextMenuOverlayRef {
+  openAt<T extends ContextMenuOverlayComponent>(
+    pointOrEvent: Point | MouseEvent,
+    component: Type<T>,
+    inputs?: Partial<T>,
+    options?: ContextMenuOpenOptions
+  ): ContextMenuOverlayRef {
     const point: Point = this.toPoint(pointOrEvent);
     this.lastOpenEventTs = this.isMouseEvent(pointOrEvent) ? pointOrEvent.timeStamp : performance.now();
+    const horizontalAlign: ContextMenuHorizontalAlign = options?.horizontalAlign ?? 'left';
 
     // Close existing overlay first
     this.close();
@@ -62,6 +72,10 @@ export class ContextMenuOverlayService {
 
     // Position within viewport after first paint/layout
     requestAnimationFrame(() => {
+      if (horizontalAlign === 'right') {
+        const rect = host.getBoundingClientRect();
+        host.style.left = `${point.x - rect.width}px`;
+      }
       this.repositionWithinViewport(host);
       host.style.visibility = 'visible';
     });
@@ -104,14 +118,25 @@ export class ContextMenuOverlayService {
     return ref;
   }
 
-  openContextAt(pointOrEvent: Point | MouseEvent, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
-    return this.openAt(pointOrEvent, ContextMenuComponent, inputs);
+  openContextAt(
+    pointOrEvent: Point | MouseEvent,
+    inputs?: Partial<ContextMenuOverlayComponent>,
+    options?: ContextMenuOpenOptions
+  ): ContextMenuOverlayRef {
+    return this.openAt(pointOrEvent, ContextMenuComponent, inputs, options);
   }
 
-  openContextForElement(el: HTMLElement, inputs?: Partial<ContextMenuOverlayComponent>): ContextMenuOverlayRef {
+  openContextForElement(
+    el: HTMLElement,
+    inputs?: Partial<ContextMenuOverlayComponent>,
+    options?: ContextMenuOpenOptions
+  ): ContextMenuOverlayRef {
     const rect = el.getBoundingClientRect();
     const point: Point = { x: rect.left, y: rect.bottom };
-    return this.openAt(point, ContextMenuComponent, inputs);
+    if (options?.horizontalAlign === 'right') {
+      point.x = rect.right;
+    }
+    return this.openAt(point, ContextMenuComponent, inputs, options);
   }
 
   close() {

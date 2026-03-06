@@ -7,6 +7,8 @@ import {TerminalId} from "../../../grid-list/+model/model";
 import {Clipboard} from "../../../_tauri/clipboard";
 import {IDisposable as IXtermDisposable} from "@xterm/xterm";
 import {TerminalStateManager} from "../state";
+import { Char } from "../../../common/chars/chars";
+import {IPty} from "../pty/pty";
 
 export class InputHandler implements ITerminalHandler {
 
@@ -14,7 +16,12 @@ export class InputHandler implements ITerminalHandler {
     private subscription: Subscription = new Subscription();
     private terminalInputDisposable?: IXtermDisposable;
 
-    constructor(private _bus: AppBus, private _terminalId: TerminalId, private stateManager: TerminalStateManager) {
+    constructor(
+        private _bus: AppBus,
+        private _terminalId: TerminalId,
+        private stateManager: TerminalStateManager,
+        private pty: IPty
+    ) {
 
     }
 
@@ -34,6 +41,13 @@ export class InputHandler implements ITerminalHandler {
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Paste'}).subscribe(async event => {
             if(event.payload !== this._terminalId) return;
             this._terminal?.input(await Clipboard.readText());
+        }));
+        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'InjectTerminalInput'}).subscribe(event => {
+            if(event.payload?.terminalId !== this._terminalId) return;
+            this.pty.write(event.payload.text);
+            if(event.payload.appendNewline) {
+                setTimeout(() => this.pty.write(Char.Enter), 500);
+            }
         }));
         this.terminalInputDisposable = terminal.onData(() => {
             this.stateManager.clearUnreadNotification();

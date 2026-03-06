@@ -125,6 +125,37 @@ cogno action run open_config
 
 ---
 
+## Telegram Notification Relay
+
+You can forward notifications to a Telegram bot and forward Telegram replies back into the currently focused terminal.
+
+Config keys:
+
+```ini
+notification.highlight_terminal_on_activity = true
+notification.max_notifications_in_overview = 30
+
+notification.app.available = true
+notification.app.enabled = true
+notification.app.notification_duration_seconds = 5
+
+notification.os.available = true
+notification.os.enabled = false
+
+notification.telegram.available = true
+notification.telegram.enabled = true
+notification.telegram.bot_token = <your_bot_token>
+notification.telegram.chat_id = <your_chat_id>
+notification.telegram.forward_replies_to_terminal = true
+```
+
+Notes:
+- Replies are injected as terminal input and executed with newline.
+- Replies are accepted only from the configured `chat_id`.
+- When no terminal is focused, the reply is stored as an in-app warning notification.
+
+---
+
 ## 🛠️ Build instructions
 
 Tauri requires Rust and a working build toolchain, see [Tauri V2](https://v2.tauri.app/)
@@ -169,3 +200,4 @@ Direkt mit Tauri CLI:
 ```bash
 npx tauri build --bundles app,dmg
 ```
+

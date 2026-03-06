@@ -154,4 +154,43 @@ describe('ConfigReader', () => {
         expect(config.font!.family).toMatch(/^Fira Code,/);
         expect(config.font!.family).toContain('ui-monospace');
     });
+
+    it('accepts numeric telegram chat_id and normalizes it to string', () => {
+        const text = `
+      notification.telegram.enabled=true
+      notification.telegram.bot_token=test-token
+      notification.telegram.chat_id=184274027
+    `;
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+
+        expect(result.diagnostics.some(d => d.message.includes('notification.telegram.chat_id'))).toBe(false);
+        expect(result.config.notification?.telegram?.chat_id).toBe('184274027');
+    });
+
+    it('parses notification channel availability and defaults', () => {
+        const text = `
+      notification.app.available=true
+      notification.app.enabled=true
+      notification.app.notification_duration_seconds=7
+      notification.os.available=true
+      notification.os.enabled=false
+      notification.telegram.available=true
+      notification.telegram.enabled=true
+      notification.highlight_terminal_on_activity=false
+      notification.max_notifications_in_overview=42
+    `;
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+
+        expect(result.diagnostics.length).toBe(0);
+        expect(result.config.notification?.app?.available).toBe(true);
+        expect(result.config.notification?.app?.enabled).toBe(true);
+        expect(result.config.notification?.app?.notification_duration_seconds).toBe(7);
+        expect(result.config.notification?.os?.available).toBe(true);
+        expect(result.config.notification?.os?.enabled).toBe(false);
+        expect(result.config.notification?.telegram?.available).toBe(true);
+        expect(result.config.notification?.telegram?.enabled).toBe(true);
+        expect(result.config.notification?.highlight_terminal_on_activity).toBe(false);
+        expect(result.config.notification?.max_notifications_in_overview).toBe(42);
+    });
 });
+

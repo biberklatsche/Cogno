@@ -5,6 +5,8 @@ import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
 import { Clipboard } from '../../../_tauri/clipboard';
 import {TerminalStateManager} from "../state";
+import {Char} from "../../../common/chars/chars";
+import {IPty} from "../pty/pty";
 
 vi.mock('../../../_tauri/clipboard', () => ({
   Clipboard: {
@@ -17,6 +19,7 @@ describe('InputHandler', () => {
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   let mockStateManager: Pick<TerminalStateManager, 'clearUnreadNotification'>;
+  let mockPty: Pick<IPty, 'write'>;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -24,7 +27,10 @@ describe('InputHandler', () => {
     mockStateManager = {
       clearUnreadNotification: vi.fn()
     };
-    handler = new InputHandler(mockBus, terminalId, mockStateManager as TerminalStateManager);
+    mockPty = {
+      write: vi.fn()
+    };
+    handler = new InputHandler(mockBus, terminalId, mockStateManager as TerminalStateManager, mockPty as IPty);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -87,6 +93,42 @@ describe('InputHandler', () => {
       // Small delay to ensure it didn't happen
       await new Promise(resolve => setTimeout(resolve, 10));
       expect(inputSpy).not.toHaveBeenCalled();
+    });
+
+    it('should inject terminal input when InjectTerminalInput event for this id is received', () => {
+      const writeSpy = vi.spyOn(mockPty, 'write');
+      mockBus.publish({
+        type: 'InjectTerminalInput',
+        path: ['app', 'terminal'],
+        payload: {
+          terminalId,
+          text: 'hello from telegram'
+        }
+      });
+
+      expect(writeSpy).toHaveBeenCalledWith('hello from telegram');
+    });
+
+    it('should append Enter when InjectTerminalInput event requests execution', () => {
+      vi.useFakeTimers();
+      const writeSpy = vi.spyOn(mockPty, 'write');
+      try {
+        mockBus.publish({
+          type: 'InjectTerminalInput',
+          path: ['app', 'terminal'],
+          payload: {
+            terminalId,
+            text: 'run this',
+            appendNewline: true
+          }
+        });
+
+        expect(writeSpy).toHaveBeenNthCalledWith(1, 'run this');
+        vi.advanceTimersByTime(500);
+        expect(writeSpy).toHaveBeenNthCalledWith(2, Char.Enter);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

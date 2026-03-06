@@ -124,6 +124,8 @@ describe('TerminalSession', () => {
         expect(items.length).toBeGreaterThan(0);
         expect(items.find(i => i.label === 'Paste')).toBeDefined();
         expect(items.find(i => i.label === 'Maximize')).toBeDefined();
+        expect(items.find(i => i.label === 'Process Info')).toBeUndefined();
+        expect(items.find(i => i.label?.includes('Notifications'))).toBeUndefined();
     });
 
     it('should show Minimize when pane is maximized', () => {
@@ -136,6 +138,25 @@ describe('TerminalSession', () => {
         const items = session.buildContextMenu();
         expect(items.find(i => i.label === 'Minimize')).toBeDefined();
         expect(items.find(i => i.label === 'Maximize')).toBeUndefined();
+    });
+
+    it('should only show available notification channels in header menu', () => {
+        (mockConfigService as any).setConfig({
+            notification: {
+                app: { available: true, enabled: false },
+                os: { available: false, enabled: false },
+                telegram: { available: false, enabled: false },
+            }
+        });
+        session.initialize(terminalId, mockShellProfile);
+
+        const items = session.buildHeaderMenu();
+        const appToggle = items.find(i => i.label === 'App');
+        expect(appToggle).toBeDefined();
+        expect(appToggle?.toggle).toBe(true);
+        expect(appToggle?.toggled).toBe(false);
+        expect(items.find(i => i.label === 'OS')).toBeUndefined();
+        expect(items.find(i => i.label === 'Telegram')).toBeUndefined();
     });
 
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {
@@ -163,7 +184,7 @@ describe('TerminalSession', () => {
 
     it('should close process info dialog when terminal session is disposed', () => {
         session.initialize(terminalId, mockShellProfile);
-        const processInfoItem = session.buildContextMenu().find(item => item.label === 'Process Info');
+        const processInfoItem = session.buildHeaderMenu().find(item => item.label === 'Process Info');
 
         processInfoItem?.action?.();
         expect(mockDialogService.open).toHaveBeenCalledTimes(1);

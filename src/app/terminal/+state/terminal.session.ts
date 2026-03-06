@@ -34,6 +34,9 @@ import {
     TerminalSystemInfoSource
 } from "../system-info/terminal-system-info-dialog.component";
 import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
+import {NotificationChannels} from "../../notification/+bus/events";
+
+type NotificationChannel = keyof NotificationChannels;
 
 @Injectable()
 export class TerminalSession {
@@ -47,6 +50,7 @@ export class TerminalSession {
     private readonly disposables: IDisposable[];
     private disposed: boolean = false;
     private processInfoDialogReference?: DialogRef<void>;
+    private sessionNotificationChannels?: NotificationChannels;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -69,6 +73,7 @@ export class TerminalSession {
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
+        this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
         this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
         this.subscription.add(
             this.bus.onType$('PaneMaximizedChanged').subscribe((event: PaneMaximizedChangedEvent) => {
@@ -87,11 +92,15 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus)));
         this.disposables.push(this.renderer.register(new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer)));
         this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)));
-        this.disposables.push(this.renderer.register(new TerminalNotificationHandler(this.bus, this.stateManager)));
+        this.disposables.push(this.renderer.register(new TerminalNotificationHandler(
+            this.bus,
+            this.stateManager,
+            () => ({...this.getSessionNotificationChannels()})
+        )));
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
-        this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId, this.stateManager)));
+        this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty)));
         this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
@@ -141,11 +150,8 @@ export class TerminalSession {
             { label: 'Close', action: () => {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
                 }, actionName: "close_terminal"  },
-            { separator: true },
-            { label: 'Process Info', action: () => {
-                    this.openProcessInfoDialog();
-                } },
         ];
+
         if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {
                     this.focusHandler?.focus();
@@ -153,6 +159,15 @@ export class TerminalSession {
                 }, actionName: 'copy'
             })
         }
+        return items;
+    }
+
+    buildHeaderMenu(): ContextMenuItem[] {
+        const items: ContextMenuItem[] = this.buildNotificationContextMenuItems();
+        items.push({
+            label: 'Process Info',
+            action: () => this.openProcessInfoDialog(),
+        });
         return items;
     }
 
@@ -200,6 +215,103 @@ export class TerminalSession {
         return {
             state$: this.stateManager.state$,
             commands$: this.stateManager.commands$,
+        };
+    }
+
+    private buildNotificationContextMenuItems(): ContextMenuItem[] {
+        const availability = this.getNotificationAvailability();
+        const hasAnyAvailableChannel = availability.app || availability.os || availability.telegram;
+        if (!hasAnyAvailableChannel) {
+            return [];
+        }
+
+        const channels = this.getSessionNotificationChannels();
+        const items: ContextMenuItem[] = [];
+
+        if (availability.app) {
+            items.push({
+                label: 'App',
+                toggle: true,
+                toggled: channels.app,
+                closeOnSelect: false,
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('app', item),
+            });
+        }
+        if (availability.os) {
+            items.push({
+                label: 'OS',
+                toggle: true,
+                toggled: channels.os,
+                closeOnSelect: false,
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('os', item),
+            });
+        }
+        if (availability.telegram) {
+            items.push({
+                label: 'Telegram',
+                toggle: true,
+                toggled: channels.telegram,
+                closeOnSelect: false,
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('telegram', item),
+            });
+        }
+        if (items.length > 0) {
+            items.push({separator: true});
+            items.unshift({header: true, label: 'Notification'})
+        }
+
+        return items;
+    }
+
+    private getSessionNotificationChannels(): NotificationChannels {
+        if (!this.sessionNotificationChannels) {
+            this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
+        }
+        return this.sessionNotificationChannels;
+    }
+
+    private toggleSessionNotificationChannel(channel: NotificationChannel, item?: ContextMenuItem): void {
+        const availability = this.getNotificationAvailability();
+        if (!availability[channel]) {
+            return;
+        }
+
+        const channels = this.getSessionNotificationChannels();
+        const nextValue = !channels[channel];
+        this.sessionNotificationChannels = {
+            ...channels,
+            [channel]: nextValue,
+        };
+        if (item?.toggle) {
+            item.toggled = nextValue;
+        }
+    }
+
+    private getDefaultSessionNotificationChannels(): NotificationChannels {
+        const availability = this.getNotificationAvailability();
+        const defaults = this.getNotificationDefaults();
+        return {
+            app: availability.app && defaults.app,
+            os: availability.os && defaults.os,
+            telegram: availability.telegram && defaults.telegram,
+        };
+    }
+
+    private getNotificationAvailability(): NotificationChannels {
+        const notificationConfig = this.configService.config.notification;
+        return {
+            app: notificationConfig?.app?.available ?? true,
+            os: notificationConfig?.os?.available ?? true,
+            telegram: notificationConfig?.telegram?.available ?? true,
+        };
+    }
+
+    private getNotificationDefaults(): NotificationChannels {
+        const notificationConfig = this.configService.config.notification;
+        return {
+            app: notificationConfig?.app?.enabled ?? true,
+            os: notificationConfig?.os?.enabled ?? false,
+            telegram: notificationConfig?.telegram?.enabled ?? false,
         };
     }
 }
