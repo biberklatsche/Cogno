@@ -124,6 +124,8 @@ describe('TerminalSession', () => {
         expect(items.length).toBeGreaterThan(0);
         expect(items.find(i => i.label === 'Paste')).toBeDefined();
         expect(items.find(i => i.label === 'Maximize')).toBeDefined();
+        expect(items.find(i => i.label === 'Process Info')).toBeUndefined();
+        expect(items.find(i => i.label?.includes('Notifications'))).toBeUndefined();
     });
 
     it('should show Minimize when pane is maximized', () => {
@@ -138,7 +140,7 @@ describe('TerminalSession', () => {
         expect(items.find(i => i.label === 'Maximize')).toBeUndefined();
     });
 
-    it('should only show available notification channels in context menu', () => {
+    it('should only show available notification channels in header menu', () => {
         (mockConfigService as any).setConfig({
             notification: {
                 app: { available: true, enabled: false },
@@ -148,7 +150,7 @@ describe('TerminalSession', () => {
         });
         session.initialize(terminalId, mockShellProfile);
 
-        const items = session.buildContextMenu();
+        const items = session.buildHeaderMenu();
         expect(items.find(i => i.label === 'Enable App Notifications')).toBeDefined();
         expect(items.find(i => i.label?.includes('OS Notifications'))).toBeUndefined();
         expect(items.find(i => i.label?.includes('Telegram Notifications'))).toBeUndefined();
@@ -179,7 +181,7 @@ describe('TerminalSession', () => {
 
     it('should close process info dialog when terminal session is disposed', () => {
         session.initialize(terminalId, mockShellProfile);
-        const processInfoItem = session.buildContextMenu().find(item => item.label === 'Process Info');
+        const processInfoItem = session.buildHeaderMenu().find(item => item.label === 'Process Info');
 
         processInfoItem?.action?.();
         expect(mockDialogService.open).toHaveBeenCalledTimes(1);

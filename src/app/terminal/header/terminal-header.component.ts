@@ -2,10 +2,17 @@ import {Component} from '@angular/core';
 import {TerminalStateManager} from '../+state/state';
 import {toSignal} from "@angular/core/rxjs-interop";
 import {map} from "rxjs";
+import {IconComponent} from "../../icons/icon/icon.component";
+import {TerminalSession} from "../+state/terminal.session";
+import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 
 @Component({
   selector: 'app-terminal-header',
   standalone: true,
+  imports: [
+    IconComponent
+  ],
   template: `
     <div class="terminal-header">
       <span class="command-row">
@@ -30,13 +37,21 @@ import {map} from "rxjs";
           <span class="command">&nbsp;</span>
         }
       </span>
+      <button
+        class="button icon-button terminal-menu-button"
+        type="button"
+        title="Terminal menu"
+        (click)="openMenu($event)">
+        <app-icon name="mdiDotsVertical"></app-icon>
+      </button>
     </div>
   `,
   styles: `
     .terminal-header {
       display: flex;
-      flex-direction: column;
       align-items: center;
+      justify-content: space-between;
+      gap: 8px;
       padding: 4px 8px 2px 8px;
       background: #00000000;
       font-family: var(--font-family);
@@ -45,9 +60,10 @@ import {map} from "rxjs";
     .command-row {
       display: flex;
       align-items: center;
-      align-self: flex-start;
       gap: 8px;
       min-height: 1.2rem;
+      min-width: 0;
+      flex: 1;
     }
     
     .cwd {
@@ -60,6 +76,15 @@ import {map} from "rxjs";
       color: var(--foreground-color);
       font-size: 1rem;
       font-weight: bold;
+      min-width: 0;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .terminal-menu-button {
+      flex: 0 0 auto;
+      margin-left: auto;
     }
 
     .notification-badge {
@@ -86,7 +111,11 @@ import {map} from "rxjs";
 })
 export class TerminalHeaderComponent {
 
-  constructor(private stateManager: TerminalStateManager) {
+  constructor(
+    private stateManager: TerminalStateManager,
+    private terminalSession: TerminalSession,
+    private menu: ContextMenuOverlayService,
+  ) {
   }
 
   commandOutOfView = toSignal(this.stateManager.commands$.pipe(
@@ -105,5 +134,13 @@ export class TerminalHeaderComponent {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
     return `${minutes}m ${seconds}s`;
+  }
+
+  openMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.terminalSession.focus();
+    const items: ContextMenuItem[] = this.terminalSession.buildHeaderMenu();
+    this.menu.openContextForElement(event.currentTarget as HTMLElement, {items});
   }
 }

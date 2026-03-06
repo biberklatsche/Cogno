@@ -150,18 +150,7 @@ export class TerminalSession {
             { label: 'Close', action: () => {
                     this.bus.publish({path: ['app', 'terminal'], type: 'RemovePane', payload: this.terminalId});
                 }, actionName: "close_terminal"  },
-            { separator: true },
-            { label: 'Process Info', action: () => {
-                    this.openProcessInfoDialog();
-                } },
         ];
-
-        const notificationItems = this.buildNotificationContextMenuItems();
-        if (notificationItems.length > 0) {
-            const insertIndex = Math.max(items.length - 1, 0);
-            items.splice(insertIndex, 0, ...notificationItems);
-            items.push({separator: true});
-        }
 
         if(this.stateManager.hasSelection){
             items.unshift({ label: 'Copy', action: () => {
@@ -170,6 +159,18 @@ export class TerminalSession {
                 }, actionName: 'copy'
             })
         }
+        return items;
+    }
+
+    buildHeaderMenu(): ContextMenuItem[] {
+        const items: ContextMenuItem[] = this.buildNotificationContextMenuItems();
+        if (items.length > 0) {
+            items.push({separator: true});
+        }
+        items.push({
+            label: 'Process Info',
+            action: () => this.openProcessInfoDialog(),
+        });
         return items;
     }
 
