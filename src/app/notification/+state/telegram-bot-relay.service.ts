@@ -21,6 +21,7 @@ export class TelegramBotRelayService {
     private readonly botByToken: Map<string, Bot> = new Map();
     private readonly incomingHandlerRegisteredForToken: Set<string> = new Set();
     private readonly terminalIdByReplyKey: Map<string, TerminalId> = new Map();
+    private readonly lastTerminalIdByChatIdentifier: Map<string, TerminalId> = new Map();
     private readonly terminalIdsWithOpenChannel: Set<TerminalId> = new Set();
     private readonly maxMappedReplies = 50;
     private receivingBot?: Bot;
@@ -133,7 +134,8 @@ export class TelegramBotRelayService {
         const targetTerminalIdentifier = this.resolveTerminalIdForIncomingReply(
             incomingChatIdentifier,
             replyMessageIdentifier
-        ) ?? this.resolveSingleTerminalFallback(incomingChatIdentifier);
+        ) ?? this.resolveLatestTerminalIdForChat(incomingChatIdentifier)
+            ?? this.resolveSingleTerminalFallback(incomingChatIdentifier);
         if (!targetTerminalIdentifier) {
             this.appBus.publish({
                 type: "Notification",
@@ -252,6 +254,7 @@ export class TelegramBotRelayService {
 
         const replyKey = this.buildReplyKey(chatIdentifier, messageIdentifier);
         this.terminalIdByReplyKey.set(replyKey, terminalId);
+        this.lastTerminalIdByChatIdentifier.set(chatIdentifier, terminalId);
 
         while (this.terminalIdByReplyKey.size > this.maxMappedReplies) {
             const firstKey = this.terminalIdByReplyKey.keys().next().value as string | undefined;
@@ -290,6 +293,13 @@ export class TelegramBotRelayService {
             return undefined;
         }
         return this.terminalIdsWithOpenChannel.values().next().value as TerminalId | undefined;
+    }
+
+    private resolveLatestTerminalIdForChat(incomingChatIdentifier: string): TerminalId | undefined {
+        if (!incomingChatIdentifier) {
+            return undefined;
+        }
+        return this.lastTerminalIdByChatIdentifier.get(incomingChatIdentifier);
     }
 
     private buildReplyKey(chatIdentifier: string, messageIdentifier: number): string {
