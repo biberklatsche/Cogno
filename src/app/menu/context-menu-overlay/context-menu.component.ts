@@ -30,7 +30,10 @@ import {ColorName} from "../../common/color/color";
                             role="menuitemcheckbox"
                             [attr.aria-checked]="item.toggled ?? false">
                         <span>{{ item.label }}</span>
-                        <span class="toggle-switch" [class.on]="item.toggled"></span>
+                        <span class="toggle-meta">
+                            <span class="toggle-state">{{ item.toggled ? 'On' : 'Off' }}</span>
+                            <span class="toggle-switch" [class.on]="item.toggled"></span>
+                        </span>
                     </button>
                 } @else {
                     <button
@@ -83,6 +86,19 @@ import {ColorName} from "../../common/color/color";
             }
 
             .toggle-item {
+                .toggle-meta {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .toggle-state {
+                    opacity: 0.55;
+                    font-size: .8rem;
+                    min-width: 1.5rem;
+                    text-align: right;
+                }
+
                 .toggle-switch {
                     width: 1.8rem;
                     height: 1rem;
@@ -106,7 +122,7 @@ import {ColorName} from "../../common/color/color";
                     }
 
                     &.on {
-                        background: var(--color-highlight, '#0000FF');
+                        background: var(--highlight-color);
                     }
 
                     &.on::after {
