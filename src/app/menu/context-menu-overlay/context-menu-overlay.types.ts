@@ -16,6 +16,7 @@ export type ContextMenuItem = {
   action?: (arg?: any) => void;
   disabled?: boolean;
   separator?: boolean;
+  header?: boolean;
 
   // Fixed color picker embedding
   colorpicker?: boolean;

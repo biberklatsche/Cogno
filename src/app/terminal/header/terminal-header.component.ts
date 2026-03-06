@@ -141,6 +141,10 @@ export class TerminalHeaderComponent {
     event.stopPropagation();
     this.terminalSession.focus();
     const items: ContextMenuItem[] = this.terminalSession.buildHeaderMenu();
-    this.menu.openContextForElement(event.currentTarget as HTMLElement, {items});
+    this.menu.openContextForElement(
+      event.currentTarget as HTMLElement,
+      {items},
+      {horizontalAlign: 'right'}
+    );
   }
 }

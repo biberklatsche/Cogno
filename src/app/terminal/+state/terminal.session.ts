@@ -164,9 +164,6 @@ export class TerminalSession {
 
     buildHeaderMenu(): ContextMenuItem[] {
         const items: ContextMenuItem[] = this.buildNotificationContextMenuItems();
-        if (items.length > 0) {
-            items.push({separator: true});
-        }
         items.push({
             label: 'Process Info',
             action: () => this.openProcessInfoDialog(),
@@ -233,22 +230,27 @@ export class TerminalSession {
 
         if (availability.app) {
             items.push({
-                label: `${channels.app ? 'Disable' : 'Enable'} App Notifications`,
+                label: `${channels.app ? 'Disable' : 'Enable'} App`,
                 action: () => this.toggleSessionNotificationChannel('app'),
             });
         }
         if (availability.os) {
             items.push({
-                label: `${channels.os ? 'Disable' : 'Enable'} OS Notifications`,
+                label: `${channels.os ? 'Disable' : 'Enable'} OS`,
                 action: () => this.toggleSessionNotificationChannel('os'),
             });
         }
         if (availability.telegram) {
             items.push({
-                label: `${channels.telegram ? 'Disable' : 'Enable'} Telegram Notifications`,
+                label: `${channels.telegram ? 'Disable' : 'Enable'} Telegram`,
                 action: () => this.toggleSessionNotificationChannel('telegram'),
             });
         }
+        if (items.length > 0) {
+            items.push({separator: true});
+            items.unshift({header: true, label: 'Notification'})
+        }
+
         return items;
     }
 

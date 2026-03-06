@@ -12,10 +12,14 @@ import {ColorName} from "../../common/color/color";
         <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
                 @if (item.separator) {
-                    <div class="sep" role="separator"></div>
+                    <div class="sep"></div>
                 } @else if (item.colorpicker) {
-                    <div class="embed" role="none">
+                    <div class="embed">
                         <app-color-select (colorSelected)="onColorPick(item, $event)" [selectedColorName]="item.selectedColorName"></app-color-select>
+                    </div>
+                }@else if (item.header) {
+                    <div class="header">
+                        {{item.label}}
                     </div>
                 } @else {
                     <button
@@ -77,6 +81,11 @@ import {ColorName} from "../../common/color/color";
                 cursor: default;
             }
 
+            .header {
+                margin: 4px;
+                opacity: 0.5;
+            }
+            
             .sep {
                 height: 1px;
                 background: var(--background-color-20l);
