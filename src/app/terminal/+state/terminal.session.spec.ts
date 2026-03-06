@@ -151,9 +151,12 @@ describe('TerminalSession', () => {
         session.initialize(terminalId, mockShellProfile);
 
         const items = session.buildHeaderMenu();
-        expect(items.find(i => i.label === 'Enable App Notifications')).toBeDefined();
-        expect(items.find(i => i.label?.includes('OS Notifications'))).toBeUndefined();
-        expect(items.find(i => i.label?.includes('Telegram Notifications'))).toBeUndefined();
+        const appToggle = items.find(i => i.label === 'App');
+        expect(appToggle).toBeDefined();
+        expect(appToggle?.toggle).toBe(true);
+        expect(appToggle?.toggled).toBe(false);
+        expect(items.find(i => i.label === 'OS')).toBeUndefined();
+        expect(items.find(i => i.label === 'Telegram')).toBeUndefined();
     });
 
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {

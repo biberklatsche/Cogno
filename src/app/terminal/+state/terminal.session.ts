@@ -230,20 +230,29 @@ export class TerminalSession {
 
         if (availability.app) {
             items.push({
-                label: `${channels.app ? 'Disable' : 'Enable'} App`,
-                action: () => this.toggleSessionNotificationChannel('app'),
+                label: 'App',
+                toggle: true,
+                toggled: channels.app,
+                closeOnSelect: false,
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('app', item),
             });
         }
         if (availability.os) {
             items.push({
-                label: `${channels.os ? 'Disable' : 'Enable'} OS`,
-                action: () => this.toggleSessionNotificationChannel('os'),
+                label: 'OS',
+                toggle: true,
+                toggled: channels.os,
+                closeOnSelect: false,
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('os', item),
             });
         }
         if (availability.telegram) {
             items.push({
-                label: `${channels.telegram ? 'Disable' : 'Enable'} Telegram`,
-                action: () => this.toggleSessionNotificationChannel('telegram'),
+                label: 'Telegram',
+                toggle: true,
+                toggled: channels.telegram,
+                closeOnSelect: false,
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('telegram', item),
             });
         }
         if (items.length > 0) {
@@ -261,17 +270,21 @@ export class TerminalSession {
         return this.sessionNotificationChannels;
     }
 
-    private toggleSessionNotificationChannel(channel: NotificationChannel): void {
+    private toggleSessionNotificationChannel(channel: NotificationChannel, item?: ContextMenuItem): void {
         const availability = this.getNotificationAvailability();
         if (!availability[channel]) {
             return;
         }
 
         const channels = this.getSessionNotificationChannels();
+        const nextValue = !channels[channel];
         this.sessionNotificationChannels = {
             ...channels,
-            [channel]: !channels[channel],
+            [channel]: nextValue,
         };
+        if (item?.toggle) {
+            item.toggled = nextValue;
+        }
     }
 
     private getDefaultSessionNotificationChannels(): NotificationChannels {

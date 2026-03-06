@@ -21,6 +21,17 @@ import {ColorName} from "../../common/color/color";
                     <div class="header">
                         {{item.label}}
                     </div>
+                } @else if (item.toggle) {
+                    <button
+                            class="item toggle-item"
+                            type="button"
+                            [disabled]="item.disabled"
+                            (click)="onItemClick(item)"
+                            role="menuitemcheckbox"
+                            [attr.aria-checked]="item.toggled ?? false">
+                        <span>{{ item.label }}</span>
+                        <span class="toggle-switch" [class.on]="item.toggled"></span>
+                    </button>
                 } @else {
                     <button
                             class="item"
@@ -71,6 +82,39 @@ import {ColorName} from "../../common/color/color";
                 }
             }
 
+            .toggle-item {
+                .toggle-switch {
+                    width: 1.8rem;
+                    height: 1rem;
+                    border-radius: 999px;
+                    background: var(--background-color-20l);
+                    border: 1px solid var(--background-color-40l);
+                    position: relative;
+                    transition: background-color .12s ease;
+
+                    &::after {
+                        content: "";
+                        position: absolute;
+                        left: 2px;
+                        top: 50%;
+                        width: 0.74rem;
+                        height: 0.74rem;
+                        border-radius: 50%;
+                        transform: translateY(-50%);
+                        background: var(--foreground-color);
+                        transition: left .12s ease;
+                    }
+
+                    &.on {
+                        background: var(--color-highlight, '#0000FF');
+                    }
+
+                    &.on::after {
+                        left: calc(100% - 0.74rem - 2px);
+                    }
+                }
+            }
+
             .item:hover:enabled, .item:focus-visible:enabled {
                 background: var(--background-color-20l);
                 outline: none;
@@ -105,9 +149,11 @@ export class ContextMenuComponent implements ContextMenuOverlayComponent {
   onItemClick(item: ContextMenuItem) {
     if (item.disabled) return;
     try {
-      item.action?.();
+      item.action?.(item);
     } finally {
-      this.close?.();
+      if (item.closeOnSelect !== false) {
+        this.close?.();
+      }
     }
   }
 
