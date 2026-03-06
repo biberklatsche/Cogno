@@ -6,19 +6,18 @@ import {IconComponent} from "../../icons/icon/icon.component";
 import {TerminalSession} from "../+state/terminal.session";
 import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
+import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 
 @Component({
   selector: 'app-terminal-header',
   standalone: true,
   imports: [
-    IconComponent
+    IconComponent,
+    TooltipDirective
   ],
   template: `
     <div class="terminal-header">
       <span class="command-row">
-        @if (isNotificationBadgeVisible()) {
-          <span class="notification-badge" title="Neue Terminal-Benachrichtigung"></span>
-        }
         @if (commandOutOfView(); as command) {
           <span class="command">
             {{command.command}}
@@ -37,13 +36,19 @@ import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-over
           <span class="command">&nbsp;</span>
         }
       </span>
-      <button
-        class="button icon-button terminal-menu-button"
-        type="button"
-        title="Terminal menu"
-        (click)="openMenu($event)">
-        <app-icon name="mdiDotsVertical"></app-icon>
-      </button>
+      <span class="header-actions">
+        @if (isNotificationBadgeVisible()) {
+          <span class="notification-indicator" appTooltip="New terminal notification">
+            <app-icon name="mdiBell"></app-icon>
+          </span>
+        }
+        <button
+          class="button icon-button terminal-menu-button"
+          type="button"
+          (click)="openMenu($event)">
+          <app-icon name="mdiDotsVertical"></app-icon>
+        </button>
+      </span>
     </div>
   `,
   styles: `
@@ -82,18 +87,24 @@ import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-over
       overflow: hidden;
     }
 
-    .terminal-menu-button {
-      flex: 0 0 auto;
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       margin-left: auto;
     }
 
-    .notification-badge {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--color-yellow);
-      box-shadow: 0 0 8px color-mix(in srgb, var(--color-yellow) 80%, transparent);
-      flex: 0 0 8px;
+    .terminal-menu-button {
+      flex: 0 0 auto;
+    }
+
+    .notification-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-yellow);
+      width: 15px;
+      height: 15px;
     }
 
     .meta {
