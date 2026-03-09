@@ -354,7 +354,7 @@ export class TerminalAutocompleteService implements OnDestroy {
             },
         });
 
-        this._suppressNextRefresh = true;
+        this._suppressNextRefresh = this.shouldSuppressRefreshAfterSelection(suggestion);
         this.hide();
     }
 
@@ -534,6 +534,10 @@ export class TerminalAutocompleteService implements OnDestroy {
         const end = Math.max(start, Math.min(suggestion.replaceEnd, currentInput.length));
         const next = currentInput.slice(0, start) + suggestion.insertText + currentInput.slice(end);
         return next === currentInput;
+    }
+
+    private shouldSuppressRefreshAfterSelection(suggestion: AutocompleteSuggestion): boolean {
+        return suggestion.completionBehavior !== "continue";
     }
 
     private hide(): void {

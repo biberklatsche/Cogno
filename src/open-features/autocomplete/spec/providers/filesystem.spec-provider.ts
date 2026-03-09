@@ -41,7 +41,8 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
 
         const kinds = this.resolveKinds(context);
         const appendSlashToDirectories = context.binding.params?.["appendSlashToDirectories"] === true;
-        const cacheKey = `${lookup.parentNorm}::${kinds.join(",")}::${appendSlashToDirectories ? "slash" : "plain"}`;
+        const continueSuggestions = context.binding.params?.["continueSuggestions"] === true;
+        const cacheKey = `${lookup.parentNorm}::${kinds.join(",")}::${appendSlashToDirectories ? "slash" : "plain"}::${continueSuggestions ? "continue" : "final"}`;
         const query = lookup.namePrefix.toLowerCase();
         const candidates = await this.readCandidates(
             lookup.parentNorm,
@@ -49,6 +50,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             context.queryContext.shellContext,
             kinds,
             appendSlashToDirectories,
+            continueSuggestions,
             cacheKey,
         );
         if (candidates.length === 0) return [];
@@ -126,6 +128,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         shellContext: ShellContextContract,
         kinds: FilesystemProviderKind[],
         appendSlashToDirectories: boolean,
+        continueSuggestions: boolean,
         cacheKey: string,
     ): Promise<Candidate[]> {
         const now = Date.now();
@@ -148,7 +151,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             }
 
             const insertText = entry.kind === "directory" && appendSlashToDirectories
-                ? this.withTrailingSlash(displayPath)
+                ? this.filesystem.appendPathSeparator(displayPath, shellContext)
                 : displayPath;
 
             candidates.push({
@@ -158,6 +161,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
                     insertText,
                     detail: entry.path,
                     selectedPath: entry.path,
+                    completionBehavior: continueSuggestions && entry.kind === "directory" ? "continue" : "final",
                 },
             });
         }
@@ -167,10 +171,6 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             candidates,
         });
         return candidates;
-    }
-
-    private withTrailingSlash(path: string): string {
-        return path.endsWith("/") ? path : `${path}/`;
     }
 
     private setCache(key: string, value: CacheEntry): void {

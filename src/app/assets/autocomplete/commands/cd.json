@@ -10,7 +10,8 @@
       "baseScore": 60,
       "params": {
         "kinds": ["directory"],
-        "appendSlashToDirectories": true
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
       }
     }
   ]

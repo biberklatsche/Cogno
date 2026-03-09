@@ -362,6 +362,31 @@ describe("TerminalAutocompleteService", () => {
         expect(applyCall[0].payload.inputText).toBe("cd projects");
     });
 
+    it("does not suppress the next refresh after selecting a suggestion with continue behavior", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "projects/",
+            insertText: "projects/",
+            detail: "",
+            score: 10,
+            source: "fs-dir",
+            replaceStart: 3,
+            replaceEnd: 6,
+            selectedPath: "/Users/larswolfram/projects",
+            completionBehavior: "continue",
+        }]));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "cd pro", cursorIndex: 6, maxCursorIndex: 6 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+
+        expect((service as any)._suppressNextRefresh).toBe(false);
+    });
+
     it("does not open from ArrowUp history recall, only after typing", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("npm test")]));
 

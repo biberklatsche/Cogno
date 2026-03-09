@@ -471,6 +471,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
                     replaceStart,
                     replaceEnd,
                     selectedPath: value.selectedPath,
+                    completionBehavior: value.completionBehavior,
                 });
             }
         }

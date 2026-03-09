@@ -17,6 +17,7 @@ export type AutocompleteSuggestionContract = {
   matchRanges?: AutocompleteMatchRangeContract[];
   selectedPath?: string;
   selectedCommand?: string;
+  completionBehavior?: "final" | "continue";
 };
 
 export type BaseAutocompleteQueryContextContract = {

@@ -1,0 +1,20 @@
+import { BasePathAdapter } from "./base-path.adapter";
+import { ShellContext } from "./shell-context";
+
+export class PowerShellPathAdapter extends BasePathAdapter {
+    constructor(ctx: Omit<ShellContext, "shellType">) {
+        super({ ...ctx, shellType: "PowerShell" });
+    }
+
+    protected override toShellView(p: string): string | undefined {
+        return this.toWindowsBackendPath(p);
+    }
+
+    protected override needsQuoting(raw: string): boolean {
+        return /\s/.test(raw) || /[`"'$&|<>(){};]/.test(raw);
+    }
+
+    protected override applyQuoting(raw: string): string {
+        return `'${raw.replace(/'/g, "''")}'`;
+    }
+}

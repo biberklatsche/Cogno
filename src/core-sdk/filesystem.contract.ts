@@ -33,6 +33,7 @@ export interface FilesystemContract {
   exists(path: string, shellContext: ShellContextContract): Promise<boolean>;
   readTextFile(path: string, shellContext: ShellContextContract): Promise<string>;
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string;
+  appendPathSeparator(path: string, shellContext: ShellContextContract): string;
   toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string;
 }
 

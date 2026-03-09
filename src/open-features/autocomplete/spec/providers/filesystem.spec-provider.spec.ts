@@ -48,6 +48,7 @@ describe("FilesystemSpecProvider", () => {
             exists: vi.fn(),
             readTextFile: vi.fn(),
             toDisplayPath: vi.fn((path, cwd) => path.replace(`${cwd}/`, "").replace(/^$/, ".") || "."),
+            appendPathSeparator: vi.fn((path) => `${path}/`),
             toRelativePath: vi.fn((path) => path),
         };
     });

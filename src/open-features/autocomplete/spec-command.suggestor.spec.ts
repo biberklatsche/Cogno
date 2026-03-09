@@ -48,6 +48,7 @@ describe("SpecCommandSuggestor", () => {
         exists: vi.fn(),
         readTextFile: vi.fn(),
         toDisplayPath: vi.fn((path) => path),
+        appendPathSeparator: vi.fn((path) => `${path}/`),
         toRelativePath: vi.fn((path) => path),
     });
 

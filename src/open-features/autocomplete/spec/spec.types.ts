@@ -67,6 +67,7 @@ export type SpecProvidedSuggestion = {
     description?: string;
     detail?: string;
     selectedPath?: string;
+    completionBehavior?: "final" | "continue";
 };
 
 export interface SpecSuggestionProvider {

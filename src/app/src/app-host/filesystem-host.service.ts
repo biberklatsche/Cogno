@@ -6,9 +6,8 @@ import {
   FilesystemListOptionsContract,
   ShellContextContract,
 } from "@cogno/core-sdk";
+import { AutocompletePathUtil, PathFactory } from "@cogno/core-host";
 import { Fs } from "../_tauri/fs";
-import { AutocompletePathUtil } from "../terminal/+state/advanced/autocomplete/autocomplete-path.util";
-import { PathFactory } from "../terminal/+state/advanced/adapter/path.factory";
 
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService implements FilesystemContract {
@@ -87,6 +86,10 @@ export class FilesystemHostService implements FilesystemContract {
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {
     return AutocompletePathUtil.toDisplayPath(path, cwd, shellContext as never);
+  }
+
+  appendPathSeparator(path: string, shellContext: ShellContextContract): string {
+    return AutocompletePathUtil.appendDirectorySeparator(path, shellContext);
   }
 
   toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string {
