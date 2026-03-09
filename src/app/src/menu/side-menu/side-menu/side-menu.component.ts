@@ -180,7 +180,6 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 export class SideMenuComponent implements OnDestroy {
     menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
     visibleItems: Signal<SideMenuItem[]> = computed(() => {
-        console.log('#######visibleItems', this.menuItems());
         return this.menuItems()
             .filter((menuItem) => !menuItem.hidden)
             .slice()

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { FilesystemContract, QueryContext } from "@cogno/core-sdk";
+import { CommandRunnerContract, FilesystemContract, QueryContext } from "@cogno/core-sdk";
 import { CommandSpecRegistry } from "./spec/command-spec.registry";
+import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
@@ -50,6 +51,9 @@ describe("SpecCommandSuggestor", () => {
         toDisplayPath: vi.fn((path) => path),
         appendPathSeparator: vi.fn((path) => `${path}/`),
         toRelativePath: vi.fn((path) => path),
+    });
+    const commandRunner = (): CommandRunnerContract => ({
+        run: vi.fn(),
     });
 
     it("suggests command names in command mode", async () => {
@@ -163,6 +167,139 @@ describe("SpecCommandSuggestor", () => {
         const result = await suggestor.suggest(commandContext("cat pa"));
         expect(result.some(v => v.label === "package.json")).toBe(true);
         expect(result.some(v => v.label === "Projects")).toBe(false);
+    });
+
+    it("suggests git branches via provider for checkout", async () => {
+        const runner = commandRunner();
+        vi.mocked(runner.run).mockResolvedValue({
+            stdout: "main\nfeature/search\n",
+            stderr: "",
+            exitCode: 0,
+        });
+
+        const gitSpec: CommandSpec = {
+            name: "git",
+            subcommands: [
+                {
+                    name: "checkout",
+                    args: [{ name: "branch" }, { name: "pathspec" }],
+                    providers: [{
+                        providerId: "command-list",
+                        source: "git-branch",
+                        baseScore: 62,
+                        params: {
+                            program: "git",
+                            args: ["for-each-ref", "--sort=-HEAD", "--sort=refname", "--format=%(refname:short)", "refs/heads", "refs/remotes"],
+                            itemLabel: "git branch",
+                        },
+                        when: {
+                            argsRegex: "^\\s*checkout(?:\\s+(?!-)\\S*)?$",
+                        },
+                    }],
+                },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, gitSpec]),
+            [new CommandListSpecProvider(runner)]
+        );
+
+        const result = await suggestor.suggest(commandContext("git checkout fe"));
+        expect(result.some(v => v.label === "feature/search")).toBe(true);
+        expect(result.some(v => v.label === "main")).toBe(false);
+        expect(runner.run).toHaveBeenCalledTimes(1);
+    });
+
+    it("suggests git branches only after the remote argument for push", async () => {
+        const runner = commandRunner();
+        vi.mocked(runner.run).mockResolvedValue({
+            stdout: "main\nrelease/1.0\n",
+            stderr: "",
+            exitCode: 0,
+        });
+
+        const gitSpec: CommandSpec = {
+            name: "git",
+            subcommands: [
+                {
+                    name: "push",
+                    args: [{ name: "remote" }, { name: "branch" }],
+                    providers: [{
+                        providerId: "command-list",
+                        source: "git-branch",
+                        baseScore: 62,
+                        params: {
+                            program: "git",
+                            args: ["for-each-ref", "--sort=-HEAD", "--sort=refname", "--format=%(refname:short)", "refs/heads", "refs/remotes"],
+                            itemLabel: "git branch",
+                        },
+                        when: {
+                            argsRegex: "^\\s*push\\s+\\S+\\s+(?!-)(?:\\S*)$",
+                        },
+                    }],
+                },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, gitSpec]),
+            [new CommandListSpecProvider(runner)]
+        );
+
+        expect(await suggestor.suggest(commandContext("git push or"))).toEqual([]);
+
+        const result = await suggestor.suggest(commandContext("git push origin re"));
+        expect(result.some(v => v.label === "release/1.0")).toBe(true);
+        expect(runner.run).toHaveBeenCalledTimes(1);
+    });
+
+    it("suggests git branches for switch create start-point, but not for the new branch name", async () => {
+        const runner = commandRunner();
+        vi.mocked(runner.run).mockResolvedValue({
+            stdout: "main\nrelease/1.0\n",
+            stderr: "",
+            exitCode: 0,
+        });
+
+        const gitSpec: CommandSpec = {
+            name: "git",
+            subcommands: [
+                {
+                    name: "switch",
+                    options: [
+                        {
+                            name: ["-c", "--create"],
+                            args: [{ name: "new branch" }, { name: "start point" }],
+                            providers: [{
+                                providerId: "command-list",
+                                source: "git-branch",
+                                baseScore: 62,
+                                params: {
+                                    program: "git",
+                                    args: ["for-each-ref", "--sort=-HEAD", "--sort=refname", "--format=%(refname:short)", "refs/heads", "refs/remotes"],
+                                    itemLabel: "git branch",
+                                },
+                                when: {
+                                    argsRegex: "^\\s*switch\\s+(?:-c|--create)\\s+\\S+\\s+(?!-)(?:\\S*)$",
+                                },
+                            }],
+                        },
+                    ],
+                },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, gitSpec]),
+            [new CommandListSpecProvider(runner)]
+        );
+
+        expect(await suggestor.suggest(commandContext("git switch -c ne"))).toEqual([]);
+
+        const result = await suggestor.suggest(commandContext("git switch -c new-branch re"));
+        expect(result.some(v => v.label === "release/1.0")).toBe(true);
+        expect(runner.run).toHaveBeenCalledTimes(1);
     });
 
     it("does not suggest npm scripts for plain npm", async () => {

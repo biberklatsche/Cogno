@@ -3,6 +3,7 @@ pub mod commands;
 
 use crate::cli::Cli;
 use clap::Parser;
+use commands::command_runner::command_runner_execute;
 use commands::config::get_default_config;
 use commands::crypto::decrypt;
 use commands::crypto::encrypt;
@@ -47,6 +48,7 @@ pub fn run(cli: Cli) {
         }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
+            command_runner_execute,
             get_default_config,
             list_fonts,
             list_shells,

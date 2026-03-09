@@ -856,6 +856,29 @@
           "name": "new base"
         }
       ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*rebase(?:\\s+(?!-)\\S+)?(?:\\s+(?!-)\\S*)?$"
+          }
+        },
+        {
+          "providerId": "command-list",
+          "source": "git-tag",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": ["tag", "--list"],
+            "itemLabel": "git tag"
+          },
+          "when": {
+            "argsRegex": "^\\s*rebase(?:\\s+(?!-)\\S+)?(?:\\s+(?!-)\\S*)?$"
+          }
+        }
+      ],
       "options": [
         {
           "name": "--onto",
@@ -863,6 +886,23 @@
           "args": [
             {
               "name": "newbase"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62
+            },
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": ["tag", "--list"],
+                "itemLabel": "git tag"
+              }
             }
           ]
         },
@@ -1581,6 +1621,16 @@
           "name": "branch"
         }
       ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*push\\s+\\S+\\s+(?!-)(?:\\S*)$"
+          }
+        }
+      ],
       "options": [
         {
           "name": "--all",
@@ -1763,6 +1813,16 @@
         },
         {
           "name": "branch"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*pull\\s+\\S+\\s+(?!-)(?:\\S*)$"
+          }
         }
       ],
       "options": [
@@ -2366,6 +2426,13 @@
                 {
                   "name": "branch"
                 }
+              ],
+              "providers": [
+                {
+                  "providerId": "git-branches",
+                  "source": "git-branch",
+                  "baseScore": 62
+                }
               ]
             },
             {
@@ -2374,6 +2441,13 @@
               "args": [
                 {
                   "name": "master"
+                }
+              ],
+              "providers": [
+                {
+                  "providerId": "git-branches",
+                  "source": "git-branch",
+                  "baseScore": 62
                 }
               ]
             },
@@ -2406,6 +2480,16 @@
               "name": "branch"
             }
           ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*remote\\s+set-head\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
+            }
+          ],
           "options": [
             {
               "name": [
@@ -2432,6 +2516,16 @@
             },
             {
               "name": "branch"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*remote\\s+set-branches\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
             }
           ],
           "options": [
@@ -2581,6 +2675,16 @@
         },
         {
           "name": "refspec"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*fetch\\s+\\S+\\s+(?!-)(?:\\S*)$"
+          }
         }
       ],
       "options": [
@@ -3257,6 +3361,13 @@
             {
               "name": "branch name"
             }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62
+            }
           ]
         },
         {
@@ -3709,7 +3820,29 @@
     },
     {
       "name": "show",
-      "description": "Show various types of objects"
+      "description": "Show various types of objects",
+      "args": [
+        {
+          "name": "object"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 58
+        },
+        {
+          "providerId": "command-list",
+          "source": "git-tag",
+          "baseScore": 60,
+          "params": {
+            "program": "git",
+            "args": ["tag", "--list"],
+            "itemLabel": "git tag"
+          }
+        }
+      ]
     },
     {
       "name": "branch",
@@ -3727,11 +3860,35 @@
             "-d",
             "--delete"
           ],
-          "description": "Delete fully merged branch"
+          "description": "Delete fully merged branch",
+          "args": [
+            {
+              "name": "branch"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62
+            }
+          ]
         },
         {
           "name": "-D",
-          "description": "Delete branch (even if not merged)"
+          "description": "Delete branch (even if not merged)",
+          "args": [
+            {
+              "name": "branch"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62
+            }
+          ]
         },
         {
           "name": [
@@ -3905,6 +4062,13 @@
             {
               "name": "upstream"
             }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62
+            }
           ]
         },
         {
@@ -3913,6 +4077,13 @@
           "args": [
             {
               "name": "upstream"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62
             }
           ]
         },
@@ -3962,6 +4133,29 @@
           "description": "Limits the paths affected by the operation"
         }
       ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*checkout(?:\\s+(?!-)\\S*)?$"
+          }
+        },
+        {
+          "providerId": "command-list",
+          "source": "git-tag",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": ["tag", "--list"],
+            "itemLabel": "git tag"
+          },
+          "when": {
+            "argsRegex": "^\\s*checkout(?:\\s+(?!-)\\S*)?$"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -4005,6 +4199,32 @@
           "args": [
             {
               "name": "New Branch"
+            },
+            {
+              "name": "start point"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*checkout\\s+-b\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
+            },
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": ["tag", "--list"],
+                "itemLabel": "git tag"
+              },
+              "when": {
+                "argsRegex": "^\\s*checkout\\s+-b\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
             }
           ]
         },
@@ -4014,6 +4234,32 @@
           "args": [
             {
               "name": "New Branch"
+            },
+            {
+              "name": "start point"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*checkout\\s+-B\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
+            },
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": ["tag", "--list"],
+                "itemLabel": "git tag"
+              },
+              "when": {
+                "argsRegex": "^\\s*checkout\\s+-B\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
             }
           ]
         },
@@ -4294,6 +4540,13 @@
                 {
                   "name": "branch"
                 }
+              ],
+              "providers": [
+                {
+                  "providerId": "git-branches",
+                  "source": "git-branch",
+                  "baseScore": 62
+                }
               ]
             },
             {
@@ -4520,6 +4773,13 @@
                   "name": "branch",
                   "description": "Remote branch to be specified"
                 }
+              ],
+              "providers": [
+                {
+                  "providerId": "git-branches",
+                  "source": "git-branch",
+                  "baseScore": 62
+                }
               ]
             },
             {
@@ -4645,6 +4905,29 @@
       "args": [
         {
           "name": "branch"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*merge(?:\\s+(?!-)\\S*)?$"
+          }
+        },
+        {
+          "providerId": "command-list",
+          "source": "git-tag",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": ["tag", "--list"],
+            "itemLabel": "git tag"
+          },
+          "when": {
+            "argsRegex": "^\\s*merge(?:\\s+(?!-)\\S*)?$"
+          }
         }
       ],
       "options": [
@@ -5089,6 +5372,29 @@
           "name": "start point"
         }
       ],
+      "providers": [
+        {
+          "providerId": "git-branches",
+          "source": "git-branch",
+          "baseScore": 62,
+          "when": {
+            "argsRegex": "^\\s*switch(?:\\s+(?!-)\\S+)?(?:\\s+(?!-)\\S*)?$"
+          }
+        },
+        {
+          "providerId": "command-list",
+          "source": "git-tag",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": ["tag", "--list"],
+            "itemLabel": "git tag"
+          },
+          "when": {
+            "argsRegex": "^\\s*switch(?:\\s+(?!-)\\S+)?(?:\\s+(?!-)\\S*)?$"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -5102,6 +5408,29 @@
             },
             {
               "name": "start point"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*switch\\s+(?:-c|--create)\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
+            },
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": ["tag", "--list"],
+                "itemLabel": "git tag"
+              },
+              "when": {
+                "argsRegex": "^\\s*switch\\s+(?:-c|--create)\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
             }
           ]
         },
@@ -5117,6 +5446,29 @@
             },
             {
               "name": "start point"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*switch\\s+(?:-C|--force-create)\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
+            },
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": ["tag", "--list"],
+                "itemLabel": "git tag"
+              },
+              "when": {
+                "argsRegex": "^\\s*switch\\s+(?:-C|--force-create)\\s+\\S+\\s+(?!-)(?:\\S*)$"
+              }
             }
           ]
         },
@@ -5189,6 +5541,29 @@
             },
             {
               "name": "start point"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "git-branches",
+              "source": "git-branch",
+              "baseScore": 62,
+              "when": {
+                "argsRegex": "^\\s*switch\\s+(?:-t|--track)(?:\\s+(?!-)\\S+)?(?:\\s+(?!-)\\S*)?$"
+              }
+            },
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": ["tag", "--list"],
+                "itemLabel": "git tag"
+              },
+              "when": {
+                "argsRegex": "^\\s*switch\\s+(?:-t|--track)(?:\\s+(?!-)\\S+)?(?:\\s+(?!-)\\S*)?$"
+              }
             }
           ]
         },

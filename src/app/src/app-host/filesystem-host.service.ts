@@ -12,11 +12,11 @@ import { Fs } from "../_tauri/fs";
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService implements FilesystemContract {
   normalizePath(path: string, shellContext: ShellContextContract): string {
-    return PathFactory.createAdapter(shellContext as never).normalize(path);
+    return PathFactory.createAdapter(shellContext).normalize(path);
   }
 
   resolvePath(cwd: string, inputPath: string, shellContext: ShellContextContract): string | undefined {
-    const adapter = PathFactory.createAdapter(shellContext as never);
+    const adapter = PathFactory.createAdapter(shellContext);
     const absoluteLike = inputPath.startsWith("/") || /^[a-zA-Z]:/.test(inputPath) || inputPath.startsWith("\\\\");
 
     try {
@@ -39,7 +39,7 @@ export class FilesystemHostService implements FilesystemContract {
     shellContext: ShellContextContract,
     options?: FilesystemListOptionsContract,
   ): Promise<ReadonlyArray<FilesystemEntryContract>> {
-    const adapter = PathFactory.createAdapter(shellContext as never);
+    const adapter = PathFactory.createAdapter(shellContext);
     const backendPath = adapter.render(path, { purpose: "backend_fs" });
     if (!backendPath) return [];
 
@@ -94,12 +94,12 @@ export class FilesystemHostService implements FilesystemContract {
   }
 
   async exists(path: string, shellContext: ShellContextContract): Promise<boolean> {
-    const backendPath = PathFactory.createAdapter(shellContext as never).render(path, { purpose: "backend_fs" });
+    const backendPath = PathFactory.createAdapter(shellContext).render(path, { purpose: "backend_fs" });
     return backendPath ? Fs.exists(backendPath) : false;
   }
 
   async readTextFile(path: string, shellContext: ShellContextContract): Promise<string> {
-    const backendPath = PathFactory.createAdapter(shellContext as never).render(path, { purpose: "backend_fs" });
+    const backendPath = PathFactory.createAdapter(shellContext).render(path, { purpose: "backend_fs" });
     if (!backendPath) {
       throw new Error(`Unable to render filesystem path '${path}'.`);
     }
@@ -107,7 +107,7 @@ export class FilesystemHostService implements FilesystemContract {
   }
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {
-    return AutocompletePathUtil.toDisplayPath(path, cwd, shellContext as never);
+    return AutocompletePathUtil.toDisplayPath(path, cwd, shellContext);
   }
 
   appendPathSeparator(path: string, shellContext: ShellContextContract): string {

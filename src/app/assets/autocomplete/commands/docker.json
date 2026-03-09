@@ -7,6 +7,26 @@
     {
       "name": "attach",
       "description": "Attach local standard input, output, and error streams to a running container,",
+      "args": [
+        {
+          "name": "container"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
+        }
+      ],
       "options": [
         {
           "name": "--detach-keys",
@@ -1182,6 +1202,24 @@
           "name": "command"
         }
       ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          },
+          "when": {
+            "argsRegex": "^\\s*exec(?:\\s+(?!-)\\S*)?$"
+          }
+        }
+      ],
       "options": [
         {
           "name": "-it",
@@ -1492,6 +1530,21 @@
           "name": "container"
         }
       ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -1583,6 +1636,21 @@
       "args": [
         {
           "name": "container"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
         }
       ],
       "options": [
@@ -1815,6 +1883,21 @@
           "name": "container"
         }
       ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -1836,6 +1919,21 @@
       "args": [
         {
           "name": "containers"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
         }
       ],
       "options": [
@@ -2898,6 +2996,21 @@
           "name": "container"
         }
       ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -2967,6 +3080,21 @@
           "name": "container"
         }
       ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -3007,6 +3135,21 @@
         {
           "name": "container"
         }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
+        }
       ]
     },
     {
@@ -3015,6 +3158,21 @@
       "args": [
         {
           "name": "container"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
         }
       ],
       "options": [
@@ -3194,6 +3352,21 @@
       "args": [
         {
           "name": "container"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "docker-container",
+          "baseScore": 62,
+          "params": {
+            "program": "docker",
+            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "labelField": 0,
+            "descriptionField": 1,
+            "detailField": 2,
+            "itemLabel": "container"
+          }
         }
       ]
     },
@@ -3520,6 +3693,26 @@
         {
           "name": "attach",
           "description": "Attach local standard input, output, and error streams to a running container,",
+          "args": [
+            {
+              "name": "container"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
+            }
+          ],
           "options": [
             {
               "name": "--detach-keys",
@@ -4420,6 +4613,24 @@
               "name": "command"
             }
           ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              },
+              "when": {
+                "argsRegex": "^\\s*container\\s+exec(?:\\s+(?!-)\\S*)?$"
+              }
+            }
+          ],
           "options": [
             {
               "name": "-it",
@@ -4588,6 +4799,21 @@
           "args": [
             {
               "name": "container"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
             }
           ],
           "options": [
@@ -4775,6 +5001,21 @@
               "name": "container"
             }
           ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
+            }
+          ],
           "options": [
             {
               "name": [
@@ -4796,6 +5037,21 @@
           "args": [
             {
               "name": "containers"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
             }
           ],
           "options": [
@@ -5690,6 +5946,21 @@
               "name": "container"
             }
           ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
+            }
+          ],
           "options": [
             {
               "name": [
@@ -5759,6 +6030,21 @@
               "name": "container"
             }
           ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
+            }
+          ],
           "options": [
             {
               "name": [
@@ -5798,6 +6084,21 @@
           "args": [
             {
               "name": "container"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
             }
           ],
           "options": [
@@ -5950,6 +6251,21 @@
           "args": [
             {
               "name": "container"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "docker-container",
+              "baseScore": 62,
+              "params": {
+                "program": "docker",
+                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "labelField": 0,
+                "descriptionField": 1,
+                "detailField": 2,
+                "itemLabel": "container"
+              }
             }
           ]
         }

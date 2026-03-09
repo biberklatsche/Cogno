@@ -18,6 +18,7 @@ import {CoreHostSideMenuLifecycleRuntimeService} from "./app-host/core-host-side
 import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
 import {NotificationService} from "@cogno/open-features/notification/notification.service";
 import {
+    commandRunnerToken,
     commandPaletteHostPortToken,
     databaseAccessToken,
     filesystemToken,
@@ -31,12 +32,14 @@ import {NotificationHostPortAdapterService} from "./app-host/notification-host-p
 import {WorkspaceHostPortAdapterService} from "./app-host/workspace-host-port.adapter.service";
 import {WorkspaceHostApplicationService} from "./app-host/workspace-host-application.service";
 import {DatabaseAccessHostService} from "./app-host/database-access-host.service";
+import { CommandRunnerHostService } from "./app-host/command-runner-host.service";
 import { FilesystemHostService } from "./app-host/filesystem-host.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
+      { provide: commandRunnerToken, useExisting: CommandRunnerHostService },
       { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
       { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
       { provide: filesystemToken, useExisting: FilesystemHostService },
