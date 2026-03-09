@@ -33,9 +33,15 @@ export class TerminalSearchSideMenuHostService {
             this.terminalSearchService.handleSideMenuClose();
           }
         },
-        onOpen: () => this.terminalSearchService.handleSideMenuOpen(),
+        onOpen: () => {
+          this.terminalSearchService.handleSideMenuOpen();
+          this.focusSideMenuAutofocusElement();
+        },
         onClose: () => this.terminalSearchService.handleSideMenuClose(),
-        onFocus: () => this.registerKeybindListener(),
+        onFocus: () => {
+          this.registerKeybindListener();
+          this.focusSideMenuAutofocusElement();
+        },
         onBlur: () => this.unregisterKeybindListener(),
       },
       {
@@ -64,5 +70,23 @@ export class TerminalSearchSideMenuHostService {
 
   private unregisterKeybindListener(): void {
     this.sideMenuFeature.unregisterKeybindListener();
+  }
+
+  private focusSideMenuAutofocusElement(): void {
+    const scheduleFocus = globalThis.requestAnimationFrame ?? ((callback: FrameRequestCallback) => setTimeout(callback, 0));
+    scheduleFocus(() => {
+      const autofocusElement = this.findSideMenuAutofocusElement();
+      autofocusElement?.focus();
+      autofocusElement?.select();
+    });
+  }
+
+  private findSideMenuAutofocusElement(): HTMLInputElement | null {
+    const documentReference = globalThis.document;
+    if (!documentReference) {
+      return null;
+    }
+
+    return documentReference.querySelector<HTMLInputElement>("[data-side-menu-autofocus='true']");
   }
 }

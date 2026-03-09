@@ -1,7 +1,6 @@
 import {ChangeDetectionStrategy, Component, computed, Signal} from "@angular/core";
 import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-sdk";
 import {TerminalSearchService} from "./terminal-search.service";
-import { TerminalSearchAutofocusDirective } from "./terminal-search-autofocus.directive";
 
 type SearchTextSegment = {
     text: string;
@@ -11,7 +10,6 @@ type SearchTextSegment = {
 @Component({
     selector: "app-terminal-search-side",
     standalone: true,
-    imports: [TerminalSearchAutofocusDirective],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="search-controls">
@@ -19,12 +17,12 @@ type SearchTextSegment = {
                 autocomplete="off"
                 spellcheck="false"
                 data-private="off"
+                data-side-menu-autofocus="true"
                 autocorrect="off"
                 type="text"
                 placeholder="Search active terminal..."
                 class="search-input"
                 [value]="searchQuery()"
-                [appTerminalSearchAutofocus]="true"
                 (input)="updateSearchQuery($event)"
                 (click)="$event.stopPropagation()"
             />
