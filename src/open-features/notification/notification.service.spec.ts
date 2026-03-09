@@ -6,7 +6,7 @@ import {
   NotificationSettingsContract,
 } from "@cogno/core-sdk";
 import { NotificationService } from "@cogno/open-features/notification/notification.service";
-import { getDestroyRef } from "../../__test__/test-factory";
+import { getDestroyRef } from "../__test__/destroy-ref";
 
 describe("NotificationService", () => {
   let notificationService: NotificationService;

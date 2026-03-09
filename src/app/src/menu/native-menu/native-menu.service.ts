@@ -11,7 +11,7 @@ import {AppBus} from "../../app-bus/app-bus";
 import {AppWindow} from "../../_tauri/window";
 import {ActionFired, ActionName} from "../../action/action.models";
 import {Config, FeatureMode} from "../../config/+models/config";
-import {CoreHostWiringService} from "../../core-host/core-host-wiring.service";
+import {CoreHostWiringService} from "../../app-host/core-host-wiring.service";
 
 @Injectable({
   providedIn: 'root'

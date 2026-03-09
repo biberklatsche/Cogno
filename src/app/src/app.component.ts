@@ -9,7 +9,7 @@ import {DB} from "./_tauri/db";
 import {Environment} from "./common/environment/environment";
 import {appDatabaseMigrations} from "./migrations/migrate";
 import {AppNotificationToastStackComponent} from "./notification/app-notification-toast-stack.component";
-import {DatabaseMigrationService} from "./core-host/database-migration.service";
+import {DatabaseMigrationService} from "./app-host/database-migration.service";
 
 @Component({
     selector: 'app-root',

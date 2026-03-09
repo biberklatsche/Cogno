@@ -13,8 +13,8 @@ import {NativeMenuService} from "./menu/native-menu/native-menu.service";
 import {WindowService} from "./window/window.service";
 import {TelegramBotRelayService} from "./notification/+state/telegram-bot-relay.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
-import {CoreHostWiringService} from "./core-host/core-host-wiring.service";
-import {CoreHostSideMenuLifecycleRuntimeService} from "./core-host/core-host-side-menu-lifecycle-runtime.service";
+import {CoreHostWiringService} from "./app-host/core-host-wiring.service";
+import {CoreHostSideMenuLifecycleRuntimeService} from "./app-host/core-host-side-menu-lifecycle-runtime.service";
 import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
 import {NotificationService} from "@cogno/open-features/notification/notification.service";
 import {
@@ -24,12 +24,12 @@ import {
     terminalSearchHostPortToken,
     workspaceHostPortToken
 } from "@cogno/core-sdk";
-import {TerminalSearchHostPortAdapterService} from "./core-host/terminal-search-host-port.adapter.service";
-import {CommandPaletteHostPortAdapterService} from "./core-host/command-palette-host-port.adapter.service";
-import {NotificationHostPortAdapterService} from "./core-host/notification-host-port.adapter.service";
-import {WorkspaceHostPortAdapterService} from "./core-host/workspace-host-port.adapter.service";
-import {WorkspaceHostApplicationService} from "./core-host/workspace-host-application.service";
-import {DatabaseAccessHostService} from "./core-host/database-access-host.service";
+import {TerminalSearchHostPortAdapterService} from "./app-host/terminal-search-host-port.adapter.service";
+import {CommandPaletteHostPortAdapterService} from "./app-host/command-palette-host-port.adapter.service";
+import {NotificationHostPortAdapterService} from "./app-host/notification-host-port.adapter.service";
+import {WorkspaceHostPortAdapterService} from "./app-host/workspace-host-port.adapter.service";
+import {WorkspaceHostApplicationService} from "./app-host/workspace-host-application.service";
+import {DatabaseAccessHostService} from "./app-host/database-access-host.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [

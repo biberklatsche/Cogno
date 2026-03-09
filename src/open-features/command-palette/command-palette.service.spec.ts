@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
 import {
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
 } from "@cogno/core-sdk";
 import { CommandPaletteService } from "@cogno/open-features/command-palette/command-palette.service";
-import { getDestroyRef } from "../../__test__/test-factory";
+import { getDestroyRef } from "../__test__/destroy-ref";
 
 describe("CommandPaletteService", () => {
   let service: CommandPaletteService;
