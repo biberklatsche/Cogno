@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {AppButtonsService} from './+state/app-buttons.service';
 
 import {OS, OsType} from "../_tauri/os";
@@ -106,7 +106,6 @@ import {OS, OsType} from "../_tauri/os";
 export class AppButtonsComponent {
 
   protected readonly operatingSystem: OsType = OS.platform();
-  protected readonly appButtonsService = inject(AppButtonsService);
   protected readonly windowControlIconPaths = {
     close: 'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z',
     linuxArrowCollapse: 'M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z',
@@ -115,6 +114,8 @@ export class AppButtonsComponent {
     windowMinimize: 'M20,14H4V10H20',
     windowRestore: 'M4,8H8V4H20V16H16V20H4V8M16,8V14H18V6H10V8H16M6,12V18H14V12H6Z'
   } as const;
+
+  constructor(protected readonly appButtonsService: AppButtonsService) {}
 
   protected closeWindow(): void {
     this.appButtonsService.closeWindow();
@@ -130,6 +131,18 @@ export class AppButtonsComponent {
       } else {
           this.appButtonsService.maximizeWindow();
       }
+  }
+
+  close(): void {
+    this.closeWindow();
+  }
+
+  minimize(): void {
+    this.minimizeWindow();
+  }
+
+  toggleMaximize(): void {
+    this.toggleMaximizeWindow();
   }
 
 }

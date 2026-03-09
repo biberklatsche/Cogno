@@ -1,0 +1,13 @@
+{
+  "name": "@cogno/pro-features",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "build": "tsc --noEmit -p ../../tsconfig.app.json",
+    "test": "vitest run --passWithNoTests",
+    "lint": "tsc --noEmit -p ../../tsconfig.app.json"
+  }
+}

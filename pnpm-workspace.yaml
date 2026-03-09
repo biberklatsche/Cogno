@@ -1,0 +1,6 @@
+packages:
+  - "src/core-sdk"
+  - "src/core-host"
+  - "src/open-features"
+  - "src/pro-features"
+  - "packages/*"

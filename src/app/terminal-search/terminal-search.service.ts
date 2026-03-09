@@ -1,4 +1,4 @@
-import {DestroyRef, Injectable, Signal, inject, signal} from "@angular/core";
+import {DestroyRef, Injectable, Signal, signal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {AppBus} from "../app-bus/app-bus";
 import {GridListService} from "../grid-list/+state/grid-list.service";
@@ -18,13 +18,6 @@ import {Color} from "../common/color/color";
 
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
-    private readonly sideMenuService = inject(SideMenuService);
-    private readonly appBus = inject(AppBus);
-    private readonly gridListService = inject(GridListService);
-    private readonly configService = inject(ConfigService);
-    private readonly keybindService = inject(KeybindService);
-    private readonly destroyRef = inject(DestroyRef);
-
     private readonly feature: SideMenuFeature;
 
     private readonly searchQuerySignal = signal<string>("");
@@ -42,7 +35,14 @@ export class TerminalSearchService {
     readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
     readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
 
-    constructor() {
+    constructor(
+        private readonly sideMenuService: SideMenuService,
+        private readonly appBus: AppBus,
+        private readonly gridListService: GridListService,
+        private readonly configService: ConfigService,
+        private readonly keybindService: KeybindService,
+        private readonly destroyRef: DestroyRef,
+    ) {
         this.feature = createSideMenuFeature(
             {
                 label: "Terminal Search",

@@ -2,10 +2,8 @@ import {
     Directive,
     ElementRef,
     effect,
-    inject,
     input,
     signal,
-    afterNextRender,
 } from '@angular/core';
 
 @Directive({
@@ -13,8 +11,6 @@ import {
     standalone: true,
 })
 export class AutofocusDirective {
-    private el = inject(ElementRef<HTMLInputElement>);
-
     /** activates the focus */
     appAutofocus = input<boolean>(false);
 
@@ -27,7 +23,7 @@ export class AutofocusDirective {
     // prevents constant refocusing (only on false -> true)
     private wasEnabled = signal(false);
 
-    constructor() {
+    constructor(private readonly inputElementReference: ElementRef<HTMLInputElement>) {
         effect(() => {
             const enabled = this.appAutofocus();
             const shouldFocusNow = enabled && !this.wasEnabled();
@@ -37,7 +33,7 @@ export class AutofocusDirective {
             if (!shouldFocusNow) return;
 
             setTimeout(() => {
-                const inputEl = this.el.nativeElement;
+                const inputEl = this.inputElementReference.nativeElement;
 
                 inputEl.focus();
                 inputEl.select(); // optional, can be removed

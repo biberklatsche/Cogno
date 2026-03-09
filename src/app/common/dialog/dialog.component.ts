@@ -6,7 +6,6 @@ import {
     Injector,
     OnDestroy,
     OnInit,
-    inject,
     input,
     Type,
     viewChild
@@ -115,8 +114,6 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   panelElementRef = viewChild<ElementRef<HTMLElement>>('panelElement');
 
   contentInjector?: Injector;
-
-  private readonly injector = inject(Injector);
   private isMoveActive = false;
   private isResizeActive = false;
   private moveMouseOffsetX = 0;
@@ -129,6 +126,8 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   private positionLeftOverride: string | null = null;
   private widthOverride: string | null = null;
   private heightOverride: string | null = null;
+
+  constructor(private readonly injector: Injector) {}
 
   ngOnInit(): void {
     // Create child injector to provide dialog data and ref

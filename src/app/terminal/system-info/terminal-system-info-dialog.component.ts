@@ -1,5 +1,5 @@
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, Signal, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Inject, OnDestroy, OnInit, Signal, signal} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
 import {Observable} from 'rxjs';
 import {DIALOG_DATA} from '../../common/dialog';
@@ -339,10 +339,8 @@ type ProcessTreeNode = {
   `
 })
 export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
-  private readonly data = inject<TerminalSystemInfoDialogData>(DIALOG_DATA);
   private refreshTimer?: number;
   private refreshInFlight = false;
-  private readonly keybindService = inject(KeybindService);
 
   readonly activeTab = signal<'process' | 'terminal'>('process');
   readonly terminalState: Signal<TerminalState | null> = toSignal(
@@ -355,6 +353,11 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   readonly error = signal<string | null>(null);
   readonly snapshot = signal<ProcessTreeSnapshot | null>(null);
   readonly collapsedProcessIdentifiers = signal<Set<number>>(new Set<number>());
+
+  constructor(
+    @Inject(DIALOG_DATA) private readonly data: TerminalSystemInfoDialogData,
+    private readonly keybindService: KeybindService,
+  ) {}
 
   ngOnInit(): void {
     void this.load(true);

@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, Signal, inject} from "@angular/core";
+import {ChangeDetectionStrategy, Component, Signal} from "@angular/core";
 import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
 import {TerminalSearchLineMatch, TerminalSearchLineResult} from "../terminal/+bus/events";
 import {TerminalSearchService} from "./terminal-search.service";
@@ -168,8 +168,6 @@ type SearchTextSegment = {
     ],
 })
 export class TerminalSearchSideComponent {
-    private readonly terminalSearchService = inject(TerminalSearchService);
-
     readonly searchQuery: Signal<string>;
     readonly searchResults: Signal<TerminalSearchLineResult[]>;
     readonly caseSensitive: Signal<boolean>;
@@ -177,7 +175,7 @@ export class TerminalSearchSideComponent {
     readonly matchBackgroundColor: Signal<string>;
     readonly matchBorderColor: Signal<string>;
 
-    constructor() {
+    constructor(private readonly terminalSearchService: TerminalSearchService) {
         this.searchQuery = this.terminalSearchService.searchQuery;
         this.searchResults = this.terminalSearchService.searchResults;
         this.caseSensitive = this.terminalSearchService.caseSensitive;
