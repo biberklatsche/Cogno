@@ -9,6 +9,8 @@
       "@cogno/core-sdk/*": ["src/core-sdk/*"],
       "@cogno/core-host": ["src/core-host/index.ts"],
       "@cogno/core-host/*": ["src/core-host/*"],
+      "@cogno/ui-kit": ["src/ui-kit/index.ts"],
+      "@cogno/ui-kit/*": ["src/ui-kit/*"],
       "@cogno/open-features": ["src/open-features/index.ts"],
       "@cogno/open-features/*": ["src/open-features/*"],
       "@cogno/pro-features": ["src/pro-features/index.ts"],

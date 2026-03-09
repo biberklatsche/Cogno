@@ -2,5 +2,6 @@ packages:
   - "src/app"
   - "src/core-sdk"
   - "src/core-host"
+  - "src/ui-kit"
   - "src/open-features"
   - "src/pro-features"

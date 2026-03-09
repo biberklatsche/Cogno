@@ -2,7 +2,7 @@ import { Injectable, Type } from "@angular/core";
 import { CoreHostBootstrapHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
 import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
 import { ActionName } from "../action/action.models";
-import { Icon } from "../icons/+model/icon";
+import { Icon } from "@cogno/ui-kit";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
 import { openFeatureDatabaseMigrations, openFeatureSideMenuFeatureDefinitions } from "@cogno/open-features";
 import { proFeatureDatabaseMigrations, proFeatureSideMenuFeatureDefinitions } from "@cogno/pro-features";

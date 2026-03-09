@@ -1,6 +1,6 @@
 import {DOCUMENT} from "@angular/common";
 import {Component, Inject, OnDestroy, input} from '@angular/core';
-import {IconComponent} from "../../icons/icon/icon.component";
+import { IconComponent } from "@cogno/ui-kit";
 import {GridListService} from "../+state/grid-list.service";
 import {toSignal} from "@angular/core/rxjs-interop";
 import {DragPreviewService} from "../../common/drag-preview/drag-preview.service";

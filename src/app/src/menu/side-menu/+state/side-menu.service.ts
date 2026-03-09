@@ -1,6 +1,6 @@
 import {Injectable, Signal, signal, Type, WritableSignal} from "@angular/core";
 import {ActionName} from "../../../action/action.models";
-import {Icon} from "../../../icons/+model/icon";
+import { Icon } from "@cogno/ui-kit";
 import {AppBus} from "../../../app-bus/app-bus";
 
 export type SideMenuItem = {

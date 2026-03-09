@@ -1,6 +1,5 @@
 import {ChangeDetectionStrategy, Component, Signal} from '@angular/core';
-import {Icon} from "../icons/+model/icon";
-import {IconComponent} from "../icons/icon/icon.component";
+import { Icon, IconComponent } from "@cogno/ui-kit";
 import {AppNotificationToast, AppNotificationToastId, Notification, NotificationService} from "@cogno/open-features/notification/notification.service";
 
 @Component({

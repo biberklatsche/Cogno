@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import {IconComponent} from "../../icons/icon/icon.component";
+import { IconComponent } from "@cogno/ui-kit";
 import {AppMenuService} from "./app-menu.service";
 import {ContextMenuOverlayService} from "../context-menu-overlay/context-menu-overlay.service";
 import {ContextMenuItem} from "../context-menu-overlay/context-menu-overlay.types";

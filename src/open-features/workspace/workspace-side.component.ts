@@ -1,10 +1,12 @@
 import { Component, Signal } from "@angular/core";
 import { defaultWorkspaceIdContract } from "@cogno/core-sdk";
+import { CopyEditDeleteComponent } from "@cogno/ui-kit";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
   selector: "app-workspace-side",
   standalone: true,
+  imports: [CopyEditDeleteComponent],
   template: `
     <section class="workspace-side">
       <ul class="workspace-grid">
@@ -27,12 +29,12 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
               @if (workspaceEntry.id !== defaultWorkspaceId) {
                 <div class="space"></div>
-                <button class="button icon-button" type="button" (click)="openEditWorkspaceDialog($event, workspaceEntry.id)">
-                  edit
-                </button>
-                <button class="button icon-button" type="button" (click)="deleteWorkspace($event, workspaceEntry.id)">
-                  del
-                </button>
+                <app-copy-edit-delete
+                  [enableEdit]="true"
+                  [enableDelete]="true"
+                  [enableCopy]="false"
+                  (onEvent)="onWorkspaceAction(workspaceEntry.id, $event)"
+                ></app-copy-edit-delete>
               }
             </div>
           </li>
@@ -140,7 +142,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         align-items: center;
         justify-content: center;
         font-size: 1.4rem;
-        line-height: 1;
+        line-height: 0;
         padding: 0;
       }
     `,
@@ -162,13 +164,13 @@ export class WorkspaceSideComponent {
     this.workspaceService.openCreateWorkspaceDialog();
   }
 
-  openEditWorkspaceDialog(event: Event, workspaceId: string): void {
-    event.stopPropagation();
-    this.workspaceService.openEditWorkspaceDialog(workspaceId);
-  }
-
-  async deleteWorkspace(event: Event, workspaceId: string): Promise<void> {
-    event.stopPropagation();
-    await this.workspaceService.deleteWorkspace(workspaceId);
+  async onWorkspaceAction(workspaceId: string, action: "copy" | "edit" | "delete"): Promise<void> {
+    if (action === "edit") {
+      this.workspaceService.openEditWorkspaceDialog(workspaceId);
+      return;
+    }
+    if (action === "delete") {
+      await this.workspaceService.deleteWorkspace(workspaceId);
+    }
   }
 }

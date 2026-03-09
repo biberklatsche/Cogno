@@ -9,7 +9,7 @@ import {
     Signal,
     ViewChild
 } from '@angular/core';
-import {IconComponent} from "../../../icons/icon/icon.component";
+import { IconComponent } from "@cogno/ui-kit";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
 import {TooltipDirective} from "../../../common/tooltip/tooltip.directive";
@@ -36,18 +36,18 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                (pointerdown)="focus()"
         >
             <header>
+                <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
-                    <button class="button icon-button" (click)="close()">
-                        <app-icon [name]="'mdiClose'"></app-icon>
-                    </button>
                     <button class="button icon-button" (click)="togglePin()">
                         <app-icon [name]="selectedItem()?.pinned ? 'mdiPinOff' : 'mdiPin'"></app-icon>
                     </button>
                     <button class="button icon-button" (click)="toggleDisplacement()">
                         <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
                     </button>
+                    <button class="button icon-button" (click)="close()">
+                        <app-icon [name]="'mdiClose'"></app-icon>
+                    </button>
                 </div>
-                <h3>{{ selectedItem()?.label }}</h3>
             </header>
             <main>
                 @if (selectedItem()?.component) {
@@ -144,10 +144,16 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 top: 0;
                 z-index: 1;
 
+                h3 {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                }
+
                 .btn-list {
                     display: flex;
                     flex-direction: row;
                     gap: 2px;
+                    margin-left: auto;
                 }
             }
             
