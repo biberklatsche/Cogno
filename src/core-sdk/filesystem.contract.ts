@@ -20,6 +20,8 @@ export interface FilesystemEntryContract {
 export interface FilesystemListOptionsContract {
   readonly directoriesOnly?: boolean;
   readonly filesOnly?: boolean;
+  readonly query?: string;
+  readonly limit?: number;
 }
 
 export interface FilesystemContract {

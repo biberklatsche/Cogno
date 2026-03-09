@@ -99,11 +99,16 @@ describe("FilesystemSpecProvider", () => {
             },
         });
 
-        expect(filesystem.list).toHaveBeenCalledWith("/", expect.anything(), { directoriesOnly: true, filesOnly: undefined });
+        expect(filesystem.list).toHaveBeenCalledWith("/", expect.anything(), {
+            directoriesOnly: true,
+            filesOnly: undefined,
+            query: "",
+            limit: 200,
+        });
         expect(result.some(r => r.label === "/Users")).toBe(true);
     });
 
-    it("reuses cached dir results and narrows by prefix", async () => {
+    it("caches query-specific results and narrows by prefix", async () => {
         vi.mocked(filesystem.list).mockResolvedValue([
             { name: "Projects", path: "/Users/larswolfram/projects/Projects", kind: "directory" },
             { name: "Private", path: "/Users/larswolfram/projects/Private", kind: "directory" },
@@ -135,9 +140,19 @@ describe("FilesystemSpecProvider", () => {
             },
         });
 
-        expect(filesystem.list).toHaveBeenCalledTimes(1);
+        expect(filesystem.list).toHaveBeenCalledTimes(2);
         expect(first.some(r => r.label.toLowerCase().includes("projects"))).toBe(true);
-        expect(second.every(r => r.label.toLowerCase().includes("pr"))).toBe(true);
+        expect(filesystem.list).toHaveBeenLastCalledWith(
+            "/Users/larswolfram/projects",
+            expect.anything(),
+            {
+                directoriesOnly: true,
+                filesOnly: undefined,
+                query: "pr",
+                limit: 200,
+            }
+        );
+        expect(second.some(r => r.label.toLowerCase().includes("projects"))).toBe(true);
     });
 
     it("returns file matches for generic command contexts", async () => {

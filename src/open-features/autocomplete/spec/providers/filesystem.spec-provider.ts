@@ -23,13 +23,9 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
     readonly id = "filesystem";
     private static readonly CACHE_TTL_MS = 800;
     private static readonly CACHE_MAX = 32;
+    private static readonly SEARCH_LIMIT = 200;
 
     private readonly cache = new Map<string, CacheEntry>();
-    private lastFilter?: {
-        cacheKey: string;
-        query: string;
-        matches: Candidate[];
-    };
 
     constructor(private readonly filesystem: FilesystemContract) {}
 
@@ -42,8 +38,14 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         const kinds = this.resolveKinds(context);
         const appendSlashToDirectories = context.binding.params?.["appendSlashToDirectories"] === true;
         const continueSuggestions = context.binding.params?.["continueSuggestions"] === true;
-        const cacheKey = `${lookup.parentNorm}::${kinds.join(",")}::${appendSlashToDirectories ? "slash" : "plain"}::${continueSuggestions ? "continue" : "final"}`;
         const query = lookup.namePrefix.toLowerCase();
+        const cacheKey = [
+            lookup.parentNorm,
+            kinds.join(","),
+            appendSlashToDirectories ? "slash" : "plain",
+            continueSuggestions ? "continue" : "final",
+            query,
+        ].join("::");
         const candidates = await this.readCandidates(
             lookup.parentNorm,
             cwdNorm,
@@ -51,25 +53,12 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             kinds,
             appendSlashToDirectories,
             continueSuggestions,
+            query,
             cacheKey,
         );
         if (candidates.length === 0) return [];
 
-        const reusableBase =
-            this.lastFilter &&
-            this.lastFilter.cacheKey === cacheKey &&
-            query.startsWith(this.lastFilter.query)
-                ? this.lastFilter.matches
-                : candidates;
-
-        const matches = reusableBase.filter(candidate => !query || candidate.entryNameLower.includes(query));
-        this.lastFilter = {
-            cacheKey,
-            query,
-            matches,
-        };
-
-        return matches.map(candidate => candidate.suggestion);
+        return candidates.map(candidate => candidate.suggestion);
     }
 
     private resolveFragment(context: SpecProviderContext): string {
@@ -129,6 +118,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         kinds: FilesystemProviderKind[],
         appendSlashToDirectories: boolean,
         continueSuggestions: boolean,
+        query: string,
         cacheKey: string,
     ): Promise<Candidate[]> {
         const now = Date.now();
@@ -140,6 +130,8 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         const entries = await this.filesystem.list(lookupPath, shellContext, {
             directoriesOnly: kinds.length === 1 && kinds[0] === "directory" ? true : undefined,
             filesOnly: kinds.length === 1 && kinds[0] === "file" ? true : undefined,
+            query,
+            limit: FilesystemSpecProvider.SEARCH_LIMIT,
         });
 
         const candidates: Candidate[] = [];

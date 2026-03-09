@@ -44,8 +44,11 @@ export class FilesystemHostService implements FilesystemContract {
     if (!backendPath) return [];
 
     const entries = await readDir(backendPath);
-    const result: FilesystemEntryContract[] = [];
+    const prefixMatches: FilesystemEntryContract[] = [];
+    const containsMatches: FilesystemEntryContract[] = [];
     const sep = backendPath.includes("\\") ? "\\" : "/";
+    const query = options?.query?.trim().toLowerCase() ?? "";
+    const limit = Math.max(1, options?.limit ?? Number.MAX_SAFE_INTEGER);
 
     for (const entry of entries) {
       const kind = entry.isDirectory ? "directory" : entry.isFile ? "file" : undefined;
@@ -61,14 +64,33 @@ export class FilesystemHostService implements FilesystemContract {
         continue;
       }
 
-      result.push({
+      const candidate = {
         name: entry.name,
         path: normalizedPath,
         kind,
-      });
+      } satisfies FilesystemEntryContract;
+
+      if (!query) {
+        prefixMatches.push(candidate);
+        if (prefixMatches.length >= limit) break;
+        continue;
+      }
+
+      const entryNameLower = entry.name.toLowerCase();
+      if (entryNameLower.startsWith(query)) {
+        prefixMatches.push(candidate);
+        continue;
+      }
+      if (entryNameLower.includes(query)) {
+        containsMatches.push(candidate);
+      }
     }
 
-    return result;
+    if (!query) {
+      return prefixMatches;
+    }
+
+    return [...prefixMatches, ...containsMatches].slice(0, limit);
   }
 
   async exists(path: string, shellContext: ShellContextContract): Promise<boolean> {
