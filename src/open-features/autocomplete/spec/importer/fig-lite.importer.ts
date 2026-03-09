@@ -59,6 +59,7 @@ function sanitizeProviders(source?: SpecProviderBinding[]): SpecProviderBinding[
             providerId,
             source: provider.source?.trim() || undefined,
             baseScore: provider.baseScore,
+            params: normalizeProviderParams(provider.params),
             when: firstArgIn.length || argsRegex || minArgs !== undefined || maxArgs !== undefined
                 ? {
                     firstArgIn: firstArgIn.length ? firstArgIn : undefined,
@@ -76,6 +77,29 @@ function sanitizeProviders(source?: SpecProviderBinding[]): SpecProviderBinding[
     }
 
     return out.length ? out : undefined;
+}
+
+function normalizeProviderParams(source: unknown): SpecProviderBinding["params"] | undefined {
+    if (!source || typeof source !== "object" || Array.isArray(source)) return undefined;
+
+    const out: NonNullable<SpecProviderBinding["params"]> = {};
+    for (const [key, value] of Object.entries(source)) {
+        if (!key.trim()) continue;
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+            out[key] = value;
+            continue;
+        }
+        if (
+            Array.isArray(value) &&
+            (value.every(item => typeof item === "string") ||
+                value.every(item => typeof item === "number") ||
+                value.every(item => typeof item === "boolean"))
+        ) {
+            out[key] = value as string[] | number[] | boolean[];
+        }
+    }
+
+    return Object.keys(out).length ? out : undefined;
 }
 
 function dedupe(values: string[]): string[] {

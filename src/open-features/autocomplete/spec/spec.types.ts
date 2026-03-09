@@ -44,20 +44,32 @@ export type SpecProviderWhen = {
     maxArgs?: number;
 };
 
+export type SpecProviderParams = Record<string, string | number | boolean | string[] | number[] | boolean[]>;
+
 export type SpecProviderBinding = {
     providerId: string;
     when?: SpecProviderWhen;
     source?: string;
     baseScore?: number;
+    params?: SpecProviderParams;
 };
 
 export type SpecProviderContext = {
     queryContext: AutocompleteQueryContextContract;
     command: string;
     args: string[];
+    binding: SpecProviderBinding;
+};
+
+export type SpecProvidedSuggestion = {
+    label: string;
+    insertText?: string;
+    description?: string;
+    detail?: string;
+    selectedPath?: string;
 };
 
 export interface SpecSuggestionProvider {
     readonly id: string;
-    suggest(context: SpecProviderContext): Promise<string[]>;
+    suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>>;
 }

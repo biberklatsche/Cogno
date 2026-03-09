@@ -2,5 +2,16 @@
   "name": "cd",
   "source": "fig",
   "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cd.ts",
-  "description": "Change the shell working directory"
+  "description": "Change the shell working directory",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-dir",
+      "baseScore": 60,
+      "params": {
+        "kinds": ["directory"],
+        "appendSlashToDirectories": true
+      }
+    }
+  ]
 }

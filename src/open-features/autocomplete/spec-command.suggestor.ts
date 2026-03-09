@@ -210,7 +210,11 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     }
 
     matches(context: AutocompleteQueryContextContract): boolean {
-        return (context.mode === "command" || context.mode === "npm-script") && this.inputPattern.test(context.beforeCursor);
+        return (
+            context.mode === "command" ||
+            context.mode === "npm-script" ||
+            context.mode === "cd"
+        ) && this.inputPattern.test(context.beforeCursor);
     }
 
     async warmUpForShellIntegration(shellType: ShellTypeContract): Promise<void> {
@@ -218,6 +222,10 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     }
 
     async suggest(context: AutocompleteQueryContextContract): Promise<AutocompleteSuggestionContract[]> {
+        if (context.mode === "cd") {
+            return this.suggestCommandArgs("cd", context.fragment, context.replaceStart, context);
+        }
+
         if (context.mode === "npm-script") {
             return this.suggestCommandArgs("npm", context.fragment, context.replaceStart, context);
         }
@@ -441,9 +449,29 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
                 queryContext: context,
                 command,
                 args: parsed.tokens.map(t => t.value),
+                binding,
             });
             for (const value of provided) {
-                add(value, binding.source ?? binding.providerId, binding.baseScore ?? 55);
+                const label = value.label.trim();
+                if (!label) continue;
+                const source = binding.source ?? binding.providerId;
+                const baseScore = binding.baseScore ?? 55;
+                const labelLower = label.toLowerCase();
+                if (typedTokenSet.has(labelLower)) continue;
+                if (activeToken && !labelLower.includes(activeToken)) continue;
+                const starts = labelLower.startsWith(activeToken);
+                const contains = labelLower.includes(activeToken);
+                suggestions.push({
+                    label,
+                    detail: value.detail ?? source,
+                    description: value.description,
+                    insertText: `${insertPrefix}${value.insertText ?? label}`,
+                    score: baseScore + (starts ? 90 : contains ? 35 : 0),
+                    source,
+                    replaceStart,
+                    replaceEnd,
+                    selectedPath: value.selectedPath,
+                });
             }
         }
 

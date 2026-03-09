@@ -1,5 +1,5 @@
 import { FilesystemContract } from "@cogno/core-sdk";
-import { SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
+import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 type CacheEntry = {
     expiresAt: number;
@@ -13,7 +13,7 @@ export class NpmScriptsSpecProvider implements SpecSuggestionProvider {
 
     constructor(private readonly filesystem: FilesystemContract) {}
 
-    async suggest(context: SpecProviderContext): Promise<string[]> {
+    async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
         const cwdNorm = this.filesystem.normalizePath(context.queryContext.cwd, context.queryContext.shellContext);
         const packageJsonPath = this.filesystem.resolvePath(cwdNorm, "package.json", context.queryContext.shellContext);
         if (!packageJsonPath) return [];
@@ -21,7 +21,7 @@ export class NpmScriptsSpecProvider implements SpecSuggestionProvider {
         const cached = this._cache.get(packageJsonPath);
         const now = Date.now();
         if (cached && cached.expiresAt > now) {
-            return cached.scripts;
+            return cached.scripts.map(label => ({ label }));
         }
 
         try {
@@ -33,7 +33,7 @@ export class NpmScriptsSpecProvider implements SpecSuggestionProvider {
                 expiresAt: now + NpmScriptsSpecProvider.TTL_MS,
                 scripts,
             });
-            return scripts;
+            return scripts.map(label => ({ label }));
         } catch {
             return [];
         }

@@ -3,6 +3,16 @@
   "source": "fig",
   "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cat.ts",
   "description": "Concatenate and print files",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-file",
+      "baseScore": 58,
+      "params": {
+        "kinds": ["file"]
+      }
+    }
+  ],
   "options": [
     {
       "name": "-b",

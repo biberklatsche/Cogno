@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { FilesystemContract, QueryContext } from "@cogno/core-sdk";
 import { CommandSpecRegistry } from "./spec/command-spec.registry";
+import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
 import { CommandSpec } from "./spec/spec.types";
@@ -8,6 +9,20 @@ import { createCommandSpecsFixture } from "./spec/testing/command-specs.fixture"
 
 function commandContext(beforeCursor: string): QueryContext {
     return commandContextWithShell(beforeCursor, "Bash");
+}
+
+function cdContext(fragment: string): QueryContext {
+    return {
+        mode: "cd",
+        beforeCursor: `cd ${fragment}`,
+        inputText: `cd ${fragment}`,
+        cursorIndex: 3 + fragment.length,
+        replaceStart: 3,
+        replaceEnd: 3 + fragment.length,
+        cwd: "/Users/larswolfram/projects",
+        shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+        fragment,
+    };
 }
 
 function commandContextWithShell(beforeCursor: string, shellType: "Bash" | "PowerShell"): QueryContext {
@@ -27,13 +42,13 @@ function commandContextWithShell(beforeCursor: string, shellType: "Bash" | "Powe
 describe("SpecCommandSuggestor", () => {
     const defaults = createCommandSpecsFixture();
     const filesystem = (): FilesystemContract => ({
-        normalizePath: (path) => path,
-        resolvePath: (cwd, input) => `${cwd.replace(/\/$/, "")}/${input}`,
+        normalizePath: vi.fn((path) => path),
+        resolvePath: vi.fn((cwd, input) => `${cwd.replace(/\/$/, "")}/${input}`),
         list: vi.fn(),
         exists: vi.fn(),
         readTextFile: vi.fn(),
-        toDisplayPath: (path) => path,
-        toRelativePath: (path) => path,
+        toDisplayPath: vi.fn((path) => path),
+        toRelativePath: vi.fn((path) => path),
     });
 
     it("suggests command names in command mode", async () => {
@@ -85,6 +100,68 @@ describe("SpecCommandSuggestor", () => {
         const result = await suggestor.suggest(ctx);
         expect(result.some(v => v.label === "test")).toBe(true);
         expect(result.some(v => v.label === "build")).toBe(true);
+    });
+
+    it("suggests directory entries for cd via filesystem provider", async () => {
+        const fs = filesystem();
+        vi.mocked(fs.list).mockResolvedValue([
+            { name: "Projects", path: "/Users/larswolfram/projects/Projects", kind: "directory" },
+            { name: "Private", path: "/Users/larswolfram/projects/Private", kind: "directory" },
+            { name: "notes.txt", path: "/Users/larswolfram/projects/notes.txt", kind: "file" },
+        ]);
+        vi.mocked(fs.toDisplayPath).mockImplementation((path, cwd) => path.replace(`${cwd}/`, ""));
+
+        const cdSpec: CommandSpec = {
+            name: "cd",
+            providers: [{
+                providerId: "filesystem",
+                source: "fs-dir",
+                params: {
+                    kinds: ["directory"],
+                    appendSlashToDirectories: true,
+                },
+            }],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, cdSpec]),
+            [new FilesystemSpecProvider(fs)]
+        );
+
+        const result = await suggestor.suggest(cdContext("Pr"));
+        expect(result.some(v => v.label === "Projects/")).toBe(true);
+        expect(result.some(v => v.label === "Private/")).toBe(true);
+        expect(result.some(v => v.label === "notes.txt")).toBe(false);
+    });
+
+    it("suggests file entries for cat via filesystem provider", async () => {
+        const fs = filesystem();
+        vi.mocked(fs.list).mockResolvedValue([
+            { name: "notes.txt", path: "/Users/larswolfram/projects/notes.txt", kind: "file" },
+            { name: "package.json", path: "/Users/larswolfram/projects/package.json", kind: "file" },
+            { name: "Projects", path: "/Users/larswolfram/projects/Projects", kind: "directory" },
+        ]);
+        vi.mocked(fs.toDisplayPath).mockImplementation((path, cwd) => path.replace(`${cwd}/`, ""));
+
+        const catSpec: CommandSpec = {
+            name: "cat",
+            providers: [{
+                providerId: "filesystem",
+                source: "fs-file",
+                params: {
+                    kinds: ["file"],
+                },
+            }],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, catSpec]),
+            [new FilesystemSpecProvider(fs)]
+        );
+
+        const result = await suggestor.suggest(commandContext("cat pa"));
+        expect(result.some(v => v.label === "package.json")).toBe(true);
+        expect(result.some(v => v.label === "Projects")).toBe(false);
     });
 
     it("does not suggest npm scripts for plain npm", async () => {
@@ -205,7 +282,7 @@ describe("SpecCommandSuggestor", () => {
     it("supports provider bindings on subcommands and blocks free-form arg suggestions", async () => {
         const scriptsProvider = {
             id: "scripts-provider",
-            suggest: vi.fn().mockResolvedValue(["test", "build"]),
+            suggest: vi.fn().mockResolvedValue([{ label: "test" }, { label: "build" }]),
         };
 
         const npmLike: CommandSpec = {
