@@ -37,16 +37,18 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
 
             const displayPath = AutocompletePathUtil.toDisplayPath(row.path, cwdNorm, context.shellContext);
             if (displayPath === "." || displayPath === ".." || AutocompletePathUtil.isParentTraversalOnly(displayPath)) continue;
+            const directoryPath = AutocompletePathUtil.appendDirectorySeparator(displayPath, context.shellContext);
 
             result.push({
-                label: AutocompletePathUtil.shortenParentTraversalDisplay(displayPath),
+                label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath),
                 detail: row.path,
-                insertText: displayPath,
+                insertText: directoryPath,
                 score,
                 source: "history-dir",
                 replaceStart: context.replaceStart,
                 replaceEnd: context.replaceEnd,
                 selectedPath: row.path,
+                completionBehavior: "continue",
             });
         }
         return result;

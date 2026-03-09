@@ -244,6 +244,30 @@ describe("TerminalAutocompleteService", () => {
         expect(firstSix.slice(3, 6).map((s: any) => s.label)).toEqual(["n1", "n2", "n3"]);
     });
 
+    it("puts the first three suggestions from history before context suggestions when available", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [
+            makeSuggestionWithSource("recent-1", "history-dir", 82),
+            makeSuggestionWithSource("recent-2", "history-dir", 81),
+            makeSuggestionWithSource("recent-3", "history-dir", 80),
+            makeSuggestionWithSource("recent-4", "history-dir", 79),
+        ], "dummy-history-dir"));
+        service.registerSuggestor(new DummySuggestor(async () =>
+            Array.from({ length: 30 }, (_, index) =>
+                makeSuggestionWithSource(`ctx-${index}`, "fs-dir", 200 - index)
+            )
+        , "dummy-fs"));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "cd p", cursorIndex: 4, maxCursorIndex: 4 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const view = (service as any)._viewState.value;
+        expect(view.suggestions.slice(0, 3).map((s: any) => s.label)).toEqual(["recent-1", "recent-2", "recent-3"]);
+        expect(view.suggestions[3].source).toBe("fs-dir");
+    });
+
     it("positions panel above cursor near bottom and keeps it in viewport", async () => {
         const originalWidth = window.innerWidth;
         const originalHeight = window.innerHeight;
@@ -497,6 +521,42 @@ describe("TerminalAutocompleteService", () => {
         expect(view.suggestions[0].label).toBe("test");
         expect(view.suggestions[0].source).toBe("npm-script + spec-sub");
         expect(view.suggestions[0].score).toBe(153);
+    });
+
+    it("merges identical directory labels from history and filesystem into one suggestion", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "projects/",
+            insertText: "projects/",
+            detail: "/Users/larswolfram/projects",
+            score: 70,
+            source: "history-dir",
+            replaceStart: 3,
+            replaceEnd: 6,
+            selectedPath: "/Users/larswolfram/projects",
+            completionBehavior: "continue",
+        }], "dummy-history-dir"));
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "projects/",
+            insertText: "projects/",
+            detail: "/Users/larswolfram/projects",
+            score: 90,
+            source: "fs-dir",
+            replaceStart: 3,
+            replaceEnd: 6,
+            selectedPath: "/Users/larswolfram/projects",
+            completionBehavior: "continue",
+        }], "dummy-fs-dir"));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "cd pro", cursorIndex: 6, maxCursorIndex: 6 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        const view = (service as any)._viewState.value;
+        expect(view.suggestions).toHaveLength(1);
+        expect(view.suggestions[0].label).toBe("projects/");
+        expect(view.suggestions[0].source).toBe("fs-dir + history-dir");
     });
 
     it("keeps one full row free above cursor when panel is rendered above", () => {

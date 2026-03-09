@@ -287,10 +287,26 @@ export class TerminalAutocompleteService implements OnDestroy {
             .filter((r): r is PromiseFulfilledResult<AutocompleteSuggestion[]> => r.status === "fulfilled")
             .flatMap(r => r.value);
 
-        return this.dedupeSuggestions(merged)
+        const deduped = this.dedupeSuggestions(merged)
             .filter(s => !this.suggestionEqualsCurrentInput(s, state.input.text))
-            .sort((a, b) => b.score - a.score)
-            .slice(0, MAX_SUGGESTIONS);
+            .sort((a, b) => b.score - a.score);
+
+        if (this._filterMode.value !== "all") {
+            return deduped.slice(0, MAX_SUGGESTIONS);
+        }
+
+        return this.trimWithSourceBalance(deduped);
+    }
+
+    private trimWithSourceBalance(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
+        if (items.length <= MAX_SUGGESTIONS) return items;
+
+        const history = items.filter(item => this.isHistorySuggestion(item));
+        const reservedHistory = history.slice(0, Math.min(3, history.length));
+        const used = new Set(reservedHistory);
+        const rest = items.filter(item => !used.has(item));
+
+        return [...reservedHistory, ...rest].slice(0, MAX_SUGGESTIONS);
     }
 
     private applyFilterMode(items: AutocompleteSuggestion[], mode: SuggestionFilterMode): AutocompleteSuggestion[] {

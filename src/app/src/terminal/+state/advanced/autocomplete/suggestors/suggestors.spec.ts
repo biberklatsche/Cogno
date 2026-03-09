@@ -49,7 +49,8 @@ describe("Autocomplete History Suggestors", () => {
 
         expect(result.some(r => r.label === "." || r.label === "..")).toBe(false);
         expect(result.some(r => r.label.startsWith("../"))).toBe(false);
-        expect(result.some(r => r.label === "/Users")).toBe(true);
+        expect(result.some(r => r.label === "/Users/")).toBe(true);
+        expect(result.every(r => r.insertText.endsWith("/"))).toBe(true);
     });
 
     it("HistoryDirectorySuggestor matches multi-token fragments against visited paths", async () => {
