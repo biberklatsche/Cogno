@@ -38,7 +38,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
           </li>
         }
         <li class="center">
-          <button class="button icon-button" type="button" (click)="openCreateWorkspaceDialog()">+</button>
+          <button class="button icon-button workspace-add-button" type="button" (click)="openCreateWorkspaceDialog()">+</button>
         </li>
       </ul>
     </section>
@@ -133,6 +133,15 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
       .space {
         flex: 1;
+      }
+
+      .workspace-add-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        line-height: 1;
+        padding: 0;
       }
     `,
   ],

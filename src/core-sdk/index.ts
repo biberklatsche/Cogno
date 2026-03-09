@@ -1,4 +1,7 @@
 export * from "./feature-mode.contract";
+export * from "./database-access.contract";
+export * from "./database-migration.contract";
+export * from "./grid-layout.contract";
 export * from "./command-palette.contract";
 export * from "./notification.contract";
 export * from "./workspace.contract";

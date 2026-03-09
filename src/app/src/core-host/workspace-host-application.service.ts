@@ -1,23 +1,24 @@
 import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import { GridConfig, TabConfig } from "@cogno/core-sdk";
+import { WorkspaceConfiguration } from "@cogno/open-features/workspace/workspace.model";
+import { WorkspaceRepository } from "@cogno/open-features/workspace/workspace.repository";
 import {AppBus} from "../app-bus/app-bus";
 import {IdCreator} from "../common/id-creator/id-creator";
-import {GridConfig, WorkspaceConfig, TabConfig} from "./workspace-model";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
 import {GridListService} from "../grid-list/+state/grid-list.service";
 import {TabListService} from "../tab-list/+state/tab-list.service";
-import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../common/color/color";
 import {ActionFired} from "../action/action.models";
 
-export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
+export type WorkspaceConfigUi = WorkspaceConfiguration & { isSelected: boolean };
 
 export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT"
 
 @Injectable({providedIn: 'root'})
 export class WorkspaceHostApplicationService {
 
-    private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
+    private readonly DEFAULT_WORKSPACE: WorkspaceConfiguration = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
 
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
@@ -111,7 +112,7 @@ export class WorkspaceHostApplicationService {
         return {id: '', name: '', color: undefined, grids: [pane], tabs: [tab], isSelected: true, isActive: true};
     }
 
-    private async saveWorkspace(workspace: WorkspaceConfig): Promise<string> {
+    private async saveWorkspace(workspace: WorkspaceConfiguration): Promise<string> {
         const isNew = workspace.id === '';
         if (isNew) {
             workspace.id = IdCreator.newWorkspaceId();
@@ -134,7 +135,7 @@ export class WorkspaceHostApplicationService {
     }
 
     // Public API to save a workspace coming from the dialog
-    public async save(workspace: WorkspaceConfig): Promise<string> {
+    public async save(workspace: WorkspaceConfiguration): Promise<string> {
         // derive color from name if applicable
         if(!workspace.color) workspace.color = Color.fromText(workspace.name);
         const id = await this.saveWorkspace(workspace);

@@ -54,7 +54,7 @@ export class WorkspaceEditDialogComponent {
   ) {}
 
   readonly name = signal<string>(this.workspace?.name ?? "");
-  readonly color = signal<ColorName | undefined>(this.workspace?.color);
+  readonly color = signal<ColorName | undefined>(this.workspace?.color as ColorName | undefined);
   readonly autosave = model<boolean>(this.workspace?.autosave ?? false);
 
   onNameInput(event: Event): void {

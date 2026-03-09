@@ -1,5 +1,5 @@
 import {HexColor, ShellType} from "../../config/+models/config";
-import {TabId} from '../../core-host/workspace-model';
+import {TabId} from "@cogno/core-sdk";
 import {ColorName} from "../../common/color/color";
 
 export type TabList = Tab[];

@@ -1,4 +1,4 @@
-import {TabId} from "../../core-host/workspace-model";
+import {TabId, WorkspaceId} from "@cogno/core-sdk";
 import {TerminalId} from "../../grid-list/+model/model";
 
 export const IdCreator = {
@@ -10,7 +10,7 @@ export const IdCreator = {
         return 'TE' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
     },
 
-    newWorkspaceId(): TerminalId {
+    newWorkspaceId(): WorkspaceId {
         return 'WS' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
     }
 

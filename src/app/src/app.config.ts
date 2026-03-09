@@ -19,6 +19,7 @@ import {TerminalSearchService} from "@cogno/open-features/terminal-search/termin
 import {NotificationService} from "@cogno/open-features/notification/notification.service";
 import {
     commandPaletteHostPortToken,
+    databaseAccessToken,
     notificationHostPortToken,
     terminalSearchHostPortToken,
     workspaceHostPortToken
@@ -28,12 +29,14 @@ import {CommandPaletteHostPortAdapterService} from "./core-host/command-palette-
 import {NotificationHostPortAdapterService} from "./core-host/notification-host-port.adapter.service";
 import {WorkspaceHostPortAdapterService} from "./core-host/workspace-host-port.adapter.service";
 import {WorkspaceHostApplicationService} from "./core-host/workspace-host-application.service";
+import {DatabaseAccessHostService} from "./core-host/database-access-host.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
       { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
+      { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
       { provide: notificationHostPortToken, useExisting: NotificationHostPortAdapterService },
       { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
       { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },

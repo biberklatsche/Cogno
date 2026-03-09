@@ -4,7 +4,6 @@ import {ConfigServiceMock} from "./mocks/config-service.mock";
 import {DestroyRef} from "@angular/core";
 import {KeybindService} from "../src/keybinding/keybind.service";
 import {KeyboardMappingService} from "../src/keybinding/keyboard/keyboard-layout.loader";
-import {WorkspaceRepository} from "../src/core-host/workspace.repository";
 import {vi} from "vitest";
 import {GridListService} from "../src/grid-list/+state/grid-list.service";
 import {TabListService} from "../src/tab-list/+state/tab-list.service";
@@ -23,7 +22,6 @@ let sideMenuService: SideMenuService | undefined;
 let configService: ConfigServiceMock | undefined;
 let keybindService: KeybindService | undefined;
 let keybindMappingService: KeyboardMappingService | undefined;
-let workspaceRepository: WorkspaceRepository | undefined;
 let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
 let terminalComponentFactory: TerminalComponentFactory | undefined;
@@ -93,13 +91,6 @@ export function getKeybindService(): KeybindService {
 export function getKeyboardMappingService(): KeyboardMappingService {
     if(!keybindMappingService) keybindMappingService = new KeyboardMappingService();
     return keybindMappingService;
-}
-
-export function getWorkspaceRepository(): WorkspaceRepository {
-    if(!workspaceRepository) {
-        workspaceRepository = new WorkspaceRepository();
-    }
-    return workspaceRepository;
 }
 
 export function getGridListService(): GridListService {
@@ -175,7 +166,6 @@ export function clear() {
     configService = undefined;
     keybindService = undefined;
     keybindMappingService = undefined;
-    workspaceRepository = undefined;
     gridListService = undefined;
     tabListService = undefined;
     terminalComponentFactory = undefined;
