@@ -5,12 +5,13 @@ import { importFigSubsetSpecs } from "./importer/fig-lite.importer";
 type ManifestEntry = {
     name: string;
     file: string;
+    description?: string;
     shells?: CommandShellConstraints["shells"];
     excludeShells?: CommandShellConstraints["excludeShells"];
 };
 
-const MANIFEST_URL = "/assets/autocomplete/fig/manifest.json";
-const COMMANDS_BASE_URL = "/assets/autocomplete/fig/commands/";
+const MANIFEST_URL = "/src/app/assets/autocomplete/manifest.json";
+const COMMANDS_BASE_URL = "/src/app/assets/autocomplete/commands/";
 
 export class AssetCommandSpecRegistry implements CommandSpecSource {
     private readonly _cache = new Map<string, CommandSpec>();
@@ -29,6 +30,7 @@ export class AssetCommandSpecRegistry implements CommandSpecSource {
             return {
                 shells: row.shells,
                 excludeShells: row.excludeShells,
+                description: row.description,
             };
         });
     }

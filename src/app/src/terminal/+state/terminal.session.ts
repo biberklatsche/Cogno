@@ -24,7 +24,7 @@ import {TerminalStateManager} from "./state";
 import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
-import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
+import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
 import {DialogRef, DialogService} from "../../common/dialog";
@@ -60,7 +60,7 @@ export class TerminalSession {
         private configService: ConfigService,
         private bus: AppBus,
         private stateManager: TerminalStateManager,
-        private specCommandSuggestorService: SpecCommandSuggestorService,
+        private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
         private dialog: DialogService,
     ) {
         this.renderer = new Renderer(this.configService.config);
@@ -108,7 +108,7 @@ export class TerminalSession {
         this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))
 
         if(this.shellProfile.enable_shell_integration) {
-            this.specCommandSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
+            this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
             this.disposables.push(this.renderer.register(new CommandLineEditor(this.bus, this.pty, this.stateManager)));
         }

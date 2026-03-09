@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalState } from "../../state";
+import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
-import { SpecCommandSuggestorService } from "./spec/spec-command-suggestor.service";
 
 class FakeStateManager {
     private readonly subject = new BehaviorSubject<TerminalState>({
@@ -99,7 +99,7 @@ describe("TerminalAutocompleteService", () => {
             fakeState as unknown as any,
             persistence,
             bus,
-            { getSharedSuggestor: vi.fn(() => new DummySuggestor(async () => [])) } as unknown as SpecCommandSuggestorService
+            { getSharedSuggestors: vi.fn(() => []) } as unknown as TerminalAutocompleteFeatureSuggestorService
         );
         (service as any)._suggestors = [];
     });
@@ -197,7 +197,7 @@ describe("TerminalAutocompleteService", () => {
             fakeState as unknown as any,
             persistence,
             new AppBus(),
-            { getSharedSuggestor: vi.fn(() => new DummySuggestor(async () => [])) } as unknown as SpecCommandSuggestorService
+            { getSharedSuggestors: vi.fn(() => []) } as unknown as TerminalAutocompleteFeatureSuggestorService
         );
         (second as any)._suggestors = [];
         second.registerSuggestor(new DummySuggestor(async () => [

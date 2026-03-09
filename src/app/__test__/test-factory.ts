@@ -15,7 +15,7 @@ import {TerminalId} from "../src/grid-list/+model/model";
 import {TerminalStateManager} from "../src/terminal/+state/state";
 import {ShellType} from "../src/config/+models/config";
 import {TerminalSession} from "../src/terminal/+state/terminal.session";
-import { SpecCommandSuggestorService } from "../src/terminal/+state/advanced/autocomplete/spec/spec-command-suggestor.service";
+import { TerminalAutocompleteFeatureSuggestorService } from "../src/app-host/terminal-autocomplete-feature-suggestor.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -30,7 +30,7 @@ let focusHandler: FocusHandler | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let stateManager: TerminalStateManager | undefined;
 let terminalSession: TerminalSession | undefined;
-let specCommandSuggestorService: SpecCommandSuggestorService | undefined;
+let terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -56,21 +56,21 @@ export function getTerminalSession(): TerminalSession {
             getConfigService(),
             getAppBus(),
             getStateManager(),
-            getSpecCommandSuggestorService(),
+            getTerminalAutocompleteFeatureSuggestorService(),
             { open: () => ({ close: () => undefined }) } as any
         );
     }
     return terminalSession;
 }
 
-export function getSpecCommandSuggestorService(): SpecCommandSuggestorService {
-    if (!specCommandSuggestorService) {
-        specCommandSuggestorService = {
-            getSharedSuggestor: vi.fn(),
+export function getTerminalAutocompleteFeatureSuggestorService(): TerminalAutocompleteFeatureSuggestorService {
+    if (!terminalAutocompleteFeatureSuggestorService) {
+        terminalAutocompleteFeatureSuggestorService = {
+            getSharedSuggestors: vi.fn().mockReturnValue([]),
             preloadForShellIntegration: vi.fn(),
-        } as unknown as SpecCommandSuggestorService;
+        } as unknown as TerminalAutocompleteFeatureSuggestorService;
     }
-    return specCommandSuggestorService;
+    return terminalAutocompleteFeatureSuggestorService;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -173,5 +173,5 @@ export function clear() {
     focusHandler = undefined;
     selectionHandler = undefined;
     stateManager = undefined;
-    specCommandSuggestorService = undefined;
+    terminalAutocompleteFeatureSuggestorService = undefined;
 }

@@ -11,3 +11,4 @@ export * from "./workspace/workspace.model";
 export * from "./workspace/workspace.repository";
 export * from "./workspace/workspace.service";
 export * from "./side-menu-feature-definitions";
+export * from "./autocomplete/terminal-autocomplete-suggestor-definitions";

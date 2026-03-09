@@ -1,23 +1,13 @@
+import {
+    AutocompleteMatchRangeContract,
+    AutocompleteQueryContextContract,
+    AutocompleteSuggestionContract,
+    ShellContextContract,
+} from "@cogno/core-sdk";
 import { TerminalState } from "../../state";
 
-export type AutocompleteMatchRange = {
-    start: number;
-    end: number;
-};
-
-export type AutocompleteSuggestion = {
-    label: string;
-    description?: string;
-    detail?: string;
-    insertText: string;
-    score: number;
-    source: string;
-    replaceStart: number;
-    replaceEnd: number;
-    matchRanges?: AutocompleteMatchRange[];
-    selectedPath?: string;
-    selectedCommand?: string;
-};
+export type AutocompleteMatchRange = AutocompleteMatchRangeContract;
+export type AutocompleteSuggestion = AutocompleteSuggestionContract;
 
 export type AutocompleteViewState = {
     visible: boolean;
@@ -29,29 +19,8 @@ export type AutocompleteViewState = {
     suggestions: AutocompleteSuggestion[];
 };
 
-export type BaseQueryContext = {
-    beforeCursor: string;
-    inputText: string;
-    cursorIndex: number;
-    replaceStart: number;
-    replaceEnd: number;
-    cwd: string;
-    shellContext: TerminalState["shellContext"];
-};
-
-export type CdQueryContext = BaseQueryContext & {
-    mode: "cd";
-    fragment: string;
-};
-
-export type CommandQueryContext = BaseQueryContext & {
-    mode: "command";
-    query: string;
-};
-
-export type NpmScriptQueryContext = BaseQueryContext & {
-    mode: "npm-script";
-    fragment: string;
-};
-
-export type QueryContext = CdQueryContext | CommandQueryContext | NpmScriptQueryContext;
+export type BaseQueryContext = Extract<AutocompleteQueryContextContract, { shellContext: ShellContextContract }>;
+export type CdQueryContext = Extract<AutocompleteQueryContextContract, { mode: "cd" }>;
+export type CommandQueryContext = Extract<AutocompleteQueryContextContract, { mode: "command" }>;
+export type NpmScriptQueryContext = Extract<AutocompleteQueryContextContract, { mode: "npm-script" }>;
+export type QueryContext = AutocompleteQueryContextContract;

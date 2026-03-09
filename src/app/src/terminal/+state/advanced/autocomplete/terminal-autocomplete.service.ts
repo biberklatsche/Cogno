@@ -4,15 +4,15 @@ import { debounceTime } from "rxjs/operators";
 
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
+import { TerminalAutocompleteSuggestorContract } from "@cogno/core-sdk";
+import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
-import { FilesystemDirectorySuggestor } from "./suggestors/filesystem-directory.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
-import { SpecCommandSuggestorService } from "./spec/spec-command-suggestor.service";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
 
 const REFRESH_DEBOUNCE_MS = 80;
@@ -49,7 +49,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     private readonly _viewState = new BehaviorSubject<AutocompleteViewState>(INITIAL_VIEW_STATE);
     private readonly _subscription = new Subscription();
-    private readonly _suggestors: TerminalAutocompleteSuggestor[] = [];
+    private readonly _suggestors: TerminalAutocompleteSuggestorContract[] = [];
     private _activeRequestId = 0;
     private _suppressNextRefresh = false;
     private _suppressUntilTyping = false;
@@ -71,7 +71,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         private readonly stateManager: TerminalStateManager,
         private readonly persistence: TerminalHistoryPersistenceService,
         private readonly bus: AppBus,
-        private readonly sharedSpecCommandSuggestorService: SpecCommandSuggestorService,
+        private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
     ) {
         this._filterMode.next(this.loadFilterMode());
         this._lastInputSignature = this.inputSignature(this.stateManager.state);
@@ -112,9 +112,10 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     private registerDefaultSuggestors(): void {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
-        this.registerSuggestor(new FilesystemDirectorySuggestor());
         this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
-        this.registerSuggestor(this.sharedSpecCommandSuggestorService.getSharedSuggestor());
+        for (const suggestor of this.featureSuggestorService.getSharedSuggestors()) {
+            this.registerSuggestor(suggestor);
+        }
     }
 
     private subscribeStateChanges(): void {

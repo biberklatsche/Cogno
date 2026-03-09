@@ -24,6 +24,7 @@ export class CommandSpecRegistry implements CommandSpecSource {
         return {
             shells: spec.shells,
             excludeShells: spec.excludeShells,
+            description: spec.description,
         };
     }
 }

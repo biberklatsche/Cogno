@@ -5,7 +5,7 @@ import { Renderer } from './renderer/renderer';
 import {getStateManager, getConfigService, getAppBus} from "../../../__test__/test-factory";
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
-import { SpecCommandSuggestorService } from "./advanced/autocomplete/spec/spec-command-suggestor.service";
+import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
 
@@ -39,7 +39,7 @@ describe('TerminalSession', () => {
     let mockConfigService: ConfigService;
     let mockBus: AppBus;
     let mockShellProfile: ShellProfile;
-    let mockSpecCommandSuggestorService: SpecCommandSuggestorService;
+    let mockFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService;
     let mockDialogService: DialogService;
     let mockProcessInfoDialogReference: DialogRef<void>;
     const terminalId = 'test-terminal-id';
@@ -55,10 +55,10 @@ describe('TerminalSession', () => {
             enable_shell_integration: false
         };
 
-        mockSpecCommandSuggestorService = {
-            getSharedSuggestor: vi.fn(),
+        mockFeatureSuggestorService = {
+            getSharedSuggestors: vi.fn().mockReturnValue([]),
             preloadForShellIntegration: vi.fn(),
-        } as unknown as SpecCommandSuggestorService;
+        } as unknown as TerminalAutocompleteFeatureSuggestorService;
 
         mockProcessInfoDialogReference = {
             id: 1,
@@ -74,7 +74,7 @@ describe('TerminalSession', () => {
             mockConfigService,
             mockBus,
             getStateManager(),
-            mockSpecCommandSuggestorService,
+            mockFeatureSuggestorService,
             mockDialogService
         );
     });
@@ -86,7 +86,7 @@ describe('TerminalSession', () => {
             mockConfigService,
             mockBus,
             getStateManager(),
-            mockSpecCommandSuggestorService,
+            mockFeatureSuggestorService,
             mockDialogService
         );
         
@@ -115,7 +115,7 @@ describe('TerminalSession', () => {
 
         const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
         expect(rendererInstance.register).toHaveBeenCalledTimes(15);
-        expect(mockSpecCommandSuggestorService.preloadForShellIntegration).toHaveBeenCalledWith('Bash');
+        expect(mockFeatureSuggestorService.preloadForShellIntegration).toHaveBeenCalledWith('Bash');
     });
 
     it('should build context menu', () => {

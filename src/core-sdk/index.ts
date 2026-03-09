@@ -11,3 +11,5 @@ export * from "./side-menu-feature-lifecycle.contract";
 export * from "./side-menu-feature-lifecycle-factory.contract";
 export * from "./side-menu-feature-registry.contract";
 export * from "./terminal-search.contract";
+export * from "./filesystem.contract";
+export * from "./terminal-autocomplete.contract";

@@ -20,6 +20,7 @@ import {NotificationService} from "@cogno/open-features/notification/notificatio
 import {
     commandPaletteHostPortToken,
     databaseAccessToken,
+    filesystemToken,
     notificationHostPortToken,
     terminalSearchHostPortToken,
     workspaceHostPortToken
@@ -30,6 +31,7 @@ import {NotificationHostPortAdapterService} from "./app-host/notification-host-p
 import {WorkspaceHostPortAdapterService} from "./app-host/workspace-host-port.adapter.service";
 import {WorkspaceHostApplicationService} from "./app-host/workspace-host-application.service";
 import {DatabaseAccessHostService} from "./app-host/database-access-host.service";
+import { FilesystemHostService } from "./app-host/filesystem-host.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -37,6 +39,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ConfigService, useClass: RealConfigService },
       { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
       { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
+      { provide: filesystemToken, useExisting: FilesystemHostService },
       { provide: notificationHostPortToken, useExisting: NotificationHostPortAdapterService },
       { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
       { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },

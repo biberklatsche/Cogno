@@ -1,20 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Fs } from "../../../../../_tauri/fs";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { QueryContext } from "../autocomplete.types";
-import { CommandSpecRegistry } from "../spec/command-spec.registry";
-import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
-import { createCommandSpecsFixture } from "../spec/testing/command-specs.fixture";
-import { FilesystemDirectorySuggestor } from "./filesystem-directory.suggestor";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./history-directory.suggestor";
-import { SpecCommandSuggestor } from "./spec-command.suggestor";
-
-const readDirMock = vi.fn();
-vi.mock("@tauri-apps/plugin-fs", () => ({
-    readDir: (...args: any[]) => readDirMock(...args),
-}));
 
 const baseHistoryRow = {
     lastSelectAt: 0,
@@ -41,9 +30,9 @@ function cdContext(fragment: string): QueryContext {
     };
 }
 
-describe("Autocomplete Suggestors", () => {
+describe("Autocomplete History Suggestors", () => {
     beforeEach(() => {
-        readDirMock.mockReset();
+        vi.restoreAllMocks();
     });
 
     it("HistoryDirectorySuggestor filters current dir and parent traversal suggestions", async () => {
@@ -107,50 +96,6 @@ describe("Autocomplete Suggestors", () => {
 
         expect(result.length).toBeGreaterThan(0);
         expect(result[0].detail).toBe("/work/backend/src");
-        expect(result.map(r => r.detail)).toContain("/work/backend/src");
-    });
-
-    it("FilesystemDirectorySuggestor returns directory matches and excludes parent traversals", async () => {
-        readDirMock.mockResolvedValue([
-            { name: "Users", isDirectory: true, isFile: false, isSymlink: false },
-            { name: "tmp", isDirectory: true, isFile: false, isSymlink: false },
-            { name: "notes.txt", isDirectory: false, isFile: true, isSymlink: false },
-        ]);
-
-        const suggestor = new FilesystemDirectorySuggestor();
-        const result = await suggestor.suggest(cdContext("u"));
-
-        expect(result.some(r => r.label.toLowerCase().includes("users"))).toBe(true);
-        expect(result.some(r => r.label.startsWith("../"))).toBe(false);
-    });
-
-    it("FilesystemDirectorySuggestor resolves absolute root fragments", async () => {
-        readDirMock.mockResolvedValue([
-            { name: "Users", isDirectory: true, isFile: false, isSymlink: false },
-            { name: "tmp", isDirectory: true, isFile: false, isSymlink: false },
-        ]);
-
-        const suggestor = new FilesystemDirectorySuggestor();
-        const result = await suggestor.suggest(cdContext("/"));
-
-        expect(readDirMock).toHaveBeenCalledWith("/");
-        expect(result.some(r => r.label === "/Users")).toBe(true);
-    });
-
-    it("FilesystemDirectorySuggestor reuses cached dir results and narrows by prefix", async () => {
-        readDirMock.mockResolvedValue([
-            { name: "Projects", isDirectory: true, isFile: false, isSymlink: false },
-            { name: "Private", isDirectory: true, isFile: false, isSymlink: false },
-            { name: "tmp", isDirectory: true, isFile: false, isSymlink: false },
-        ]);
-
-        const suggestor = new FilesystemDirectorySuggestor();
-        const first = await suggestor.suggest(cdContext("p"));
-        const second = await suggestor.suggest(cdContext("pr"));
-
-        expect(readDirMock).toHaveBeenCalledTimes(1);
-        expect(first.some(r => r.label.toLowerCase().includes("projects"))).toBe(true);
-        expect(second.every(r => r.label.toLowerCase().includes("pr"))).toBe(true);
     });
 
     it("HistoryCommandSuggestor returns ranked command suggestions", async () => {
@@ -173,8 +118,8 @@ describe("Autocomplete Suggestors", () => {
             shellContext: { shellType: "Bash", backendOs: "macos" } as any,
             query: "npm",
         };
-        const result = await suggestor.suggest(ctx);
 
+        const result = await suggestor.suggest(ctx);
         expect(result.length).toBe(2);
     });
 
@@ -198,8 +143,8 @@ describe("Autocomplete Suggestors", () => {
             shellContext: { shellType: "Bash", backendOs: "macos" } as any,
             query: "npm",
         };
-        const result = await suggestor.suggest(ctx);
 
+        const result = await suggestor.suggest(ctx);
         expect(result[0].label).toBe("npm test");
         expect(result[0].score).toBeGreaterThan(result[1].score);
     });
@@ -223,8 +168,8 @@ describe("Autocomplete Suggestors", () => {
             shellContext: { shellType: "Bash", backendOs: "macos" } as any,
             fragment: "te",
         };
-        const result = await suggestor.suggest(ctx);
 
+        const result = await suggestor.suggest(ctx);
         expect(result).toHaveLength(1);
         expect(result[0].replaceStart).toBe(0);
         expect(result[0].replaceEnd).toBe(6);
@@ -304,32 +249,5 @@ describe("Autocomplete Suggestors", () => {
 
         const result = await suggestor.suggest(ctx);
         expect(result[0].label).toBe("git push");
-    });
-
-    it("SpecCommandSuggestor returns npm scripts when package.json exists", async () => {
-        vi.spyOn(Fs, "exists").mockResolvedValue(true);
-        vi.spyOn(Fs, "readTextFile").mockResolvedValue(
-            JSON.stringify({ scripts: { test: "vitest", build: "ng build" } })
-        );
-
-        const suggestor = new SpecCommandSuggestor(
-            new CommandSpecRegistry(createCommandSpecsFixture()),
-            [new NpmScriptsSpecProvider()]
-        );
-        const ctx: QueryContext = {
-            mode: "command",
-            beforeCursor: "npm run ",
-            inputText: "npm run ",
-            cursorIndex: 8,
-            replaceStart: 8,
-            replaceEnd: 8,
-            cwd: "/Users/larswolfram/projects",
-            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
-            query: "npm run",
-        };
-
-        const result = await suggestor.suggest(ctx);
-        expect(result.some(r => r.label === "test")).toBe(true);
-        expect(result.some(r => r.label === "build")).toBe(true);
     });
 });

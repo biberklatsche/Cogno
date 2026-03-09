@@ -1,6 +1,6 @@
-import { QueryContext } from "../autocomplete.types";
+import { AutocompleteQueryContextContract, ShellTypeContract } from "@cogno/core-sdk";
 
-export type ShellConstraint = "PowerShell" | "ZSH" | "Bash" | "GitBash" | "Fish";
+export type ShellConstraint = ShellTypeContract;
 
 export type FigArgSpec = {
     name: string;
@@ -52,7 +52,7 @@ export type SpecProviderBinding = {
 };
 
 export type SpecProviderContext = {
-    queryContext: QueryContext;
+    queryContext: AutocompleteQueryContextContract;
     command: string;
     args: string[];
 };

@@ -11,7 +11,7 @@ describe("AssetCommandSpecRegistry", () => {
     it("loads command names and command specs from assets endpoints", async () => {
         const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
             const url = String(input);
-            if (url.endsWith("/assets/autocomplete/fig/manifest.json")) {
+            if (url.endsWith("/src/app/assets/autocomplete/manifest.json")) {
                 return {
                     ok: true,
                     json: async () => [
@@ -19,7 +19,7 @@ describe("AssetCommandSpecRegistry", () => {
                     ],
                 } as Response;
             }
-            if (url.endsWith("/assets/autocomplete/fig/commands/git.json")) {
+            if (url.endsWith("/src/app/assets/autocomplete/commands/git.json")) {
                 return {
                     ok: true,
                     json: async () => ({

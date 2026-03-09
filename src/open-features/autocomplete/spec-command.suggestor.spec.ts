@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-
-import { Fs } from "../../../../../_tauri/fs";
-import { CommandSpecRegistry } from "../spec/command-spec.registry";
-import { NpmScriptsSpecProvider } from "../spec/providers/npm-scripts.spec-provider";
-import { QueryContext } from "../autocomplete.types";
+import { FilesystemContract, QueryContext } from "@cogno/core-sdk";
+import { CommandSpecRegistry } from "./spec/command-spec.registry";
+import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
-import { CommandSpec } from "../spec/spec.types";
-import { createCommandSpecsFixture } from "../spec/testing/command-specs.fixture";
+import { CommandSpec } from "./spec/spec.types";
+import { createCommandSpecsFixture } from "./spec/testing/command-specs.fixture";
 
 function commandContext(beforeCursor: string): QueryContext {
     return commandContextWithShell(beforeCursor, "Bash");
@@ -28,6 +26,15 @@ function commandContextWithShell(beforeCursor: string, shellType: "Bash" | "Powe
 
 describe("SpecCommandSuggestor", () => {
     const defaults = createCommandSpecsFixture();
+    const filesystem = (): FilesystemContract => ({
+        normalizePath: (path) => path,
+        resolvePath: (cwd, input) => `${cwd.replace(/\/$/, "")}/${input}`,
+        list: vi.fn(),
+        exists: vi.fn(),
+        readTextFile: vi.fn(),
+        toDisplayPath: (path) => path,
+        toRelativePath: (path) => path,
+    });
 
     it("suggests command names in command mode", async () => {
         const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry(defaults), []);
@@ -49,8 +56,9 @@ describe("SpecCommandSuggestor", () => {
     });
 
     it("suggests npm scripts via provider for npm run", async () => {
-        vi.spyOn(Fs, "exists").mockResolvedValue(true);
-        vi.spyOn(Fs, "readTextFile").mockResolvedValue(JSON.stringify({
+        const fs = filesystem();
+        vi.mocked(fs.exists).mockResolvedValue(true);
+        vi.mocked(fs.readTextFile).mockResolvedValue(JSON.stringify({
             scripts: {
                 test: "vitest",
                 build: "ng build",
@@ -59,7 +67,7 @@ describe("SpecCommandSuggestor", () => {
 
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(defaults),
-            [new NpmScriptsSpecProvider()]
+            [new NpmScriptsSpecProvider(fs)]
         );
 
         const ctx: QueryContext = {
@@ -80,8 +88,9 @@ describe("SpecCommandSuggestor", () => {
     });
 
     it("does not suggest npm scripts for plain npm", async () => {
-        vi.spyOn(Fs, "exists").mockResolvedValue(true);
-        vi.spyOn(Fs, "readTextFile").mockResolvedValue(JSON.stringify({
+        const fs = filesystem();
+        vi.mocked(fs.exists).mockResolvedValue(true);
+        vi.mocked(fs.readTextFile).mockResolvedValue(JSON.stringify({
             scripts: {
                 test: "vitest",
             },
@@ -89,7 +98,7 @@ describe("SpecCommandSuggestor", () => {
 
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry(defaults),
-            [new NpmScriptsSpecProvider()]
+            [new NpmScriptsSpecProvider(fs)]
         );
         const result = await suggestor.suggest(commandContext("npm "));
         expect(result.some(v => v.source === "npm-script")).toBe(false);

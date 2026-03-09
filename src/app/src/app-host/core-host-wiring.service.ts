@@ -1,11 +1,22 @@
 import { Injectable, Type } from "@angular/core";
 import { CoreHostBootstrapHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
+import {
+  SideMenuFeatureDefinitionContract,
+  TerminalAutocompleteSuggestorDefinitionContract,
+} from "@cogno/core-sdk";
 import { ActionName } from "../action/action.models";
 import { Icon } from "@cogno/ui-kit";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
-import { openFeatureDatabaseMigrations, openFeatureSideMenuFeatureDefinitions } from "@cogno/open-features";
-import { proFeatureDatabaseMigrations, proFeatureSideMenuFeatureDefinitions } from "@cogno/pro-features";
+import {
+  openFeatureDatabaseMigrations,
+  openFeatureSideMenuFeatureDefinitions,
+  openFeatureTerminalAutocompleteSuggestorDefinitions,
+} from "@cogno/open-features";
+import {
+  proFeatureDatabaseMigrations,
+  proFeatureSideMenuFeatureDefinitions,
+  proFeatureTerminalAutocompleteSuggestorDefinitions,
+} from "@cogno/pro-features";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
 
@@ -16,6 +27,12 @@ export class CoreHostWiringService {
     Icon,
     ActionName
   >();
+  private readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
+    TerminalAutocompleteSuggestorDefinitionContract
+  > = [
+    ...openFeatureTerminalAutocompleteSuggestorDefinitions,
+    ...proFeatureTerminalAutocompleteSuggestorDefinitions,
+  ];
 
   private readonly coreHostBootstrapHost = new CoreHostBootstrapHost<
     Type<unknown>,
@@ -52,5 +69,11 @@ export class CoreHostWiringService {
     SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName>
   > {
     return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitions();
+  }
+
+  getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<
+    TerminalAutocompleteSuggestorDefinitionContract
+  > {
+    return this.terminalAutocompleteSuggestorDefinitions;
   }
 }
