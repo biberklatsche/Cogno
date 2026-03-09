@@ -10,7 +10,7 @@ import { TerminalSearchService } from "@cogno/open-features/terminal-search/term
 import { terminalSearchFeatureId } from "@cogno/open-features/terminal-search/terminal-search.feature-definition";
 
 @Injectable({ providedIn: "root" })
-export class TerminalSearchSideMenuHostService {
+  export class TerminalSearchSideMenuHostService {
   private readonly sideMenuFeature: SideMenuFeature;
 
   constructor(

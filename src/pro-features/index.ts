@@ -1,3 +1,1 @@
-export interface ProFeaturesModuleMarker {
-  readonly moduleName: "pro-features";
-}
+export * from "./side-menu-feature-definitions";

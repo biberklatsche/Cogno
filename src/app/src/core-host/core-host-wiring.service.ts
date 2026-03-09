@@ -4,7 +4,8 @@ import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
 import { ActionName } from "../action/action.models";
 import { Icon } from "../icons/+model/icon";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
-import { terminalSearchSideMenuFeatureDefinition } from "@cogno/open-features/terminal-search/terminal-search.feature-definition";
+import { openFeatureSideMenuFeatureDefinitions } from "@cogno/open-features";
+import { proFeatureSideMenuFeatureDefinitions } from "@cogno/pro-features";
 
 @Injectable({ providedIn: "root" })
 export class CoreHostWiringService {
@@ -25,7 +26,8 @@ export class CoreHostWiringService {
   constructor() {
     this.coreHostBootstrapHost.registerSideMenuFeatures([
       ...sideMenuFeatureDefinitions,
-      terminalSearchSideMenuFeatureDefinition,
+      ...openFeatureSideMenuFeatureDefinitions,
+      ...proFeatureSideMenuFeatureDefinitions,
     ]);
     CoreHostWiringService.singletonInstance = this;
   }
