@@ -17,6 +17,7 @@ import {TelegramBotRelayService} from "./notification/+state/telegram-bot-relay.
 import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
 import {TerminalSearchService} from "./terminal-search/terminal-search.service";
+import {CoreHostWiringService} from "./core-host/core-host-wiring.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -34,6 +35,7 @@ export const appConfig: ApplicationConfig = {
           inject(CliActionService);
           inject(NativeMenuService);
           inject(WindowService);
+          inject(CoreHostWiringService);
       }),
   ],
 };

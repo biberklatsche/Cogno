@@ -13,8 +13,8 @@ import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
 import {KeybindService} from "../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../menu/side-menu/+state/side-menu-feature";
 import {TerminalId} from "../grid-list/+model/model";
-import {TerminalSearchSideComponent} from "./terminal-search-side.component";
 import {Color} from "../common/color/color";
+import { terminalSearchFeatureDefinition } from "./terminal-search.feature-definition";
 
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
@@ -45,11 +45,7 @@ export class TerminalSearchService {
     ) {
         this.feature = createSideMenuFeature(
             {
-                label: "Terminal Search",
-                icon: "mdiFilter",
-                actionName: "open_terminal_search",
-                component: TerminalSearchSideComponent,
-                configPath: "terminal_search",
+                ...terminalSearchFeatureDefinition,
             },
             {
                 onModeChange: (mode: FeatureMode) => this.handleModeChange(mode),

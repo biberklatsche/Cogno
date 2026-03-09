@@ -1,6 +1,11 @@
 import { DestroyRef} from '@angular/core';
+import {
+    FeatureModeContract,
+    SideMenuFeatureDefinitionContract,
+    SideMenuFeatureHandleContract,
+    SideMenuFeatureLifecycleContract
+} from "@cogno/core-sdk";
 import { Subscription } from 'rxjs';
-import {FeatureMode} from "../../../config/+models/config";
 import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
 import {ConfigService} from "../../../config/+state/config.service";
@@ -11,42 +16,18 @@ import {ActionName} from "../../../action/action.models";
 /**
  * Configuration for a side menu feature
  */
-export interface SideMenuFeatureConfig {
-    /** Unique label for the feature */
-    label: string;
-    /** Icon identifier */
-    icon: Icon;
-    /** Action name for keybinding */
-    actionName: ActionName;
-    /** Component to render in side menu */
-    component: any;
-    /** Path in config object, e.g., 'workspace', 'notification' */
-    configPath: string;
-    /** Whether the feature should be pinned by default */
-    pinned?: boolean;
-}
+export interface SideMenuFeatureConfig extends SideMenuFeatureDefinitionContract<unknown, Icon, ActionName> {}
 
 /**
  * Lifecycle hooks for side menu features
  */
-export interface SideMenuFeatureLifecycle {
-    /** Called when feature mode changes */
-    onModeChange?(mode: FeatureMode): void;
-    /** Called when side menu is opened */
-    onOpen?(): void;
-    /** Called when side menu is closed */
-    onClose?(): void;
-    /** Called when side menu gains focus */
-    onFocus?(): void;
-    /** Called when side menu loses focus */
-    onBlur?(): void;
-}
+export interface SideMenuFeatureLifecycle extends SideMenuFeatureLifecycleContract {}
 
 /**
  * Manages the integration of a feature with the side menu system.
  * Handles configuration, keybindings, and lifecycle automatically.
  */
-export class SideMenuFeature {
+export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     private readonly menuItem: SideMenuItem;
     private keybindSubscription?: Subscription;
     private readonly subscriptions = new Subscription();
@@ -77,7 +58,7 @@ export class SideMenuFeature {
 
     private setupConfigListener(): void {
         const sub = this.configService.config$.subscribe((cfg) => {
-            const mode = this.getFeatureMode(cfg);
+            const mode = this.getFeatureMode(cfg as Record<string, unknown>);
             this.handleModeChange(mode);
         });
         this.subscriptions.add(sub);
@@ -114,12 +95,21 @@ export class SideMenuFeature {
         this.subscriptions.add(blurSub);
     }
 
-    private getFeatureMode(cfg: any): FeatureMode {
-        const featureConfig = cfg[this.config.configPath];
-        return featureConfig?.mode ?? 'visible';
+    private getFeatureMode(configuration: Record<string, unknown>): FeatureModeContract {
+        const featureConfiguration = configuration[this.config.configPath];
+        if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
+            return "visible";
+        }
+
+        const modeValue = (featureConfiguration as { mode?: unknown }).mode;
+        if (modeValue === "off" || modeValue === "hidden" || modeValue === "visible") {
+            return modeValue;
+        }
+
+        return "visible";
     }
 
-    private handleModeChange(mode: FeatureMode): void {
+    private handleModeChange(mode: FeatureModeContract): void {
         this.lifecycle.onModeChange?.(mode);
 
         switch (mode) {
@@ -146,7 +136,8 @@ export class SideMenuFeature {
             .subscribe((event) => {
                 if (event.payload === this.config.actionName) {
                     this.sideMenuService.open(this.config.label);
-                    (event as any).performed = true;
+                    const mutableEvent = event as { performed?: boolean };
+                    mutableEvent.performed = true;
                 }
             });
     }

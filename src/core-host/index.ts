@@ -1,3 +1,2 @@
-export interface CoreHostModuleMarker {
-  readonly moduleName: "core-host";
-}
+export * from "./core-host-bootstrap.host";
+export * from "./side-menu-feature-registry.host";

@@ -1,3 +1,5 @@
-export interface CoreSdkModuleMarker {
-  readonly moduleName: "core-sdk";
-}
+export * from "./feature-mode.contract";
+export * from "./side-menu-feature-definition.contract";
+export * from "./side-menu-feature-handle.contract";
+export * from "./side-menu-feature-lifecycle.contract";
+export * from "./side-menu-feature-registry.contract";
