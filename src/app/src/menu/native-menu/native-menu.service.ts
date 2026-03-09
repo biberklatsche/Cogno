@@ -11,6 +11,7 @@ import {AppBus} from "../../app-bus/app-bus";
 import {AppWindow} from "../../_tauri/window";
 import {ActionFired, ActionName} from "../../action/action.models";
 import {Config, FeatureMode} from "../../config/+models/config";
+import {CoreHostWiringService} from "../../core-host/core-host-wiring.service";
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,13 @@ export class NativeMenuService {
   private latestConfig?: Config;
 
 
-  constructor(private bus: AppBus, private keybindService: KeybindService, configService: ConfigService, ref: DestroyRef) {
+  constructor(
+    private bus: AppBus,
+    private keybindService: KeybindService,
+    private readonly coreHostWiringService: CoreHostWiringService,
+    configService: ConfigService,
+    ref: DestroyRef,
+  ) {
       if(OS.platform() === 'macos') {
           configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(async (config) => {
               this.latestConfig = config;
@@ -35,11 +42,6 @@ export class NativeMenuService {
   }
 
   private async buildMenu() {
-      const isWorkspaceEnabled = this.isFeatureEnabled(this.latestConfig?.workspace?.mode);
-      const isTerminalSearchEnabled = this.isFeatureEnabled(this.latestConfig?.terminal_search?.mode);
-      const isNotificationEnabled = this.isFeatureEnabled(this.latestConfig?.notification?.mode);
-      const isCommandPaletteEnabled = this.isFeatureEnabled(this.latestConfig?.command_palette?.mode);
-
       const aboutSubmenu = await Submenu.new({
           id: 'cogno',
           text: 'Cogno',
@@ -84,14 +86,26 @@ export class NativeMenuService {
           ],
       });
 
+      const sideMenuFeatureDefinitions = this.coreHostWiringService
+        .getSideMenuFeatureDefinitions();
+      const sortedSideMenuFeatureDefinitions = [...sideMenuFeatureDefinitions].sort(
+        (firstFeatureDefinition, secondFeatureDefinition) => firstFeatureDefinition.order - secondFeatureDefinition.order,
+      );
+
+      const viewMenuItems = await Promise.all(
+        sortedSideMenuFeatureDefinitions.map(async (sideMenuFeatureDefinition) => {
+          const mode = this.getFeatureMode(sideMenuFeatureDefinition.configPath);
+          return this.buildMenuItem(
+            sideMenuFeatureDefinition.actionName,
+            sideMenuFeatureDefinition.title,
+            this.isFeatureEnabled(mode),
+          );
+        }),
+      );
+
       const viewSubmenu = await Submenu.new({
           text: 'View',
-          items: [
-              await this.buildMenuItem('open_workspace', 'Workspace', isWorkspaceEnabled),
-              await this.buildMenuItem('open_terminal_search', 'Terminal Search', isTerminalSearchEnabled),
-              await this.buildMenuItem('open_notification', 'Notifications', isNotificationEnabled),
-              await this.buildMenuItem('open_command_palette', 'Command Palette', isCommandPaletteEnabled),
-          ],
+          items: viewMenuItems,
       });
 
       const menu = await Menu.new({
@@ -117,5 +131,17 @@ export class NativeMenuService {
 
   private isFeatureEnabled(mode: FeatureMode | undefined): boolean {
       return mode !== 'off';
+  }
+
+  private getFeatureMode(configPath: string): FeatureMode | undefined {
+      const featureConfigValue = (this.latestConfig as unknown as Record<string, unknown> | undefined)?.[configPath];
+      if (typeof featureConfigValue !== "object" || featureConfigValue === null) {
+          return undefined;
+      }
+      const modeValue = (featureConfigValue as { mode?: unknown }).mode;
+      if (modeValue === "off" || modeValue === "hidden" || modeValue === "visible") {
+          return modeValue;
+      }
+      return undefined;
   }
 }
