@@ -1,5 +1,5 @@
-import {ColorName} from "../../common/color/color";
-import {TerminalId} from "../../grid-list/+model/model";
+import {ColorName} from "../common/color/color";
+import {TerminalId} from "../grid-list/+model/model";
 
 
 export type TabId = string;
@@ -57,4 +57,3 @@ export type TerminalSession = {
     sessionData: string;
     updatedAt?: string;
 }
-

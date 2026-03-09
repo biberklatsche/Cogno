@@ -4,4 +4,6 @@ export * from "./notification/notification.feature-definition";
 export * from "./notification/notification.service";
 export * from "./terminal-search/terminal-search.feature-definition";
 export * from "./terminal-search/terminal-search.service";
+export * from "./workspace/workspace.feature-definition";
+export * from "./workspace/workspace.service";
 export * from "./side-menu-feature-definitions";

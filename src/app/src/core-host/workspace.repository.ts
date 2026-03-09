@@ -2,10 +2,10 @@
 
 
 import {Injectable} from "@angular/core";
-import {DB} from "../../_tauri/db";
-import {WorkspaceConfig, TabConfig, GridConfig, TerminalSession, WorkspaceId, PaneConfig} from "../+model/workspace";
-import {TerminalId} from "../../grid-list/+model/model";
-import { ColorName } from "../../common/color/color";
+import {DB} from "../_tauri/db";
+import {WorkspaceConfig, TabConfig, GridConfig, TerminalSession, WorkspaceId, PaneConfig} from "./workspace-model";
+import {TerminalId} from "../grid-list/+model/model";
+import { ColorName } from "../common/color/color";
 
 export type WorkspaceEntity = {
     id: string;

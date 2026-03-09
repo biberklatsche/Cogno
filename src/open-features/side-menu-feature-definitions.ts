@@ -3,8 +3,10 @@ import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
 import { commandPaletteSideMenuFeatureDefinition } from "./command-palette/command-palette.feature-definition";
 import { notificationSideMenuFeatureDefinition } from "./notification/notification.feature-definition";
 import { terminalSearchSideMenuFeatureDefinition } from "./terminal-search/terminal-search.feature-definition";
+import { workspaceSideMenuFeatureDefinition } from "./workspace/workspace.feature-definition";
 
 export const openFeatureSideMenuFeatureDefinitions = [
+  workspaceSideMenuFeatureDefinition,
   commandPaletteSideMenuFeatureDefinition,
   notificationSideMenuFeatureDefinition,
   terminalSearchSideMenuFeatureDefinition,

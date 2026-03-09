@@ -1,4 +1,4 @@
-import {TabId} from "../../workspace/+model/workspace";
+import {TabId} from "../../core-host/workspace-model";
 import {BinaryTree} from "../../common/tree/binary-tree";
 
 export type GridList = Record<TabId, Grid>;

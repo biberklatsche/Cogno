@@ -1,5 +1,5 @@
 import {MessageBase} from "../../app-bus/app-bus";
-import {TabId} from "../../workspace/+model/workspace";
+import {TabId} from "../../core-host/workspace-model";
 
 export type TabAddedEvent = MessageBase<"TabAdded", {tabId: TabId, isActive: boolean, shellName?: string, workingDir?: string}>
 export type TabRemovedEvent = MessageBase<"TabRemoved", TabId>

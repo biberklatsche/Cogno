@@ -2,7 +2,7 @@ import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/c
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {TabConfig, TabId} from "../../workspace/+model/workspace";
+import {TabConfig, TabId} from "../../core-host/workspace-model";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";

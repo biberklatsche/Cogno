@@ -4,7 +4,7 @@ import { AppBus } from '../../app-bus/app-bus';
 import { clear, getAppBus, getTerminalComponentFactory, getDestroyRef } from "../../../__test__/test-factory";
 import { TerminalComponentFactory } from "./terminal-component.factory";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import {TerminalConfig} from "../../workspace/+model/workspace";
+import {TerminalConfig} from "../../core-host/workspace-model";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {Grid} from "../+model/model";
 import {

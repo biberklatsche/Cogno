@@ -5,7 +5,7 @@ import {Observable} from "rxjs";
 import {IconComponent} from "../icons/icon/icon.component";
 import {ShellType} from "../config/+models/config";
 import {Icon} from "../icons/+model/icon";
-import {TabId} from '../workspace/+model/workspace';
+import {TabId} from '../core-host/workspace-model';
 import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../menu/context-menu-overlay/context-menu-overlay.types";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";

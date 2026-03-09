@@ -1,31 +1,23 @@
 import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {AppBus} from "../../app-bus/app-bus";
-import {IdCreator} from "../../common/id-creator/id-creator";
-import {GridConfig, WorkspaceConfig, TabConfig} from "../+model/workspace";
-import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
-import {GridListService} from "../../grid-list/+state/grid-list.service";
-import {TabListService} from "../../tab-list/+state/tab-list.service";
-import {ConfigService} from "../../config/+state/config.service";
-import {FeatureMode} from "../../config/+models/config";
-import {KeybindService} from "../../keybinding/keybind.service";
-import {Grid} from "../../common/grid/grid-calculations";
+import {AppBus} from "../app-bus/app-bus";
+import {IdCreator} from "../common/id-creator/id-creator";
+import {GridConfig, WorkspaceConfig, TabConfig} from "./workspace-model";
+import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
+import {GridListService} from "../grid-list/+state/grid-list.service";
+import {TabListService} from "../tab-list/+state/tab-list.service";
 import {WorkspaceRepository} from "./workspace.repository";
-import {Color} from "../../common/color/color";
-import {ActionFired} from "../../action/action.models";
-import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
-import { CoreHostWiringService } from "../../core-host/core-host-wiring.service";
-import { sideMenuFeatureIds } from "../../menu/side-menu/+state/side-menu-feature-ids";
+import {Color} from "../common/color/color";
+import {ActionFired} from "../action/action.models";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
 export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT"
 
 @Injectable({providedIn: 'root'})
-export class WorkspaceService {
+export class WorkspaceHostApplicationService {
 
     private readonly DEFAULT_WORKSPACE: WorkspaceConfig = {id: DEFAULT_WORKSPACE_ID, name: 'Default Workspace', color: 'grey', grids: [{tabId: "TB_DEFAULT", pane: {}}], tabs: [{tabId: "TB_DEFAULT"}]};
-    private readonly feature: SideMenuFeature;
 
     _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
     readonly workspaceList = this._workspaceList.asReadonly();
@@ -33,29 +25,12 @@ export class WorkspaceService {
     constructor(
         private bus: AppBus,
         private sideMenuService: SideMenuService,
-        config: ConfigService,
-        keybinds: KeybindService,
         private workspaceRepository: WorkspaceRepository,
         private gridListService: GridListService,
         private tabListService: TabListService,
         destroyRef: DestroyRef,
     ) {
-        const workspaceSideMenuDefinition = CoreHostWiringService
-            .getInstance()
-            .getRequiredSideMenuFeatureDefinitionById(sideMenuFeatureIds.workspace);
-
-        this.feature = createSideMenuFeature(
-            workspaceSideMenuDefinition,
-            {
-                onModeChange: (mode) => this.onModeChange(mode),
-                onBlur: () => this.unregisterKeybindListener(),
-                onFocus: () => this.registerKeybindListener(),
-                onClose: () => this.unregisterKeybindListener(),
-            },
-            { sideMenuService: this.sideMenuService, bus, configService: config, keybinds, destroyRef }
-        );
-
-        this.bus.onceType$('DBInitialized').subscribe(async e => {
+        this.bus.onceType$('DBInitialized').subscribe(async () => {
             //load workspaces here
             const workspaces = await workspaceRepository.getAllWorkspaces();
             const workspacesUi: WorkspaceConfigUi[] = [this.DEFAULT_WORKSPACE, ...workspaces].map(w => ({...w, isSelected: w.isActive ?? false}));
@@ -94,64 +69,6 @@ export class WorkspaceService {
                 msg.propagationStopped = true;
                 this.bus.publish(ActionFired.create(msg.payload, msg.trigger, [...args, 'workspace_saved']));
             });
-    }
-
-    private onModeChange(mode: FeatureMode): void {
-        if (mode === 'off') {
-            this.unregisterKeybindListener();
-        }
-    }
-
-    public registerKeybindListener(): void {
-        this.feature.registerKeybindListener(
-            ['Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'],
-            evt => this.handleKey(evt)
-        );
-    }
-
-    public unregisterKeybindListener(): void {
-        this.feature.unregisterKeybindListener();
-    }
-
-    private handleKey(event: KeyboardEvent): void {
-        const key = event.key;
-        switch (key) {
-            case 'Escape':
-                this.feature.close();
-                break;
-            case 'Enter':
-                this.restoreSelectedWorkspace()
-                    .then(() => this.feature.close());
-                break;
-            case 'ArrowDown':
-                this.selectNextWorkspace('d');
-                break;
-            case 'ArrowUp':
-                this.selectNextWorkspace('u');
-                break;
-            case 'ArrowLeft':
-                this.selectNextWorkspace('l');
-                break;
-            case 'ArrowRight':
-                this.selectNextWorkspace('r');
-                break;
-        }
-    }
-
-    private selectNextWorkspace(direction: 'l' | 'r' | 'u' | 'd'): void {
-        const workspaceList = [...this._workspaceList()];
-        if (workspaceList.length === 0) return;
-        const current = workspaceList.findIndex(c => c.isSelected);
-        const next = Grid.nextIndex(current, direction, 2, workspaceList.length);
-        workspaceList.forEach(c => (c.isSelected = false));
-        workspaceList[next].isSelected = true;
-        this._workspaceList.set(workspaceList);
-    }
-
-    private async restoreSelectedWorkspace() {
-        const selectedWorkspace = this._workspaceList().find(s => s.isSelected);
-        if(!selectedWorkspace) throw new Error('No workspace selected');
-        await this.restoreWorkspace(selectedWorkspace);
     }
 
     public async restoreWorkspace(workspace: WorkspaceConfigUi) {
@@ -256,5 +173,9 @@ export class WorkspaceService {
             }
         }
         this._workspaceList.set(list);
+    }
+
+    getWorkspaceById(id: string): WorkspaceConfigUi | undefined {
+        return this._workspaceList().find(workspaceConfig => workspaceConfig.id === id);
     }
 }

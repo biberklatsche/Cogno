@@ -4,7 +4,7 @@ import {ConfigServiceMock} from "./mocks/config-service.mock";
 import {DestroyRef} from "@angular/core";
 import {KeybindService} from "../src/keybinding/keybind.service";
 import {KeyboardMappingService} from "../src/keybinding/keyboard/keyboard-layout.loader";
-import {WorkspaceRepository} from "../src/workspace/+state/workspace.repository";
+import {WorkspaceRepository} from "../src/core-host/workspace.repository";
 import {vi} from "vitest";
 import {GridListService} from "../src/grid-list/+state/grid-list.service";
 import {TabListService} from "../src/tab-list/+state/tab-list.service";

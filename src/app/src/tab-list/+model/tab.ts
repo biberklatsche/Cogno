@@ -1,5 +1,5 @@
 import {HexColor, ShellType} from "../../config/+models/config";
-import {TabId} from '../../workspace/+model/workspace';
+import {TabId} from '../../core-host/workspace-model';
 import {ColorName} from "../../common/color/color";
 
 export type TabList = Tab[];

@@ -1,9 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { WorkspaceRepository } from './workspace.repository';
-import { DB } from '../../_tauri/db';
-import { WorkspaceConfig } from '../+model/workspace';
+import { DB } from '../_tauri/db';
+import { WorkspaceConfig } from './workspace-model';
 
-vi.mock('../../_tauri/db', () => ({
+vi.mock('../_tauri/db', () => ({
   DB: {
     select: vi.fn(),
     execute: vi.fn(),

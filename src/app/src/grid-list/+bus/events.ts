@@ -1,5 +1,5 @@
 import {MessageBase} from "../../app-bus/app-bus";
-import {TabId} from "../../workspace/+model/workspace";
+import {TabId} from "../../core-host/workspace-model";
 import {TerminalId} from "../+model/model";
 
 export type TabTitle = {

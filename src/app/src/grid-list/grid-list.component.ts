@@ -4,7 +4,7 @@ import {Observable} from "rxjs";
 import {Grid} from "./+model/model";
 import {AsyncPipe,} from "@angular/common";
 import {GridComponent} from "./grid/grid.component";
-import {TabId} from "../workspace/+model/workspace";
+import {TabId} from "../core-host/workspace-model";
 import {EmtpyComponent} from "./emtpy/emtpy.component";
 import {SideMenuComponent} from "../menu/side-menu/side-menu/side-menu.component";
 

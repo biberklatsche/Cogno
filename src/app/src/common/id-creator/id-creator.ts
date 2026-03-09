@@ -1,4 +1,4 @@
-import {TabId} from "../../workspace/+model/workspace";
+import {TabId} from "../../core-host/workspace-model";
 import {TerminalId} from "../../grid-list/+model/model";
 
 export const IdCreator = {

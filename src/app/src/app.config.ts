@@ -7,7 +7,6 @@ import {
 } from "@angular/core";
 import { GlobalErrorHandler } from './common/error/global-error.handler';
 import {StyleService} from "./style/style.service";
-import {WorkspaceService} from "./workspace/+state/workspace.service";
 import {KeybindService} from "./keybinding/keybind.service";
 import {CliActionService} from "./cli-command/cli-action.service";
 import {NativeMenuService} from "./menu/native-menu/native-menu.service";
@@ -18,10 +17,17 @@ import {CoreHostWiringService} from "./core-host/core-host-wiring.service";
 import {CoreHostSideMenuLifecycleRuntimeService} from "./core-host/core-host-side-menu-lifecycle-runtime.service";
 import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
 import {NotificationService} from "@cogno/open-features/notification/notification.service";
-import {commandPaletteHostPortToken, notificationHostPortToken, terminalSearchHostPortToken} from "@cogno/core-sdk";
+import {
+    commandPaletteHostPortToken,
+    notificationHostPortToken,
+    terminalSearchHostPortToken,
+    workspaceHostPortToken
+} from "@cogno/core-sdk";
 import {TerminalSearchHostPortAdapterService} from "./core-host/terminal-search-host-port.adapter.service";
 import {CommandPaletteHostPortAdapterService} from "./core-host/command-palette-host-port.adapter.service";
 import {NotificationHostPortAdapterService} from "./core-host/notification-host-port.adapter.service";
+import {WorkspaceHostPortAdapterService} from "./core-host/workspace-host-port.adapter.service";
+import {WorkspaceHostApplicationService} from "./core-host/workspace-host-application.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,12 +36,13 @@ export const appConfig: ApplicationConfig = {
       { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
       { provide: notificationHostPortToken, useExisting: NotificationHostPortAdapterService },
       { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
+      { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },
       provideZonelessChangeDetection(),
       provideEnvironmentInitializer(() => {
           inject(StyleService);
           inject(NotificationService);
           inject(TelegramBotRelayService);
-          inject(WorkspaceService);
+          inject(WorkspaceHostApplicationService);
           inject(KeybindService);
           inject(CliActionService);
           inject(NativeMenuService);
@@ -45,6 +52,7 @@ export const appConfig: ApplicationConfig = {
           inject(CommandPaletteHostPortAdapterService);
           inject(NotificationHostPortAdapterService);
           inject(TerminalSearchHostPortAdapterService);
+          inject(WorkspaceHostPortAdapterService);
           inject(TerminalSearchService);
       }),
   ],
