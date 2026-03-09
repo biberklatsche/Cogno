@@ -47,6 +47,10 @@ export class KeybindingMatcher {
         return this.actions[actionName];
     }
 
+    getActionNames(): ReadonlyArray<string> {
+        return Object.keys(this.actions);
+    }
+
     getKeybinding(actinName: ActionName): string | undefined {
         return this.keybindings[actinName]?.shortcut;
     }

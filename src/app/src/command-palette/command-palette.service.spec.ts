@@ -4,7 +4,6 @@ import { AppBus } from '../app-bus/app-bus';
 import { KeybindService } from '../keybinding/keybind.service';
 import { SideMenuService } from '../menu/side-menu/+state/side-menu.service';
 import { DestroyRef } from '@angular/core';
-import { ACTION_NAMES } from '../action/action.models';
 import {Config} from "../config/+models/config";
 import {
     clear,
@@ -58,7 +57,9 @@ describe('CommandPaletteService', () => {
         it('should initialize commands and filter them', () => {
             sideMenuService.open('Command Palette' );
             const list = service.filteredCommandList();
-            expect(list.length).toBe(ACTION_NAMES.length);
+            expect(list.length).toBeGreaterThan(0);
+            expect(list.some(commandEntry => commandEntry.label === 'copy')).toBe(true);
+            expect(list.some(commandEntry => commandEntry.label === 'open terminal search')).toBe(true);
             expect(list.some(c => c.isSelected)).toBe(true);
             expect(list[0].isSelected).toBe(true);
         });

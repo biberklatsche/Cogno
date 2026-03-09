@@ -1,6 +1,7 @@
 import {DestroyRef, Injectable, signal} from '@angular/core';
 import { AppBus } from '../app-bus/app-bus';
-import { ACTION_NAMES, ActionFired } from '../action/action.models';
+import { ActionFired } from '../action/action.models';
+import { coreActionNames } from "../action/core-action-names";
 import { ConfigService } from '../config/+state/config.service';
 import {
     ActionDefinition,
@@ -36,7 +37,7 @@ export class CommandPaletteService {
         sideMenuService: SideMenuService,
         private bus: AppBus,
         private config: ConfigService,
-        keybinds: KeybindService,
+        private readonly keybindService: KeybindService,
         destroyRef: DestroyRef,
     ) {
         const commandPaletteSideMenuDefinition = CoreHostWiringService
@@ -52,7 +53,7 @@ export class CommandPaletteService {
                 onBlur: () => this.unregisterKeybindListener(),
                 onClose: () => this.handleClose(),
             },
-            { sideMenuService, bus, configService: config, keybinds, destroyRef }
+            { sideMenuService, bus, configService: config, keybinds: this.keybindService, destroyRef }
         );
     }
 
@@ -88,7 +89,19 @@ export class CommandPaletteService {
     }
 
     private initCommands(): void {
-        const commands = ACTION_NAMES
+        const sideMenuActionNames = CoreHostWiringService
+            .getInstance()
+            .getSideMenuFeatureDefinitions()
+            .map((sideMenuFeatureDefinition) => sideMenuFeatureDefinition.actionName);
+        const actionNames = Array.from(
+            new Set<string>([
+                ...coreActionNames,
+                ...this.keybindService.getActionNames(),
+                ...sideMenuActionNames,
+            ]),
+        );
+
+        const commands = actionNames
             .map(actionName => ({
                 label: actionName.replaceAll('_', ' '),
                 keybinding: '',

@@ -72,6 +72,10 @@ export class KeybindService {
         return this._keybindMatcher.getAction(actionName);
     }
 
+    getActionNames(): ReadonlyArray<string> {
+        return this._keybindMatcher.getActionNames();
+    }
+
     /** Register a temporary key listener by id. Subsequent calls with the same id overwrite keys/handler. */
     registerListener(
         id: string,
