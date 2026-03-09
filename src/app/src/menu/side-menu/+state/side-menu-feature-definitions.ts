@@ -2,7 +2,6 @@ import { Type } from "@angular/core";
 import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
 import { ActionName } from "../../../action/action.models";
 import { Icon } from "../../../icons/+model/icon";
-import { CommandPaletteComponent } from "../../../command-palette/command-palette.component";
 import { NotificationSideComponent } from "../../../notification/notification-side/notification-side.component";
 import { WorkspaceSideComponent } from "../../../workspace/workspace-side/workspace-side.component";
 import { sideMenuFeatureIds } from "./side-menu-feature-ids";
@@ -31,14 +30,5 @@ export const sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition
     actionName: "open_notification",
     targetComponent: NotificationSideComponent,
     configPath: "notification",
-  },
-  {
-    id: sideMenuFeatureIds.commandPalette,
-    title: "Command Palette",
-    icon: "mdiPaletteSwatch",
-    order: 30,
-    actionName: "open_command_palette",
-    targetComponent: CommandPaletteComponent,
-    configPath: "command_palette",
   },
 ];
