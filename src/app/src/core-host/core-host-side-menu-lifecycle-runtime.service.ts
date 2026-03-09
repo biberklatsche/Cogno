@@ -28,17 +28,18 @@ export class CoreHostSideMenuLifecycleRuntimeService {
     const sideMenuFeatureDefinitions = this.coreHostWiringService.getSideMenuFeatureDefinitions();
 
     for (const sideMenuFeatureDefinition of sideMenuFeatureDefinitions) {
-      if (!sideMenuFeatureDefinition.createLifecycle) {
-        continue;
-      }
-
       let sideMenuFeatureHandle: SideMenuFeature | undefined;
       const sideMenuFeatureHandleProxy = this.createSideMenuFeatureHandleProxy(
         () => this.getRequiredSideMenuFeatureHandle(sideMenuFeatureHandle),
       );
 
       let sideMenuFeatureLifecycle: SideMenuFeatureLifecycleContract = {};
-      sideMenuFeatureLifecycle = sideMenuFeatureDefinition.createLifecycle(this.injector, sideMenuFeatureHandleProxy);
+      if (sideMenuFeatureDefinition.createLifecycle) {
+        sideMenuFeatureLifecycle = sideMenuFeatureDefinition.createLifecycle(
+          this.injector,
+          sideMenuFeatureHandleProxy,
+        );
+      }
 
       sideMenuFeatureHandle = createSideMenuFeature(
         sideMenuFeatureDefinition,
