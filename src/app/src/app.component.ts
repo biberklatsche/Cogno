@@ -7,8 +7,9 @@ import {GridListComponent} from "./grid-list/grid-list.component";
 import {AppBus} from "./app-bus/app-bus";
 import {DB} from "./_tauri/db";
 import {Environment} from "./common/environment/environment";
-import {migrate} from "./migrations/migrate";
+import {appDatabaseMigrations} from "./migrations/migrate";
 import {AppNotificationToastStackComponent} from "./notification/app-notification-toast-stack.component";
+import {DatabaseMigrationService} from "./core-host/database-migration.service";
 
 @Component({
     selector: 'app-root',
@@ -59,13 +60,16 @@ import {AppNotificationToastStackComponent} from "./notification/app-notificatio
 })
 export class AppComponent {
     os = OS.platform();
-    constructor(bus: AppBus) {
+    constructor(
+      bus: AppBus,
+      private readonly databaseMigrationService: DatabaseMigrationService,
+    ) {
         window.addEventListener('contextmenu', (event) => {
             event.preventDefault();
         });
         bus.onceType$('ConfigLoaded').subscribe(async e => {
             await DB.load(`sqlite:${Environment.dbFilePath()}`);
-            await migrate();
+            await this.databaseMigrationService.executeMigrations(appDatabaseMigrations);
             bus.publish({type: 'DBInitialized'});
         });
     }

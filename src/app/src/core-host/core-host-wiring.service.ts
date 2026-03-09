@@ -4,13 +4,13 @@ import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
 import { ActionName } from "../action/action.models";
 import { Icon } from "../icons/+model/icon";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
-import { openFeatureSideMenuFeatureDefinitions } from "@cogno/open-features";
-import { proFeatureSideMenuFeatureDefinitions } from "@cogno/pro-features";
+import { openFeatureDatabaseMigrations, openFeatureSideMenuFeatureDefinitions } from "@cogno/open-features";
+import { proFeatureDatabaseMigrations, proFeatureSideMenuFeatureDefinitions } from "@cogno/pro-features";
+import { DatabaseMigrationService } from "./database-migration.service";
+import { coreDatabaseMigrations } from "./database-migrations";
 
 @Injectable({ providedIn: "root" })
 export class CoreHostWiringService {
-  private static singletonInstance: CoreHostWiringService | undefined;
-
   private readonly sideMenuFeatureRegistryHost = new SideMenuFeatureRegistryHost<
     Type<unknown>,
     Icon,
@@ -23,20 +23,17 @@ export class CoreHostWiringService {
     ActionName
   >(this.sideMenuFeatureRegistryHost);
 
-  constructor() {
+  constructor(private readonly databaseMigrationService: DatabaseMigrationService) {
     this.coreHostBootstrapHost.registerSideMenuFeatures([
       ...sideMenuFeatureDefinitions,
       ...openFeatureSideMenuFeatureDefinitions,
       ...proFeatureSideMenuFeatureDefinitions,
     ]);
-    CoreHostWiringService.singletonInstance = this;
-  }
-
-  static getInstance(): CoreHostWiringService {
-    if (CoreHostWiringService.singletonInstance === undefined) {
-      CoreHostWiringService.singletonInstance = new CoreHostWiringService();
-    }
-    return CoreHostWiringService.singletonInstance;
+    this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
+    this.databaseMigrationService.registerFeatureMigrations([
+      ...openFeatureDatabaseMigrations,
+      ...proFeatureDatabaseMigrations,
+    ]);
   }
 
   getRequiredSideMenuFeatureDefinitionById(

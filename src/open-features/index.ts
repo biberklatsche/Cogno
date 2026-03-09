@@ -5,6 +5,7 @@ export * from "./notification/notification.service";
 export * from "./terminal-search/terminal-search.feature-definition";
 export * from "./terminal-search/terminal-search.service";
 export * from "./workspace/workspace.feature-definition";
+export * from "./database-migrations";
 export * from "./workspace/workspace.migrations";
 export * from "./workspace/workspace.model";
 export * from "./workspace/workspace.repository";
