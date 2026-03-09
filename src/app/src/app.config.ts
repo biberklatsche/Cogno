@@ -17,10 +17,10 @@ import {TelegramBotRelayService} from "./notification/+state/telegram-bot-relay.
 import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
 import {CoreHostWiringService} from "./core-host/core-host-wiring.service";
+import {CoreHostSideMenuLifecycleRuntimeService} from "./core-host/core-host-side-menu-lifecycle-runtime.service";
 import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
 import {terminalSearchHostPortToken} from "@cogno/core-sdk";
-import {TerminalSearchHostPortAdapterService} from "./terminal-search-host/terminal-search-host-port.adapter.service";
-import {TerminalSearchSideMenuHostService} from "./terminal-search-host/terminal-search-side-menu.host.service";
+import {TerminalSearchHostPortAdapterService} from "./core-host/terminal-search-host-port.adapter.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,9 +39,9 @@ export const appConfig: ApplicationConfig = {
           inject(NativeMenuService);
           inject(WindowService);
           inject(CoreHostWiringService);
+          inject(CoreHostSideMenuLifecycleRuntimeService);
           inject(TerminalSearchHostPortAdapterService);
           inject(TerminalSearchService);
-          inject(TerminalSearchSideMenuHostService);
       }),
   ],
 };

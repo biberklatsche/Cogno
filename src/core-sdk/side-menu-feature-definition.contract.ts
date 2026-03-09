@@ -1,3 +1,5 @@
+import { SideMenuFeatureLifecycleFactoryContract } from "./side-menu-feature-lifecycle-factory.contract";
+
 export interface SideMenuFeatureDefinitionContract<
   TComponent = unknown,
   TIcon = string,
@@ -11,4 +13,5 @@ export interface SideMenuFeatureDefinitionContract<
   readonly targetComponent: TComponent;
   readonly configPath: string;
   readonly pinned?: boolean;
+  readonly createLifecycle?: SideMenuFeatureLifecycleFactoryContract<TIcon>;
 }
