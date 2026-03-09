@@ -9,23 +9,23 @@
     "cogno": {
       "projectType": "application",
       "root": "",
-      "sourceRoot": "src",
+      "sourceRoot": "src/app/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/cogno",
-            "index": "src/index.html",
-            "browser": "src/main.ts",
+            "index": "src/app/index.html",
+            "browser": "src/app/main.ts",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
             "loader": {
               ".sql": "text"
             },
-            "assets": ["src/assets"],
+            "assets": ["src/app/assets"],
             "styles": [
-              "src/assets/styles/styles.css",
+              "src/app/assets/styles/styles.css",
               "node_modules/@xterm/xterm/css/xterm.css"
             ]
           },

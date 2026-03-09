@@ -1,5 +1,5 @@
-import {ConfigService} from "../../app/config/+state/config.service";
-import {Config, ShellConfig} from "../../app/config/+models/config";
+import {ConfigService} from "../../src/config/+state/config.service";
+import {Config, ShellConfig} from "../../src/config/+models/config";
 import {BehaviorSubject, Observable} from "rxjs";
 import {filter} from "rxjs/operators";
 
