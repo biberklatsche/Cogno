@@ -4,15 +4,17 @@ import {Icon} from "../../../icons/+model/icon";
 import {AppBus} from "../../../app-bus/app-bus";
 
 export type SideMenuItem = {
+    id?: string;
     // Regular action item
     label: string;
     icon: Icon;
+    order?: number;
     hidden: boolean;
     pinned: boolean;
     actionName: ActionName;
     separator?: boolean;
     // Optional component to render in the side "aside" area when this item is active
-    component: Type<any>;
+    component: Type<unknown>;
     // Optional badge color indicator
     badgeColor?: string;
 };

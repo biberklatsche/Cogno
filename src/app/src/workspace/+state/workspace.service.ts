@@ -8,13 +8,14 @@ import {GridListService} from "../../grid-list/+state/grid-list.service";
 import {TabListService} from "../../tab-list/+state/tab-list.service";
 import {ConfigService} from "../../config/+state/config.service";
 import {FeatureMode} from "../../config/+models/config";
-import {WorkspaceSideComponent} from "../workspace-side/workspace-side.component";
 import {KeybindService} from "../../keybinding/keybind.service";
 import {Grid} from "../../common/grid/grid-calculations";
 import {WorkspaceRepository} from "./workspace.repository";
 import {Color} from "../../common/color/color";
 import {ActionFired} from "../../action/action.models";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
+import { CoreHostWiringService } from "../../core-host/core-host-wiring.service";
+import { sideMenuFeatureIds } from "../../menu/side-menu/+state/side-menu-feature-ids";
 
 export type WorkspaceConfigUi = WorkspaceConfig & { isSelected: boolean };
 
@@ -39,14 +40,12 @@ export class WorkspaceService {
         private tabListService: TabListService,
         destroyRef: DestroyRef,
     ) {
+        const workspaceSideMenuDefinition = CoreHostWiringService
+            .getInstance()
+            .getRequiredSideMenuFeatureDefinitionById(sideMenuFeatureIds.workspace);
+
         this.feature = createSideMenuFeature(
-            {
-                label: 'Workspace',
-                icon: 'mdiViewDashboard',
-                actionName: 'open_workspace',
-                component: WorkspaceSideComponent,
-                configPath: 'workspace',
-            },
+            workspaceSideMenuDefinition,
             {
                 onModeChange: (mode) => this.onModeChange(mode),
                 onBlur: () => this.unregisterKeybindListener(),

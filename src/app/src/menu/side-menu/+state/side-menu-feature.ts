@@ -1,4 +1,4 @@
-import { DestroyRef} from '@angular/core';
+import { DestroyRef, Type} from '@angular/core';
 import {
     FeatureModeContract,
     SideMenuFeatureDefinitionContract,
@@ -16,7 +16,7 @@ import {ActionName} from "../../../action/action.models";
 /**
  * Configuration for a side menu feature
  */
-export interface SideMenuFeatureConfig extends SideMenuFeatureDefinitionContract<unknown, Icon, ActionName> {}
+export interface SideMenuFeatureConfig extends SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName> {}
 
 /**
  * Lifecycle hooks for side menu features
@@ -42,11 +42,13 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
         destroyRef: DestroyRef
     ) {
         this.menuItem = {
-            label: config.label,
+            id: config.id,
+            label: config.title,
             hidden: false,
             pinned: config.pinned ?? false,
             icon: config.icon,
-            component: config.component,
+            order: config.order,
+            component: config.targetComponent,
             actionName: config.actionName,
         };
 
@@ -66,25 +68,25 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
 
     private setupSideMenuListeners(): void {
         const openSub = this.bus.onType$('SideMenuViewOpened').subscribe((event) => {
-            if (event.payload?.label === this.config.label) {
+            if (event.payload?.label === this.config.title) {
                 this.lifecycle.onOpen?.();
             }
         });
 
         const closeSub = this.bus.onType$('SideMenuViewClosed').subscribe((event) => {
-            if (event.payload?.label === this.config.label) {
+            if (event.payload?.label === this.config.title) {
                 this.lifecycle.onClose?.();
             }
         });
 
         const focusSub = this.bus.onType$('SideMenuViewFocused').subscribe((event) => {
-            if (event.payload?.label === this.config.label) {
+            if (event.payload?.label === this.config.title) {
                 this.lifecycle.onFocus?.();
             }
         });
 
         const blurSub = this.bus.onType$('SideMenuViewBlurred').subscribe((event) => {
-            if (event.payload?.label === this.config.label) {
+            if (event.payload?.label === this.config.title) {
                 this.lifecycle.onBlur?.();
             }
         });
@@ -135,7 +137,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
             .on$({ type: 'ActionFired', path: ['app', 'action'] })
             .subscribe((event) => {
                 if (event.payload === this.config.actionName) {
-                    this.sideMenuService.open(this.config.label);
+                    this.sideMenuService.open(this.config.title);
                     const mutableEvent = event as { performed?: boolean };
                     mutableEvent.performed = true;
                 }
@@ -177,7 +179,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
      * Helper to update the menu icon
      */
     updateIcon(icon: Icon): void {
-        this.sideMenuService.updateIcon(this.config.label, icon);
+        this.sideMenuService.updateIcon(this.config.title, icon);
     }
 }
 

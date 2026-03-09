@@ -8,6 +8,9 @@ export interface SideMenuFeatureRegistryContract<
   registerSideMenuFeature(
     sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>,
   ): void;
+  getSideMenuFeatureDefinitionById(
+    sideMenuFeatureDefinitionId: string,
+  ): SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName> | undefined;
   getSideMenuFeatureDefinitions(): ReadonlyArray<
     SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
   >;

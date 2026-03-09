@@ -3,10 +3,13 @@ import { CoreHostBootstrapHost, SideMenuFeatureRegistryHost } from "@cogno/core-
 import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
 import { ActionName } from "../action/action.models";
 import { Icon } from "../icons/+model/icon";
-import { terminalSearchFeatureDefinition } from "../terminal-search/terminal-search.feature-definition";
+import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
+import { terminalSearchSideMenuFeatureDefinition } from "@cogno/open-features/terminal-search/terminal-search.feature-definition";
 
 @Injectable({ providedIn: "root" })
 export class CoreHostWiringService {
+  private static singletonInstance: CoreHostWiringService | undefined;
+
   private readonly sideMenuFeatureRegistryHost = new SideMenuFeatureRegistryHost<
     Type<unknown>,
     Icon,
@@ -21,8 +24,29 @@ export class CoreHostWiringService {
 
   constructor() {
     this.coreHostBootstrapHost.registerSideMenuFeatures([
-      terminalSearchFeatureDefinition,
+      ...sideMenuFeatureDefinitions,
+      terminalSearchSideMenuFeatureDefinition,
     ]);
+    CoreHostWiringService.singletonInstance = this;
+  }
+
+  static getInstance(): CoreHostWiringService {
+    if (CoreHostWiringService.singletonInstance === undefined) {
+      CoreHostWiringService.singletonInstance = new CoreHostWiringService();
+    }
+    return CoreHostWiringService.singletonInstance;
+  }
+
+  getRequiredSideMenuFeatureDefinitionById(
+    sideMenuFeatureDefinitionId: string,
+  ): SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName> {
+    const sideMenuFeatureDefinition = this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitionById(
+      sideMenuFeatureDefinitionId,
+    );
+    if (sideMenuFeatureDefinition === undefined) {
+      throw new Error(`Unknown side menu feature definition id: ${sideMenuFeatureDefinitionId}`);
+    }
+    return sideMenuFeatureDefinition;
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<

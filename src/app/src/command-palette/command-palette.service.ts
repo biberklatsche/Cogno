@@ -11,8 +11,9 @@ import {Subscription} from "rxjs";
 import {Grid} from "../common/grid/grid-calculations";
 import {FeatureMode} from "../config/+models/config";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
-import {CommandPaletteComponent} from "./command-palette.component";
 import {createSideMenuFeature, SideMenuFeature} from "../menu/side-menu/+state/side-menu-feature";
+import { CoreHostWiringService } from "../core-host/core-host-wiring.service";
+import { sideMenuFeatureIds } from "../menu/side-menu/+state/side-menu-feature-ids";
 
 export type CommandEntry = {
     isSelected: boolean;
@@ -38,14 +39,12 @@ export class CommandPaletteService {
         keybinds: KeybindService,
         destroyRef: DestroyRef,
     ) {
+        const commandPaletteSideMenuDefinition = CoreHostWiringService
+            .getInstance()
+            .getRequiredSideMenuFeatureDefinitionById(sideMenuFeatureIds.commandPalette);
+
         this.feature = createSideMenuFeature(
-            {
-                label: 'Command Palette',
-                icon: 'mdiPaletteSwatch',
-                actionName: 'open_command_palette',
-                component: CommandPaletteComponent,
-                configPath: 'command_palette',
-            },
+            commandPaletteSideMenuDefinition,
             {
                 onModeChange: (mode) => this.handleModeChange(mode),
                 onOpen: () => this.handleOpen(),

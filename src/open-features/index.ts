@@ -1,3 +1,2 @@
-export interface OpenFeaturesModuleMarker {
-  readonly moduleName: "open-features";
-}
+export * from "./terminal-search/terminal-search.feature-definition";
+export * from "./terminal-search/terminal-search.service";

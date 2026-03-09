@@ -4,12 +4,13 @@ import {AppBus} from "../../app-bus/app-bus";
 import {SideMenuService} from "../../menu/side-menu/+state/side-menu.service";
 import {ConfigService} from "../../config/+state/config.service";
 import {FeatureMode} from "../../config/+models/config";
-import {NotificationSideComponent} from "../notification-side/notification-side.component";
 import {Hash} from '../../common/hash/hash';
 import {KeybindService} from "../../keybinding/keybind.service";
 import {createSideMenuFeature, SideMenuFeature} from "../../menu/side-menu/+state/side-menu-feature";
 import {NotificationOs} from "../../_tauri/notification";
 import {NotificationEvent} from "../+bus/events";
+import { CoreHostWiringService } from "../../core-host/core-host-wiring.service";
+import { sideMenuFeatureIds } from "../../menu/side-menu/+state/side-menu-feature-ids";
 
 type NotificationChannels = {
     app: boolean;
@@ -62,14 +63,12 @@ export class NotificationService {
         keybinds: KeybindService,
         destroyRef: DestroyRef,
     ) {
+        const notificationSideMenuDefinition = CoreHostWiringService
+            .getInstance()
+            .getRequiredSideMenuFeatureDefinitionById(sideMenuFeatureIds.notification);
+
         this.feature = createSideMenuFeature(
-            {
-                label: 'Notification',
-                icon: 'mdiBell',
-                actionName: 'open_notification',
-                component: NotificationSideComponent,
-                configPath: 'notification',
-            },
+            notificationSideMenuDefinition,
             {
                 onModeChange: (mode) => this.handleModeChange(mode),
                 onOpen: () => this.handleOpen(),

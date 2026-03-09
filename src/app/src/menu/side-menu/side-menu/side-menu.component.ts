@@ -173,7 +173,12 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 })
 export class SideMenuComponent implements OnDestroy {
     menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
-    visibleItems: Signal<SideMenuItem[]> = computed(() => this.menuItems().filter(i => !i.hidden));
+    visibleItems: Signal<SideMenuItem[]> = computed(() => {
+        return this.menuItems()
+            .filter((menuItem) => !menuItem.hidden)
+            .slice()
+            .sort((leftMenuItem, rightMenuItem) => (leftMenuItem.order ?? 0) - (rightMenuItem.order ?? 0));
+    });
     selectedItem = this.menuItemService.selectedItem;
     overlay = this.menuItemService.displacement;
     focused = this.menuItemService.isFocused;

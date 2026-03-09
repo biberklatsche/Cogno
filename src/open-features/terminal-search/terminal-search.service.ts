@@ -1,20 +1,20 @@
 import {DestroyRef, Injectable, Signal, signal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {AppBus} from "../app-bus/app-bus";
-import {GridListService} from "../grid-list/+state/grid-list.service";
+import {AppBus} from "../../app/src/app-bus/app-bus";
+import {GridListService} from "../../app/src/grid-list/+state/grid-list.service";
 import {
     TerminalSearchLineResult,
     TerminalSearchRevealPayload,
     TerminalSearchResultEvent,
-} from "../terminal/+bus/events";
-import {FeatureMode} from "../config/+models/config";
-import {ConfigService} from "../config/+state/config.service";
-import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";
-import {KeybindService} from "../keybinding/keybind.service";
-import {createSideMenuFeature, SideMenuFeature} from "../menu/side-menu/+state/side-menu-feature";
-import {TerminalId} from "../grid-list/+model/model";
-import {Color} from "../common/color/color";
-import { terminalSearchFeatureDefinition } from "./terminal-search.feature-definition";
+} from "../../app/src/terminal/+bus/events";
+import {FeatureMode} from "../../app/src/config/+models/config";
+import {ConfigService} from "../../app/src/config/+state/config.service";
+import {SideMenuService} from "../../app/src/menu/side-menu/+state/side-menu.service";
+import {KeybindService} from "../../app/src/keybinding/keybind.service";
+import {createSideMenuFeature, SideMenuFeature} from "../../app/src/menu/side-menu/+state/side-menu-feature";
+import {TerminalId} from "../../app/src/grid-list/+model/model";
+import {Color} from "../../app/src/common/color/color";
+import { terminalSearchSideMenuFeatureDefinition } from "./terminal-search.feature-definition";
 
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
@@ -44,9 +44,7 @@ export class TerminalSearchService {
         private readonly destroyRef: DestroyRef,
     ) {
         this.feature = createSideMenuFeature(
-            {
-                ...terminalSearchFeatureDefinition,
-            },
+            terminalSearchSideMenuFeatureDefinition,
             {
                 onModeChange: (mode: FeatureMode) => this.handleModeChange(mode),
                 onOpen: () => this.handleOpen(),

@@ -10,7 +10,7 @@ export class SideMenuFeatureRegistryHost<
   >
   implements SideMenuFeatureRegistryContract<TComponent, TIcon, TActionName>
 {
-  private readonly sideMenuFeatureDefinitionsByLabel = new Map<
+  private readonly sideMenuFeatureDefinitionsById = new Map<
     string,
     SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
   >();
@@ -18,21 +18,29 @@ export class SideMenuFeatureRegistryHost<
   registerSideMenuFeature(
     sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>,
   ): void {
-    const existingDefinition = this.sideMenuFeatureDefinitionsByLabel.get(sideMenuFeatureDefinition.label);
+    const existingDefinition = this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinition.id);
     if (existingDefinition !== undefined) {
-      this.sideMenuFeatureDefinitionsByLabel.set(sideMenuFeatureDefinition.label, {
+      this.sideMenuFeatureDefinitionsById.set(sideMenuFeatureDefinition.id, {
         ...existingDefinition,
         ...sideMenuFeatureDefinition,
       });
       return;
     }
 
-    this.sideMenuFeatureDefinitionsByLabel.set(sideMenuFeatureDefinition.label, sideMenuFeatureDefinition);
+    this.sideMenuFeatureDefinitionsById.set(sideMenuFeatureDefinition.id, sideMenuFeatureDefinition);
+  }
+
+  getSideMenuFeatureDefinitionById(
+    sideMenuFeatureDefinitionId: string,
+  ): SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName> | undefined {
+    return this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinitionId);
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<
     SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
   > {
-    return [...this.sideMenuFeatureDefinitionsByLabel.values()];
+    return [...this.sideMenuFeatureDefinitionsById.values()].sort((leftDefinition, rightDefinition) => {
+      return leftDefinition.order - rightDefinition.order;
+    });
   }
 }

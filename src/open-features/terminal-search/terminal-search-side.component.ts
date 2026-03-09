@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Signal} from "@angular/core";
-import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
-import {TerminalSearchLineMatch, TerminalSearchLineResult} from "../terminal/+bus/events";
+import {AutofocusDirective} from "../../app/src/common/autofocus/autofocus.directive";
+import {TerminalSearchLineMatch, TerminalSearchLineResult} from "../../app/src/terminal/+bus/events";
 import {TerminalSearchService} from "./terminal-search.service";
 
 type SearchTextSegment = {

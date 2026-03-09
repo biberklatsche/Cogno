@@ -16,8 +16,8 @@ import {NotificationService} from "./notification/+state/notification.service";
 import {TelegramBotRelayService} from "./notification/+state/telegram-bot-relay.service";
 import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
-import {TerminalSearchService} from "./terminal-search/terminal-search.service";
 import {CoreHostWiringService} from "./core-host/core-host-wiring.service";
+import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -3,10 +3,12 @@ export interface SideMenuFeatureDefinitionContract<
   TIcon = string,
   TActionName = string,
 > {
-  readonly label: string;
+  readonly id: string;
+  readonly title: string;
   readonly icon: TIcon;
+  readonly order: number;
   readonly actionName: TActionName;
-  readonly component: TComponent;
+  readonly targetComponent: TComponent;
   readonly configPath: string;
   readonly pinned?: boolean;
 }

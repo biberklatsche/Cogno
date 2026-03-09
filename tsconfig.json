@@ -6,9 +6,13 @@
     "baseUrl": ".",
     "paths": {
       "@cogno/core-sdk": ["src/core-sdk/index.ts"],
+      "@cogno/core-sdk/*": ["src/core-sdk/*"],
       "@cogno/core-host": ["src/core-host/index.ts"],
+      "@cogno/core-host/*": ["src/core-host/*"],
       "@cogno/open-features": ["src/open-features/index.ts"],
-      "@cogno/pro-features": ["src/pro-features/index.ts"]
+      "@cogno/open-features/*": ["src/open-features/*"],
+      "@cogno/pro-features": ["src/pro-features/index.ts"],
+      "@cogno/pro-features/*": ["src/pro-features/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "strict": true,

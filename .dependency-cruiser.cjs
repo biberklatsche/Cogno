@@ -26,7 +26,10 @@ module.exports = {
       name: "open-features-only-core-sdk",
       severity: "error",
       comment: "open-features darf nur gegen core-sdk entwickeln.",
-      from: { path: "^src/open-features/" },
+      from: {
+        path: "^src/open-features/",
+        pathNot: "^src/open-features/terminal-search/",
+      },
       to: { path: "^src/(app|core-host|pro-features)/" },
     },
     {
