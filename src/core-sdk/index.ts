@@ -3,3 +3,4 @@ export * from "./side-menu-feature-definition.contract";
 export * from "./side-menu-feature-handle.contract";
 export * from "./side-menu-feature-lifecycle.contract";
 export * from "./side-menu-feature-registry.contract";
+export * from "./terminal-search.contract";

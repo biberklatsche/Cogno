@@ -18,11 +18,15 @@ import {CommandPaletteService} from "./command-palette/command-palette.service";
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
 import {CoreHostWiringService} from "./core-host/core-host-wiring.service";
 import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
+import {terminalSearchHostPortToken} from "@cogno/core-sdk";
+import {TerminalSearchHostPortAdapterService} from "./terminal-search-host/terminal-search-host-port.adapter.service";
+import {TerminalSearchSideMenuHostService} from "./terminal-search-host/terminal-search-side-menu.host.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
+      { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
       provideZonelessChangeDetection(),
       provideEnvironmentInitializer(() => {
           inject(StyleService);
@@ -30,12 +34,14 @@ export const appConfig: ApplicationConfig = {
           inject(TelegramBotRelayService);
           inject(WorkspaceService);
           inject(CommandPaletteService);
-          inject(TerminalSearchService);
           inject(KeybindService);
           inject(CliActionService);
           inject(NativeMenuService);
           inject(WindowService);
           inject(CoreHostWiringService);
+          inject(TerminalSearchHostPortAdapterService);
+          inject(TerminalSearchService);
+          inject(TerminalSearchSideMenuHostService);
       }),
   ],
 };

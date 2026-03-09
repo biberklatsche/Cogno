@@ -1,77 +1,50 @@
-import {DestroyRef, Injectable, Signal, signal} from "@angular/core";
+import {DestroyRef, Inject, Injectable, Signal, signal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {AppBus} from "../../app/src/app-bus/app-bus";
-import {GridListService} from "../../app/src/grid-list/+state/grid-list.service";
 import {
-    TerminalSearchLineResult,
-    TerminalSearchRevealPayload,
-    TerminalSearchResultEvent,
-} from "../../app/src/terminal/+bus/events";
-import {FeatureMode} from "../../app/src/config/+models/config";
-import {ConfigService} from "../../app/src/config/+state/config.service";
-import {SideMenuService} from "../../app/src/menu/side-menu/+state/side-menu.service";
-import {KeybindService} from "../../app/src/keybinding/keybind.service";
-import {createSideMenuFeature, SideMenuFeature} from "../../app/src/menu/side-menu/+state/side-menu-feature";
-import {TerminalId} from "../../app/src/grid-list/+model/model";
-import {Color} from "../../app/src/common/color/color";
-import { terminalSearchSideMenuFeatureDefinition } from "./terminal-search.feature-definition";
+    TerminalSearchHostPortContract,
+    TerminalSearchLineResultContract,
+    TerminalSearchRevealRequestContract,
+    TerminalSearchTerminalIdContract,
+    terminalSearchHostPortToken
+} from "@cogno/core-sdk";
 
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
-    private readonly feature: SideMenuFeature;
-
+    private readonly defaultMatchBackgroundColor = "var(--highlight-color-ct2)";
+    private readonly defaultMatchBorderColor = "var(--highlight-color)";
     private readonly searchQuerySignal = signal<string>("");
-    private readonly searchResultsSignal = signal<TerminalSearchLineResult[]>([]);
+    private readonly searchResultsSignal = signal<ReadonlyArray<TerminalSearchLineResultContract>>([]);
     private readonly caseSensitiveSignal = signal<boolean>(false);
     private readonly regularExpressionSignal = signal<boolean>(false);
-    private readonly matchBackgroundColorSignal = signal<string>("");
-    private readonly matchBorderColorSignal = signal<string>("");
-    private readonly activeTerminalIdSignal = signal<TerminalId | undefined>(undefined);
+    private readonly matchBackgroundColorSignal = signal<string>(this.defaultMatchBackgroundColor);
+    private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
+    private readonly activeTerminalIdSignal = signal<TerminalSearchTerminalIdContract | undefined>(undefined);
 
     readonly searchQuery: Signal<string> = this.searchQuerySignal.asReadonly();
-    readonly searchResults: Signal<TerminalSearchLineResult[]> = this.searchResultsSignal.asReadonly();
+    readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = this.searchResultsSignal.asReadonly();
     readonly caseSensitive: Signal<boolean> = this.caseSensitiveSignal.asReadonly();
     readonly regularExpression: Signal<boolean> = this.regularExpressionSignal.asReadonly();
     readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
     readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
 
     constructor(
-        private readonly sideMenuService: SideMenuService,
-        private readonly appBus: AppBus,
-        private readonly gridListService: GridListService,
-        private readonly configService: ConfigService,
-        private readonly keybindService: KeybindService,
+        @Inject(terminalSearchHostPortToken)
+        private readonly terminalSearchHostPort: TerminalSearchHostPortContract,
         private readonly destroyRef: DestroyRef,
     ) {
-        this.feature = createSideMenuFeature(
-            terminalSearchSideMenuFeatureDefinition,
-            {
-                onModeChange: (mode: FeatureMode) => this.handleModeChange(mode),
-                onOpen: () => this.handleOpen(),
-                onFocus: () => this.registerKeybindListener(),
-                onBlur: () => this.unregisterKeybindListener(),
-                onClose: () => this.handleClose(),
-            },
-            {
-                sideMenuService: this.sideMenuService,
-                bus: this.appBus,
-                configService: this.configService,
-                keybinds: this.keybindService,
-                destroyRef: this.destroyRef
-            }
-        );
-
-        this.appBus
-            .on$({path: ["app", "terminal"], type: "TerminalSearchResult"})
+        this.terminalSearchHostPort.terminalSearchResult$
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((event: TerminalSearchResultEvent) => {
-                this.handleSearchResult(event);
+            .subscribe((terminalSearchResult) => {
+                this.handleSearchResult(terminalSearchResult);
             });
 
-        this.configService.config$
+        this.terminalSearchHostPort.terminalSearchColorConfig$
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((config) => {
-                this.updateSearchColors(config.terminal_search?.match_background_color, config.terminal_search?.match_border_color);
+            .subscribe((terminalSearchColorConfig) => {
+                this.updateSearchColors(
+                    terminalSearchColorConfig.matchBackgroundColor,
+                    terminalSearchColorConfig.matchBorderColor,
+                );
             });
     }
 
@@ -94,7 +67,7 @@ export class TerminalSearchService {
         this.repeatSearch();
     }
 
-    revealSearchResult(searchLine: TerminalSearchLineResult): void {
+    revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
         const activeTerminalId = this.activeTerminalIdSignal();
         if (!activeTerminalId) {
             return;
@@ -105,7 +78,7 @@ export class TerminalSearchService {
             return;
         }
 
-        const revealPayload: TerminalSearchRevealPayload = {
+        const revealPayload: TerminalSearchRevealRequestContract = {
             terminalId: activeTerminalId,
             query: this.searchQuerySignal().trim(),
             caseSensitive: this.caseSensitiveSignal(),
@@ -115,24 +88,10 @@ export class TerminalSearchService {
             matchLength: firstLineMatch.endIndex - firstLineMatch.startIndex,
         };
 
-        this.appBus.publish({
-            path: ["app", "terminal"],
-            type: "TerminalSearchRevealRequested",
-            payload: revealPayload,
-        });
+        this.terminalSearchHostPort.requestReveal(revealPayload);
     }
 
-    closeSearch(): void {
-        this.feature.close();
-    }
-
-    private handleModeChange(mode: FeatureMode): void {
-        if (mode === "off") {
-            this.handleClose();
-        }
-    }
-
-    private handleOpen(): void {
+    handleSideMenuOpen(): void {
         this.registerKeybindListener();
         const currentQuery = this.searchQuerySignal();
         if (currentQuery.length > 0) {
@@ -140,7 +99,7 @@ export class TerminalSearchService {
         }
     }
 
-    private handleClose(): void {
+    handleSideMenuClose(): void {
         this.unregisterKeybindListener();
         this.clearDecorationsInAllTerminals();
         this.searchQuerySignal.set("");
@@ -151,23 +110,15 @@ export class TerminalSearchService {
     }
 
     private registerKeybindListener(): void {
-        this.feature.registerKeybindListener(["Escape", "Enter"], (keyboardEvent: KeyboardEvent) => {
-            if (keyboardEvent.key === "Escape") {
-                this.feature.close();
-                return;
-            }
-            if (keyboardEvent.key === "Enter") {
-                this.repeatSearch();
-            }
-        });
+        // handled by host integration layer
     }
 
     private unregisterKeybindListener(): void {
-        this.feature.unregisterKeybindListener();
+        // handled by host integration layer
     }
 
     private searchInActiveTerminal(query: string): void {
-        const activeTerminalId = this.gridListService.getFocusedTerminalId();
+        const activeTerminalId = this.terminalSearchHostPort.getFocusedTerminalId();
         this.activeTerminalIdSignal.set(activeTerminalId);
 
         if (!activeTerminalId) {
@@ -175,59 +126,61 @@ export class TerminalSearchService {
             return;
         }
 
-        this.appBus.publish({
-            path: ["app", "terminal"],
-            type: "TerminalSearchRequested",
-            payload: {
-                terminalId: activeTerminalId,
-                query,
-                caseSensitive: this.caseSensitiveSignal(),
-                regularExpression: this.regularExpressionSignal(),
-            }
+        this.terminalSearchHostPort.requestSearch({
+            terminalId: activeTerminalId,
+            query,
+            caseSensitive: this.caseSensitiveSignal(),
+            regularExpression: this.regularExpressionSignal(),
         });
     }
 
     private clearDecorationsInAllTerminals(): void {
-        this.appBus.publish({
-            path: ["app", "terminal"],
-            type: "TerminalSearchRequested",
-            payload: {
-                query: "",
-                caseSensitive: false,
-                regularExpression: false,
-            }
-        });
+        this.terminalSearchHostPort.requestSearchDecorationClear();
     }
 
-    private handleSearchResult(event: TerminalSearchResultEvent): void {
-        const payload = event.payload;
-        if (!payload) {
+    private handleSearchResult(terminalSearchResult: {
+        terminalId: TerminalSearchTerminalIdContract;
+        query: string;
+        caseSensitive: boolean;
+        regularExpression: boolean;
+        lines: ReadonlyArray<TerminalSearchLineResultContract>;
+    }): void {
+        if (terminalSearchResult.terminalId !== this.activeTerminalIdSignal()) {
             return;
         }
 
-        if (payload.terminalId !== this.activeTerminalIdSignal()) {
+        if (terminalSearchResult.query !== this.searchQuerySignal().trim()) {
             return;
         }
 
-        if (payload.query !== this.searchQuerySignal().trim()) {
+        if (terminalSearchResult.caseSensitive !== this.caseSensitiveSignal()) {
             return;
         }
 
-        if (payload.caseSensitive !== this.caseSensitiveSignal()) {
+        if (terminalSearchResult.regularExpression !== this.regularExpressionSignal()) {
             return;
         }
 
-        if (payload.regularExpression !== this.regularExpressionSignal()) {
-            return;
-        }
-
-        this.searchResultsSignal.set(payload.lines);
+        this.searchResultsSignal.set(terminalSearchResult.lines);
     }
 
     private updateSearchColors(matchBackgroundColor?: string, matchBorderColor?: string): void {
-        this.matchBackgroundColorSignal.set(Color.toHexColor(matchBackgroundColor));
-        this.matchBorderColorSignal.set(Color.toHexColor(matchBorderColor));
+        const normalizedMatchBackgroundColor = this.normalizeHexColor(matchBackgroundColor);
+        const normalizedMatchBorderColor = this.normalizeHexColor(matchBorderColor);
+
+        this.matchBackgroundColorSignal.set(normalizedMatchBackgroundColor ?? this.defaultMatchBackgroundColor);
+        this.matchBorderColorSignal.set(normalizedMatchBorderColor ?? this.defaultMatchBorderColor);
     }
 
+    private normalizeHexColor(colorValue?: string): string | undefined {
+        if (colorValue === undefined || colorValue === null || colorValue.trim().length === 0) {
+            return undefined;
+        }
 
+        if (colorValue.startsWith("#")) {
+            return colorValue;
+        }
+
+        return `#${colorValue}`;
+    }
 }

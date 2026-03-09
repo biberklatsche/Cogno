@@ -1,7 +1,7 @@
-import {ChangeDetectionStrategy, Component, Signal} from "@angular/core";
-import {AutofocusDirective} from "../../app/src/common/autofocus/autofocus.directive";
-import {TerminalSearchLineMatch, TerminalSearchLineResult} from "../../app/src/terminal/+bus/events";
+import {ChangeDetectionStrategy, Component, computed, Signal} from "@angular/core";
+import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-sdk";
 import {TerminalSearchService} from "./terminal-search.service";
+import { TerminalSearchAutofocusDirective } from "./terminal-search-autofocus.directive";
 
 type SearchTextSegment = {
     text: string;
@@ -11,7 +11,7 @@ type SearchTextSegment = {
 @Component({
     selector: "app-terminal-search-side",
     standalone: true,
-    imports: [AutofocusDirective],
+    imports: [TerminalSearchAutofocusDirective],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="search-controls">
@@ -24,7 +24,7 @@ type SearchTextSegment = {
                 placeholder="Search active terminal..."
                 class="search-input"
                 [value]="searchQuery()"
-                [appAutofocus]="true"
+                [appTerminalSearchAutofocus]="true"
                 (input)="updateSearchQuery($event)"
                 (click)="$event.stopPropagation()"
             />
@@ -58,7 +58,7 @@ type SearchTextSegment = {
             <div class="result-header">{{ searchResults().length }} matching lines</div>
             @if (searchResults().length > 0) {
                 <ul class="result-list">
-                    @for (searchLine of searchResults().reverse(); track trackSearchLine(searchLine)) {
+                    @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
                         <li class="result-line" (click)="revealSearchResult(searchLine)">
                             <span class="line-number">{{ searchLine.lineNumber }}</span>
                             <span class="line-content">
@@ -169,11 +169,12 @@ type SearchTextSegment = {
 })
 export class TerminalSearchSideComponent {
     readonly searchQuery: Signal<string>;
-    readonly searchResults: Signal<TerminalSearchLineResult[]>;
+    readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
     readonly caseSensitive: Signal<boolean>;
     readonly regularExpression: Signal<boolean>;
     readonly matchBackgroundColor: Signal<string>;
     readonly matchBorderColor: Signal<string>;
+    readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
 
     constructor(private readonly terminalSearchService: TerminalSearchService) {
         this.searchQuery = this.terminalSearchService.searchQuery;
@@ -182,6 +183,9 @@ export class TerminalSearchSideComponent {
         this.regularExpression = this.terminalSearchService.regularExpression;
         this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
         this.matchBorderColor = this.terminalSearchService.matchBorderColor;
+        this.reversedSearchResults = computed(() => {
+            return [...this.searchResults()].reverse();
+        });
     }
 
     updateSearchQuery(event: Event): void {
@@ -189,7 +193,7 @@ export class TerminalSearchSideComponent {
         this.terminalSearchService.submitSearchQuery(inputElement.value);
     }
 
-    revealSearchResult(searchLine: TerminalSearchLineResult): void {
+    revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
         this.terminalSearchService.revealSearchResult(searchLine);
     }
 
@@ -201,7 +205,7 @@ export class TerminalSearchSideComponent {
         this.terminalSearchService.toggleRegularExpression();
     }
 
-    trackSearchLine(searchLine: TerminalSearchLineResult): string {
+    trackSearchLine(searchLine: TerminalSearchLineResultContract): string {
         return `${searchLine.lineNumber}:${searchLine.lineText}`;
     }
 
@@ -209,7 +213,7 @@ export class TerminalSearchSideComponent {
         return `${index}:${segment.text}:${segment.isMatch}`;
     }
 
-    buildSegments(searchLine: TerminalSearchLineResult): SearchTextSegment[] {
+    buildSegments(searchLine: TerminalSearchLineResultContract): SearchTextSegment[] {
         if (searchLine.matches.length === 0) {
             return [{text: searchLine.lineText, isMatch: false}];
         }
@@ -237,7 +241,7 @@ export class TerminalSearchSideComponent {
         segments: SearchTextSegment[],
         lineText: string,
         currentIndex: number,
-        match: TerminalSearchLineMatch,
+        match: TerminalSearchLineMatchContract,
     ): void {
         if (match.startIndex <= currentIndex) {
             return;
@@ -252,7 +256,7 @@ export class TerminalSearchSideComponent {
     private appendMatchedText(
         segments: SearchTextSegment[],
         lineText: string,
-        match: TerminalSearchLineMatch,
+        match: TerminalSearchLineMatchContract,
     ): void {
         segments.push({
             text: lineText.slice(match.startIndex, match.endIndex),
