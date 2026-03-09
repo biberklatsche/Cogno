@@ -1,5 +1,5 @@
 import {MessageBase} from "../../app-bus/app-bus";
-import {NotificationType} from "../+state/notification.service";
+import {NotificationTypeContract} from "@cogno/core-sdk";
 import {TerminalId} from "../../grid-list/+model/model";
 
 export type NotificationSource = 'local' | 'telegram';
@@ -13,7 +13,7 @@ export type NotificationEvent = MessageBase<"Notification", {
     header: string;
     body?: string;
     timestamp?: Date;
-    type?: NotificationType;
+    type?: NotificationTypeContract;
     source?: NotificationSource;
     terminalId?: TerminalId;
     channels?: Partial<NotificationChannels>;

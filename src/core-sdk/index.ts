@@ -1,5 +1,6 @@
 export * from "./feature-mode.contract";
 export * from "./command-palette.contract";
+export * from "./notification.contract";
 export * from "./side-menu-feature-definition.contract";
 export * from "./side-menu-feature-handle.contract";
 export * from "./side-menu-feature-lifecycle.contract";
