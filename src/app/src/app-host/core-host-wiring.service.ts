@@ -1,6 +1,7 @@
 import { Injectable, Type } from "@angular/core";
 import { CoreHostBootstrapHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
 import {
+  ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-sdk";
@@ -9,11 +10,13 @@ import { Icon } from "@cogno/ui-kit";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
 import {
   communityFeatureDatabaseMigrations,
+  communityFeatureShellSupportDefinitions,
   communityFeatureSideMenuFeatureDefinitions,
   communityFeatureTerminalAutocompleteSuggestorDefinitions,
 } from "@cogno/community-features";
 import {
   proFeatureDatabaseMigrations,
+  proFeatureShellSupportDefinitions,
   proFeatureSideMenuFeatureDefinitions,
   proFeatureTerminalAutocompleteSuggestorDefinitions,
 } from "@cogno/pro-features";
@@ -32,6 +35,10 @@ export class CoreHostWiringService {
   > = [
     ...communityFeatureTerminalAutocompleteSuggestorDefinitions,
     ...proFeatureTerminalAutocompleteSuggestorDefinitions,
+  ];
+  private readonly shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract> = [
+    ...communityFeatureShellSupportDefinitions,
+    ...proFeatureShellSupportDefinitions,
   ];
 
   private readonly coreHostBootstrapHost = new CoreHostBootstrapHost<
@@ -75,5 +82,9 @@ export class CoreHostWiringService {
     TerminalAutocompleteSuggestorDefinitionContract
   > {
     return this.terminalAutocompleteSuggestorDefinitions;
+  }
+
+  getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
+    return this.shellSupportDefinitions;
   }
 }

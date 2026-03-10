@@ -3,47 +3,31 @@ import { Config, ShellType } from './+models/config';
 import { Shell, Shells } from '../_tauri/shells';
 import {ShellProfile} from "./+models/shell-config";
 import {OS, OsType} from "../_tauri/os";
+import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
 
 @Injectable({ providedIn: 'root' })
 export class ShellConfigurator {
-
-    private readonly shellOrderPerOs: Record<OsType, Record<ShellType, number>> = {
-        macos: {
-            Fish: 1,
-            ZSH: 2,
-            Bash: 3,
-            PowerShell: 4,
-            GitBash: 5,
-        },
-        windows: {
-            PowerShell: 1,
-            GitBash: 2,
-            Bash: 3,
-            ZSH: 4,
-            Fish: 5,
-        },
-        linux: {
-            Fish: 1,
-            ZSH: 2,
-            Bash: 3,
-            PowerShell: 4,
-            GitBash: 5,
-        },
-    };
 
     /**
      * Detects available shells and writes them into config.shell.profiles
      * and sets config.shell.default + (optional) config.shell.order.
      */
-    async apply(config: Config): Promise<void> {
+    async apply(
+        config: Config,
+        shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
+    ): Promise<void> {
         const installedShells = await Shells.load();
-
-        const weight: Record<ShellType, number> = this.shellOrderPerOs[OS.platform()];
-
-        const sortedShells = installedShells.sort((a, b) => {
-            const wa = weight[a.shell_type] ?? 99;
-            const wb = weight[b.shell_type] ?? 99;
-            return wa - wb;
+        const platform = OS.platform();
+        const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
+        const supportedInstalledShells = installedShells.filter(
+            shell => definitionsByShellType.has(shell.shell_type),
+        );
+        const sortedShells = supportedInstalledShells.sort((leftShell, rightShell) => {
+            const leftDefinition = definitionsByShellType.get(leftShell.shell_type);
+            const rightDefinition = definitionsByShellType.get(rightShell.shell_type);
+            const leftWeight = leftDefinition?.sortWeightByOs[platform] ?? 99;
+            const rightWeight = rightDefinition?.sortWeightByOs[platform] ?? 99;
+            return leftWeight - rightWeight;
         });
 
         // Ensure new structure exists
@@ -68,9 +52,11 @@ export class ShellConfigurator {
         const order: string[] = [];
 
         for (const sh of sortedShells) {
-            const name = this.makeUniqueProfileName(config.shell.profiles, sh.shell_type);
-            config.shell.profiles[name] = this.createShellConfig(sh);
-            order.push(name);
+            const shellDefinition = definitionsByShellType.get(sh.shell_type);
+            if (!shellDefinition) continue;
+            const profileName = this.makeUniqueProfileName(config.shell.profiles, shellDefinition.profileName);
+            config.shell.profiles[profileName] = this.createShellConfig(sh, shellDefinition, platform);
+            order.push(profileName);
         }
 
         // Set default: if empty or invalid → first profile
@@ -85,45 +71,28 @@ export class ShellConfigurator {
 
     private makeUniqueProfileName(
         profiles: Record<string, ShellProfile>,
-        shellType: ShellType
+        profileNameBase: string
     ): string {
-        // Base name from ShellType (e.g., "ZSH" -> "zsh", "GitBash" -> "gitbash")
-        const base = shellType.toLowerCase();
-
-        if (!profiles[base]) return base;
+        if (!profiles[profileNameBase]) return profileNameBase;
 
         // Kollisionsfrei: zsh2, zsh3, ...
         let i = 2;
-        while (profiles[`${base}${i}`]) i++;
-        return `${base}${i}`;
+        while (profiles[`${profileNameBase}${i}`]) i++;
+        return `${profileNameBase}${i}`;
     }
 
-    private createShellConfig(sh: Shell): ShellProfile {
-        // Determine default args based on shell type for login shell + integration
-        let args: string[] = [];
-
-        switch (sh.shell_type) {
-            case 'Bash':
-            case 'GitBash':
-                // Note: --rcfile (added by integration) implies interactive mode
-                // Don't add -i here, it will be automatically interactive
-                args = [];
-                break;
-            case 'ZSH':
-                args = ['-l', '-i'];
-                break;
-            case 'Fish':
-                args = ['-l'];
-                break;
-            case 'PowerShell':
-                args = ['-NoLogo'];
-                break;
-        }
+    private createShellConfig(
+        shell: Shell,
+        shellSupportDefinition: ShellSupportDefinitionContract,
+        platform: OsType,
+    ): ShellProfile {
+        const defaultArguments = shellSupportDefinition.defaultArgumentsByOs[platform] ?? [];
+        const argumentsCopy = [...defaultArguments];
 
         const base: ShellProfile = {
-            shell_type: sh.shell_type,
-            path: sh.path,
-            args: args,
+            shell_type: shell.shell_type,
+            path: shell.path,
+            args: argumentsCopy,
             env: {},
             working_dir: '~',
             load_user_rc: true,
@@ -134,5 +103,15 @@ export class ShellConfigurator {
         // TERM is set globally in environment_builder.rs for all shells.
 
         return base;
+    }
+
+    private createDefinitionsByShellType(
+        shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
+    ): Map<ShellType, ShellSupportDefinitionContract> {
+        const definitionsByShellType = new Map<ShellType, ShellSupportDefinitionContract>();
+        for (const definition of shellSupportDefinitions) {
+            definitionsByShellType.set(definition.shellType, definition);
+        }
+        return definitionsByShellType;
     }
 }

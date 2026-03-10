@@ -14,3 +14,4 @@ export * from "./terminal-search.contract";
 export * from "./command-runner.contract";
 export * from "./filesystem.contract";
 export * from "./terminal-autocomplete.contract";
+export * from "./shell-support.contract";
