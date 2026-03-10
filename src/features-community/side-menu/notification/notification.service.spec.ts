@@ -5,8 +5,8 @@ import {
   NotificationHostPortContract,
   NotificationSettingsContract,
 } from "@cogno/core-sdk";
-import { NotificationService } from "@cogno/community-features/notification/notification.service";
-import { getDestroyRef } from "../__test__/destroy-ref";
+import { NotificationService } from "@cogno/community-features/side-menu/notification/notification.service";
+import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("NotificationService", () => {
   let notificationService: NotificationService;
@@ -105,3 +105,5 @@ describe("NotificationService", () => {
     expect(notificationService.notifications().length).toBe(0);
   });
 });
+
+

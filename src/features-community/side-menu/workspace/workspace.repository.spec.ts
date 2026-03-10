@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseAccessContract } from "@cogno/core-sdk";
-import { WorkspaceConfiguration } from "@cogno/community-features/workspace/workspace.model";
-import { WorkspaceRepository } from "@cogno/community-features/workspace/workspace.repository";
+import { WorkspaceConfiguration } from "@cogno/community-features/side-menu/workspace/workspace.model";
+import { WorkspaceRepository } from "@cogno/community-features/side-menu/workspace/workspace.repository";
 
 describe("WorkspaceRepository", () => {
   let workspaceRepository: WorkspaceRepository;
@@ -92,3 +92,4 @@ describe("WorkspaceRepository", () => {
     expect(executeMock).toHaveBeenCalledWith("DELETE FROM workspaces WHERE id = ?", ["ws1"]);
   });
 });
+

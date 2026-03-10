@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
 import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-sdk";
-import { WorkspaceService } from "@cogno/community-features/workspace/workspace.service";
-import { getDestroyRef } from "../__test__/destroy-ref";
+import { WorkspaceService } from "@cogno/community-features/side-menu/workspace/workspace.service";
+import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("WorkspaceService", () => {
   let workspaceService: WorkspaceService;
@@ -63,3 +63,5 @@ describe("WorkspaceService", () => {
     expect(deleteWorkspaceMock).toHaveBeenCalledWith("WS-2");
   });
 });
+
+
