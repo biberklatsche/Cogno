@@ -1,6 +1,4 @@
 {
   "name": "copyfile",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/copyfile.ts",
   "description": "Oh-My-Zsh plugin that copies the contents of a file to the clipboard"
 }

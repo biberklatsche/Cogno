@@ -1,7 +1,5 @@
 {
   "name": "spanner",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/spanner.ts",
   "description": "Command groups for Cloud Spanner",
   "options": [
     {

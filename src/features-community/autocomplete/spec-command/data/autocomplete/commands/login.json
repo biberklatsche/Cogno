@@ -1,7 +1,5 @@
 {
   "name": "login",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/login.ts",
   "description": "Log in to Azure",
   "options": [
     {

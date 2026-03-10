@@ -1,7 +1,5 @@
 {
   "name": "checkov",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/checkov.ts",
   "description": "Checkov scans cloud infrastructure configurations to find misconfigurations before they're deployed",
   "options": [
     {

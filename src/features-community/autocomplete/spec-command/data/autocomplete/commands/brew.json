@@ -1,7 +1,5 @@
 {
   "name": "brew",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/brew.ts",
   "description": "Package manager for macOS",
   "options": [
     {

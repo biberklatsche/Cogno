@@ -1,7 +1,5 @@
 {
   "name": "azurestackhci",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/azurestackhci.ts",
   "description": "Manage azurestackhci",
   "subcommands": [
     {

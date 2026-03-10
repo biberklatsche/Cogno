@@ -1,7 +1,5 @@
 {
   "name": "surreal",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/surreal.ts",
   "description": "SurrealDB is the ultimate cloud database for tomorrow's applications - https://surrealdb.com/",
   "options": [
     {

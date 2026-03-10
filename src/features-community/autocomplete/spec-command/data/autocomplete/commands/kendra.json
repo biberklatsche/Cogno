@@ -1,7 +1,5 @@
 {
   "name": "kendra",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kendra.ts",
   "description": "Amazon Kendra is a service for indexing large document sets",
   "subcommands": [
     {

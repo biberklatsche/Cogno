@@ -1,7 +1,5 @@
 {
   "name": "degit",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/degit.ts",
   "description": "Straightforward project scaffolding",
   "options": [
     {

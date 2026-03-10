@@ -1,7 +1,5 @@
 {
   "name": "minectl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/minectl.ts",
   "description": "Create Minecraft Server on different cloud provider",
   "options": [
     {

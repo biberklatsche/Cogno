@@ -1,7 +1,5 @@
 {
   "name": "chmod",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/chmod.ts",
   "description": "Change file modes or Access Control Lists",
   "options": [
     {

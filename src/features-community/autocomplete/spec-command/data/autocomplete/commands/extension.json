@@ -1,7 +1,5 @@
 {
   "name": "extension",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/extension.ts",
   "description": "Manage and update CLI extensions",
   "subcommands": [
     {

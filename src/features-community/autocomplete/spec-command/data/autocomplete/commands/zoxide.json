@@ -1,7 +1,5 @@
 {
   "name": "zoxide",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/zoxide.ts",
   "description": "A smarter cd command for your terminal",
   "options": [
     {

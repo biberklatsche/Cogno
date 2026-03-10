@@ -1,7 +1,5 @@
 {
   "name": "build",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-build.ts",
   "options": [
     {
       "name": [

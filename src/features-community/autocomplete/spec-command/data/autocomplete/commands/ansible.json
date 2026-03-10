@@ -1,7 +1,5 @@
 {
   "name": "ansible",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ansible.ts",
   "description": "Define and run a single Ansible task 'playbook' against a set of hosts",
   "options": [
     {

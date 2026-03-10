@@ -1,7 +1,5 @@
 {
   "name": "debug",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/debug.ts",
   "description": "Commands for interacting with the Cloud Debugger",
   "options": [
     {

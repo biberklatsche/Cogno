@@ -1,6 +1,4 @@
 {
   "name": "else",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/else.ts",
   "description": "Execute this command if the test returned 1"
 }

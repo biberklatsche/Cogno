@@ -1,7 +1,5 @@
 {
   "name": "route53domains",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/route53domains.ts",
   "description": "Amazon Route 53 API actions let you register domain names and perform related operations",
   "subcommands": [
     {

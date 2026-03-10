@@ -1,7 +1,5 @@
 {
   "name": "k8s-extension",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/k8s-extension.ts",
   "description": "Commands to manage Kubernetes Extensions",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "webapp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/webapp.ts",
   "description": "Manage web apps",
   "subcommands": [
     {

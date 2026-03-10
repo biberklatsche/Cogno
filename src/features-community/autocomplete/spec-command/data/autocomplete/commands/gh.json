@@ -1,7 +1,5 @@
 {
   "name": "gh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gh.ts",
   "description": "GitHub's CLI tool",
   "options": [
     {

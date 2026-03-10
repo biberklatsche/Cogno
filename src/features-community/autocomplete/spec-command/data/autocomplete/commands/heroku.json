@@ -1,7 +1,5 @@
 {
   "name": "heroku",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/heroku/8.0.0.ts",
   "description": "Makes it easy to create and manage your Heroku apps directly from the terminal",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "drs",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/drs.ts",
   "description": "AWS Elastic Disaster Recovery Service",
   "subcommands": [
     {

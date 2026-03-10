@@ -1,7 +1,5 @@
 {
   "name": "kool",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kool.ts",
   "description": "Cloud and docker environments made easy",
   "options": [
     {

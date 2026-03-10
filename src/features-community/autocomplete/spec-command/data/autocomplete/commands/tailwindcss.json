@@ -1,7 +1,5 @@
 {
   "name": "tailwindcss",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tailwindcss.ts",
   "description": "Tailwindcss CLI tools",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "github",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/github.ts",
   "description": "Open a git repository in GitHub Desktop",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "mongosh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mongosh.ts",
   "description": "The MongoDB Shell, mongosh  is a fully functional JavaScript and Node.js 14.x REPL environment for interacting with MongoDB deployments",
   "options": [
     {

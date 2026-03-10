@@ -1,7 +1,5 @@
 {
   "name": "k3d",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/k3d.ts",
   "description": "K3d is a lightweight wrapper to run k3s in Docker",
   "options": [
     {

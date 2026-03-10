@@ -1,7 +1,5 @@
 {
   "name": "rclone",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rclone.ts",
   "description": "The Swiss army knife of cloud storage",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "awsume",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/awsume.ts",
   "description": "Awsume",
   "options": [
     {

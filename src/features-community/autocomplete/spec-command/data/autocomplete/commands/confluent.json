@@ -1,7 +1,5 @@
 {
   "name": "confluent",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/confluent.ts",
   "description": "Manage confluent resources",
   "subcommands": [
     {

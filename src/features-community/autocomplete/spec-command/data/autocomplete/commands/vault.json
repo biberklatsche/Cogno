@@ -1,7 +1,5 @@
 {
   "name": "vault",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vault.ts",
   "description": "Interact with HashiCorp Vault",
   "options": [
     {

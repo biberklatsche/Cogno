@@ -1,7 +1,5 @@
 {
   "name": "exercism",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/exercism.ts",
   "description": "Solve coding exercises in your chosen programming languages",
   "options": [
     {

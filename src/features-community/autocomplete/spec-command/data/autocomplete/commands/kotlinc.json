@@ -1,7 +1,5 @@
 {
   "name": "kotlinc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kotlinc.ts",
   "description": "Kotlin compiler for JVM",
   "subcommands": [
     {

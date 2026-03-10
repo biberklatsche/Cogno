@@ -1,7 +1,5 @@
 {
   "name": "security-ir",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/security-ir.ts",
   "description": "This guide provides documents the action and response elements for customer use of the service",
   "subcommands": [
     {

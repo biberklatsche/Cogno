@@ -1,7 +1,5 @@
 {
   "name": "next",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/next.ts",
   "description": "Recommend the possible next set of commands to take",
   "options": [
     {

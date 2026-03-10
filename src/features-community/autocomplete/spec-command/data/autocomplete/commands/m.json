@@ -1,7 +1,5 @@
 {
   "name": "m",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/m.ts",
   "description": "Swiss Army Knife for macOS",
   "options": [
     {

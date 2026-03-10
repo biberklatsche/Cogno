@@ -1,7 +1,5 @@
 {
   "name": "lsd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lsd.ts",
   "description": "An ls command with a lot of pretty colors and some other stuff",
   "options": [
     {

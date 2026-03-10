@@ -1,7 +1,5 @@
 {
   "name": "vultr-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vultr-cli.ts",
   "description": "Official command line interface for the Vultr API",
   "subcommands": [
     {

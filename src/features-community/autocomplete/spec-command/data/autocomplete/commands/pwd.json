@@ -1,7 +1,5 @@
 {
   "name": "pwd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pwd.ts",
   "description": "Return working directory name",
   "options": [
     {

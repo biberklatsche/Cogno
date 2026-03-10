@@ -1,7 +1,5 @@
 {
   "name": "man",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/man.ts",
   "description": "Format and display the on-line manual pages",
   "options": [
     {

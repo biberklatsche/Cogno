@@ -1,7 +1,5 @@
 {
   "name": "palera1n",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/palera1n.ts",
   "description": "Jailbreaking tool for iOS/iPadOS 15.x-16.x arm64",
   "options": [
     {

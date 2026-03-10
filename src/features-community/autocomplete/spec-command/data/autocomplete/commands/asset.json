@@ -1,7 +1,5 @@
 {
   "name": "asset",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/asset.ts",
   "description": "Manage the Cloud Asset Inventory",
   "options": [
     {

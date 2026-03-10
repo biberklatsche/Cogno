@@ -1,7 +1,5 @@
 {
   "name": "doppler",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/doppler.ts",
   "description": "The official Doppler CLI",
   "options": [
     {

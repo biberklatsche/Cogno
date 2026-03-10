@@ -1,7 +1,5 @@
 {
   "name": "code",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/code.ts",
   "description": "Visual Studio Code",
   "options": [
     {

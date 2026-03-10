@@ -1,7 +1,5 @@
 {
   "name": "enapter",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/enapter.ts",
   "description": "Cross-platform device management command-line tool for Enapter Energy Management System Toolkit",
   "options": [
     {

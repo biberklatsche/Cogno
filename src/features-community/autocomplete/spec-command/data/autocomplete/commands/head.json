@@ -1,7 +1,5 @@
 {
   "name": "head",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/head.ts",
   "description": "Output the first part of files",
   "options": [
     {

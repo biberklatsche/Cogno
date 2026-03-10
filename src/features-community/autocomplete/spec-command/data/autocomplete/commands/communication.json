@@ -1,7 +1,5 @@
 {
   "name": "communication",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/communication.ts",
   "description": "Manage communication service with communication",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "rustup",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rustup.ts",
   "description": "The Rust toolchain installer",
   "options": [
     {

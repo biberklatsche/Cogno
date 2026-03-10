@@ -1,7 +1,5 @@
 {
   "name": "redwood",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/redwood.ts",
   "description": "Redwood provides a first-class CLI that helps you at every stage of development, from your first commit to your first deploy",
   "options": [
     {

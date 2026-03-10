@@ -1,7 +1,5 @@
 {
   "name": "glue",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/glue.ts",
   "description": "Glue Defines the public endpoint for the Glue service",
   "subcommands": [
     {

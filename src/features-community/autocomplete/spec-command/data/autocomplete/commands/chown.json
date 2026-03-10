@@ -1,7 +1,5 @@
 {
   "name": "chown",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/chown.ts",
   "description": "Change the user and/or group ownership of a given file, directory, or symbolic link",
   "options": [
     {

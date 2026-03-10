@@ -1,7 +1,5 @@
 {
   "name": "airflow",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/airflow.ts",
   "description": "Subcommand",
   "options": [
     {

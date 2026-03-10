@@ -1,7 +1,5 @@
 {
   "name": "shortcuts",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/shortcuts.ts",
   "description": "Command-line utility for running shortcuts",
   "subcommands": [
     {

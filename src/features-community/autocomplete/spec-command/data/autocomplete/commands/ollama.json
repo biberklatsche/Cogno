@@ -1,7 +1,5 @@
 {
   "name": "ollama",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ollama.ts",
   "description": "A command-line tool for managing and deploying machine learning models",
   "options": [
     {

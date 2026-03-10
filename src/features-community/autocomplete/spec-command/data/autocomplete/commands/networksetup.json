@@ -1,7 +1,5 @@
 {
   "name": "networksetup",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/networksetup.ts",
   "description": "Configuration tool for network settings in System Preferences",
   "subcommands": [
     {

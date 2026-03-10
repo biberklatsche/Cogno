@@ -1,7 +1,5 @@
 {
   "name": "cap",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cap.ts",
   "description": "The Capacitor command-line interface (CLI) tool is used to develop Capacitor apps",
   "options": [
     {

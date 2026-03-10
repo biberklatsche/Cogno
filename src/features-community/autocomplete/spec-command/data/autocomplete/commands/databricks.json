@@ -1,7 +1,5 @@
 {
   "name": "databricks",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/databricks.ts",
   "description": "Manage databricks workspaces",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "dns",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/dns.ts",
   "description": "Manage your Cloud DNS managed-zones and record-sets",
   "options": [
     {

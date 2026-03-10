@@ -1,7 +1,5 @@
 {
   "name": "lookoutmetrics",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/lookoutmetrics.ts",
   "description": "This is the Amazon Lookout for Metrics API Reference. For an introduction to the service with tutorials for getting started, visit Amazon Lookout for Metrics Developer Guide",
   "subcommands": [
     {

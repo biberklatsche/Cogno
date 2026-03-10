@@ -1,7 +1,5 @@
 {
   "name": "clear",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/clear.ts",
   "description": "Clear the terminal screen",
   "options": [
     {

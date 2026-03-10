@@ -1,7 +1,5 @@
 {
   "name": "location",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/location.ts",
   "description": "\"Suite of geospatial services including Maps, Places, Routes, Tracking, and Geofencing\"",
   "subcommands": [
     {

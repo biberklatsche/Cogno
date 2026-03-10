@@ -1,7 +1,5 @@
 {
   "name": "where",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/where.ts",
   "description": "For each name, indicate how it should be interpreted",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "dog",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dog.ts",
   "description": "A command-line DNS client",
   "options": [
     {

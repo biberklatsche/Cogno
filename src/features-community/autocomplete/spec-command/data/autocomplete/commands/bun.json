@@ -1,7 +1,5 @@
 {
   "name": "bun",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bun.ts",
   "description": "A fast bundler, transpiler, JavaScript Runtime and package manager for web software",
   "options": [
     {

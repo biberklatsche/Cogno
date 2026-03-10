@@ -1,7 +1,5 @@
 {
   "name": "info",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/info.ts",
   "description": "Display information about the current gcloud environment",
   "options": [
     {

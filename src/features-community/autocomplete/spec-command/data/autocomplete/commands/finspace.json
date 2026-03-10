@@ -1,7 +1,5 @@
 {
   "name": "finspace",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/finspace.ts",
   "description": "The FinSpace management service provides the APIs for managing FinSpace environments",
   "subcommands": [
     {

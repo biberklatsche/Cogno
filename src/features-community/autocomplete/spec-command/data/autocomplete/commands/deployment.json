@@ -1,7 +1,5 @@
 {
   "name": "deployment",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/deployment.ts",
   "description": "Manage Azure Resource Manager template deployment at subscription scope",
   "subcommands": [
     {

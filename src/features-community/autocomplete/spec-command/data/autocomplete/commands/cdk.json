@@ -1,7 +1,5 @@
 {
   "name": "cdk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cdk.ts",
   "description": "AWS CDK CLI",
   "options": [
     {

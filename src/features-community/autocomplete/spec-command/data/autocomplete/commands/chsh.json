@@ -1,7 +1,5 @@
 {
   "name": "chsh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/chsh.ts",
   "description": "Change your login shell",
   "options": [
     {

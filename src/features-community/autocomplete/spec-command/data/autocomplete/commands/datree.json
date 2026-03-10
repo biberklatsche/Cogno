@@ -1,7 +1,5 @@
 {
   "name": "datree",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/datree.ts",
   "description": "Datree can be used on the command line to run policies against Kubernetes manifests YAML files or Helm charts",
   "options": [
     {

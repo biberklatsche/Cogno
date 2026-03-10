@@ -1,7 +1,5 @@
 {
   "name": "sdc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/@usermn/sdc/0.0.0.ts",
   "description": "\"setup dominic's computer\" cli tool",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "mysql",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mysql.ts",
   "description": "Mysql is a terminal-based front-end to MySQL",
   "options": [
     {

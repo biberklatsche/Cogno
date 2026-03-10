@@ -1,7 +1,5 @@
 {
   "name": "eventgrid",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/eventgrid.ts",
   "description": "Manage Azure Event Grid topics, domains, domain topics, system topics partner topics, event subscriptions, system topic event subscriptions and partner topic event subscriptions",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "palo-alto",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/palo-alto.ts",
   "description": "Manage palo-alto networks resource",
   "subcommands": [
     {

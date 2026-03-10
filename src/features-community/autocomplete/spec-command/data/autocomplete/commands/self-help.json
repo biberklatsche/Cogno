@@ -1,7 +1,5 @@
 {
   "name": "self-help",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/self-help.ts",
   "description": "Azure SelfHelp will help you troubleshoot issues with Azure resources",
   "subcommands": [
     {

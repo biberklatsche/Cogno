@@ -1,7 +1,5 @@
 {
   "name": "nmap",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nmap.ts",
   "description": "Network exploration tool and security / port scanner",
   "options": [
     {

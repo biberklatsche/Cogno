@@ -1,7 +1,5 @@
 {
   "name": "caffeinate",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/caffeinate.ts",
   "description": "Prevent the system from sleeping on behalf of a utility",
   "options": [
     {

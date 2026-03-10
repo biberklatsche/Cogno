@@ -1,7 +1,5 @@
 {
   "name": "@wordpress/create-block",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/@wordpress/create-block.ts",
   "description": "Generates PHP, JS and CSS code for registering a WordPress plugin with blocks",
   "options": [
     {

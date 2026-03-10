@@ -1,7 +1,5 @@
 {
   "name": "pass",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pass.ts",
   "description": "Pass - stores, retrieves, generates, and synchronizes passwords securely",
   "options": [
     {

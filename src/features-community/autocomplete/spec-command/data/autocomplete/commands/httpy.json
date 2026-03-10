@@ -1,7 +1,5 @@
 {
   "name": "httpy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/httpy.ts",
   "description": "Programmable command-line HTTP client for the API",
   "options": [
     {

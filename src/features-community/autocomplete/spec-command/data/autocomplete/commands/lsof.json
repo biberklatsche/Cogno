@@ -1,7 +1,5 @@
 {
   "name": "lsof",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lsof.ts",
   "description": "List open files",
   "options": [
     {

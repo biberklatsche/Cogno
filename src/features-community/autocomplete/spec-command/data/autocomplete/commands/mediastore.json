@@ -1,7 +1,5 @@
 {
   "name": "mediastore",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/mediastore.ts",
   "description": "An AWS Elemental MediaStore container is a namespace that holds folders and objects. You use a container endpoint to create, read, and delete objects",
   "subcommands": [
     {

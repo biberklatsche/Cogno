@@ -1,7 +1,5 @@
 {
   "name": "wc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wc.ts",
   "description": "World, line, character, and byte count",
   "options": [
     {

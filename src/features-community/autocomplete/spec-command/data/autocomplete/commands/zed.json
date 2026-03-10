@@ -1,7 +1,5 @@
 {
   "name": "zed",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/zed.ts",
   "description": "A lightning-fast, collaborative code editor written in Rust",
   "options": [
     {

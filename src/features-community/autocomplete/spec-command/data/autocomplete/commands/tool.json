@@ -1,7 +1,5 @@
 {
   "name": "tool",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-tool.ts",
   "description": "The dotnet tool install command provides a way for you to install .NET tools on your machine",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "oxlint",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/oxlint.ts",
   "description": "A high performance linter for the Oxidation Compiler",
   "options": [
     {

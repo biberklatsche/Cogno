@@ -1,7 +1,5 @@
 {
   "name": "pmset",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pmset.ts",
   "description": "Power management settings",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "rbenv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rbenv.ts",
   "description": "Pick a Ruby version for your application and guarantee that your development environment matches production",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "pdfunite",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pdfunite.ts",
   "description": "Combine multiple pdfs",
   "options": [
     {

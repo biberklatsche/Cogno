@@ -1,7 +1,5 @@
 {
   "name": "config",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/config.ts",
   "description": "Manage Azure CLI configuration.\n\n\t\tAvailable since Azure CLI 2.10.0",
   "subcommands": [
     {

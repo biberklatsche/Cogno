@@ -1,7 +1,5 @@
 {
   "name": "create-react-app",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-react-app.ts",
   "description": "Creates a new React project",
   "options": [
     {

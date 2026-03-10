@@ -1,7 +1,5 @@
 {
   "name": "sam",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sam.ts",
   "description": "AWS Serverless Application Model CLI",
   "options": [
     {

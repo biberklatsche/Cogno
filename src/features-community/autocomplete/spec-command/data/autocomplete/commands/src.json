@@ -1,7 +1,5 @@
 {
   "name": "src",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/src.ts",
   "description": "Interact with Sourcegraph from the command line",
   "options": [
     {

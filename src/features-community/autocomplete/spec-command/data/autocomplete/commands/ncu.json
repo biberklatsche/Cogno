@@ -1,7 +1,5 @@
 {
   "name": "ncu",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ncu.ts",
   "description": "Upgrade your npm package.json dependencies to the latest versions, ignoring specified versions",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "mturk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/mturk.ts",
   "description": "Amazon Mechanical Turk API Reference",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "shopify",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/shopify/2.0.0.ts",
   "description": "Shopify CLI helps you build Shopify apps. It quickly generates Node.js, Ruby on Rails, and PHP apps, app extensions, Shopify Scripts (beta), and Shopify themes. You can also use it for Shopify themes and when automating many common development tasks. Visit https://shopify.dev/apps/tools/cli to know more",
   "options": [
     {

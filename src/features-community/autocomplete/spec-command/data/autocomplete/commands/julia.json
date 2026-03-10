@@ -1,7 +1,5 @@
 {
   "name": "julia",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/julia.ts",
   "description": "The Julia Programming Language",
   "options": [
     {

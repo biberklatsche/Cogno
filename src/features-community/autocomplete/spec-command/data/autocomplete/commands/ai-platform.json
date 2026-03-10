@@ -1,7 +1,5 @@
 {
   "name": "ai-platform",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/ai-platform.ts",
   "description": "Manage AI Platform jobs and models",
   "options": [
     {

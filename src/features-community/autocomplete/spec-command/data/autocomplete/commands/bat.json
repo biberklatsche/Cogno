@@ -1,7 +1,5 @@
 {
   "name": "bat",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bat.ts",
   "description": "A cat(1) clone with syntax highlighting and Git integration",
   "options": [
     {

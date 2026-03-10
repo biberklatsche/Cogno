@@ -1,7 +1,5 @@
 {
   "name": "ng",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ng.ts",
   "description": "CLI interface for Angular",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "gcloud",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud.ts",
   "description": "Manage Google Cloud Platform resources and developer workflow",
   "subcommands": [
     {

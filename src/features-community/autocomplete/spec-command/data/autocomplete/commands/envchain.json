@@ -1,7 +1,5 @@
 {
   "name": "envchain",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/envchain.ts",
   "description": "Set environment variables with macOS keychain or D-Bus secret service",
   "subcommands": [
     {

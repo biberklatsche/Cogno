@@ -1,7 +1,5 @@
 {
   "name": "trap",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/trap.ts",
   "description": "Automatically execute commands after receiving signals by processes or the operating system",
   "options": [
     {

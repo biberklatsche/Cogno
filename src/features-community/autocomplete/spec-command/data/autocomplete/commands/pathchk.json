@@ -1,7 +1,5 @@
 {
   "name": "pathchk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pathchk.ts",
   "description": "Check pathnames for POSIX portability",
   "options": [
     {

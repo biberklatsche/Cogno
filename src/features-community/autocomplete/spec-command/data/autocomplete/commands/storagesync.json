@@ -1,7 +1,5 @@
 {
   "name": "storagesync",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/storagesync.ts",
   "description": "Manage Azure File Sync",
   "subcommands": [
     {

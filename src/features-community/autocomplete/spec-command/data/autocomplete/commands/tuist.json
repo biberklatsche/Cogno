@@ -1,7 +1,5 @@
 {
   "name": "tuist",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tuist.ts",
   "description": "Generate, build and test your Xcode projects. For more info please see https://docs.tuist.io/",
   "options": [
     {

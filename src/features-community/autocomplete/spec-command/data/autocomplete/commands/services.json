@@ -1,7 +1,5 @@
 {
   "name": "services",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/services.ts",
   "description": "List, enable and disable APIs and services",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "mediaconvert",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/mediaconvert.ts",
   "description": "AWS Elemental MediaConvert",
   "subcommands": [
     {

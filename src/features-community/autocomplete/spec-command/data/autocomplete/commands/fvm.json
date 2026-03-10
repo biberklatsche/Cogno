@@ -1,7 +1,5 @@
 {
   "name": "fvm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fvm.ts",
   "description": "Flutter Version Management: A cli to manage Flutter SDK versions",
   "options": [
     {

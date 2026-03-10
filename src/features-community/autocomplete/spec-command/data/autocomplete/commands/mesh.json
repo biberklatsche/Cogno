@@ -1,7 +1,5 @@
 {
   "name": "mesh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/mesh.ts",
   "description": "(PREVIEW) Manage Azure Service Fabric Mesh Resources",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "paper",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/paper.ts",
   "description": "The Paper CLI",
   "options": [
     {

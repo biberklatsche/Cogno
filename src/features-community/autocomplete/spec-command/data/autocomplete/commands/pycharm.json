@@ -1,7 +1,5 @@
 {
   "name": "pycharm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pycharm.ts",
   "description": "PyCharm cli",
   "options": [
     {

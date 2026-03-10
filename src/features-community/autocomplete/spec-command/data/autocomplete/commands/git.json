@@ -1,7 +1,5 @@
 {
   "name": "git",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/git.ts",
   "description": "Distributed version control system",
   "options": [
     {
@@ -871,7 +869,10 @@
           "baseScore": 61,
           "params": {
             "program": "git",
-            "args": ["tag", "--list"],
+            "args": [
+              "tag",
+              "--list"
+            ],
             "itemLabel": "git tag"
           },
           "when": {
@@ -900,7 +901,10 @@
               "baseScore": 61,
               "params": {
                 "program": "git",
-                "args": ["tag", "--list"],
+                "args": [
+                  "tag",
+                  "--list"
+                ],
                 "itemLabel": "git tag"
               }
             }
@@ -3838,7 +3842,10 @@
           "baseScore": 60,
           "params": {
             "program": "git",
-            "args": ["tag", "--list"],
+            "args": [
+              "tag",
+              "--list"
+            ],
             "itemLabel": "git tag"
           }
         }
@@ -4148,7 +4155,10 @@
           "baseScore": 61,
           "params": {
             "program": "git",
-            "args": ["tag", "--list"],
+            "args": [
+              "tag",
+              "--list"
+            ],
             "itemLabel": "git tag"
           },
           "when": {
@@ -4219,7 +4229,10 @@
               "baseScore": 61,
               "params": {
                 "program": "git",
-                "args": ["tag", "--list"],
+                "args": [
+                  "tag",
+                  "--list"
+                ],
                 "itemLabel": "git tag"
               },
               "when": {
@@ -4254,7 +4267,10 @@
               "baseScore": 61,
               "params": {
                 "program": "git",
-                "args": ["tag", "--list"],
+                "args": [
+                  "tag",
+                  "--list"
+                ],
                 "itemLabel": "git tag"
               },
               "when": {
@@ -4922,7 +4938,10 @@
           "baseScore": 61,
           "params": {
             "program": "git",
-            "args": ["tag", "--list"],
+            "args": [
+              "tag",
+              "--list"
+            ],
             "itemLabel": "git tag"
           },
           "when": {
@@ -5387,7 +5406,10 @@
           "baseScore": 61,
           "params": {
             "program": "git",
-            "args": ["tag", "--list"],
+            "args": [
+              "tag",
+              "--list"
+            ],
             "itemLabel": "git tag"
           },
           "when": {
@@ -5425,7 +5447,10 @@
               "baseScore": 61,
               "params": {
                 "program": "git",
-                "args": ["tag", "--list"],
+                "args": [
+                  "tag",
+                  "--list"
+                ],
                 "itemLabel": "git tag"
               },
               "when": {
@@ -5463,7 +5488,10 @@
               "baseScore": 61,
               "params": {
                 "program": "git",
-                "args": ["tag", "--list"],
+                "args": [
+                  "tag",
+                  "--list"
+                ],
                 "itemLabel": "git tag"
               },
               "when": {
@@ -5558,7 +5586,10 @@
               "baseScore": 61,
               "params": {
                 "program": "git",
-                "args": ["tag", "--list"],
+                "args": [
+                  "tag",
+                  "--list"
+                ],
                 "itemLabel": "git tag"
               },
               "when": {

@@ -1,7 +1,5 @@
 {
   "name": "spring",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/spring.ts",
   "description": "The Spring Boot CLI is a command line tool that you can use to bootstrap a new project from start.spring.io or encode a password",
   "options": [
     {

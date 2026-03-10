@@ -1,7 +1,5 @@
 {
   "name": "kinesisvideo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kinesisvideo.ts",
   "subcommands": [
     {
       "name": "create-signaling-channel",

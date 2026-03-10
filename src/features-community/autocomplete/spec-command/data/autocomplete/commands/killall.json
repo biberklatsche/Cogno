@@ -1,7 +1,5 @@
 {
   "name": "killall",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/killall.ts",
   "description": "Kill processes by name",
   "options": [
     {

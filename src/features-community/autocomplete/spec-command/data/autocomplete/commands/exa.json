@@ -1,7 +1,5 @@
 {
   "name": "exa",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/exa.ts",
   "description": "A modern replacement for ls",
   "options": [
     {

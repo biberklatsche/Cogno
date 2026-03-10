@@ -1,7 +1,5 @@
 {
   "name": "mediapackage-vod",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/mediapackage-vod.ts",
   "description": "AWS Elemental MediaPackage VOD",
   "subcommands": [
     {

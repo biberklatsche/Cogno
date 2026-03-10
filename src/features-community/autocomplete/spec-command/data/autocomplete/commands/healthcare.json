@@ -1,7 +1,5 @@
 {
   "name": "healthcare",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/healthcare.ts",
   "description": "Manage Cloud Healthcare resources",
   "options": [
     {

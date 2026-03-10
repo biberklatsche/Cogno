@@ -1,7 +1,5 @@
 {
   "name": "eas",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/eas.ts",
   "description": "EAS CLI is the command-line app that you will use to interact with EAS services from your terminal",
   "subcommands": [
     {

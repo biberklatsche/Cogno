@@ -1,7 +1,5 @@
 {
   "name": "wezterm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wezterm.ts",
   "description": "Wez's Terminal Emulator",
   "options": [
     {

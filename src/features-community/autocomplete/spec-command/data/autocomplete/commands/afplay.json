@@ -1,7 +1,5 @@
 {
   "name": "afplay",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/afplay.ts",
   "description": "Audio File Play",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "kafka",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kafka.ts",
   "description": "The operations for managing an Amazon MSK cluster",
   "subcommands": [
     {

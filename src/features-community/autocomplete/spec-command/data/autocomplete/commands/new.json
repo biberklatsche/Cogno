@@ -1,7 +1,5 @@
 {
   "name": "new",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-new.ts",
   "description": "The dotnet new command creates a .NET project or other artifacts based on a template",
   "options": [
     {

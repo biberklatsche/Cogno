@@ -1,7 +1,5 @@
 {
   "name": "add",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-add.ts",
   "subcommands": [
     {
       "name": "package",

@@ -1,7 +1,5 @@
 {
   "name": "ml-engine",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/ml-engine.ts",
   "description": "Manage AI Platform jobs and models",
   "options": [
     {

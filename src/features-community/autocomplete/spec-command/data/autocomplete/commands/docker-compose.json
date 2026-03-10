@@ -1,7 +1,5 @@
 {
   "name": "docker-compose",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/docker-compose.ts",
   "description": "Define and run multi-container applications with Docker",
   "options": [
     {

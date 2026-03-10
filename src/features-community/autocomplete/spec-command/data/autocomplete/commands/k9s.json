@@ -1,7 +1,5 @@
 {
   "name": "k9s",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/k9s.ts",
   "description": "K9s is a terminal based UI to interact with your Kubernetes clusters",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "gem",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gem.ts",
   "description": "Ruby package manager",
   "options": [
     {

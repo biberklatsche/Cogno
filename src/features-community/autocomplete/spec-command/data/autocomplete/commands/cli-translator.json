@@ -1,7 +1,5 @@
 {
   "name": "cli-translator",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/cli-translator.ts",
   "description": "Translate ARM template or REST API to CLI scripts",
   "subcommands": [
     {

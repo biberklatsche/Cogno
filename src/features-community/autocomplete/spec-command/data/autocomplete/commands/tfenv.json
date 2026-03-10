@@ -1,7 +1,5 @@
 {
   "name": "tfenv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tfenv.ts",
   "description": "Terraform version manager",
   "options": [
     {

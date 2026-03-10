@@ -1,6 +1,4 @@
 {
   "name": "artisan",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/php/artisan.ts",
   "description": "Laravel Artisan Command"
 }

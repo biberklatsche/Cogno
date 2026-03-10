@@ -1,7 +1,5 @@
 {
   "name": "act",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/act.ts",
   "description": "Run GitHub actions locally by specifying the event name (e.g. `push`) or an action name directly",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "arduino-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/arduino-cli.ts",
   "description": "Arduino Command Line Interface",
   "options": [
     {

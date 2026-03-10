@@ -1,7 +1,5 @@
 {
   "name": "tsh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tsh.ts",
   "description": "TSH: Teleport Authentication Gateway Client",
   "options": [
     {

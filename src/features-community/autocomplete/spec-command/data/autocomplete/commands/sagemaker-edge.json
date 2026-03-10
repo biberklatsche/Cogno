@@ -1,7 +1,5 @@
 {
   "name": "sagemaker-edge",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/sagemaker-edge.ts",
   "description": "SageMaker Edge Manager dataplane service for communicating with active agents",
   "subcommands": [
     {

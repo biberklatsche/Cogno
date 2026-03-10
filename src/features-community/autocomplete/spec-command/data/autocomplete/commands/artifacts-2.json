@@ -1,7 +1,5 @@
 {
   "name": "artifacts",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/artifacts.ts",
   "description": "Manage Artifact Registry resources",
   "options": [
     {

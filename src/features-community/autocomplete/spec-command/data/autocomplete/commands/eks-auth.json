@@ -1,7 +1,5 @@
 {
   "name": "eks-auth",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/eks-auth.ts",
   "description": "The Amazon EKS Auth API and the AssumeRoleForPodIdentity action are only used by the EKS Pod Identity Agent",
   "subcommands": [
     {

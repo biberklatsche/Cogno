@@ -1,7 +1,5 @@
 {
   "name": "ganache-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ganache-cli.ts",
   "description": "Fast Ethereum RPC client",
   "options": [
     {

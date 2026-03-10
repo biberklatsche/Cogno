@@ -1,7 +1,5 @@
 {
   "name": "expo-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/expo-cli.ts",
   "description": "Tools for creating, running, and deploying Universal Expo and React Native apps",
   "options": [
     {

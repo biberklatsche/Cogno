@@ -1,7 +1,5 @@
 {
   "name": "vsce",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vsce.ts",
   "description": "The Visual Studio Code Extension Manager",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "nvim",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nvim.ts",
   "description": "Hyperextensible Vim-based text editor",
   "options": [
     {

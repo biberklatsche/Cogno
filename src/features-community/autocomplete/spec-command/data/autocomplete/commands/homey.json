@@ -1,7 +1,5 @@
 {
   "name": "homey",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/homey.ts",
   "options": [
     {
       "name": "--help"

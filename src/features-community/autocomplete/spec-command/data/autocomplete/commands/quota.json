@@ -1,7 +1,5 @@
 {
   "name": "quota",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/quota.ts",
   "description": "Manage Azure Quota Extension API",
   "subcommands": [
     {

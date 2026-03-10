@@ -1,7 +1,5 @@
 {
   "name": "qldb",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/qldb.ts",
   "description": "The resource management API for Amazon QLDB",
   "subcommands": [
     {

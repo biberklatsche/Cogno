@@ -1,7 +1,5 @@
 {
   "name": "fzf-tmux",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fzf-tmux.ts",
   "description": "Opens a fuzzy finder in a tmux pane",
   "options": [
     {

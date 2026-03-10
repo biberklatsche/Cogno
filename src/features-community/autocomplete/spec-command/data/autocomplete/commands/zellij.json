@@ -1,7 +1,5 @@
 {
   "name": "zellij",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/zellij.ts",
   "description": "A terminal workspace with batteries included",
   "options": [
     {

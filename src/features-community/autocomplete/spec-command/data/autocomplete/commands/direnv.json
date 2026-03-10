@@ -1,7 +1,5 @@
 {
   "name": "direnv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/direnv.ts",
   "description": "Unclutter your .profile",
   "options": [
     {

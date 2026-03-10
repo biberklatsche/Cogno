@@ -1,7 +1,5 @@
 {
   "name": "dynamodbstreams",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/dynamodbstreams.ts",
   "description": "Amazon DynamoDB Amazon DynamoDB Streams provides API actions for accessing streams and processing stream records. To learn more about application development with Streams, see Capturing Table Activity with DynamoDB Streams in the Amazon DynamoDB Developer Guide",
   "subcommands": [
     {

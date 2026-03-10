@@ -1,7 +1,5 @@
 {
   "name": "kind",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kind.ts",
   "description": "Kubernetes IN Docker - local clusters for testing Kubernetes",
   "options": [
     {

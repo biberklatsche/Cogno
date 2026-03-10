@@ -1,7 +1,5 @@
 {
   "name": "adb",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/adb.ts",
   "description": "Android Debug Bridge",
   "options": [
     {

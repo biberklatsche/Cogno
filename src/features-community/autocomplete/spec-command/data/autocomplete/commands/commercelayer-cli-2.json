@@ -1,7 +1,5 @@
 {
   "name": "@commercelayer/cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/commercelayer.ts",
   "subcommands": [
     {
       "name": [

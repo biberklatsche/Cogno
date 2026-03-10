@@ -1,7 +1,5 @@
 {
   "name": "wget",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wget.ts",
   "description": "A non-interactive network retriever",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "valet",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/valet.ts",
   "description": "Valet is a Laravel development environment for macOS minimalists",
   "options": [
     {

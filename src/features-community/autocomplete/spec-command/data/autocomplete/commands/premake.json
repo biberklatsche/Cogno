@@ -1,7 +1,5 @@
 {
   "name": "premake",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/premake.ts",
   "description": "Premake CLI",
   "options": [
     {

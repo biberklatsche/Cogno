@@ -1,7 +1,5 @@
 {
   "name": "ai-examples",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/ai-examples.ts",
   "description": "Add AI powered examples to help content",
   "subcommands": [
     {

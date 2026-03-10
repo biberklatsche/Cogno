@@ -1,7 +1,5 @@
 {
   "name": "chime-sdk-media-pipelines",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/chime-sdk-media-pipelines.ts",
   "description": "The Amazon Chime SDK media pipeline APIs in this section allow software developers to create Amazon Chime SDK media pipelines that capture, concatenate, or stream your Amazon Chime SDK meetings. For more information about media pipelines, see Amazon Chime SDK media pipelines",
   "subcommands": [
     {

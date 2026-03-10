@@ -1,7 +1,5 @@
 {
   "name": "rm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rm.ts",
   "description": "Remove directory entries",
   "options": [
     {

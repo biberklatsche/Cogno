@@ -1,7 +1,5 @@
 {
   "name": "ping",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ping.ts",
   "description": "Send ICMP ECHO_REQUEST to network hosts",
   "options": [
     {

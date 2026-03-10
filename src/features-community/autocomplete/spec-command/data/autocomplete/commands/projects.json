@@ -1,7 +1,5 @@
 {
   "name": "projects",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/projects.ts",
   "description": "Create and manage project access policies",
   "options": [
     {

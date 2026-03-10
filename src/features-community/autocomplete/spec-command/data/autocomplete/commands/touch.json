@@ -1,7 +1,5 @@
 {
   "name": "touch",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/touch.ts",
   "description": "Change file access and modification times",
   "options": [
     {

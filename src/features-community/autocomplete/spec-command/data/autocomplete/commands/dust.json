@@ -1,7 +1,5 @@
 {
   "name": "dust",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dust.ts",
   "description": "Like du but more intuitive",
   "options": [
     {

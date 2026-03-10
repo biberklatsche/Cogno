@@ -1,7 +1,5 @@
 {
   "name": "esbuild",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/esbuild.ts",
   "description": "An extremely fast JavaScript bundler",
   "options": [
     {

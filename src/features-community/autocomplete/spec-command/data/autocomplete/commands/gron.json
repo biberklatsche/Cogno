@@ -1,7 +1,5 @@
 {
   "name": "gron",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gron.ts",
   "description": "Gron is a tool to make it easier to understand big blobs of JSON",
   "options": [
     {

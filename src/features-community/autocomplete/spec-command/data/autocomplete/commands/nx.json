@@ -1,7 +1,5 @@
 {
   "name": "nx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nx.ts",
   "description": "Fig completions for Nx by Nrwl",
   "subcommands": [
     {

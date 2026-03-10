@@ -1,7 +1,5 @@
 {
   "name": "charm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/charm.ts",
   "description": "Do Charm stuff; run without arguments for a TUI or use the sub-commands like a pro",
   "options": [
     {

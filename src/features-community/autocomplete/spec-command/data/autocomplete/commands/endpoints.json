@@ -1,7 +1,5 @@
 {
   "name": "endpoints",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/endpoints.ts",
   "description": "Create, enable and manage API services",
   "options": [
     {

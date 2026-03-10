@@ -1,7 +1,5 @@
 {
   "name": "goctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/goctl.ts",
   "description": "A cli tool to generate go-zero code",
   "options": [
     {

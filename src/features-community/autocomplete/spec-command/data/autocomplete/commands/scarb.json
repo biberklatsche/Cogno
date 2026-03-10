@@ -1,7 +1,5 @@
 {
   "name": "scarb",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/scarb.ts",
   "description": "Scarb, The build toolchain and package manager for Cairo and Starknet ecosystems",
   "options": [
     {

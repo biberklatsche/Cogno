@@ -1,7 +1,5 @@
 {
   "name": "progressline",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/progressline.ts",
   "description": "⏳Track commands progress in a compact one-line format",
   "options": [
     {

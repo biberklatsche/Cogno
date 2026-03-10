@@ -1,7 +1,5 @@
 {
   "name": "asciinema",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/asciinema.ts",
   "description": "Terminal session recorder",
   "options": [
     {

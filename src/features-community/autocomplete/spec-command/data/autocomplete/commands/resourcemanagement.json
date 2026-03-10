@@ -1,7 +1,5 @@
 {
   "name": "resourcemanagement",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/resourcemanagement.ts",
   "description": "Resourcemanagement CLI command group",
   "subcommands": [
     {

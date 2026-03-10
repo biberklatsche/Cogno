@@ -1,7 +1,5 @@
 {
   "name": "sql",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/sql.ts",
   "description": "Create and manage Google Cloud SQL databases",
   "options": [
     {

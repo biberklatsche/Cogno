@@ -1,7 +1,5 @@
 {
   "name": "managedservices",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/managedservices.ts",
   "description": "Manage the registration assignments and definitions in Azure",
   "subcommands": [
     {

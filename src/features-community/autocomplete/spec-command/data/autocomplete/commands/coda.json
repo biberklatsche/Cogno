@@ -1,7 +1,5 @@
 {
   "name": "coda",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/coda.ts",
   "description": "Coda Local development CLI tool. It comes bundled with the Pack SDK and makes it easy to build and manage Packs from the CLI",
   "options": [
     {

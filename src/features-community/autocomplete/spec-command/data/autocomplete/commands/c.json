@@ -1,7 +1,5 @@
 {
   "name": "c++",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/c++.ts",
   "description": "C++ compiler",
   "options": [
     {

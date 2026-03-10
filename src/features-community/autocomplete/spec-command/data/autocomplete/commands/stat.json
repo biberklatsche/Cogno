@@ -1,7 +1,5 @@
 {
   "name": "stat",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/stat.ts",
   "description": "Display file status",
   "options": [
     {

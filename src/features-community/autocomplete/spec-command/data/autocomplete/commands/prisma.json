@@ -1,7 +1,5 @@
 {
   "name": "prisma",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/prisma.ts",
   "description": "Prisma is a modern DB toolkit to query, migrate and model your database",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "ln",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ln.ts",
   "description": "Create (default hard) symbolic links to files",
   "options": [
     {

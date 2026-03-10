@@ -1,7 +1,5 @@
 {
   "name": "laravel",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/laravel.ts",
   "description": "Laravel Installer",
   "options": [
     {

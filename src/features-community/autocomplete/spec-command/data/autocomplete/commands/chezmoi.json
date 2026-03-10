@@ -1,7 +1,5 @@
 {
   "name": "chezmoi",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/chezmoi.ts",
   "description": "Manage your dotfiles across multiple diverse machines, securely",
   "options": [
     {

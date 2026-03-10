@@ -1,7 +1,5 @@
 {
   "name": "pulumi",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pulumi.ts",
   "description": "Pulumi's open source infrastructure as code SDK enables you to create, deploy, and manage infrastructure on any cloud, using your favorite languages",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "ansible-lint",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ansible-lint.ts",
   "description": "Ansible static code analysis",
   "options": [
     {

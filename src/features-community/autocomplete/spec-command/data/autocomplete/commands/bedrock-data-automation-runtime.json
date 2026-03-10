@@ -1,7 +1,5 @@
 {
   "name": "bedrock-data-automation-runtime",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/bedrock-data-automation-runtime.ts",
   "description": "Amazon Bedrock Keystone Runtime",
   "subcommands": [
     {

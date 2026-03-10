@@ -1,7 +1,5 @@
 {
   "name": "iex",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/iex.ts",
   "description": "Elixir Interactive Shell",
   "options": [
     {

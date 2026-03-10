@@ -1,7 +1,5 @@
 {
   "name": "gum",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gum.ts",
   "description": "A tool for glamorous shell scripts",
   "options": [
     {

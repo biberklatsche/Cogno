@@ -1,7 +1,5 @@
 {
   "name": "ffmpeg",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ffmpeg.ts",
   "description": "Play, record, convert, and stream audio and video",
   "options": [
     {

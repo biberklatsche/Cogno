@@ -1,7 +1,5 @@
 {
   "name": "cf",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cf.ts",
   "description": "Cloudfoundry cli",
   "options": [
     {

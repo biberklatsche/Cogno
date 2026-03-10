@@ -1,7 +1,5 @@
 {
   "name": "ruby",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ruby.ts",
   "description": "Interpreted object-oriented scripting language",
   "options": [
     {

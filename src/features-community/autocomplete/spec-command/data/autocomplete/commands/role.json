@@ -1,7 +1,5 @@
 {
   "name": "role",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/role.ts",
   "description": "Manage user roles for access control with Azure Active Directory and service principals",
   "subcommands": [
     {

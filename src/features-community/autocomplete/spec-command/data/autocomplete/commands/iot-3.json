@@ -1,7 +1,5 @@
 {
   "name": "iot",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/iot.ts",
   "description": "Manage Cloud IoT resources",
   "options": [
     {

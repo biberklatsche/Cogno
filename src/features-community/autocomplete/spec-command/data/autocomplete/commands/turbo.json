@@ -1,7 +1,5 @@
 {
   "name": "turbo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/turbo.ts",
   "description": "Turborepo is a high-performance build system for JavaScript and TypeScript codebases",
   "options": [
     {

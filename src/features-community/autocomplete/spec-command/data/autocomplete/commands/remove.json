@@ -1,7 +1,5 @@
 {
   "name": "remove",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-remove.ts",
   "subcommands": [
     {
       "name": "package",

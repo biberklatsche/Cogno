@@ -1,7 +1,5 @@
 {
   "name": "atlas",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/atlas.ts",
   "description": "CLI tool to manage MongoDB Atlas",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "deta",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/deta.ts",
   "description": "Deta CLI for managing Deta Micros",
   "options": [
     {

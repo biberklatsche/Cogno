@@ -1,7 +1,5 @@
 {
   "name": "cp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cp.ts",
   "description": "Copy files and directories",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "publish",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/publish.ts",
   "description": "",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "encore",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/encore.ts",
   "description": "Encore is the fastest way of developing backend applications",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "hop",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hop.ts",
   "description": "Interact with Hop in your terminal",
   "options": [
     {

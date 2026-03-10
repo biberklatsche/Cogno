@@ -1,7 +1,5 @@
 {
   "name": "sed",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sed.ts",
   "description": "Stream editor",
   "options": [
     {

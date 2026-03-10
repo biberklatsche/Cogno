@@ -1,7 +1,5 @@
 {
   "name": "composer",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/composer.ts",
   "description": "Create and manage Cloud Composer Environments",
   "options": [
     {

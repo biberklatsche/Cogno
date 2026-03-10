@@ -1,7 +1,5 @@
 {
   "name": "restore-point",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/restore-point.ts",
   "description": "Manage restore point with res",
   "subcommands": [
     {

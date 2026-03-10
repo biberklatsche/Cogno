@@ -1,7 +1,5 @@
 {
   "name": "pijul",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pijul.ts",
   "description": "A distributed version control system that is at the same time theoretically sound, fast and easy to learn and use",
   "subcommands": [
     {

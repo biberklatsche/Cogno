@@ -1,7 +1,5 @@
 {
   "name": "youtube-dl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/youtube-dl.ts",
   "description": "Download videos from YouTube",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "ssh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ssh.ts",
   "description": "Log into a remote machine",
   "options": [
     {

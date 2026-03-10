@@ -1,7 +1,5 @@
 {
   "name": "braket",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/braket.ts",
   "description": "The Amazon Braket API Reference provides information about the operations and structures supported in Amazon Braket. Additional Resources:    Amazon Braket Developer Guide",
   "subcommands": [
     {

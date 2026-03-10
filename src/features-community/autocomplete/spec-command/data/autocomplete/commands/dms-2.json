@@ -1,7 +1,5 @@
 {
   "name": "dms",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/dms.ts",
   "description": "Manage Azure Data Migration Service (classic) instances",
   "subcommands": [
     {

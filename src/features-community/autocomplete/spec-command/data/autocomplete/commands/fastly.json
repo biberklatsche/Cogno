@@ -1,7 +1,5 @@
 {
   "name": "fastly",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fastly.ts",
   "description": "A CLI for interacting with the Fastly platform",
   "options": [
     {

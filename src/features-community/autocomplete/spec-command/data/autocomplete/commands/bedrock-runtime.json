@@ -1,7 +1,5 @@
 {
   "name": "bedrock-runtime",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/bedrock-runtime.ts",
   "description": "Describes the API operations for running inference using Amazon Bedrock models",
   "subcommands": [
     {

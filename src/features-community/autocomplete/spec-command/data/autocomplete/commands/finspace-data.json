@@ -1,7 +1,5 @@
 {
   "name": "finspace-data",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/finspace-data.ts",
   "description": "The FinSpace APIs let you take actions inside the FinSpace",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "kubectx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kubectx.ts",
   "description": "Switch between Kubernetes-contexts",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "login",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/login.ts",
   "description": "Begin session on the system",
   "options": [
     {

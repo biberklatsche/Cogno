@@ -1,7 +1,5 @@
 {
   "name": "domains",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/domains.ts",
   "description": "Manage domains for your Google Cloud projects",
   "options": [
     {

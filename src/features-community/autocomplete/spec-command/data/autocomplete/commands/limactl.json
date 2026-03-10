@@ -1,7 +1,5 @@
 {
   "name": "limactl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/limactl.ts",
   "description": "Control the Lima(Linux virtual machines)",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "policy-troubleshoot",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/policy-troubleshoot.ts",
   "description": "Troubleshoot Google Cloud Platform policies",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "help",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/help.ts",
   "description": "Search gcloud help text",
   "options": [
     {

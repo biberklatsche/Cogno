@@ -1,7 +1,5 @@
 {
   "name": "shadcn-ui",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/shadcn-ui.ts",
   "description": "Shadcn UI CLI",
   "subcommands": [
     {

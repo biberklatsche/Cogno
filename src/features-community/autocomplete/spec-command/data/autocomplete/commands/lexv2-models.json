@@ -1,7 +1,5 @@
 {
   "name": "lexv2-models",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/lexv2-models.ts",
   "subcommands": [
     {
       "name": "batch-create-custom-vocabulary-item",

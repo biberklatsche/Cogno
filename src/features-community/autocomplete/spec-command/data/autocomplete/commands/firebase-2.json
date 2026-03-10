@@ -1,7 +1,5 @@
 {
   "name": "firebase",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/firebase.ts",
   "description": "Work with Google Firebase",
   "options": [
     {

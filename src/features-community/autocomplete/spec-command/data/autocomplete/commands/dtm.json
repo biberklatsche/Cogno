@@ -1,7 +1,5 @@
 {
   "name": "dtm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dtm.ts",
   "description": "DevStream is an open-source DevOps toolchain manager",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "mdls",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mdls.ts",
   "description": "Lists the metadata attributes for the specified file",
   "options": [
     {

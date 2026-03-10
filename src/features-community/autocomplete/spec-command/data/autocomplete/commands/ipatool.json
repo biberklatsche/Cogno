@@ -1,7 +1,5 @@
 {
   "name": "ipatool",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ipatool.ts",
   "description": "IPATool is a command line tool that allows you to search for iOS apps on the App Store and download a copy of the app package, known as an ipa file",
   "options": [
     {

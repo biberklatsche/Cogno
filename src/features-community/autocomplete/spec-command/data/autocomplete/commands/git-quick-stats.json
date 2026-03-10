@@ -1,7 +1,5 @@
 {
   "name": "git-quick-stats",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/git-quick-stats.ts",
   "description": "Git quick statistics is a simple and efficient way to access various statistics in git repository",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "watchman",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/watchman.ts",
   "description": "A file watching service",
   "options": [
     {

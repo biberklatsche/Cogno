@@ -1,7 +1,5 @@
 {
   "name": "run",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/run.ts",
   "description": "Manage your Cloud Run applications",
   "options": [
     {

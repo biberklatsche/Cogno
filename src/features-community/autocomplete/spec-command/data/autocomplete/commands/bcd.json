@@ -1,7 +1,5 @@
 {
   "name": "bcd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bcd.ts",
   "description": "Bookmark directories and move to them",
   "options": [
     {

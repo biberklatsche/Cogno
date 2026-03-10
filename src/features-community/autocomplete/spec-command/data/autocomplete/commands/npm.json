@@ -1,7 +1,5 @@
 {
   "name": "npm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/npm.ts",
   "description": "Node package manager",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "electron",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/electron.ts",
   "description": "Build cross platform desktop apps with JavaScript, HTML and CSS",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "onboardbase",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/onboardbase.ts",
   "description": "Onboardbase manages app secrets and credentials securely with team work and contractors in mind",
   "subcommands": [
     {

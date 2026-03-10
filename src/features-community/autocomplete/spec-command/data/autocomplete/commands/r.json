@@ -1,7 +1,5 @@
 {
   "name": "R",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/r.ts",
   "description": "Start R or invoke an R tool using CMD",
   "options": [
     {

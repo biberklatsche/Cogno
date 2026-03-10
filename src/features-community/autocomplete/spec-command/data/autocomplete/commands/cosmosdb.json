@@ -1,7 +1,5 @@
 {
   "name": "cosmosdb",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/cosmosdb.ts",
   "description": "Manage Azure Cosmos DB database accounts",
   "subcommands": [
     {

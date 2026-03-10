@@ -1,7 +1,5 @@
 {
   "name": "pnpm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pnpm.ts",
   "description": "Fast, disk space efficient package manager",
   "options": [
     {

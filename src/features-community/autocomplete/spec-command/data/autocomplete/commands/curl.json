@@ -1,7 +1,5 @@
 {
   "name": "curl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/curl.ts",
   "description": "Transfer a URL",
   "options": [
     {

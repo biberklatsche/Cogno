@@ -1,7 +1,5 @@
 {
   "name": "elastictranscoder",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/elastictranscoder.ts",
   "description": "AWS Elastic Transcoder Service The AWS Elastic Transcoder Service",
   "subcommands": [
     {

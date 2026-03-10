@@ -1,7 +1,5 @@
 {
   "name": "jenv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/jenv.ts",
   "description": "Manage your Java environment",
   "options": [
     {

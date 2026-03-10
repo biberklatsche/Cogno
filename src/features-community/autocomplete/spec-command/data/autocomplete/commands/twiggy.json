@@ -1,7 +1,5 @@
 {
   "name": "twiggy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/twiggy.ts",
   "description": "A code-size profiler for WebAssembly",
   "options": [
     {

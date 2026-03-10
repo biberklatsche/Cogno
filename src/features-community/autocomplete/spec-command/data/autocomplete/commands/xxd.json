@@ -1,7 +1,5 @@
 {
   "name": "xxd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xxd.ts",
   "description": "Make a hexdump or do the reverse",
   "options": [
     {

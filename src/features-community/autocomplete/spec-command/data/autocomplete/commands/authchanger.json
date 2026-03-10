@@ -1,7 +1,5 @@
 {
   "name": "authchanger",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/authchanger.ts",
   "description": "Authchanger is a utility included with Jamf Connect to help you manage the authorization database used by macOS to determine how the login process progresses",
   "options": [
     {

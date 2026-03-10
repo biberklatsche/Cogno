@@ -1,7 +1,5 @@
 {
   "name": "bosh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bosh.ts",
   "description": "Bosh cli to managed your bosh deployment",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "ag",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ag.ts",
   "description": "Recursively search for PATTERN in PATH. Like grep or ack, but faster",
   "options": [
     {

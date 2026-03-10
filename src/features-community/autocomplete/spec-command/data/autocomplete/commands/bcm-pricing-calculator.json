@@ -1,7 +1,5 @@
 {
   "name": "bcm-pricing-calculator",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/bcm-pricing-calculator.ts",
   "description": "You can use the Pricing Calculator API to programmatically create estimates for your planned cloud use. You can model usage and commitments such as Savings Plans and Reserved Instances, and generate estimated costs using your discounts and benefit sharing preferences.  The Pricing Calculator API provides the following endpoint:    https://bcm-pricing-calculator.us-east-1.api.aws",
   "subcommands": [
     {

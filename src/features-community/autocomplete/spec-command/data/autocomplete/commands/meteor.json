@@ -1,7 +1,5 @@
 {
   "name": "meteor",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/meteor.ts",
   "description": "Run the meteor command-line tool",
   "subcommands": [
     {

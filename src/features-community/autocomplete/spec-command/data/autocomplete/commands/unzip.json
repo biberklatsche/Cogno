@@ -1,7 +1,5 @@
 {
   "name": "unzip",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/unzip.ts",
   "description": "Extract compressed files in a ZIP archive",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "aliases",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aliases.ts",
   "description": "Bash aliases on steroids, dynamic alias functions for bash",
   "options": [
     {

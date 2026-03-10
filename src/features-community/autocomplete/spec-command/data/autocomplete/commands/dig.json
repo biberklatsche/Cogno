@@ -1,7 +1,5 @@
 {
   "name": "dig",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dig.ts",
   "description": "Domain Information Groper",
   "subcommands": [
     {

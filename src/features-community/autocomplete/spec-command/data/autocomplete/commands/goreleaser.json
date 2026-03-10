@@ -1,7 +1,5 @@
 {
   "name": "goreleaser",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/goreleaser.ts",
   "description": "Deliver Go binaries as fast and easily as possible",
   "options": [
     {

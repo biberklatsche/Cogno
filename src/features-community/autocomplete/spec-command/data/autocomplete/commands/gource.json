@@ -1,7 +1,5 @@
 {
   "name": "gource",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gource.ts",
   "description": "Gource is an OpenGL-based 3D visualisation tool for source control repositories",
   "options": [
     {

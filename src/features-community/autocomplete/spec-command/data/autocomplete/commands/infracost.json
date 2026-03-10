@@ -1,7 +1,5 @@
 {
   "name": "infracost",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/infracost/0.10.0.ts",
   "description": "Cloud cost estimates for Terraform",
   "options": [
     {

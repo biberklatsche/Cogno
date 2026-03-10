@@ -1,7 +1,5 @@
 {
   "name": "fastlane",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fastlane.ts",
   "description": "Fastlane is an open source platform aimed at simplifying Android and iOS deployment",
   "options": [
     {

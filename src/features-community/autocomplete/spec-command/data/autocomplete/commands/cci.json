@@ -1,7 +1,5 @@
 {
   "name": "cci",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cci.ts",
   "description": "CumulusCI command line interface",
   "options": [
     {

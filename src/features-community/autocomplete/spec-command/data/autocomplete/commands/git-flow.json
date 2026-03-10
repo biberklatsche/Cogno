@@ -1,7 +1,5 @@
 {
   "name": "git-flow",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/git-flow.ts",
   "description": "A collection of Git extensions to provide high-level repository operations for Vincent Driessen's branching model",
   "subcommands": [
     {

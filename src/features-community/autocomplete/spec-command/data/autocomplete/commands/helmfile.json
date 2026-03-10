@@ -1,7 +1,5 @@
 {
   "name": "helmfile",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/helmfile.ts",
   "description": "Deploy helm charts",
   "options": [
     {

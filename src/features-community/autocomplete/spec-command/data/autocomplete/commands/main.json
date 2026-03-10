@@ -1,7 +1,5 @@
 {
   "name": "main",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/shell-config.ts",
   "options": [
     {
       "name": [

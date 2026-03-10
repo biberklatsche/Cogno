@@ -1,7 +1,5 @@
 {
   "name": "volta",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/volta.ts",
   "description": "The JavaScript Launcher",
   "options": [
     {

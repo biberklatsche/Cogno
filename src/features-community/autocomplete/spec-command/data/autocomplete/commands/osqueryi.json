@@ -1,7 +1,5 @@
 {
   "name": "osqueryi",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/osqueryi.ts",
   "description": "Your OS as a high-performance relational database",
   "options": [
     {

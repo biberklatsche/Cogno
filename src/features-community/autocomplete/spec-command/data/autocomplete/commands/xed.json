@@ -1,7 +1,5 @@
 {
   "name": "xed",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xed.ts",
   "description": "Xcode text editor invocation tool",
   "options": [
     {

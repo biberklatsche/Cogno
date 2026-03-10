@@ -1,7 +1,5 @@
 {
   "name": "less",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/less.ts",
   "description": "Opposite of more",
   "options": [
     {

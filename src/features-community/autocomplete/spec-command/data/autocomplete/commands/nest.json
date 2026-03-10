@@ -1,7 +1,5 @@
 {
   "name": "nest",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nest.ts",
   "description": "Nest CLI",
   "options": [
     {

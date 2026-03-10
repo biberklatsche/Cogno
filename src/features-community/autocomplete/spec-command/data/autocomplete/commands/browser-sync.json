@@ -1,7 +1,5 @@
 {
   "name": "browser-sync",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/browser-sync.ts",
   "description": "Keep multiple browsers & devices in sync when building websites",
   "options": [
     {

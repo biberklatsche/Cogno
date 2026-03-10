@@ -1,7 +1,5 @@
 {
   "name": "cache",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/cache.ts",
   "description": "Commands to manage CLI objects cached using the --defer argument",
   "subcommands": [
     {

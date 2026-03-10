@@ -1,7 +1,5 @@
 {
   "name": "circleci",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/circleci.ts",
   "description": "CircleCI CLI",
   "options": [
     {

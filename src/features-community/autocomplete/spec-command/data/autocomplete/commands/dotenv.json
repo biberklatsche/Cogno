@@ -1,7 +1,5 @@
 {
   "name": "dotenv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotenv.ts",
   "description": "Loads environment variables from .env",
   "options": [
     {

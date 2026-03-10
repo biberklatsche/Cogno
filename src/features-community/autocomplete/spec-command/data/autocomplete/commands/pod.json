@@ -1,7 +1,5 @@
 {
   "name": "pod",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pod.ts",
   "description": "CocoaPods, the Cocoa library package manager",
   "options": [
     {

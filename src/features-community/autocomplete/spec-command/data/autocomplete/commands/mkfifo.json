@@ -1,7 +1,5 @@
 {
   "name": "mkfifo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mkfifo.ts",
   "description": "Make FIFOs (first-in, first-out)",
   "options": [
     {

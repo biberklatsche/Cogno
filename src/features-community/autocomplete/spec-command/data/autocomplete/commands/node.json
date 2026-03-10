@@ -1,7 +1,5 @@
 {
   "name": "node",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/node.ts",
   "description": "Run the node interpreter",
   "options": [
     {

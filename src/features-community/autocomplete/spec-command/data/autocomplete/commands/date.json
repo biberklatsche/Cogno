@@ -1,7 +1,5 @@
 {
   "name": "date",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/date.ts",
   "description": "Display or set date and time",
   "options": [
     {

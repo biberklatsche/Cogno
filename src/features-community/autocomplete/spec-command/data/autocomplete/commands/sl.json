@@ -1,7 +1,5 @@
 {
   "name": "sl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sl.ts",
   "description": "A highly advanced animation program for curing your bad habit of mistyping",
   "options": [
     {

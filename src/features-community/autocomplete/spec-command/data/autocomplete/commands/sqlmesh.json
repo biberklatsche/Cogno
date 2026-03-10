@@ -1,7 +1,5 @@
 {
   "name": "sqlmesh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sqlmesh.ts",
   "description": "SQLMesh command line tool",
   "options": [
     {

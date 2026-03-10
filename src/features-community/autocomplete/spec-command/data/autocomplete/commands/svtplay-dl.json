@@ -1,7 +1,5 @@
 {
   "name": "svtplay-dl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/svtplay-dl.ts",
   "description": "Download videos from your favourite play services",
   "options": [
     {

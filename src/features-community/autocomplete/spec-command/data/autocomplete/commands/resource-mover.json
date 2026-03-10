@@ -1,7 +1,5 @@
 {
   "name": "resource-mover",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/resource-mover.ts",
   "description": "Manage Resource Mover Service API",
   "subcommands": [
     {

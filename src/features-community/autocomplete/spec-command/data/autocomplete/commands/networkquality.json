@@ -1,7 +1,5 @@
 {
   "name": "networkQuality",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/networkQuality.ts",
   "description": "Measure the different aspects of network quality",
   "options": [
     {

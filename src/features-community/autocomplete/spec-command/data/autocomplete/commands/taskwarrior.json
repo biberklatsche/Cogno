@@ -1,7 +1,5 @@
 {
   "name": "taskwarrior",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/task/taskwarrior.ts",
   "description": "A command line todo manager",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "@fig/publish-spec",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/@fig/publish-spec.ts",
   "description": "Publish a spec to fig teams",
   "options": [
     {

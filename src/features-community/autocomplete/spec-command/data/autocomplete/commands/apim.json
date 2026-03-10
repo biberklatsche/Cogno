@@ -1,7 +1,5 @@
 {
   "name": "apim",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/apim.ts",
   "description": "Manage Azure API Management services",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "yank",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/yank.ts",
   "description": "Yank terminal output to clipboard",
   "options": [
     {

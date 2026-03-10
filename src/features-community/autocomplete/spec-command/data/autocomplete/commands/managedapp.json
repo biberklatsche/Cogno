@@ -1,7 +1,5 @@
 {
   "name": "managedapp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/managedapp.ts",
   "description": "Manage template solutions provided and maintained by Independent Software Vendors (ISVs)",
   "subcommands": [
     {

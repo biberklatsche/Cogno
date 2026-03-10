@@ -1,7 +1,5 @@
 {
   "name": "config",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/config.ts",
   "description": "View and edit Cloud SDK properties",
   "options": [
     {

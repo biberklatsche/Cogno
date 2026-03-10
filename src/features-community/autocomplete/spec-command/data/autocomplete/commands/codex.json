@@ -1,6 +1,5 @@
 {
   "name": "codex",
-  "source": "fig",
   "description": "Codex CLI",
   "options": [
     {

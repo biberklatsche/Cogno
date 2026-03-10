@@ -1,7 +1,5 @@
 {
   "name": "xcode-select",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xcode-select.ts",
   "description": "Active developer directory for Xcode tools",
   "options": [
     {

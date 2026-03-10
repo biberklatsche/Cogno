@@ -1,7 +1,5 @@
 {
   "name": "app",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/app.ts",
   "description": "Manage your App Engine deployments",
   "options": [
     {

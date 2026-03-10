@@ -1,6 +1,4 @@
 {
   "name": "repeat",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/repeat.ts",
   "description": "Interpret the result as a number and repeat the commands this many times"
 }

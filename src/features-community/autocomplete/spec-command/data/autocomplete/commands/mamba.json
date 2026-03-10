@@ -1,7 +1,5 @@
 {
   "name": "mamba",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mamba.ts",
   "description": "Mamba is a reimplementation of the conda package manager in C++",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "ts-node",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ts-node.ts",
   "description": "Run the TypeScript interpreter for Node.JS",
   "options": [
     {

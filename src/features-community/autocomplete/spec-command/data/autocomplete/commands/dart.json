@@ -1,7 +1,5 @@
 {
   "name": "dart",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dart.ts",
   "description": "A command-line utility for Dart development",
   "options": [
     {

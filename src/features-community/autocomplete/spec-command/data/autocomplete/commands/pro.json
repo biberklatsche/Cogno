@@ -1,7 +1,5 @@
 {
   "name": "pro",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pro.ts",
   "description": "Manage Ubuntu Pro services from Canonical",
   "subcommands": [
     {

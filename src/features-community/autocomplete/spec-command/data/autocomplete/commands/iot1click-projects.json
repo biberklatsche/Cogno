@@ -1,7 +1,5 @@
 {
   "name": "iot1click-projects",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/iot1click-projects.ts",
   "description": "The AWS IoT 1-Click Projects API Reference",
   "subcommands": [
     {

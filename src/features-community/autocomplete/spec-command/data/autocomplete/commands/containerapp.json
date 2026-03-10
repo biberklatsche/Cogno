@@ -1,7 +1,5 @@
 {
   "name": "containerapp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/containerapp.ts",
   "description": "Manage Azure Container Apps",
   "subcommands": [
     {

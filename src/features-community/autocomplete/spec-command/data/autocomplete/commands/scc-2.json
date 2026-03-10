@@ -1,7 +1,5 @@
 {
   "name": "scc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/scc.ts",
   "description": "Sloc, Cloc and Code. Count lines of code in a directory with complexity estimation",
   "options": [
     {

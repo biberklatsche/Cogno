@@ -1,7 +1,5 @@
 {
   "name": "network",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/network.ts",
   "description": "Manage Azure Network resources",
   "subcommands": [
     {

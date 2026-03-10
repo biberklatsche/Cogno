@@ -1,7 +1,5 @@
 {
   "name": "cloudhsmv2",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/cloudhsmv2.ts",
   "description": "For more information about CloudHSM, see CloudHSM and the  CloudHSM User Guide",
   "subcommands": [
     {

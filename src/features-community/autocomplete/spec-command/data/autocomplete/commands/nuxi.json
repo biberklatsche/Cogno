@@ -1,7 +1,5 @@
 {
   "name": "nuxi",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nuxi.ts",
   "description": "Nuxt 3 CLI",
   "options": [
     {

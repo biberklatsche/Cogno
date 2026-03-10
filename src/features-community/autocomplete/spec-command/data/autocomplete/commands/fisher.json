@@ -1,7 +1,5 @@
 {
   "name": "fisher",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fisher.ts",
   "description": "A plugin manager for Fish",
   "options": [
     {

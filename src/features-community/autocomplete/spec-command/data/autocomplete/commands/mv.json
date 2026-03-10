@@ -1,7 +1,5 @@
 {
   "name": "mv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mv.ts",
   "description": "Move & rename files and folders",
   "options": [
     {

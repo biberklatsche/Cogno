@@ -1,7 +1,5 @@
 {
   "name": "game",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/game.ts",
   "description": "Managed Cloud Game Services",
   "options": [
     {

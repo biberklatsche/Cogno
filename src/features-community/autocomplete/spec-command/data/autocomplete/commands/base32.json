@@ -1,7 +1,5 @@
 {
   "name": "base32",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/base32.ts",
   "description": "Base32 encode/decode data and print to standard output",
   "options": [
     {

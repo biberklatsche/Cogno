@@ -1,7 +1,5 @@
 {
   "name": "dataproc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/dataproc.ts",
   "description": "Create and manage Google Cloud Dataproc clusters and jobs",
   "options": [
     {

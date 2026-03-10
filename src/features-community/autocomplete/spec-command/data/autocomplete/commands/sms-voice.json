@@ -1,7 +1,5 @@
 {
   "name": "sms-voice",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/sms-voice.ts",
   "description": "Pinpoint SMS and Voice Messaging public facing APIs",
   "subcommands": [
     {

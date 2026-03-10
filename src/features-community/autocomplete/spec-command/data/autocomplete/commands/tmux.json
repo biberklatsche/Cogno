@@ -1,7 +1,5 @@
 {
   "name": "tmux",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tmux.ts",
   "description": "A terminal multiplexer",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "sfdx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sfdx.ts",
   "description": "",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "adr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/adr.ts",
   "description": "Manage Architectural Design Records",
   "subcommands": [
     {

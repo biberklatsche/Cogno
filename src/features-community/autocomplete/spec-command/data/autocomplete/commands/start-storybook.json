@@ -1,7 +1,5 @@
 {
   "name": "start-storybook",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/start-storybook.ts",
   "description": "Storybook start CLI tools",
   "options": [
     {

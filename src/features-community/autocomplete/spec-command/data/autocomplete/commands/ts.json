@@ -1,7 +1,5 @@
 {
   "name": "ts",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/ts.ts",
   "description": "Manage template specs at subscription or resource group scope",
   "subcommands": [
     {

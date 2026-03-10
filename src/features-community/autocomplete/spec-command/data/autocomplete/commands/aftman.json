@@ -1,7 +1,5 @@
 {
   "name": "aftman",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aftman.ts",
   "description": "A toolchain manager, enabling project-specific command line tools",
   "options": [
     {

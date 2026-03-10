@@ -1,7 +1,5 @@
 {
   "name": "phpunit-watcher",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/phpunit-watcher.ts",
   "description": "Automatically rerun PHPUnit tests when source code changes",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/@capgo/cli.ts",
   "description": "Manage packages and bundle versions in Capgo Cloud",
   "subcommands": [
     {

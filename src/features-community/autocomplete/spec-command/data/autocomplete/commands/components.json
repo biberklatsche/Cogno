@@ -1,7 +1,5 @@
 {
   "name": "components",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/components.ts",
   "description": "List, install, update, or remove Google Cloud SDK components",
   "options": [
     {

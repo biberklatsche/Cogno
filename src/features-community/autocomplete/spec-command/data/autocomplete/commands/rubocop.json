@@ -1,7 +1,5 @@
 {
   "name": "rubocop",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rubocop.ts",
   "description": "A Ruby static code analyzer and formatter, based on the community Ruby style guide",
   "options": [
     {

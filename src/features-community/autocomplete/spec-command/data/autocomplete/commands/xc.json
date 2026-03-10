@@ -1,7 +1,5 @@
 {
   "name": "xc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xc.ts",
   "description": "List tasks from an xc-compatible markdown file",
   "options": [
     {

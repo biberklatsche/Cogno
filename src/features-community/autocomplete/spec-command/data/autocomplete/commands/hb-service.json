@@ -1,7 +1,5 @@
 {
   "name": "hb-service",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hb-service.ts",
   "description": "The hb-service command is provided by homebridge-config-ui-x",
   "options": [
     {

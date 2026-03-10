@@ -1,7 +1,5 @@
 {
   "name": "mknod",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mknod.ts",
   "description": "Create device special file",
   "options": [
     {

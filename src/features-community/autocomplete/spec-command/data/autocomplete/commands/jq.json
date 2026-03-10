@@ -1,7 +1,5 @@
 {
   "name": "jq",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/jq.ts",
   "description": "Command-line JSON processor",
   "options": [
     {

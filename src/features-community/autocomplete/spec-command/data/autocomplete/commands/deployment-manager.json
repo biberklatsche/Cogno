@@ -1,7 +1,5 @@
 {
   "name": "deployment-manager",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/deployment-manager.ts",
   "description": "Manage deployments of cloud resources",
   "options": [
     {

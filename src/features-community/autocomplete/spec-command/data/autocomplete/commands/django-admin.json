@@ -1,7 +1,5 @@
 {
   "name": "django-admin",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/django-admin.ts",
   "description": "Utility script for the Django Web framework",
   "subcommands": [
     {

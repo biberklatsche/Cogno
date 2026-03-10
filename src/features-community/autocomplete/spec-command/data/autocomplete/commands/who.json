@@ -1,7 +1,5 @@
 {
   "name": "who",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/who.ts",
   "description": "Display who is logged in",
   "options": [
     {

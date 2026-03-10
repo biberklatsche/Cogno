@@ -1,7 +1,5 @@
 {
   "name": "qodana",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/qodana.ts",
   "description": "Run Qodana as fast as possible, with minimum effort required",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "eza",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/eza.ts",
   "description": "A modern replacement for ls",
   "options": [
     {

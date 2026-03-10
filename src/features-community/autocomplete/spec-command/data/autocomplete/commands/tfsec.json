@@ -1,7 +1,5 @@
 {
   "name": "tfsec",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tfsec.ts",
   "description": "Tfsec is a simple tool to detect potential security vulnerabilities in your terraformed infrastructure",
   "options": [
     {

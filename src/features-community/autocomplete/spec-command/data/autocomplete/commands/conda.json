@@ -1,7 +1,5 @@
 {
   "name": "conda",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/conda.ts",
   "description": "Conda package manager",
   "options": [
     {

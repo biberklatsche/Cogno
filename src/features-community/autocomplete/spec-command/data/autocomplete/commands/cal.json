@@ -1,7 +1,5 @@
 {
   "name": "cal",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cal.ts",
   "description": "Displays a calendar and the date of Easter",
   "options": [
     {

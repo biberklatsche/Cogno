@@ -1,7 +1,5 @@
 {
   "name": "xcodebuild",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xcodebuild.ts",
   "description": "Build Xcode projects",
   "options": [
     {

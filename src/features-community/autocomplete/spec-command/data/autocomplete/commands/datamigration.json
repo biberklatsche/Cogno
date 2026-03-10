@@ -1,7 +1,5 @@
 {
   "name": "datamigration",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/datamigration.ts",
   "description": "Manage Data Migration",
   "subcommands": [
     {

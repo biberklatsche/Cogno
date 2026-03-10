@@ -1,7 +1,5 @@
 {
   "name": "rvm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rvm.ts",
   "description": "Ruby version manager",
   "options": [
     {

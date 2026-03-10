@@ -1,7 +1,5 @@
 {
   "name": "cicada",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cicada.ts",
   "description": "Write CI/CD Pipelines in TypeScript",
   "options": [
     {

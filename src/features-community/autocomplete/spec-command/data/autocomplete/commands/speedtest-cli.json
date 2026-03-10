@@ -1,7 +1,5 @@
 {
   "name": "speedtest-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/speedtest-cli.ts",
   "description": "Command line interface for testing internet bandwidth using speedtest.net",
   "options": [
     {

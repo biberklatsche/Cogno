@@ -1,7 +1,5 @@
 {
   "name": "svokit",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/svokit.ts",
   "description": "Runs built svokit project",
   "options": [
     {

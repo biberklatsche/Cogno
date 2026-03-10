@@ -1,7 +1,5 @@
 {
   "name": "nuget",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-nuget.ts",
   "subcommands": [
     {
       "name": "delete",

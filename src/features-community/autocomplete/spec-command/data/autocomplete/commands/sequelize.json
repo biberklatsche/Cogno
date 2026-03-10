@@ -1,7 +1,5 @@
 {
   "name": "sequelize",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sequelize.ts",
   "description": "The Sequelize Command Line Interface",
   "options": [
     {

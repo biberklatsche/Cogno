@@ -1,7 +1,5 @@
 {
   "name": "lpass",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lpass.ts",
   "description": "Command line interface for LastPass",
   "options": [
     {

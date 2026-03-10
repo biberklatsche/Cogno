@@ -1,7 +1,5 @@
 {
   "name": "nhost",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nhost.ts",
   "description": "Nhost's command-line",
   "subcommands": [
     {

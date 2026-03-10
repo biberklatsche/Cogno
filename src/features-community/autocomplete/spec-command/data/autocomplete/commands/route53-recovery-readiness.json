@@ -1,7 +1,5 @@
 {
   "name": "route53-recovery-readiness",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/route53-recovery-readiness.ts",
   "description": "Recovery readiness",
   "subcommands": [
     {

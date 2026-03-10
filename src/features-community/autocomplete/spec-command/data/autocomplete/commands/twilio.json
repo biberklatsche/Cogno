@@ -1,7 +1,5 @@
 {
   "name": "twilio",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/twilio.ts",
   "description": "Manage your Twilio resources from your terminal",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "nuxt",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nuxt.ts",
   "description": "",
   "subcommands": [
     {

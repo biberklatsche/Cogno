@@ -1,7 +1,5 @@
 {
   "name": "lvim",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lvim.ts",
   "description": "Hyperextensible Vim-based text editor",
   "options": [
     {

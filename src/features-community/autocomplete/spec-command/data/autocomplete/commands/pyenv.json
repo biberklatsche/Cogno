@@ -1,7 +1,5 @@
 {
   "name": "pyenv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pyenv.ts",
   "description": "Pyenv",
   "options": [
     {

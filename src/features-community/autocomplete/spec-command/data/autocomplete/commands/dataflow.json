@@ -1,7 +1,5 @@
 {
   "name": "dataflow",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/dataflow.ts",
   "description": "Manage Google Cloud Dataflow resources",
   "options": [
     {

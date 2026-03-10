@@ -1,7 +1,5 @@
 {
   "name": "atuin",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/atuin.ts",
   "description": "Magical shell history",
   "options": [
     {

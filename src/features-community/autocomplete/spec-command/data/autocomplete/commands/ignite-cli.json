@@ -1,7 +1,5 @@
 {
   "name": "ignite-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ignite-cli.ts",
   "description": "Ignite is a CLI that helps you spin up a new React Native app using a battle-tested tech stack",
   "options": [
     {

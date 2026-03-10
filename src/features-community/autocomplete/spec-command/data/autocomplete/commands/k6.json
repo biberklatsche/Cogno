@@ -1,7 +1,5 @@
 {
   "name": "k6",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/k6.ts",
   "description": "Grafana k6 is an open-source load testing tool that makes performance testing easy",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "meta",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/meta.ts",
   "description": "Cloud meta introspection commands",
   "options": [
     {

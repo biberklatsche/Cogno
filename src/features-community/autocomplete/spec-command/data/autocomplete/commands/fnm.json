@@ -1,7 +1,5 @@
 {
   "name": "fnm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fnm.ts",
   "description": "Fast Node Manager",
   "options": [
     {

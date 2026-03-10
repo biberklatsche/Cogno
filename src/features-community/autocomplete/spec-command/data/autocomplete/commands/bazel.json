@@ -1,7 +1,5 @@
 {
   "name": "bazel",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bazel.ts",
   "description": "Bazel the build system!",
   "options": [
     {

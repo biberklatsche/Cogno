@@ -1,7 +1,5 @@
 {
   "name": "term",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/term.ts",
   "description": "Manage marketplace agreement with marketplaceordering",
   "subcommands": [
     {

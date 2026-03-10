@@ -1,7 +1,5 @@
 {
   "name": "echo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/echo.ts",
   "description": "Write arguments to the standard output",
   "options": [
     {

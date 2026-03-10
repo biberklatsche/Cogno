@@ -1,7 +1,5 @@
 {
   "name": "provider",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/provider.ts",
   "description": "Manage resource providers",
   "subcommands": [
     {

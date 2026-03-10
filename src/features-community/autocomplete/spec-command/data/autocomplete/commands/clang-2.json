@@ -1,7 +1,5 @@
 {
   "name": "clang",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/clang.ts",
   "description": "Clang LLVM compiler",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "synapse",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/synapse.ts",
   "description": "Manage and operate Synapse Workspace, Spark Pool, SQL Pool",
   "subcommands": [
     {

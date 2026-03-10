@@ -1,7 +1,5 @@
 {
   "name": "nl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nl.ts",
   "description": "Line numbering filter",
   "options": [
     {

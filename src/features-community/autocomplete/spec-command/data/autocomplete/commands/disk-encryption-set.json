@@ -1,7 +1,5 @@
 {
   "name": "disk-encryption-set",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/disk-encryption-set.ts",
   "description": "Disk Encryption Set resource",
   "subcommands": [
     {

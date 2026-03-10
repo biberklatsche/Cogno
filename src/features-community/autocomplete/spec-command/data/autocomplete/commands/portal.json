@@ -1,7 +1,5 @@
 {
   "name": "portal",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/portal.ts",
   "description": "Manage Portal",
   "subcommands": [
     {

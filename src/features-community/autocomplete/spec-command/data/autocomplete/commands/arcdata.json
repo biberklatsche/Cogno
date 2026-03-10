@@ -1,7 +1,5 @@
 {
   "name": "arcdata",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/arcdata.ts",
   "description": "Commands for using Azure Arc-enabled data services",
   "subcommands": [
     {

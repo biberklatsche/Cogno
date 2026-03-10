@@ -1,7 +1,5 @@
 {
   "name": "swift",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/swift.ts",
   "description": "Swift compiler",
   "options": [
     {

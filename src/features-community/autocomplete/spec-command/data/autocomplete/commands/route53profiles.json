@@ -1,7 +1,5 @@
 {
   "name": "route53profiles",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/route53profiles.ts",
   "description": "With Amazon Route 53 Profiles you can share Route 53 configurations with VPCs and AWS accounts",
   "subcommands": [
     {

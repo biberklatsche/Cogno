@@ -1,7 +1,5 @@
 {
   "name": "pg_dump",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pg_dump.ts",
   "description": "Dumps a database as a text file or to other formats",
   "options": [
     {

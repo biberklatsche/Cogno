@@ -1,7 +1,5 @@
 {
   "name": "functions",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/functions.ts",
   "description": "Manage Google Cloud Functions",
   "options": [
     {

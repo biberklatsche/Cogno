@@ -1,7 +1,5 @@
 {
   "name": "cosign",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cosign.ts",
   "description": "",
   "options": [
     {

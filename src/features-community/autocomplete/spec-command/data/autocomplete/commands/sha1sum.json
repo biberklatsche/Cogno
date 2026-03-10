@@ -1,7 +1,5 @@
 {
   "name": "sha1sum",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sha1sum.ts",
   "description": "Print or check SHA1 (160-bit) checksums",
   "options": [
     {

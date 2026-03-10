@@ -1,7 +1,5 @@
 {
   "name": "mas",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mas.ts",
   "description": "A simple command line interface for the Mac App Store",
   "subcommands": [
     {

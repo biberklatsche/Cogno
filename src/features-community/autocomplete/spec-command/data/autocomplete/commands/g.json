@@ -1,7 +1,5 @@
 {
   "name": "g++",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/g++.ts",
   "description": "The default C++ compiler for most linux distributions",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "bedrock",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/bedrock.ts",
   "description": "Describes the API operations for creating, managing, fine-turning, and evaluating Amazon Bedrock models",
   "subcommands": [
     {

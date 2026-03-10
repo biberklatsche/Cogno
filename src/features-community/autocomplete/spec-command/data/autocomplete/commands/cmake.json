@@ -1,7 +1,5 @@
 {
   "name": "cmake",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cmake.ts",
   "description": "Command-line interface of the cross-platform buildsystem generator CMake",
   "options": [
     {

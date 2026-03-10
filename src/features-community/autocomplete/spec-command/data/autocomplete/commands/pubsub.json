@@ -1,7 +1,5 @@
 {
   "name": "pubsub",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/pubsub.ts",
   "description": "Manage Cloud Pub/Sub topics, subscriptions, and snapshots",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "iam",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/iam.ts",
   "description": "Manage IAM service accounts and keys",
   "options": [
     {

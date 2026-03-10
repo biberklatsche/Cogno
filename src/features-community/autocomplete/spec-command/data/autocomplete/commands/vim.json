@@ -1,7 +1,5 @@
 {
   "name": "vim",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vim.ts",
   "description": "Vi IMproved, a programmer's text editor",
   "options": [
     {

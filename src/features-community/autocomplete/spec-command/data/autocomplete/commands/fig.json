@@ -1,7 +1,5 @@
 {
   "name": "fig",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fig/1.0.0.ts",
   "description": "The CLI for Fig",
   "options": [
     {

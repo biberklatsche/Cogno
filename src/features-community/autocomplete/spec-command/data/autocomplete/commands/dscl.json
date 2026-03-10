@@ -1,7 +1,5 @@
 {
   "name": "dscl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dscl.ts",
   "description": "Directory Service command line utility",
   "options": [
     {

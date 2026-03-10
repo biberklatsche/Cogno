@@ -1,7 +1,5 @@
 {
   "name": "starkli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/starkli.ts",
   "description": "Starkli, a ⚡ blazing ⚡ fast ⚡ CLI tool for Starknet powered by 🦀 starknet-rs 🦀",
   "subcommands": [
     {

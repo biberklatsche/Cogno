@@ -1,7 +1,5 @@
 {
   "name": "mvn",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mvn.ts",
   "description": "Maven - a Java based project management and comprehension tool",
   "options": [
     {

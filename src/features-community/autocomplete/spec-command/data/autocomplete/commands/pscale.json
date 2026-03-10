@@ -1,7 +1,5 @@
 {
   "name": "pscale",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pscale.ts",
   "description": "Pscale is a CLI library for communicating with PlanetScale's API",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "cloudfront-keyvaluestore",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/cloudfront-keyvaluestore.ts",
   "description": "Amazon CloudFront KeyValueStore Service to View and Update Data in a KVS Resource",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "vela",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vela.ts",
   "description": "A Highly Extensible Platform Engine based on Kubernetes and Open Application Model",
   "options": [
     {

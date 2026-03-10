@@ -1,7 +1,5 @@
 {
   "name": "pca-connector-scep",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/pca-connector-scep.ts",
   "description": "Connector for SCEP creates a connector between Amazon Web Services Private CA and your SCEP-enabled clients and devices. For more information, see Connector for SCEP in the Amazon Web Services Private CA User Guide",
   "subcommands": [
     {

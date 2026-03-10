@@ -1,7 +1,5 @@
 {
   "name": "wasm-pack",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wasm-pack.ts",
   "description": "",
   "options": [
     {

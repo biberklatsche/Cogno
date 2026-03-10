@@ -1,7 +1,5 @@
 {
   "name": "cloudflared",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cloudflared.ts",
   "description": "Cloudflared connects your machine or user identity to Cloudflare's global network",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "pkg-config",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pkg-config.ts",
   "description": "Return metainformation about installed libraries",
   "options": [
     {

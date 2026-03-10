@@ -1,7 +1,5 @@
 {
   "name": "support",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/support.ts",
   "description": "Manage Azure support resource",
   "subcommands": [
     {

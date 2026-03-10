@@ -1,7 +1,5 @@
 {
   "name": "code-insiders",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/code-insiders.ts",
   "description": "Visual Studio Code",
   "options": [
     {

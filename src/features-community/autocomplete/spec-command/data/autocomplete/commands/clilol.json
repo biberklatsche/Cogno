@@ -1,7 +1,5 @@
 {
   "name": "clilol",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/clilol.ts",
   "description": "A cli for omg.lol",
   "options": [
     {

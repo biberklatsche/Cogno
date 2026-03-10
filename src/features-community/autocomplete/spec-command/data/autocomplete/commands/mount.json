@@ -1,7 +1,5 @@
 {
   "name": "mount",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mount.ts",
   "description": "Mount disks and manage subtrees",
   "options": [
     {

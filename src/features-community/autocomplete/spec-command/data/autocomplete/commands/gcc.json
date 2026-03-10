@@ -1,7 +1,5 @@
 {
   "name": "gcc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcc.ts",
   "description": "The default compiler for most linux distributions",
   "options": [
     {

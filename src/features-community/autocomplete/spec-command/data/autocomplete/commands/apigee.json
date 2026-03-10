@@ -1,7 +1,5 @@
 {
   "name": "apigee",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/apigee.ts",
   "description": "Manage Apigee resources",
   "options": [
     {

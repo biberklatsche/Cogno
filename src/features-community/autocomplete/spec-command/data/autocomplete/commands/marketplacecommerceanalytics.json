@@ -1,7 +1,5 @@
 {
   "name": "marketplacecommerceanalytics",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/marketplacecommerceanalytics.ts",
   "description": "Provides AWS Marketplace business intelligence data on-demand",
   "subcommands": [
     {

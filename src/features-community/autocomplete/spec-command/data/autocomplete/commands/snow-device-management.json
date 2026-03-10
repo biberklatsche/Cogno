@@ -1,7 +1,5 @@
 {
   "name": "snow-device-management",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/snow-device-management.ts",
   "description": "Amazon Web Services Snow Device Management documentation",
   "subcommands": [
     {

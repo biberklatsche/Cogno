@@ -1,7 +1,5 @@
 {
   "name": "wrangler",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wrangler.ts",
   "description": "Wrangler CLI for Cloudflare Workers",
   "options": [
     {

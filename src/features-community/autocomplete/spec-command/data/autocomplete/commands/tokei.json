@@ -1,7 +1,5 @@
 {
   "name": "tokei",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tokei.ts",
   "description": "Count your code, quickly",
   "options": [
     {

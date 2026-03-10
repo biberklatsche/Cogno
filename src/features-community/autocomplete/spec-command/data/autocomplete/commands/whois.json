@@ -1,7 +1,5 @@
 {
   "name": "whois",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/whois.ts",
   "description": "Query a database for information about a domain registrant",
   "options": [
     {

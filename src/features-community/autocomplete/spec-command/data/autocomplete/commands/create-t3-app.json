@@ -1,7 +1,5 @@
 {
   "name": "create-t3-app",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-t3-app.ts",
   "description": "A CLI for creating web applications with the t3 stack",
   "options": [
     {

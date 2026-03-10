@@ -1,7 +1,5 @@
 {
   "name": "group",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/group.ts",
   "description": "Manage resource groups and template deployments",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "maigret",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/maigret.ts",
   "description": "Maigret is an easy-to-use and powerful OSINT tool for collecting a dossier on a person by username only",
   "options": [
     {

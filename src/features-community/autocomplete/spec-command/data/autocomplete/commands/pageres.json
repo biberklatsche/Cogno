@@ -1,7 +1,5 @@
 {
   "name": "pageres",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pageres.ts",
   "description": "Capture website screenshots",
   "options": [
     {

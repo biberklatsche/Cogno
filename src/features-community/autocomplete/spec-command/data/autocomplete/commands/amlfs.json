@@ -1,7 +1,5 @@
 {
   "name": "amlfs",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/amlfs.ts",
   "description": "Manage lustre file system",
   "subcommands": [
     {

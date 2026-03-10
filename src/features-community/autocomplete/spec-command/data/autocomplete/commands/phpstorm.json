@@ -1,7 +1,5 @@
 {
   "name": "phpstorm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/phpstorm.ts",
   "description": "PhpStorm cli",
   "options": [
     {

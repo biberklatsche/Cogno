@@ -1,6 +1,4 @@
 {
   "name": "source",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/source.ts",
   "description": "Source files in shell"
 }

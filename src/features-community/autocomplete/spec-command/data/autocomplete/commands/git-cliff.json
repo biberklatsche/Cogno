@@ -1,7 +1,5 @@
 {
   "name": "git-cliff",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/git-cliff.ts",
   "description": "A highly customizable changelog generator ⛰️",
   "options": [
     {

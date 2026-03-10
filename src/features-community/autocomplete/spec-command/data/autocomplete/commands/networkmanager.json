@@ -1,7 +1,5 @@
 {
   "name": "networkmanager",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/networkmanager.ts",
   "description": "Amazon Web Services enables you to centrally manage your Amazon Web Services Cloud WAN core network and your Transit Gateway network across Amazon Web Services accounts, Regions, and on-premises locations",
   "subcommands": [
     {

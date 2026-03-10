@@ -1,7 +1,5 @@
 {
   "name": "zig",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/zig.ts",
   "description": "Zig is a general-purpose programming language and toolchain for maintaining robust, optimal, and reusable software",
   "options": [
     {

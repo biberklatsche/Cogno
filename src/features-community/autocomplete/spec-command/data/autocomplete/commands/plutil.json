@@ -1,7 +1,5 @@
 {
   "name": "plutil",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/plutil.ts",
   "description": "Check the syntax of property list files, or convert a plist file from one format to another. Specifying - as an input file reads from stdin",
   "options": [
     {

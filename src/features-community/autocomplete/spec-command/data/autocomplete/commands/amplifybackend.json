@@ -1,7 +1,5 @@
 {
   "name": "amplifybackend",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/amplifybackend.ts",
   "description": "AWS Amplify Admin API",
   "subcommands": [
     {

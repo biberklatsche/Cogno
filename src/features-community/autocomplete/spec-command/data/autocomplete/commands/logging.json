@@ -1,7 +1,5 @@
 {
   "name": "logging",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/logging.ts",
   "description": "Manage Cloud Logging",
   "options": [
     {

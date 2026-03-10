@@ -1,7 +1,5 @@
 {
   "name": "file",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/file.ts",
   "description": "Determine file type",
   "options": [
     {

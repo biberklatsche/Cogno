@@ -26,8 +26,6 @@ export type SubcommandSpec = {
 
 export type CommandSpec = {
     name: string;
-    source?: "fig";
-    sourceUrl?: string;
     description?: string;
     subcommands?: Array<string | SubcommandSpec>;
     options?: Array<string | OptionSpec>;

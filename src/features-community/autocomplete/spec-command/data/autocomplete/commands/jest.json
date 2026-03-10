@@ -1,7 +1,5 @@
 {
   "name": "jest",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/jest.ts",
   "description": "A delightful JavaScript Testing Framework with a focus on simplicity",
   "options": [
     {

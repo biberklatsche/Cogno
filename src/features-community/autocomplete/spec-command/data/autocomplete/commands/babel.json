@@ -1,7 +1,5 @@
 {
   "name": "babel",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/babel.ts",
   "options": [
     {
       "name": [

@@ -1,7 +1,5 @@
 {
   "name": "shield",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/shield.ts",
   "description": "Shield Advanced This is the Shield Advanced API Reference. This guide is for developers who need detailed information about the Shield Advanced API actions, data types, and errors. For detailed information about WAF and Shield Advanced features and an overview of how to use the WAF and Shield Advanced APIs, see the WAF and Shield Developer Guide",
   "subcommands": [
     {

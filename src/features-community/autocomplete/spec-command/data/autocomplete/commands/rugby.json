@@ -1,7 +1,5 @@
 {
   "name": "rugby",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rugby.ts",
   "description": "Cache Cocoa 🌱 pods for faster rebuild and indexing Xcode project. https://github.com/swiftyfinch/Rugby",
   "options": [
     {

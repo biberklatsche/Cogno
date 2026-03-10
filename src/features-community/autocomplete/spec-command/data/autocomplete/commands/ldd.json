@@ -1,7 +1,5 @@
 {
   "name": "ldd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ldd.ts",
   "description": "Print shared library dependencies",
   "options": [
     {

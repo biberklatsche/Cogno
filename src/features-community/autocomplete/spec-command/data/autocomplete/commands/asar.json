@@ -1,7 +1,5 @@
 {
   "name": "asar",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/asar.ts",
   "description": "A simple extensive tar-like archive format with indexing",
   "options": [
     {

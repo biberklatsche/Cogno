@@ -1,7 +1,5 @@
 {
   "name": "trex",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/trex.ts",
   "description": "Advanced package management for deno, based on import_map.json",
   "options": [
     {

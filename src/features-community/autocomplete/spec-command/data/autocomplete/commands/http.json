@@ -1,7 +1,5 @@
 {
   "name": "http",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/http.ts",
   "description": "HTTPie: command-line HTTP client for the API era",
   "options": [
     {

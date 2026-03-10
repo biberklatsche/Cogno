@@ -1,7 +1,5 @@
 {
   "name": "redis",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/redis.ts",
   "description": "Manage Cloud Memorystore Redis resources",
   "options": [
     {

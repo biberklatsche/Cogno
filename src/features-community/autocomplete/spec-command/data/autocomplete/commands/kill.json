@@ -1,7 +1,5 @@
 {
   "name": "kill",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kill.ts",
   "description": "Terminate or signal a process",
   "options": [
     {

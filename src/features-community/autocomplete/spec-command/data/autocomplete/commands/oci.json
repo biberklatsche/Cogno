@@ -1,7 +1,5 @@
 {
   "name": "oci",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/oci.ts",
   "description": "Oracle Cloud Infrastructure CLI",
   "options": [
     {

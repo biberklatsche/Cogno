@@ -1,7 +1,5 @@
 {
   "name": "consumption",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/consumption.ts",
   "description": "Manage consumption of Azure resources",
   "subcommands": [
     {

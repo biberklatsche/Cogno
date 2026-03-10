@@ -1,7 +1,5 @@
 {
   "name": "scp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/scp.ts",
   "description": "Copies files or directories between hosts on a network",
   "options": [
     {

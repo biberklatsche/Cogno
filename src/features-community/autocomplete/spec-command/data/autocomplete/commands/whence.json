@@ -1,7 +1,5 @@
 {
   "name": "whence",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/whence.ts",
   "description": "For each name, indicate how it should be interpreted",
   "options": [
     {

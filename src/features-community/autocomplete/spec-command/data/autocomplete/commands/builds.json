@@ -1,7 +1,5 @@
 {
   "name": "builds",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/builds.ts",
   "description": "Create and manage builds for Google Cloud Build",
   "options": [
     {

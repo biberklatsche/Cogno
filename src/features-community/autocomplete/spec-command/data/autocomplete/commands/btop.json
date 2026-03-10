@@ -1,7 +1,5 @@
 {
   "name": "btop",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/btop.ts",
   "description": "Beautifuler htop (interactive process viewer)",
   "options": [
     {

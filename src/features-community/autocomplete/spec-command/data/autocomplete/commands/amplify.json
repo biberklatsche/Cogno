@@ -1,7 +1,5 @@
 {
   "name": "amplify",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/amplify.ts",
   "description": "A set of tools and services to help front-end web and mobile developers build scalable full stack applications",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "pocketbase",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pocketbase.ts",
   "description": "PocketBase CLI",
   "options": [
     {

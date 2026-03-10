@@ -1,7 +1,5 @@
 {
   "name": "hostname",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hostname.ts",
   "description": "Set or print name of current host system",
   "options": [
     {

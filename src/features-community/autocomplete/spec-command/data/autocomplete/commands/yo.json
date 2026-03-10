@@ -1,7 +1,5 @@
 {
   "name": "yo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/yo.ts",
   "description": "Yeoman generator",
   "options": [
     {

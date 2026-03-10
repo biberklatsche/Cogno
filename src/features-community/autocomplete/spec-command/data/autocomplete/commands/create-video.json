@@ -1,6 +1,4 @@
 {
   "name": "create-video",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-video.ts",
   "description": "CLI used to create remotion video project"
 }

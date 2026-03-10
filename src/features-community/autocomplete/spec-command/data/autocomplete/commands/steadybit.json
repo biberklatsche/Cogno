@@ -1,7 +1,5 @@
 {
   "name": "steadybit",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/steadybit.ts",
   "description": "Command-line interface to interact with the Steadybit API",
   "options": [
     {

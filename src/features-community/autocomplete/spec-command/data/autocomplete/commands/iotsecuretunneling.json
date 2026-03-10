@@ -1,7 +1,5 @@
 {
   "name": "iotsecuretunneling",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/iotsecuretunneling.ts",
   "description": "IoT Secure Tunneling IoT Secure Tunneling creates remote connections to devices deployed in the field. For more information about how IoT Secure Tunneling works, see IoT Secure Tunneling",
   "subcommands": [
     {

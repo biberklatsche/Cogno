@@ -1,7 +1,5 @@
 {
   "name": "shasum",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/shasum.ts",
   "description": "Print or Check SHA Checksums",
   "options": [
     {

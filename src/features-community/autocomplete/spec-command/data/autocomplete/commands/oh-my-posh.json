@@ -1,7 +1,5 @@
 {
   "name": "oh-my-posh",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/oh-my-posh.ts",
   "description": "",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "workloads",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/workloads.ts",
   "description": "Manage workloads",
   "subcommands": [
     {

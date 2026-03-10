@@ -1,7 +1,5 @@
 {
   "name": "private-link",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/private-link.ts",
   "description": "Private-link association CLI command group",
   "subcommands": [
     {

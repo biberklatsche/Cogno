@@ -1,7 +1,5 @@
 {
   "name": "timestream-query",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/timestream-query.ts",
   "description": "Amazon Timestream Query",
   "subcommands": [
     {

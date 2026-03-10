@@ -1,7 +1,5 @@
 {
   "name": "ams",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/ams.ts",
   "description": "Manage Azure Media Services resources",
   "subcommands": [
     {

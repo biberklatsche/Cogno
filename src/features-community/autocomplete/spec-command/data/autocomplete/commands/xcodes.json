@@ -1,7 +1,5 @@
 {
   "name": "xcodes",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xcodes.ts",
   "description": "Manage the Xcode versions installed on your Mac",
   "options": [
     {

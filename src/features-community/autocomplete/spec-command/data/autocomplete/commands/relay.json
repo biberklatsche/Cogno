@@ -1,7 +1,5 @@
 {
   "name": "relay",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/relay.ts",
   "description": "Manage Azure Relay Service namespaces, WCF relays, hybrid connections, and rules",
   "subcommands": [
     {

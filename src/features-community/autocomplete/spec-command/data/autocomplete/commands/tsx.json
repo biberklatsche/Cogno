@@ -1,7 +1,5 @@
 {
   "name": "tsx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tsx.ts",
   "description": "Run TypeScript file using tsx",
   "options": [
     {

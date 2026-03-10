@@ -1,7 +1,5 @@
 {
   "name": "symfony",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/symfony.ts",
   "description": "Symfony Binary",
   "options": [
     {

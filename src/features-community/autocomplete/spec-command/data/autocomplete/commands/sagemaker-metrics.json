@@ -1,7 +1,5 @@
 {
   "name": "sagemaker-metrics",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/sagemaker-metrics.ts",
   "description": "Contains all data plane API operations and data types for Amazon SageMaker Metrics. Use these APIs to put and retrieve (get) features related to your training run.    BatchPutMetrics",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "tmuxinator",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tmuxinator.ts",
   "description": "Create and manage tmux sessions easily",
   "subcommands": [
     {

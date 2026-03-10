@@ -1,7 +1,5 @@
 {
   "name": "ni",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ni.ts",
   "description": "Use the right package manager - install",
   "options": [
     {

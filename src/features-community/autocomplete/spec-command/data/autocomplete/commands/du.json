@@ -1,7 +1,5 @@
 {
   "name": "du",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/du.ts",
   "description": "Display disk usage statistics",
   "options": [
     {

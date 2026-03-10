@@ -1,7 +1,5 @@
 {
   "name": "shopify",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/shopify/3.0.0.ts",
   "description": "Shopify CLI is a command-line interface tool that helps you build Shopify apps and themes. It quickly generates Shopify apps, themes, and custom storefronts. You can also use it to automate many common development tasks. Visit https://shopify.dev/apps/tools/cli to know more",
   "options": [
     {

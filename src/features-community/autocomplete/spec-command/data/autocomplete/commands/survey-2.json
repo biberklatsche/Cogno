@@ -1,7 +1,5 @@
 {
   "name": "survey",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/survey.ts",
   "description": "Invoke a customer satisfaction survey for Cloud SDK",
   "options": [
     {

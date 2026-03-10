@@ -1,7 +1,5 @@
 {
   "name": "hanainstance",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/hanainstance.ts",
   "description": "(PREVIEW) Manage Azure SAP HANA Instance",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "docker",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/docker.ts",
   "description": "*(DEPRECATED)*  Enable Docker CLI access to Google Container Registry",
   "options": [
     {

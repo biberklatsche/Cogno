@@ -1,7 +1,5 @@
 {
   "name": "mypy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mypy.ts",
   "description": "Mypy is a static type checker for Python",
   "options": [
     {

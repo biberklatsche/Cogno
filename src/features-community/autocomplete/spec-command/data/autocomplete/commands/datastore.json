@@ -1,7 +1,5 @@
 {
   "name": "datastore",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/datastore.ts",
   "description": "Manage your Cloud Datastore resources",
   "options": [
     {

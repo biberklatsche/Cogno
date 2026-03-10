@@ -1,7 +1,5 @@
 {
   "name": "apigatewayv2",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/apigatewayv2.ts",
   "description": "Amazon API Gateway V2",
   "subcommands": [
     {

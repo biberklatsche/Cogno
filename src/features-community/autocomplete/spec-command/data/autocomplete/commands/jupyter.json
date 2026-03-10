@@ -1,7 +1,5 @@
 {
   "name": "jupyter",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/jupyter.ts",
   "description": "An interactive computing environment for notebook programming",
   "options": [
     {

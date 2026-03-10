@@ -1,7 +1,5 @@
 {
   "name": "quasar",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/quasar.ts",
   "description": "Quasar Framework CLI",
   "options": [
     {

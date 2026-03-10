@@ -1,7 +1,5 @@
 {
   "name": "st2",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/st2.ts",
   "description": "CLI for StackStorm event-driven automation platform",
   "options": [
     {

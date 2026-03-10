@@ -1,7 +1,5 @@
 {
   "name": "tb",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tb.ts",
   "description": "Tinybird CLI",
   "options": [
     {

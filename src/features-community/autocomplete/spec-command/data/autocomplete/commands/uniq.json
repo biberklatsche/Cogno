@@ -1,7 +1,5 @@
 {
   "name": "uniq",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/uniq.ts",
   "description": "Report or omit repeated line",
   "options": [
     {

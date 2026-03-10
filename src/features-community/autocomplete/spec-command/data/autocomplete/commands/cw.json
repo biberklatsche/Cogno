@@ -1,7 +1,5 @@
 {
   "name": "cw",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cw.ts",
   "description": "Top level cli commands",
   "options": [
     {

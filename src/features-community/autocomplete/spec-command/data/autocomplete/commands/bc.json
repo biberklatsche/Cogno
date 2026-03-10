@@ -1,7 +1,5 @@
 {
   "name": "bc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bc.ts",
   "description": "An arbitrary precision calculator language",
   "options": [
     {

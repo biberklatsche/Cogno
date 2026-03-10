@@ -1,7 +1,5 @@
 {
   "name": "rustrover",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rustrover.ts",
   "description": "RustRover cli",
   "options": [
     {

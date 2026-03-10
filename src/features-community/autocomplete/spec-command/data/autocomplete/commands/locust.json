@@ -1,7 +1,5 @@
 {
   "name": "locust",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/locust.ts",
   "description": "Locust is an easy to use, scriptable and scalable Python-based performance testing tool",
   "options": [
     {

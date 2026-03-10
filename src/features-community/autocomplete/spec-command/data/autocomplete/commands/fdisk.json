@@ -1,7 +1,5 @@
 {
   "name": "fdisk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fdisk.ts",
   "description": "Manipulate disk partition table",
   "options": [
     {

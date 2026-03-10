@@ -1,7 +1,5 @@
 {
   "name": "tree",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tree.ts",
   "description": "Display directories as trees (with optional color/HTML output)",
   "options": [
     {

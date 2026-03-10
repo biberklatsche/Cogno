@@ -1,7 +1,5 @@
 {
   "name": "cordova",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cordova.ts",
   "description": "Manage your Cordova application",
   "options": [
     {

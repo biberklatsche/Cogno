@@ -1,7 +1,5 @@
 {
   "name": "pandoc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pandoc.ts",
   "description": "A universal document converter",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "sanity",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sanity.ts",
   "description": "Sanity CLI tool for managing Sanity installations, managing plugins, schemas and datasets",
   "options": [
     {

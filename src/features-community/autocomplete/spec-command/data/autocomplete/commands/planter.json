@@ -1,7 +1,5 @@
 {
   "name": "planter",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/planter.ts",
   "options": [
     {
       "name": [

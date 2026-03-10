@@ -1,7 +1,5 @@
 {
   "name": "fin",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fin.ts",
   "description": "Docksal command line utility",
   "subcommands": [
     {

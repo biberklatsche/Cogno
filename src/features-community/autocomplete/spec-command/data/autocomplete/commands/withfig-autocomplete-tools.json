@@ -1,7 +1,5 @@
 {
   "name": "@withfig/autocomplete-tools",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/@withfig/autocomplete-tools.ts",
   "description": "Dev tools for fig's autocomplete",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "lp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lp.ts",
   "description": "Print files",
   "options": [
     {

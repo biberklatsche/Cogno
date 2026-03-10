@@ -1,7 +1,5 @@
 {
   "name": "ssh-keygen",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ssh-keygen.ts",
   "description": "Generates, manages and converts authentication keys for ssh",
   "options": [
     {

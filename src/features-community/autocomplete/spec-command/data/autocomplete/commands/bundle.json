@@ -1,7 +1,5 @@
 {
   "name": "bundle",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bundle.ts",
   "description": "Ruby Dependency Management",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "n",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/n.ts",
   "description": "Node version management",
   "options": [
     {

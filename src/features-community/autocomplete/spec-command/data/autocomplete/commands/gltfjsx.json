@@ -1,7 +1,5 @@
 {
   "name": "gltfjsx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gltfjsx.ts",
   "description": "GLTF to JSX converter",
   "options": [
     {

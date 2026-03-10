@@ -1,7 +1,5 @@
 {
   "name": "trunk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/trunk.ts",
   "description": "An all-in-one tool for scalably checking, formatting, and monitoring code",
   "options": [
     {

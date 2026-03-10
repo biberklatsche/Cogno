@@ -1,7 +1,5 @@
 {
   "name": "sqlite3",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sqlite3.ts",
   "description": "A command line interface for SQLite version 3",
   "options": [
     {

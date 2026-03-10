@@ -1,7 +1,5 @@
 {
   "name": "okta",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/okta.ts",
   "description": "The Okta CLI is the easiest way to get started with Okta!",
   "options": [
     {

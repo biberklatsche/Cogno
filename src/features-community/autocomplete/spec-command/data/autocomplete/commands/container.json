@@ -1,7 +1,5 @@
 {
   "name": "container",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/container.ts",
   "description": "Manage Azure Container Instances",
   "subcommands": [
     {

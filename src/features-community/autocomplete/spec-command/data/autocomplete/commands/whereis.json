@@ -1,7 +1,5 @@
 {
   "name": "whereis",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/whereis.ts",
   "description": "Locate the binary, source, and manual page files for a command",
   "options": [
     {

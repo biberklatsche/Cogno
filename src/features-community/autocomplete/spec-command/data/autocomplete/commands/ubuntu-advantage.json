@@ -1,7 +1,5 @@
 {
   "name": "ubuntu-advantage",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ubuntu-advantage.ts",
   "description": "Manage Ubuntu Pro services from Canonical",
   "subcommands": [
     {

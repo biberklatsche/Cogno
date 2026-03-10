@@ -1,7 +1,5 @@
 {
   "name": "tkn",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tkn.ts",
   "description": "CLI for tekton pipelines",
   "options": [
     {

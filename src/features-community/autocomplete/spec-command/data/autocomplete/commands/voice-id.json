@@ -1,7 +1,5 @@
 {
   "name": "voice-id",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/voice-id.ts",
   "description": "Amazon Connect Voice ID provides real-time caller authentication and fraud risk detection, which make voice interactions in contact centers more secure and efficient",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "newman",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/newman.ts",
   "description": "Newman is a command-line collection runner for Postman",
   "options": [
     {

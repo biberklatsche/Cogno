@@ -1,7 +1,5 @@
 {
   "name": "hyperfine",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hyperfine.ts",
   "description": "A command-line benchmarking tool",
   "options": [
     {

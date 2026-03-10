@@ -1,7 +1,5 @@
 {
   "name": "s3api",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/s3api.ts",
   "subcommands": [
     {
       "name": "abort-multipart-upload",

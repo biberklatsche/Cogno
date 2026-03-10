@@ -1,7 +1,5 @@
 {
   "name": "dapr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dapr.ts",
   "description": "Dapr CLI",
   "options": [
     {

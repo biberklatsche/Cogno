@@ -1,7 +1,5 @@
 {
   "name": "license-manager-linux-subscriptions",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/license-manager-linux-subscriptions.ts",
   "description": "With License Manager, you can discover and track your commercial Linux subscriptions on running Amazon EC2 instances",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "wp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wp.ts",
   "description": "WP-CLI is the command-line interface for WordPress",
   "subcommands": [
     {

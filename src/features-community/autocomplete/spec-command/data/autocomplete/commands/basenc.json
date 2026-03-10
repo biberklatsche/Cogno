@@ -1,7 +1,5 @@
 {
   "name": "basenc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/basenc.ts",
   "description": "Encode/decode data and print to standard output",
   "options": [
     {

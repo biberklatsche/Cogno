@@ -1,6 +1,4 @@
 {
   "name": "noglob",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/noglob.ts",
   "description": "ZSH pre-command modifier that disables glob expansion"
 }

@@ -1,7 +1,5 @@
 {
   "name": "create-react-native-app",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-react-native-app.ts",
   "description": "Creates a new React Native project",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "pipelines",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/pipelines.ts",
   "description": "Manage Azure Pipelines.\n\n\t\tThis command group is a part of the azure-devops extension",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "dscacheutil",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dscacheutil.ts",
   "description": "Utility for managing the Directory Service cache",
   "subcommands": [
     {

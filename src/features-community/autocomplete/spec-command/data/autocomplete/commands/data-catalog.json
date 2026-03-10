@@ -1,7 +1,5 @@
 {
   "name": "data-catalog",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/data-catalog.ts",
   "description": "Manage Cloud Data Catalog resources",
   "options": [
     {

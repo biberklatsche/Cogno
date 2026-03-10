@@ -1,7 +1,5 @@
 {
   "name": "change-analysis",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/change-analysis.ts",
   "description": "List changes for resources",
   "subcommands": [
     {

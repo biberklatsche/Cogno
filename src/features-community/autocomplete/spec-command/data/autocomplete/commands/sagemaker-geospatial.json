@@ -1,7 +1,5 @@
 {
   "name": "sagemaker-geospatial",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/sagemaker-geospatial.ts",
   "description": "Provides APIs for creating and managing SageMaker geospatial resources",
   "subcommands": [
     {

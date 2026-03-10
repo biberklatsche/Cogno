@@ -1,7 +1,5 @@
 {
   "name": "gradle",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gradle.ts",
   "description": "Gradle is an open-source build automation tool that is designed to be flexible enough to build almost any type of software",
   "options": [
     {

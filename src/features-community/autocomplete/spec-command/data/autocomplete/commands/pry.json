@@ -1,7 +1,5 @@
 {
   "name": "pry",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pry.ts",
   "description": "Interactive Ruby",
   "options": [
     {

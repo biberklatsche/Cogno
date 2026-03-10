@@ -1,7 +1,5 @@
 {
   "name": "splash-cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/splash.ts",
   "description": "Get stunning wallpapers from Unsplash",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "tsuru",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tsuru.ts",
   "description": "Tsuru is the command line utility used by application developers, that will allow users to create, list, bind and manage apps",
   "options": [
     {

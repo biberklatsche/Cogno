@@ -1,7 +1,5 @@
 {
   "name": "image",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/image.ts",
   "description": "Manage custom virtual machine images",
   "subcommands": [
     {

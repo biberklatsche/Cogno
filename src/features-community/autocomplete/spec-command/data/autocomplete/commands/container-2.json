@@ -1,7 +1,5 @@
 {
   "name": "container",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/container.ts",
   "description": "Deploy and manage clusters of machines for running containers",
   "options": [
     {

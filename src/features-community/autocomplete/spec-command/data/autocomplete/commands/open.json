@@ -1,7 +1,5 @@
 {
   "name": "open",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/open.ts",
   "description": "Open files, apps, or URLs using default application",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "pac",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pac.ts",
   "description": "Power Platform CLI",
   "subcommands": [
     {

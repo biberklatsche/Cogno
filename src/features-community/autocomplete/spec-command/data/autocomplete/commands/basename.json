@@ -1,7 +1,5 @@
 {
   "name": "basename",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/basename.ts",
   "description": "Return filename portion of pathname",
   "options": [
     {

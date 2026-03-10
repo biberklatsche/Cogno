@@ -1,7 +1,5 @@
 {
   "name": "format",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-format.ts",
   "description": "Dotnet format is a code formatter that applies style preferences to a project or solution. Preferences will be read from an .editorconfig file, if present, otherwise a default set of preferences will be used",
   "options": [
     {

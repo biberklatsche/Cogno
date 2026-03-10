@@ -1,7 +1,5 @@
 {
   "name": "serve",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/serve.ts",
   "description": "Static file serving and directory listing",
   "options": [
     {

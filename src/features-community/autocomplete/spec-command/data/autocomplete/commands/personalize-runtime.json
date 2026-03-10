@@ -1,7 +1,5 @@
 {
   "name": "personalize-runtime",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/personalize-runtime.ts",
   "subcommands": [
     {
       "name": "get-action-recommendations",

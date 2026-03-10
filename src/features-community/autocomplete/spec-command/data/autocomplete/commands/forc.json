@@ -1,7 +1,5 @@
 {
   "name": "forc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/forc.ts",
   "description": "Fuel Orchestrator",
   "options": [
     {

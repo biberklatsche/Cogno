@@ -1,7 +1,5 @@
 {
   "name": "rome",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rome.ts",
   "description": "Rome CLI",
   "options": [
     {

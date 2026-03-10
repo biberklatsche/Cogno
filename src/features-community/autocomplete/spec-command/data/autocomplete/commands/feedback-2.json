@@ -1,7 +1,5 @@
 {
   "name": "feedback",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/feedback.ts",
   "description": "Provide feedback to the Google Cloud SDK team",
   "options": [
     {

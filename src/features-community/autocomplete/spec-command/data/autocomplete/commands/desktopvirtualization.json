@@ -1,7 +1,5 @@
 {
   "name": "desktopvirtualization",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/desktopvirtualization.ts",
   "description": "Manage desktop virtualization",
   "subcommands": [
     {

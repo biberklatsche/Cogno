@@ -1,7 +1,5 @@
 {
   "name": "uname",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/uname.ts",
   "description": "Print operating system name",
   "options": [
     {

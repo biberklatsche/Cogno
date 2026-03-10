@@ -1,7 +1,5 @@
 {
   "name": "micro",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/micro.ts",
   "description": "A modern and intuitive terminal-based text editor",
   "options": [
     {

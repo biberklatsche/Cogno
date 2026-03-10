@@ -1,7 +1,5 @@
 {
   "name": "snaplet",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/snaplet.ts",
   "description": "Create and share PostgreSQL snapshots with schema, data transformation, and preview databases for collaborative development (see: https://docs.snaplet.dev)",
   "options": [
     {

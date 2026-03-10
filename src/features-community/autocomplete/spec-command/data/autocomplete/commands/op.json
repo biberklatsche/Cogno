@@ -1,7 +1,5 @@
 {
   "name": "op",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/op.ts",
   "description": "Official 1Password CLI",
   "options": [
     {

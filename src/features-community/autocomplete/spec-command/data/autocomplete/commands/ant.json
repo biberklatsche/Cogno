@@ -1,7 +1,5 @@
 {
   "name": "ant",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ant.ts",
   "description": "A software tool for automating software build processes",
   "options": [
     {

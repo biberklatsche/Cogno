@@ -1,7 +1,5 @@
 {
   "name": "internet-analyzer",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/internet-analyzer.ts",
   "description": "Commands to manage internet analyzer",
   "subcommands": [
     {

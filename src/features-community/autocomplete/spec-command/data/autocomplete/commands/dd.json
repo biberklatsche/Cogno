@@ -1,7 +1,5 @@
 {
   "name": "dd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dd.ts",
   "description": "Convert and copy a file",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "tangram",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tangram.ts",
   "description": "",
   "options": [
     {

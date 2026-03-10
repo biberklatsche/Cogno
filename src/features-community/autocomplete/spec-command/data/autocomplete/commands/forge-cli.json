@@ -1,7 +1,5 @@
 {
   "name": "@forge/cli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/forge.ts",
   "description": "A command line interface for managing Atlassian-hosted apps",
   "options": [
     {

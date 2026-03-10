@@ -1,7 +1,5 @@
 {
   "name": "account",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/account.ts",
   "description": "Operations for Amazon Web Services Account Management",
   "subcommands": [
     {

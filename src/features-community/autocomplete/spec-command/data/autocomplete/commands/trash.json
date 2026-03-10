@@ -1,7 +1,5 @@
 {
   "name": "trash",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/trash.ts",
   "description": "Trash, move files/folders to the trash",
   "options": [
     {

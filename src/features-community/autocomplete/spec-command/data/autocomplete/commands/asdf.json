@@ -1,7 +1,5 @@
 {
   "name": "asdf",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/asdf.ts",
   "description": "Extendable version manager with support for Ruby, Node.js, Elixir, Erlang & more",
   "options": [
     {

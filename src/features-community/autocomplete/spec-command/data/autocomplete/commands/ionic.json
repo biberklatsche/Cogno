@@ -1,7 +1,5 @@
 {
   "name": "ionic",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ionic.ts",
   "description": "The Ionic command-line interface (CLI) is the go-to tool for developing Ionic apps",
   "subcommands": [
     {

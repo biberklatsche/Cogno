@@ -1,7 +1,5 @@
 {
   "name": "elm-review",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/elm-review.ts",
   "description": "",
   "options": [
     {

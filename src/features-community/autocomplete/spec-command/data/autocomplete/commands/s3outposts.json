@@ -1,7 +1,5 @@
 {
   "name": "s3outposts",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/s3outposts.ts",
   "description": "Amazon S3 on Outposts provides access to S3 on Outposts operations",
   "subcommands": [
     {

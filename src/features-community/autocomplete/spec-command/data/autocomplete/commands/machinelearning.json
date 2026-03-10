@@ -1,7 +1,5 @@
 {
   "name": "machinelearning",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/machinelearning.ts",
   "description": "Definition of the public APIs exposed by Amazon Machine Learning",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "bedrock-agent",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/bedrock-agent.ts",
   "description": "Describes the API operations for creating and managing Amazon Bedrock agents",
   "subcommands": [
     {

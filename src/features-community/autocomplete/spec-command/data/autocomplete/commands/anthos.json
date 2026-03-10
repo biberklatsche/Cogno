@@ -1,7 +1,5 @@
 {
   "name": "anthos",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/anthos.ts",
   "description": "Anthos command Group",
   "options": [
     {

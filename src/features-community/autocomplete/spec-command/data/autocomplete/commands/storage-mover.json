@@ -1,7 +1,5 @@
 {
   "name": "storage-mover",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/storage-mover.ts",
   "description": "Manage top-level Storage Mover resource",
   "subcommands": [
     {

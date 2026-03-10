@@ -1,7 +1,5 @@
 {
   "name": "kafkactl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kafkactl.ts",
   "description": "Command-line interface for Apache Kafka",
   "options": [
     {

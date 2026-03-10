@@ -1,7 +1,5 @@
 {
   "name": "uv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/uv.ts",
   "description": "An extremely fast Python package manager",
   "options": [
     {

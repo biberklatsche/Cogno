@@ -1,7 +1,5 @@
 {
   "name": "ddosify",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ddosify.ts",
   "description": "High-performance load testing tool, written in Golang",
   "options": [
     {

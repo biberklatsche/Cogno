@@ -1,7 +1,5 @@
 {
   "name": "jmeter",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/jmeter.ts",
   "description": "Apache JMeter - 100% Java Load Testing Tool",
   "options": [
     {

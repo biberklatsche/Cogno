@@ -1,7 +1,5 @@
 {
   "name": "hx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hx.ts",
   "description": "A post-modern text editor",
   "options": [
     {

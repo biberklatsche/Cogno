@@ -1,7 +1,5 @@
 {
   "name": "sagemaker-runtime",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/sagemaker-runtime.ts",
   "description": "The Amazon SageMaker runtime API",
   "subcommands": [
     {

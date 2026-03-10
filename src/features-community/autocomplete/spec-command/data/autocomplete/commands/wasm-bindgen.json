@@ -1,7 +1,5 @@
 {
   "name": "wasm-bindgen",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wasm-bindgen.ts",
   "description": "Generate bindings between WebAssembly and JavaScript",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "adp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/adp.ts",
   "description": "Manage Azure Autonomous Development Platform resources",
   "subcommands": [
     {

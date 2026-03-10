@@ -1,7 +1,5 @@
 {
   "name": "hugo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hugo.ts",
   "description": "Hugo builds your site",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "cloud",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/cloud.ts",
   "description": "Manage registered Azure clouds",
   "subcommands": [
     {

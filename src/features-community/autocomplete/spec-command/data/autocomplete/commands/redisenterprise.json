@@ -1,7 +1,5 @@
 {
   "name": "redisenterprise",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/redisenterprise.ts",
   "description": "Manage the redisenterprise cache",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "kinesis-video-webrtc-storage",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kinesis-video-webrtc-storage.ts",
   "description": "Webrtc",
   "subcommands": [
     {

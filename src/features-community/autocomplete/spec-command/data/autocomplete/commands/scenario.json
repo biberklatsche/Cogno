@@ -1,7 +1,5 @@
 {
   "name": "scenario",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/scenario.ts",
   "description": "E2E Scenario Usage Guidance",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "remix",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/remix.ts",
   "description": "Remix CLI to start, build and export your application",
   "options": [
     {

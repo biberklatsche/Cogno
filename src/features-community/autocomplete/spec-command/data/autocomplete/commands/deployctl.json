@@ -1,7 +1,5 @@
 {
   "name": "deployctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/deployctl.ts",
   "description": "Command line tool for Deno Deploy",
   "options": [
     {

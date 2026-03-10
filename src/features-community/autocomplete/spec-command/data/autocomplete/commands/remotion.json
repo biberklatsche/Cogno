@@ -1,7 +1,5 @@
 {
   "name": "remotion",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/remotion.ts",
   "description": "Create videos programmatically in React",
   "options": [
     {

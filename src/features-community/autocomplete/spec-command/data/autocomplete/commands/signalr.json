@@ -1,7 +1,5 @@
 {
   "name": "signalr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/signalr.ts",
   "description": "Manage Azure SignalR Service",
   "subcommands": [
     {

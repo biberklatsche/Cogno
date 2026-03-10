@@ -1,7 +1,5 @@
 {
   "name": "bit",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bit.ts",
   "description": "Bit documentation: https://bit.dev/docs",
   "options": [
     {

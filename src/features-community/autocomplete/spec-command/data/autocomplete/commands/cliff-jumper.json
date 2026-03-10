@@ -1,7 +1,5 @@
 {
   "name": "cliff-jumper",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cliff-jumper.ts",
   "description": "A small CLI tool to create a semantic release and git-cliff powered Changelog",
   "options": [
     {

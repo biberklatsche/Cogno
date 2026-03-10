@@ -1,7 +1,5 @@
 {
   "name": "python",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/python.ts",
   "description": "Run the python interpreter",
   "options": [
     {

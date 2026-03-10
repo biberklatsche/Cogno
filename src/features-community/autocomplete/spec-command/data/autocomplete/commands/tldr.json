@@ -1,7 +1,5 @@
 {
   "name": "tldr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tldr.ts",
   "description": "A simpler man page than the existing man page",
   "options": [
     {

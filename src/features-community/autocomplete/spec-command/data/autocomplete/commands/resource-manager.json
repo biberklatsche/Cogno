@@ -1,7 +1,5 @@
 {
   "name": "resource-manager",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/resource-manager.ts",
   "description": "Manage Cloud Resources",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "alias",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/alias.ts",
   "description": "Manage Azure CLI Aliases",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "apptest",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/apptest.ts",
   "description": "AWS Mainframe Modernization Application Testing provides tools and resources for automated functional equivalence testing for your migration projects",
   "subcommands": [
     {

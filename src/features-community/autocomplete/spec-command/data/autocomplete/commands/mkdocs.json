@@ -1,7 +1,5 @@
 {
   "name": "mkdocs",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mkdocs.ts",
   "description": "Project documentation with Markdown",
   "options": [
     {

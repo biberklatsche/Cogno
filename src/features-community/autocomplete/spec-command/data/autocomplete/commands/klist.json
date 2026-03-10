@@ -1,7 +1,5 @@
 {
   "name": "klist",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/klist.ts",
   "description": "Reads and displays the current tickets in the credential cache (also known as the ticket file)",
   "options": [
     {

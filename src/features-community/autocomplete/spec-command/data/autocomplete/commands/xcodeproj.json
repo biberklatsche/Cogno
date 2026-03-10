@@ -1,7 +1,5 @@
 {
   "name": "xcodeproj",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xcodeproj.ts",
   "description": "Xcodeproj lets you create and modify Xcode projects",
   "options": [
     {

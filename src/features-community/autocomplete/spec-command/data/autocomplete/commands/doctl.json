@@ -1,7 +1,5 @@
 {
   "name": "doctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/doctl.ts",
   "description": "The official DigitalOcean command line interface (CLI)",
   "options": [
     {

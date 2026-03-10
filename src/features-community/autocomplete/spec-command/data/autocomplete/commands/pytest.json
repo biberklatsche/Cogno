@@ -1,7 +1,5 @@
 {
   "name": "pytest",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pytest.ts",
   "options": [
     {
       "name": "--assert",

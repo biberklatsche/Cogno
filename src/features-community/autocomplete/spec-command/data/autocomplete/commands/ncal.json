@@ -1,7 +1,5 @@
 {
   "name": "ncal",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ncal.ts",
   "description": "Displays a calendar and the date of Easter",
   "options": [
     {

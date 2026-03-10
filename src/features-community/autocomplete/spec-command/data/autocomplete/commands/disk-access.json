@@ -1,7 +1,5 @@
 {
   "name": "disk-access",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/disk-access.ts",
   "description": "Manage disk access resources",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "rancher",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rancher.ts",
   "description": "The Rancher CLI (Command Line Interface) is a unified tool that you can use to interact with Rancher",
   "options": [
     {

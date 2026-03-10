@@ -1,7 +1,5 @@
 {
   "name": "preset",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/preset.ts",
   "description": "Elegant, ecosystem-agnostic scaffolding tool",
   "options": [
     {

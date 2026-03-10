@@ -1,7 +1,5 @@
 {
   "name": "ansible-playbook",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ansible-playbook.ts",
   "description": "Runs Ansible playbooks, executing the defined tasks on the targeted hosts",
   "options": [
     {

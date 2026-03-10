@@ -1,7 +1,5 @@
 {
   "name": "neofetch",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/neofetch.ts",
   "description": "The most complete system information CLI tool",
   "options": [
     {

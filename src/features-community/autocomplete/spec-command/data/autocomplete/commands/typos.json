@@ -1,7 +1,5 @@
 {
   "name": "typos",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/typos.ts",
   "description": "Source code spelling correction",
   "options": [
     {

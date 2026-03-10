@@ -1,7 +1,5 @@
 {
   "name": "account",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/account.ts",
   "description": "Manage Azure subscription information",
   "subcommands": [
     {

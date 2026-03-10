@@ -1,7 +1,5 @@
 {
   "name": "poetry",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/poetry.ts",
   "description": "Poetry is a tool for dependency management and packaging in Python",
   "options": [
     {

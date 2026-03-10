@@ -1,7 +1,5 @@
 {
   "name": "alexaforbusiness",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/alexaforbusiness.ts",
   "description": "Alexa for Business has been retired and is no longer supported",
   "subcommands": [
     {

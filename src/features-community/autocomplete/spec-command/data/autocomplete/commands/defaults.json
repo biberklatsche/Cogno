@@ -1,7 +1,5 @@
 {
   "name": "defaults",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/defaults.ts",
   "description": "Command line interface to a user's defaults",
   "subcommands": [
     {

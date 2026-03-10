@@ -1,7 +1,5 @@
 {
   "name": "keyvault",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/keyvault.ts",
   "description": "Manage KeyVault keys, secrets, and certificates",
   "subcommands": [
     {

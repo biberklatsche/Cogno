@@ -1,7 +1,5 @@
 {
   "name": "filestore",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/filestore.ts",
   "description": "Create and manipulate Cloud Filestore resources",
   "options": [
     {

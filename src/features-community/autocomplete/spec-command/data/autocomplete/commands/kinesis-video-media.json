@@ -1,7 +1,5 @@
 {
   "name": "kinesis-video-media",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kinesis-video-media.ts",
   "subcommands": [
     {
       "name": "get-media",

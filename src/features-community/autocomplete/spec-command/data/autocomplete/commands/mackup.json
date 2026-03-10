@@ -1,7 +1,5 @@
 {
   "name": "mackup",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mackup.ts",
   "description": "Mackup",
   "options": [
     {

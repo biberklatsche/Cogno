@@ -1,7 +1,5 @@
 {
   "name": "organizations",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/organizations.ts",
   "description": "Create and manage Google Cloud Platform Organizations",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "kendra-ranking",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kendra-ranking.ts",
   "description": "Amazon Kendra Intelligent Ranking uses Amazon Kendra semantic search capabilities to intelligently re-rank a search service's results",
   "subcommands": [
     {

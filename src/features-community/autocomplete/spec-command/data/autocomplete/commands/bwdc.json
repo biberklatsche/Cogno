@@ -1,7 +1,5 @@
 {
   "name": "bwdc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bwdc.ts",
   "description": "Bitwarden Directory Connector",
   "options": [
     {

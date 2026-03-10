@@ -1,7 +1,5 @@
 {
   "name": "git_push_example",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/example/git_push.ts",
   "description": "",
   "options": [
     {

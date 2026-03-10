@@ -1,7 +1,5 @@
 {
   "name": "networkfabric",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/networkfabric.ts",
   "description": "Manage Azure Network Fabric Management Service API",
   "subcommands": [
     {

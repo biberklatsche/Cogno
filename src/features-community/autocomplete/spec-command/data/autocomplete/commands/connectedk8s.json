@@ -1,7 +1,5 @@
 {
   "name": "connectedk8s",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/connectedk8s.ts",
   "description": "Commands to manage connected kubernetes clusters",
   "subcommands": [
     {

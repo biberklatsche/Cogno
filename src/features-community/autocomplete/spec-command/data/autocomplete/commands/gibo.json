@@ -1,7 +1,5 @@
 {
   "name": "gibo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gibo.ts",
   "description": "Easy access to gitignore boilerplates",
   "options": [
     {

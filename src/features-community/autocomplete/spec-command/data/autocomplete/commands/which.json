@@ -1,7 +1,5 @@
 {
   "name": "which",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/which.ts",
   "description": "Locate a program in the user's PATH",
   "options": [
     {

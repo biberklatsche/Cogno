@@ -1,7 +1,5 @@
 {
   "name": "wrk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wrk.ts",
   "description": "Wrk - a HTTP benchmarking tool",
   "options": [
     {

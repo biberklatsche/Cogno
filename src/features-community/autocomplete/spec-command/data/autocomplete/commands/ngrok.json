@@ -1,7 +1,5 @@
 {
   "name": "ngrok",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ngrok.ts",
   "description": "Tunnel local ports to public URLs and inspect traffic",
   "subcommands": [
     {

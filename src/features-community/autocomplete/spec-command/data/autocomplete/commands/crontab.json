@@ -1,7 +1,5 @@
 {
   "name": "crontab",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/crontab.ts",
   "description": "Maintain crontab file for individual users",
   "options": [
     {

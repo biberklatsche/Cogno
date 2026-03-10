@@ -1,7 +1,5 @@
 {
   "name": "vimr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vimr.ts",
   "description": "VimR — Neovim GUI for macOS in Swift",
   "options": [
     {

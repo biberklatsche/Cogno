@@ -1,7 +1,5 @@
 {
   "name": "seq",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/seq.ts",
   "description": "Print sequences of numbers. (Defaults to increments of 1)",
   "options": [
     {

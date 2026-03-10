@@ -1,7 +1,5 @@
 {
   "name": "suitecloud",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/suitecloud.ts",
   "description": "SuiteCloud CLI",
   "options": [
     {

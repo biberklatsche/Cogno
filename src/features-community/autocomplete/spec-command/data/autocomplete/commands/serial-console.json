@@ -1,7 +1,5 @@
 {
   "name": "serial-console",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/serial-console.ts",
   "description": "Connect to the Serial Console of a Linux/Windows Virtual Machine or VMSS Instance",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "dedicated-hsm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/dedicated-hsm.ts",
   "description": "Manage dedicated hsm with hardware security modules",
   "subcommands": [
     {

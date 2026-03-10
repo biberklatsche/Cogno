@@ -1,7 +1,5 @@
 {
   "name": "interactive",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/interactive.ts",
   "description": "Start interactive mode. Installs the Interactive extension if not installed already",
   "options": [
     {

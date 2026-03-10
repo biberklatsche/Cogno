@@ -1,7 +1,5 @@
 {
   "name": "stow",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/stow.ts",
   "description": "Manage farms of symbolic links",
   "options": [
     {

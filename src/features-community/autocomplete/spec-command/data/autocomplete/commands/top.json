@@ -1,7 +1,5 @@
 {
   "name": "top",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/top.ts",
   "description": "Display Linux tasks",
   "options": [
     {

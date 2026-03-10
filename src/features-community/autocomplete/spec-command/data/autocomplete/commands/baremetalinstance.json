@@ -1,7 +1,5 @@
 {
   "name": "baremetalinstance",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/baremetalinstance.ts",
   "description": "(PREVIEW) Manage BareMetal Instances",
   "subcommands": [
     {

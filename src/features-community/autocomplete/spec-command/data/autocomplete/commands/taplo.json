@@ -1,7 +1,5 @@
 {
   "name": "taplo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/taplo.ts",
   "description": "Tool for validation, formatting, and querying TOML documents with a jq-like fashion",
   "options": [
     {

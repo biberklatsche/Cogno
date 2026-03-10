@@ -1,7 +1,5 @@
 {
   "name": "docker",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/docker.ts",
   "description": "A self-sufficient runtime for containers",
   "subcommands": [
     {
@@ -19,7 +17,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -1209,7 +1212,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -1537,7 +1545,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -1645,7 +1658,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -1890,7 +1908,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -1928,7 +1951,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -3003,7 +3031,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -3087,7 +3120,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -3143,7 +3181,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -3167,7 +3210,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -3361,7 +3409,12 @@
           "baseScore": 62,
           "params": {
             "program": "docker",
-            "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+            "args": [
+              "ps",
+              "-a",
+              "--format",
+              "{{.Names}}\t{{.Image}}\t{{.Status}}"
+            ],
             "labelField": 0,
             "descriptionField": 1,
             "detailField": 2,
@@ -3705,7 +3758,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -4620,7 +4678,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -4808,7 +4871,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -5008,7 +5076,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -5046,7 +5119,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -5953,7 +6031,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -6037,7 +6120,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -6093,7 +6181,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,
@@ -6260,7 +6353,12 @@
               "baseScore": 62,
               "params": {
                 "program": "docker",
-                "args": ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
+                "args": [
+                  "ps",
+                  "-a",
+                  "--format",
+                  "{{.Names}}\t{{.Image}}\t{{.Status}}"
+                ],
                 "labelField": 0,
                 "descriptionField": 1,
                 "detailField": 2,

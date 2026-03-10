@@ -1,7 +1,5 @@
 {
   "name": "rich",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rich.ts",
   "description": "Rich text and formatting in the terminal",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "pipenv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pipenv.ts",
   "description": "Python package manager",
   "options": [
     {

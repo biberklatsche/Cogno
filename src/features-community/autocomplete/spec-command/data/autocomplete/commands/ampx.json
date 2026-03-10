@@ -1,7 +1,5 @@
 {
   "name": "ampx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ampx.ts",
   "description": "CLI for Amplify Gen 2",
   "options": [
     {

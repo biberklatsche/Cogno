@@ -1,7 +1,5 @@
 {
   "name": "lookoutequipment",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/lookoutequipment.ts",
   "description": "Amazon Lookout for Equipment is a machine learning service that uses advanced analytics to identify anomalies in machines from sensor data for use in predictive maintenance",
   "subcommands": [
     {

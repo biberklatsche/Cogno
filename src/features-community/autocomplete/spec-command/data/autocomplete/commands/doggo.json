@@ -1,7 +1,5 @@
 {
   "name": "doggo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/doggo.ts",
   "description": "DNS Client for Humans",
   "options": [
     {

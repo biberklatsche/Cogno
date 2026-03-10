@@ -1,7 +1,5 @@
 {
   "name": "kubectl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kubecolor.ts",
   "description": "",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "list",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-list.ts",
   "subcommands": [
     {
       "name": "package",

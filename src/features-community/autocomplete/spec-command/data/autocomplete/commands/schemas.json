@@ -1,7 +1,5 @@
 {
   "name": "schemas",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/schemas.ts",
   "description": "Amazon EventBridge Schema Registry",
   "subcommands": [
     {

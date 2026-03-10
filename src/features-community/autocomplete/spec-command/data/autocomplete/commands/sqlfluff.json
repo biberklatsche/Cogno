@@ -1,7 +1,5 @@
 {
   "name": "sqlfluff",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sqlfluff.ts",
   "description": "A dialect-flexible and configurable SQL linter",
   "options": [
     {

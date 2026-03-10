@@ -1,7 +1,5 @@
 {
   "name": "ls",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ls.ts",
   "description": "List directory contents",
   "options": [
     {

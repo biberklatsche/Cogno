@@ -1,7 +1,5 @@
 {
   "name": "swc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/swc.ts",
   "description": "SWC is a super-fast compiler written in rust; producing widely-supported javascript from modern standards and typescript",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "podman",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/podman.ts",
   "description": "Manage containers, pods, and images with Podman",
   "options": [
     {

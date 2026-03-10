@@ -1,7 +1,5 @@
 {
   "name": "grex",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/grex.ts",
   "description": "Command-line tool for generating regular expressions from user-provided test cases",
   "options": [
     {

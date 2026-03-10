@@ -1,7 +1,5 @@
 {
   "name": "dateseq",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dateseq.ts",
   "description": "Nifty command line date and time utilities; fast date calculations and conversion in the shell",
   "options": [
     {

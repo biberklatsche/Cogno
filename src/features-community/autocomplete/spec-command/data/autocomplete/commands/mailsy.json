@@ -1,7 +1,5 @@
 {
   "name": "mailsy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mailsy.ts",
   "description": "⚡️ Quickly generate a disposable email straight from terminal",
   "options": [
     {

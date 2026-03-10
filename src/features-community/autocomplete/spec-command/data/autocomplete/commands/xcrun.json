@@ -1,7 +1,5 @@
 {
   "name": "xcrun",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xcrun.ts",
   "description": "Find and execute the named command line tool from the active xCode developer directory",
   "options": [
     {

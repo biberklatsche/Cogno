@@ -1,7 +1,5 @@
 {
   "name": "create-remix",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-remix.ts",
   "options": [
     {
       "name": [

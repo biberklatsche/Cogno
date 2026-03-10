@@ -1,7 +1,5 @@
 {
   "name": "cloud-shell",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/cloud-shell.ts",
   "description": "Manage Google Cloud Shell",
   "options": [
     {

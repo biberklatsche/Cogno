@@ -1,7 +1,5 @@
 {
   "name": "netlify",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/netlify.ts",
   "description": "Netlify command line tool",
   "options": [
     {

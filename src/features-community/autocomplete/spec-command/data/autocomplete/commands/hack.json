@@ -1,7 +1,5 @@
 {
   "name": "hack",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/hack.ts",
   "description": "Commands to manage resources commonly used for student hacks",
   "subcommands": [
     {

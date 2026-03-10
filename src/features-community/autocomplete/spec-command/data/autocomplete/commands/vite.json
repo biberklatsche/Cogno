@@ -1,7 +1,5 @@
 {
   "name": "vite",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vite.ts",
   "description": "Native ESM-powered web dev build tool",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "space",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/space.ts",
   "description": "Deta Space CLI for mananging Deta Space projects",
   "options": [
     {

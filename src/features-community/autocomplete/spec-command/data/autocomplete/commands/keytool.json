@@ -1,7 +1,5 @@
 {
   "name": "keytool",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/keytool.ts",
   "description": "Key and Certificate Management Tool",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "wing",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wing.ts",
   "subcommands": [
     {
       "name": "run",

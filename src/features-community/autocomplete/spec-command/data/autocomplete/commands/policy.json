@@ -1,7 +1,5 @@
 {
   "name": "policy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/policy.ts",
   "description": "Manage resource policies",
   "subcommands": [
     {

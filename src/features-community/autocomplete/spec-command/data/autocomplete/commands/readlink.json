@@ -1,7 +1,5 @@
 {
   "name": "readlink",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/readlink.ts",
   "description": "Display file status",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "iap",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/iap.ts",
   "description": "Manage IAP policies",
   "options": [
     {

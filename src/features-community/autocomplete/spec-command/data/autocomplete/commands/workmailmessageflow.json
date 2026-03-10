@@ -1,7 +1,5 @@
 {
   "name": "workmailmessageflow",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/workmailmessageflow.ts",
   "description": "The WorkMail Message Flow API provides access to email messages as they are being sent and received by a WorkMail organization",
   "subcommands": [
     {

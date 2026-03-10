@@ -1,7 +1,5 @@
 {
   "name": "mgnl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mgnl.ts",
   "description": "Magnolia CLI is a command line interface (CLI) tool to set up and facilitate light development with Magnolia",
   "options": [
     {

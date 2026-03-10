@@ -1,7 +1,5 @@
 {
   "name": "split",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/split.ts",
   "description": "The split utility reads the given file and breaks it up into files of 1000 lines each (if no options are specified), leaving the file unchanged. If file is a single dash ('-') or absent, split reads from the standard input",
   "options": [
     {

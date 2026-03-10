@@ -1,7 +1,5 @@
 {
   "name": "elastic-inference",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/elastic-inference.ts",
   "description": "Amazon Elastic Inference is no longer available.   Elastic Inference public APIs",
   "subcommands": [
     {

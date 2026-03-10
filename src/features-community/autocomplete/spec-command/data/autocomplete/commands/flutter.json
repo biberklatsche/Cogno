@@ -1,7 +1,5 @@
 {
   "name": "flutter",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/flutter.ts",
   "description": "Run flutter command",
   "options": [
     {

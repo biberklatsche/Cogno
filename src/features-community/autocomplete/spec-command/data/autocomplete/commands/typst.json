@@ -1,7 +1,5 @@
 {
   "name": "typst",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/typst.ts",
   "description": "The Typst compiler",
   "options": [
     {

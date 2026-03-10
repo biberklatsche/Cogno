@@ -1,7 +1,5 @@
 {
   "name": "backupstorage",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/backupstorage.ts",
   "description": "The frontend service for Cryo Storage",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "monitor",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/monitor.ts",
   "description": "Manage the Azure Monitor Service",
   "subcommands": [
     {

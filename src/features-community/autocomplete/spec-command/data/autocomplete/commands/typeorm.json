@@ -1,7 +1,5 @@
 {
   "name": "typeorm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/typeorm.ts",
   "description": "TypeORM CLI",
   "options": [
     {

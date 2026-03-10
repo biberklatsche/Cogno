@@ -1,7 +1,5 @@
 {
   "name": "macie2",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/macie2.ts",
   "description": "Amazon Macie",
   "subcommands": [
     {

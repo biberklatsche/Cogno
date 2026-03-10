@@ -1,7 +1,5 @@
 {
   "name": "migrate",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-migrate.ts",
   "options": [
     {
       "name": "--format-report-file-json",

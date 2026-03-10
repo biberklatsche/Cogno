@@ -1,7 +1,5 @@
 {
   "name": "ansible-galaxy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ansible-galaxy.ts",
   "description": "Perform various Role and Collection related operations",
   "options": [
     {

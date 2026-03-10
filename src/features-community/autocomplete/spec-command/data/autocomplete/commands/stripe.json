@@ -1,7 +1,5 @@
 {
   "name": "stripe",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/stripe.ts",
   "description": "CLI interface for Stripe.com",
   "options": [
     {

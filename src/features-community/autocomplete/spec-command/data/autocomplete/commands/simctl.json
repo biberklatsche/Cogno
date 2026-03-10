@@ -1,7 +1,5 @@
 {
   "name": "simctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/simctl.ts",
   "description": "",
   "subcommands": [
     {

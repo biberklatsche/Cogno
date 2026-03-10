@@ -1,7 +1,5 @@
 {
   "name": "lsblk",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lsblk.ts",
   "description": "List block devices",
   "options": [
     {

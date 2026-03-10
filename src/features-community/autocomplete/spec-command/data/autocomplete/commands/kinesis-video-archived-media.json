@@ -1,7 +1,5 @@
 {
   "name": "kinesis-video-archived-media",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/kinesis-video-archived-media.ts",
   "subcommands": [
     {
       "name": "get-clip",

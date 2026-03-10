@@ -1,7 +1,5 @@
 {
   "name": "build-storybook",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/build-storybook.ts",
   "description": "Storybook build CLI tools",
   "options": [
     {

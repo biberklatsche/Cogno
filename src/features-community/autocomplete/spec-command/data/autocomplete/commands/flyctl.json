@@ -1,7 +1,5 @@
 {
   "name": "flyctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/flyctl.ts",
   "description": "The flyctl is a command-line interface for fly.io",
   "options": [
     {

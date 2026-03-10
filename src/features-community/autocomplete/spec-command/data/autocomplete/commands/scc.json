@@ -1,7 +1,5 @@
 {
   "name": "scc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/scc.ts",
   "description": "Manage Cloud SCC resources",
   "options": [
     {

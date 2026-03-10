@@ -1,7 +1,5 @@
 {
   "name": "grafana",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/grafana.ts",
   "description": "Commands to manage Azure Grafana instanced.\n\n\t\tFor optimized experience, not all data plane Apis, documented at https://grafana.com/docs/grafana/latest/http_api/, are exposed. On coverage gap, please reach out to ad4g@microsoft.com",
   "subcommands": [
     {

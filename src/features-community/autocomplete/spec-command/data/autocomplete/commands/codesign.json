@@ -1,7 +1,5 @@
 {
   "name": "codesign",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/codesign.ts",
   "description": "Create and manipulate code signatures",
   "options": [
     {

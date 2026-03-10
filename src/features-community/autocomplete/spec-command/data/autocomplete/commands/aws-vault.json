@@ -1,7 +1,5 @@
 {
   "name": "aws-vault",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws-vault.ts",
   "description": "A vault for securely storing and accessing AWS credentials in development environments",
   "options": [
     {

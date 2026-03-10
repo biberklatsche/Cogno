@@ -1,7 +1,5 @@
 {
   "name": "ad",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/ad.ts",
   "description": "Manage Azure Active Directory Graph entities needed for Role Based Access Control",
   "subcommands": [
     {

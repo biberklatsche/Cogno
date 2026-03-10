@@ -1,7 +1,5 @@
 {
   "name": "build-server",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-build-server.ts",
   "description": "Interacts with servers started by a build",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "clojure",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/clojure.ts",
   "description": "Use the Clojure tools to run Clojure programs on the JVM, start a REPL, or invoke a specific function with data",
   "options": [
     {

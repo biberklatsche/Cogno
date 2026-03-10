@@ -1,7 +1,5 @@
 {
   "name": "react-native",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/react-native.ts",
   "description": "Command line tools that ship with react-native in form of the @react-native-community/cli package",
   "options": [
     {

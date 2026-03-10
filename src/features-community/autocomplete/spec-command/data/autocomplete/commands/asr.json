@@ -1,7 +1,5 @@
 {
   "name": "asr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/asr.ts",
   "description": "Asr efficiently copies disk images onto volumes, either directly or via a multicast network stream",
   "options": [
     {

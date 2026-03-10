@@ -1,7 +1,5 @@
 {
   "name": "functionapp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/functionapp.ts",
   "description": "Manage function apps. To install the Azure Functions Core tools see https://github.com/Azure/azure-functions-core-tools",
   "subcommands": [
     {

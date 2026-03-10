@@ -1,7 +1,5 @@
 {
   "name": "sips",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sips.ts",
   "description": "Scriptable image processing system",
   "options": [
     {

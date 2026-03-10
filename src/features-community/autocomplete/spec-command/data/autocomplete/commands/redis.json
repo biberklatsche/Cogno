@@ -1,7 +1,5 @@
 {
   "name": "redis",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/redis.ts",
   "description": "Manage dedicated Redis caches for your Azure applications",
   "subcommands": [
     {

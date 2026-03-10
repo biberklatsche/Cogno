@@ -1,7 +1,5 @@
 {
   "name": "artifact",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/artifact.ts",
   "description": "This reference provides descriptions of the low-level AWS Artifact Service API",
   "subcommands": [
     {

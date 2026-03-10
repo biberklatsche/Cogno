@@ -1,7 +1,5 @@
 {
   "name": "yalc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/yalc.ts",
   "description": "Work with yarn/npm packages locally like a boss",
   "options": [
     {

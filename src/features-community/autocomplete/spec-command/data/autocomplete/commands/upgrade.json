@@ -1,7 +1,5 @@
 {
   "name": "upgrade",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/upgrade.ts",
   "description": "Upgrade Azure CLI and extensions",
   "options": [
     {

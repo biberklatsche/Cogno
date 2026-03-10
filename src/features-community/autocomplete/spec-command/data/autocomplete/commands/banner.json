@@ -1,7 +1,5 @@
 {
   "name": "banner",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/banner.ts",
   "description": "Prints a large, high quality banner on the standard output",
   "options": [
     {

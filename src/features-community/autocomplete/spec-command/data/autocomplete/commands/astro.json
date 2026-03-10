@@ -1,7 +1,5 @@
 {
   "name": "astro",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/astro.ts",
   "description": "CLI provided by Astro to develop, build, and preview your project from a terminal window",
   "options": [
     {

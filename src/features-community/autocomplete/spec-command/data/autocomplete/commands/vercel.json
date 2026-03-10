@@ -1,7 +1,5 @@
 {
   "name": "vercel",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vercel.ts",
   "description": "CLI Interface for Vercel.com",
   "options": [
     {

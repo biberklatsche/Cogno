@@ -1,7 +1,5 @@
 {
   "name": "java",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/java.ts",
   "description": "Launch a Java application",
   "options": [
     {

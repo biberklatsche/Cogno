@@ -1,7 +1,5 @@
 {
   "name": "go-task",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/task/go-task.ts",
   "description": "A task runner / simpler Make alternative written in Go",
   "options": [
     {

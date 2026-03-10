@@ -1,7 +1,5 @@
 {
   "name": "dotnet",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet.ts",
   "description": "The dotnet cli",
   "options": [
     {

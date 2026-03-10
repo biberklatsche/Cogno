@@ -1,7 +1,5 @@
 {
   "name": "dprint",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dprint.ts",
   "description": "A pluggable and configurable code formatting platform written in Rust",
   "options": [
     {

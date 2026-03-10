@@ -1,7 +1,5 @@
 {
   "name": "robomaker",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/robomaker.ts",
   "description": "This section provides documentation for the AWS RoboMaker API operations",
   "subcommands": [
     {

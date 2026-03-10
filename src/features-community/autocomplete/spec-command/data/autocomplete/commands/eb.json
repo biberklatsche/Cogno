@@ -1,7 +1,5 @@
 {
   "name": "eb",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/eb.ts",
   "description": "AWS Elastic Beanstalk",
   "subcommands": [
     {

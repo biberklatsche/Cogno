@@ -1,7 +1,5 @@
 {
   "name": "rojo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rojo.ts",
   "description": "Enables professional-grade development tools for Roblox developers",
   "options": [
     {

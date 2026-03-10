@@ -1,7 +1,5 @@
 {
   "name": "pkgutil",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pkgutil.ts",
   "description": "Query and manipulate for macOS Installer packages and receipts",
   "options": [
     {

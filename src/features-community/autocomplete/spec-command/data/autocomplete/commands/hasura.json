@@ -1,7 +1,5 @@
 {
   "name": "hasura",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hasura.ts",
   "description": "Hasura GraphQL engine command line tool",
   "options": [
     {

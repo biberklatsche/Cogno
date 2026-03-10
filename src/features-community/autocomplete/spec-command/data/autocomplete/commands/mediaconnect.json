@@ -1,7 +1,5 @@
 {
   "name": "mediaconnect",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/mediaconnect.ts",
   "description": "API for AWS Elemental MediaConnect",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "omz",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/omz.ts",
   "description": "Oh My Zsh",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "rsync",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rsync.ts",
   "description": "Rsync is a file transfer program capable of efficient remote update via a fast differencing algorithm",
   "options": [
     {

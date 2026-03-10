@@ -1,7 +1,5 @@
 {
   "name": "stencil",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/stencil.ts",
   "description": "CLI to build Stencil projects and generate components",
   "options": [
     {

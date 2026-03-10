@@ -1,7 +1,5 @@
 {
   "name": "search",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/search.ts",
   "description": "Manage Azure Search services, admin keys and query keys",
   "subcommands": [
     {

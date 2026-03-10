@@ -1,7 +1,5 @@
 {
   "name": "index",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/appwrite.ts",
   "description": "Appwrite - Open-Source End-to-End Backend Server",
   "options": [
     {

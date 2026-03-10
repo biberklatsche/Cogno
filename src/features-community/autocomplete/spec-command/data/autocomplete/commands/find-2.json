@@ -1,7 +1,5 @@
 {
   "name": "find",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/find.ts",
   "description": "Walk a file hierarchy",
   "options": [
     {

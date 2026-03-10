@@ -1,7 +1,5 @@
 {
   "name": "hardhat",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hardhat.ts",
   "description": "Ethereum development environment",
   "options": [
     {

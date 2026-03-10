@@ -1,7 +1,5 @@
 {
   "name": "recommender",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/recommender.ts",
   "description": "Manage Cloud recommendations and recommendation rules",
   "options": [
     {

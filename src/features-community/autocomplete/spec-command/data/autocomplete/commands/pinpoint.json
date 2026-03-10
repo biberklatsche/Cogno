@@ -1,7 +1,5 @@
 {
   "name": "pinpoint",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/pinpoint.ts",
   "description": "Doc Engage API - Amazon Pinpoint API",
   "subcommands": [
     {

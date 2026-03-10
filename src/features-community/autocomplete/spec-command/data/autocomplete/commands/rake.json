@@ -1,7 +1,5 @@
 {
   "name": "rake",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rake.ts",
   "description": "A ruby build program with capabilities similar to make",
   "options": [
     {

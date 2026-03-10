@@ -1,7 +1,5 @@
 {
   "name": "molecule",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/molecule.ts",
   "description": "Molecule aids in the development and testing of Ansible roles",
   "options": [
     {

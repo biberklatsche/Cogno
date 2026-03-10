@@ -1,7 +1,5 @@
 {
   "name": "gt",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gt.ts",
   "description": "Graphite.dev CLI",
   "options": [
     {

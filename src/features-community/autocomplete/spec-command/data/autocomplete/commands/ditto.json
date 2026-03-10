@@ -1,7 +1,5 @@
 {
   "name": "ditto",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ditto.ts",
   "description": "Copy directory hierarchies, create and extract archives",
   "options": [
     {

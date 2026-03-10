@@ -1,7 +1,5 @@
 {
   "name": "screen",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/screen.ts",
   "description": "Screen manager with VT100/ANSI terminal emulation",
   "options": [
     {

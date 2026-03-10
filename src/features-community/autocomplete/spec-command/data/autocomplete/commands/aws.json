@@ -1,7 +1,5 @@
 {
   "name": "aws",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws.ts",
   "options": [
     {
       "name": "--profile",

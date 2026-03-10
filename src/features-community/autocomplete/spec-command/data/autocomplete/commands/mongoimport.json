@@ -1,7 +1,5 @@
 {
   "name": "mongoimport",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mongoimport.ts",
   "description": "Import data from a JSON, CSV, or TSV file into a MongoDB instance",
   "options": [
     {

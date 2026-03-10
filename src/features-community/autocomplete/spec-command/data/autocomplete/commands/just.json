@@ -1,7 +1,5 @@
 {
   "name": "just",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/just.ts",
   "description": "Just a command runner",
   "options": [
     {

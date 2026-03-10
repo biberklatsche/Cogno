@@ -1,7 +1,5 @@
 {
   "name": "rubymine",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rubymine.ts",
   "description": "RubyMine cli",
   "options": [
     {

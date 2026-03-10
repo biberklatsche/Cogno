@@ -1,7 +1,5 @@
 {
   "name": "elm-format",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/elm-format.ts",
   "description": "Format your code in the Elm idiomatic way",
   "options": [
     {

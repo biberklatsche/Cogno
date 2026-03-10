@@ -1,7 +1,5 @@
 {
   "name": "meroxa",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/meroxa.ts",
   "description": "The Meroxa CLI",
   "options": [
     {

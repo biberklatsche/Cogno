@@ -1,7 +1,5 @@
 {
   "name": "goland",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/goland.ts",
   "description": "GoLand cli",
   "options": [
     {

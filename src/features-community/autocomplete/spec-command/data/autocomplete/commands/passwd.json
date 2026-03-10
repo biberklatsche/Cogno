@@ -1,7 +1,5 @@
 {
   "name": "passwd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/passwd.ts",
   "description": "Modify a user's password",
   "options": [
     {

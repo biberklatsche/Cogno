@@ -1,7 +1,5 @@
 {
   "name": "fzf",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/fzf.ts",
   "description": "A general-purpose command-line fuzzy finder",
   "options": [
     {

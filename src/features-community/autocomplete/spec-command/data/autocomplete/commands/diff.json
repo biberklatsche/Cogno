@@ -1,7 +1,5 @@
 {
   "name": "diff",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/diff.ts",
   "description": "Compare files line by line",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "iconv",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/iconv.ts",
   "description": "Character set conversion",
   "options": [
     {

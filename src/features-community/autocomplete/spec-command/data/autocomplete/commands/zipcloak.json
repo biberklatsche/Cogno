@@ -1,7 +1,5 @@
 {
   "name": "zipcloak",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/zipcloak.ts",
   "description": "Encrypt entries in a zipfile",
   "options": [
     {

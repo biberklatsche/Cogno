@@ -1,7 +1,5 @@
 {
   "name": "glow",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/glow.ts",
   "description": "Render markdown on the CLI, with pizzazz!",
   "options": [
     {

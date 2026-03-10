@@ -1,7 +1,5 @@
 {
   "name": "pkill",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pkill.ts",
   "description": "Send  the  specified  signal  (by default SIGTERM) to each specified process",
   "options": [
     {

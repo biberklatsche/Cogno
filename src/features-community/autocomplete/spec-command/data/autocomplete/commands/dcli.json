@@ -1,7 +1,5 @@
 {
   "name": "dcli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dcli.ts",
   "description": "Dashlane CLI",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "lerna",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/lerna.ts",
   "description": "A tool for managing JavaScript projects with multiple packages",
   "subcommands": [
     {

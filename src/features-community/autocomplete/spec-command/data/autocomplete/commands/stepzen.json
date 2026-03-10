@@ -1,7 +1,5 @@
 {
   "name": "StepZen",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/stepzen.ts",
   "description": "The StepZen CLI is the primary way to build, deploy and test your schemas on StepZen",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "base64",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/base64.ts",
   "description": "Encode and decode using Base64 representation",
   "options": [
     {

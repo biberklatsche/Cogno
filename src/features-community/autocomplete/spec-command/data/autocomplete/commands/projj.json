@@ -1,7 +1,5 @@
 {
   "name": "projj",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/projj.ts",
   "description": "Manage repository easily",
   "options": [
     {

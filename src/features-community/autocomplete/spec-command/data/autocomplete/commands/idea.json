@@ -1,7 +1,5 @@
 {
   "name": "idea",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/idea.ts",
   "description": "InteliJ IDEA cli",
   "options": [
     {

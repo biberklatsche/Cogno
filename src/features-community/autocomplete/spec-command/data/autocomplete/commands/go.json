@@ -1,7 +1,5 @@
 {
   "name": "go",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/go.ts",
   "description": "Go is a tool for managing Go source code",
   "subcommands": [
     {

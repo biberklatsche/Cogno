@@ -1,7 +1,5 @@
 {
   "name": "site-recovery",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/site-recovery.ts",
   "description": "Manage Site Recovery Service",
   "subcommands": [
     {

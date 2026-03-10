@@ -1,7 +1,5 @@
 {
   "name": "unix2dos",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/unix2dos.ts",
   "description": "Unix to DOS text file format convertor",
   "options": [
     {

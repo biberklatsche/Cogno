@@ -1,7 +1,5 @@
 {
   "name": "mdfind",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mdfind.ts",
   "description": "Finds files matching a given query",
   "options": [
     {

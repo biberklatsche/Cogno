@@ -1,7 +1,5 @@
 {
   "name": "panorama",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/panorama.ts",
   "description": "AWS Panorama  Overview  This is the AWS Panorama API Reference. For an introduction to the service, see What is AWS Panorama? in the AWS Panorama Developer Guide",
   "subcommands": [
     {

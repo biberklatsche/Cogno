@@ -1,7 +1,5 @@
 {
   "name": "okteto",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/okteto.ts",
   "description": "Okteto - Remote Development Environments powered by Kubernetes",
   "options": [
     {

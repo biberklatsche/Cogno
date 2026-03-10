@@ -1,7 +1,5 @@
 {
   "name": "tr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tr.ts",
   "description": "Translate characters",
   "options": [
     {

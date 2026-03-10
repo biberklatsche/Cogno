@@ -1,7 +1,5 @@
 {
   "name": "truncate",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/truncate.ts",
   "description": "Shrink or extend the size of a file to the specified size",
   "options": [
     {

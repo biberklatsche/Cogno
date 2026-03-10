@@ -1,7 +1,5 @@
 {
   "name": "security",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/security.ts",
   "description": "Manage your security posture with Microsoft Defender for Cloud",
   "subcommands": [
     {

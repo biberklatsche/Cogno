@@ -1,7 +1,5 @@
 {
   "name": "hdinsight",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/hdinsight.ts",
   "description": "Manage HDInsight resources",
   "subcommands": [
     {

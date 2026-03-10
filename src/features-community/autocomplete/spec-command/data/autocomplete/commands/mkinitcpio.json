@@ -1,7 +1,5 @@
 {
   "name": "mkinitcpio",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mkinitcpio.ts",
   "description": "Create an initial ramdisk environment",
   "options": [
     {

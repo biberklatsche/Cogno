@@ -1,7 +1,5 @@
 {
   "name": "identity",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/identity.ts",
   "description": "Manage Cloud Identity Groups and Memberships resources",
   "options": [
     {

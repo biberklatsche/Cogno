@@ -1,7 +1,5 @@
 {
   "name": "nvm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nvm.ts",
   "description": "Node Package Manager",
   "options": [
     {

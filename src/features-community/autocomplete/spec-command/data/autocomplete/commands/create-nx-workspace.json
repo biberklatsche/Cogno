@@ -1,7 +1,5 @@
 {
   "name": "create-nx-workspace",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-nx-workspace.ts",
   "description": "Create a new Nx workspace",
   "options": [
     {

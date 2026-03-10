@@ -1,7 +1,5 @@
 {
   "name": "ml",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/ml.ts",
   "description": "Use Google Cloud machine learning capabilities",
   "options": [
     {

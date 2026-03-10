@@ -1,7 +1,5 @@
 {
   "name": "vue",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vue.ts",
   "description": "Vue cli tools",
   "options": [
     {

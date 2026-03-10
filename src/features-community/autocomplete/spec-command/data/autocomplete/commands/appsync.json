@@ -1,7 +1,5 @@
 {
   "name": "appsync",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/appsync.ts",
   "description": "AppSync provides API actions for creating and interacting with data sources using GraphQL from your application",
   "subcommands": [
     {

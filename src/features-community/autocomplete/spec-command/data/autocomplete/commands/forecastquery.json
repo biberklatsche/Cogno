@@ -1,7 +1,5 @@
 {
   "name": "forecastquery",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/forecastquery.ts",
   "description": "Provides APIs for creating and managing Amazon Forecast resources",
   "subcommands": [
     {

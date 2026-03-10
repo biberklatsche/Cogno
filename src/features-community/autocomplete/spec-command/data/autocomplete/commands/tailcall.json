@@ -1,7 +1,5 @@
 {
   "name": "tailcall",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tailcall.ts",
   "description": "TailCall CLI for managing and optimizing GraphQL configurations",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "xargs",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xargs.ts",
   "description": "Execute a command with whitespace-delimited strings (from stdin) as arguments",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "mob",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mob.ts",
   "description": "Fast git handover for remote collaboration with mob.sh",
   "options": [
     {

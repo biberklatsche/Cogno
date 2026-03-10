@@ -1,7 +1,5 @@
 {
   "name": "init",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/init.ts",
   "description": "Initialize or reinitialize gcloud",
   "options": [
     {

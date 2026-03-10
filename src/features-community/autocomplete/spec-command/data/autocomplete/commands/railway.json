@@ -1,7 +1,5 @@
 {
   "name": "railway",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/railway.ts",
   "description": "CLI for managing Railway Apps",
   "options": [
     {

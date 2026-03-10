@@ -1,7 +1,5 @@
 {
   "name": "access-context-manager",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/access-context-manager.ts",
   "description": "Manage Access Context Manager resources",
   "options": [
     {

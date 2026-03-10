@@ -1,7 +1,5 @@
 {
   "name": "logicapp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/logicapp.ts",
   "description": "Manage logic apps",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "customlocation",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/customlocation.ts",
   "description": "Commands to Create, Get, List and Delete CustomLocations",
   "subcommands": [
     {

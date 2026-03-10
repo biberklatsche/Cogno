@@ -1,7 +1,5 @@
 {
   "name": "tmutil",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tmutil.ts",
   "description": "Time Machine utility",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "Rscript",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rscript.ts",
   "description": "Scripting Front-End for R",
   "options": [
     {

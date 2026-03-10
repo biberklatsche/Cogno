@@ -1,7 +1,5 @@
 {
   "name": "webpack",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/webpack.ts",
   "description": "",
   "options": [
     {

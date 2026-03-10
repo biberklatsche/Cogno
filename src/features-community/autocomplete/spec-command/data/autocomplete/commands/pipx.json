@@ -1,7 +1,5 @@
 {
   "name": "pipx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pipx.ts",
   "description": "Install and Run Python Applications in Isolated Environments",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "apt",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/apt.ts",
   "description": "Package manager for Debian-based Linux distributions",
   "options": [
     {

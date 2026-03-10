@@ -1,7 +1,5 @@
 {
   "name": "tailscale",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tailscale.ts",
   "options": [
     {
       "name": "--socket",

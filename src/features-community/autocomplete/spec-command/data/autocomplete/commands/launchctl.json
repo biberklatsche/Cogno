@@ -1,7 +1,5 @@
 {
   "name": "launchctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/launchctl.ts",
   "description": "Interfaces with launchd",
   "subcommands": [
     {

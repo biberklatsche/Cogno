@@ -1,7 +1,5 @@
 {
   "name": "hexo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hexo.ts",
   "description": "Command line interface for Hexo, a static site generator",
   "options": [
     {

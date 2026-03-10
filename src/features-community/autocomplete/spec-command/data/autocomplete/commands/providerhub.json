@@ -1,7 +1,5 @@
 {
   "name": "providerhub",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/providerhub.ts",
   "description": "Manage resources with ProviderHub",
   "subcommands": [
     {

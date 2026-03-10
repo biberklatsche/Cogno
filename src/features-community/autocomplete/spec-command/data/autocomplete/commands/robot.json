@@ -1,7 +1,5 @@
 {
   "name": "robot",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/robot.ts",
   "description": "CLI for running Robot Framework automation tests",
   "options": [
     {

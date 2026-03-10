@@ -1,7 +1,5 @@
 {
   "name": "v",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/v.ts",
   "description": "The V Programming Language",
   "options": [
     {

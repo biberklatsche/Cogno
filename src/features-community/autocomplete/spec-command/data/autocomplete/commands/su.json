@@ -1,7 +1,5 @@
 {
   "name": "su",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/su.ts",
   "description": "",
   "options": [
     {

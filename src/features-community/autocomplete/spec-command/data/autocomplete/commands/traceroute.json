@@ -1,7 +1,5 @@
 {
   "name": "traceroute",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/traceroute.ts",
   "description": "Print the route packets take to network host",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "systemctl",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/systemctl.ts",
   "description": "",
   "options": [
     {

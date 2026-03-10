@@ -1,7 +1,5 @@
 {
   "name": "ykman",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ykman.ts",
   "description": "Configure your YubiKey via the command line",
   "options": [
     {

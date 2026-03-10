@@ -1,7 +1,5 @@
 {
   "name": "cdk8s",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cdk8s.ts",
   "description": "CDK for K8s",
   "options": [
     {

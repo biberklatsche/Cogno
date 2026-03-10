@@ -1,7 +1,5 @@
 {
   "name": "minikube",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/minikube.ts",
   "description": "Minikube provisions and manages local Kubernetes clusters optimized for development workflows",
   "subcommands": [
     {

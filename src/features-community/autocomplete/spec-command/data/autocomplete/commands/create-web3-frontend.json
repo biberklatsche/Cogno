@@ -1,7 +1,5 @@
 {
   "name": "create-web3-frontend",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-web3-frontend.ts",
   "description": "Quickly create a Next.js project with wagmi and TailwindCSS ready to go",
   "options": [
     {

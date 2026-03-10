@@ -1,7 +1,5 @@
 {
   "name": "wd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/wd.ts",
   "description": "Warp to directories without using cd",
   "options": [
     {

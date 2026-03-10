@@ -1,7 +1,5 @@
 {
   "name": "knex",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/knex.ts",
   "description": "SQL query builder for JavaScript",
   "options": [
     {

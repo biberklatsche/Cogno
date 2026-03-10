@@ -1,7 +1,5 @@
 {
   "name": "publish",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-publish.ts",
   "description": "Dotnet publish compiles the application, reads through its dependencies specified in the project file, and publishes the resulting set of files to a directory",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "rushx",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rushx.ts",
   "description": "Run arbitrary package scripts for rush project. analogous to npm run",
   "options": [
     {

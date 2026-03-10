@@ -1,7 +1,5 @@
 {
   "name": "mobile-network",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/mobile-network.ts",
   "description": "Manage mobile network",
   "subcommands": [
     {

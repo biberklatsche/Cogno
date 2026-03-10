@@ -1,7 +1,5 @@
 {
   "name": "firestore",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/firestore.ts",
   "description": "Manage your Cloud Firestore resources",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "cloudcontrol",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/cloudcontrol.ts",
   "description": "For more information about Amazon Web Services Cloud Control API, see the Amazon Web Services Cloud Control API User Guide",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "active-directory",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/active-directory.ts",
   "description": "Manage Managed Microsoft AD resources",
   "options": [
     {

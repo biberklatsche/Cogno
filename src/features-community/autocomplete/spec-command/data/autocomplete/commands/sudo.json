@@ -1,7 +1,5 @@
 {
   "name": "sudo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sudo.ts",
   "description": "Execute a command as the superuser or another user",
   "options": [
     {

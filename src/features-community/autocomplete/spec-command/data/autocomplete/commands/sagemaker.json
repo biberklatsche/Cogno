@@ -1,7 +1,5 @@
 {
   "name": "sagemaker",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/sagemaker.ts",
   "description": "Provides APIs for creating and managing SageMaker resources.  Other Resources:    SageMaker Developer Guide     Amazon Augmented AI Runtime API Reference",
   "subcommands": [
     {

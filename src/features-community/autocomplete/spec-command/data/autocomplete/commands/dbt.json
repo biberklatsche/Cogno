@@ -1,7 +1,5 @@
 {
   "name": "dbt",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dbt.ts",
   "description": "CLI for dbt - Data Build Tool",
   "options": [
     {

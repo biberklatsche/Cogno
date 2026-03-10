@@ -1,7 +1,5 @@
 {
   "name": "trivy",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/trivy.ts",
   "description": "A simple and comprehensive vulnerability scanner",
   "options": [
     {

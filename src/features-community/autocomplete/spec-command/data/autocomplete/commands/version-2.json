@@ -1,7 +1,5 @@
 {
   "name": "version",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/version.ts",
   "description": "Print version information for Cloud SDK components",
   "options": [
     {

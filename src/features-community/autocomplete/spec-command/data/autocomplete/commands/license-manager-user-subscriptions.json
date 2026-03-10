@@ -1,7 +1,5 @@
 {
   "name": "license-manager-user-subscriptions",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/license-manager-user-subscriptions.ts",
   "description": "With License Manager, you can create user-based subscriptions to utilize licensed software with a per user subscription fee on Amazon EC2 instances",
   "subcommands": [
     {

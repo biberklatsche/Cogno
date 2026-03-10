@@ -1,7 +1,5 @@
 {
   "name": "http.server",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/python/http.server.ts",
   "description": "",
   "options": [
     {

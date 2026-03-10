@@ -1,7 +1,5 @@
 {
   "name": "create-redwood-app",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/create-redwood-app.ts",
   "options": [
     {
       "name": [

@@ -1,7 +1,5 @@
 {
   "name": "sapphire",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sapphire.ts",
   "description": "CLI for the Sapphire Framework",
   "options": [
     {

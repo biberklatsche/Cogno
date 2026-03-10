@@ -1,7 +1,5 @@
 {
   "name": "cheat-sheet",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/cheat-sheet.ts",
   "description": "Display gcloud cheat sheet",
   "options": [
     {

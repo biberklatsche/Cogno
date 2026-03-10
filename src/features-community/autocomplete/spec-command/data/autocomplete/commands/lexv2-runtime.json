@@ -1,7 +1,5 @@
 {
   "name": "lexv2-runtime",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/lexv2-runtime.ts",
   "description": "This section contains documentation for the Amazon Lex V2 Runtime V2 API operations",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "nc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/nc.ts",
   "description": "Arbitrary TCP and UDP connections and listens",
   "options": [
     {

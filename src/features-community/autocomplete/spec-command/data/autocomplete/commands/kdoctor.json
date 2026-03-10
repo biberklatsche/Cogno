@@ -1,7 +1,5 @@
 {
   "name": "kdoctor",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/kdoctor.ts",
   "description": "Tool that helps to set up the environment for Kotlin Multiplatform Mobile app development",
   "options": [
     {

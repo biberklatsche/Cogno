@@ -1,7 +1,5 @@
 {
   "name": "bigtable",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/bigtable.ts",
   "description": "Manage your Cloud Bigtable storage",
   "options": [
     {

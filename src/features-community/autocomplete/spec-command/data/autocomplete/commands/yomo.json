@@ -1,7 +1,5 @@
 {
   "name": "yomo",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/yomo.ts",
   "description": "CLI interface for YoMo",
   "options": [
     {

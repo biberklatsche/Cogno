@@ -1,7 +1,5 @@
 {
   "name": "connectcampaigns",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/connectcampaigns.ts",
   "description": "Provide APIs to create and manage Amazon Connect Campaigns",
   "subcommands": [
     {

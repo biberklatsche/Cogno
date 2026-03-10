@@ -1,7 +1,5 @@
 {
   "name": "trustedadvisor",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/trustedadvisor.ts",
   "description": "TrustedAdvisor Public API",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "eslint",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/eslint.ts",
   "description": "Pluggable JavaScript linter",
   "options": [
     {

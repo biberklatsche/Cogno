@@ -1,7 +1,5 @@
 {
   "name": "webstorm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/webstorm.ts",
   "description": "WebStorm cli",
   "options": [
     {

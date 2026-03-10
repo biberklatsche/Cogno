@@ -1,7 +1,5 @@
 {
   "name": "notification-hub",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/notification-hub.ts",
   "description": "Manage notification hubs",
   "subcommands": [
     {

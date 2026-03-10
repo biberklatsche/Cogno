@@ -1,7 +1,5 @@
 {
   "name": "emacs",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/emacs.ts",
   "description": "An extensible, customizable, free/libre text editor — and more",
   "options": [
     {

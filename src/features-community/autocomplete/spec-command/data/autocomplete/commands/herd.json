@@ -1,7 +1,5 @@
 {
   "name": "herd",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/herd.ts",
   "description": "Herd is a blazing fast, native Laravel and PHP development environment for macOS. It provides everything that you need to get started with Laravel development",
   "options": [
     {

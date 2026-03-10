@@ -1,7 +1,5 @@
 {
   "name": "forecast",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/forecast.ts",
   "description": "Provides APIs for creating and managing Amazon Forecast resources",
   "subcommands": [
     {

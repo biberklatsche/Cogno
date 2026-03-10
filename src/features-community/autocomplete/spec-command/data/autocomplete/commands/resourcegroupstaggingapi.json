@@ -1,7 +1,5 @@
 {
   "name": "resourcegroupstaggingapi",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/resourcegroupstaggingapi.ts",
   "description": "Resource Groups Tagging API",
   "subcommands": [
     {

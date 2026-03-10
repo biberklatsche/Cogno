@@ -1,7 +1,5 @@
 {
   "name": "googler",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/googler.ts",
   "description": "Google from the command-line",
   "options": [
     {

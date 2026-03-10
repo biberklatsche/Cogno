@@ -1,7 +1,5 @@
 {
   "name": "grep",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/grep.ts",
   "description": "Matches patterns in input text. Supports simple patterns and regular expressions",
   "options": [
     {

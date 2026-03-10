@@ -1,7 +1,5 @@
 {
   "name": "sort",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sort.ts",
   "description": "Sort or merge records (lines) of text and binary files",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "sw_vers",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sw_vers.ts",
   "description": "Print macOS version information",
   "options": [
     {

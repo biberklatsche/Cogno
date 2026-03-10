@@ -1,7 +1,5 @@
 {
   "name": "sshkey",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/sshkey.ts",
   "description": "Manage ssh public key with vm",
   "subcommands": [
     {

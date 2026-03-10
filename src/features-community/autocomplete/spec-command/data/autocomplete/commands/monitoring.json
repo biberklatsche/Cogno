@@ -1,7 +1,5 @@
 {
   "name": "monitoring",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/monitoring.ts",
   "description": "Manage Cloud Monitoring dashboards",
   "options": [
     {

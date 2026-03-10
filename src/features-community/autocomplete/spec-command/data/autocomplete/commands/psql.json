@@ -1,7 +1,5 @@
 {
   "name": "psql",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/psql.ts",
   "description": "Psql is a terminal-based front-end to PostgreSQL",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "bedrock-data-automation",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/bedrock-data-automation.ts",
   "description": "Amazon Bedrock Keystone Build",
   "subcommands": [
     {

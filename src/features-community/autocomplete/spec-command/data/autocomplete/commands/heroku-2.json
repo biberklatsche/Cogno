@@ -1,7 +1,5 @@
 {
   "name": "heroku",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/heroku/8.6.0.ts",
   "subcommands": [
     {
       "name": [

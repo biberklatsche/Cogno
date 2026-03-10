@@ -1,7 +1,5 @@
 {
   "name": "firefox",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/firefox.ts",
   "description": "Free open-source web browser developer by Mozilla",
   "options": [
     {

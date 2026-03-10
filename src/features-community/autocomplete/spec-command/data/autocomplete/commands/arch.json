@@ -1,7 +1,5 @@
 {
   "name": "arch",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/arch.ts",
   "description": "Print architecture type or run select architecture",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "watson",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/watson.ts",
   "description": "A wonderful CLI to track your time",
   "options": [
     {

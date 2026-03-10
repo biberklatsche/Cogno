@@ -1,7 +1,5 @@
 {
   "name": "tac",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/tac.ts",
   "description": "Concatenate and print files in reverse",
   "options": [
     {

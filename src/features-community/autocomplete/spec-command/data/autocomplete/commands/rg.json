@@ -1,7 +1,5 @@
 {
   "name": "rg",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rg.ts",
   "description": "Recursively searches current directory for lines matching a pattern",
   "options": [
     {

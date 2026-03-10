@@ -1,7 +1,5 @@
 {
   "name": "rustc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rustc.ts",
   "description": "CLI for rustc",
   "options": [
     {

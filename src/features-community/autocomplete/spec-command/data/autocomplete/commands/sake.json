@@ -1,7 +1,5 @@
 {
   "name": "sake",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sake.ts",
   "description": "🍶 Swift-based utility for managing project commands, inspired by Make",
   "options": [
     {

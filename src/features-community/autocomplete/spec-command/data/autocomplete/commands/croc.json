@@ -1,7 +1,5 @@
 {
   "name": "croc",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/croc.ts",
   "description": "Croc is a tool that allows any two computers to simply and securely transfer files and folders",
   "options": [
     {

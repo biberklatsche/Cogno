@@ -1,7 +1,5 @@
 {
   "name": "helm",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/helm.ts",
   "description": "The Helm package manager for Kubernetes",
   "options": [
     {

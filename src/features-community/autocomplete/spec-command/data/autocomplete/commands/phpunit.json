@@ -1,7 +1,5 @@
 {
   "name": "phpunit",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/phpunit.ts",
   "description": "The PHPUnit is a command-line test runner that can be invoked through the phpunit command",
   "options": [
     {

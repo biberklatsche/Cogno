@@ -1,7 +1,5 @@
 {
   "name": "terragrunt",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/terragrunt.ts",
   "description": "Terragrunt CLI",
   "options": [
     {

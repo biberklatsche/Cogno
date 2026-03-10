@@ -1,7 +1,5 @@
 {
   "name": "do-release-upgrade",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/do-release-upgrade.ts",
   "description": "Upgrade Ubuntu to latest release",
   "options": [
     {

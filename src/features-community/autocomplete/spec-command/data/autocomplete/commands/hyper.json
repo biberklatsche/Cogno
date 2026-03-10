@@ -1,7 +1,5 @@
 {
   "name": "hyper",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/hyper.ts",
   "description": "Hyper is an Electron-based terminal",
   "options": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "ps",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/ps.ts",
   "description": "Report a snapshot of the current processes",
   "options": [
     {

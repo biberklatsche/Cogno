@@ -1,7 +1,5 @@
 {
   "name": "multipass",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/multipass.ts",
   "description": "Create, control and connect to Ubuntu instances",
   "options": [
     {

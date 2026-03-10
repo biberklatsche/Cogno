@@ -1,7 +1,5 @@
 {
   "name": "translate",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/translate.ts",
   "description": "Provides translation of the input content from the source language to the target language",
   "subcommands": [
     {

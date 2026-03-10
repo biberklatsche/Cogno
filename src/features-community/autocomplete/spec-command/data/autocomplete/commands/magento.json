@@ -1,6 +1,4 @@
 {
   "name": "magento",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/magento.ts",
   "description": "Open-source E-commerce"
 }

@@ -1,7 +1,5 @@
 {
   "name": "osascript",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/osascript.ts",
   "description": "Execute OSA scripts (AppleScript, JavaScript, etc.)",
   "options": [
     {

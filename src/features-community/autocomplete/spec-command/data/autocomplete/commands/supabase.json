@@ -1,7 +1,5 @@
 {
   "name": "supabase",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/supabase.ts",
   "description": "Supabase CLI",
   "options": [
     {

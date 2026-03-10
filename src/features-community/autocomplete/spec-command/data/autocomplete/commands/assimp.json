@@ -1,7 +1,5 @@
 {
   "name": "assimp",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/assimp.ts",
   "description": "Open Asset Import Library",
   "options": [
     {

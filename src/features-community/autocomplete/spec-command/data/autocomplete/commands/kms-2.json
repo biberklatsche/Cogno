@@ -1,7 +1,5 @@
 {
   "name": "kms",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/gcloud/kms.ts",
   "description": "Manage cryptographic keys in the cloud",
   "options": [
     {

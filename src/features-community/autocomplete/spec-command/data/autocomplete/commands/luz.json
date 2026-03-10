@@ -1,7 +1,5 @@
 {
   "name": "luz",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/luz.ts",
   "description": "A next-generation build system for Apple Darwin-based systems",
   "options": [
     {

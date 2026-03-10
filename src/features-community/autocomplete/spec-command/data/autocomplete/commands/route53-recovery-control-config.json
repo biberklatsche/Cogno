@@ -1,7 +1,5 @@
 {
   "name": "route53-recovery-control-config",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/route53-recovery-control-config.ts",
   "description": "Recovery Control Configuration API Reference for Amazon Route 53 Application Recovery Controller",
   "subcommands": [
     {

@@ -1,7 +1,5 @@
 {
   "name": "autojump",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/autojump.ts",
   "description": "A faster way to navigate your filesystem",
   "options": [
     {

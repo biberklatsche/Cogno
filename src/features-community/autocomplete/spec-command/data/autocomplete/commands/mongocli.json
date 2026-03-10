@@ -1,7 +1,5 @@
 {
   "name": "mongocli",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mongocli.ts",
   "description": "CLI tool to manage your MongoDB Cloud",
   "options": [
     {

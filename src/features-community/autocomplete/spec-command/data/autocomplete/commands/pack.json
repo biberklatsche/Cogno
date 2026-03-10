@@ -1,7 +1,5 @@
 {
   "name": "pack",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-pack.ts",
   "description": "The dotnet pack command builds the project and creates NuGet packages. The result of this command is a NuGet package (that is, a .nupkg file)",
   "options": [
     {

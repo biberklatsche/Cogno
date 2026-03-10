@@ -1,7 +1,5 @@
 {
   "name": "spotify",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/spotify.ts",
   "description": "CLI to use Spotify from the terminal",
   "options": [
     {

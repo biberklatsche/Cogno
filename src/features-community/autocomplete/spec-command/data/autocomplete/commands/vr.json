@@ -1,7 +1,5 @@
 {
   "name": "vr",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/vr.ts",
   "description": "The npm-style script runner for Deno",
   "options": [
     {

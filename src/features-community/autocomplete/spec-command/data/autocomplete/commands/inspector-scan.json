@@ -1,7 +1,5 @@
 {
   "name": "inspector-scan",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/inspector-scan.ts",
   "description": "Amazon Inspector Scan is a vulnerability discovery service that scans a provided Software Bill of Materials (SBOM) for security vulnerabilities",
   "subcommands": [
     {

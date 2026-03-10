@@ -1,7 +1,5 @@
 {
   "name": "batch",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/batch.ts",
   "description": "Manage Azure Batch",
   "subcommands": [
     {

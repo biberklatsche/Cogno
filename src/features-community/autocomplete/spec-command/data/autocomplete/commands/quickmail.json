@@ -1,7 +1,5 @@
 {
   "name": "quickmail",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/quickmail.ts",
   "description": "Quickmail is a terminal-based solution to send mails",
   "options": [
     {

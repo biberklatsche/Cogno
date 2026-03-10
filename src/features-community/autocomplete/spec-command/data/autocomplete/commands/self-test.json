@@ -1,6 +1,4 @@
 {
   "name": "self-test",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/self-test.ts",
   "description": "Runs a self-test of the CLI"
 }

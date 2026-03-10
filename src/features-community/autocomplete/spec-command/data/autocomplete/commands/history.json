@@ -1,7 +1,5 @@
 {
   "name": "history",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/history.ts",
   "description": "Commands to interact with the history of AWS CLI commands ran over time. To record the history of AWS CLI commands set ``cli_history`` to ``enabled`` in the ``~/.aws/config`` file. This can be done by running:\n\n``$ aws configure set cli_history enabled``",
   "subcommands": [
     {

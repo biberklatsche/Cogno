@@ -1,7 +1,5 @@
 {
   "name": "bws",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/bws.ts",
   "options": [
     {
       "name": [

@@ -1,7 +1,5 @@
 {
   "name": "leaf",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/leaf.ts",
   "description": "Create and interact with your leaf projects",
   "options": [
     {

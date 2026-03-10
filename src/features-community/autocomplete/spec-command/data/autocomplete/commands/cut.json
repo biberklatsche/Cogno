@@ -1,7 +1,5 @@
 {
   "name": "cut",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/cut.ts",
   "description": "Cut out selected portions of each line of a file",
   "options": [
     {

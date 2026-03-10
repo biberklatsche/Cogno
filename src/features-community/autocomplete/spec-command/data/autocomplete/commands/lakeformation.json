@@ -1,7 +1,5 @@
 {
   "name": "lakeformation",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/aws/lakeformation.ts",
   "description": "Lake Formation Defines the public endpoint for the Lake Formation service",
   "subcommands": [
     {

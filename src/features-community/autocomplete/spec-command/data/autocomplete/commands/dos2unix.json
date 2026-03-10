@@ -1,7 +1,5 @@
 {
   "name": "dos2unix",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dos2unix.ts",
   "description": "DOS to Unix file format converter",
   "options": [
     {

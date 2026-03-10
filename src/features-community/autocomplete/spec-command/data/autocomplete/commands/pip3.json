@@ -1,7 +1,5 @@
 {
   "name": "pip3",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/pip3.ts",
   "description": "Python package manager",
   "subcommands": [
     {

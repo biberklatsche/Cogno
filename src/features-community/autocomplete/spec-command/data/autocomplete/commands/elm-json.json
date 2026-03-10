@@ -1,7 +1,5 @@
 {
   "name": "elm-json",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/elm-json.ts",
   "description": "Deal with your elm.json",
   "options": [
     {

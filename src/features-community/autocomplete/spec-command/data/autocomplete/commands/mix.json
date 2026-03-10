@@ -1,7 +1,5 @@
 {
   "name": "mix",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/mix.ts",
   "description": "Build tool for Elixir",
   "options": [
     {

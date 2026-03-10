@@ -1,7 +1,5 @@
 {
   "name": "repos",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/repos.ts",
   "description": "Manage Azure Repos.\n\n\t\tThis command group is a part of the azure-devops extension",
   "subcommands": [
     {

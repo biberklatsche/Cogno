@@ -1,7 +1,5 @@
 {
   "name": "xdg-mime",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/xdg-mime.ts",
   "description": "Command line tool for querying information about file type handling and adding descriptions for new file types",
   "options": [
     {

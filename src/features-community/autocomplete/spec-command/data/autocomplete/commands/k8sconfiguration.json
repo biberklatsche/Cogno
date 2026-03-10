@@ -1,7 +1,5 @@
 {
   "name": "k8sconfiguration",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/az/2.53.0/k8sconfiguration.ts",
   "description": "Commands to manage Kubernetes configuration",
   "subcommands": [
     {

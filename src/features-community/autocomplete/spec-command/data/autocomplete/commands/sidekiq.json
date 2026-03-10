@@ -1,7 +1,5 @@
 {
   "name": "sidekiq",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/sidekiq.ts",
   "description": "Background job framework for Ruby",
   "options": [
     {

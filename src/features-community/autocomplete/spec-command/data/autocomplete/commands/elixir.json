@@ -1,7 +1,5 @@
 {
   "name": "elixir",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/elixir.ts",
   "description": "Elixir Language",
   "options": [
     {
