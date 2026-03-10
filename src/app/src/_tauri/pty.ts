@@ -87,6 +87,14 @@ export const TauriPty = {
         });
     },
 
+    executeShellAction(terminalId: TerminalId, action: string, payload?: object) {
+        return invoke('pty_execute_shell_action', {
+            terminalId,
+            action,
+            payloadJson: payload ? JSON.stringify(payload) : null,
+        });
+    },
+
     getProcessTreeByProcessId(processId: number) {
         return invoke<ProcessTreeSnapshot>('pty_get_process_tree_by_pid', {
             processId

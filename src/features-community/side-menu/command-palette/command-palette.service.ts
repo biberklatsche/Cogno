@@ -42,8 +42,10 @@ export class CommandPaletteService {
 
   handleSideMenuClose(): void {
     this.querySignal.set("");
-    this.commandListSignal.set([]);
-    this.filteredCommandListSignal.set([]);
+    this.filteredCommandListSignal.set(this.withFirstSelected(this.commandListSignal().map((commandEntry) => ({
+      ...commandEntry,
+      isSelected: false,
+    }))));
   }
 
   fireSelectedAction(commandEntry?: CommandEntry): void {

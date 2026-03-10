@@ -24,6 +24,7 @@ describe('CommandLineEditor', () => {
     mockBus = new AppBus();
     mockPty = {
       write: vi.fn(),
+      executeShellAction: vi.fn(),
       resize: vi.fn(),
       kill: vi.fn(),
       onData: vi.fn(),
@@ -52,6 +53,55 @@ describe('CommandLineEditor', () => {
     // repeat(13) [C + repeat(19) backspace
     const expected = '\x1b[C'.repeat(13) + '\x08'.repeat(19);
     expect(mockPty.write).toHaveBeenCalledWith(expected);
+  });
+
+  it('should prefer native shell input when defined', () => {
+    editor = new CommandLineEditor(
+      mockBus,
+      mockPty,
+      state as any,
+      { nativeInputByAction: { clearLineToEnd: '\x0b' } }
+    );
+    editor.registerTerminal(mockTerminal);
+
+    mockBus.publish({ type: 'ClearLineToEnd', payload: terminalId, path: ['app', 'terminal'] });
+
+    expect(mockPty.write).toHaveBeenCalledWith('\x0b');
+  });
+
+  it('should prefer shell integration actions when defined', () => {
+    editor = new CommandLineEditor(
+      mockBus,
+      mockPty,
+      state as any,
+      { nativeActionsViaShellIntegration: ['clearLineToEnd'] }
+    );
+    editor.registerTerminal(mockTerminal);
+
+    mockBus.publish({ type: 'ClearLineToEnd', payload: terminalId, path: ['app', 'terminal'] });
+
+    expect(mockPty.executeShellAction).toHaveBeenCalledWith('clearLineToEnd');
+  });
+
+  it('should use native shell action for autocomplete replacement when defined', () => {
+    editor = new CommandLineEditor(
+      mockBus,
+      mockPty,
+      state as any,
+      { nativeActionsViaShellIntegration: ['replaceCurrentInput'] }
+    );
+    editor.registerTerminal(mockTerminal);
+
+    mockBus.publish({
+      type: 'ApplyAutocompleteSuggestion',
+      payload: { terminalId, inputText: 'pnpm run build', cursorIndex: 4 },
+      path: ['app', 'terminal'],
+    });
+
+    expect(mockPty.executeShellAction).toHaveBeenCalledWith('replaceCurrentInput', {
+      text: 'pnpm run build',
+      cursorIndex: 4,
+    });
   });
 
   it('should clear line to end', () => {
@@ -282,6 +332,34 @@ describe('CommandLineEditor', () => {
       // Cursor was at 5. Range index 0 to 5. endIdx = 5. currentCursorIdx = 5.
       // Expected: write 5 backspaces.
       expect(mockPty.write).toHaveBeenLastCalledWith('\x08'.repeat(5));
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should use native shell action for selection delete when defined', () => {
+      editor = new CommandLineEditor(
+        mockBus,
+        mockPty,
+        state as any,
+        { nativeActionsViaShellIntegration: ['deleteSelection'] }
+      );
+      editor.registerTerminal(mockTerminal);
+
+      state.input = { text: 'hello world', cursorIndex: 5, maxCursorIndex: 11 };
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 }
+      });
+
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls.at(-1)![0];
+      const event = { type: 'keydown', key: 'Backspace' } as KeyboardEvent;
+      const result = customKeyHandler(event);
+
+      expect(result).toBe(false);
+      expect(mockPty.executeShellAction).toHaveBeenCalledWith('deleteSelection', {
+        start: 0,
+        length: 5,
+      });
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
     });
 

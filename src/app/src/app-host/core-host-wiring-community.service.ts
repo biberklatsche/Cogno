@@ -1,6 +1,7 @@
 import { Injectable, Type } from "@angular/core";
 import { CoreHostBootstrapHost, PathFactory, SideMenuFeatureRegistryHost } from "@cogno/core-host";
 import {
+  ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
@@ -9,6 +10,7 @@ import { ActionName } from "../action/action.models";
 import { Icon } from "@cogno/core-ui";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
 import {
+  communityFeatureShellDefinitions,
   communityFeatureShellPathAdapterDefinitions,
   communityFeatureDatabaseMigrations,
   communityFeatureShellSupportDefinitions,
@@ -30,6 +32,9 @@ export class CoreHostWiringService {
   > = [...communityFeatureTerminalAutocompleteSuggestorDefinitions];
   private readonly shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract> = [
     ...communityFeatureShellSupportDefinitions,
+  ];
+  private readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract> = [
+    ...communityFeatureShellDefinitions,
   ];
 
   private readonly coreHostBootstrapHost = new CoreHostBootstrapHost<
@@ -76,5 +81,9 @@ export class CoreHostWiringService {
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
     return this.shellSupportDefinitions;
+  }
+
+  getShellDefinitions(): ReadonlyArray<ShellDefinitionContract> {
+    return this.shellDefinitions;
   }
 }

@@ -5,4 +5,17 @@ import { powerShellShellSupportDefinition } from "./powershell.shell-support-def
 export const powerShellShellDefinition: ShellDefinitionContract = {
   support: powerShellShellSupportDefinition,
   pathAdapter: powerShellShellPathAdapterDefinition,
+  lineEditor: {
+    nativeActionsViaShellIntegration: [
+      "clearLine",
+      "clearLineToEnd",
+      "clearLineToStart",
+      "deletePreviousWord",
+      "deleteNextWord",
+      "deleteSelection",
+      "goToNextWord",
+      "goToPreviousWord",
+      "replaceCurrentInput",
+    ],
+  },
 };

@@ -4,7 +4,7 @@ import { Logger } from "../_tauri/logger";
 import { Shells } from "../_tauri/shells";
 import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-sdk";
 
-const INTEGRATION_VERSION = "1.1.1";
+const INTEGRATION_VERSION = "1.1.3";
 
 /**
  * Manages shell integration scripts in ~/.cogno2/shell-integration

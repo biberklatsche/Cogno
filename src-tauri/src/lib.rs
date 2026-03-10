@@ -14,7 +14,7 @@ use commands::environment::{
 use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
 use commands::processes::{pty_get_process_tree_by_pid, pty_get_process_tree_by_terminal_id};
-use commands::pty::{pty_kill, pty_resize, pty_spawn, pty_write, PtyState};
+use commands::pty::{pty_execute_shell_action, pty_kill, pty_resize, pty_spawn, pty_write, PtyState};
 use commands::shells::list_shells;
 use commands::window::new_window;
 use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
@@ -57,6 +57,7 @@ pub fn run(cli: Cli) {
             encrypt,
             pty_spawn,
             pty_write,
+            pty_execute_shell_action,
             pty_resize,
             pty_kill,
             pty_get_process_tree_by_pid,

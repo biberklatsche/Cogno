@@ -6,8 +6,12 @@ import {getStateManager, getConfigService, getAppBus} from "../../../__test__/te
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
+import { CoreHostWiringService } from "../../app-host/core-host-wiring.service";
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
+import { PathFactory } from "@cogno/core-host";
+import { communityFeatureShellPathAdapterDefinitions } from "@cogno/community-features";
+import { proFeatureShellPathAdapterDefinitions } from "@cogno/pro-features";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -42,9 +46,14 @@ describe('TerminalSession', () => {
     let mockFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService;
     let mockDialogService: DialogService;
     let mockProcessInfoDialogReference: DialogRef<void>;
+    let mockCoreHostWiringService: CoreHostWiringService;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
+        PathFactory.setDefinitions([
+            ...communityFeatureShellPathAdapterDefinitions,
+            ...proFeatureShellPathAdapterDefinitions,
+        ]);
         mockConfigService = getConfigService() as unknown as ConfigService;
         mockBus = getAppBus();
         vi.spyOn(mockBus, 'publish');
@@ -70,12 +79,17 @@ describe('TerminalSession', () => {
             open: vi.fn().mockReturnValue(mockProcessInfoDialogReference)
         } as unknown as DialogService;
 
+        mockCoreHostWiringService = {
+            getShellDefinitions: vi.fn().mockReturnValue([]),
+        } as unknown as CoreHostWiringService;
+
         session = new TerminalSession(
             mockConfigService,
             mockBus,
             getStateManager(),
             mockFeatureSuggestorService,
-            mockDialogService
+            mockDialogService,
+            mockCoreHostWiringService,
         );
     });
 
@@ -87,7 +101,8 @@ describe('TerminalSession', () => {
             mockBus,
             getStateManager(),
             mockFeatureSuggestorService,
-            mockDialogService
+            mockDialogService,
+            mockCoreHostWiringService,
         );
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));

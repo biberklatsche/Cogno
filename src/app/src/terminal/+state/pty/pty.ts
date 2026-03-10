@@ -11,6 +11,7 @@ export interface IPty extends IDisposable{
     resize(dimensions: TerminalDimensions): void;
     onData(listener: (e: string) => any): IDisposable;
     write(data: string): void;
+    executeShellAction(action: string, payload?: object): void;
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable;
     kill(signal?: string): void;
 }
@@ -68,6 +69,12 @@ export class Pty implements IPty {
         if(!this._terminalId) throw Error('Please spawn Pty before write to it.');
         TauriPty.write(this._terminalId, data)
             .catch(err => console.error('Failed to write to PTY:', err));
+    }
+
+    executeShellAction(action: string, payload?: object) {
+        if(!this._terminalId) throw Error('Please spawn Pty before executing shell actions.');
+        TauriPty.executeShellAction(this._terminalId, action, payload)
+            .catch(err => Logger.error('Failed to execute shell action:', err));
     }
 
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {

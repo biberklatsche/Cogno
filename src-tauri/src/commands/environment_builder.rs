@@ -36,6 +36,10 @@ impl EnvironmentBuilder {
                 integration_root.to_string_lossy().to_string(),
             );
             env.insert(
+                "COGNO_LINE_EDITOR_PIPE_NAME".to_string(),
+                format!("cogno-line-editor-{}", session_id.replace('-', "")),
+            );
+            env.insert(
                 "COGNO_LOG_DIR".to_string(),
                 log_dir.to_string_lossy().to_string(),
             );

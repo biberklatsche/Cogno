@@ -92,9 +92,21 @@ describe("CommandPaletteService", () => {
     expect(commandList[0].keybinding).toBe("ctrl+alt+t");
   });
 
-  it("clears command state on close", () => {
+  it("keeps command entries and resets the filtered state on close", () => {
+    service.filterCommands("copy");
+    expect(service.filteredCommandList().length).toBe(1);
+
     service.handleSideMenuClose();
-    expect(service.filteredCommandList().length).toBe(0);
+    expect(service.filteredCommandList().length).toBe(3);
+    expect(service.filteredCommandList()[0].isSelected).toBe(true);
+  });
+
+  it("shows commands again when reopened after filtering", () => {
+    service.filterCommands("copy");
+    service.handleSideMenuClose();
+    service.handleSideMenuOpen();
+
+    expect(service.filteredCommandList().length).toBe(3);
   });
 });
 

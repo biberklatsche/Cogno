@@ -43,6 +43,13 @@ if ($env:COGNO_CLI_PATH -and -not (Get-Command cogno -ErrorAction SilentlyContin
     }
 }
 
+if ($env:COGNO_INTEGRATION_ROOT) {
+    $lineEditorScript = Join-Path $env:COGNO_INTEGRATION_ROOT "pwsh/line-editor.ps1"
+    if (Test-Path $lineEditorScript) {
+        . $lineEditorScript
+    }
+}
+
 $esc = [char]27
 $bel = [char]7
 

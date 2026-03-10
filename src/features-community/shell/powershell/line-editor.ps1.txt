@@ -1,0 +1,216 @@
+# Cogno2 PowerShell line editor integration
+# Provides out-of-band line editing actions
+
+if ($global:COGNO_PWSH_LINE_EDITOR_INITIALIZED -eq $true) {
+    return
+}
+$global:COGNO_PWSH_LINE_EDITOR_INITIALIZED = $true
+
+function Invoke-CognoLineEditorAction {
+    param(
+        [string]$Action,
+        [object]$Payload
+    )
+
+    if (-not $Action) {
+        return
+    }
+
+    switch ($Action) {
+        "clearLine" { [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine() }
+        "clearLineToEnd" { [Microsoft.PowerShell.PSConsoleReadLine]::KillLine() }
+        "clearLineToStart" { [Microsoft.PowerShell.PSConsoleReadLine]::BackwardDeleteLine() }
+        "deletePreviousWord" { [Microsoft.PowerShell.PSConsoleReadLine]::BackwardKillWord() }
+        "deleteNextWord" { [Microsoft.PowerShell.PSConsoleReadLine]::KillWord() }
+        "deleteSelection" { Invoke-CognoDeleteSelection $Payload }
+        "goToNextWord" { [Microsoft.PowerShell.PSConsoleReadLine]::ForwardWord() }
+        "goToPreviousWord" { [Microsoft.PowerShell.PSConsoleReadLine]::BackwardWord() }
+        "replaceCurrentInput" { Invoke-CognoReplaceCurrentInput $Payload }
+        default { }
+    }
+}
+
+function Invoke-CognoDeleteSelection {
+    param([object]$Payload)
+
+    if ($null -eq $Payload) {
+        return
+    }
+
+    $start = [int]$Payload.start
+    $length = [int]$Payload.length
+    if ($length -le 0) {
+        return
+    }
+
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace($start, $length, "")
+}
+
+function Invoke-CognoReplaceCurrentInput {
+    param([object]$Payload)
+
+    if ($null -eq $Payload) {
+        return
+    }
+
+    $line = ""
+    $cursor = 0
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+    $text = [string]$Payload.text
+    $targetCursor = [int]$Payload.cursorIndex
+    if ($targetCursor -lt 0) {
+        $targetCursor = 0
+    }
+    if ($targetCursor -gt $text.Length) {
+        $targetCursor = $text.Length
+    }
+
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $text)
+
+    $offset = $text.Length - $targetCursor
+    while ($offset -gt 0) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::BackwardChar()
+        $offset--
+    }
+}
+
+function Start-CognoLineEditorPipeListener {
+    if (-not $env:COGNO_LINE_EDITOR_PIPE_NAME) {
+        return
+    }
+
+    if ($null -eq (Get-Module -ListAvailable PSReadLine)) {
+        return
+    }
+
+    Import-Module PSReadLine -ErrorAction SilentlyContinue | Out-Null
+
+    $pipeName = $env:COGNO_LINE_EDITOR_PIPE_NAME
+    $listenerScript = @'
+param($PipeName)
+
+Import-Module PSReadLine -ErrorAction SilentlyContinue | Out-Null
+
+function Invoke-CognoLineEditorAction {
+    param(
+        [string]$Action,
+        [object]$Payload
+    )
+
+    if (-not $Action) {
+        return
+    }
+
+    switch ($Action) {
+        "clearLine" { [Microsoft.PowerShell.PSConsoleReadLine]::DeleteLine() }
+        "clearLineToEnd" { [Microsoft.PowerShell.PSConsoleReadLine]::KillLine() }
+        "clearLineToStart" { [Microsoft.PowerShell.PSConsoleReadLine]::BackwardDeleteLine() }
+        "deletePreviousWord" { [Microsoft.PowerShell.PSConsoleReadLine]::BackwardKillWord() }
+        "deleteNextWord" { [Microsoft.PowerShell.PSConsoleReadLine]::KillWord() }
+        "deleteSelection" { Invoke-CognoDeleteSelection $Payload }
+        "goToNextWord" { [Microsoft.PowerShell.PSConsoleReadLine]::ForwardWord() }
+        "goToPreviousWord" { [Microsoft.PowerShell.PSConsoleReadLine]::BackwardWord() }
+        "replaceCurrentInput" { Invoke-CognoReplaceCurrentInput $Payload }
+        default { }
+    }
+}
+
+function Invoke-CognoDeleteSelection {
+    param([object]$Payload)
+
+    if ($null -eq $Payload) {
+        return
+    }
+
+    $start = [int]$Payload.start
+    $length = [int]$Payload.length
+    if ($length -le 0) {
+        return
+    }
+
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace($start, $length, "")
+}
+
+function Invoke-CognoReplaceCurrentInput {
+    param([object]$Payload)
+
+    if ($null -eq $Payload) {
+        return
+    }
+
+    $line = ""
+    $cursor = 0
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+    $text = [string]$Payload.text
+    $targetCursor = [int]$Payload.cursorIndex
+    if ($targetCursor -lt 0) {
+        $targetCursor = 0
+    }
+    if ($targetCursor -gt $text.Length) {
+        $targetCursor = $text.Length
+    }
+
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace(0, $line.Length, $text)
+
+    $offset = $text.Length - $targetCursor
+    while ($offset -gt 0) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::BackwardChar()
+        $offset--
+    }
+}
+
+while ($true) {
+    $pipe = $null
+    $reader = $null
+
+    try {
+        $pipe = [System.IO.Pipes.NamedPipeServerStream]::new(
+            $PipeName,
+            [System.IO.Pipes.PipeDirection]::In,
+            1,
+            [System.IO.Pipes.PipeTransmissionMode]::Byte,
+            [System.IO.Pipes.PipeOptions]::Asynchronous
+        )
+        $pipe.WaitForConnection()
+        $reader = [System.IO.StreamReader]::new($pipe)
+
+        while (($messageJson = $reader.ReadLine()) -ne $null) {
+            $message = $null
+
+            try {
+                $message = $messageJson | ConvertFrom-Json
+            } catch {
+                $message = [pscustomobject]@{
+                    action = $messageJson
+                    payload = $null
+                }
+            }
+
+            if ($null -eq $message) {
+                continue
+            }
+
+            Invoke-CognoLineEditorAction $message.action $message.payload
+        }
+    } catch {
+    } finally {
+        if ($reader) {
+            $reader.Dispose()
+        }
+        if ($pipe) {
+            $pipe.Dispose()
+        }
+    }
+}
+'@
+
+    $listener = [powershell]::Create()
+    $null = $listener.AddScript($listenerScript).AddArgument($pipeName)
+    $null = $listener.BeginInvoke()
+
+    $global:COGNO_PWSH_LINE_EDITOR_LISTENER = $listener
+}
+
+Start-CognoLineEditorPipeListener

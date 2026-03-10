@@ -16,6 +16,7 @@ import {TerminalStateManager} from "../src/terminal/+state/state";
 import {ShellType} from "../src/config/+models/config";
 import {TerminalSession} from "../src/terminal/+state/terminal.session";
 import { TerminalAutocompleteFeatureSuggestorService } from "../src/app-host/terminal-autocomplete-feature-suggestor.service";
+import { CoreHostWiringService } from "../src/app-host/core-host-wiring.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -31,6 +32,7 @@ let selectionHandler: SelectionHandler | undefined;
 let stateManager: TerminalStateManager | undefined;
 let terminalSession: TerminalSession | undefined;
 let terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService | undefined;
+let coreHostWiringService: CoreHostWiringService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -57,7 +59,8 @@ export function getTerminalSession(): TerminalSession {
             getAppBus(),
             getStateManager(),
             getTerminalAutocompleteFeatureSuggestorService(),
-            { open: () => ({ close: () => undefined }) } as any
+            { open: () => ({ close: () => undefined }) } as any,
+            getCoreHostWiringService(),
         );
     }
     return terminalSession;
@@ -76,6 +79,15 @@ export function getTerminalAutocompleteFeatureSuggestorService(): TerminalAutoco
 export function getConfigService(): ConfigServiceMock {
     if(!configService) configService = new ConfigServiceMock();
     return configService;
+}
+
+export function getCoreHostWiringService(): CoreHostWiringService {
+    if (!coreHostWiringService) {
+        coreHostWiringService = {
+            getShellDefinitions: vi.fn().mockReturnValue([]),
+        } as unknown as CoreHostWiringService;
+    }
+    return coreHostWiringService;
 }
 
 export function getKeybindService(): KeybindService {
@@ -173,5 +185,7 @@ export function clear() {
     focusHandler = undefined;
     selectionHandler = undefined;
     stateManager = undefined;
+    terminalSession = undefined;
     terminalAutocompleteFeatureSuggestorService = undefined;
+    coreHostWiringService = undefined;
 }

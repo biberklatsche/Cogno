@@ -7,6 +7,7 @@ import {Subscription} from 'rxjs';
 import {IPty} from '../../pty/pty';
 import {TerminalStateManager} from "../../state";
 import {Clipboard} from "../../../../_tauri/clipboard";
+import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-sdk";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;
@@ -15,7 +16,12 @@ export class CommandLineEditor implements ITerminalHandler  {
     private readonly WORD_SEPARATORS = "()[]{}'\"\\,;:/&<>*+=$^!~` ";
     private _selectionStart: number | null = null;
 
-    constructor(private _bus: AppBus, private _pty: IPty, private stateManager: TerminalStateManager) {
+    constructor(
+        private _bus: AppBus,
+        private _pty: IPty,
+        private stateManager: TerminalStateManager,
+        private readonly lineEditor?: ShellLineEditorDefinitionContract,
+    ) {
     }
 
     dispose(): void {
@@ -48,24 +54,22 @@ export class CommandLineEditor implements ITerminalHandler  {
             return true;
         });
 
-        const actions: Record<string, (event: any) => void> = {
-            'ClearLine': () => this.clearCurrentInput(),
-            'ClearLineToEnd': () => this.clearLineToEnd(),
-            'ClearLineToStart': () => this.clearLineToStart(),
-            'DeletePreviousWord': () => this.deletePreviousWord(),
-            'DeleteNextWord': () => this.deleteNextWord(),
-            'GoToNextWord': () => this.goToNextWord(),
-            'GoToPreviousWord': () => this.goToPreviousWord(),
-            'SelectAll': () => this.selectAll(),
-            'SelectTextRight': () => this.selectTextRight(),
-            'SelectTextLeft': () => this.selectTextLeft(),
-            'SelectWordRight': () => this.selectWordRight(),
-            'SelectWordLeft': () => this.selectWordLeft(),
-            'SelectTextToEndOfLine': () => this.selectTextToEndOfLine(),
-            'SelectTextToStartOfLine': () => this.selectTextToStartOfLine(),
-            'Cut': () => this.cutSelection(),
-            'ApplyAutocompleteSuggestion': (event) => this.applyAutocompleteSuggestion(event.payload.inputText, event.payload.cursorIndex),
-        } satisfies Partial<Record<AppMessage['type'], (event: any) => void>>;
+        const actions: Record<string, { actionId: ShellLineEditorActionContract; run: () => void }> = {
+            'ClearLine': { actionId: 'clearLine', run: () => this.clearCurrentInput() },
+            'ClearLineToEnd': { actionId: 'clearLineToEnd', run: () => this.clearLineToEnd() },
+            'ClearLineToStart': { actionId: 'clearLineToStart', run: () => this.clearLineToStart() },
+            'DeletePreviousWord': { actionId: 'deletePreviousWord', run: () => this.deletePreviousWord() },
+            'DeleteNextWord': { actionId: 'deleteNextWord', run: () => this.deleteNextWord() },
+            'GoToNextWord': { actionId: 'goToNextWord', run: () => this.goToNextWord() },
+            'GoToPreviousWord': { actionId: 'goToPreviousWord', run: () => this.goToPreviousWord() },
+            'SelectAll': { actionId: 'selectAll', run: () => this.selectAll() },
+            'SelectTextRight': { actionId: 'selectTextRight', run: () => this.selectTextRight() },
+            'SelectTextLeft': { actionId: 'selectTextLeft', run: () => this.selectTextLeft() },
+            'SelectWordRight': { actionId: 'selectWordRight', run: () => this.selectWordRight() },
+            'SelectWordLeft': { actionId: 'selectWordLeft', run: () => this.selectWordLeft() },
+            'SelectTextToEndOfLine': { actionId: 'selectTextToEndOfLine', run: () => this.selectTextToEndOfLine() },
+            'SelectTextToStartOfLine': { actionId: 'selectTextToStartOfLine', run: () => this.selectTextToStartOfLine() },
+        };
 
         Object.entries(actions).forEach(([key, handler]) => {
             const type = key as AppMessage['type'];
@@ -81,12 +85,49 @@ export class CommandLineEditor implements ITerminalHandler  {
                 if (!type.startsWith('Select')) {
                     this._selectionStart = null;
                 }
-                
-                handler(event);
+
+                if (this.executeNativeAction(handler.actionId)) {
+                    return;
+                }
+
+                handler.run();
             }));
         });
 
+        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Cut' }).subscribe(event => {
+            if (event.payload !== this.stateManager.terminalId || this.stateManager.isCommandRunning) return;
+            this._selectionStart = null;
+            this.cutSelection();
+        }));
+        this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'ApplyAutocompleteSuggestion' }).subscribe(
+            (event) => {
+                const payload = event.payload;
+                if (!payload || payload.terminalId !== this.stateManager.terminalId || this.stateManager.isCommandRunning) return;
+                this._selectionStart = null;
+                this.applyAutocompleteSuggestion(payload.inputText, payload.cursorIndex);
+            },
+        ));
+
         return this;
+    }
+
+    private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
+        if (this.lineEditor?.nativeActionsViaShellIntegration?.includes(actionId)) {
+            this._pty.executeShellAction(actionId);
+            return true;
+        }
+
+        const nativeInput = this.lineEditor?.nativeInputByAction?.[actionId];
+        if (!nativeInput) {
+            return false;
+        }
+
+        this._ptyWrite(nativeInput);
+        return true;
+    }
+
+    private supportsNativeShellAction(actionId: ShellLineEditorActionContract): boolean {
+        return this.lineEditor?.nativeActionsViaShellIntegration?.includes(actionId) ?? false;
     }
 
     /**
@@ -289,6 +330,14 @@ export class CommandLineEditor implements ITerminalHandler  {
 
     private applyAutocompleteSuggestion(inputText: string, cursorIndex: number) {
         if (!this._terminal) return;
+        if (this.supportsNativeShellAction('replaceCurrentInput')) {
+            this._pty.executeShellAction('replaceCurrentInput', {
+                text: inputText,
+                cursorIndex,
+            });
+            return;
+        }
+
         const input = this.stateManager.input;
         const countToEnd = input.text.length - input.cursorIndex;
         const clearCmd = this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(input.text.length);
@@ -336,6 +385,15 @@ export class CommandLineEditor implements ITerminalHandler  {
 
         const deleteLength = endIdx - startIdx;
         if (deleteLength <= 0) {
+            this._clearSelection();
+            return true;
+        }
+
+        if (this.supportsNativeShellAction('deleteSelection')) {
+            this._pty.executeShellAction('deleteSelection', {
+                start: startIdx,
+                length: deleteLength,
+            });
             this._clearSelection();
             return true;
         }

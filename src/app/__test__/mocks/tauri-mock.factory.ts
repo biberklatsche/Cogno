@@ -10,6 +10,7 @@ export class TauriMockFactory {
       onData: vi.fn().mockResolvedValue(() => {}),
       onExit: vi.fn().mockResolvedValue(() => {}),
       write: vi.fn().mockResolvedValue(undefined),
+      executeShellAction: vi.fn().mockResolvedValue(undefined),
     };
   }
 
