@@ -23,7 +23,14 @@
             "loader": {
               ".sql": "text"
             },
-            "assets": ["src/app/assets"],
+            "assets": [
+              "src/app/assets",
+              {
+                "glob": "**/*",
+                "input": "src/features-community/autocomplete/spec-command/data/autocomplete",
+                "output": "/feature-data/community/spec-command"
+              }
+            ],
             "styles": [
               "src/app/assets/styles/styles.css",
               "node_modules/@xterm/xterm/css/xterm.css"

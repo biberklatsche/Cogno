@@ -1,6 +1,5 @@
 import { CommandSpec } from "./spec.types";
 import { CommandShellConstraints, CommandSpecSource } from "./command-spec.source";
-import { importFigSubsetSpecs } from "./importer/fig-lite.importer";
 
 type ManifestEntry = {
     name: string;
@@ -10,8 +9,8 @@ type ManifestEntry = {
     excludeShells?: CommandShellConstraints["excludeShells"];
 };
 
-const MANIFEST_URL = "/src/app/assets/autocomplete/manifest.json";
-const COMMANDS_BASE_URL = "/src/app/assets/autocomplete/commands/";
+const MANIFEST_URL = "/feature-data/community/spec-command/manifest.json";
+const COMMANDS_BASE_URL = "/feature-data/community/spec-command/commands/";
 
 export class AssetCommandSpecRegistry implements CommandSpecSource {
     private readonly _cache = new Map<string, CommandSpec>();
@@ -55,10 +54,10 @@ export class AssetCommandSpecRegistry implements CommandSpecSource {
         if (!row) return undefined;
         const response = await fetch(`${COMMANDS_BASE_URL}${row.file}`);
         if (!response.ok) return undefined;
-        const raw = await response.json() as CommandSpec;
-        const imported = importFigSubsetSpecs([raw])[0];
-        if (imported) this._cache.set(command, imported);
-        return imported;
+        const spec = await response.json() as CommandSpec;
+        if (!spec?.name?.trim()) return undefined;
+        this._cache.set(command, spec);
+        return spec;
     }
 
     private loadManifest(): Promise<Map<string, ManifestEntry>> {

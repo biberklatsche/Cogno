@@ -1,8 +1,7 @@
 import { CommandSpec } from "../spec.types";
-import { importFigSubsetSpecs } from "../importer/fig-lite.importer";
 
 export function createCommandSpecsFixture(): CommandSpec[] {
-    return importFigSubsetSpecs([
+    return [
         {
             name: "npm",
             subcommands: [
@@ -26,6 +25,6 @@ export function createCommandSpecsFixture(): CommandSpec[] {
         {
             name: "docker",
         },
-    ]);
+    ];
 }
 

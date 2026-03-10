@@ -2,58 +2,6 @@ import { AutocompleteQueryContextContract, ShellTypeContract } from "@cogno/core
 
 export type ShellConstraint = ShellTypeContract;
 
-export type SingleOrArray<T> = T | T[];
-
-export type ExecuteShellCommandInput = {
-    command: string;
-    args?: string[];
-    cwd?: string;
-    env?: Record<string, string>;
-};
-
-export type ExecuteShellCommandResult = {
-    stdout: string;
-    stderr: string;
-    status?: number;
-};
-
-export type ExecuteShellCommand = (
-    input: ExecuteShellCommandInput
-) => Promise<ExecuteShellCommandResult>;
-
-export type Suggestion = {
-    name?: string;
-    description?: string;
-    insertValue?: string;
-    icon?: string;
-    priority?: number;
-    [key: string]: unknown;
-};
-
-export type Generator = {
-    script?: string | string[];
-    template?: string | string[];
-    trigger?: string;
-    custom?: (
-        tokens: string[],
-        executeShellCommand: ExecuteShellCommand,
-        context?: unknown
-    ) => Promise<ReadonlyArray<Suggestion | string> | string[] | Suggestion[] | undefined> | ReadonlyArray<Suggestion | string> | string[] | Suggestion[] | undefined;
-    postProcess?: (
-        out: string,
-        prefix?: string,
-        tokens?: string[]
-    ) => ReadonlyArray<Suggestion | string> | string[] | Suggestion[] | undefined;
-    generators?: SingleOrArray<Generator>;
-    [key: string]: unknown;
-};
-
-export type ParserDirectives = {
-    flagsArePosixNoncompliant?: boolean;
-    optionsMustPrecedeArguments?: boolean;
-    [key: string]: unknown;
-};
-
 export type ArgSpec = {
     name: string;
     description?: string;
@@ -88,12 +36,6 @@ export type CommandSpec = {
     shells?: ShellConstraint[];
     excludeShells?: ShellConstraint[];
 };
-
-export type VersionDiffMap = Record<string, unknown>;
-
-export type GetVersionCommand = (
-    executeShellCommand: ExecuteShellCommand
-) => Promise<string>;
 
 export type SpecProviderWhen = {
     firstArgIn?: string[];

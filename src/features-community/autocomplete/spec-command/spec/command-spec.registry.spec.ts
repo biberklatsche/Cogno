@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { CommandSpecRegistry } from "./command-spec.registry";
-import { importFigSubsetSpecs } from "./importer/fig-lite.importer";
 import { createCommandSpecsFixture } from "./testing/command-specs.fixture";
 
-describe("CommandSpecRegistry defaults/importer", () => {
+describe("CommandSpecRegistry", () => {
     it("loads fixture defaults", () => {
         const specs = createCommandSpecsFixture();
         const names = specs.map(v => v.name);
@@ -12,15 +11,6 @@ describe("CommandSpecRegistry defaults/importer", () => {
         expect(names).toContain("git");
         expect(names).toContain("docker");
         expect(names).toContain("Get-ChildItem");
-    });
-
-    it("deduplicates duplicate entries by command name and values", () => {
-        const imported = importFigSubsetSpecs([
-            { name: "foo", subcommands: ["a", "a", "b"], options: ["--x", "--x"] },
-            { name: "foo", subcommands: ["c"] },
-        ]);
-        expect(imported).toHaveLength(1);
-        expect(imported[0].subcommands).toEqual([{ name: "c" }]);
     });
 
     it("keeps secondary options from command specs", () => {

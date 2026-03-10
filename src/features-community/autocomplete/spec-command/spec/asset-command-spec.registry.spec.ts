@@ -8,10 +8,10 @@ describe("AssetCommandSpecRegistry", () => {
         vi.restoreAllMocks();
     });
 
-    it("loads command names and command specs from assets endpoints", async () => {
+    it("loads command names and command specs from feature data endpoints", async () => {
         const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
             const url = String(input);
-            if (url.endsWith("/src/app/assets/autocomplete/manifest.json")) {
+            if (url.endsWith("/feature-data/community/spec-command/manifest.json")) {
                 return {
                     ok: true,
                     json: async () => [
@@ -19,7 +19,7 @@ describe("AssetCommandSpecRegistry", () => {
                     ],
                 } as Response;
             }
-            if (url.endsWith("/src/app/assets/autocomplete/commands/git.json")) {
+            if (url.endsWith("/feature-data/community/spec-command/commands/git.json")) {
                 return {
                     ok: true,
                     json: async () => ({
