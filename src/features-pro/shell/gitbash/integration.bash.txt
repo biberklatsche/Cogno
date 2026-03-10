@@ -1,0 +1,92 @@
+#!/bin/bash
+# Cogno2 Integration Script for Git Bash
+# Provides OSC markers, prompt hooks, and shell integration features
+
+if [[ -n "${COGNO_BASH_INTEGRATION_LOADED}" ]]; then
+  return 0
+fi
+export COGNO_BASH_INTEGRATION_LOADED=1
+
+# State variables
+COGNO_COUNT=0
+COGNO_LAST_CMD=""
+COGNO_CMD_SEEN=0
+
+# Sanitize command for OSC payload
+_cogno_sanitize_cmd() {
+  local s="$1"
+  s="${s//$'\r'/}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$(printf '\033')/}"
+  s="${s//$(printf '\007')/}"
+  s="${s//;/\\;}"
+  s="${s//|/\\|}"
+  echo "$s"
+}
+
+_cogno_extract_command_name() {
+  local line="$1"
+  line="${line#"${line%%[![:space:]]*}"}"
+
+  local assignment_re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+'
+  while [[ "$line" =~ $assignment_re ]]; do
+    line="${line#${BASH_REMATCH[0]}}"
+  done
+
+  line="${line#"${line%%[![:space:]]*}"}"
+  if [[ -z "$line" ]]; then
+    echo ""
+    return
+  fi
+
+  echo "${line%%[[:space:]]*}"
+}
+
+_cogno_preexec() {
+  local actual_input
+  actual_input=$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
+  if [[ -z "$actual_input" ]]; then
+    actual_input="$BASH_COMMAND"
+  fi
+
+  if [[ "$actual_input" != "_cogno_precmd"* &&
+        "$actual_input" != "_cogno_preexec"* &&
+        "$actual_input" != "COGNO_"* ]]; then
+    COGNO_LAST_CMD="$actual_input"
+    COGNO_CMD_SEEN=1
+  fi
+}
+
+_cogno_precmd() {
+  local last_ec=$?
+
+  COGNO_COUNT=$((COGNO_COUNT + 1))
+
+  local ts="$COGNO_COUNT"
+  local host="${HOSTNAME%%.*}"
+  local user="${USER:-${USERNAME:-$(whoami)}}"
+  local cwd="$PWD"
+
+  local cmd=""
+  local command_exists="false"
+  if [ "$COGNO_CMD_SEEN" -eq 1 ]; then
+    cmd="$(_cogno_sanitize_cmd "$COGNO_LAST_CMD")"
+    local command_name
+    command_name="$(_cogno_extract_command_name "$COGNO_LAST_CMD")"
+    if [[ -n "$command_name" ]] && [[ -n "$(type -t -- "$command_name" 2>/dev/null)" ]]; then
+      command_exists="true"
+    fi
+  fi
+
+  printf '\033]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;commandExists=%s;\033\\' \
+    "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd" "$command_exists"
+
+  COGNO_CMD_SEEN=0
+  COGNO_LAST_CMD=""
+
+  return $last_ec
+}
+
+trap '_cogno_preexec' DEBUG
+PROMPT_COMMAND='_cogno_precmd'
+PS1='\n^^#${COGNO_COUNT}\n'

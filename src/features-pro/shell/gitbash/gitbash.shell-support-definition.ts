@@ -1,4 +1,6 @@
 import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
+import gitBashBootstrapScript from "./bootstrap.bash.txt?raw";
+import gitBashIntegrationScript from "./integration.bash.txt?raw";
 
 export const gitBashShellSupportDefinition: ShellSupportDefinitionContract = {
   shellType: "GitBash",
@@ -13,6 +15,14 @@ export const gitBashShellSupportDefinition: ShellSupportDefinitionContract = {
     linux: 5,
     macos: 5,
   },
-  integrationFiles: [],
-  integrationTemplateShellType: "Bash",
+  integrationFiles: [
+    {
+      relativePath: "gitbash/bootstrap.bash",
+      content: gitBashBootstrapScript,
+    },
+    {
+      relativePath: "gitbash/integration.bash",
+      content: gitBashIntegrationScript,
+    },
+  ],
 };

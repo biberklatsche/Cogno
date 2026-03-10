@@ -1,5 +1,5 @@
 import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
-import bashBootstrapScript from "./cogno.bashrc.txt?raw";
+import bashBootstrapScript from "./bootstrap.bash.txt?raw";
 import bashIntegrationScript from "./integration.bash.txt?raw";
 
 export const bashShellSupportDefinition: ShellSupportDefinitionContract = {
@@ -17,7 +17,7 @@ export const bashShellSupportDefinition: ShellSupportDefinitionContract = {
   },
   integrationFiles: [
     {
-      relativePath: "bash/cogno.bashrc",
+      relativePath: "bash/bootstrap.bash",
       content: bashBootstrapScript,
     },
     {

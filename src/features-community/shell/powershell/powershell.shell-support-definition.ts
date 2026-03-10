@@ -1,5 +1,5 @@
 import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
-import powerShellIntegrationScript from "./integration.ps1.txt?raw";
+import powerShellBootstrapScript from "./bootstrap.ps1.txt?raw";
 
 export const powerShellShellSupportDefinition: ShellSupportDefinitionContract = {
   shellType: "PowerShell",
@@ -16,8 +16,8 @@ export const powerShellShellSupportDefinition: ShellSupportDefinitionContract = 
   },
   integrationFiles: [
     {
-      relativePath: "pwsh/integration.ps1",
-      content: powerShellIntegrationScript,
+      relativePath: "pwsh/bootstrap.ps1",
+      content: powerShellBootstrapScript,
     },
   ],
 };

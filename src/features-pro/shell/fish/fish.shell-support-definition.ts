@@ -1,5 +1,5 @@
 import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
-import fishBootstrapScript from "./config.fish.txt?raw";
+import fishBootstrapScript from "./bootstrap.fish.txt?raw";
 import fishIntegrationScript from "./integration.fish.txt?raw";
 
 export const fishShellSupportDefinition: ShellSupportDefinitionContract = {
@@ -16,6 +16,10 @@ export const fishShellSupportDefinition: ShellSupportDefinitionContract = {
     macos: 1,
   },
   integrationFiles: [
+    {
+      relativePath: "fish/bootstrap.fish",
+      content: fishBootstrapScript,
+    },
     {
       relativePath: "fish/config.fish",
       content: fishBootstrapScript,

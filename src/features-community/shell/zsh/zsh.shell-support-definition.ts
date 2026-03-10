@@ -17,11 +17,11 @@ export const zshShellSupportDefinition: ShellSupportDefinitionContract = {
   },
   integrationFiles: [
     {
-      relativePath: "zsh/.zshrc",
+      relativePath: "zsh/bootstrap.zsh",
       content: zshBootstrapScript,
     },
     {
-      relativePath: "zsh/bootstrap.zsh",
+      relativePath: "zsh/.zshrc",
       content: zshBootstrapScript,
     },
     {

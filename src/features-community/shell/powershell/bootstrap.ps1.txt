@@ -1,5 +1,5 @@
-# Cogno2 Integration Script for PowerShell
-# Provides OSC markers, prompt hooks, and shell integration features
+# Cogno2 Bootstrap Script for PowerShell
+# Provides shell startup, prompt hooks, and shell integration features
 
 # Guard against double loading
 if ($env:COGNO_PWSH_BOOTSTRAPPED -eq "1") {
@@ -18,7 +18,7 @@ function Write-CognoLog {
     }
 }
 
-Write-CognoLog "PowerShell integration started"
+Write-CognoLog "PowerShell bootstrap started"
 
 # Optionally load user's profile (only if COGNO_ALLOW_USER_RC=1)
 if ($env:COGNO_ALLOW_USER_RC -eq "1") {
@@ -145,4 +145,4 @@ function prompt {
     return "`n^^#$ts`n"
 }
 
-Write-CognoLog "PowerShell integration completed"
+Write-CognoLog "PowerShell bootstrap completed"
