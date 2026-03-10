@@ -5,7 +5,7 @@ const generateRange = (start: number, end: number): Array<string> => {
   );
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "eas",
   description:
     "EAS CLI is the command-line app that you will use to interact with EAS services from your terminal",

@@ -5,7 +5,7 @@ type VersionsJSON = {
   versions: string[];
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "deployctl",
   description: "Command line tool for Deno Deploy",
   subcommands: [

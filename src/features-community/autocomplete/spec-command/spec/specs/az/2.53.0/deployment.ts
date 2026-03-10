@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "deployment",
   description:
     "Manage Azure Resource Manager template deployment at subscription scope",

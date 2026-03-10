@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iotsecuretunneling",
   description:
     "IoT Secure Tunneling IoT Secure Tunneling creates remote connections to devices deployed in the field. For more information about how IoT Secure Tunneling works, see IoT Secure Tunneling",

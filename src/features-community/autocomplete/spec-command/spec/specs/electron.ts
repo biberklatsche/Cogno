@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "electron",
   description:
     "Build cross platform desktop apps with JavaScript, HTML and CSS",

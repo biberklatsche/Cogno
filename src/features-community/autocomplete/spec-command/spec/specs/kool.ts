@@ -1,4 +1,4 @@
-const getScripts: Fig.Generator = {
+const getScripts: Generator = {
   script: ["kool", "run", "--help"],
   postProcess: (output) => {
     const lines = output.split("\n");
@@ -13,12 +13,12 @@ const getScripts: Fig.Generator = {
   },
 };
 
-const getServices: Fig.Generator = {
+const getServices: Generator = {
   script: ["docker-compose", "config", "--services"],
   splitOn: "\n",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kool",
   description: "Cloud and docker environments made easy",
   subcommands: [

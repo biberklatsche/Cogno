@@ -32,7 +32,7 @@ interface BinConsoleJSON {
     };
   }[];
 }
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bin-console",
   description: "Symfony bin/console command",
   generateSpec: async (_, executeShellCommand) => {
@@ -64,7 +64,7 @@ const completionSpec: Fig.Spec = {
             name.push(option.shortcut);
           }
 
-          const args: Fig.Arg[] = [];
+          const args: ArgSpec[] = [];
           if (option.accept_value) {
             args.push({
               name: "arg",

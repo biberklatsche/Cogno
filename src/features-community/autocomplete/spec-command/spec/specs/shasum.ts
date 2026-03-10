@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "shasum",
   description: "Print or Check SHA Checksums",
   args: {

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nl",
   description: "Line numbering filter",
   parserDirectives: {

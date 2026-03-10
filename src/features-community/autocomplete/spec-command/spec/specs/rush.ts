@@ -7,7 +7,7 @@ interface IRushConfigurationProjectJson {
 interface IRushConfigurationJson {
   projects: IRushConfigurationProjectJson[];
 }
-const projectGenerator: Fig.Generator = {
+const projectGenerator: Generator = {
   script: [
     "bash",
     "-c",
@@ -39,7 +39,7 @@ const projectGenerator: Fig.Generator = {
 };
 
 /** Base options for selecting subsets of projects */
-const PROJECT_SELECTION_OPTIONS: Fig.Option[] = [
+const PROJECT_SELECTION_OPTIONS: OptionSpec[] = [
   {
     name: ["-t", "--to"],
     args: { name: "PROJECT", generators: projectGenerator },
@@ -90,7 +90,7 @@ const PROJECT_SELECTION_OPTIONS: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rush",
   description: "Multi-Project Build Tool",
   subcommands: [

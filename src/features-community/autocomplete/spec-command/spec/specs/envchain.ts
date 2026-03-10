@@ -1,4 +1,4 @@
-const namespaces: Fig.Generator = {
+const namespaces: Generator = {
   script: ["envchain", "--list"],
   postProcess: (output) => {
     return Array.from(new Set(output.split("\n"))).map((namespace) => {
@@ -10,7 +10,7 @@ const namespaces: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "envchain",
   description:
     "Set environment variables with macOS keychain or D-Bus secret service",

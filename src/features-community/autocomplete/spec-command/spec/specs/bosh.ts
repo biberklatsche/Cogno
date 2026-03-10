@@ -1,9 +1,9 @@
-const genericPathArg: Fig.Arg = {
+const genericPathArg: ArgSpec = {
   name: "PATH",
   template: "filepaths",
 };
 
-const deployments: Fig.Generator = {
+const deployments: Generator = {
   script: ["bosh", "--json", "deployments"],
   postProcess: function (out) {
     if (out.startsWith("fatal:")) {
@@ -23,7 +23,7 @@ const deployments: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bosh",
   description: "Bosh cli to managed your bosh deployment",
   subcommands: [

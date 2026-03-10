@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "hybridaks",
   description: "Manage hybridaks provisioned clusters",
   subcommands: [

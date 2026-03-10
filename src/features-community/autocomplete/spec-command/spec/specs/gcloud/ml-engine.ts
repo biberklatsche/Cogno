@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ml-engine",
   description: "Manage AI Platform jobs and models",
   subcommands: [

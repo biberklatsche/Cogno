@@ -1,4 +1,4 @@
-const tests: Fig.Generator = {
+const tests: Generator = {
   script: ["phpunit", "--list-tests"],
   postProcess: function (out) {
     if (out.startsWith("fatal:")) {
@@ -18,7 +18,7 @@ const tests: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "phpunit-watcher",
   description: "Automatically rerun PHPUnit tests when source code changes",
   subcommands: [

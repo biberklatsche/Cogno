@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "zed",
   description: "A lightning-fast, collaborative code editor written in Rust",
   options: [

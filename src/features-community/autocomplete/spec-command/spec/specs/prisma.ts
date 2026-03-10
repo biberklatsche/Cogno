@@ -1,8 +1,8 @@
-const commonOptions: Fig.Option = {
+const commonOptions: OptionSpec = {
   name: ["-h", "--help"],
   description: "Display this help message",
 };
-const schemaOptions: Fig.Option = {
+const schemaOptions: OptionSpec = {
   name: "--schema",
   description: "Custom path to your Prisma schema",
   args: {
@@ -10,7 +10,7 @@ const schemaOptions: Fig.Option = {
     template: "filepaths",
   },
 };
-const skipOptions: Fig.Option[] = [
+const skipOptions: OptionSpec[] = [
   {
     name: "--skip-seed",
     description: "Skip triggering seed",
@@ -21,7 +21,7 @@ const skipOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "prisma",
   description:
     "Prisma is a modern DB toolkit to query, migrate and model your database",

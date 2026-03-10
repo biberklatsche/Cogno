@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "disk-pool",
   description: "Manage Azure disk pool",
   subcommands: [

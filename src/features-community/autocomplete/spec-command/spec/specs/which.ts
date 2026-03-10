@@ -1,4 +1,4 @@
-const programGenerator: Fig.Generator = {
+const programGenerator: Generator = {
   script: [
     "bash",
     "-c",
@@ -11,7 +11,7 @@ const programGenerator: Fig.Generator = {
       .map((pr) => ({ name: pr, description: "Executable file", type: "arg" })),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "which",
   description: "Locate a program in the user's PATH",
   args: {

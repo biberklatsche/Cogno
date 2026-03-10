@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "publish",
   description:
     "Dotnet publish compiles the application, reads through its dependencies specified in the project file, and publishes the resulting set of files to a directory",

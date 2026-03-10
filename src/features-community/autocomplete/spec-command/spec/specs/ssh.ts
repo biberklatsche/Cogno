@@ -24,7 +24,7 @@ const resolveAbsolutePath = (
 
 const getConfigLines = async (
   file: string,
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   home: string,
   basePath: string
 ) => {
@@ -53,7 +53,7 @@ const getConfigLines = async (
   return [...configLines, ...includeLines.flat()];
 };
 
-export const knownHosts: Fig.Generator = {
+export const knownHosts: Generator = {
   custom: async (tokens, executeCommand, context) => {
     const { stdout } = await executeCommand({
       command: "cat",
@@ -78,7 +78,7 @@ export const knownHosts: Fig.Generator = {
   trigger: "@",
 };
 
-export const configHosts: Fig.Generator = {
+export const configHosts: Generator = {
   custom: async (tokens, executeShellCommand, context) => {
     const configLines = await getConfigLines(
       "config",
@@ -100,7 +100,7 @@ export const configHosts: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ssh",
   description: "Log into a remote machine",
   args: {

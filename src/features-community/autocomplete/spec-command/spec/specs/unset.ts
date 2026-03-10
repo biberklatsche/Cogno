@@ -1,4 +1,4 @@
-const environmentVariableGenerator: Fig.Generator = {
+const environmentVariableGenerator: Generator = {
   script: ["env"],
   postProcess: (out) =>
     out.length === 0
@@ -13,7 +13,7 @@ const environmentVariableGenerator: Fig.Generator = {
           })),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "unset",
   description: "Named variable shall be undefined",
   args: {

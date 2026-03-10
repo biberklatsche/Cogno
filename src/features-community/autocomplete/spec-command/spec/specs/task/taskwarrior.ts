@@ -233,7 +233,7 @@ const buildPrioritiesSuggestions = () => {
 };
 
 // build the filter list with tasks
-const filtersWithTasks: Fig.Generator = {
+const filtersWithTasks: Generator = {
   script: ["task", "export"],
   postProcess: (output) => {
     const tasks = JSON.parse(output);
@@ -250,7 +250,7 @@ const filtersWithTasks: Fig.Generator = {
 };
 
 // build tasks list
-const listTasks: Fig.Generator = {
+const listTasks: Generator = {
   script: ["task", "export"],
   postProcess: (output) => {
     const tasks = JSON.parse(output);
@@ -259,7 +259,7 @@ const listTasks: Fig.Generator = {
 };
 
 // build filter suggestions
-const filters: Fig.Generator = {
+const filters: Generator = {
   script: ["task", "export"],
   postProcess: (output) => {
     const tasks = JSON.parse(output);
@@ -275,7 +275,7 @@ const filters: Fig.Generator = {
 };
 
 // build modifications suggestions
-const modifications: Fig.Generator = {
+const modifications: Generator = {
   script: ["task", "export"],
   postProcess: (output) => {
     const tasks = JSON.parse(output);
@@ -292,7 +292,7 @@ const modifications: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "taskwarrior",
   description: "A command line todo manager",
   args: {

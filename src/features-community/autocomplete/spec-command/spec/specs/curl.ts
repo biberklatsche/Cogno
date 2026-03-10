@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "curl",
   description: "Transfer a URL",
   args: { name: "URL", template: "history" },

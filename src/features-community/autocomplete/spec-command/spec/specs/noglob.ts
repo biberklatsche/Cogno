@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "noglob",
   description: "ZSH pre-command modifier that disables glob expansion",
   hidden: true,

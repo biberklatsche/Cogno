@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["--config-path", "-c"],
     description: "Specify the path to the configuration file",
@@ -18,7 +18,7 @@ const commonOptions: Fig.Option[] = [
     isPersistent: true,
   },
 ];
-const commonCommandSpecificOptions: Fig.Option[] = [
+const commonCommandSpecificOptions: OptionSpec[] = [
   {
     name: "--case-converting-strategy",
     description: "Specify the strategy for converting command names' case",
@@ -40,7 +40,7 @@ const commonCommandSpecificOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sake",
   description:
     "🍶 Swift-based utility for managing project commands, inspired by Make",

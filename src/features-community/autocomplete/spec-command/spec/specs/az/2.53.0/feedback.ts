@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "feedback",
   description: "Send feedback to the Azure CLI Team",
 };

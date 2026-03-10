@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const packageList: Fig.Generator = {
+const packageList: Generator = {
   script: [
     "curl",
     "-sH",
@@ -22,7 +22,7 @@ const packageList: Fig.Generator = {
 /**
  * Based on [elm-json](https://github.com/zwilias/elm-json), version 0.2.13. Cli tool for working with your elm.json file.
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elm-json",
   description: "Deal with your elm.json",
   subcommands: [

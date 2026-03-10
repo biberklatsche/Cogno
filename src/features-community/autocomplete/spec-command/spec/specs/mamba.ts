@@ -34,7 +34,7 @@ interface SearchItem {
   version: string;
 }
 // using conda for all the generators as mamba just proxies over them
-const getMambaEnvs: Fig.Generator = {
+const getMambaEnvs: Generator = {
   // For some reason the json version of this command
   // does not give out the names, so here we are
   script: ["conda", "env", "list"],
@@ -44,7 +44,7 @@ const getMambaEnvs: Fig.Generator = {
   },
   postProcess: function (out) {
     const lines = out.split("\n");
-    const availableEnvs: Fig.Suggestion[] = [];
+    const availableEnvs: Suggestion[] = [];
     // Skip first 2 lines as they are just headers for the output
     for (let i = 2; i < lines.length; i++) {
       const parts = lines[i].split(" ").filter((p) => p != "");
@@ -60,18 +60,18 @@ const getMambaEnvs: Fig.Generator = {
   },
 };
 
-const getInstalledPackages: Fig.Generator = {
+const getInstalledPackages: Generator = {
   script: ["conda", "list", "--json"],
   scriptTimeout: 10000,
   cache: {
     strategy: "stale-while-revalidate",
   },
   postProcess: function (out) {
-    let installedPackages: Array<Fig.Suggestion> = [];
+    let installedPackages: Array<Suggestion> = [];
     try {
       const parsed: Array<Package> = JSON.parse(out);
       installedPackages = parsed.map((conda_package) => {
-        return <Fig.Suggestion>{
+        return <Suggestion>{
           name: conda_package.name,
           description: `${conda_package.version} - ${conda_package.platform}`,
           icon: "fig://icon?type=package",
@@ -84,20 +84,20 @@ const getInstalledPackages: Fig.Generator = {
   },
 };
 // This is a generator that searches for a given query via conda search
-const condaSearchGenerator: Fig.Generator = {
+const condaSearchGenerator: Generator = {
   script: (context) => {
     const searchTerm = context[context.length - 1];
     return ["conda", "search", searchTerm, "--json"];
   },
   scriptTimeout: 10000,
   postProcess(out) {
-    let searchResults: Array<Fig.Suggestion> = [];
+    let searchResults: Array<Suggestion> = [];
     try {
       const parsed = JSON.parse(out);
       // just get the names of the packages
       searchResults = Object.entries(parsed).map(
         ([key, value]: [string, SearchItem[]]) => {
-          return <Fig.Suggestion>{
+          return <Suggestion>{
             name: key,
             icon: "fig://icon?type=package",
             description: `${value[value.length - 1].version} - ${
@@ -113,7 +113,7 @@ const condaSearchGenerator: Fig.Generator = {
   },
 };
 
-const name_options: Fig.Option[] = [
+const name_options: OptionSpec[] = [
   {
     name: ["-n", "--name"],
     description: "Name of environment",
@@ -132,7 +132,7 @@ const name_options: Fig.Option[] = [
   },
 ];
 
-const update_options: Fig.Option[] = [
+const update_options: OptionSpec[] = [
   {
     name: "--file",
     description:
@@ -261,7 +261,7 @@ const update_options: Fig.Option[] = [
   },
 ];
 
-const remove_options: Fig.Option[] = [
+const remove_options: OptionSpec[] = [
   {
     name: "--dev",
     description:
@@ -342,7 +342,7 @@ const remove_options: Fig.Option[] = [
   { name: ["-y", "--yes"], description: "Do not ask for confirmation" },
 ];
 
-const repoquery_options: Fig.Option[] = [
+const repoquery_options: OptionSpec[] = [
   {
     name: ["-c", "--channel"],
     description:
@@ -407,7 +407,7 @@ const repoquery_options: Fig.Option[] = [
   },
   { name: ["-q", "--quiet"], description: "Do not display progress bar" },
 ];
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mamba",
   description:
     "Mamba is a reimplementation of the conda package manager in C++",

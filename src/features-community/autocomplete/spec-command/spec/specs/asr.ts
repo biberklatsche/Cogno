@@ -1,5 +1,5 @@
 import { filepaths } from "@fig/autocomplete-generators";
-const restoreRestoreExactOptions: Fig.Option[] = [
+const restoreRestoreExactOptions: OptionSpec[] = [
   {
     name: "--source",
     description: "Can be a disk image, /dev entry, or volume mountpoint",
@@ -113,7 +113,7 @@ const restoreRestoreExactOptions: Fig.Option[] = [
   },
 ];
 
-const bufferingOptions: Fig.Option[] = [
+const bufferingOptions: OptionSpec[] = [
   {
     name: "--buffers",
     description: "One of the options that control how asr uses memory",
@@ -149,7 +149,7 @@ const bufferingOptions: Fig.Option[] = [
   },
 ];
 
-const otherOptions: Fig.Option[] = [
+const otherOptions: OptionSpec[] = [
   {
     name: "--verbose",
     description: "Enables verbose progress and error messages",
@@ -160,7 +160,7 @@ const otherOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "asr",
   description:
     "Asr efficiently copies disk images onto volumes, either directly or via a multicast network stream",

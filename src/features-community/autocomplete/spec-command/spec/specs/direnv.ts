@@ -7,8 +7,8 @@ const PRIORITY_BOTTOM_THRESHOLD = 49;
  *  Generators
  */
 const envrcFilepathsGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>
+): Generator => ({
   template: "filepaths",
   filterTemplateSuggestions: (paths) => {
     const isEnvrc = (fileName: string) => fileName.includes(".envrc");
@@ -30,7 +30,7 @@ const dotenvFilepathsGenerator = filepaths({
 /*
  *  Reusable suggestions
  */
-const shellSuggestions: Partial<Fig.Suggestion>[] = [
+const shellSuggestions: Partial<Suggestion>[] = [
   "bash",
   "zsh",
   "fish",
@@ -44,7 +44,7 @@ const shellSuggestions: Partial<Fig.Suggestion>[] = [
 /*
  *  Reusable specs
  */
-const helpSpec: Partial<Fig.Subcommand> = {
+const helpSpec: Partial<SubcommandSpec> = {
   description: "Help for direnv",
   args: {
     name: "SHOW_PRIVATE",
@@ -53,7 +53,7 @@ const helpSpec: Partial<Fig.Subcommand> = {
   },
 };
 
-const versionSpec: Partial<Fig.Subcommand> = {
+const versionSpec: Partial<SubcommandSpec> = {
   description:
     "Prints the version or checks that direnv is older than VERSION_AT_LEAST",
   args: {
@@ -65,7 +65,7 @@ const versionSpec: Partial<Fig.Subcommand> = {
 /*
  *  Completion spec
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "direnv",
   description: "Unclutter your .profile",
   subcommands: [

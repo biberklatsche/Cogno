@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "charm",
   description:
     "Do Charm stuff; run without arguments for a TUI or use the sub-commands like a pro",

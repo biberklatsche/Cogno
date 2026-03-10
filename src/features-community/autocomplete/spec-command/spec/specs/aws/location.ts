@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "location",
   description:
     '"Suite of geospatial services including Maps, Places, Routes, Tracking, and Geofencing"',

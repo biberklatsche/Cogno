@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lexv2-runtime",
   description:
     "This section contains documentation for the Amazon Lex V2 Runtime V2 API operations",

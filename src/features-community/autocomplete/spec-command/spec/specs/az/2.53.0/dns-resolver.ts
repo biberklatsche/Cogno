@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "dns-resolver",
   description: "Manage Dns Resolver",
   subcommands: [

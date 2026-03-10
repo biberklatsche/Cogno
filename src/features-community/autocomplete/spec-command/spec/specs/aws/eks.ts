@@ -3,7 +3,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -28,12 +28,12 @@ const postPrecessGenerator = (
 };
 const listCustomGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["eks", command];
     for (let i = 0; i < options.length; i++) {
@@ -73,7 +73,7 @@ const listCustomGenerator = async (
 const listRolesForPrincipal = (
   out: string,
   principal: string
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const roles = JSON.parse(out)["Roles"];
     return roles
@@ -116,7 +116,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -171,7 +171,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   // --cli-input-json and a few other options takes a JSON string literal, or arbitrary files containing valid JSON.
   // In case the JSON is passed as a file, the filepath must be prefixed by file://
   // See more: https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-parameters-file.html
@@ -312,7 +312,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "eks",
   description:
     "Amazon Elastic Kubernetes Service (Amazon EKS) is a managed service that makes it easy for you to run Kubernetes on Amazon Web Services without needing to setup or maintain your own Kubernetes control plane. Kubernetes is an open-source system for automating the deployment, scaling, and management of containerized applications. Amazon EKS runs up-to-date versions of the open-source Kubernetes software, so you can use all the existing plugins and tooling from the Kubernetes community. Applications running on Amazon EKS are fully compatible with applications running on any standard Kubernetes environment, whether running in on-premises data centers or public clouds. This means that you can easily migrate any standard Kubernetes application to Amazon EKS without any code modification required",

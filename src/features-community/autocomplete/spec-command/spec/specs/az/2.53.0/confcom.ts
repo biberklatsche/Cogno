@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "confcom",
   description:
     "Commands to generate security policies for confidential containers in Azure",

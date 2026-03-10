@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tailcall",
   description:
     "TailCall CLI for managing and optimizing GraphQL configurations",

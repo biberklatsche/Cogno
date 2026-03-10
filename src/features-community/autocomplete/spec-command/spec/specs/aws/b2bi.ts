@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "b2bi",
   description:
     "This is the Amazon Web Services B2B Data Interchange API Reference. It provides descriptions, API request parameters, and the XML response for each of the B2BI API actions. B2BI enables automated exchange of EDI (electronic data interchange) based business-critical transactions at cloud scale, with elasticity and pay-as-you-go pricing. Businesses use EDI documents to exchange transactional data with trading partners, such as suppliers and end customers, using standardized formats such as X12.  Rather than actually running a command, you can use the --generate-cli-skeleton parameter with any API call to generate and display a parameter template. You can then use the generated template to customize and use as input on a later command. For details, see Generate and use a parameter skeleton file",

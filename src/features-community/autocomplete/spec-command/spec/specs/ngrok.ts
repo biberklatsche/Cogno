@@ -1,4 +1,4 @@
-const defaultNgrokOptions: Array<Fig.Option> = [
+const defaultNgrokOptions: Array<OptionSpec> = [
   {
     description: "Path to log file, 'stdout', 'stderr' or 'false'",
     name: ["--log", "-log"],
@@ -25,7 +25,7 @@ const defaultNgrokOptions: Array<Fig.Option> = [
   },
 ];
 
-const authTokenOption: Fig.Option = {
+const authTokenOption: OptionSpec = {
   description: "Ngrok.com authtoken identifying a user",
   name: ["--authtoken", "-authtoken"],
   args: {
@@ -33,14 +33,14 @@ const authTokenOption: Fig.Option = {
   },
 };
 
-const regionOption: Fig.Option = {
+const regionOption: OptionSpec = {
   description: "Ngrok server region [us, eu, au, ap, sa, jp, in] (default: us)",
   name: ["--region", "-region"],
   args: {
     suggestions: ["us", "eu", "au", "ap", "sa", "jp", "in"],
   },
 };
-const configOptions: Fig.Option = {
+const configOptions: OptionSpec = {
   description: "Path to config files; they are merged if multiple",
   name: ["--config", "-config"],
   args: {
@@ -49,7 +49,7 @@ const configOptions: Fig.Option = {
   },
 };
 
-const subdomainOption: Fig.Option = {
+const subdomainOption: OptionSpec = {
   description: "Host tunnel on a custom subdomain",
   name: ["--subdomain", "-subdomain"],
   args: {
@@ -57,7 +57,7 @@ const subdomainOption: Fig.Option = {
   },
 };
 
-const hostOption: Fig.Option = {
+const hostOption: OptionSpec = {
   description: "Host tunnel on custom hostname (requires DNS CNAME)",
   name: ["--hostname", "-hostname"],
   args: {
@@ -65,7 +65,7 @@ const hostOption: Fig.Option = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ngrok",
   description: "Tunnel local ports to public URLs and inspect traffic",
   subcommands: [

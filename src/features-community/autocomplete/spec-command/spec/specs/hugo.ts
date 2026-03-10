@@ -1,9 +1,9 @@
-const help = (name: string): Fig.Option => ({
+const help = (name: string): OptionSpec => ({
   name: ["-h", "--help"],
   description: `help for ${name}`,
 });
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: "--config",
     description: "Config file (default is path/config.yaml|json|toml)",
@@ -121,7 +121,7 @@ const globalOptions: Fig.Option[] = [
 
 // options common to 'hugo', 'hugo mod', 'hugo new', and 'hugo server' commands
 
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["-b", "--baseURL"],
     description: "Hostname (and path) to the root, e.g. http://spf13.com/",
@@ -334,7 +334,7 @@ const watch = {
 
 // options common to 'toJSON', 'toTOML', 'toYAML' commands
 
-const convertOptions: Fig.Option[] = [
+const convertOptions: OptionSpec[] = [
   {
     name: ["-o", "--output"],
     description: "Filesystem path to write files to",
@@ -350,7 +350,7 @@ const convertOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hugo",
   description: "Hugo builds your site",
   subcommands: [

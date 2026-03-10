@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rake",
   description: "A ruby build program with capabilities similar to make",
   icon: "https://avatars.githubusercontent.com/u/210414?s=48&v=4",

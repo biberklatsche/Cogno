@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "glow",
   description: "Render markdown on the CLI, with pizzazz!",
   args: {

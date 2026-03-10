@@ -1,8 +1,8 @@
 import prismaSpec from "./prisma";
 
-const prismaCommands = (prismaSpec as Fig.Subcommand).subcommands;
+const prismaCommands = (prismaSpec as SubcommandSpec).subcommands;
 
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Show help for command",
@@ -13,7 +13,7 @@ const commonOptions: Fig.Option[] = [
 const icon =
   "https://raw.githubusercontent.com/blitz-js/art/master/square-logo-600.png";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "blitz",
   description:
     "Blitz.js CLI is your single access point for interacting with your app, from database management to code generation",

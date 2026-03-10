@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "finspace",
   description:
     "The FinSpace management service provides the APIs for managing FinSpace environments",

@@ -3,7 +3,7 @@ interface PostProcessPkgFilenames {
 }
 
 const postProcessPkgFilenames =
-  (options: PostProcessPkgFilenames = {}): Fig.Generator["postProcess"] =>
+  (options: PostProcessPkgFilenames = {}): Generator["postProcess"] =>
   (out) => {
     const { pathPrefix = "" } = options;
     const names = new Set<string>();
@@ -22,7 +22,7 @@ const postProcessPkgFilenames =
     return suggestions;
   };
 
-export const pkgutilGenerators: Record<string, Fig.Generator> = {
+export const pkgutilGenerators: Record<string, Generator> = {
   // BOM files
   bom: {
     script: ["find", ".", "-type", "f", "-name", "*.bom", "-maxdepth", "1"],
@@ -77,7 +77,7 @@ export const pkgutilGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pkgutil",
   description: "Query and manipulate for macOS Installer packages and receipts",
   subcommands: [

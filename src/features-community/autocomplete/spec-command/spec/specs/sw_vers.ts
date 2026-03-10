@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sw_vers",
   description: "Print macOS version information",
   options: [

@@ -1,13 +1,13 @@
 import { clangBase } from "./clang";
 
-const colorOption: Fig.Option = {
+const colorOption: OptionSpec = {
   name: "--color",
   description: "Enable or disable colored message",
   args: {
     suggestions: ["auto", "on", "off"],
   },
 };
-const cacheDirOption: Fig.Option = {
+const cacheDirOption: OptionSpec = {
   name: "--cache-dir",
   description: "Override path to local Zig cache directory",
   args: {
@@ -15,7 +15,7 @@ const cacheDirOption: Fig.Option = {
   },
   priority: 20,
 };
-const globalCacheDirOption: Fig.Option = {
+const globalCacheDirOption: OptionSpec = {
   name: "--global-cache-dir",
   description: "Override path to global Zig cache directory",
   args: {
@@ -23,19 +23,19 @@ const globalCacheDirOption: Fig.Option = {
   },
   priority: 20,
 };
-const stage1Option: Fig.Option = {
+const stage1Option: OptionSpec = {
   name: "-fstage1",
   description: "Force using bootstrap compiler as the codegen backend",
   exclusiveOn: ["-fno-stage1"],
   priority: 20,
 };
-const noStage1Option: Fig.Option = {
+const noStage1Option: OptionSpec = {
   name: "-fno-stage1",
   description: "Prevent using bootstrap compiler as the codegen backend",
   exclusiveOn: ["-fstage1"],
   priority: 20,
 };
-const zigLibDirOption: Fig.Option = {
+const zigLibDirOption: OptionSpec = {
   name: "--zig-lib-dir",
   description: "Override path to Zig lib directory",
   args: {
@@ -43,7 +43,7 @@ const zigLibDirOption: Fig.Option = {
   },
   priority: 20,
 };
-const referenceTraceOption: Fig.Option = {
+const referenceTraceOption: OptionSpec = {
   name: "-freference-trace",
   description:
     "How many lines of reference trace should be shown per compile error",
@@ -51,22 +51,22 @@ const referenceTraceOption: Fig.Option = {
   exclusiveOn: ["-fno-reference-trace"],
   priority: 20,
 };
-const noReferenceTraceOption: Fig.Option = {
+const noReferenceTraceOption: OptionSpec = {
   name: "-fno-reference-trace",
   description: "Disable reference trace",
   exclusiveOn: ["-freference-trace"],
   priority: 20,
 };
-const helpOption: Fig.Option = {
+const helpOption: OptionSpec = {
   name: ["-h", "--help"],
   description: "Print help and exit",
 };
-const versionOption: Fig.Option = {
+const versionOption: OptionSpec = {
   name: ["-v", "--version"],
   description: "Display the version of this program",
 };
 
-const buildOptions: Fig.Option[] = [
+const buildOptions: OptionSpec[] = [
   //General Options:
   helpOption,
   {
@@ -1012,12 +1012,12 @@ const buildOptions: Fig.Option[] = [
   },
 ];
 
-const llvmOptions: Fig.Option[] = [
-  ...(clangBase as Fig.Subcommand).options,
+const llvmOptions: OptionSpec[] = [
+  ...(clangBase as SubcommandSpec).options,
   helpOption,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "zig",
   parserDirectives: {
     flagsArePosixNoncompliant: true,

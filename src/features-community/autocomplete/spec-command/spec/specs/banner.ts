@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "banner",
   description: "Prints a large, high quality banner on the standard output",
   args: { name: "text" },

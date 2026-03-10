@@ -1,4 +1,4 @@
-const generatePackages: Fig.Generator = {
+const generatePackages: Generator = {
   // TODO: use the same as for npm and yarn package.json reverse lookup
   script: [
     "bash",
@@ -24,7 +24,7 @@ const generatePackages: Fig.Generator = {
       })),
 };
 
-const getRemovablePackages: Fig.Generator = {
+const getRemovablePackages: Generator = {
   script: ["ls", ".yalc"],
   postProcess: (out) =>
     out.split("\n").map((path) => ({
@@ -34,7 +34,7 @@ const getRemovablePackages: Fig.Generator = {
     })),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "yalc",
   description: "Work with yarn/npm packages locally like a boss",
   subcommands: [

@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const formulaNames: Fig.Generator = {
+const formulaNames: Generator = {
   script: [
     "bash",
     "-c",
@@ -19,19 +19,19 @@ const formulaNames: Fig.Generator = {
   },
 };
 
-const pathToPackArg: Fig.Arg = {
+const pathToPackArg: ArgSpec = {
   name: "path/to/pack.ts",
   description: "The path to the pack.ts file. E.g. src/pack.ts",
   generators: filepaths({ extensions: ["ts"] }),
 };
 
-const urlOrPackIdArg: Fig.Arg = {
+const urlOrPackIdArg: ArgSpec = {
   name: "urlOrPackId",
   description:
     "The URL or ID of the Pack. E.g. https://coda.io/p/123456 or 123456",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "coda",
   description:
     "Coda Local development CLI tool. It comes bundled with the Pack SDK and makes it easy to build and manage Packs from the CLI",

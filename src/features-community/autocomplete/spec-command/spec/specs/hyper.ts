@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hyper",
   description: "Hyper is an Electron-based terminal",
   args: {

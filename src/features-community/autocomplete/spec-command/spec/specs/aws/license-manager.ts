@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "license-manager",
   description:
     "License Manager makes it easier to manage licenses from software vendors across multiple Amazon Web Services accounts and on-premises servers",

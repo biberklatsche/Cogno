@@ -1,6 +1,6 @@
 import { isVariableDeclaration } from "typescript";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nc",
   description: "Arbitrary TCP and UDP connections and listens",
   parserDirectives: {

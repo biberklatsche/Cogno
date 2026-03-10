@@ -1,4 +1,4 @@
-const completion: Fig.Subcommand = {
+const completion: SubcommandSpec = {
   name: "sdc",
   description: '"setup dominic\'s computer" cli tool',
   subcommands: [
@@ -35,7 +35,7 @@ const completion: Fig.Subcommand = {
   ],
 };
 
-const versions: Fig.VersionDiffMap = {};
+const versions: VersionDiffMap = {};
 
 versions["0.0.4"] = {};
 

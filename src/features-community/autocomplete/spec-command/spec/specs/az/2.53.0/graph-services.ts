@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "graph-services",
   description: "Make operations on Microsoft.GraphServices resource types",
   subcommands: [

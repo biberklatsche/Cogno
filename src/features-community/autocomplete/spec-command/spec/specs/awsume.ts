@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "awsume",
   description: "Awsume",
   parserDirectives: {

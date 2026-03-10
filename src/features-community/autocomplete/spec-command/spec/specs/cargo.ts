@@ -1,6 +1,6 @@
 import { filepaths, keyValue } from "@fig/autocomplete-generators";
 
-const rustEditions: Fig.Suggestion[] = [
+const rustEditions: Suggestion[] = [
   {
     name: "2015",
     description: "2015 edition",
@@ -48,7 +48,7 @@ const vcsOptions: {
 ];
 
 // TODO(grant): add this back but better with no awk
-// const testGenerator: Fig.Generator = {
+// const testGenerator: Generator = {
 //   cache: {
 //     cacheByDirectory: true,
 //     strategy: "stale-while-revalidate",
@@ -126,7 +126,7 @@ const rootPackageOrLocal = (manifest: Metadata) => {
     : manifest.packages.filter((pkg) => !pkg.source);
 };
 
-const packageGenerator: Fig.Generator = {
+const packageGenerator: Generator = {
   script: ["cargo", "metadata", "--format-version", "1", "--no-deps"],
   postProcess: (data) => {
     const manifest: Metadata = JSON.parse(data);
@@ -142,7 +142,7 @@ const packageGenerator: Fig.Generator = {
   },
 };
 
-const directDependencyGenerator: Fig.Generator = {
+const directDependencyGenerator: Generator = {
   script: ["cargo", "metadata", "--format-version", "1"],
   postProcess: (data: string) => {
     const manifest: Metadata = JSON.parse(data);
@@ -157,7 +157,7 @@ const directDependencyGenerator: Fig.Generator = {
   },
 };
 
-const targetGenerator: ({ kind }: { kind?: TargetKind }) => Fig.Generator = ({
+const targetGenerator: ({ kind }: { kind?: TargetKind }) => Generator = ({
   kind,
 }) => ({
   custom: async (_, executeShellCommand, context) => {
@@ -185,7 +185,7 @@ const targetGenerator: ({ kind }: { kind?: TargetKind }) => Fig.Generator = ({
   },
 });
 
-const dependencyGenerator: Fig.Generator = {
+const dependencyGenerator: Generator = {
   script: ["cargo", "metadata", "--format-version", "1"],
   postProcess: (data: string) => {
     const metadata: Metadata = JSON.parse(data);
@@ -196,7 +196,7 @@ const dependencyGenerator: Fig.Generator = {
   },
 };
 
-const featuresGenerator: Fig.Generator = {
+const featuresGenerator: Generator = {
   script: ["cargo", "read-manifest"],
   postProcess: (data: string) => {
     const manifest = JSON.parse(data);
@@ -208,7 +208,7 @@ const featuresGenerator: Fig.Generator = {
   },
 };
 
-const makeTasksGenerator: Fig.Generator = {
+const makeTasksGenerator: Generator = {
   custom: async function (tokens, executeCommand) {
     let makefileLocation = "Makefile.toml";
 
@@ -261,7 +261,7 @@ type Version = {
 // Search for crates
 // If context is empty, return the most downloaded crates for the search term,
 // if there is an `@` in the context, return the versions for the crate
-export const searchGenerator: Fig.Generator = {
+export const searchGenerator: Generator = {
   custom: async (context, executeShellCommand) => {
     const numberFormatter = new Intl.NumberFormat(undefined, {
       notation: "compact",
@@ -305,7 +305,7 @@ export const searchGenerator: Fig.Generator = {
         ]);
 
       const remoteJson: CrateSearchResults = JSON.parse(remoteStdout);
-      const remoteSuggustions: Fig.Suggestion[] = remoteJson.crates
+      const remoteSuggustions: Suggestion[] = remoteJson.crates
         .sort((a, b) => b.recent_downloads - a.recent_downloads)
         .map((crate) => ({
           icon: "📦",
@@ -316,7 +316,7 @@ export const searchGenerator: Fig.Generator = {
           }`,
         }));
 
-      let localSuggestions: Fig.Suggestion[] = [];
+      let localSuggestions: Suggestion[] = [];
       if (localStdout.trim().length > 0) {
         const localJson: Metadata = JSON.parse(localStdout);
         localSuggestions = localJson.packages
@@ -346,7 +346,7 @@ export const searchGenerator: Fig.Generator = {
   getQueryTerm: "@",
 };
 
-const tripleGenerator: Fig.Generator = {
+const tripleGenerator: Generator = {
   script: ["rustc", "--print", "target-list"],
   postProcess: (data: string) => {
     return data
@@ -358,7 +358,7 @@ const tripleGenerator: Fig.Generator = {
   },
 };
 
-const tomlBool: Fig.Suggestion[] = [
+const tomlBool: Suggestion[] = [
   {
     name: "true",
   },
@@ -369,8 +369,8 @@ const tomlBool: Fig.Suggestion[] = [
 
 const configPairs: Record<
   string,
-  Omit<Fig.Suggestion, "name"> & {
-    tomlSuggestions?: Fig.Suggestion[];
+  Omit<Suggestion, "name"> & {
+    tomlSuggestions?: Suggestion[];
   }
 > = {
   "build.jobs": {
@@ -486,7 +486,7 @@ const configPairs: Record<
 };
 
 // Configs are in the format `key=value` where value is a toml value
-const configGenerator: Fig.Generator = keyValue({
+const configGenerator: Generator = keyValue({
   keys: Object.entries(configPairs).map(([key, other]) => ({
     name: key,
     ...other,
@@ -501,7 +501,7 @@ const configGenerator: Fig.Generator = keyValue({
   separator: "=",
 });
 
-const completionSpec: (toolchain?: boolean) => Fig.Spec = (
+const completionSpec: (toolchain?: boolean) => CommandSpec = (
   toolchain = true
 ) => ({
   name: "cargo",
@@ -5838,7 +5838,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
         executeShellCommand({ command: "cargo", args: ["--list"] }),
       ]);
 
-    const toolchains: Fig.Option[] = toolchainStdout
+    const toolchains: OptionSpec[] = toolchainStdout
       .split("\n")
       .map((toolchain) => {
         return {
@@ -5848,14 +5848,14 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
         };
       });
 
-    const subcommands: Fig.Subcommand[] = [];
+    const subcommands: SubcommandSpec[] = [];
     const commands = listOutput
       .split("\n")
       .filter((_, i) => i != 0)
       .map((line) => line.trim().split(/\s+/, 1)[0]);
 
     if (commands.includes("fmt")) {
-      const fmt: Fig.Subcommand = {
+      const fmt: SubcommandSpec = {
         name: "fmt",
         icon: "🛠",
         description:
@@ -5983,7 +5983,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("clippy")) {
-      const clippy: Fig.Subcommand = {
+      const clippy: SubcommandSpec = {
         name: "clippy",
         icon: "📎",
         description: "Runs the Clippy linter",
@@ -6044,7 +6044,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("flamegraph")) {
-      const flamegraph: Fig.Subcommand = {
+      const flamegraph: SubcommandSpec = {
         name: "flamegraph",
         icon: "🔥",
         description: "Generates a flamegraph of the current crate",
@@ -6089,7 +6089,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("audit")) {
-      const audit: Fig.Subcommand = {
+      const audit: SubcommandSpec = {
         name: "audit",
         icon: "📚",
         description: "Runs the cargo audit tool",
@@ -6162,7 +6162,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("outdated")) {
-      const outdated: Fig.Subcommand = {
+      const outdated: SubcommandSpec = {
         name: "outdated",
         icon: "📦",
         description: "Displays information about project dependency versions",
@@ -6304,7 +6304,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("udeps")) {
-      const udeps: Fig.Subcommand = {
+      const udeps: SubcommandSpec = {
         name: "udeps",
         icon: "📦",
         description: "Find unused dependencies in Cargo.toml files",
@@ -6532,7 +6532,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("deny")) {
-      const deny: Fig.Subcommand = {
+      const deny: SubcommandSpec = {
         name: "deny",
         icon: "❌",
         description: "Cargo plugin to help you manage large dependency graphs",
@@ -6835,7 +6835,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("bloat")) {
-      const bloat: Fig.Subcommand = {
+      const bloat: SubcommandSpec = {
         name: "bloat",
         icon: "⚖️",
         description: "Find out what takes most of the space in your executable",
@@ -7009,7 +7009,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("sort")) {
-      const sort: Fig.Subcommand = {
+      const sort: SubcommandSpec = {
         name: "sort",
         icon: "🛠",
         description: "Ensure Cargo.toml dependency tables are sorted",
@@ -7067,7 +7067,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("fuzz")) {
-      const fuzz: Fig.Subcommand = {
+      const fuzz: SubcommandSpec = {
         name: "fuzz",
         icon: "🛠",
         description: "A `cargo` subcommand for fuzzing with `libFuzzer`!",
@@ -7120,7 +7120,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("insta")) {
-      const commonOptions: Fig.Option[] = [
+      const commonOptions: OptionSpec[] = [
         {
           name: ["-h", "--help"],
           description: "Print help information",
@@ -7172,7 +7172,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
         },
       ];
 
-      const insta: Fig.Subcommand = {
+      const insta: SubcommandSpec = {
         name: "insta",
         icon: "🛠",
         description: "A `cargo` subcommand for snapshot testing",
@@ -7387,7 +7387,7 @@ const completionSpec: (toolchain?: boolean) => Fig.Spec = (
     }
 
     if (commands.includes("make")) {
-      const make: Fig.Subcommand = {
+      const make: SubcommandSpec = {
         name: "make",
         icon: "🛠",
         description: "Rust cargo-make task runner and build tool",

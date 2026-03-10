@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "backupstorage",
   description: "The frontend service for Cryo Storage",
   subcommands: [

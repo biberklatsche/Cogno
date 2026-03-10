@@ -1,5 +1,5 @@
 // args
-const version: Fig.Arg = {
+const version: ArgSpec = {
   name: "version",
   description: "Node version",
   suggestions: [
@@ -18,58 +18,58 @@ const version: Fig.Arg = {
   ],
 };
 
-const command: Fig.Arg = {
+const command: ArgSpec = {
   name: "command",
   isVariadic: true,
 };
 
-const args: Fig.Arg = {
+const args: ArgSpec = {
   name: "args",
   isVariadic: true,
 };
 
-const name: Fig.Arg = {
+const name: ArgSpec = {
   name: "name",
 };
 
-const ltsName: Fig.Arg = {
+const ltsName: ArgSpec = {
   name: "LTS name",
 };
 
-const colorCodes: Fig.Arg = {
+const colorCodes: ArgSpec = {
   name: "color codes",
   description: 'Using format "yMeBg"',
 };
 
 // options
-const noColors: Fig.Option = {
+const noColors: OptionSpec = {
   name: "--no-colors",
   description: "Suppress colored output",
 };
 
-const noAlias: Fig.Option = {
+const noAlias: OptionSpec = {
   name: "--no-alias",
   description: "Suppress `nvm alias` output",
 };
 
-const silent: Fig.Option = {
+const silent: OptionSpec = {
   name: "--silent",
   description: "Silences stdout/stderr output",
 };
 
-const lts: Fig.Option = {
+const lts: OptionSpec = {
   name: "--lts",
   description:
     "Uses automatic LTS (long-term support) alias `lts/*`, if available",
 };
 
-const ltsWithName: Fig.Option = {
+const ltsWithName: OptionSpec = {
   name: "--lts",
   description: "Uses automatic alias for provided LTS line, if available",
   args: ltsName,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nvm",
   description: "Node Package Manager",
   subcommands: [

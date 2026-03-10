@@ -1,5 +1,5 @@
 import { filepaths } from "@fig/autocomplete-generators";
-const dtmGenerators: Record<string, Fig.Generator> = {
+const dtmGenerators: Record<string, Generator> = {
   plugins: {
     script: ["dtm", "list", "plugins"],
     postProcess: (output) => {
@@ -13,7 +13,7 @@ const dtmGenerators: Record<string, Fig.Generator> = {
   },
   yamlFiles: filepaths({ extensions: ["yaml", "yml"] }),
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dtm",
   description: "DevStream is an open-source DevOps toolchain manager",
   subcommands: [

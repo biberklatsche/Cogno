@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "maigret",
   description:
     "Maigret is an easy-to-use and powerful OSINT tool for collecting a dossier on a person by username only",

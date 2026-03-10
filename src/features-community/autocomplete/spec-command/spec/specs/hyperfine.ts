@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hyperfine",
   description: "A command-line benchmarking tool",
 

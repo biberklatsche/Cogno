@@ -1,6 +1,6 @@
 import { knownHosts, configHosts } from "./ssh";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mosh",
   description: "",
   args: {

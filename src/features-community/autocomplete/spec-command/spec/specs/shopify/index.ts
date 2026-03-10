@@ -1,6 +1,6 @@
 import { createVersionedSpec } from "@fig/autocomplete-helpers";
 const versionFiles = ["2.0.0", "3.0.0"];
-export const getVersionCommand: Fig.GetVersionCommand = async (
+export const getVersionCommand: GetVersionCommand = async (
   executeShellCommand
 ) => {
   const versionRegex = /\d+\.\d+\.\d+/;

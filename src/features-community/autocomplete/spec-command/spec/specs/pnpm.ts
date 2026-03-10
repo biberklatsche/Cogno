@@ -9,7 +9,7 @@ const filterMessages = (out: string): string => {
     : out;
 };
 
-const searchBranches: Fig.Generator = {
+const searchBranches: Generator = {
   script: ["git", "branch", "--no-color"],
   postProcess: function (out) {
     const output = filterMessages(out);
@@ -44,7 +44,7 @@ const searchBranches: Fig.Generator = {
   },
 };
 
-const generatorInstalledPackages: Fig.Generator = {
+const generatorInstalledPackages: Generator = {
   script: ["pnpm", "ls"],
   postProcess: function (out) {
     /**
@@ -88,7 +88,7 @@ const generatorInstalledPackages: Fig.Generator = {
   },
 };
 
-const FILTER_OPTION: Fig.Option = {
+const FILTER_OPTION: OptionSpec = {
   name: "--filter",
   args: {
     template: "filepaths",
@@ -102,7 +102,7 @@ More details: https://pnpm.io/filtering`,
 };
 
 /** Options that being appended for `pnpm i` and `add` */
-const INSTALL_BASE_OPTIONS: Fig.Option[] = [
+const INSTALL_BASE_OPTIONS: OptionSpec[] = [
   {
     name: "--offline",
     description:
@@ -129,7 +129,7 @@ const INSTALL_BASE_OPTIONS: Fig.Option[] = [
 ];
 
 /** Base options for pnpm i when run without any arguments */
-const INSTALL_OPTIONS: Fig.Option[] = [
+const INSTALL_OPTIONS: OptionSpec[] = [
   {
     name: ["-P", "--save-prod"],
     description: `Pnpm will not install any package listed in devDependencies if the NODE_ENV environment variable is set to production.
@@ -167,7 +167,7 @@ Use this flag to instruct pnpm to ignore NODE_ENV and take its production status
 ];
 
 /** Base options for pnpm add */
-const INSTALL_PACKAGE_OPTIONS: Fig.Option[] = [
+const INSTALL_PACKAGE_OPTIONS: OptionSpec[] = [
   {
     name: ["-P", "--save-prod"],
     description: "Install the specified packages as regular dependencies",
@@ -211,7 +211,7 @@ For instance, pnpm add debug -W`,
 ];
 
 // SUBCOMMANDS
-const SUBCOMMANDS_MANAGE_DEPENDENCIES: Fig.Subcommand[] = [
+const SUBCOMMANDS_MANAGE_DEPENDENCIES: SubcommandSpec[] = [
   {
     name: "add",
     description: `Installs a package and any packages that it depends on. By default, any new package is installed as a production dependency`,
@@ -472,7 +472,7 @@ This is similar to yarn unlink, except pnpm re-installs the dependency after rem
   },
 ];
 
-const SUBCOMMANDS_RUN_SCRIPTS: Fig.Subcommand[] = [
+const SUBCOMMANDS_RUN_SCRIPTS: SubcommandSpec[] = [
   {
     name: ["run", "run-script"],
     description: "Runs a script defined in the package's manifest file",
@@ -541,7 +541,7 @@ The intended usage of the property is to specify a command that starts your prog
   },
 ];
 
-const SUBCOMMANDS_REVIEW_DEPS: Fig.Subcommand[] = [
+const SUBCOMMANDS_REVIEW_DEPS: SubcommandSpec[] = [
   {
     name: "audit",
     description: `Checks for known security issues with the installed packages.
@@ -713,7 +713,7 @@ pnpm ls --depth 0 will list direct dependencies only. pnpm ls --depth -1 will li
   },
 ];
 
-const SUBCOMMANDS_MISC: Fig.Subcommand[] = [
+const SUBCOMMANDS_MISC: SubcommandSpec[] = [
   {
     name: "publish",
     description: `Publishes a package to the registry.
@@ -944,7 +944,7 @@ const recursiveSubcommands = subcommands.filter((subcommand) => {
 SUBCOMMANDS_MISC[1].subcommands = recursiveSubcommands;
 
 // common options
-const COMMON_OPTIONS: Fig.Option[] = [
+const COMMON_OPTIONS: OptionSpec[] = [
   {
     name: ["-C", "--dir"],
     args: {
@@ -976,7 +976,7 @@ const COMMON_OPTIONS: Fig.Option[] = [
 ];
 
 // SPEC
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pnpm",
   description: "Fast, disk space efficient package manager",
   args: {
@@ -987,7 +987,7 @@ const completionSpec: Fig.Spec = {
   },
   filterStrategy: "fuzzy",
   generateSpec: async (tokens, executeShellCommand) => {
-    const { script, postProcess } = dependenciesGenerator as Fig.Generator & {
+    const { script, postProcess } = dependenciesGenerator as Generator & {
       script: string[];
     };
 
@@ -1018,7 +1018,7 @@ const completionSpec: Fig.Spec = {
     return {
       name: "pnpm",
       subcommands,
-    } as Fig.Spec;
+    } as CommandSpec;
   },
   subcommands,
   options: COMMON_OPTIONS,

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sagemaker-edge",
   description:
     "SageMaker Edge Manager dataplane service for communicating with active agents",

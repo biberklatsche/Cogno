@@ -1,4 +1,4 @@
-const sharedOpts: Record<string, Fig.Option> = {
+const sharedOpts: Record<string, OptionSpec> = {
   help: {
     name: ["-h", "--help"],
     description: "Displays help on commandline options",
@@ -42,7 +42,7 @@ const sharedOpts: Record<string, Fig.Option> = {
   },
 };
 
-const multipassGenerators: Record<string, Fig.Generator> = {
+const multipassGenerators: Record<string, Generator> = {
   allAvailableImages: {
     script: ["multipass", "find", "--format=json"],
     postProcess: (out) => {
@@ -109,7 +109,7 @@ const multipassGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "multipass",
   description: "Create, control and connect to Ubuntu instances",
   subcommands: [

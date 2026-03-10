@@ -1,4 +1,4 @@
-export const getAppGenerator: Fig.Generator = {
+export const getAppGenerator: Generator = {
   script: ["heroku", "apps", "--all", "--json"],
   cache: {
     strategy: "stale-while-revalidate",

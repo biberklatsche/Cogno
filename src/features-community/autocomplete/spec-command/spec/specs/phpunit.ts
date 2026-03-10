@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "phpunit",
   description:
     "The PHPUnit is a command-line test runner that can be invoked through the phpunit command",

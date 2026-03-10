@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "keyvault",
   description: "Manage KeyVault keys, secrets, and certificates",
   subcommands: [

@@ -1,4 +1,4 @@
-const projects: Fig.Generator = {
+const projects: Generator = {
   script: ["tmuxinator", "list", "-n"],
   postProcess: (output) => {
     if (output.startsWith("fatal:")) {
@@ -16,7 +16,7 @@ const projects: Fig.Generator = {
   },
 };
 
-const tmuxsessions: Fig.Generator = {
+const tmuxsessions: Generator = {
   script: ["tmux", "ls"],
   postProcess: (output) => {
     if (output.startsWith("fatal:")) {
@@ -31,7 +31,7 @@ const tmuxsessions: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tmuxinator",
   description: "Create and manage tmux sessions easily",
   subcommands: [

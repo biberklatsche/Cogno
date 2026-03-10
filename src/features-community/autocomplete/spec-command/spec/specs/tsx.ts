@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const scriptPathArgs: Fig.Arg = {
+const scriptPathArgs: ArgSpec = {
   name: "script path",
   isScript: true,
   generators: filepaths({
@@ -10,7 +10,7 @@ const scriptPathArgs: Fig.Arg = {
   }),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tsx",
   description: "Run TypeScript file using tsx",
   subcommands: [

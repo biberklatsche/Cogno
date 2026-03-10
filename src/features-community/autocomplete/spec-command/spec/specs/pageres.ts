@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pageres",
   description: "Capture website screenshots",
   options: [

@@ -1,11 +1,11 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Display usage information",
   },
 ];
 
-const buildOptions: Fig.Option[] = [
+const buildOptions: OptionSpec[] = [
   {
     name: ["-i", "--input"],
     description: "Specify input file",
@@ -54,7 +54,7 @@ const buildOptions: Fig.Option[] = [
   ...commonOptions,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tailwindcss",
   description: "Tailwindcss CLI tools",
   icon: "https://tailwindcss.com/favicons/favicon-32x32.png",

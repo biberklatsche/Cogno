@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "locust",
   description:
     "Locust is an easy to use, scriptable and scalable Python-based performance testing tool",

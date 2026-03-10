@@ -2,14 +2,14 @@ const TASKS_PRIORITY = 80;
 const TASKFILE_FLAGS = ["-t", "--taskfile"];
 const DIRECTORY_FLAGS = ["-d", "--dir"];
 
-const tasksGenerator: Fig.Generator = {
+const tasksGenerator: Generator = {
   script: ["task", "-a"],
   postProcess: (output) => {
     if (output.includes("task: No Taskfile found")) {
       return [];
     }
 
-    const result: Fig.Suggestion[] = output
+    const result: Suggestion[] = output
       .split("\n")
       .filter((task) => task.startsWith("*"))
       .map((task) => {
@@ -28,7 +28,7 @@ const tasksGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "go-task",
   description: "A task runner / simpler Make alternative written in Go",
   icon: "https://taskfile.dev/favicon.ico",

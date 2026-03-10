@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bedrock",
   description:
     "Describes the API operations for creating, managing, fine-turning, and evaluating Amazon Bedrock models",

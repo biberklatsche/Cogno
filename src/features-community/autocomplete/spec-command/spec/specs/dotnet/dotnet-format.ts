@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "format",
   description:
     "Dotnet format is a code formatter that applies style preferences to a project or solution. Preferences will be read from an .editorconfig file, if present, otherwise a default set of preferences will be used",

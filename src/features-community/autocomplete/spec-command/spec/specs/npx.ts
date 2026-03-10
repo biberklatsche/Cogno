@@ -1,6 +1,6 @@
 import autocannon from "./autocannon";
 
-export const npxSuggestions: Fig.Suggestion[] = [
+export const npxSuggestions: Suggestion[] = [
   {
     name: autocannon.name,
     ...("icon" in autocannon && { icon: autocannon.icon }),
@@ -169,7 +169,7 @@ export const npxSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "npx",
   description: "Execute binaries from npm packages",
   args: {

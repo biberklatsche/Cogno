@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "route53domains",
   description:
     "Amazon Route 53 API actions let you register domain names and perform related operations",

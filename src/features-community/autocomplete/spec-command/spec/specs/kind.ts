@@ -1,4 +1,4 @@
-const ClusterGenerator: Fig.Generator = {
+const ClusterGenerator: Generator = {
   script: ["kind", "get", "clusters"],
   postProcess: (out) => {
     return out.split("\n").map((cluster) => ({
@@ -8,7 +8,7 @@ const ClusterGenerator: Fig.Generator = {
   },
 };
 
-const NodeGenerator: Fig.Generator = {
+const NodeGenerator: Generator = {
   script: ["kind", "get", "nodes", "-A"],
   postProcess: (out) => {
     return out.split("\n").map((node) => ({
@@ -18,7 +18,7 @@ const NodeGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kind",
   description: "Kubernetes IN Docker - local clusters for testing Kubernetes",
   subcommands: [

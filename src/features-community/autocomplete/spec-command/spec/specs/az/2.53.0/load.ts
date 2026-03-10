@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "load",
   description: "Manage Azure Load Testing resources",
   subcommands: [

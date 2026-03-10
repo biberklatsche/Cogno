@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ruby",
   description: "Interpreted object-oriented scripting language",
   options: [

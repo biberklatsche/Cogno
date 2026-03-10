@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "synapse",
   description: "Manage and operate Synapse Workspace, Spark Pool, SQL Pool",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dbt",
   description: "CLI for dbt - Data Build Tool",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elif",
   description: "Execute if the previous condition returned 0",
   args: {

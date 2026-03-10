@@ -1,4 +1,4 @@
-const servicesGenerator = (action: string): Fig.Generator => ({
+const servicesGenerator = (action: string): Generator => ({
   script: ["bash", "-c", "brew services list | sed -e 's/ .*//' | tail -n +2"],
   postProcess: function (out) {
     return out
@@ -12,14 +12,14 @@ const servicesGenerator = (action: string): Fig.Generator => ({
   },
 });
 
-const repositoriesGenerator = (): Fig.Generator => ({
+const repositoriesGenerator = (): Generator => ({
   script: ["brew", "tap"],
   postProcess: (out) => {
     return out.split("\n").map((line) => ({ name: line }));
   },
 });
 
-const formulaeGenerator: Fig.Generator = {
+const formulaeGenerator: Generator = {
   script: ["brew", "list", "-1"],
   postProcess: function (out) {
     return out
@@ -33,7 +33,7 @@ const formulaeGenerator: Fig.Generator = {
   },
 };
 
-const outdatedformulaeGenerator: Fig.Generator = {
+const outdatedformulaeGenerator: Generator = {
   script: ["brew", "outdated", "-q"],
   postProcess: function (out) {
     return out.split("\n").map((formula) => ({
@@ -44,7 +44,7 @@ const outdatedformulaeGenerator: Fig.Generator = {
   },
 };
 
-const generateAllFormulae: Fig.Generator = {
+const generateAllFormulae: Generator = {
   script: ["brew", "formulae"],
   postProcess: function (out) {
     return out.split("\n").map((formula) => ({
@@ -56,7 +56,7 @@ const generateAllFormulae: Fig.Generator = {
   },
 };
 
-const generateAllCasks: Fig.Generator = {
+const generateAllCasks: Generator = {
   script: ["brew", "casks"],
   postProcess: function (out) {
     return out.split("\n").map((cask) => ({
@@ -67,7 +67,7 @@ const generateAllCasks: Fig.Generator = {
     }));
   },
 };
-const generateAliases: Fig.Generator = {
+const generateAliases: Generator = {
   script: [
     "bash",
     "-c",
@@ -85,7 +85,7 @@ const generateAliases: Fig.Generator = {
   },
 };
 
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["-d", "--debug"],
     description: "Display any debugging information",
@@ -101,7 +101,7 @@ const commonOptions: Fig.Option[] = [
   { name: ["-h", "--help"], description: "Show help message" },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "brew",
   description: "Package manager for macOS",
   subcommands: [

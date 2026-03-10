@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "caffeinate",
   description: "Prevent the system from sleeping on behalf of a utility",
   options: [

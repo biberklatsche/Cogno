@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "alexaforbusiness",
   description: "Alexa for Business has been retired and is no longer supported",
   subcommands: [

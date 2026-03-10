@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "luz",
   description: "A next-generation build system for Apple Darwin-based systems",
   subcommands: [

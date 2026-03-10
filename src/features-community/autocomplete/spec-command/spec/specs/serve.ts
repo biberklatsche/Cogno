@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "serve",
   description: "Static file serving and directory listing",
   args: {

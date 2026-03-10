@@ -1,6 +1,6 @@
 // ////////////////////////////////////////////////////////////////// Generators //////////////////////////////////////////////////////////////////
 
-const dependenciesGenerator: Fig.Generator = {
+const dependenciesGenerator: Generator = {
   script: {
     command: "bash",
     args: [
@@ -20,7 +20,7 @@ const dependenciesGenerator: Fig.Generator = {
   },
 };
 
-const commandGenerator: Fig.Generator = {
+const commandGenerator: Generator = {
   script: {
     command: "bash",
     args: ["-c", `uv run | grep -E '^- ' | sed 's/^- //'`],
@@ -38,7 +38,7 @@ const commandGenerator: Fig.Generator = {
 };
 
 // ////////////////////////////////////////////////////////////////// Options //////////////////////////////////////////////////////////////////
-const indexOptions: Fig.Option[] = [
+const indexOptions: OptionSpec[] = [
   {
     name: "--index",
     description:
@@ -93,7 +93,7 @@ const indexOptions: Fig.Option[] = [
   },
 ];
 
-const cacheOptions: Fig.Option[] = [
+const cacheOptions: OptionSpec[] = [
   {
     name: "--no-cache",
     description:
@@ -115,7 +115,7 @@ const cacheOptions: Fig.Option[] = [
   },
 ];
 
-const resolverOptions: Fig.Option[] = [
+const resolverOptions: OptionSpec[] = [
   {
     name: "-U",
     description:
@@ -163,7 +163,7 @@ const resolverOptions: Fig.Option[] = [
   },
 ];
 
-const installerOptions: Fig.Option[] = [
+const installerOptions: OptionSpec[] = [
   {
     name: "--reinstall",
     description:
@@ -190,7 +190,7 @@ const installerOptions: Fig.Option[] = [
   },
 ];
 
-const buildOptions: Fig.Option[] = [
+const buildOptions: OptionSpec[] = [
   {
     name: "-C",
     description:
@@ -228,7 +228,7 @@ const buildOptions: Fig.Option[] = [
   },
 ];
 
-const pythonOptions: Fig.Option[] = [
+const pythonOptions: OptionSpec[] = [
   {
     name: ["-p", "--python"],
     description:
@@ -254,7 +254,7 @@ const pythonOptions: Fig.Option[] = [
 // ////////////////////////////////////////////////////////////////// Subcommands //////////////////////////////////////////////////////////////////
 
 //    run
-const runOptions: Fig.Option[] = [
+const runOptions: OptionSpec[] = [
   {
     name: "--extra",
     description: "Include optional dependencies from the specified extra name",
@@ -368,7 +368,7 @@ const runOptions: Fig.Option[] = [
 ];
 
 //    init
-const initOptions: Fig.Option[] = [
+const initOptions: OptionSpec[] = [
   {
     name: "--name",
     description: "The name of the project",
@@ -433,7 +433,7 @@ const initOptions: Fig.Option[] = [
   },
 ];
 
-const initCacheOptions: Fig.Option[] = [
+const initCacheOptions: OptionSpec[] = [
   {
     name: "-n",
     description:
@@ -447,7 +447,7 @@ const initCacheOptions: Fig.Option[] = [
 ];
 
 //    add
-const addOptions: Fig.Option[] = [
+const addOptions: OptionSpec[] = [
   {
     name: ["-r", "--requirements"],
     description:
@@ -527,7 +527,7 @@ const addOptions: Fig.Option[] = [
 ];
 
 //    remove
-const removeOptions: Fig.Option[] = [
+const removeOptions: OptionSpec[] = [
   {
     name: "--dev",
     description: "Remove the packages from the development dependency group",
@@ -588,7 +588,7 @@ const removeOptions: Fig.Option[] = [
 ];
 
 //    sync
-const syncOptions: Fig.Option[] = [
+const syncOptions: OptionSpec[] = [
   {
     name: "--extra",
     description: "Include optional dependencies from the specified extra name",
@@ -695,7 +695,7 @@ const syncOptions: Fig.Option[] = [
 ];
 
 //   lock
-const lockOptions: Fig.Option[] = [
+const lockOptions: OptionSpec[] = [
   {
     name: "--locked",
     description: "Assert that the `uv.lock` will remain unchanged",
@@ -710,7 +710,7 @@ const lockOptions: Fig.Option[] = [
   },
 ];
 
-const lockInstallerOptions: Fig.Option[] = [
+const lockInstallerOptions: OptionSpec[] = [
   {
     name: "--link-mode",
     description:
@@ -723,7 +723,7 @@ const lockInstallerOptions: Fig.Option[] = [
 ];
 
 //  export
-const exportOptions: Fig.Option[] = [
+const exportOptions: OptionSpec[] = [
   {
     name: "--format",
     description: "The format to which `uv.lock` should be exported",
@@ -857,7 +857,7 @@ const exportOptions: Fig.Option[] = [
 ];
 
 // tree
-const treeOptions: Fig.Option[] = [
+const treeOptions: OptionSpec[] = [
   {
     name: "--universal",
     description: "Show a platform-independent dependency tree",
@@ -1001,7 +1001,7 @@ const treeOptions: Fig.Option[] = [
   },
 ];
 
-const toolSubcommands: Fig.Subcommand[] = [
+const toolSubcommands: SubcommandSpec[] = [
   {
     name: "run",
     description: "Run a command provided by a Python package",
@@ -1118,7 +1118,7 @@ const toolSubcommands: Fig.Subcommand[] = [
 
 // python
 
-const pythonSubcommands: Fig.Subcommand[] = [
+const pythonSubcommands: SubcommandSpec[] = [
   {
     name: "list",
     description: "List the available Python installations",
@@ -1239,7 +1239,7 @@ const pythonSubcommands: Fig.Subcommand[] = [
 ];
 
 // pip
-const pipSubcommands: Fig.Subcommand[] = [
+const pipSubcommands: SubcommandSpec[] = [
   {
     name: "compile",
     description:
@@ -1301,7 +1301,7 @@ const pipSubcommands: Fig.Subcommand[] = [
 ];
 
 // venv
-const venvOptions: Fig.Option[] = [
+const venvOptions: OptionSpec[] = [
   {
     name: "--no-project",
     description: "Avoid discovering a project or workspace",
@@ -1370,7 +1370,7 @@ const venvOptions: Fig.Option[] = [
 ];
 
 // build
-const buildCommandOptions: Fig.Option[] = [
+const buildCommandOptions: OptionSpec[] = [
   {
     name: "--package",
     description: "Build a specific package in the workspace",
@@ -1428,7 +1428,7 @@ const buildCommandOptions: Fig.Option[] = [
 ];
 
 // publish
-const publishOptions: Fig.Option[] = [
+const publishOptions: OptionSpec[] = [
   {
     name: "--publish-url",
     description: "The URL of the upload endpoint (not the index URL)",
@@ -1485,7 +1485,7 @@ const publishOptions: Fig.Option[] = [
 ];
 
 // cache
-const cacheSubcommands: Fig.Subcommand[] = [
+const cacheSubcommands: SubcommandSpec[] = [
   {
     name: "clean",
     description: "Clear the cache",
@@ -1506,7 +1506,7 @@ const cacheSubcommands: Fig.Subcommand[] = [
 ];
 
 // self
-const selfSubcommands: Fig.Subcommand[] = [
+const selfSubcommands: SubcommandSpec[] = [
   {
     name: "update",
     description: "Update uv",
@@ -1525,7 +1525,7 @@ const selfSubcommands: Fig.Subcommand[] = [
   },
 ];
 
-const subcommands: Fig.Subcommand[] = [
+const subcommands: SubcommandSpec[] = [
   {
     name: "run",
     description: "Run a command or script",
@@ -1802,7 +1802,7 @@ const subcommands: Fig.Subcommand[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: ["-q", "--quiet"],
     description: "Do not print any output",
@@ -1891,7 +1891,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "uv",
   description: "An extremely fast Python package manager",
   subcommands,

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "while",
   description: "Repeat a command while this is true",
   args: {

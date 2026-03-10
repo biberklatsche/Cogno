@@ -4,7 +4,7 @@
 // Built with go version go1.18.3 linux/amd64
 // Viceroy version: viceroy 0.2.14
 //
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fastly",
   description: "A CLI for interacting with the Fastly platform",
   subcommands: [

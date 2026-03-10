@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "hpc-cache",
   description: "Commands to manage hpc cache",
   subcommands: [

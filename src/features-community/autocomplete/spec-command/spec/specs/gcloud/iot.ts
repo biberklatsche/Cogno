@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iot",
   description: "Manage Cloud IoT resources",
   subcommands: [

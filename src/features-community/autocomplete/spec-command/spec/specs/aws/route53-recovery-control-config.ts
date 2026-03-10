@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "route53-recovery-control-config",
   description:
     "Recovery Control Configuration API Reference for Amazon Route 53 Application Recovery Controller",

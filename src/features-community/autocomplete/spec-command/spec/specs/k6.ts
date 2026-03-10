@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "k6",
   description:
     "Grafana k6 is an open-source load testing tool that makes performance testing easy",

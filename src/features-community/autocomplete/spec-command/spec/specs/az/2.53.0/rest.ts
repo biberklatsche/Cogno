@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "rest",
   description: "Invoke a custom request",
   options: [

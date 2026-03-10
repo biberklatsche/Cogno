@@ -5,7 +5,7 @@ const sharedArgs = {
     name: "UID",
   },
 };
-let globalOptions: Fig.Option[] = [
+let globalOptions: OptionSpec[] = [
   {
     name: "--argo-base-href",
     description:
@@ -217,7 +217,7 @@ globalOptions = globalOptions.map((option) => ({
   ...option,
 }));
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "argo",
   description: "",
   subcommands: [

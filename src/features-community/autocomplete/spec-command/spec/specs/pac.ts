@@ -1,36 +1,36 @@
-const backupRetentionPeriodDays: Fig.Suggestion[] = [
+const backupRetentionPeriodDays: Suggestion[] = [
   { name: "7", description: "7" },
   { name: "14", description: "14" },
   { name: "21", description: "21" },
   { name: "28", description: "28" },
 ];
-const solutionTypes: Fig.Suggestion[] = [
+const solutionTypes: Suggestion[] = [
   { name: "Unmanaged", description: "Unmanaged" },
   { name: "Managed", description: "Managed" },
   { name: "Both", description: "Both" },
 ];
-const envCopyTypes: Fig.Suggestion[] = [
+const envCopyTypes: Suggestion[] = [
   { name: "MinimalCopy", description: "MinimalCopy" },
   { name: "FullCopy", description: "FullCopy" },
 ];
-const teamTypes: Fig.Suggestion[] = [
+const teamTypes: Suggestion[] = [
   { name: "Owner", description: "Owner" },
   { name: "Access", description: "Access" },
   { name: "AadSecurityGroup", description: "AadSecurityGroup" },
   { name: "AadOfficeGroup", description: "AadOfficeGroup" },
 ];
-const membershipTypes: Fig.Suggestion[] = [
+const membershipTypes: Suggestion[] = [
   { name: "MembersAndGuests", description: "MembersAndGuests" },
   { name: "Members", description: "Members" },
   { name: "Owners", description: "Owners" },
   { name: "Guests", description: "Guests" },
 ];
-const solutionCheckerMode: Fig.Suggestion[] = [
+const solutionCheckerMode: Suggestion[] = [
   { name: "none", description: "None" },
   { name: "warn", description: "Warn" },
   { name: "block", description: "Block" },
 ];
-const cloudTypes: Fig.Suggestion[] = [
+const cloudTypes: Suggestion[] = [
   { name: "Public", description: "Public" },
   { name: "Preprod", description: "Preprod" },
   { name: "Test", description: "Test" },
@@ -39,54 +39,54 @@ const cloudTypes: Fig.Suggestion[] = [
   { name: "UsGovDod", description: "UsGovDod" },
   { name: "China", description: "China" },
 ];
-const connectionTemplates: Fig.Suggestion[] = [
+const connectionTemplates: Suggestion[] = [
   { name: "NoAuth", description: "NoAuth" },
   { name: "BasicAuth", description: "BasicAuth" },
   { name: "ApiKey", description: "ApiKey" },
   { name: "OAuthGeneric", description: "OAuthGeneric" },
   { name: "OAuthAAD", description: "OAuthAAD" },
 ];
-const trueFalse: Fig.Suggestion[] = [
+const trueFalse: Suggestion[] = [
   { name: "true", description: "True" },
   { name: "false", description: "False" },
 ];
-const syncAsync: Fig.Suggestion[] = [
+const syncAsync: Suggestion[] = [
   { name: "sync", description: "Sync" },
   { name: "async", description: "Async" },
 ];
-const skipFault: Fig.Suggestion[] = [
+const skipFault: Suggestion[] = [
   { name: "skip", description: "Skip" },
   { name: "fault", description: "Fault" },
 ];
-const pcfComponentTypes: Fig.Suggestion[] = [
+const pcfComponentTypes: Suggestion[] = [
   { name: "field", description: "Field" },
   { name: "dataset", description: "Dataset" },
 ];
-const pcfFrameworkTypes: Fig.Suggestion[] = [
+const pcfFrameworkTypes: Suggestion[] = [
   { name: "none", description: "None" },
   { name: "react", description: "React" },
 ];
-const pcfPatchStrategies: Fig.Suggestion[] = [
+const pcfPatchStrategies: Suggestion[] = [
   { name: "None", description: "None" },
   { name: "GitTags", description: "GitTags" },
   { name: "FileTracking", description: "FileTracking" },
   { name: "Manifest", description: "Manifest" },
 ];
-const msBuildVerbosityLevels: Fig.Suggestion[] = [
+const msBuildVerbosityLevels: Suggestion[] = [
   { name: "minimal", description: "Minimal" },
   { name: "normal", description: "Normal" },
   { name: "detailed", description: "Detailed" },
   { name: "diagnostic", description: "Diagnostic" },
 ];
-const pcfPatchTargets: Fig.Suggestion[] = [
+const pcfPatchTargets: Suggestion[] = [
   { name: "build", description: "Build" },
   { name: "project", description: "Project" },
 ];
-const importPluginType: Fig.Suggestion[] = [
+const importPluginType: Suggestion[] = [
   { name: "Nuget", description: "Nuget" },
   { name: "Assembly", description: "Assembly" },
 ];
-const powerAppsCheckerRegions: Fig.Suggestion[] = [
+const powerAppsCheckerRegions: Suggestion[] = [
   { name: "PreviewUnitedStates", description: "PreviewUnitedStates" },
   { name: "UnitedStates", description: "UnitedStates" },
   { name: "Europe", description: "Europe" },
@@ -110,18 +110,18 @@ const powerAppsCheckerRegions: Fig.Suggestion[] = [
   { name: "USGovernmentL5DoD", description: "USGovernmentL5DoD" },
   { name: "China", description: "China" },
 ];
-const applicationInstallStates: Fig.Suggestion[] = [
+const applicationInstallStates: Suggestion[] = [
   { name: "NotInstalled", description: "NotInstalled" },
   { name: "Installed", description: "Installed" },
   { name: "All", description: "All" },
 ];
-const solutionPatchStrategies: Fig.Suggestion[] = [
+const solutionPatchStrategies: Suggestion[] = [
   { name: "None", description: "None" },
   { name: "GitTags", description: "GitTags" },
   { name: "FileTracking", description: "FileTracking" },
   { name: "Solution", description: "Solution" },
 ];
-const logLevels: Fig.Suggestion[] = [
+const logLevels: Suggestion[] = [
   { name: "Off", description: "Off" },
   { name: "Critical", description: "Critical" },
   { name: "Error", description: "Error" },
@@ -131,7 +131,7 @@ const logLevels: Fig.Suggestion[] = [
   { name: "ActivityTracing", description: "ActivityTracing" },
   { name: "All", description: "All" },
 ];
-const environmentTypes: Fig.Suggestion[] = [
+const environmentTypes: Suggestion[] = [
   {
     name: "Trial",
     description: "Trial",
@@ -158,7 +158,7 @@ const environmentTypes: Fig.Suggestion[] = [
   },
 ];
 
-const azureLocations: Fig.Suggestion[] = [
+const azureLocations: Suggestion[] = [
   { name: "unitedstates", description: "Unitedstates" },
   { name: "unitedstatesfirstrelease", description: "Unitedstatesfirstrelease" },
   { name: "europe", description: "Europe" },
@@ -177,7 +177,7 @@ const azureLocations: Fig.Suggestion[] = [
   { name: "korea", description: "Korea" },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pac",
   description: "Power Platform CLI",
   subcommands: [

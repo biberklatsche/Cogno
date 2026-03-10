@@ -1,9 +1,9 @@
-const boilerplates: Fig.Generator = {
+const boilerplates: Generator = {
   script: ["gibo", "list"],
   splitOn: "\n",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gibo",
   description: "Easy access to gitignore boilerplates",
   subcommands: [

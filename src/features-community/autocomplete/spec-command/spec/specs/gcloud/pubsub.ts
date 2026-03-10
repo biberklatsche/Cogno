@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pubsub",
   description: "Manage Cloud Pub/Sub topics, subscriptions, and snapshots",
   subcommands: [

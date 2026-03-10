@@ -1,11 +1,11 @@
 import { existingUsersandGroups } from "./chown";
 
-const helpOption: Fig.Option = {
+const helpOption: OptionSpec = {
   name: ["-h", "--help"],
   description: "Show this help and exit",
 };
 
-const tokenOption: Fig.Option = {
+const tokenOption: OptionSpec = {
   name: ["-t", "--token"],
   description:
     "Access token for user authentication. Get ST2_AUTH_TOKEN from the environment variables by default",
@@ -14,7 +14,7 @@ const tokenOption: Fig.Option = {
   },
 };
 
-const apiKeyOption: Fig.Option = {
+const apiKeyOption: OptionSpec = {
   name: "--api-key",
   description:
     "Api Key for user authentication. Get ST2_API_KEY from the environment variables by default",
@@ -23,17 +23,17 @@ const apiKeyOption: Fig.Option = {
   },
 };
 
-const jsonOption: Fig.Option = {
+const jsonOption: OptionSpec = {
   name: ["-j", "--json"],
   description: "Print output in JSON format",
 };
 
-const yamlOption: Fig.Option = {
+const yamlOption: OptionSpec = {
   name: ["-y", "--yaml"],
   description: "Print output in YAML format",
 };
 
-const attrOption: Fig.Option = {
+const attrOption: OptionSpec = {
   name: "--attr",
   description:
     "List of attributes to include in the output. 'all' or unspecified will return all attributes",
@@ -43,12 +43,12 @@ const attrOption: Fig.Option = {
   },
 };
 
-const detailOption: Fig.Option = {
+const detailOption: OptionSpec = {
   name: ["-d", "--detail"],
   description: "Display full detail of the execution in table format",
 };
 
-const keyOption: Fig.Option = {
+const keyOption: OptionSpec = {
   name: ["-k", "--key"],
   description:
     "If result is type of JSON, then print specific key-value pair; dot notation for nested JSON is supported",
@@ -57,7 +57,7 @@ const keyOption: Fig.Option = {
   },
 };
 
-const delayOption: Fig.Option = {
+const delayOption: OptionSpec = {
   name: "--delay",
   description:
     "How long (in milliseconds) to delay the execution before scheduling",
@@ -66,18 +66,18 @@ const delayOption: Fig.Option = {
   },
 };
 
-const tailOption: Fig.Option = {
+const tailOption: OptionSpec = {
   name: "--tail",
   description: "Automatically start tailing new execution",
 };
 
-const autoDictOption: Fig.Option = {
+const autoDictOption: OptionSpec = {
   name: "--auto-dict",
   description:
     "Automatically convert list items to dictionaries when colons are detected. (NOTE - this parameter and its functionality will be deprecated in the next release in favor of a more robust conversion method)",
 };
 
-const traceTagOption: Fig.Option = {
+const traceTagOption: OptionSpec = {
   name: ["--trace-tag", "--trace_tag"],
   description: "A trace tag string to track execution later",
   args: {
@@ -85,7 +85,7 @@ const traceTagOption: Fig.Option = {
   },
 };
 
-const traceIdOption: Fig.Option = {
+const traceIdOption: OptionSpec = {
   name: "--trace-id",
   description: "Existing trace id for this execution",
   args: {
@@ -93,18 +93,18 @@ const traceIdOption: Fig.Option = {
   },
 };
 
-const asyncOption: Fig.Option = {
+const asyncOption: OptionSpec = {
   name: ["-a", "--async"],
   description: "Do not wait for action to finish",
 };
 
-const inheritEnvOption: Fig.Option = {
+const inheritEnvOption: OptionSpec = {
   name: ["-e", "--inherit-env"],
   description:
     "Pass all the environment variables which are accessible to the CLI as 'env' parameter to the action. Note: Only works with python, local and remote runners",
 };
 
-const userOption: Fig.Option = {
+const userOption: OptionSpec = {
   name: ["-u", "--user"],
   description: "User under which to run the action (admins only)",
   args: {
@@ -113,7 +113,7 @@ const userOption: Fig.Option = {
   },
 };
 
-const widthOption: Fig.Option = {
+const widthOption: OptionSpec = {
   name: ["-w", "--width"],
   description: "Set the width of the columns in output",
   args: {
@@ -122,7 +122,7 @@ const widthOption: Fig.Option = {
   },
 };
 
-const packOption: Fig.Option = {
+const packOption: OptionSpec = {
   name: ["-p", "--pack"],
   description: "Only return resources belonging to the provided pack",
   args: {
@@ -130,7 +130,7 @@ const packOption: Fig.Option = {
   },
 };
 
-const resourceRefOption: Fig.Option = {
+const resourceRefOption: OptionSpec = {
   name: ["-r", "--resource-ref"],
   description: "Return policies for the resource ref",
   args: {
@@ -138,7 +138,7 @@ const resourceRefOption: Fig.Option = {
   },
 };
 
-const policyTypeOption: Fig.Option = {
+const policyTypeOption: OptionSpec = {
   name: ["-pt", "--policy-type"],
   description: "Return policies of the policy type",
   args: {
@@ -146,7 +146,7 @@ const policyTypeOption: Fig.Option = {
   },
 };
 
-const passwordOption: Fig.Option = {
+const passwordOption: OptionSpec = {
   name: "-p",
   description: "Password",
   args: {
@@ -154,7 +154,7 @@ const passwordOption: Fig.Option = {
   },
 };
 
-const ttlOption: Fig.Option = {
+const ttlOption: OptionSpec = {
   name: ["-l", "--ttl"],
   description:
     "The life span of the token in seconds. Max TTL configured by the admin supersedes this",
@@ -163,18 +163,18 @@ const ttlOption: Fig.Option = {
   },
 };
 
-const onlyTokenOption: Fig.Option = {
+const onlyTokenOption: OptionSpec = {
   name: ["-t", "--only-token"],
   description: "On successful authentication, print only token to the console",
 };
 
-const writePasswordOption: Fig.Option = {
+const writePasswordOption: OptionSpec = {
   name: ["-w", "--write-password"],
   description:
     "Write the password in plain text to the config file (default is to omit it)",
 };
 
-const lastOption: Fig.Option = {
+const lastOption: OptionSpec = {
   name: ["-n", "--last"],
   description: "List N most recent; use -n -1 to fetch the full result set",
   args: {
@@ -183,7 +183,7 @@ const lastOption: Fig.Option = {
   },
 };
 
-const sortOrderOption: Fig.Option = {
+const sortOrderOption: OptionSpec = {
   name: ["-s", "--sort"],
   description:
     "Sort action executions by start timestamp, asc|ascending (earliest first) or desc|descending (latest first)",
@@ -193,7 +193,7 @@ const sortOrderOption: Fig.Option = {
   },
 };
 
-const timeStampGtOption: Fig.Option = {
+const timeStampGtOption: OptionSpec = {
   name: ["-tg", "timestamp-gt"],
   description:
     "Only return executions with timestamp greater than the one provided. Use time in the format '2000-01-01T12:00:00.000Z'",
@@ -202,7 +202,7 @@ const timeStampGtOption: Fig.Option = {
   },
 };
 
-const timeStampLtOption: Fig.Option = {
+const timeStampLtOption: OptionSpec = {
   name: ["-tl", "timestamp-lt"],
   description:
     "Only return executions with timestamp lower than the one provided. Use time in the format '2000-01-01T12:00:00.000Z'",
@@ -211,12 +211,12 @@ const timeStampLtOption: Fig.Option = {
   },
 };
 
-const showAllOption: Fig.Option = {
+const showAllOption: OptionSpec = {
   name: ["-l", "--showall"],
   description: "Show all attributes",
 };
 
-const actionOption: Fig.Option = {
+const actionOption: OptionSpec = {
   name: "--action",
   description: "Action reference to filter the list",
   args: {
@@ -224,7 +224,7 @@ const actionOption: Fig.Option = {
   },
 };
 
-const fileOption: Fig.Option = {
+const fileOption: OptionSpec = {
   name: "--file",
   description: "Local file path to the workflow definition",
   args: {
@@ -233,7 +233,7 @@ const fileOption: Fig.Option = {
   },
 };
 
-const statusOption: Fig.Option = {
+const statusOption: OptionSpec = {
   name: "--status",
   description:
     "Only return executions with the provided status. Possible values are 'succeeded', 'running', 'scheduled', 'paused', 'failed', 'canceling' or 'canceled'",
@@ -251,7 +251,7 @@ const statusOption: Fig.Option = {
   },
 };
 
-const triggerInstanceOption: Fig.Option = {
+const triggerInstanceOption: OptionSpec = {
   name: "--trigger_instance",
   description: "Trigger instance id to filter the list",
   args: {
@@ -259,12 +259,12 @@ const triggerInstanceOption: Fig.Option = {
   },
 };
 
-const showSecretsOption: Fig.Option = {
+const showSecretsOption: OptionSpec = {
   name: "--show-secrets",
   description: "Full list of attributes",
 };
 
-const metadataOpion: Fig.Option = {
+const metadataOpion: OptionSpec = {
   name: ["-m", "--metadata"],
   description: "Optional metadata to associate with the API Keys",
   args: {
@@ -272,17 +272,17 @@ const metadataOpion: Fig.Option = {
   },
 };
 
-const onlyKeyOption: Fig.Option = {
+const onlyKeyOption: OptionSpec = {
   name: ["-k", "--only-key"],
   description: "Only print API Key to the console on creation",
 };
 
-const excludeResultOption: Fig.Option = {
+const excludeResultOption: OptionSpec = {
   name: ["-x", "--exclude-result"],
   description: "Don't retrieve and display the result field",
 };
 
-const tasksOption: Fig.Option = {
+const tasksOption: OptionSpec = {
   name: "--tasks",
   description: "Name of the workflow tasks to re-run",
   args: {
@@ -291,7 +291,7 @@ const tasksOption: Fig.Option = {
   },
 };
 
-const noResetOption: Fig.Option = {
+const noResetOption: OptionSpec = {
   name: "--no-reset",
   description:
     "Name of the with-items tasks to not reset. This only applies to Orquesta workflows. By default, all iterations for with- items tasks is rerun. If no reset, only failed iterations are rerun",
@@ -300,7 +300,7 @@ const noResetOption: Fig.Option = {
   },
 };
 
-const typeOption: Fig.Option = {
+const typeOption: OptionSpec = {
   name: "--type",
   description: "Type of output to tail for. If not provided, defaults to all",
   args: {
@@ -308,7 +308,7 @@ const typeOption: Fig.Option = {
   },
 };
 
-const typesOption: Fig.Option = {
+const typesOption: OptionSpec = {
   name: "--types",
   description: "Types of content to register",
   args: {
@@ -317,12 +317,12 @@ const typesOption: Fig.Option = {
   },
 };
 
-const includeMetadataOption: Fig.Option = {
+const includeMetadataOption: OptionSpec = {
   name: "--include-metadata",
   description: "Include metadata (timestamp, output type) with the output",
 };
 
-const responseOption: Fig.Option = {
+const responseOption: OptionSpec = {
   name: ["-r", "--response"],
   description:
     "Entire response payload as JSON string (bypass interactive mode)",
@@ -331,7 +331,7 @@ const responseOption: Fig.Option = {
   },
 };
 
-const prefixOption: Fig.Option = {
+const prefixOption: OptionSpec = {
   name: "--prefix",
   description:
     "Only return values with names starting with the provided prefix",
@@ -340,44 +340,44 @@ const prefixOption: Fig.Option = {
   },
 };
 
-const decryptOption: Fig.Option = {
+const decryptOption: OptionSpec = {
   name: ["-d", "--decrypt"],
   description: "Decrypt secrets and displays plain text",
 };
 
-const encryptOption: Fig.Option = {
+const encryptOption: OptionSpec = {
   name: ["-e", "--enrypt"],
   description: "Encrypt values before saving",
 };
 
-const encryptedOption: Fig.Option = {
+const encryptedOption: OptionSpec = {
   name: "--enrypted",
   description:
     "Value provided is already encrypted with the instance crypto key and should be stored as-is",
 };
 
-const convertOption: Fig.Option = {
+const convertOption: OptionSpec = {
   name: ["-c", "--convert"],
   description:
     "Convert non-string types (hash, array, boolean, int, float) to a JSON string before loading it into the datastore",
 };
 
-const scopeOption: Fig.Option = {
+const scopeOption: OptionSpec = {
   name: ["-s", "--scope"],
   description: "Scope item is under. Example: 'user'",
 };
 
-const forceOption: Fig.Option = {
+const forceOption: OptionSpec = {
   name: "force",
   description: "Force",
 };
 
-const skipDependenciesOption: Fig.Option = {
+const skipDependenciesOption: OptionSpec = {
   name: "--skip-dependencies",
   description: "Skip dependencies",
 };
 
-const resourceTypeOption: Fig.Option = {
+const resourceTypeOption: OptionSpec = {
   name: ["-r", "--resource-type"],
   description: "Return policy types for the resource type",
   args: {
@@ -385,22 +385,22 @@ const resourceTypeOption: Fig.Option = {
   },
 };
 
-const ifttOption: Fig.Option = {
+const ifttOption: OptionSpec = {
   name: "--iftt",
   description: "Show trigger and action in display list",
 };
 
-const enabledOption: Fig.Option = {
+const enabledOption: OptionSpec = {
   name: "--enabled",
   description: "Show enabled",
 };
 
-const disabledOption: Fig.Option = {
+const disabledOption: OptionSpec = {
   name: "--disabled",
   description: "Show disabled",
 };
 
-const triggerOption: Fig.Option = {
+const triggerOption: OptionSpec = {
   name: ["-g", "--trigger"],
   description: "Trigger type reference to filter the list",
   args: {
@@ -408,7 +408,7 @@ const triggerOption: Fig.Option = {
   },
 };
 
-const timerTypeOption: Fig.Option = {
+const timerTypeOption: OptionSpec = {
   name: ["-ty", "--timer-type"],
   description:
     "List timers type, example: 'core.st2.IntervalTimer', 'core.st2.DateTimer', 'core.st2.CronTimer'",
@@ -422,7 +422,7 @@ const timerTypeOption: Fig.Option = {
   },
 };
 
-const executionOption: Fig.Option = {
+const executionOption: OptionSpec = {
   name: ["-e", "--execution"],
   description: "Execution to filter the list",
   args: {
@@ -430,7 +430,7 @@ const executionOption: Fig.Option = {
   },
 };
 
-const ruleOption: Fig.Option = {
+const ruleOption: OptionSpec = {
   name: ["-r", "--rule"],
   description: "Rule to filter the list",
   args: {
@@ -438,27 +438,27 @@ const ruleOption: Fig.Option = {
   },
 };
 
-const showExecutionsOption: Fig.Option = {
+const showExecutionsOption: OptionSpec = {
   name: "--show-executions",
   description: "Only show executions",
 };
 
-const showRulesOption: Fig.Option = {
+const showRulesOption: OptionSpec = {
   name: "--show-rules",
   description: "Only show rules",
 };
 
-const showTriggerInstancesOption: Fig.Option = {
+const showTriggerInstancesOption: OptionSpec = {
   name: "--show-trigger-instances",
   description: "Only show trigger instances",
 };
 
-const hideNoopTriggersOption: Fig.Option = {
+const hideNoopTriggersOption: OptionSpec = {
   name: ["-n", "--hide-noop-triggers"],
   description: "Hide noop trigger instances",
 };
 
-const groupIdOption: Fig.Option = {
+const groupIdOption: OptionSpec = {
   name: "--group-id",
   description: "Group ID",
   args: {
@@ -466,12 +466,12 @@ const groupIdOption: Fig.Option = {
   },
 };
 
-const systemOption: Fig.Option = {
+const systemOption: OptionSpec = {
   name: ["-s", "--system"],
   description: "Only display system roles",
 };
 
-const roleOption: Fig.Option = {
+const roleOption: OptionSpec = {
   name: ["-r", "--role"],
   description: "Role to filter on",
   args: {
@@ -479,7 +479,7 @@ const roleOption: Fig.Option = {
   },
 };
 
-const sourceOption: Fig.Option = {
+const sourceOption: OptionSpec = {
   name: ["-s", "--source"],
   description: "Source to filter on",
   args: {
@@ -487,138 +487,138 @@ const sourceOption: Fig.Option = {
   },
 };
 
-const remoteOption: Fig.Option = {
+const remoteOption: OptionSpec = {
   name: "--remote",
   description: "Only display remote role assignments",
 };
 
-const refOrIdArg: Fig.Arg = {
+const refOrIdArg: ArgSpec = {
   name: "ref-or-id",
   description: "Reference or ID",
 };
 
-const refOrIdArgVariadic: Fig.Arg = {
+const refOrIdArgVariadic: ArgSpec = {
   name: "ref-or-id",
   description: "Reference or ID",
   isVariadic: true,
 };
 
-const nameOrIdArg: Fig.Arg = {
+const nameOrIdArg: ArgSpec = {
   name: "name-or-id",
   description: "Name or ID",
 };
 
-const nameOrIdArgVariadic: Fig.Arg = {
+const nameOrIdArgVariadic: ArgSpec = {
   name: "name-or-id",
   description: "Name or ID",
   isVariadic: true,
 };
 
-const keyOrIdArg: Fig.Arg = {
+const keyOrIdArg: ArgSpec = {
   name: "key-or-id",
   description: "Key or ID",
 };
 
-const idArg: Fig.Arg = {
+const idArg: ArgSpec = {
   name: "id",
   description: "ID",
 };
 
-const idArgVariadic: Fig.Arg = {
+const idArgVariadic: ArgSpec = {
   name: "id",
   description: "ID",
   isVariadic: true,
 };
 
-const parametersArg: Fig.Arg = {
+const parametersArg: ArgSpec = {
   name: "parameters",
   description:
     "List of keyword args, positional args, and optional args for the action",
   isVariadic: true,
 };
 
-const fileArg: Fig.Arg = {
+const fileArg: ArgSpec = {
   name: "file",
   description: "JSON/YAML file",
   template: "filepaths",
 };
 
-const commandArg: Fig.Arg = {
+const commandArg: ArgSpec = {
   name: "comamnd",
   description: "Command text",
 };
 
-const usernameArg: Fig.Arg = {
+const usernameArg: ArgSpec = {
   name: "username",
   description: "Name of the user",
 };
 
-const nameArg: Fig.Arg = {
+const nameArg: ArgSpec = {
   name: "name",
   description: "Name",
 };
 
-const nameArgVariadic: Fig.Arg = {
+const nameArgVariadic: ArgSpec = {
   name: "name",
   description: "Name",
   isVariadic: true,
 };
 
-const valueArg: Fig.Arg = {
+const valueArg: ArgSpec = {
   name: "value",
   description: "Value",
 };
 
-const valueArgOptional: Fig.Arg = {
+const valueArgOptional: ArgSpec = {
   name: "value",
   description: "Value",
   isOptional: true,
 };
 
-const prefixArg: Fig.Arg = {
+const prefixArg: ArgSpec = {
   name: "prefix",
   description: "Prefix",
 };
 
-const refArg: Fig.Arg = {
+const refArg: ArgSpec = {
   name: "ref",
   description: "Reference",
 };
 
-const refArgVariadic: Fig.Arg = {
+const refArgVariadic: ArgSpec = {
   name: "ref",
   description: "Reference",
   isVariadic: true,
 };
 
-const packArg: Fig.Arg = {
+const packArg: ArgSpec = {
   name: "pack",
   description: "Pack",
 };
 
-const packArgVariadic: Fig.Arg = {
+const packArgVariadic: ArgSpec = {
   name: "pack",
   description: "Pack",
   isVariadic: true,
 };
 
-const queryArg: Fig.Arg = {
+const queryArg: ArgSpec = {
   name: "query",
   description: "Query",
 };
 
-const urlArg: Fig.Arg = {
+const urlArg: ArgSpec = {
   name: "url",
   description: "URL",
 };
 
-const urlArgVariadic: Fig.Arg = {
+const urlArgVariadic: ArgSpec = {
   name: "url",
   description: "URL",
   isVariadic: true,
 };
 
-const runSubcommand: Fig.Subcommand = {
+const runSubcommand: SubcommandSpec = {
   name: "run",
   description: "Invoke an action manually",
   parserDirectives: {
@@ -645,7 +645,7 @@ const runSubcommand: Fig.Subcommand = {
   args: [refOrIdArg, parametersArg],
 };
 
-const actionSubcommand: Fig.Subcommand = {
+const actionSubcommand: SubcommandSpec = {
   name: "action",
   description: "An activity that happens as a response to the external event",
   subcommands: [
@@ -764,7 +764,7 @@ const actionSubcommand: Fig.Subcommand = {
   ],
 };
 
-const actionAliasSubcommand: Fig.Subcommand = {
+const actionAliasSubcommand: SubcommandSpec = {
   name: "action-alias",
   description: "Action aliases",
   subcommands: [
@@ -865,7 +865,7 @@ const actionAliasSubcommand: Fig.Subcommand = {
   ],
 };
 
-const authSubcommand: Fig.Subcommand = {
+const authSubcommand: SubcommandSpec = {
   name: "auth",
   description: "Authenticate user and acquire access token",
   parserDirectives: {
@@ -882,7 +882,7 @@ const authSubcommand: Fig.Subcommand = {
   args: usernameArg,
 };
 
-const loginSubcommand: Fig.Subcommand = {
+const loginSubcommand: SubcommandSpec = {
   name: "login",
   description:
     "Authenticate user, acquire access token, and update CLI config directory",
@@ -900,7 +900,7 @@ const loginSubcommand: Fig.Subcommand = {
   args: usernameArg,
 };
 
-const whoamiSubcommand: Fig.Subcommand = {
+const whoamiSubcommand: SubcommandSpec = {
   name: "whoami",
   description: "Display the currently authenticated user",
   parserDirectives: {
@@ -909,7 +909,7 @@ const whoamiSubcommand: Fig.Subcommand = {
   options: [helpOption, jsonOption, yamlOption],
 };
 
-const apiKeySubcommand: Fig.Subcommand = {
+const apiKeySubcommand: SubcommandSpec = {
   name: "apikey",
   description: "API Keys",
   parserDirectives: {
@@ -1007,7 +1007,7 @@ const apiKeySubcommand: Fig.Subcommand = {
   ],
 };
 
-const executionSubcommand: Fig.Subcommand = {
+const executionSubcommand: SubcommandSpec = {
   name: "execution",
   description: "An invocation of an action",
   parserDirectives: {
@@ -1157,7 +1157,7 @@ const executionSubcommand: Fig.Subcommand = {
   ],
 };
 
-const inquirySubcommand: Fig.Subcommand = {
+const inquirySubcommand: SubcommandSpec = {
   name: "inquiry",
   description:
     "Inquiries provide an opportunity to ask a question and wait for a response in a workflow",
@@ -1214,7 +1214,7 @@ const inquirySubcommand: Fig.Subcommand = {
   ],
 };
 
-const keySubcommand: Fig.Subcommand = {
+const keySubcommand: SubcommandSpec = {
   name: "key",
   description:
     "Key value pair is used to store commonly used configuration for reuse in sensors, actions, and rules",
@@ -1330,7 +1330,7 @@ const keySubcommand: Fig.Subcommand = {
   ],
 };
 
-const packSubcommand: Fig.Subcommand = {
+const packSubcommand: SubcommandSpec = {
   name: "pack",
   description:
     "A group of related integration resources: actions, rules, and sensors",
@@ -1460,7 +1460,7 @@ const packSubcommand: Fig.Subcommand = {
   ],
 };
 
-const policySubcommand: Fig.Subcommand = {
+const policySubcommand: SubcommandSpec = {
   name: "policy",
   description: "Policy that is enforced on a resource",
   subcommands: [
@@ -1529,7 +1529,7 @@ const policySubcommand: Fig.Subcommand = {
   ],
 };
 
-const policyTypeSubcommand: Fig.Subcommand = {
+const policyTypeSubcommand: SubcommandSpec = {
   name: "policy-type",
   description: "Type of policy that can be applied to the resources",
   subcommands: [
@@ -1569,7 +1569,7 @@ const policyTypeSubcommand: Fig.Subcommand = {
   ],
 };
 
-const ruleSubcommand: Fig.Subcommand = {
+const ruleSubcommand: SubcommandSpec = {
   name: "rule",
   description:
     "A specification to invoke an 'action' on a 'trigger' selectively based on some criteria'",
@@ -1667,7 +1667,7 @@ const ruleSubcommand: Fig.Subcommand = {
   ],
 };
 
-const webhookSubcommand: Fig.Subcommand = {
+const webhookSubcommand: SubcommandSpec = {
   name: "webhook",
   description: "Webhooks",
   subcommands: [
@@ -1707,7 +1707,7 @@ const webhookSubcommand: Fig.Subcommand = {
   ],
 };
 
-const timerSubcommand: Fig.Subcommand = {
+const timerSubcommand: SubcommandSpec = {
   name: "timer",
   description: "Timers",
   subcommands: [
@@ -1747,7 +1747,7 @@ const timerSubcommand: Fig.Subcommand = {
   ],
 };
 
-const runnerSubcommand: Fig.Subcommand = {
+const runnerSubcommand: SubcommandSpec = {
   name: "runner",
   description: "Runner is a type of handler for a specific class of actions",
   subcommands: [
@@ -1804,7 +1804,7 @@ const runnerSubcommand: Fig.Subcommand = {
   ],
 };
 
-const sensorSubcommand: Fig.Subcommand = {
+const sensorSubcommand: SubcommandSpec = {
   name: "sensor",
   description:
     "An adapter which allows you to integrate StackStorm with external system",
@@ -1863,7 +1863,7 @@ const sensorSubcommand: Fig.Subcommand = {
   ],
 };
 
-const traceSubcommand: Fig.Subcommand = {
+const traceSubcommand: SubcommandSpec = {
   name: "trace",
   description:
     "A group of executions, rules and triggerinstances that are related",
@@ -1914,7 +1914,7 @@ const traceSubcommand: Fig.Subcommand = {
   ],
 };
 
-const triggerSubcommand: Fig.Subcommand = {
+const triggerSubcommand: SubcommandSpec = {
   name: "trigger",
   description:
     "An external event that is mapped to a st2 input. It is the st2 invocation point",
@@ -1991,7 +1991,7 @@ const triggerSubcommand: Fig.Subcommand = {
   ],
 };
 
-const triggerInstanceSubcommand: Fig.Subcommand = {
+const triggerInstanceSubcommand: SubcommandSpec = {
   name: "trigger-instance",
   description: "Actual instances of triggers received by st2",
   subcommands: [
@@ -2051,7 +2051,7 @@ const triggerInstanceSubcommand: Fig.Subcommand = {
   ],
 };
 
-const ruleEnforcementSubcommand: Fig.Subcommand = {
+const ruleEnforcementSubcommand: SubcommandSpec = {
   name: "rule-enforcement",
   description: "Models that represent enforcement of rules",
   subcommands: [
@@ -2122,7 +2122,7 @@ const ruleEnforcementSubcommand: Fig.Subcommand = {
   ],
 };
 
-const workflowSubcommand: Fig.Subcommand = {
+const workflowSubcommand: SubcommandSpec = {
   name: "workflow",
   description:
     "An adapter which allows you to integrate StackStorm with external system",
@@ -2139,7 +2139,7 @@ const workflowSubcommand: Fig.Subcommand = {
   ],
 };
 
-const serviceeRegistrySubcommand: Fig.Subcommand = {
+const serviceeRegistrySubcommand: SubcommandSpec = {
   name: "service-registry",
   description: "Service registry group and membership related commands",
   subcommands: [
@@ -2191,7 +2191,7 @@ const serviceeRegistrySubcommand: Fig.Subcommand = {
   ],
 };
 
-const roleSubcommand: Fig.Subcommand = {
+const roleSubcommand: SubcommandSpec = {
   name: "role",
   description: "RBAC roles",
   subcommands: [
@@ -2231,7 +2231,7 @@ const roleSubcommand: Fig.Subcommand = {
   ],
 };
 
-const roleAssignmentSubcommand: Fig.Subcommand = {
+const roleAssignmentSubcommand: SubcommandSpec = {
   name: "role-assignment",
   description: "RBAC role assignments",
   subcommands: [
@@ -2266,7 +2266,7 @@ const roleAssignmentSubcommand: Fig.Subcommand = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "st2",
   description: "CLI for StackStorm event-driven automation platform",
   subcommands: [

@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const tagsGenerator: Fig.Generator = {
+const tagsGenerator: Generator = {
   script: [
     "bash",
     "-c",
@@ -12,7 +12,7 @@ const tagsGenerator: Fig.Generator = {
     const iter = out.matchAll(/(?:^\s\s+\[Tags\])\s\s+(\w+ *)*(?!.\#.*)/gm);
 
     const seen: Set<string> = new Set();
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
 
     for (const [line] of iter) {
       // original line: "   [Tags]  first tag  dev tag    some tag   "
@@ -31,7 +31,7 @@ const tagsGenerator: Fig.Generator = {
   },
 };
 
-const variablesGenerator: Fig.Generator = {
+const variablesGenerator: Generator = {
   trigger: ":",
   custom: async (tokens, executeShellCommand) => {
     const finalToken = tokens[tokens.length - 1];
@@ -54,7 +54,7 @@ const variablesGenerator: Fig.Generator = {
   },
 };
 
-const testCasesGenerator: Fig.Generator = {
+const testCasesGenerator: Generator = {
   script: [
     "bash",
     "-c",
@@ -68,7 +68,7 @@ const testCasesGenerator: Fig.Generator = {
     );
 
     const seen: Set<string> = new Set();
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
 
     // go through ***Test Cases** blocks
     for (const [_, block] of iter) {
@@ -95,7 +95,7 @@ const testCasesGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "robot",
   description: "CLI for running Robot Framework automation tests",
   args: {

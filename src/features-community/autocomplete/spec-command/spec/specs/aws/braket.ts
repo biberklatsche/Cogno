@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "braket",
   description:
     "The Amazon Braket API Reference provides information about the operations and structures supported in Amazon Braket. Additional Resources:    Amazon Braket Developer Guide",

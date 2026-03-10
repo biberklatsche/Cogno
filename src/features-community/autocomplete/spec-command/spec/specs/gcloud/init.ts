@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "init",
   description: "Initialize or reinitialize gcloud",
   options: [

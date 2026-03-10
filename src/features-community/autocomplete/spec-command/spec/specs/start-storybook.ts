@@ -1,4 +1,4 @@
-export const storybookCommonOptions: Fig.Option[] = [
+export const storybookCommonOptions: OptionSpec[] = [
   {
     name: "--help",
     description: "Display usage information",
@@ -91,7 +91,7 @@ export const storybookCommonOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "start-storybook",
   description: "Storybook start CLI tools",
   options: [

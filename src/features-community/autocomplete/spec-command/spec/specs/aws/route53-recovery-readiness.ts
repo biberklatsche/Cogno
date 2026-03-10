@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "route53-recovery-readiness",
   description: "Recovery readiness",
   subcommands: [

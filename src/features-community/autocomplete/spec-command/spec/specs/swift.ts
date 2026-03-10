@@ -1,6 +1,6 @@
 import { keyValue } from "@fig/autocomplete-generators";
 
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["--help", "-h", "-help"],
     description: "Show help information",
@@ -11,7 +11,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "swift",
   description: "Swift compiler",
   parserDirectives: {

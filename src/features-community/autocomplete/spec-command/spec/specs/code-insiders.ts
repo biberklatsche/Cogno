@@ -1,6 +1,6 @@
 import code from "./code";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...code,
   name: "code-insiders",
 };

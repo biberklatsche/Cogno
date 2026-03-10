@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nocorrect",
   description: "ZSH pre-command modifier that disables correction",
   hidden: true,

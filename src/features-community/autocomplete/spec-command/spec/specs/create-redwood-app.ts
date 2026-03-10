@@ -1,4 +1,4 @@
-const spec: Fig.Spec = {
+const spec: CommandSpec = {
   name: "create-redwood-app",
   icon: "https://avatars.githubusercontent.com/u/45050444?s=48&v=4",
   args: {

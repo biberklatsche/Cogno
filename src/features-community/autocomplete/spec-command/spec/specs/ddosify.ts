@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ddosify",
   description: "High-performance load testing tool, written in Golang",
   options: [

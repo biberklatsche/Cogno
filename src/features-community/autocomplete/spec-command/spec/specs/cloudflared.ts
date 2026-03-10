@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const tcp_rdp_ssh_smb_options: Fig.Option[] = [
+const tcp_rdp_ssh_smb_options: OptionSpec[] = [
   {
     name: ["--hostname", "--tunnel-host", "-T"],
     description: "Specify the hostname of your application",
@@ -86,7 +86,7 @@ const tcp_rdp_ssh_smb_options: Fig.Option[] = [
   },
 ];
 
-const update: Fig.Subcommand = {
+const update: SubcommandSpec = {
   name: "update",
   description: "Update the agent if a new version exists",
   options: [
@@ -110,7 +110,7 @@ const update: Fig.Subcommand = {
   },
 };
 
-const version: Fig.Subcommand = {
+const version: SubcommandSpec = {
   name: "version",
   description: "Print the version",
   args: {
@@ -120,7 +120,7 @@ const version: Fig.Subcommand = {
   },
 };
 
-const proxyDns: Fig.Subcommand = {
+const proxyDns: SubcommandSpec = {
   name: "proxy-dns",
   description: "Run a DNS over HTTPS proxy server",
   options: [
@@ -184,7 +184,7 @@ const proxyDns: Fig.Subcommand = {
   },
 };
 
-const service: Fig.Subcommand = {
+const service: SubcommandSpec = {
   name: "service",
   description: "Manages the cloudflared launch agent",
   subcommands: [
@@ -215,12 +215,12 @@ const service: Fig.Subcommand = {
   ],
 };
 
-const help: Fig.Subcommand = {
+const help: SubcommandSpec = {
   name: "help",
   description: "Shows a list of commands or help for one command",
 };
 
-const access: Fig.Subcommand = {
+const access: SubcommandSpec = {
   name: "access",
   description:
     "Cloudflare Access protects internal resources by securing, authenticating and monitoring access per-user and by application. With Cloudflare Access, only authenticated users with the required permissions are able to reach sensitive resources. The commands provided here allow you to interact with Access protected applications from the command line",
@@ -366,7 +366,7 @@ const access: Fig.Subcommand = {
   ],
 };
 
-const tunnel: Fig.Subcommand = {
+const tunnel: SubcommandSpec = {
   name: "tunnel",
   description:
     "Use Cloudflare Tunnel to expose private services to the Internet or to Cloudflare connected private users",
@@ -2351,7 +2351,7 @@ const tunnel: Fig.Subcommand = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloudflared",
   description:
     "Cloudflared connects your machine or user identity to Cloudflare's global network",

@@ -1,42 +1,42 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   jsonFileGenerator: filepaths({ extensions: ["json"] }),
 };
 
-const appArg: Fig.Arg = {
+const appArg: ArgSpec = {
   name: "app name",
 };
 
-const keyArg: Fig.Arg = {
+const keyArg: ArgSpec = {
   name: "key",
 };
 
-const nameArg: Fig.Arg = {
+const nameArg: ArgSpec = {
   name: "name",
 };
 
-const numberArg: Fig.Arg = {
+const numberArg: ArgSpec = {
   name: "number",
 };
 
-const pathArg: Fig.Arg = {
+const pathArg: ArgSpec = {
   name: "path",
   template: "filepaths",
 };
 
-const platformArg: Fig.Arg = {
+const platformArg: ArgSpec = {
   name: "platform",
   isOptional: true,
   suggestions: ["systemd", "upstart", "launchd", "rcd"],
 };
 
-const jsonFileArg: Fig.Arg = {
+const jsonFileArg: ArgSpec = {
   name: "json",
   generators: generators.jsonFileGenerator,
 };
 
-const sharedOptions: Fig.Option[] = [
+const sharedOptions: OptionSpec[] = [
   {
     name: ["-V", "--version"],
     description: "Outputs the version number",
@@ -335,7 +335,7 @@ const sharedOptions: Fig.Option[] = [
   { name: ["-h", "–-help"], description: "Outputs usage information" },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pm2",
   description: "Daemon process manager",
   subcommands: [

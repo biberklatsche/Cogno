@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "twiggy",
   description: "A code-size profiler for WebAssembly",
   icon: "🌱",

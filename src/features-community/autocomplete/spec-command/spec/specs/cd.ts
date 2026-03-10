@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cd",
   description: "Change the shell working directory",
   args: {

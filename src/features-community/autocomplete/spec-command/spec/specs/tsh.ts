@@ -1,6 +1,6 @@
 import sshSpec from "./ssh";
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   { name: ["-l", "--login"], description: "Remote host login" },
   {
     name: "--proxy",
@@ -68,7 +68,7 @@ const globalOptions: Fig.Option[] = [
   { name: ["-J", "--jumphost"], description: "SSH jumphost" },
 ];
 
-const subcommandOptions: Fig.Option[] = [
+const subcommandOptions: OptionSpec[] = [
   ...globalOptions,
   {
     name: ["-f", "--format"],
@@ -81,7 +81,7 @@ const subcommandOptions: Fig.Option[] = [
   { name: ["-q", "--quiet"], description: "Quiet mode" },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tsh",
   description: "TSH: Teleport Authentication Gateway Client",
   subcommands: [
@@ -104,7 +104,7 @@ const completionSpec: Fig.Spec = {
           },
         },
       },
-      options: (sshSpec as Fig.Subcommand).options,
+      options: (sshSpec as SubcommandSpec).options,
       // Rather than loadspec we will probably just import the ssh spec for all option suggestions and then override argument suggestions with the below
       // loadSpec: "ssh",
     },

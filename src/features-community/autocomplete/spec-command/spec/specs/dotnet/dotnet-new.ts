@@ -4,7 +4,7 @@ type SearchResultData = {
   description: string;
 };
 
-const searchGenerator: Fig.Generator = {
+const searchGenerator: Generator = {
   script(context) {
     const searchTerm = context[context.length - 1];
     return [
@@ -18,7 +18,7 @@ const searchGenerator: Fig.Generator = {
   postProcess(out) {
     const searchResults: SearchResultData[] = JSON.parse(out).data;
 
-    return searchResults.map<Fig.Suggestion>((value) => {
+    return searchResults.map<Suggestion>((value) => {
       return {
         name: value.title,
         insertValue: value.id,
@@ -28,7 +28,7 @@ const searchGenerator: Fig.Generator = {
   },
 };
 
-const commands: Fig.Subcommand[] = [
+const commands: SubcommandSpec[] = [
   {
     name: "--list",
     description:
@@ -179,7 +179,7 @@ const commands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "new",
   description:
     "The dotnet new command creates a .NET project or other artifacts based on a template",
@@ -192,7 +192,7 @@ const completionSpec: Fig.Spec = {
       postProcess(out) {
         const lines = out.split("\n").slice(4);
 
-        return lines.map<Fig.Suggestion>((line) => {
+        return lines.map<Suggestion>((line) => {
           const argRegex = /(([a-zA-Z \.\[\]#,/][^ ]{1,})+)/g;
           const [templateName, shortName, language, tags] = line
             .match(argRegex)

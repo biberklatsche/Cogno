@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "wrk",
   description: "Wrk - a HTTP benchmarking tool",
   args: {

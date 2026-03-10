@@ -181,7 +181,7 @@ const tables = [
   "ycloud_instance_metadata",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "osqueryi",
   description: "Your OS as a high-performance relational database",
   options: [

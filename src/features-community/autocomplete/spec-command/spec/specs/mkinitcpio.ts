@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mkinitcpio",
   description: "Create an initial ramdisk environment",
   options: [

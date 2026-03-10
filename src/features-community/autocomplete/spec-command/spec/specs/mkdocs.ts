@@ -1,10 +1,10 @@
-const help = (name: string): Fig.Option => ({
+const help = (name: string): OptionSpec => ({
   name: ["-h", "--help"],
   description: `help for ${name}`,
 });
 
 // options common to 'mkdocs build' 'mkdocs gh-deploy' and 'mkdocs serve'
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["-f", "--config-file"],
     description: "Provide a specific MkDocs config",
@@ -34,7 +34,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: ["-q", "--quiet"],
     description: "Silence warnings",
@@ -45,7 +45,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mkdocs",
   description: "Project documentation with Markdown",
   subcommands: [

@@ -5,7 +5,7 @@ type ToolchainLocalGeneratorOptions = {
 // A generator of local toolchains including the short names
 const toolchainLocalGenertor: (
   args?: ToolchainLocalGeneratorOptions
-) => Fig.Generator = ({ excludeShort } = {}) => ({
+) => Generator = ({ excludeShort } = {}) => ({
   script: ["rustup", "toolchain", "list"],
   postProcess: (out) => {
     const toolchains = out
@@ -27,7 +27,7 @@ const toolchainLocalGenertor: (
   },
 });
 
-const toolchainAllGenerator: Fig.Generator = {
+const toolchainAllGenerator: Generator = {
   // Grab the latest versions of rust from github, try the gh cli first as it has a higher rate limit
   script: [
     "bash",
@@ -75,7 +75,7 @@ type TripleGeneratorOptions = {
   installed?: boolean;
 };
 
-const tripleGenerator: (args?: TripleGeneratorOptions) => Fig.Generator = ({
+const tripleGenerator: (args?: TripleGeneratorOptions) => Generator = ({
   installed,
 } = {}) => ({
   script: ["rustup", "target", "list"],
@@ -90,7 +90,7 @@ const tripleGenerator: (args?: TripleGeneratorOptions) => Fig.Generator = ({
   },
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rustup",
   description: "The Rust toolchain installer",
   subcommands: [
@@ -891,7 +891,7 @@ const completionSpec: Fig.Spec = {
       command: "rustup",
       args: ["toolchain", "list"],
     });
-    const toolchains: Fig.Option[] = toolchainOutput
+    const toolchains: OptionSpec[] = toolchainOutput
       .split("\n")
       .map((toolchain) => {
         return {

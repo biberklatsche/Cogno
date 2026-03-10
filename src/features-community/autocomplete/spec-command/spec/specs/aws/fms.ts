@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fms",
   description:
     "This is the Firewall Manager API Reference. This guide is for developers who need detailed information about the Firewall Manager API actions, data types, and errors. For detailed information about Firewall Manager features, see the Firewall Manager Developer Guide. Some API actions require explicit resource permissions. For information, see the developer guide topic Service roles for Firewall Manager",

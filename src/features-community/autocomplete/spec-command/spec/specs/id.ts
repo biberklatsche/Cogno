@@ -1,6 +1,6 @@
 const exclusiveOptions = ["-A", "-F", "-G", "-M", "-P", "-g", "-p", "-u"];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "id",
   description:
     "The id utility displays the user and group names and numeric IDs, of the calling process, to the standard output.  If the real and effective IDs are different, both are displayed, otherwise only the real ID is displayed. If a user (login name or user ID) is specified, the user and group IDs of that user are displayed.  In this case, the real and effective IDs are assumed to be the same",

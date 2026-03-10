@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloudcontrol",
   description:
     "For more information about Amazon Web Services Cloud Control API, see the Amazon Web Services Cloud Control API User Guide",

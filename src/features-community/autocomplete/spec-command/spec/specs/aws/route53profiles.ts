@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "route53profiles",
   description:
     "With Amazon Route 53 Profiles you can share Route 53 configurations with VPCs and AWS accounts",

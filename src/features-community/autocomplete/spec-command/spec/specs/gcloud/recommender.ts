@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "recommender",
   description: "Manage Cloud recommendations and recommendation rules",
   subcommands: [

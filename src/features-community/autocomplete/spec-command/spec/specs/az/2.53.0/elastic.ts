@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "elastic",
   description: "Manage Microsoft Elastic",
   subcommands: [

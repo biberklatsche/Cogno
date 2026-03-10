@@ -133,7 +133,7 @@ function filterNodes(
   });
 }
 
-function convertNodeToSuggestion(node: Node): Fig.Suggestion {
+function convertNodeToSuggestion(node: Node): Suggestion {
   return {
     name: node.name,
     description: getNodeTypeName(node),
@@ -142,7 +142,7 @@ function convertNodeToSuggestion(node: Node): Fig.Suggestion {
   };
 }
 
-export const generateDocs: Fig.Generator = {
+export const generateDocs: Generator = {
   // This can cause dependencies to download, needs a longer timeout
   scriptTimeout: 12000,
 
@@ -190,7 +190,7 @@ type VersionsJSON = {
   versions: string[];
 };
 
-export const generateVersions: Fig.Generator = {
+export const generateVersions: Generator = {
   script: ["curl", "-sL", "https://cdn.deno.land/deno/meta/versions.json"],
   cache: { ttl: 1000 * 60 * 60 * 24 }, // 24 hours, in milliseconds
   postProcess: (out) => {
@@ -210,7 +210,7 @@ export const generateVersions: Fig.Generator = {
 export function generatePreferredFilepaths(init: {
   names: string[];
   matchPriority?: number;
-}): Fig.Generator {
+}): Generator {
   // Since the set is an implementation detail and will be constructed from
   // an array at *some* point, doing it internally at least hides some ugly.
   const names = new Set(init.names);
@@ -611,7 +611,7 @@ function getConfigPath(tokens: string[]): string | null {
 
 async function getDenoConfig(
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction
+  executeShellCommand: ExecuteCommandFunction
 ): Promise<DenoConfigurationFile | null> {
   const configPath = getConfigPath(tokens);
   let jsonString: string;
@@ -640,7 +640,7 @@ async function getDenoConfig(
   }
 }
 
-export const generateTasks: Fig.Generator = {
+export const generateTasks: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
   },
@@ -665,7 +665,7 @@ export const generateTasks: Fig.Generator = {
 
 // --- Generate installed deno scripts
 
-export const generateInstalledDenoScripts: Fig.Generator = {
+export const generateInstalledDenoScripts: Generator = {
   script: [
     "bash",
     "-c",
@@ -701,7 +701,7 @@ const clipboardTests: ((str: string) => string | boolean)[] = [
   (str) => str.startsWith("npm:"),
 ];
 
-export const generateUrlScript: Fig.Generator = {
+export const generateUrlScript: Generator = {
   // There's no simple solution for pasting on Linux, it depends on
   // whether you use X11 or Wayland. For Wayland on some (most?) distros,
   // you would have to manually install wl-paste.

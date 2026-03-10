@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "restore",
   description:
     "The dotnet restore command uses NuGet to restore dependencies as well as project-specific tools that are specified in the project file",

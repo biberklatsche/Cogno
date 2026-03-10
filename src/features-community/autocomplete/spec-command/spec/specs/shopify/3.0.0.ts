@@ -1,4 +1,4 @@
-const completion: Fig.Subcommand = {
+const completion: SubcommandSpec = {
   name: "shopify",
   options: [
     {
@@ -978,7 +978,7 @@ const completion: Fig.Subcommand = {
   ],
 };
 
-const versions: Fig.VersionDiffMap = {};
+const versions: VersionDiffMap = {};
 
 versions["3.0.0"] = {};
 

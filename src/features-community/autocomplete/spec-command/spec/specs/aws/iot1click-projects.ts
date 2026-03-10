@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iot1click-projects",
   description: "The AWS IoT 1-Click Projects API Reference",
   subcommands: [

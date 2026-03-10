@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hb-service",
   description: "The hb-service command is provided by homebridge-config-ui-x",
   subcommands: [

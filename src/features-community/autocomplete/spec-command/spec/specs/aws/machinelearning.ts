@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "machinelearning",
   description:
     "Definition of the public APIs exposed by Amazon Machine Learning",

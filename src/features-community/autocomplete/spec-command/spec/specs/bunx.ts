@@ -1,6 +1,6 @@
 import { npxSuggestions } from "./npx";
 
-const bunx: Fig.Spec = {
+const bunx: CommandSpec = {
   name: "bunx",
   args: {
     name: "command",

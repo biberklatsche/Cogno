@@ -5,8 +5,8 @@ const HOUR_IN_MILLISECONDS = 3600000;
  *  Generators
  */
 const installedPluginNamesGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>
+): Generator => ({
   script: ["asdf", "plugin-list"],
   postProcess: (output) =>
     output.split("\n").map((pluginName) => ({
@@ -19,8 +19,8 @@ const installedPluginNamesGenerator = (
 });
 
 const allPluginNamesGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>
+): Generator => ({
   // If use `asdf plugin-list-all`, it will time out, so use `ls`.
   custom: async (_, executeCommand, generatorContext) => {
     const { stdout } = await executeCommand({
@@ -42,9 +42,9 @@ const allPluginNamesGenerator = (
 });
 
 const installedPluginVersionsGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>,
-  generatorOptions?: Partial<Fig.Generator>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>,
+  generatorOptions?: Partial<Generator>
+): Generator => ({
   script: (context) => {
     const pluginName = context[context.length - 2];
     return ["asdf", "list", pluginName];
@@ -64,9 +64,9 @@ const installedPluginVersionsGenerator = (
 });
 
 const allPluginVersionsGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>,
-  generatorOptions?: Partial<Fig.Generator>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>,
+  generatorOptions?: Partial<Generator>
+): Generator => ({
   script: (context) => {
     const pluginName = context[context.length - 2];
     return ["asdf", "list-all", pluginName];
@@ -89,8 +89,8 @@ const allPluginVersionsGenerator = (
 });
 
 const shimNamesGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>
+): Generator => ({
   // Use `ls` because there is no command to get shims in `asdf`.
   custom: async (_, executeCommand, generatorContext) => {
     const { stdout } = await executeCommand({
@@ -113,7 +113,7 @@ const shimNamesGenerator = (
 /*
  *  Reusable specs
  */
-const pluginAddSpec: Omit<Fig.Subcommand, "name"> = {
+const pluginAddSpec: Omit<SubcommandSpec, "name"> = {
   description:
     "Add a plugin from the plugin repo OR, add a Git repo as a plugin by specifying the name and repo url",
   args: [
@@ -128,11 +128,11 @@ const pluginAddSpec: Omit<Fig.Subcommand, "name"> = {
   ],
 };
 
-const pluginListAllSpec: Omit<Fig.Subcommand, "name"> = {
+const pluginListAllSpec: Omit<SubcommandSpec, "name"> = {
   description: "List plugins registered on asdf-plugins repository with URLs",
 };
 
-const pluginListSpec: Omit<Fig.Subcommand, "name"> = {
+const pluginListSpec: Omit<SubcommandSpec, "name"> = {
   description: "List installed plugins. Optionally show git urls and git-ref",
   options: [
     {
@@ -152,7 +152,7 @@ const pluginListSpec: Omit<Fig.Subcommand, "name"> = {
   ],
 };
 
-const pluginRemoveSpec: Omit<Fig.Subcommand, "name"> = {
+const pluginRemoveSpec: Omit<SubcommandSpec, "name"> = {
   description: "Remove plugin and package versions",
   args: {
     name: "name",
@@ -160,7 +160,7 @@ const pluginRemoveSpec: Omit<Fig.Subcommand, "name"> = {
   },
 };
 
-const pluginUpdateSpec: Omit<Fig.Subcommand, "name"> = {
+const pluginUpdateSpec: Omit<SubcommandSpec, "name"> = {
   description:
     "Update a plugin to latest commit on default branch or a particular git-ref",
   args: [
@@ -184,7 +184,7 @@ const pluginUpdateSpec: Omit<Fig.Subcommand, "name"> = {
   ],
 };
 
-const listAllSpec: Omit<Fig.Subcommand, "name"> = {
+const listAllSpec: Omit<SubcommandSpec, "name"> = {
   description: "List all available (remote) versions of a package",
   args: [
     {
@@ -199,7 +199,7 @@ const listAllSpec: Omit<Fig.Subcommand, "name"> = {
   ],
 };
 
-const shimVersionsSpec: Omit<Fig.Subcommand, "name"> = {
+const shimVersionsSpec: Omit<SubcommandSpec, "name"> = {
   description: "List for given command which plugins and versions provide it",
   args: {
     name: "command",
@@ -210,7 +210,7 @@ const shimVersionsSpec: Omit<Fig.Subcommand, "name"> = {
 /*
  *  Completion spec
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "asdf",
   description:
     "Extendable version manager with support for Ruby, Node.js, Elixir, Erlang & more",

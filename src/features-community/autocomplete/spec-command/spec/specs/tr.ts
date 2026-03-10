@@ -1,4 +1,4 @@
-const stringSuggestions: Fig.Suggestion[] = [
+const stringSuggestions: Suggestion[] = [
   {
     name: "a",
     description: "Any single character",
@@ -139,7 +139,7 @@ const stringSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tr",
   description: "Translate characters",
   parserDirectives: {

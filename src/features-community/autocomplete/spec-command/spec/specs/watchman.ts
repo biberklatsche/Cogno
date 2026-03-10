@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "watchman",
   description: "A file watching service",
   subcommands: [

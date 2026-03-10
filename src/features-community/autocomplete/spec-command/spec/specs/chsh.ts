@@ -1,5 +1,5 @@
 // TODO: this does not work on macos
-const shells: Fig.Generator = {
+const shells: Generator = {
   script: ["chsh", "-l"],
   postProcess: (output) => {
     if (output.startsWith("fatal:")) {
@@ -11,7 +11,7 @@ const shells: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "chsh",
   description: "Change your login shell",
   options: [

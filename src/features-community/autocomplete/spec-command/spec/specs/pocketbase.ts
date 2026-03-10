@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pocketbase",
   description: "PocketBase CLI",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "geo-maps",
   description:
     "Integrate high-quality base map data into your applications using MapLibre. Capabilities include:    Access to comprehensive base map data, allowing you to tailor the map display to your specific needs.   Multiple pre-designed map styles suited for various application types, such as navigation, logistics, or data visualization.   Generation of static map images for scenarios where interactive maps aren't suitable, such as:   Embedding in emails or documents   Displaying in low-bandwidth environments   Creating printable maps   Enhancing application performance by reducing client-side rendering",

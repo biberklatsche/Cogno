@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "tsi",
   description: "Manage Azure Time Series Insights",
   subcommands: [

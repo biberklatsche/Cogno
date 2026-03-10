@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "create-web3-frontend",
   description:
     "Quickly create a Next.js project with wagmi and TailwindCSS ready to go",

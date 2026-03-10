@@ -3,11 +3,11 @@
  * xc - Simple, Convenient, Markdown-based task runner.
  * v0.2.0
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xc",
   description: "List tasks from an xc-compatible markdown file",
   generateSpec: async (context, executeShellCommand) => {
-    const options: Fig.Option[] = [
+    const options: OptionSpec[] = [
       {
         name: ["-f", "-file"],
         args: {
@@ -35,7 +35,7 @@ const completionSpec: Fig.Spec = {
       // eslint-disable-next-line @withfig/fig-linter/no-empty-array-values
       args: [],
     });
-    const subcommands: Fig.Subcommand[] = stdout
+    const subcommands: SubcommandSpec[] = stdout
       .trim()
       .split("\n")
       .map((line) =>

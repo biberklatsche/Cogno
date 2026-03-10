@@ -2,7 +2,7 @@ import prismaSpec from "./prisma";
 
 const icon = "https://avatars.githubusercontent.com/u/45050444?s=200&v=4";
 
-const scripts: Fig.Generator = {
+const scripts: Generator = {
   script: [
     "bash",
     "-c",
@@ -28,7 +28,7 @@ const scripts: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "redwood",
   description:
     "Redwood provides a first-class CLI that helps you at every stage of development, from your first commit to your first deploy",
@@ -900,7 +900,7 @@ const completionSpec: Fig.Spec = {
       name: "prisma",
       icon: "https://raw.githubusercontent.com/prisma/docs/main/src/images/favicon-16x16.png",
       description: "Prisma commands",
-      subcommands: (prismaSpec as Fig.Subcommand).subcommands,
+      subcommands: (prismaSpec as SubcommandSpec).subcommands,
     },
   ],
   options: [

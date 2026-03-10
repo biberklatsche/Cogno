@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "amlfs",
   description: "Manage lustre file system",
   subcommands: [

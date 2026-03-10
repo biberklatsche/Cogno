@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lakeformation",
   description:
     "Lake Formation Defines the public endpoint for the Lake Formation service",

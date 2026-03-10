@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "cli-translator",
   description: "Translate ARM template or REST API to CLI scripts",
   subcommands: [

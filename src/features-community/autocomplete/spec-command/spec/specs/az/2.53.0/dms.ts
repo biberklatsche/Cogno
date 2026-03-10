@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "dms",
   description: "Manage Azure Data Migration Service (classic) instances",
   subcommands: [

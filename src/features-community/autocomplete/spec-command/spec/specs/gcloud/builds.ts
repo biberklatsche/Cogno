@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "builds",
   description: "Create and manage builds for Google Cloud Build",
   subcommands: [

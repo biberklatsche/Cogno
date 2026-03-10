@@ -7,7 +7,7 @@
 
 // Fig generator for runtime options. Manually coded from
 // https://docs.deta.sh/docs/cli/commands#deta-new
-const runtimes: Fig.Suggestion[] = [
+const runtimes: Suggestion[] = [
   "node12",
   "node14",
   "python3.7",
@@ -17,7 +17,7 @@ const runtimes: Fig.Suggestion[] = [
   description: "Runtime",
 }));
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "deta",
   description: "Deta CLI for managing Deta Micros",
   subcommands: [

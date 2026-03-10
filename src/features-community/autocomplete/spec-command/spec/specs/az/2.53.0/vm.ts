@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "vm",
   description: "Manage Linux or Windows virtual machines",
   subcommands: [

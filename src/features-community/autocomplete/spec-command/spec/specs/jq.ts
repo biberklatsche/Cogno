@@ -1,4 +1,4 @@
-const sharedOptions: Fig.Option[] = [
+const sharedOptions: OptionSpec[] = [
   {
     name: "--version",
     description: "Output the jq version and exit with zero",
@@ -174,7 +174,7 @@ const sharedOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "jq",
   description: "Command-line JSON processor",
   options: sharedOptions,

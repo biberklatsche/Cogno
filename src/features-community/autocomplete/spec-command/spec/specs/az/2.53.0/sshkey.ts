@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "sshkey",
   description: "Manage ssh public key with vm",
   subcommands: [

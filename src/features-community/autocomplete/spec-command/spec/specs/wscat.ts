@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "wscat",
   description: "Communicate over websocket",
   options: [

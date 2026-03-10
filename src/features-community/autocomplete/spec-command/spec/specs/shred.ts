@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "shred",
   description:
     "Overwrite a file to hide its contents, and optionally delete it",

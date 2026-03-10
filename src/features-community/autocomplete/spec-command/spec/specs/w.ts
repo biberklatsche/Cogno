@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "w",
   description: "Display who is logged in and what they are doing",
   parserDirectives: {

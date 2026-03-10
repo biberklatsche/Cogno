@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "minectl",
   description: "Create Minecraft Server on different cloud provider",
   subcommands: [

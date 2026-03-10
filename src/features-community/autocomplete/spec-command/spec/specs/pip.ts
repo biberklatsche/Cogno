@@ -1,4 +1,4 @@
-const listPackages: Fig.Generator = {
+const listPackages: Generator = {
   script: ["pip", "list"],
   postProcess: function (out) {
     const lines = out.split("\n");
@@ -14,7 +14,7 @@ const listPackages: Fig.Generator = {
 };
 
 // Accessible through ES imports - e.g. import { packageList } from "./pip"
-export const packageList: Array<Fig.Suggestion> = [
+export const packageList: Array<Suggestion> = [
   {
     name: "urllib3",
     icon: "📦",
@@ -16033,7 +16033,7 @@ export const packageList: Array<Fig.Suggestion> = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pip",
   description: "Python package manager",
   args: {},

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "runtime.sagemaker",
   description: "The Amazon SageMaker runtime API",
   subcommands: [

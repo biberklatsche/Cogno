@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "relay",
   description:
     "Manage Azure Relay Service namespaces, WCF relays, hybrid connections, and rules",

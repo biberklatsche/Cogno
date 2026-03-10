@@ -1,6 +1,6 @@
 import { npmScriptsGenerator, npmSearchGenerator } from "./npm";
 
-export const yarnScriptParserDirectives: Fig.Arg["parserDirectives"] = {
+export const yarnScriptParserDirectives: ArgSpec["parserDirectives"] = {
   alias: async (token, executeShellCommand) => {
     const npmPrefix = await executeShellCommand({
       command: "npm",
@@ -50,7 +50,7 @@ export const nodeClis = new Set([
 ]);
 
 // generate global package list from global package.json file
-const getGlobalPackagesGenerator: Fig.Generator = {
+const getGlobalPackagesGenerator: Generator = {
   custom: async (tokens, executeCommand, generatorContext) => {
     const { stdout: yarnGlobalDir } = await executeCommand({
       command: "yarn",
@@ -89,7 +89,7 @@ const getGlobalPackagesGenerator: Fig.Generator = {
 };
 
 // generate package list of direct and indirect dependencies
-const allDependenciesGenerator: Fig.Generator = {
+const allDependenciesGenerator: Generator = {
   script: ["yarn", "list", "--depth=0", "--json"],
   postProcess: (out) => {
     if (out.trim() == "") return [];
@@ -106,7 +106,7 @@ const allDependenciesGenerator: Fig.Generator = {
   },
 };
 
-const configList: Fig.Generator = {
+const configList: Generator = {
   script: ["yarn", "config", "list"],
   postProcess: function (out) {
     if (out.trim() == "") {
@@ -133,7 +133,7 @@ const configList: Fig.Generator = {
   },
 };
 
-export const dependenciesGenerator: Fig.Generator = {
+export const dependenciesGenerator: Generator = {
   script: [
     "bash",
     "-c",
@@ -172,7 +172,7 @@ export const dependenciesGenerator: Fig.Generator = {
   },
 };
 
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   { name: ["-s", "--silent"], description: "Skip Yarn console logs" },
   {
     name: "--no-default-rc",
@@ -349,7 +349,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-export const createCLIsGenerator: Fig.Generator = {
+export const createCLIsGenerator: Generator = {
   script: function (context) {
     if (context[context.length - 1] === "") return undefined;
     const searchTerm = "create-" + context[context.length - 1];
@@ -371,15 +371,15 @@ export const createCLIsGenerator: Fig.Generator = {
           ({
             name: item.package.name.substring(7),
             description: item.package.description,
-          }) as Fig.Suggestion
-      ) as Fig.Suggestion[];
+          }) as Suggestion
+      ) as Suggestion[];
     } catch (e) {
       return [];
     }
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "yarn",
   description: "Manage packages and run scripts",
   generateSpec: async (tokens, executeShellCommand) => {
@@ -404,7 +404,7 @@ const completionSpec: Fig.Spec = {
     return {
       name: "yarn",
       subcommands,
-    } as Fig.Spec;
+    } as CommandSpec;
   },
   args: {
     generators: npmScriptsGenerator,
@@ -1554,7 +1554,7 @@ const completionSpec: Fig.Spec = {
             : // in yarn v>=2.0.0, workspaces definitions are a list of JSON lines
               await getWorkspacesDefinitionsVOther();
 
-          const subcommands: Fig.Subcommand[] = workspacesDefinitions.map(
+          const subcommands: SubcommandSpec[] = workspacesDefinitions.map(
             ({ name, location }: { name: string; location: string }) => ({
               name,
               description: "Workspaces",

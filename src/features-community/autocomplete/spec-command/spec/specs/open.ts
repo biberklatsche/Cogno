@@ -1,4 +1,4 @@
-export const generateApps = (unquotedPath: string): Fig.Generator => ({
+export const generateApps = (unquotedPath: string): Generator => ({
   cache: { strategy: "stale-while-revalidate" },
   script: [
     "mdfind",
@@ -23,7 +23,7 @@ export const generateApps = (unquotedPath: string): Fig.Generator => ({
   },
 });
 
-export const generateBundleIds = (unquotedPath: string): Fig.Generator => ({
+export const generateBundleIds = (unquotedPath: string): Generator => ({
   scriptTimeout: 15000,
   cache: { strategy: "stale-while-revalidate" },
   script: [
@@ -39,7 +39,7 @@ export const generateBundleIds = (unquotedPath: string): Fig.Generator => ({
       })
     );
     ids.delete("(null)");
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     for (const [id, path] of ids.entries()) {
       suggestions.push({
         name: id,
@@ -51,7 +51,7 @@ export const generateBundleIds = (unquotedPath: string): Fig.Generator => ({
   },
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "open",
   description: "Open files, apps, or URLs using default application",
   options: [

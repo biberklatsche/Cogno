@@ -13,12 +13,12 @@ const FAVICONS = {
   qwik: "https://qwik.builder.io/favicons/favicon.svg",
 };
 
-const iconWrap = (name: string): Fig.Suggestion => {
+const iconWrap = (name: string): Suggestion => {
   const icon = FAVICONS[name] || FAVICONS[name.split("-")[0]];
   return { name, icon };
 };
 
-const spec: Fig.Spec = {
+const spec: CommandSpec = {
   name: "create-vite",
   description: "Create a new project powered by Vite",
   icon: "https://vitejs.dev/logo.svg",

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "connectedmachine",
   description: "Manage an Azure Arc-Enabled Server",
   subcommands: [

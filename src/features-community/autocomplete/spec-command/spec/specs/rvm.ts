@@ -64,7 +64,7 @@ const interpreters = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rvm",
   description: "Ruby version manager",
   options: [

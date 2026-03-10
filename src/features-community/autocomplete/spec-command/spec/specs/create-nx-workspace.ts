@@ -22,7 +22,7 @@ enum ICONS {
   vercel = "https://assets.vercel.com/image/upload/q_auto/front/favicon/vercel/favicon.ico",
 }
 
-const boolArg: (name: string, isOptional: boolean) => Fig.Arg = (
+const boolArg: (name: string, isOptional: boolean) => ArgSpec = (
   name,
   isOptional
 ) => ({
@@ -40,12 +40,12 @@ const boolArg: (name: string, isOptional: boolean) => Fig.Arg = (
   ],
 });
 
-const workspaceNameArg: Fig.Arg = {
+const workspaceNameArg: ArgSpec = {
   name: "workspace",
   description: "The name of the workspace",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "create-nx-workspace",
   description: "Create a new Nx workspace",
   options: [

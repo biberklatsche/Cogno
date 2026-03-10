@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kinesis-video-archived-media",
   description: null,
   subcommands: [

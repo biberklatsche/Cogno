@@ -1,30 +1,30 @@
-const installVersionsGenerator: Fig.Generator = {
+const installVersionsGenerator: Generator = {
   script: ["rbenv", "install", "-L"],
   postProcess: function (out) {
     return out.split("\n").map((name) => ({ name }));
   },
 };
 
-const installedVersionsGenerator: Fig.Generator = {
+const installedVersionsGenerator: Generator = {
   script: ["rbenv", "versions", "--bare"],
   postProcess: function (out) {
     return out.split("\n").map((name) => ({ name }));
   },
 };
 
-const versionArg = (generator?: Fig.Generator, required = false): Fig.Arg => ({
+const versionArg = (generator?: Generator, required = false): ArgSpec => ({
   name: "version",
   isOptional: !required,
   generators: generator,
 });
 
-const versionOptions: Fig.Option[] = [
+const versionOptions: OptionSpec[] = [
   {
     name: "--unset",
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rbenv",
   description:
     "Pick a Ruby version for your application and guarantee that your development environment matches production",

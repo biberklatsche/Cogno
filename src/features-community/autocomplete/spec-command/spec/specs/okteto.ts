@@ -1,4 +1,4 @@
-const contexts: Fig.Generator = {
+const contexts: Generator = {
   script: ["okteto", "context", "list"],
   cache: {
     ttl: 1000 * 60 * 30, // 30 minutes
@@ -18,7 +18,7 @@ const contexts: Fig.Generator = {
   },
 };
 
-const namespaces: Fig.Generator = {
+const namespaces: Generator = {
   script: ["okteto", "namespace", "list"],
   cache: {
     ttl: 1000 * 60 * 30, // 30 minutes
@@ -38,7 +38,7 @@ const namespaces: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "okteto",
   icon: "fig://icon?type=okteto",
   description: "Okteto - Remote Development Environments powered by Kubernetes",

@@ -1,4 +1,4 @@
-const destinationGenerator: Fig.Generator = {
+const destinationGenerator: Generator = {
   script: ["bin/kamal", "destinations", "--json"],
   cache: {
     cacheByDirectory: true,
@@ -17,14 +17,14 @@ const destinationGenerator: Fig.Generator = {
   },
 };
 
-const deployOptions: Fig.Option[] = [
+const deployOptions: OptionSpec[] = [
   {
     name: ["-P", "--skip_push"],
     description: "Skip image build and push",
   },
 ];
 
-const logOptions: Fig.Option[] = [
+const logOptions: OptionSpec[] = [
   {
     name: ["--since", "-s"],
     description:
@@ -46,7 +46,7 @@ const logOptions: Fig.Option[] = [
   },
 ];
 
-const baseOptions: Fig.Option[] = [
+const baseOptions: OptionSpec[] = [
   { name: ["--verbose", "-v"], description: "Detailed logging" },
   { name: ["--quiet", "-q"], description: "Minimal logging" },
   {
@@ -91,7 +91,7 @@ const baseOptions: Fig.Option[] = [
 
 // ------------------------ COMMANDS ------------------------
 
-const accessorySubcommand: Fig.Subcommand = {
+const accessorySubcommand: SubcommandSpec = {
   name: "accessory",
   description: "Manage accessories (db/redis/search)",
   subcommands: [
@@ -242,7 +242,7 @@ const accessorySubcommand: Fig.Subcommand = {
   ],
 };
 
-const appSubcommand: Fig.Subcommand = {
+const appSubcommand: SubcommandSpec = {
   name: "app",
   description: "Manage application",
   subcommands: [
@@ -315,7 +315,7 @@ const appSubcommand: Fig.Subcommand = {
   ],
 };
 
-const traefikCommand: Fig.Subcommand = {
+const traefikCommand: SubcommandSpec = {
   name: "traefik",
   description: "Manage Traefik load balancer",
   icon: "🚦",
@@ -385,7 +385,7 @@ const traefikCommand: Fig.Subcommand = {
   ],
 };
 
-const lockSubcommands: Fig.Subcommand = {
+const lockSubcommands: SubcommandSpec = {
   name: "lock",
   description: "Manage the deploy lock",
   icon: "🔒",
@@ -414,7 +414,7 @@ const lockSubcommands: Fig.Subcommand = {
   ],
 };
 
-const registrySubcommand: Fig.Subcommand = {
+const registrySubcommand: SubcommandSpec = {
   name: "registry",
   description: "Login and -out of the image registry",
   icon: "📦",
@@ -424,7 +424,7 @@ const registrySubcommand: Fig.Subcommand = {
   ],
 };
 
-const pruneSubcommand: Fig.Subcommand = {
+const pruneSubcommand: SubcommandSpec = {
   name: "prune",
   icon: "🧹",
   description: "Prune old application images and containers",
@@ -438,7 +438,7 @@ const pruneSubcommand: Fig.Subcommand = {
   ],
 };
 
-const buildSubcommand: Fig.Subcommand = {
+const buildSubcommand: SubcommandSpec = {
   name: "build",
   description: "Build application image",
   icon: "🏗️",
@@ -471,7 +471,7 @@ const buildSubcommand: Fig.Subcommand = {
   ],
 };
 
-const rootCommands: Fig.Subcommand[] = [
+const rootCommands: SubcommandSpec[] = [
   {
     name: "setup",
     icon: "🛠️",
@@ -592,7 +592,7 @@ const rootCommands: Fig.Subcommand[] = [
   traefikCommand,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kamal",
   description: "Deploy web apps anywhere",
   generateSpec: async (context, executeShellCommand) => {

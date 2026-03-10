@@ -1,4 +1,4 @@
-const ClusterGenerator: Fig.Generator = {
+const ClusterGenerator: Generator = {
   script: ["k3d", "cluster", "list", "--no-headers"],
   postProcess: (out) => {
     return out.split("\n").map((line) => {
@@ -13,7 +13,7 @@ const ClusterGenerator: Fig.Generator = {
 };
 
 // List of SHELL completions
-const ShellCompletions: Fig.Suggestion[] = [
+const ShellCompletions: Suggestion[] = [
   {
     name: "bash",
     description: "Bash shell",
@@ -33,7 +33,7 @@ const ShellCompletions: Fig.Suggestion[] = [
 ];
 
 // Docker Image Generator
-const DockerImageGenerator: Fig.Generator = {
+const DockerImageGenerator: Generator = {
   script: ["docker", "image", "ls", "--format", "{{.Repository}}:{{.Tag}}"],
   postProcess: (out) => {
     return out.split("\n").map((image) => ({
@@ -45,7 +45,7 @@ const DockerImageGenerator: Fig.Generator = {
 };
 
 // Node Generator
-const NodeGenerator: Fig.Generator = {
+const NodeGenerator: Generator = {
   script: ["k3d", "node", "list", "--no-headers"],
   postProcess: (out) => {
     return out.split("\n").map((line) => {
@@ -60,7 +60,7 @@ const NodeGenerator: Fig.Generator = {
 };
 
 // Registry Generator
-const RegistryGenerator: Fig.Generator = {
+const RegistryGenerator: Generator = {
   script: ["k3d", "registry", "list", "--no-headers"],
   postProcess: (out) => {
     return out.split("\n").map((line) => {
@@ -73,7 +73,7 @@ const RegistryGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "k3d",
   description: "K3d is a lightweight wrapper to run k3s in Docker",
   subcommands: [

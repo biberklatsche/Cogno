@@ -1,11 +1,11 @@
-const profilesGenerator: Fig.Generator = {
+const profilesGenerator: Generator = {
   script: ["aws-vault", "list", "--profiles"],
   postProcess(out) {
     return out.split("\n").map((name) => ({ name }));
   },
 };
 
-const subcommands: Fig.Subcommand[] = [
+const subcommands: SubcommandSpec[] = [
   {
     name: "add",
     description: "Add credentials to the secure keystore",
@@ -136,7 +136,7 @@ const subcommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "aws-vault",
   description:
     "A vault for securely storing and accessing AWS credentials in development environments",

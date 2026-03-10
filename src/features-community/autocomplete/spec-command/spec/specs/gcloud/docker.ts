@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "docker",
   description:
     "*(DEPRECATED)*  Enable Docker CLI access to Google Container Registry",

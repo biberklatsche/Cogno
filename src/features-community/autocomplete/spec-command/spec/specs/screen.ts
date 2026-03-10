@@ -1,4 +1,4 @@
-const identifierArg: Fig.Arg = {
+const identifierArg: ArgSpec = {
   name: "identifier",
   suggestions: [
     "pid",
@@ -10,7 +10,7 @@ const identifierArg: Fig.Arg = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "screen",
   description: "Screen manager with VT100/ANSI terminal emulation",
   parserDirectives: {

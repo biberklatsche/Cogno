@@ -46,7 +46,7 @@ const generateLanguages: KeyValueSuggestions = async (
 };
 
 /** The formats that SCC can output. */
-const suggestOutputFormats: Fig.Suggestion[] = [
+const suggestOutputFormats: Suggestion[] = [
   { name: "tabular", icon: "fig://icon?type=string" },
   { name: "wide", icon: "fig://icon?type=string" },
   { name: "json", icon: "fig://icon?type=string" },
@@ -80,7 +80,7 @@ function getDriveKB(year: number): number {
 /** The current size of the Drivemaker's Kilobyte */
 const driveKB = getDriveKB(new Date().getFullYear());
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "scc",
   description:
     "Sloc, Cloc and Code. Count lines of code in a directory with complexity estimation",
@@ -191,7 +191,7 @@ const completionSpec: Fig.Spec = {
               // eslint-disable-next-line @withfig/fig-linter/no-useless-arrays
               args: ["-lAF1"],
             });
-            const suggestions: Fig.Suggestion[] = stdout
+            const suggestions: Suggestion[] = stdout
               .split("\n")
               .map((path) => ({
                 name: path.slice(path.lastIndexOf("/") + 1),

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vela",
   description:
     "A Highly Extensible Platform Engine based on Kubernetes and Open Application Model",

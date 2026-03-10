@@ -1,4 +1,4 @@
-const icatCommand: Fig.Subcommand = {
+const icatCommand: SubcommandSpec = {
   name: "icat",
   description: "A cat like utility to display images in the terminal",
   options: [
@@ -100,7 +100,7 @@ const icatCommand: Fig.Subcommand = {
   },
 };
 
-const kittenCommands: Fig.Subcommand[] = [
+const kittenCommands: SubcommandSpec[] = [
   icatCommand,
   {
     name: "diff",
@@ -137,7 +137,7 @@ const kittenCommands: Fig.Subcommand[] = [
   { name: "mouse_demo" },
 ];
 
-const plusCommands: Fig.Subcommand[] = [
+const plusCommands: SubcommandSpec[] = [
   icatCommand,
   {
     name: "list-fonts",
@@ -169,7 +169,7 @@ const plusCommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kitty",
   options: [
     {

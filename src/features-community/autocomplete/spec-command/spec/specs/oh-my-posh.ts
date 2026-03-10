@@ -1,4 +1,4 @@
-const config: Fig.Option = {
+const config: OptionSpec = {
   name: ["--config", "-c"],
   description: "The config file to use",
   isPersistent: true,
@@ -9,7 +9,7 @@ const config: Fig.Option = {
   },
 };
 
-const format: Fig.Option = {
+const format: OptionSpec = {
   name: ["--format", "-f"],
   description: "The file format to use",
   args: {
@@ -19,7 +19,7 @@ const format: Fig.Option = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "oh-my-posh",
   description: "",
   subcommands: [

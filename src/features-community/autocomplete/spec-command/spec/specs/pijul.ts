@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pijul",
   description:
     "A distributed version control system that is at the same time theoretically sound, fast and easy to learn and use",

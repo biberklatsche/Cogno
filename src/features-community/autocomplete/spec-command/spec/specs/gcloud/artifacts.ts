@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "artifacts",
   description: "Manage Artifact Registry resources",
   subcommands: [

@@ -6,7 +6,7 @@ const formatTsuruOutput = (output: string) => {
     .slice(1);
 };
 
-const tsuruGenerators: Record<string, Fig.Generator> = {
+const tsuruGenerators: Record<string, Generator> = {
   plans: {
     script: ["tsuru", "plan", "list"],
     postProcess: function (out) {
@@ -60,7 +60,7 @@ const tsuruGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const tsuruOptions: Record<string, Fig.Option> = {
+const tsuruOptions: Record<string, OptionSpec> = {
   app: {
     name: ["-a", "--app"],
     description: "App name",
@@ -112,7 +112,7 @@ const tsuruOptions: Record<string, Fig.Option> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tsuru",
   description:
     "Tsuru is the command line utility used by application developers, that will allow users to create, list, bind and manage apps",

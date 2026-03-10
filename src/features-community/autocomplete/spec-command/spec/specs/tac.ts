@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tac",
   description: "Concatenate and print files in reverse",
   parserDirectives: {

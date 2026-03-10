@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "serial-console",
   description:
     "Connect to the Serial Console of a Linux/Windows Virtual Machine or VMSS Instance",

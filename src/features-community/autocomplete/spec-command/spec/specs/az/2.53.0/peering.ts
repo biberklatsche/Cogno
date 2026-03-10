@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "peering",
   description: "Manage peering",
   subcommands: [

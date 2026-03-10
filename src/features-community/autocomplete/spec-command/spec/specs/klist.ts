@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "klist",
   description:
     "Reads and displays the current tickets in the credential cache (also known as the ticket file)",

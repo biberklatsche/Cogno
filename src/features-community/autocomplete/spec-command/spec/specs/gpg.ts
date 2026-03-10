@@ -1,4 +1,4 @@
-const getCipherAlgorithms: Fig.Generator = {
+const getCipherAlgorithms: Generator = {
   script: ["gpg", "--version"],
   postProcess: (out, context) => {
     // Get the substring 2of cyphers, remove whitespace and split by commas
@@ -14,7 +14,7 @@ const getCipherAlgorithms: Fig.Generator = {
   },
 };
 
-const getDigestAlgorithms: Fig.Generator = {
+const getDigestAlgorithms: Generator = {
   script: ["gpg", "--version"],
   postProcess: (out, context) => {
     // Get the substring of digests, remove whitespace and split by commas
@@ -30,7 +30,7 @@ const getDigestAlgorithms: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gpg",
   description: "Encryption and signing tool",
   options: [

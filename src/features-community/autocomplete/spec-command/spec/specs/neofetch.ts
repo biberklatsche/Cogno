@@ -22,28 +22,28 @@ const infoLines = {
   ],
 };
 
-const onOff: Fig.Arg = {
+const onOff: ArgSpec = {
   name: "on/off",
   suggestions: ["on", "off"],
 };
 
-const onOffTiny: Fig.Arg = {
+const onOffTiny: ArgSpec = {
   name: "on/off",
   suggestions: ["on", "off", "tiny"],
 };
 
 const anyNum = "[0-9]+";
 
-const num: Fig.Arg = {
+const num: ArgSpec = {
   name: anyNum,
 };
 
-const bar: Fig.Arg = {
+const bar: ArgSpec = {
   name: "mode",
   suggestions: ["bar", "infobar", "barinfo", "off"],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "neofetch",
   description: "The most complete system information CLI tool",
   args: { ...infoLines, isVariadic: true },

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "swagger-typescript-api",
   description: "Generate api via swagger scheme",
   icon: "https://static1.smartbear.co/swagger/media/assets/swagger_fav.png",

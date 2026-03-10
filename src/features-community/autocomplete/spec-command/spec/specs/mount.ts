@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mount",
   description: "Mount disks and manage subtrees",
   args: [

@@ -15,7 +15,7 @@ const ICONS = {
   yarn: "fig://icon?type=yarn",
 };
 
-const boolArg: Fig.Arg = {
+const boolArg: ArgSpec = {
   name: "boolean",
   isOptional: true,
   suggestions: [
@@ -30,7 +30,7 @@ const boolArg: Fig.Arg = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "create-react-app",
   description: "Creates a new React project",
   args: {

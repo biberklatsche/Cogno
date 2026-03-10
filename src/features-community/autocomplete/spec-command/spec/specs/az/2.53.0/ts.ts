@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "ts",
   description: "Manage template specs at subscription or resource group scope",
   subcommands: [

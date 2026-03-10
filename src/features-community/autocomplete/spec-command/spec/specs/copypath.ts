@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "copypath",
   description:
     "Oh-My-Zsh plugin that copies the path of given directory or file to the clipboard",

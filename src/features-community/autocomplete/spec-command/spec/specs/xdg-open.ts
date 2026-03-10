@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xdg-open",
   description: "Opens a file or URL in the user's preferred application",
   args: {

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "access-context-manager",
   description: "Manage Access Context Manager resources",
   subcommands: [

@@ -1,4 +1,4 @@
-const programGenerator: Fig.Generator = {
+const programGenerator: Generator = {
   script: [
     "bash",
     "-c",
@@ -15,7 +15,7 @@ const programGenerator: Fig.Generator = {
         type: "arg",
       })),
 };
-const generateAllShims: Fig.Generator = {
+const generateAllShims: Generator = {
   script: ["jenv", "shims", "--short"],
   postProcess: function (out) {
     return out
@@ -28,7 +28,7 @@ const generateAllShims: Fig.Generator = {
       }));
   },
 };
-const generateAllCommands: Fig.Generator = {
+const generateAllCommands: Generator = {
   script: ["jenv", "commands"],
   postProcess: function (out) {
     return out
@@ -43,7 +43,7 @@ const generateAllCommands: Fig.Generator = {
       }));
   },
 };
-const generateAllPlugins: Fig.Generator = {
+const generateAllPlugins: Generator = {
   script: ["jenv", "plugins"],
   postProcess: function (out) {
     return out
@@ -57,7 +57,7 @@ const generateAllPlugins: Fig.Generator = {
       }));
   },
 };
-const generateJEnvVersions: Fig.Generator = {
+const generateJEnvVersions: Generator = {
   script: ["jenv", "versions", "--bare"],
   postProcess: function (out) {
     return out
@@ -72,7 +72,7 @@ const generateJEnvVersions: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "jenv",
   description: "Manage your Java environment",
   subcommands: [

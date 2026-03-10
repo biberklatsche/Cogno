@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "where",
   description: "For each name, indicate how it should be interpreted",
   args: {

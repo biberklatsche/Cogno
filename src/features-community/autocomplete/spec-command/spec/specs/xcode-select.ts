@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xcode-select",
   description: "Active developer directory for Xcode tools",
   options: [

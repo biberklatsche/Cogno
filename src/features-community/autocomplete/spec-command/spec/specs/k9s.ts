@@ -1,4 +1,4 @@
-const namespaces: Fig.Generator = {
+const namespaces: Generator = {
   script: ["kubectl", "get", "namespaces"],
   postProcess: (out) => {
     return out
@@ -13,7 +13,7 @@ const namespaces: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "k9s",
   description:
     "K9s is a terminal based UI to interact with your Kubernetes clusters",

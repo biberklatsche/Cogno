@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ganache-cli",
   description: "Fast Ethereum RPC client",
   subcommands: [

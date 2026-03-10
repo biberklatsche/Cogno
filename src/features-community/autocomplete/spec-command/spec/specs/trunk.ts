@@ -1,4 +1,4 @@
-const checkAndFormatSharedOptions: Fig.Option[] = [
+const checkAndFormatSharedOptions: OptionSpec[] = [
   {
     name: ["-a", "--all"],
     description: "Run on all files instead of only changed files",
@@ -74,7 +74,7 @@ const checkAndFormatSharedOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "trunk",
   description:
     "An all-in-one tool for scalably checking, formatting, and monitoring code",

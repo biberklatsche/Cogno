@@ -1,6 +1,6 @@
 import { getAppGenerator } from "./shared";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "heroku",
   description:
     "Makes it easy to create and manage your Heroku apps directly from the terminal",
@@ -8460,7 +8460,7 @@ const completionSpec: Fig.Spec = {
   ],
 };
 
-const versions: Fig.VersionDiffMap = {};
+const versions: VersionDiffMap = {};
 
 versions["8.11.1"] = {
   subcommands: [

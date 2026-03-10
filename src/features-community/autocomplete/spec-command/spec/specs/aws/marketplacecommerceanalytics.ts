@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "marketplacecommerceanalytics",
   description: "Provides AWS Marketplace business intelligence data on-demand",
   subcommands: [

@@ -1,13 +1,13 @@
-const modeArg: Fig.Arg = {
+const modeArg: ArgSpec = {
   name: "mode",
   suggestions: ["desktop", "server"],
 };
 
-const frontendArg: Fig.Arg = {
+const frontendArg: ArgSpec = {
   name: "frontend",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "do-release-upgrade",
   description: "Upgrade Ubuntu to latest release",
   options: [

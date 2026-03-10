@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["-d", "--verbose"],
     description:
@@ -23,7 +23,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const platformGenerator: Fig.Generator = {
+const platformGenerator: Generator = {
   script: ["cat", "package.json"],
   postProcess: function (out: string) {
     const suggestions = [];
@@ -50,7 +50,7 @@ const platformGenerator: Fig.Generator = {
   },
 };
 
-const pluginGenerator: Fig.Generator = {
+const pluginGenerator: Generator = {
   script: ["cordova", "plugin", "list"],
   postProcess: (out: string) =>
     out.split("\n").map((pluginName) => ({
@@ -59,7 +59,7 @@ const pluginGenerator: Fig.Generator = {
     })),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cordova",
   description: "Manage your Cordova application",
   subcommands: [

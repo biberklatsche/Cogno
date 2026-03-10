@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sudo",
   description: "Execute a command as the superuser or another user",
   options: [

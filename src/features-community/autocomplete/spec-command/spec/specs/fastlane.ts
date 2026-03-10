@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fastlane",
   description:
     "Fastlane is an open source platform aimed at simplifying Android and iOS deployment",

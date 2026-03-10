@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hardhat",
   description: "Ethereum development environment",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bedrock-data-automation",
   description: "Amazon Bedrock Keystone Build",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "asar",
   description: "A simple extensive tar-like archive format with indexing",
   subcommands: [

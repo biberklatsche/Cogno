@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "logout",
   description: "Log out to remove access to Azure subscriptions",
   options: [

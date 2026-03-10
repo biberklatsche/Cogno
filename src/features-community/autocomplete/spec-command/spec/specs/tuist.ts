@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tuist",
   description:
     "Generate, build and test your Xcode projects. For more info please see https://docs.tuist.io/",

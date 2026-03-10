@@ -1,6 +1,6 @@
 import { keyValueList } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "airflow",
   description: "Subcommand",
   subcommands: [

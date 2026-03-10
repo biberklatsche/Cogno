@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "crontab",
   description: "Maintain crontab file for individual users",
   options: [

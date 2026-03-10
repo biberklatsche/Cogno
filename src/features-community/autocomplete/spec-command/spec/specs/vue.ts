@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vue",
   description: "Vue cli tools",
   subcommands: [

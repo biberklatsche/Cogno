@@ -1,5 +1,5 @@
 // https://github.com/psf/black
-const blackVersions: Fig.Generator = {
+const blackVersions: Generator = {
   script: ["gh", "release", "list", "--repo", "psf/black"],
   cache: {
     ttl: 1000 * 60 * 60 * 24 * 2, // 2 days
@@ -15,7 +15,7 @@ const blackVersions: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "black",
   description: "Python code formatter",
   args: {

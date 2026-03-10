@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "devops",
   description:
     "Manage Azure DevOps organization level operations.\n\n\t\tRelated Groups\naz pipelines: Manage Azure Pipelines\naz boards: Manage Azure Boards\naz repos: Manage Azure Repos\naz artifacts: Manage Azure Artifacts",

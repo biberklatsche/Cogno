@@ -3,7 +3,7 @@ import { filepaths } from "@fig/autocomplete-generators";
 const DOTNET_ICON =
   "https://upload.wikimedia.org/wikipedia/commons/7/7d/Microsoft_.NET_logo.svg";
 
-const commands: Fig.Subcommand[] = [
+const commands: SubcommandSpec[] = [
   {
     name: "new",
     loadSpec: "dotnet/dotnet-new",
@@ -101,7 +101,7 @@ const commands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dotnet",
   description: "The dotnet cli",
   icon: DOTNET_ICON,
@@ -210,7 +210,7 @@ const completionSpec: Fig.Spec = {
   async generateSpec(_, executeShellCommand) {
     const argRegex = /(([a-zA-Z \.\[\]#,/][^ ]{1,})+)/g;
 
-    const subcommands: Fig.Subcommand[] = [];
+    const subcommands: SubcommandSpec[] = [];
     const { stdout } = await executeShellCommand({
       command: "dotnet",
       args: ["tool", "list", "--global"],
@@ -223,7 +223,7 @@ const completionSpec: Fig.Spec = {
         .match(argRegex)
         .map((match) => match.trim());
 
-      const commands = command.split(",").map<Fig.Subcommand>((cmd) => {
+      const commands = command.split(",").map<SubcommandSpec>((cmd) => {
         const value = cmd.replace("dotnet-", "");
 
         return {

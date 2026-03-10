@@ -1,4 +1,4 @@
-const youtubeDlGenerators: Record<string, Fig.Generator> = {
+const youtubeDlGenerators: Record<string, Generator> = {
   listVideos: {
     script: (context) => [
       "youtube-dl",
@@ -47,7 +47,7 @@ const youtubeDlGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "youtube-dl",
   description: "Download videos from YouTube",
   args: {

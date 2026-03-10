@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "jest",
   description:
     "A delightful JavaScript Testing Framework with a focus on simplicity",

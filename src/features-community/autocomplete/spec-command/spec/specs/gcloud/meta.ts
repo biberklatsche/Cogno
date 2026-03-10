@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "meta",
   description: "Cloud meta introspection commands",
   subcommands: [

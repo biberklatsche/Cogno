@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "network",
   description: "Manage Azure Network resources",
   subcommands: [

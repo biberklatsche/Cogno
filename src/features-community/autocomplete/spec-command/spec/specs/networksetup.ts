@@ -1,7 +1,7 @@
-const hardwareports: Fig.Generator = {
+const hardwareports: Generator = {
   script: ["networksetup", "-listallhardwareports"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const re = /^Hardware Port: (.*?)\n.*?Device: (.*?)$/gms;
     for (const match of out.matchAll(re)) {
       suggestions.push({
@@ -13,10 +13,10 @@ const hardwareports: Fig.Generator = {
   },
 };
 
-const networkservices: Fig.Generator = {
+const networkservices: Generator = {
   script: ["networksetup", "-listallnetworkservices"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const lines = out.split("\n");
 
     for (const line of lines) {
@@ -39,10 +39,10 @@ const networkservices: Fig.Generator = {
   },
 };
 
-const wirelessInterfaces: Fig.Generator = {
+const wirelessInterfaces: Generator = {
   script: ["networksetup", "-listallhardwareports"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const re = /^Hardware Port: (.*?)\n.*?Device: (.*?)$/gms;
     for (const match of out.matchAll(re)) {
       if (match[1] === "Wi-Fi") {
@@ -56,10 +56,10 @@ const wirelessInterfaces: Fig.Generator = {
   },
 };
 
-const interfaces: Fig.Generator = {
+const interfaces: Generator = {
   script: ["networksetup", "-listallhardwareports"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const re = /^Hardware Port: (.*?)\n.*?Device: (.*?)$/gms;
     for (const match of out.matchAll(re)) {
       suggestions.push({
@@ -71,10 +71,10 @@ const interfaces: Fig.Generator = {
   },
 };
 
-const bonds: Fig.Generator = {
+const bonds: Generator = {
   script: ["networksetup", "-listBonds"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const re = /^interface name: (.*?)\n.*?user-defined-name: (.*?)$/gms;
     for (const match of out.matchAll(re)) {
       suggestions.push({ name: match[2], description: "Bonds" });
@@ -83,10 +83,10 @@ const bonds: Fig.Generator = {
   },
 };
 
-const pppoeServices: Fig.Generator = {
+const pppoeServices: Generator = {
   script: ["networksetup", "-listpppoeservices"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const lines = out.trim().split("\n");
     for (const line of lines) {
       if (line.trim()) {
@@ -97,10 +97,10 @@ const pppoeServices: Fig.Generator = {
   },
 };
 
-const locations: Fig.Generator = {
+const locations: Generator = {
   script: ["networksetup", "-listlocations"],
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     const lines = out.trim().split("\n");
     for (const line of lines) {
       if (line.trim()) {
@@ -114,7 +114,7 @@ const locations: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "networksetup",
   description: "Configuration tool for network settings in System Preferences",
   subcommands: [

@@ -1,4 +1,4 @@
-export const existingUsersandGroups: Fig.Generator = {
+export const existingUsersandGroups: Generator = {
   custom: async function (tokens, executeShellCommand) {
     const colonAdded = tokens.find((token) => token.includes(":"));
     const nFlagUsed = tokens.find((token) => /^-.*n.*/.test(token));
@@ -50,7 +50,7 @@ export const existingUsersandGroups: Fig.Generator = {
   getQueryTerm: ":",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "chown",
   description:
     "Change the user and/or group ownership of a given file, directory, or symbolic link",

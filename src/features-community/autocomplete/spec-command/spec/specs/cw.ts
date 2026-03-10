@@ -1,7 +1,7 @@
-export const themesGenerator: Fig.Generator = {
+export const themesGenerator: Generator = {
   script: ["cw", "theme", "--list"],
   postProcess: (output) => {
-    const builtinThemes: Fig.Suggestion[] = [
+    const builtinThemes: Suggestion[] = [
       {
         name: "system",
         icon: "💻",
@@ -25,13 +25,13 @@ export const themesGenerator: Fig.Generator = {
           ({
             name,
             icon: "🎨",
-          }) as Fig.Suggestion
+          }) as Suggestion
       )
       .concat(builtinThemes);
   },
 };
 
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "cw",
   description: "Top level cli commands",
   subcommands: [
@@ -425,7 +425,7 @@ const completion: Fig.Spec = {
         },
         {
           name: "build",
-          description: "Switch to another branch of a Fig.js app",
+          description: "Switch to another branch of a js app",
           options: [
             {
               name: ["-h", "--help"],
@@ -786,7 +786,7 @@ const completion: Fig.Spec = {
             },
             {
               name: "build",
-              description: "Switch to another branch of a Fig.js app",
+              description: "Switch to another branch of a js app",
             },
             {
               name: "autocomplete-window",
@@ -3070,7 +3070,7 @@ const completion: Fig.Spec = {
             },
             {
               name: "build",
-              description: "Switch to another branch of a Fig.js app",
+              description: "Switch to another branch of a js app",
             },
             {
               name: "autocomplete-window",

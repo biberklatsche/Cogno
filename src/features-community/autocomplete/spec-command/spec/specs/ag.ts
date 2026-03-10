@@ -1,7 +1,7 @@
 // To learn more about Fig's autocomplete standard visit: https://fig.io/docs/concepts/cli-skeleton
 
 // The below is a dummy example for git. Make sure to change the file name!
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ag",
   description:
     "Recursively search for PATTERN in PATH. Like grep or ack, but faster",

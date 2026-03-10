@@ -12,7 +12,7 @@ const skipTagDescription = [
   'default "true" when CI=true, "false" otherwise',
 ].join("\n");
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cliff-jumper",
   description:
     "A small CLI tool to create a semantic release and git-cliff powered Changelog",

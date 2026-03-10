@@ -1,4 +1,4 @@
-const sourceDestArgs: Fig.Arg[] = [
+const sourceDestArgs: ArgSpec[] = [
   {
     name: "source_file",
     template: ["filepaths", "folders"],
@@ -13,7 +13,7 @@ const sourceDestArgs: Fig.Arg[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ln",
   description: "Create (default hard) symbolic links to files",
   args: sourceDestArgs,

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hx",
   description: "A post-modern text editor",
   parserDirectives: {

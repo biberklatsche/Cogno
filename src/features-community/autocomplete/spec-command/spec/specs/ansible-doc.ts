@@ -1,4 +1,4 @@
-const allPluginsGenerator: Fig.Generator = {
+const allPluginsGenerator: Generator = {
   script: ["ansible-doc", "--list", "--json"],
   postProcess: function (output) {
     const plugins = JSON.parse(output);
@@ -9,7 +9,7 @@ const allPluginsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ansible-doc",
   description: "Displays information on modules installed in Ansible libraries",
   options: [

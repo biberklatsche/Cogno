@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "aro",
   description: "Manage Azure Red Hat OpenShift clusters",
   subcommands: [

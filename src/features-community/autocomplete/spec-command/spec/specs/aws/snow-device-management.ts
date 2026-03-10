@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "snow-device-management",
   description: "Amazon Web Services Snow Device Management documentation",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "whereis",
   description: "Locate the binary, source, and manual page files for a command",
   options: [

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "sapmonitor",
   description: "(PREVIEW) Manage Azure SAP Monitor",
   subcommands: [

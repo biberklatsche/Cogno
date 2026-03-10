@@ -64,10 +64,10 @@ function parsePreviewDatabaseList(output: string): PreviewDatabase[] {
   return result;
 }
 
-const snapshotsGenerator: Fig.Generator = {
+const snapshotsGenerator: Generator = {
   script: ["snaplet", "snapshot", "ls"],
   postProcess: (output) => {
-    const result: Fig.Suggestion[] = [];
+    const result: Suggestion[] = [];
     const snapshotList = parseSnapshotList(output);
     for (const snapshot of snapshotList) {
       const statusEmoji = snapshot.status === "SUCCESS" ? `✅` : `❌`;
@@ -82,10 +82,10 @@ const snapshotsGenerator: Fig.Generator = {
 };
 
 // Only suggest successful snapshots on the cloud
-const snapshotsSuccessCloudGenerator: Fig.Generator = {
+const snapshotsSuccessCloudGenerator: Generator = {
   script: ["snaplet", "snapshot", "ls"],
   postProcess: (output) => {
-    const result: Fig.Suggestion[] = [];
+    const result: Suggestion[] = [];
     const snapshotList = parseSnapshotList(output).filter(
       (s) => s.src === "CLOUD" && s.status === "SUCCESS"
     );
@@ -101,10 +101,10 @@ const snapshotsSuccessCloudGenerator: Fig.Generator = {
   },
 };
 
-const databaseGenerator: Fig.Generator = {
+const databaseGenerator: Generator = {
   script: ["snaplet", "database", "ls"],
   postProcess: (output) => {
-    const result: Fig.Suggestion[] = [];
+    const result: Suggestion[] = [];
     const databases = parsePreviewDatabaseList(output);
     for (const database of databases) {
       result.push({
@@ -129,7 +129,7 @@ const persistentOptions = [
   },
 ];
 
-const authCommand: Fig.Subcommand = {
+const authCommand: SubcommandSpec = {
   name: "auth",
   description: "Manage auth state",
   subcommands: [
@@ -141,17 +141,17 @@ const authCommand: Fig.Subcommand = {
   ],
 };
 
-const configTypeOption: Fig.Option = {
+const configTypeOption: OptionSpec = {
   name: ["--type", "-t"],
   args: {
     suggestions: ["typedefs", "transform", "keys", "seed"],
   },
 };
-const yesOption: Fig.Option = {
+const yesOption: OptionSpec = {
   name: "--yes",
   description: "Automatically accept any prompt, useful for scripts",
 };
-const configCommand: Fig.Subcommand = {
+const configCommand: SubcommandSpec = {
   name: "config",
   description: "Manage configuration",
   subcommands: [
@@ -199,20 +199,20 @@ const configCommand: Fig.Subcommand = {
   ],
 };
 
-const snapshotTagsOption: Fig.Option = {
+const snapshotTagsOption: OptionSpec = {
   name: "--tags",
   description: "Filter snapshots by tags",
   args: { name: "tags-list", description: "Tag1,tag2,tag3" },
 };
-const snapshotLatestOption: Fig.Option = {
+const snapshotLatestOption: OptionSpec = {
   name: "--latest",
   description: "Restore the latest snapshot",
 };
-const databaseGitOption: Fig.Option = {
+const databaseGitOption: OptionSpec = {
   name: "--git",
   description: "Infer the database name from the current git branch",
 };
-const databaseCommand: Fig.Subcommand = {
+const databaseCommand: SubcommandSpec = {
   name: ["database", "db"],
   description: "Manage preview database",
   subcommands: [
@@ -337,23 +337,23 @@ const databaseCommand: Fig.Subcommand = {
   ],
 };
 
-const discordCommand: Fig.Subcommand = {
+const discordCommand: SubcommandSpec = {
   name: ["discord", "chat"],
   description: "Open the Snaplet Discord chat window in your browser",
 };
 
-const documentationCommand: Fig.Subcommand = {
+const documentationCommand: SubcommandSpec = {
   name: ["documentation", "docs"],
   description: "Opens the Snaplet Documentation in your browser",
 };
 
-const projectTeamOption: Fig.Option = {
+const projectTeamOption: OptionSpec = {
   name: ["--team", "-t"],
   args: {
     name: "team-name",
   },
 };
-const projectCommand: Fig.Subcommand = {
+const projectCommand: SubcommandSpec = {
   name: "project",
   description: "Manage project configuration",
   subcommands: [
@@ -380,12 +380,12 @@ const projectCommand: Fig.Subcommand = {
   ],
 };
 
-const proxyCommand: Fig.Subcommand = {
+const proxyCommand: SubcommandSpec = {
   name: ["proxy", "dev"],
   description: "Start a database proxy",
 };
 
-const seedCommand: Fig.Subcommand = {
+const seedCommand: SubcommandSpec = {
   options: [
     {
       name: ["-i", "--interactive"],
@@ -403,7 +403,7 @@ const seedCommand: Fig.Subcommand = {
   description: "Populates an empty database with generated data",
 };
 
-const snapshotCommand: Fig.Subcommand = {
+const snapshotCommand: SubcommandSpec = {
   name: ["snapshot", "ss"],
   description: "Manage snapshots",
   subcommands: [
@@ -557,7 +557,7 @@ const snapshotCommand: Fig.Subcommand = {
   ],
 };
 
-const subsetCommand: Fig.Subcommand = {
+const subsetCommand: SubcommandSpec = {
   name: ["subset", "subsetting"],
   description: "Manage subsetting",
   subcommands: [
@@ -567,7 +567,7 @@ const subsetCommand: Fig.Subcommand = {
     },
   ],
 };
-const teamCommand: Fig.Subcommand = {
+const teamCommand: SubcommandSpec = {
   name: "team",
   description: "Manage team configuration",
   subcommands: [
@@ -580,16 +580,16 @@ const teamCommand: Fig.Subcommand = {
     },
   ],
 };
-const upgradeCommand: Fig.Subcommand = {
+const upgradeCommand: SubcommandSpec = {
   name: "upgrade",
   description: "Upgrade this binary",
 };
-const completionCommand: Fig.Subcommand = {
+const completionCommand: SubcommandSpec = {
   name: "completion",
   description: "Generate completion script",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "snaplet",
   description:
     "Create and share PostgreSQL snapshots with schema, data transformation, and preview databases for collaborative development (see: https://docs.snaplet.dev)",

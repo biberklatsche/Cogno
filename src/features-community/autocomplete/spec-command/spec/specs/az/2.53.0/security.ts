@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "security",
   description: "Manage your security posture with Microsoft Defender for Cloud",
   subcommands: [

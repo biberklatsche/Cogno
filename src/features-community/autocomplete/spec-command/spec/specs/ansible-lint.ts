@@ -1,10 +1,10 @@
-const shortFormatArg: Fig.Arg = {
+const shortFormatArg: ArgSpec = {
   name: "-f",
   suggestions: ["rich", "plain", "md"],
   default: "rich",
 };
 
-const fullFormatArg: Fig.Arg = {
+const fullFormatArg: ArgSpec = {
   name: "-f",
   suggestions: [
     "rich",
@@ -19,7 +19,7 @@ const fullFormatArg: Fig.Arg = {
   default: "rich",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ansible-lint",
   description: "Ansible static code analysis",
   options: [

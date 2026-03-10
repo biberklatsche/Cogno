@@ -7,7 +7,7 @@ import {
   generateUrlScript,
 } from "./deno/generators";
 
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "deno",
   description: "A modern JavaScript and TypeScript runtime",
   subcommands: [

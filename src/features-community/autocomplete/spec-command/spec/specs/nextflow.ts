@@ -1,4 +1,4 @@
-const sessionid: Fig.Generator = {
+const sessionid: Generator = {
   script: ["bash", "-c", "cat .nextflow/history | awk '{ print $7 }'"],
   postProcess: (output) => {
     if (output == "") {
@@ -13,7 +13,7 @@ const sessionid: Fig.Generator = {
   },
 };
 
-const runname: Fig.Generator = {
+const runname: Generator = {
   script: ["bash", "-c", "cat .nextflow/history | awk '{ print $4 }'"],
   postProcess: (output) => {
     if (output == "") {
@@ -25,7 +25,7 @@ const runname: Fig.Generator = {
   },
 };
 
-const projectname: Fig.Generator = {
+const projectname: Generator = {
   script: [
     "bash",
     "-c",
@@ -44,7 +44,7 @@ const projectname: Fig.Generator = {
   },
 };
 
-const dockerimage: Fig.Generator = {
+const dockerimage: Generator = {
   script: ["bash", "-c", "docker images | cut -w -f 1 | grep -v REPOSITORY"],
   postProcess: (output) => {
     if (output == "") {
@@ -59,7 +59,7 @@ const dockerimage: Fig.Generator = {
   },
 };
 
-const secretname: Fig.Generator = {
+const secretname: Generator = {
   script: [
     "bash",
     "-c",
@@ -78,7 +78,7 @@ const secretname: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nextflow",
   description:
     "Nextflow enables scalable and reproducible scientific workflows using software containers. It allows the adaptation of pipelines written in the most common scripting languages",

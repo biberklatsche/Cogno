@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "notification-hub",
   description: "Manage notification hubs",
   subcommands: [

@@ -1,6 +1,6 @@
 import { dependenciesGenerator } from "./npm";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nrm",
   description: "Use the right package manage - remove",
   options: [

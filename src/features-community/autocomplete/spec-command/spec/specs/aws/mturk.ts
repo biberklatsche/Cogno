@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mturk",
   description: "Amazon Mechanical Turk API Reference",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "firebase",
   description: "Work with Google Firebase",
   subcommands: [

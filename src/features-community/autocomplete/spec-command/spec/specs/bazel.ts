@@ -1,4 +1,4 @@
-const bazelBuildFiles: Fig.Generator = {
+const bazelBuildFiles: Generator = {
   script: [
     "bash",
     "-c",
@@ -38,7 +38,7 @@ const bazelBuildFiles: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bazel",
   description: "Bazel the build system!",
   subcommands: [

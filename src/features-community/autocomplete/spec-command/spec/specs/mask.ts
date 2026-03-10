@@ -1,8 +1,8 @@
 // To learn more about Fig's autocomplete standard visit: https://fig.io/docs/concepts/cli-skeleton
-// var executeShellCommand: Fig.ExecuteShellCommandFunction;
+// var executeShellCommand: ExecuteShellCommandFunction;
 
 // The below is a dummy example for git. Make sure to change the file name!
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mask",
   generateSpec: async (tokens, executeShellCommand) => {
     // See if use specified a maskfile location

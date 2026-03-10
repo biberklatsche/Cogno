@@ -13,7 +13,7 @@ type App = {
   price: number;
 };
 
-const bundleIdentifierGenerator: Fig.Generator = {
+const bundleIdentifierGenerator: Generator = {
   script: (context) => {
     const identifier = context[context.length - 1];
     if (!identifier) return undefined;
@@ -43,7 +43,7 @@ const bundleIdentifierGenerator: Fig.Generator = {
   },
 };
 
-const bundleIdentifierOption: Fig.Option = {
+const bundleIdentifierOption: OptionSpec = {
   name: ["-b", "--bundle-identifier"],
   description: "Bundle identifier of the app",
   isRequired: true,
@@ -55,7 +55,7 @@ const bundleIdentifierOption: Fig.Option = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ipatool",
   displayName: "IPATool",
   description:

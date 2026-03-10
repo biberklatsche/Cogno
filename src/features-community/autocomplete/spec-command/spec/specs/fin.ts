@@ -1,4 +1,4 @@
-const databases: Fig.Generator = {
+const databases: Generator = {
   script: ["fin", "db", "list"],
   postProcess: (output) => {
     return output.split("\n").map((db) => {
@@ -7,7 +7,7 @@ const databases: Fig.Generator = {
   },
 };
 
-const hosts: Fig.Generator = {
+const hosts: Generator = {
   script: ["fin", "hosts"],
   postProcess: (output) => {
     return output.split("\n").map((host) => {
@@ -19,7 +19,7 @@ const hosts: Fig.Generator = {
   },
 };
 
-const aliasGenerator: Fig.Generator = {
+const aliasGenerator: Generator = {
   script: ["fin", "alias", "list"],
   postProcess: (output) => {
     return output
@@ -31,12 +31,12 @@ const aliasGenerator: Fig.Generator = {
   },
 };
 
-const serviceGenerator: Fig.Generator = {
+const serviceGenerator: Generator = {
   script: ["fin", "docker", "ps", "--format", "{{.Names}}"],
   splitOn: "\n",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fin",
   description: "Docksal command line utility",
   subcommands: [

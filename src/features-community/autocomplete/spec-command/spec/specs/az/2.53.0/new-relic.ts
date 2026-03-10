@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "new-relic",
   description: "Manage Azure NewRelic resources",
   subcommands: [

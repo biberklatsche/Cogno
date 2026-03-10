@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "network-management",
   description: "Manage Network Management resources",
   subcommands: [

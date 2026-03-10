@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dirname",
   description: "Return directory portion of pathname",
   args: {

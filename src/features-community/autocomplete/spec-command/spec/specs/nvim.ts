@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nvim",
   description: "Hyperextensible Vim-based text editor",
   args: {

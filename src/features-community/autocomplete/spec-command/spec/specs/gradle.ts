@@ -1,4 +1,4 @@
-const consoleModeArg: Fig.Arg = {
+const consoleModeArg: ArgSpec = {
   name: "mode",
   default: "auto",
   suggestions: [
@@ -25,7 +25,7 @@ const consoleModeArg: Fig.Arg = {
   ],
 };
 
-const warningModeArg: Fig.Arg = {
+const warningModeArg: ArgSpec = {
   name: "mode",
   default: "summary",
   suggestions: [
@@ -51,7 +51,7 @@ const warningModeArg: Fig.Arg = {
   ],
 };
 
-const sharedOptions: Fig.Option[] = [
+const sharedOptions: OptionSpec[] = [
   {
     name: ["-?", "-h", "--help"],
     description: "Shows a help message with all available CLI options",
@@ -348,7 +348,7 @@ const sharedOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gradle",
   description:
     "Gradle is an open-source build automation tool that is designed to be flexible enough to build almost any type of software",

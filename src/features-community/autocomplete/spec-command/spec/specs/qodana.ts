@@ -3,7 +3,7 @@
  */
 const icon = "fig://template?badge=🔧";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "qodana",
   description: "Run Qodana as fast as possible, with minimum effort required",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "build-server",
   description: "Interacts with servers started by a build",
   subcommands: [

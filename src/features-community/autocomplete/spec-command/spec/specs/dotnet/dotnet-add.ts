@@ -1,4 +1,4 @@
-import { filepaths } from "@fig/autocomplete-generators";
+import {ArgSpec} from "@cogno/community-features/autocomplete/spec-command/spec/spec.types";
 
 type PackageSearchResultData = {
   id: string;
@@ -6,7 +6,7 @@ type PackageSearchResultData = {
   description: string;
 };
 
-const packageSearchGenerator: Fig.Generator = {
+const packageSearchGenerator: Generator = {
   script(context) {
     const searchTerm = context[context.length - 1];
     return [
@@ -20,7 +20,7 @@ const packageSearchGenerator: Fig.Generator = {
   postProcess(out) {
     const searchResults: PackageSearchResultData[] = JSON.parse(out).data;
 
-    return searchResults.map<Fig.Suggestion>((value) => {
+    return searchResults.map<Suggestion>((value) => {
       return {
         name: value.title,
         insertValue: value.id,
@@ -30,7 +30,7 @@ const packageSearchGenerator: Fig.Generator = {
   },
 };
 
-const versionSearchGenerator: Fig.Generator = {
+const versionSearchGenerator: Generator = {
   script(context) {
     const command = context.filter((ctx) => !ctx.startsWith("-"));
     const idx = command.findIndex((ctx) => ctx === "package");
@@ -47,7 +47,7 @@ const versionSearchGenerator: Fig.Generator = {
   postProcess(out) {
     const searchResults: string[] = JSON.parse(out).versions;
 
-    return searchResults.reverse().map<Fig.Suggestion>((value) => {
+    return searchResults.reverse().map<Suggestion>((value) => {
       return {
         name: value,
       };
@@ -55,7 +55,7 @@ const versionSearchGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "add",
   args: {
     name: "project",

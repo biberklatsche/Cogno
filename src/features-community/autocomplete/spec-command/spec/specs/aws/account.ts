@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "account",
   description: "Operations for Amazon Web Services Account Management",
   subcommands: [

@@ -14,17 +14,17 @@ const processXcodeList = (out: string, tokens: string[]) =>
       description: line.slice(line.indexOf("(")).replace(/[\(\)]/g, ""),
     }));
 
-const allXcodes: Fig.Generator = {
+const allXcodes: Generator = {
   script: ["xcodes", "list"],
   postProcess: processXcodeList,
 };
 
-const installedXcodes: Fig.Generator = {
+const installedXcodes: Generator = {
   script: ["xcodes", "installed"],
   postProcess: processXcodeList,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xcodes",
   description: "Manage the Xcode versions installed on your Mac",
   subcommands: [

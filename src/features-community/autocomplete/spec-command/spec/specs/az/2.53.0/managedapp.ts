@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "managedapp",
   description:
     "Manage template solutions provided and maintained by Independent Software Vendors (ISVs)",

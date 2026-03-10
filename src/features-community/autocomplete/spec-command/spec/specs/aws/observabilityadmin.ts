@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "observabilityadmin",
   description:
     "Amazon CloudWatch Obsersavability Admin to control temletry config for your AWS Organization or account. Telemetry config con\ufb01g to discover and understand the state of telemetry con\ufb01guration for your AWS resources from a central view in the CloudWatch console. Telemetry con\ufb01g simpli\ufb01es the process of auditing your telemetry collection con\ufb01gurations across multiple resource types across your AWS Organization or account. For more information, see Auditing CloudWatch telemetry con\ufb01gurations in the CloudWatch User Guide. For information on the permissions you need to use this API, see Identity and access management for Amazon CloudWatch in the CloudWatch User Guide",

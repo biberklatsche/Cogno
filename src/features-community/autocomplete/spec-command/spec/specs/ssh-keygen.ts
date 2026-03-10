@@ -42,7 +42,7 @@ const allOptions = [
   "-Z",
   "-z",
 ];
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ssh-keygen",
   description: "Generates, manages and converts authentication keys for ssh",
   options: [

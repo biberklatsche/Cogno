@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bit",
   description: "Bit documentation: https://bit.dev/docs",
   subcommands: [

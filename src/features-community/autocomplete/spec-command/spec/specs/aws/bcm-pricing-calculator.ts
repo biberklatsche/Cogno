@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bcm-pricing-calculator",
   description:
     "You can use the Pricing Calculator API to programmatically create estimates for your planned cloud use. You can model usage and commitments such as Savings Plans and Reserved Instances, and generate estimated costs using your discounts and benefit sharing preferences.  The Pricing Calculator API provides the following endpoint:    https://bcm-pricing-calculator.us-east-1.api.aws",

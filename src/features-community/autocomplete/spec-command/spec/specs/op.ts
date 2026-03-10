@@ -8,7 +8,7 @@ interface Account {
   account_uuid: string;
 }
 
-const suggestAccounts: Fig.Generator = {
+const suggestAccounts: Generator = {
   script: ["op", "account", "list", "--format", "json"],
   postProcess: (out) => {
     const json = JSON.parse(out) as Account[];
@@ -21,7 +21,7 @@ const suggestAccounts: Fig.Generator = {
   },
 };
 
-const spec: Fig.Spec = {
+const spec: CommandSpec = {
   name: "op",
   description: "Official 1Password CLI",
   icon,

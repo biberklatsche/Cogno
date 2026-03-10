@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "panorama",
   description:
     "AWS Panorama  Overview  This is the AWS Panorama API Reference. For an introduction to the service, see What is AWS Panorama? in the AWS Panorama Developer Guide",

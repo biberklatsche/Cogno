@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "managed-cassandra",
   description: "Azure Managed Cassandra",
   subcommands: [

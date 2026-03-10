@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const packages: Fig.Generator = {
+const packages: Generator = {
   // only trigger when the token length transitions to or from 0
   trigger: (current, previous) =>
     current.length === 0 || (previous.length === 0 && current.length > 0),
@@ -34,7 +34,7 @@ const packages: Fig.Generator = {
   },
 };
 
-const installedPackages: Fig.Generator = {
+const installedPackages: Generator = {
   script: ["apt", "list", "--installed"],
   postProcess: function (a) {
     return a
@@ -50,7 +50,7 @@ const installedPackages: Fig.Generator = {
   },
 };
 
-const upgradablePackages: Fig.Generator = {
+const upgradablePackages: Generator = {
   script: ["apt", "list", "--upgradable"],
   postProcess: function (a) {
     return a
@@ -66,7 +66,7 @@ const upgradablePackages: Fig.Generator = {
   },
 };
 
-const yesNoOptions: Fig.Option[] = [
+const yesNoOptions: OptionSpec[] = [
   {
     name: "-y",
     description: "Assume yes to all prompts",
@@ -79,7 +79,7 @@ const yesNoOptions: Fig.Option[] = [
   },
 ];
 
-const installationOptions: Fig.Option[] = [
+const installationOptions: OptionSpec[] = [
   {
     name: ["-d", "--download-only"],
     description:
@@ -92,7 +92,7 @@ const installationOptions: Fig.Option[] = [
   },
 ];
 
-const simulate: Fig.Option[] = [
+const simulate: OptionSpec[] = [
   {
     name: ["-s", "--simulate"],
     description:
@@ -100,7 +100,7 @@ const simulate: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "apt",
   description: "Package manager for Debian-based Linux distributions",
   subcommands: [

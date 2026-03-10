@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "if",
   description: "Conditionally execute based on the return value of a command",
   args: {

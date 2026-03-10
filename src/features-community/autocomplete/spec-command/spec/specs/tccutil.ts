@@ -1,6 +1,6 @@
 import { generateBundleIds } from "./open";
 
-const commands: Fig.Suggestion[] = [
+const commands: Suggestion[] = [
   {
     name: "reset",
     description: "Reset permissions",
@@ -8,7 +8,7 @@ const commands: Fig.Suggestion[] = [
   },
 ];
 
-const services: Fig.Suggestion[] = [
+const services: Suggestion[] = [
   {
     name: "AppleEvents",
   },
@@ -144,7 +144,7 @@ const services: Fig.Suggestion[] = [
   },
 ].map((item) => Object.assign(item, { icon: "⚙️" }));
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tccutil",
   description: "Manage the privacy database",
   args: [

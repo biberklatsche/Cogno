@@ -1,8 +1,8 @@
-const helpOption: Fig.Option = {
+const helpOption: OptionSpec = {
   name: ["--help", "-h"],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "graphcdn",
   description: "GraphCDN CLI",
   subcommands: [

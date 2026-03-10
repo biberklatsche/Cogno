@@ -1,59 +1,59 @@
-const help: Fig.Option = {
+const help: OptionSpec = {
   name: ["-h", "--help"],
   description: "Display help information",
 };
 
-const quiet: Fig.Option = {
+const quiet: OptionSpec = {
   name: ["-q", "--quiet"],
   description: "Do not output any message",
 };
 
-const verbose: Fig.Option = {
+const verbose: OptionSpec = {
   name: ["-v", "--verbose"],
   description: "Increase the verbosity of messages",
 };
 
-const vverbose: Fig.Option = {
+const vverbose: OptionSpec = {
   name: "-vv",
   description: "More verbose output",
 };
 
-const vvverbose: Fig.Option = {
+const vvverbose: OptionSpec = {
   name: "-vvv",
   description: "Debug output",
 };
 
-const version: Fig.Option = {
+const version: OptionSpec = {
   name: ["-V", "--version"],
   description: "Display this application version",
 };
 
-const ansi: Fig.Option = {
+const ansi: OptionSpec = {
   name: "--ansi",
   description: "Force ANSI output",
 };
 
-const noAnsi: Fig.Option = {
+const noAnsi: OptionSpec = {
   name: "--no-ansi",
   description: "Disable ANSI output",
 };
 
-const noInteraction: Fig.Option = {
+const noInteraction: OptionSpec = {
   name: ["-n", "--no-interaction"],
   description: "Do not ask any interactive question",
 };
 
-const noPlugins: Fig.Option = {
+const noPlugins: OptionSpec = {
   name: "--no-plugins",
   description: "Disables plugins",
 };
 
-const noCache: Fig.Option = {
+const noCache: OptionSpec = {
   name: "--no-cache",
   description: "Disables poetry source caches",
 };
 
-const directory: Fig.Option = {
+const directory: OptionSpec = {
   name: "--directory",
   description: "The working directory for the poetry command",
   args: {
@@ -61,7 +61,7 @@ const directory: Fig.Option = {
   },
 };
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   help,
   verbose,
   vverbose,
@@ -76,7 +76,7 @@ const globalOptions: Fig.Option[] = [
   quiet,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "poetry",
   description:
     "Poetry is a tool for dependency management and packaging in Python",

@@ -1,4 +1,4 @@
-const generateUsers: Fig.Generator = {
+const generateUsers: Generator = {
   script: ["bash", "-c", "dscl . -list /Users | grep -E -v '^_'"],
   postProcess: (out) =>
     out
@@ -7,7 +7,7 @@ const generateUsers: Fig.Generator = {
       .map((name) => ({ name, icon: "👤" })),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "passwd",
   description: "Modify a user's password",
   options: [

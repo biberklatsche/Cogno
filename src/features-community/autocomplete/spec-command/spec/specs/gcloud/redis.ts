@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "redis",
   description: "Manage Cloud Memorystore Redis resources",
   subcommands: [

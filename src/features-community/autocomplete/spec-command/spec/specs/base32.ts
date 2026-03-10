@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "base32",
   description: "Base32 encode/decode data and print to standard output",
   parserDirectives: {

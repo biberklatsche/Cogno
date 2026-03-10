@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "figterm",
   description: "Fig's terminal layer",
   options: [

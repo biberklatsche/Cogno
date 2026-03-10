@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "timestream-query",
   description: "Amazon Timestream Query",
   subcommands: [

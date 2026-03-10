@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kubens",
   description: "Switch between Kubernetes-namespaces",
   additionalSuggestions: [
@@ -32,7 +32,7 @@ const completionSpec: Fig.Spec = {
             name: item,
             priority: 90,
             icon: "fig://icon?type=kubernetes",
-          })) as Fig.Suggestion[],
+          })) as Suggestion[],
       },
       {
         script: ["kubens", "-c"],

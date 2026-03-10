@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tasks",
   description: "Manage Cloud Tasks queues and tasks",
   subcommands: [

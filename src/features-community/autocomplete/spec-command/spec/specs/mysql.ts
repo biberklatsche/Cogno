@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mysql",
   description: "Mysql is a terminal-based front-end to MySQL",
   args: {},

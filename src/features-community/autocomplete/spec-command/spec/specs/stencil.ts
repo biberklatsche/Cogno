@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "stencil",
   description: "CLI to build Stencil projects and generate components",
   icon: "https://stenciljs.com/assets/icon/favicon.ico",

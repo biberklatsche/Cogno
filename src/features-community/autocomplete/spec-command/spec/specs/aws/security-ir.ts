@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "security-ir",
   description:
     "This guide provides documents the action and response elements for customer use of the service",

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "databricks",
   description: "Manage databricks workspaces",
   subcommands: [

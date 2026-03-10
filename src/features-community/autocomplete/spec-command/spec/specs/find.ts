@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "find",
   description: "Walk a file hierarchy",
   args: [

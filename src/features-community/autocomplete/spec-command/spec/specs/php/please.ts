@@ -16,7 +16,7 @@ interface Option {
   default: string;
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "please",
   description: "Statamic Please command",
   generateSpec: async (tokens, executeShellCommand) => {

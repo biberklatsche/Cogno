@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "appintegrations",
   description:
     "Amazon AppIntegrations actions     Amazon AppIntegrations data types    The Amazon AppIntegrations service enables you to configure and reuse connections to external applications. For information about how you can use external applications with Amazon Connect, see the following topics in the Amazon Connect Administrator Guide:    Third-party applications (3p apps) in the agent workspace     Use Amazon Q in Connect for generative AI\u2013powered agent assistance in real-time",

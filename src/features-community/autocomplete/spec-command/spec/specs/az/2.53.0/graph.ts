@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "graph",
   description:
     "Query the resources managed by Azure Resource Manager.\n\n\t\tRun 'az graph query --help' for detailed help",

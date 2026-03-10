@@ -14,7 +14,7 @@ const ICONS = {
   npm: "fig://icon?type=npm",
 };
 
-const boolArg: Fig.Arg = {
+const boolArg: ArgSpec = {
   name: "boolean",
   isOptional: true,
   suggestions: [
@@ -29,7 +29,7 @@ const boolArg: Fig.Arg = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "create-react-native-app",
   description: "Creates a new React Native project",
   args: {

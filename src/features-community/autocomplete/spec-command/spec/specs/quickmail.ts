@@ -1,4 +1,4 @@
-const bodyTempalates: Fig.Generator = {
+const bodyTempalates: Generator = {
   script: ["quickmail", "template", "listall"],
   postProcess: (output) => {
     const items = output.split("\n");
@@ -12,7 +12,7 @@ const bodyTempalates: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "quickmail",
   description: "Quickmail is a terminal-based solution to send mails",
   parserDirectives: {

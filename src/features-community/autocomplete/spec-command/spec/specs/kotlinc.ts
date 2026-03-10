@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kotlinc",
   description: "Kotlin compiler for JVM",
   subcommands: [

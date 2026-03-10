@@ -1,4 +1,4 @@
-const formatFlag: Fig.Option = {
+const formatFlag: OptionSpec = {
   name: ["-f", "--format"],
   description:
     'Change the way structured data is presented. If "json" or "raw", you can pipe the output of the command into other tools, such as jq',
@@ -7,12 +7,12 @@ const formatFlag: Fig.Option = {
     suggestions: ["plain", "json", "raw", "row", "table"],
   },
 };
-const debugFlag: Fig.Option = {
+const debugFlag: OptionSpec = {
   name: ["-d", "--debug"],
   description: "Show extra debugging output",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "zapier-platform-cli",
   description:
     "The Zapier CLI is a developer-focused way to create and maintain Zapier integrations. See more at https://github.com/zapier/zapier-platform",

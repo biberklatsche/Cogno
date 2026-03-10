@@ -38,7 +38,7 @@ interface ComposerListOutput {
 
 const PACKAGE_REGEXP = new RegExp("^.*/.*$");
 
-const searchGenerator: Fig.Generator = {
+const searchGenerator: Generator = {
   script: function (context) {
     if (context[context.length - 1] === "") return undefined;
     const searchTerm = context[context.length - 1];
@@ -58,8 +58,8 @@ const searchGenerator: Fig.Generator = {
             name: item.name,
             description: item.description,
             icon: "📦",
-          }) as Fig.Suggestion
-      ) as Fig.Suggestion[];
+          }) as Suggestion
+      ) as Suggestion[];
     } catch (e) {
       return [];
     }
@@ -67,7 +67,7 @@ const searchGenerator: Fig.Generator = {
 };
 
 // generate package list from composer.json file
-const packagesGenerator: Fig.Generator = {
+const packagesGenerator: Generator = {
   script: ["cat", "composer.json"],
   postProcess: function (out) {
     if (out.trim() == "") {
@@ -99,7 +99,7 @@ function filterRealDependencies(dependencies) {
   );
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "composer",
   description: "Composer Command",
   generateSpec: async (tokens, executeShellCommand) => {
@@ -115,7 +115,7 @@ const completionSpec: Fig.Spec = {
       }),
     ]);
 
-    const subcommands: Fig.Subcommand[] = [];
+    const subcommands: SubcommandSpec[] = [];
 
     try {
       const data: ComposerListOutput = JSON.parse(jsonList.stdout);
@@ -169,7 +169,7 @@ const completionSpec: Fig.Spec = {
         });
       }
 
-      const recipesCommonOptions: Fig.Option[] = [
+      const recipesCommonOptions: OptionSpec[] = [
         { name: ["-h", "--help"], description: "Display this help message" },
         { name: ["-q", "--quiet"], description: "Do not output any message" },
         {

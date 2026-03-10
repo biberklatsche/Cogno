@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "plutil",
   description:
     "Check the syntax of property list files, or convert a plist file from one format to another. Specifying - as an input file reads from stdin",

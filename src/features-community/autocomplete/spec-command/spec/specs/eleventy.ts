@@ -1,5 +1,5 @@
 // Author: Yavko
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "eleventy",
   icon: "https://www.11ty.dev/favicon.ico",
   description: "Eleventy is a simpler static site generator",

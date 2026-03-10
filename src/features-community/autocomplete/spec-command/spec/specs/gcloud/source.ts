@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "source",
   description: "Cloud git repository commands",
   subcommands: [

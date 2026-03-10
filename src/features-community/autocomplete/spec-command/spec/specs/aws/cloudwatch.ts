@@ -146,7 +146,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -173,12 +173,12 @@ const postPrecessGenerator = (
 };
 const listCustomGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["cloudwatch", command];
     for (let i = 0; i < options.length; i++) {
@@ -217,12 +217,12 @@ const listCustomGenerator = async (
 };
 const listDimensionTypes = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   option: string,
   parentKey: string,
   childKey: string
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     const idx = tokens.indexOf(option);
     if (idx < 0) {
@@ -254,7 +254,7 @@ const listDimensionTypes = async (
 };
 const MultiSuggestionsGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   enabled: {
     command: string[];
     parentKey: string;
@@ -262,7 +262,7 @@ const MultiSuggestionsGenerator = async (
   }[]
 ) => {
   try {
-    const list: Fig.Suggestion[][] = [];
+    const list: Suggestion[][] = [];
     const promises: Promise<string>[] = [];
     for (let i = 0; i < enabled.length; i++) {
       promises[i] = executeShellCommand({
@@ -286,10 +286,10 @@ const MultiSuggestionsGenerator = async (
 };
 const getResultList = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   args: string[],
   key: string
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   const { stdout } = await executeShellCommand({
     command: "aws",
     args,
@@ -315,7 +315,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -372,7 +372,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   listFiles: {
     script: (tokens) => {
       return appendFolderPath(tokens, _prefixFile);
@@ -527,7 +527,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloudwatch",
   description:
     "Amazon CloudWatch monitors your Amazon Web Services (Amazon Web Services) resources and the applications you run on Amazon Web Services in real time. You can use CloudWatch to collect and track metrics, which are the variables you want to measure for your resources and applications. CloudWatch alarms send notifications or automatically change the resources you are monitoring based on rules that you define. For example, you can monitor the CPU usage and disk reads and writes of your Amazon EC2 instances. Then, use this data to determine whether you should launch additional instances to handle increased load. You can also use this data to stop under-used instances to save money. In addition to monitoring the built-in metrics that come with Amazon Web Services, you can monitor your own custom metrics. With CloudWatch, you gain system-wide visibility into resource utilization, application performance, and operational health",

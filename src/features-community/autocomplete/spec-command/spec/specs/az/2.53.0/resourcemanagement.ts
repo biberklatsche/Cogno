@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "resourcemanagement",
   description: "Resourcemanagement CLI command group",
   subcommands: [

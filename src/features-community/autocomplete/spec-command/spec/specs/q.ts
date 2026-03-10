@@ -1,7 +1,7 @@
-export const themesGenerator: Fig.Generator = {
+export const themesGenerator: Generator = {
   script: ["q", "theme", "--list"],
   postProcess: (output) => {
-    const builtinThemes: Fig.Suggestion[] = [
+    const builtinThemes: Suggestion[] = [
       {
         name: "system",
         icon: "💻",
@@ -25,13 +25,13 @@ export const themesGenerator: Fig.Generator = {
           ({
             name,
             icon: "🎨",
-          }) as Fig.Suggestion
+          }) as Suggestion
       )
       .concat(builtinThemes);
   },
 };
 
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "q",
   description: "The Amazon Q CLI",
   subcommands: [
@@ -509,7 +509,7 @@ const completion: Fig.Spec = {
         },
         {
           name: "build",
-          description: "Switch to another branch of a Fig.js app",
+          description: "Switch to another branch of a js app",
           options: [
             {
               name: ["-v", "--verbose"],
@@ -977,7 +977,7 @@ const completion: Fig.Spec = {
             },
             {
               name: "build",
-              description: "Switch to another branch of a Fig.js app",
+              description: "Switch to another branch of a js app",
             },
             {
               name: "autocomplete-window",
@@ -3579,7 +3579,7 @@ const completion: Fig.Spec = {
             },
             {
               name: "build",
-              description: "Switch to another branch of a Fig.js app",
+              description: "Switch to another branch of a js app",
             },
             {
               name: "autocomplete-window",

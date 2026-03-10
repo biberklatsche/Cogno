@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "astro",
   description:
     "CLI provided by Astro to develop, build, and preview your project from a terminal window",

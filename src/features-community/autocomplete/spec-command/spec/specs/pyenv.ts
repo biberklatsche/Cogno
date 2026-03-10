@@ -1,4 +1,4 @@
-const versionList: Fig.Generator = {
+const versionList: Generator = {
   script: ["pyenv", "install", "-l"],
   postProcess: function (out) {
     return out
@@ -9,7 +9,7 @@ const versionList: Fig.Generator = {
   },
 };
 
-const globalList: Fig.Generator = {
+const globalList: Generator = {
   script: ["pyenv", "versions"],
   postProcess: function (out) {
     return out
@@ -24,7 +24,7 @@ const globalList: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pyenv",
   description: "Pyenv",
   args: {},

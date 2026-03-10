@@ -1,6 +1,6 @@
 import capacitor from "./capacitor";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...capacitor,
   name: "cap",
 };

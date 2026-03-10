@@ -14,7 +14,7 @@ function bracketize<T>(content: T): string {
  * @param value The value to extract
  * @returns The single value
  */
-function singleName<T>(value: Fig.SingleOrArray<T>): T {
+function singleName<T>(value: SingleOrArray<T>): T {
   if (Array.isArray(value)) {
     return value.at(-1);
   } else {
@@ -26,9 +26,9 @@ function singleName<T>(value: Fig.SingleOrArray<T>): T {
  * Create an option with aliasing support.
  */
 function alias(
-  { name: oName, ...option }: Fig.Option,
+  { name: oName, ...option }: OptionSpec,
   { args } = { args: "aliases" }
-): Fig.Option {
+): OptionSpec {
   const name = singleName(oName);
 
   return {
@@ -59,7 +59,7 @@ const invokeArgs = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "clojure",
   description:
     "Use the Clojure tools to run Clojure programs on the JVM, start a REPL, or invoke a specific function with data",

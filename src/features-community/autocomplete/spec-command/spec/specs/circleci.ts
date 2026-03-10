@@ -1,6 +1,6 @@
 // Fig autocomplete spec for the CircleCI CLI.
 // The full spec can be found at https://circleci-public.github.io/circleci-cli/index.html
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "circleci",
   description: "CircleCI CLI",
   subcommands: [

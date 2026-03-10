@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "fluid-relay",
   description: "Manage Fluid Relay",
   subcommands: [

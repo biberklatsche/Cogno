@@ -18,7 +18,7 @@ const RFileGenerator = filepaths({
   editFileSuggestions: { priority: 76 },
 });
 
-const RLibGenerator: Fig.Generator = {
+const RLibGenerator: Generator = {
   script: ["Rscript", "-e", ".libPaths()"],
   postProcess: (output) => {
     if (output.includes("not found")) {
@@ -33,7 +33,7 @@ const RLibGenerator: Fig.Generator = {
   },
 };
 
-const helpAndVersionOptions: Fig.Option[] = [
+const helpAndVersionOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Print help message and exit",
@@ -46,7 +46,7 @@ const helpAndVersionOptions: Fig.Option[] = [
   },
 ];
 
-const cleanAndPrecleanOptions: Fig.Option[] = [
+const cleanAndPrecleanOptions: OptionSpec[] = [
   {
     name: ["--clean", "-c"],
     description: "Remove files created during compilation",
@@ -57,7 +57,7 @@ const cleanAndPrecleanOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "R",
   description: "Start R or invoke an R tool using CMD",
   icon: "https://www.r-project.org/favicon-32x32.png",

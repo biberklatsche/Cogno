@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pinpoint",
   description: "Doc Engage API - Amazon Pinpoint API",
   subcommands: [

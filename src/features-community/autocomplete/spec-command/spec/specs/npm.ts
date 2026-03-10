@@ -1,4 +1,4 @@
-function uninstallSubcommand(named: string | string[]): Fig.Subcommand {
+function uninstallSubcommand(named: string | string[]): SubcommandSpec {
   return {
     name: named,
     description: "Uninstall a package",
@@ -18,9 +18,9 @@ export const createNpmSearchHandler =
   (keywords?: string[]) =>
   async (
     context: string[],
-    executeShellCommand: Fig.ExecuteCommandFunction,
-    shellContext: Fig.ShellContext
-  ): Promise<Fig.Suggestion[]> => {
+    executeShellCommand: ExecuteCommandFunction,
+    shellContext: ShellContext
+  ): Promise<Suggestion[]> => {
     const searchTerm = context[context.length - 1];
     if (searchTerm === "") {
       return [];
@@ -70,11 +70,11 @@ export const createNpmSearchHandler =
             name: key,
             description: value,
           })
-        ) as Fig.Suggestion[];
+        ) as Suggestion[];
         // create versions
         versions.push(
           ...Object.keys(data.versions)
-            .map((version) => ({ name: version }) as Fig.Suggestion)
+            .map((version) => ({ name: version }) as Suggestion)
             .reverse()
         );
         return versions;
@@ -86,7 +86,7 @@ export const createNpmSearchHandler =
           name: item.package.name,
           description: item.package.description,
         })
-      ) as Fig.Suggestion[];
+      ) as Suggestion[];
     } catch (error) {
       console.error({ error });
       return [];
@@ -94,7 +94,7 @@ export const createNpmSearchHandler =
   };
 
 // GENERATORS
-export const npmSearchGenerator: Fig.Generator = {
+export const npmSearchGenerator: Generator = {
   trigger: (newToken, oldToken) => {
     // If the package name starts with '@', we want to trigger when
     // the 2nd '@' is typed because we'll need to generate version
@@ -115,7 +115,7 @@ export const npmSearchGenerator: Fig.Generator = {
   custom: createNpmSearchHandler(),
 };
 
-const workspaceGenerator: Fig.Generator = {
+const workspaceGenerator: Generator = {
   // script: "cat $(npm prefix)/package.json",
   custom: async (tokens, executeShellCommand) => {
     const { stdout: npmPrefix } = await executeShellCommand({
@@ -130,7 +130,7 @@ const workspaceGenerator: Fig.Generator = {
       args: [`${npmPrefix}/package.json`],
     });
 
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
     try {
       if (out.trim() == "") {
         return suggestions;
@@ -155,7 +155,7 @@ const workspaceGenerator: Fig.Generator = {
 };
 
 /** Generator that lists package.json dependencies */
-export const dependenciesGenerator: Fig.Generator = {
+export const dependenciesGenerator: Generator = {
   trigger: (newToken) => newToken === "-g" || newToken === "--global",
   custom: async function (tokens, executeShellCommand) {
     if (!tokens.includes("-g") && !tokens.includes("--global")) {
@@ -204,7 +204,7 @@ export const dependenciesGenerator: Fig.Generator = {
 };
 
 /** Generator that lists package.json scripts (with the respect to the `fig` field) */
-export const npmScriptsGenerator: Fig.Generator = {
+export const npmScriptsGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
     cacheByDirectory: true,
@@ -230,7 +230,7 @@ export const npmScriptsGenerator: Fig.Generator = {
             npmClient === "yarn"
               ? "fig://icon?type=yarn"
               : "fig://icon?type=npm";
-          const customScripts: Fig.Suggestion = figCompletions[scriptName];
+          const customScripts: Suggestion = figCompletions[scriptName];
           return {
             name: scriptName,
             icon,
@@ -252,18 +252,18 @@ export const npmScriptsGenerator: Fig.Generator = {
   },
 };
 
-const globalOption: Fig.Option = {
+const globalOption: OptionSpec = {
   name: ["-g", "--global"],
   description:
     "Operates in 'global' mode, so that packages are installed into the prefix folder instead of the current working directory",
 };
 
-const jsonOption: Fig.Option = {
+const jsonOption: OptionSpec = {
   name: "--json",
   description: "Show output in json format",
 };
 
-const omitOption: Fig.Option = {
+const omitOption: OptionSpec = {
   name: "--omit",
   description: "Dependency types to omit from the installation tree on disk",
   args: {
@@ -274,18 +274,18 @@ const omitOption: Fig.Option = {
   isRepeatable: 3,
 };
 
-const parseableOption: Fig.Option = {
+const parseableOption: OptionSpec = {
   name: ["-p", "--parseable"],
   description:
     "Output parseable results from commands that write to standard output",
 };
 
-const longOption: Fig.Option = {
+const longOption: OptionSpec = {
   name: ["-l", "--long"],
   description: "Show extended information",
 };
 
-const workSpaceOptions: Fig.Option[] = [
+const workSpaceOptions: OptionSpec[] = [
   {
     name: ["-w", "--workspace"],
     description:
@@ -303,7 +303,7 @@ const workSpaceOptions: Fig.Option[] = [
   },
 ];
 
-const npmUninstallOptions: Fig.Option[] = [
+const npmUninstallOptions: OptionSpec[] = [
   {
     name: ["-S", "--save"],
     description: "Package will be removed from your dependencies",
@@ -327,7 +327,7 @@ const npmUninstallOptions: Fig.Option[] = [
   ...workSpaceOptions,
 ];
 
-const npmListOptions: Fig.Option[] = [
+const npmListOptions: OptionSpec[] = [
   {
     name: ["-a", "-all"],
     description: "Show all outdated or installed packages",
@@ -358,44 +358,44 @@ const npmListOptions: Fig.Option[] = [
   ...workSpaceOptions,
 ];
 
-const registryOption: Fig.Option = {
+const registryOption: OptionSpec = {
   name: "--registry",
   description: "The base URL of the npm registry",
   args: { name: "registry" },
 };
 
-const verboseOption: Fig.Option = {
+const verboseOption: OptionSpec = {
   name: "--verbose",
   description: "Show extra information",
   args: { name: "verbose" },
 };
 
-const otpOption: Fig.Option = {
+const otpOption: OptionSpec = {
   name: "--otp",
   description: "One-time password from a two-factor authenticator",
   args: { name: "otp" },
 };
 
-const ignoreScriptsOption: Fig.Option = {
+const ignoreScriptsOption: OptionSpec = {
   name: "--ignore-scripts",
   description:
     "If true, npm does not run scripts specified in package.json files",
 };
 
-const scriptShellOption: Fig.Option = {
+const scriptShellOption: OptionSpec = {
   name: "--script-shell",
   description:
     "The shell to use for scripts run with the npm exec, npm run and npm init <pkg> commands",
   args: { name: "script-shell" },
 };
 
-const dryRunOption: Fig.Option = {
+const dryRunOption: OptionSpec = {
   name: "--dry-run",
   description:
     "Indicates that you don't want npm to make any changes and that it should only report what it would have done",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "npm",
   parserDirectives: {
     flagsArePosixNoncompliant: true,

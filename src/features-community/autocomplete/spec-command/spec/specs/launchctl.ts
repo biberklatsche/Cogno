@@ -1,10 +1,10 @@
-const serviceOrDomain: Fig.Arg = {
+const serviceOrDomain: ArgSpec = {
   name: "service",
   description: "Service or domain target",
   template: "filepaths",
 };
 
-const servicePath: Fig.Arg = {
+const servicePath: ArgSpec = {
   name: "service-path",
   isVariadic: true,
   description: "Service path(s)",
@@ -53,7 +53,7 @@ const limitArgs = [
   },
 ];
 
-const listGenerator: Fig.Generator = {
+const listGenerator: Generator = {
   script: ["launchctl", "list"],
   // The list command outputs 3 columns: PID	Status	Label
   // we want the last column ([2])
@@ -76,7 +76,7 @@ const labelArg = {
   generators: listGenerator,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "launchctl",
   description: "Interfaces with launchd",
   args: {},

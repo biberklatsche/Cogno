@@ -14,7 +14,7 @@ type Unit = {
   description: string;
 };
 
-const unitGenerator: Fig.Generator = {
+const unitGenerator: Generator = {
   custom: async (tokens, executeShellCommand) => {
     const user = tokens.includes("--user");
     const { stdout } = await executeShellCommand({
@@ -70,7 +70,7 @@ type UnitFile = {
   preset?: "enabled" | "disabled";
 };
 
-const unitFileGenerator: Fig.Generator = {
+const unitFileGenerator: Generator = {
   custom: async (tokens, executeShellCommand) => {
     const user = tokens.includes("--user");
     const { stdout } = await executeShellCommand({
@@ -111,7 +111,7 @@ const unitFileGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "systemctl",
   description: "",
   subcommands: [

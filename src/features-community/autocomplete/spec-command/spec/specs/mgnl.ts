@@ -1,6 +1,6 @@
 import { createNpmSearchHandler, npmSearchGenerator } from "./npm";
 
-const pathOption = (description: string): Fig.Option => ({
+const pathOption = (description: string): OptionSpec => ({
   name: ["-p", "--path"],
   description,
   args: {
@@ -9,7 +9,7 @@ const pathOption = (description: string): Fig.Option => ({
   },
 });
 
-const prototypeOption = (description: string): Fig.Option => ({
+const prototypeOption = (description: string): OptionSpec => ({
   name: ["-P", "--prototype"],
   description,
   args: {
@@ -17,12 +17,12 @@ const prototypeOption = (description: string): Fig.Option => ({
   },
 });
 
-const lightModuleGenerator: Fig.Generator = {
+const lightModuleGenerator: Generator = {
   ...npmSearchGenerator,
   custom: createNpmSearchHandler(["magnolia-light-module"]),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mgnl",
   description:
     "Magnolia CLI is a command line interface (CLI) tool to set up and facilitate light development with Magnolia",

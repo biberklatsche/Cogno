@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "robomaker",
   description:
     "This section provides documentation for the AWS RoboMaker API operations",

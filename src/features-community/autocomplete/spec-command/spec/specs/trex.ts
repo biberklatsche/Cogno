@@ -1,4 +1,4 @@
-const dependenciesGenerator: Fig.Generator = {
+const dependenciesGenerator: Generator = {
   script: ["cat", "import_map.json"],
   postProcess: function (out) {
     if (out) {
@@ -23,7 +23,7 @@ const dependenciesGenerator: Fig.Generator = {
     return [];
   },
 };
-const scriptsGenerator: Fig.Generator = {
+const scriptsGenerator: Generator = {
   script: ["cat", "run.json"],
   postProcess: function (out) {
     if (out) {
@@ -49,7 +49,7 @@ const scriptsGenerator: Fig.Generator = {
   },
 };
 
-const trexOptions: Record<string, Fig.Option> = {
+const trexOptions: Record<string, OptionSpec> = {
   version: { name: ["-v", "--version"], description: "Print version" },
   map: {
     name: ["-m", "--map"],
@@ -92,7 +92,7 @@ const trexOptions: Record<string, Fig.Option> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "trex",
   description: "Advanced package management for deno, based on import_map.json",
   subcommands: [

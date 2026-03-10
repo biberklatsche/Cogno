@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const shortcut: Fig.Arg = {
+const shortcut: ArgSpec = {
   generators: {
     script: ["shortcuts", "list"],
     postProcess: (list) =>
@@ -11,7 +11,7 @@ const shortcut: Fig.Arg = {
   },
 };
 
-const subcommands: Fig.Subcommand[] = [
+const subcommands: SubcommandSpec[] = [
   {
     name: "run",
     description: "Run a shortcut",
@@ -146,7 +146,7 @@ const subcommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "shortcuts",
   description: "Command-line utility for running shortcuts",
   subcommands: [

@@ -1,6 +1,6 @@
 import { npmSearchGenerator } from "./npm";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ni",
   description: "Use the right package manager - install",
   options: [

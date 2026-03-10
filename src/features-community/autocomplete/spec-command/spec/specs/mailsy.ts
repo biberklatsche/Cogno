@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mailsy",
   description: "⚡️ Quickly generate a disposable email straight from terminal",
   subcommands: [

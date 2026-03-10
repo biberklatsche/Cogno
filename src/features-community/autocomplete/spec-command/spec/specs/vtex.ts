@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Show help for command",
@@ -6,7 +6,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "vtex",
   description:
     "Fig autocomplete for VTEX IO's CLI - VTEX IO's CLI allows you to perform any action necessary to your development process, such as linking local files to the VTEX platform, managing workspaces, and releasing new app versions",

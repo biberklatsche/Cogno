@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fzf-tmux",
   description: "Opens a fuzzy finder in a tmux pane",
   options: [

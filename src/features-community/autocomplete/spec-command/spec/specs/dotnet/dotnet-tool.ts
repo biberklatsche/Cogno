@@ -6,7 +6,7 @@ type SearchResultData = {
   description: string;
 };
 
-const packageGenerator: Fig.Generator = {
+const packageGenerator: Generator = {
   script(context) {
     const searchTerm = context[context.length - 1];
     return [
@@ -20,7 +20,7 @@ const packageGenerator: Fig.Generator = {
   postProcess(out) {
     const searchResults: SearchResultData[] = JSON.parse(out).data;
 
-    return searchResults.map<Fig.Suggestion>((value) => {
+    return searchResults.map<Suggestion>((value) => {
       return {
         name: value.title,
         insertValue: value.id,
@@ -30,7 +30,7 @@ const packageGenerator: Fig.Generator = {
   },
 };
 
-const versionSearchGenerator: Fig.Generator = {
+const versionSearchGenerator: Generator = {
   script(context) {
     const commands = ["install", "update"];
     const command = context.filter((ctx) => !ctx.startsWith("-"));
@@ -48,7 +48,7 @@ const versionSearchGenerator: Fig.Generator = {
   postProcess(out) {
     const searchResults: string[] = JSON.parse(out).versions;
 
-    return searchResults.reverse().map<Fig.Suggestion>((value) => {
+    return searchResults.reverse().map<Suggestion>((value) => {
       return {
         name: value,
       };
@@ -58,7 +58,7 @@ const versionSearchGenerator: Fig.Generator = {
 
 const configFileGenerator = filepaths({ equals: "nuget.config" });
 
-const toolListGenerator: Fig.Generator = {
+const toolListGenerator: Generator = {
   trigger: () => true,
   script(context) {
     const globalFlags = ["-g", "--global"];
@@ -72,7 +72,7 @@ const toolListGenerator: Fig.Generator = {
   postProcess(out) {
     const lines = out.split("\n").slice(2);
 
-    return lines.map<Fig.Suggestion>((line) => {
+    return lines.map<Suggestion>((line) => {
       const argRegex = /(([a-zA-Z \.\[\]#,/][^ ]{1,})+)/g;
       const [pkg, version, commands] = line
         .match(argRegex)
@@ -87,7 +87,7 @@ const toolListGenerator: Fig.Generator = {
   },
 };
 
-const toolInstallCommonOptions: Fig.Option[] = [
+const toolInstallCommonOptions: OptionSpec[] = [
   {
     name: "--add-source",
     description:
@@ -171,7 +171,7 @@ const toolInstallCommonOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tool",
   description:
     "The dotnet tool install command provides a way for you to install .NET tools on your machine",

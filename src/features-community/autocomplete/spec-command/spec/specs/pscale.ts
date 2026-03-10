@@ -1,4 +1,4 @@
-const authOptions: Fig.Option[] = [
+const authOptions: OptionSpec[] = [
   {
     name: "--client-id",
     description: "The client ID for the PlanetScale CLI application",
@@ -9,13 +9,13 @@ const authOptions: Fig.Option[] = [
   },
 ];
 
-const databaseOption: Fig.Option = {
+const databaseOption: OptionSpec = {
   name: "--database",
   description: "The database this project is using",
   args: { name: "string" },
 };
 
-const forceOption: (arg0: string) => Fig.Option = (target: string) => {
+const forceOption: (arg0: string) => OptionSpec = (target: string) => {
   return {
     name: "--force",
     description: `Delete a ${target} without confirmation`,
@@ -23,48 +23,48 @@ const forceOption: (arg0: string) => Fig.Option = (target: string) => {
   };
 };
 
-const helpOption: Fig.Option = {
+const helpOption: OptionSpec = {
   name: ["--help", "-h"],
   description: "Show help",
 };
 
-const localAddrOption: Fig.Option = {
+const localAddrOption: OptionSpec = {
   name: "--local-addr",
   description:
     "Local address to bind and listen for connections. By default the proxy binds to 127.0.0.1 with a random port",
   args: { name: "string" },
 };
 
-const orgOption: Fig.Option = {
+const orgOption: OptionSpec = {
   name: "--org",
   description: "The organization for the current user",
   args: { name: "string" },
 };
 
-const portOption: Fig.Option = {
+const portOption: OptionSpec = {
   name: "--port",
   description: 'Local port to bind and listen for connections (default "3306")',
   args: { name: "string" },
 };
 
-const regionOption: Fig.Option = {
+const regionOption: OptionSpec = {
   name: "--region",
   description: "Region for the database",
 };
 
-const remoteAddrOption: Fig.Option = {
+const remoteAddrOption: OptionSpec = {
   name: "--remote-addr",
   description:
     "PlanetScale Database remote network address. By default the remote address is populated automatically from the PlanetScale API",
   args: { name: "string" },
 };
 
-const webOption: Fig.Option = {
+const webOption: OptionSpec = {
   name: "--web",
   description: "Open in web browser",
 };
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   helpOption,
   {
     name: "--api-token",
@@ -110,7 +110,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pscale",
   description:
     "Pscale is a CLI library for communicating with PlanetScale's API",

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lsd",
   description: "An ls command with a lot of pretty colors and some other stuff",
   args: {

@@ -1,4 +1,4 @@
-const shelveSubcommands: Fig.Subcommand[] = [
+const shelveSubcommands: SubcommandSpec[] = [
   {
     name: ["create", "c", "init"],
     description: "Create a new project",
@@ -57,7 +57,7 @@ const shelveSubcommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "shelve",
   description:
     "Shelve CLI a command-line interface designed for the Shelve platform. This tool enables users to authenticate with Shelve, facilitating the seamless transfer of environment variables for project collaboration within a team directly through the terminal interface",

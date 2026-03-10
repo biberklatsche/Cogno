@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pinpoint-sms-voice",
   description: "Pinpoint SMS and Voice Messaging public facing APIs",
   subcommands: [

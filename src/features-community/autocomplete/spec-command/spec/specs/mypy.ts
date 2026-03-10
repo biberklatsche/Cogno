@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mypy",
   description: "Mypy is a static type checker for Python",
   options: [

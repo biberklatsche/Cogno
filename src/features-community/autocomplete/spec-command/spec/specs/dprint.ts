@@ -1,4 +1,4 @@
-const helpSubcommand: Fig.Subcommand = {
+const helpSubcommand: SubcommandSpec = {
   name: "help",
   description: "Prints the help of the given subcommand(s)",
   args: {
@@ -11,7 +11,7 @@ const helpSubcommand: Fig.Subcommand = {
   },
 };
 
-const configurableCommandOptions: Fig.Option[] = [
+const configurableCommandOptions: OptionSpec[] = [
   {
     name: "--excludes",
     description:
@@ -30,7 +30,7 @@ const configurableCommandOptions: Fig.Option[] = [
   },
 ];
 
-const checkCommandOptions: Fig.Option[] = [
+const checkCommandOptions: OptionSpec[] = [
   {
     name: "--incremental",
     description:
@@ -44,14 +44,14 @@ const checkCommandOptions: Fig.Option[] = [
   ...configurableCommandOptions,
 ];
 
-const filesArgument: Fig.Arg = {
+const filesArgument: ArgSpec = {
   name: "files",
   isVariadic: true,
   description:
     "List of file patterns in quotes to format. This overrides what is specified in the config file",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dprint",
   description:
     "A pluggable and configurable code formatting platform written in Rust",

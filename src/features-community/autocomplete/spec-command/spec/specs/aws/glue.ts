@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "glue",
   description: "Glue Defines the public endpoint for the Glue service",
   subcommands: [

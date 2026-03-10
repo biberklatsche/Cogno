@@ -3,7 +3,7 @@
 // 19 June 2021
 
 // To learn more about Fig's autocomplete standard visit: https://fig.io/docs/concepts/cli-skeleton
-const global_parameter_path: Fig.Option = {
+const global_parameter_path: OptionSpec = {
   name: "--path",
   requiresSeparator: true,
   description: "Path to the WordPress files",
@@ -13,7 +13,7 @@ const global_parameter_path: Fig.Option = {
   },
 };
 
-const global_parameter_url: Fig.Option = {
+const global_parameter_url: OptionSpec = {
   name: "--url",
   requiresSeparator: true,
   description:
@@ -23,7 +23,7 @@ const global_parameter_url: Fig.Option = {
   },
 };
 
-const global_parameter_ssh: Fig.Option = {
+const global_parameter_ssh: OptionSpec = {
   name: "--ssh",
   requiresSeparator: true,
   description:
@@ -41,7 +41,7 @@ const global_parameter_ssh: Fig.Option = {
   },
 };
 
-const global_parameter_http: Fig.Option = {
+const global_parameter_http: OptionSpec = {
   name: "--http",
   requiresSeparator: true,
   description:
@@ -51,7 +51,7 @@ const global_parameter_http: Fig.Option = {
   },
 };
 
-const global_parameter_user: Fig.Option = {
+const global_parameter_user: OptionSpec = {
   name: "--user",
   requiresSeparator: true,
   description: "Set the WordPress user",
@@ -61,13 +61,13 @@ const global_parameter_user: Fig.Option = {
   },
 };
 
-const global_parameter_skip_plugins1: Fig.Option = {
+const global_parameter_skip_plugins1: OptionSpec = {
   name: "--skip-plugins",
   description:
     "Skip loading all plugins, or a comma-separated list of plugins. Note: mu-plugins are still loaded",
 };
 
-const global_parameter_skip_plugins2: Fig.Option = {
+const global_parameter_skip_plugins2: OptionSpec = {
   name: "--skip-plugins",
   requiresSeparator: true,
   displayName: "--skip-plugins=",
@@ -78,12 +78,12 @@ const global_parameter_skip_plugins2: Fig.Option = {
   },
 };
 
-const global_parameter_skip_themes1: Fig.Option = {
+const global_parameter_skip_themes1: OptionSpec = {
   name: "--skip-themes",
   description: "Skip loading all themes, or a comma-separated list of themes",
 };
 
-const global_parameter_skip_themes2: Fig.Option = {
+const global_parameter_skip_themes2: OptionSpec = {
   name: "--skip-themes",
   requiresSeparator: true,
   displayName: "--skip-themes=",
@@ -93,12 +93,12 @@ const global_parameter_skip_themes2: Fig.Option = {
   },
 };
 
-const global_parameter_skip_packages: Fig.Option = {
+const global_parameter_skip_packages: OptionSpec = {
   name: "--skip-packages",
   description: "Skip loading all installed packages",
 };
 
-const global_parameter_require: Fig.Option = {
+const global_parameter_require: OptionSpec = {
   name: "--require",
   requiresSeparator: true,
   description:
@@ -108,7 +108,7 @@ const global_parameter_require: Fig.Option = {
   },
 };
 
-const global_parameter_exec: Fig.Option = {
+const global_parameter_exec: OptionSpec = {
   name: "--exec",
   requiresSeparator: true,
   description:
@@ -118,23 +118,23 @@ const global_parameter_exec: Fig.Option = {
   },
 };
 
-const global_parameter_color: Fig.Option = {
+const global_parameter_color: OptionSpec = {
   name: "--color",
   description: "Whether to colorize the output",
 };
 
-const global_parameter_no_color: Fig.Option = {
+const global_parameter_no_color: OptionSpec = {
   name: "--no-color",
   description: "Whether to colorize the output",
 };
 
-const global_parameter_debug1: Fig.Option = {
+const global_parameter_debug1: OptionSpec = {
   name: "--debug",
   description:
     "Show all PHP errors and add verbosity to WP-CLI output. Built-in groups include: bootstrap, commandfactory, and help",
 };
 
-const global_parameter_debug2: Fig.Option = {
+const global_parameter_debug2: OptionSpec = {
   name: "--debug",
   displayName: "--debug=",
   requiresSeparator: true,
@@ -146,13 +146,13 @@ const global_parameter_debug2: Fig.Option = {
   },
 };
 
-const global_parameter_prompt1: Fig.Option = {
+const global_parameter_prompt1: OptionSpec = {
   name: "--prompt",
   description:
     "Prompt the user to enter values for all command arguments, or a subset specified as comma-separated values",
 };
 
-const global_parameter_prompt2: Fig.Option = {
+const global_parameter_prompt2: OptionSpec = {
   name: "--prompt",
   requiresSeparator: true,
   displayName: "--prompt=",
@@ -163,13 +163,13 @@ const global_parameter_prompt2: Fig.Option = {
   },
 };
 
-const global_parameter_quiet: Fig.Option = {
+const global_parameter_quiet: OptionSpec = {
   name: "--quiet",
   description: "Suppress informational messages",
 };
 
 // The below is a dummy example for git. Make sure to change the file name!
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "wp",
   description: "WP-CLI is the command-line interface for WordPress",
   subcommands: [

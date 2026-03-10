@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "visudo",
   description:
     "Visudo edits the sudoers file, which defines the users and groups with administrator rights",

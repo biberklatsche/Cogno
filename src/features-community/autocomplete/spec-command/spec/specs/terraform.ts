@@ -1,5 +1,5 @@
 // If you edit commands or options, please copy our changes on to the terragrunt spec
-const workspaceList: Fig.Generator = {
+const workspaceList: Generator = {
   script: ["terraform", "workspace", "list"],
   postProcess: function (out) {
     return out.split("\n").map((workspace) => {
@@ -12,7 +12,7 @@ const workspaceList: Fig.Generator = {
   },
 };
 
-const addressList: Fig.Generator = {
+const addressList: Generator = {
   script: ["terraform", "state", "list"],
   postProcess: function (out) {
     if (out.includes("No state file was found!") || out.includes("Error")) {
@@ -28,7 +28,7 @@ const addressList: Fig.Generator = {
   },
 };
 
-const generalSubCommandOptions: Fig.Option[] = [
+const generalSubCommandOptions: OptionSpec[] = [
   {
     name: "-lock",
     requiresSeparator: true,
@@ -72,7 +72,7 @@ const generalSubCommandOptions: Fig.Option[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: "-help",
     description:
@@ -93,7 +93,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const mainCommands: Fig.Subcommand[] = [
+const mainCommands: SubcommandSpec[] = [
   {
     name: "init",
     description: "Prepare your working directory for other commands",
@@ -203,7 +203,7 @@ const mainCommands: Fig.Subcommand[] = [
   },
 ];
 
-const otherCommands: Fig.Subcommand[] = [
+const otherCommands: SubcommandSpec[] = [
   {
     name: "console",
     description: "Try Terraform expressions at an interactive command prompt",
@@ -395,7 +395,7 @@ const otherCommands: Fig.Subcommand[] = [
   },
 ];
 
-const extraCommands: Fig.Subcommand[] = [
+const extraCommands: SubcommandSpec[] = [
   {
     name: "-install-autocomplete",
     description: "Install bash/zsh tab completion",
@@ -406,7 +406,7 @@ const extraCommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "terraform",
   description: "Terraform CLI",
   options: globalOptions,

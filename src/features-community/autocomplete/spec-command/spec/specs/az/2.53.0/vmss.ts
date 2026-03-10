@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "vmss",
   description:
     "Manage groupings of virtual machines in an Azure Virtual Machine Scale Set (VMSS)",

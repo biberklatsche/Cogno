@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "storage-mover",
   description: "Manage top-level Storage Mover resource",
   subcommands: [

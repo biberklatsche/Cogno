@@ -6,7 +6,7 @@ interface ZSuggestion {
 }
 
 async function getZHistory(
-  execute: Fig.ExecuteCommandFunction
+  execute: ExecuteCommandFunction
 ): Promise<ZSuggestion[]> {
   const { stdout } = await execute({
     command: "zsh",
@@ -30,7 +30,7 @@ async function getZHistory(
 
 async function getCurrentDirectoryFolders(
   currentWorkingDirectory: string,
-  execute: Fig.ExecuteCommandFunction
+  execute: ExecuteCommandFunction
 ): Promise<ZSuggestion[]> {
   const { stdout } = await execute({
     command: "bash",
@@ -58,7 +58,7 @@ function filterHistoryBySearchTerms(
 }
 
 // https://github.com/rupa/z
-const zShCompletionSpec: Fig.Spec = {
+const zShCompletionSpec: CommandSpec = {
   name: "z",
   description: "CLI tool to jump around directories",
   args: {
@@ -118,7 +118,7 @@ const zShCompletionSpec: Fig.Spec = {
 };
 
 // https://github.com/ajeetdsouza/zoxide
-const zoxideCompletionSpec: Fig.Spec = {
+const zoxideCompletionSpec: CommandSpec = {
   name: "z",
   description: "Smarter cd command, inspired by z and autojump",
   args: {
@@ -203,7 +203,7 @@ const zoxideCompletionSpec: Fig.Spec = {
   },
 };
 
-const zCompletionSpec: Fig.Spec = {
+const zCompletionSpec: CommandSpec = {
   name: "z",
   generateSpec: async (_, executeShellCommand) => {
     // Assume if zoxide is installed, use that completion spec

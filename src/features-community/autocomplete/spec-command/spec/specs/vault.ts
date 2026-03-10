@@ -1,4 +1,4 @@
-const vaultCommonOptions: Fig.Option[] = [
+const vaultCommonOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Display help",
@@ -6,7 +6,7 @@ const vaultCommonOptions: Fig.Option[] = [
   },
 ];
 
-const vaultHTTPOptions: Fig.Option[] = [
+const vaultHTTPOptions: OptionSpec[] = [
   {
     name: "-address",
     description:
@@ -168,7 +168,7 @@ const vaultHTTPOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOutputFieldOptions: Fig.Option[] = [
+const vaultOutputFieldOptions: OptionSpec[] = [
   {
     name: "-field",
     description:
@@ -181,7 +181,7 @@ const vaultOutputFieldOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOutputFormatOptions: Fig.Option[] = [
+const vaultOutputFormatOptions: OptionSpec[] = [
   {
     name: "-format",
     description:
@@ -196,7 +196,7 @@ const vaultOutputFormatOptions: Fig.Option[] = [
   },
 ];
 
-const vaultWriteOptions: Fig.Option[] = [
+const vaultWriteOptions: OptionSpec[] = [
   {
     name: ["-force", "-f"],
     description:
@@ -205,7 +205,7 @@ const vaultWriteOptions: Fig.Option[] = [
   },
 ];
 
-const vaultLoginOptions: Fig.Option[] = [
+const vaultLoginOptions: OptionSpec[] = [
   {
     name: "-method",
     description:
@@ -268,7 +268,7 @@ const vaultLoginOptions: Fig.Option[] = [
   },
 ];
 
-const vaultAgentOptions: Fig.Option[] = [
+const vaultAgentOptions: OptionSpec[] = [
   {
     name: "-config",
     description:
@@ -306,7 +306,7 @@ const vaultAgentOptions: Fig.Option[] = [
   },
 ];
 
-const vaultServerOptions: Fig.Option[] = [
+const vaultServerOptions: OptionSpec[] = [
   {
     name: "-config",
     description:
@@ -367,7 +367,7 @@ const vaultServerOptions: Fig.Option[] = [
   },
 ];
 
-const vaultDevOptions: Fig.Option[] = [
+const vaultDevOptions: OptionSpec[] = [
   {
     name: "-dev",
     description:
@@ -416,7 +416,7 @@ const vaultDevOptions: Fig.Option[] = [
   },
 ];
 
-const vaultDebugOptions: Fig.Option[] = [
+const vaultDebugOptions: OptionSpec[] = [
   {
     name: "-compress",
     description:
@@ -494,7 +494,7 @@ const vaultDebugOptions: Fig.Option[] = [
   },
 ];
 
-const vaultMonitorOptions: Fig.Option[] = [
+const vaultMonitorOptions: OptionSpec[] = [
   {
     name: "-log-level",
     description:
@@ -509,7 +509,7 @@ const vaultMonitorOptions: Fig.Option[] = [
   },
 ];
 
-const vaultAuditEnableOptions: Fig.Option[] = [
+const vaultAuditEnableOptions: OptionSpec[] = [
   {
     name: "-description",
     description:
@@ -544,7 +544,7 @@ const vaultAuditEnableOptions: Fig.Option[] = [
   },
 ];
 
-const vaultVersionOptions: Fig.Option[] = [
+const vaultVersionOptions: OptionSpec[] = [
   {
     name: "-versions",
     description: "Specifies the version numbers",
@@ -558,7 +558,7 @@ const vaultVersionOptions: Fig.Option[] = [
   },
 ];
 
-const vaultKvMetadataPatchAndPutOptions: Fig.Option[] = [
+const vaultKvMetadataPatchAndPutOptions: OptionSpec[] = [
   {
     name: "-cas-required",
     description:
@@ -605,7 +605,7 @@ const vaultKvMetadataPatchAndPutOptions: Fig.Option[] = [
   },
 ];
 
-const vaultKvPatchOptions: Fig.Option[] = [
+const vaultKvPatchOptions: OptionSpec[] = [
   {
     name: "-cas",
     description:
@@ -631,7 +631,7 @@ const vaultKvPatchOptions: Fig.Option[] = [
   },
 ];
 
-const vaultKvPutOptions: Fig.Option[] = [
+const vaultKvPutOptions: OptionSpec[] = [
   {
     name: "-cas",
     description:
@@ -646,7 +646,7 @@ const vaultKvPutOptions: Fig.Option[] = [
   },
 ];
 
-const vaultLeaseRenewOptions: Fig.Option[] = [
+const vaultLeaseRenewOptions: OptionSpec[] = [
   {
     name: "-increment",
     description:
@@ -659,7 +659,7 @@ const vaultLeaseRenewOptions: Fig.Option[] = [
   },
 ];
 
-const vaultLeaseRevokeOptions: Fig.Option[] = [
+const vaultLeaseRevokeOptions: OptionSpec[] = [
   {
     name: "-force",
     description:
@@ -698,7 +698,7 @@ const vaultLeaseRevokeOptions: Fig.Option[] = [
   },
 ];
 
-const vaultAuditListOptions: Fig.Option[] = [
+const vaultAuditListOptions: OptionSpec[] = [
   {
     name: "-detailed",
     description:
@@ -713,7 +713,7 @@ const vaultAuditListOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorDiagnoseOptions: Fig.Option[] = [
+const vaultOperatorDiagnoseOptions: OptionSpec[] = [
   {
     name: "-config",
     description:
@@ -753,7 +753,7 @@ const vaultOperatorDiagnoseOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorGenerateRootOptions: Fig.Option[] = [
+const vaultOperatorGenerateRootOptions: OptionSpec[] = [
   {
     name: "-cancel",
     description:
@@ -833,7 +833,7 @@ const vaultOperatorGenerateRootOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorInitOptions: Fig.Option[] = [
+const vaultOperatorInitOptions: OptionSpec[] = [
   {
     name: ["-key-shares", "-n"],
     description:
@@ -896,7 +896,7 @@ const vaultOperatorInitOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorConsulOptions: Fig.Option[] = [
+const vaultOperatorConsulOptions: OptionSpec[] = [
   {
     name: "-consul-auto",
     description:
@@ -915,7 +915,7 @@ const vaultOperatorConsulOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorAutoUnsealOptions: Fig.Option[] = [
+const vaultOperatorAutoUnsealOptions: OptionSpec[] = [
   {
     name: "-recovery-pgp-keys",
     description:
@@ -951,7 +951,7 @@ const vaultOperatorAutoUnsealOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorMigrateOptions: Fig.Option[] = [
+const vaultOperatorMigrateOptions: OptionSpec[] = [
   {
     name: "-config",
     description:
@@ -977,7 +977,7 @@ const vaultOperatorMigrateOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorRaftJoinOptions: Fig.Option[] = [
+const vaultOperatorRaftJoinOptions: OptionSpec[] = [
   {
     name: "-auto-join-port",
     description:
@@ -1042,7 +1042,7 @@ const vaultOperatorRaftJoinOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorRaftPeerOptions: Fig.Option[] = [
+const vaultOperatorRaftPeerOptions: OptionSpec[] = [
   {
     name: "-dr-token",
     description:
@@ -1054,7 +1054,7 @@ const vaultOperatorRaftPeerOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorRaftSetConfigOptions: Fig.Option[] = [
+const vaultOperatorRaftSetConfigOptions: OptionSpec[] = [
   {
     name: "-cleanup-dead-servers",
     description: "Clean up dead servers",
@@ -1107,7 +1107,7 @@ const vaultOperatorRaftSetConfigOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorRekeyOptions: Fig.Option[] = [
+const vaultOperatorRekeyOptions: OptionSpec[] = [
   {
     name: "-cancel",
     description:
@@ -1203,7 +1203,7 @@ const vaultOperatorRekeyOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorRaftSnaphotRestoreOptions: Fig.Option[] = [
+const vaultOperatorRaftSnaphotRestoreOptions: OptionSpec[] = [
   {
     name: "-force",
     description:
@@ -1212,7 +1212,7 @@ const vaultOperatorRaftSnaphotRestoreOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorUnsealOptions: Fig.Option[] = [
+const vaultOperatorUnsealOptions: OptionSpec[] = [
   {
     name: "-migrate",
     description:
@@ -1227,7 +1227,7 @@ const vaultOperatorUnsealOptions: Fig.Option[] = [
   },
 ];
 
-const vaultOperatorUsageOptions: Fig.Option[] = [
+const vaultOperatorUsageOptions: OptionSpec[] = [
   {
     name: "-end-time",
     description: "End of report period. Defaults to end of last month",
@@ -1247,7 +1247,7 @@ const vaultOperatorUsageOptions: Fig.Option[] = [
   },
 ];
 
-const vaultPluginRegisterOptions: Fig.Option[] = [
+const vaultPluginRegisterOptions: OptionSpec[] = [
   {
     name: "-args",
     description:
@@ -1277,7 +1277,7 @@ const vaultPluginRegisterOptions: Fig.Option[] = [
   },
 ];
 
-const vaultPluginReloadOptions: Fig.Option[] = [
+const vaultPluginReloadOptions: OptionSpec[] = [
   {
     name: "-mounts",
     description:
@@ -1307,7 +1307,7 @@ const vaultPluginReloadOptions: Fig.Option[] = [
   },
 ];
 
-const vaultSecretsEnableOptions: Fig.Option[] = [
+const vaultSecretsEnableOptions: OptionSpec[] = [
   {
     name: "-allowed-managed-keys",
     description:
@@ -1448,7 +1448,7 @@ const vaultSecretsEnableOptions: Fig.Option[] = [
   },
 ];
 
-const vaultSecretsListOptions: Fig.Option[] = [
+const vaultSecretsListOptions: OptionSpec[] = [
   {
     name: "-details",
     description:
@@ -1457,7 +1457,7 @@ const vaultSecretsListOptions: Fig.Option[] = [
   },
 ];
 
-const vaultSshOptions: Fig.Option[] = [
+const vaultSshOptions: OptionSpec[] = [
   {
     name: "-mode",
     description: "Name of the authentication mode (ca, dynamic, otp)",
@@ -1514,7 +1514,7 @@ const vaultSshOptions: Fig.Option[] = [
   },
 ];
 
-const vaultSshCaOptions: Fig.Option[] = [
+const vaultSshCaOptions: OptionSpec[] = [
   {
     name: "-host-key-hostnames",
     description:
@@ -1579,7 +1579,7 @@ const vaultSshCaOptions: Fig.Option[] = [
   },
 ];
 
-const vaultTokenCreateOptions: Fig.Option[] = [
+const vaultTokenCreateOptions: OptionSpec[] = [
   {
     name: "-display-name",
     description:
@@ -1702,7 +1702,7 @@ const vaultTokenCreateOptions: Fig.Option[] = [
   },
 ];
 
-const vaultTokenLookupOptions: Fig.Option[] = [
+const vaultTokenLookupOptions: OptionSpec[] = [
   {
     name: "-accessor",
     description:
@@ -1710,7 +1710,7 @@ const vaultTokenLookupOptions: Fig.Option[] = [
   },
 ];
 
-const vaultTokenRenewOptions: Fig.Option[] = [
+const vaultTokenRenewOptions: OptionSpec[] = [
   {
     name: "-accessor",
     description:
@@ -1728,7 +1728,7 @@ const vaultTokenRenewOptions: Fig.Option[] = [
   },
 ];
 
-const vaultTokenRevokeOptions: Fig.Option[] = [
+const vaultTokenRevokeOptions: OptionSpec[] = [
   {
     name: "-accessor",
     description:
@@ -1751,14 +1751,14 @@ const vaultTokenRevokeOptions: Fig.Option[] = [
   },
 ];
 
-const vaultSshArgs: Fig.Arg[] = [
+const vaultSshArgs: ArgSpec[] = [
   {
     name: "username@ip",
     description: "Ssh username and destination",
   },
 ];
 
-const vaultSecretsMoveArgs: Fig.Arg[] = [
+const vaultSecretsMoveArgs: ArgSpec[] = [
   {
     name: "source",
     description: "Secret source engine",
@@ -1769,14 +1769,14 @@ const vaultSecretsMoveArgs: Fig.Arg[] = [
   },
 ];
 
-const vaultPluginReloadIdArg: Fig.Arg[] = [
+const vaultPluginReloadIdArg: ArgSpec[] = [
   {
     name: "reload_id",
     description: "Reload ID",
   },
 ];
 
-const vaultPluginTypeArg: Fig.Arg[] = [
+const vaultPluginTypeArg: ArgSpec[] = [
   {
     name: "type",
     description: "Plugin type",
@@ -1784,21 +1784,21 @@ const vaultPluginTypeArg: Fig.Arg[] = [
   },
 ];
 
-const vaultPluginNameArg: Fig.Arg[] = [
+const vaultPluginNameArg: ArgSpec[] = [
   {
     name: "name",
     description: "Plugin name",
   },
 ];
 
-const vaultPolicyNameArg: Fig.Arg[] = [
+const vaultPolicyNameArg: ArgSpec[] = [
   {
     name: "name",
     description: "Policy name",
   },
 ];
 
-const vaultPolicyPathArg: Fig.Arg[] = [
+const vaultPolicyPathArg: ArgSpec[] = [
   {
     name: "path",
     description: "Policy file",
@@ -1806,7 +1806,7 @@ const vaultPolicyPathArg: Fig.Arg[] = [
   },
 ];
 
-const vaultPathArg: Fig.Arg[] = [
+const vaultPathArg: ArgSpec[] = [
   {
     name: "PATH",
     description: "Vault secret path",
@@ -1818,7 +1818,7 @@ const vaultPathArg: Fig.Arg[] = [
   },
 ];
 
-const vaultKeyArg: Fig.Arg[] = [
+const vaultKeyArg: ArgSpec[] = [
   {
     name: "KEY",
     description: "Vault secret key",
@@ -1830,7 +1830,7 @@ const vaultKeyArg: Fig.Arg[] = [
   },
 ];
 
-const vaultIdArg: Fig.Arg[] = [
+const vaultIdArg: ArgSpec[] = [
   {
     name: "ID",
     description: "Vault secret ID",
@@ -1842,7 +1842,7 @@ const vaultIdArg: Fig.Arg[] = [
   },
 ];
 
-const vaultDataArg: Fig.Arg[] = [
+const vaultDataArg: ArgSpec[] = [
   {
     name: "DATA",
     description: "K=V or K=@V.json",
@@ -1851,7 +1851,7 @@ const vaultDataArg: Fig.Arg[] = [
   },
 ];
 
-const vaultTypeArg: Fig.Arg[] = [
+const vaultTypeArg: ArgSpec[] = [
   {
     name: "TYPE",
     description: "Device type",
@@ -1863,7 +1863,7 @@ const vaultTypeArg: Fig.Arg[] = [
   },
 ];
 
-const vaultConfigArg: Fig.Arg[] = [
+const vaultConfigArg: ArgSpec[] = [
   {
     name: "CONFIG",
     description: "K=V",
@@ -1872,21 +1872,21 @@ const vaultConfigArg: Fig.Arg[] = [
   },
 ];
 
-const vaultTokenArg: Fig.Arg[] = [
+const vaultTokenArg: ArgSpec[] = [
   {
     name: "TOKEN",
     description: "Vault token",
   },
 ];
 
-const vaultTokenOrAccessorArg: Fig.Arg[] = [
+const vaultTokenOrAccessorArg: ArgSpec[] = [
   {
     name: "TOKEN|ACCESSOR",
     description: "Vault token or accesor",
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vault",
   description: "Interact with HashiCorp Vault",
   parserDirectives: {

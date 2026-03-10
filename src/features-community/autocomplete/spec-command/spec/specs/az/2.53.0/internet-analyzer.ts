@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "internet-analyzer",
   description: "Commands to manage internet analyzer",
   subcommands: [

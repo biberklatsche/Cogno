@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "import-export",
   description: "Manage Import Export",
   subcommands: [

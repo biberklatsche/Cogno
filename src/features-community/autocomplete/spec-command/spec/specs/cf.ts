@@ -6,27 +6,27 @@ const postProcessCfList =
       .slice(leadingLines)
       .map((name) => ({ name, description }));
 
-const generateAppNames: Fig.Generator = {
+const generateAppNames: Generator = {
   script: ["bash", "-c", `cf apps | cut -d " " -f1`],
   postProcess: postProcessCfList("App name", 4),
 };
 
-const generateOrgs: Fig.Generator = {
+const generateOrgs: Generator = {
   script: ["cf", "orgs"],
   postProcess: postProcessCfList("Org", 3),
 };
 
-const generateSpaces: Fig.Generator = {
+const generateSpaces: Generator = {
   script: ["cf", "spaces"],
   postProcess: postProcessCfList("Space", 3),
 };
 
-const generateServices: Fig.Generator = {
+const generateServices: Generator = {
   script: ["bash", "-c", `cf services | cut -d " " -f1 `],
   postProcess: postProcessCfList("Service", 4),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cf",
   description: "Cloudfoundry cli",
   subcommands: [

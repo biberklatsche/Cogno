@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sagemaker",
   description:
     "Provides APIs for creating and managing SageMaker resources.  Other Resources:    SageMaker Developer Guide     Amazon Augmented AI Runtime API Reference",

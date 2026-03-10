@@ -1,5 +1,5 @@
 // https://tailordev.github.io/Watson/
-const listProjects: Fig.Generator = {
+const listProjects: Generator = {
   script: ["watson", "projects"],
   postProcess: (output) => {
     return output.split("\n").map((project) => ({
@@ -9,7 +9,7 @@ const listProjects: Fig.Generator = {
   },
 };
 
-const listTags: Fig.Generator = {
+const listTags: Generator = {
   script: ["watson", "tags"],
   postProcess: (output) => {
     return output.split("\n").map((tag) => ({
@@ -19,7 +19,7 @@ const listTags: Fig.Generator = {
   },
 };
 
-const listFrames: Fig.Generator = {
+const listFrames: Generator = {
   script: ["watson", "log", "--json", "--reverse"],
   postProcess: (output) => {
     return JSON.parse(output).map((frame) => ({
@@ -32,7 +32,7 @@ const listFrames: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "watson",
   description: "A wonderful CLI to track your time",
   subcommands: [

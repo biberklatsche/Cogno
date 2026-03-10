@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mdls",
   description: "Lists the metadata attributes for the specified file",
   parserDirectives: {

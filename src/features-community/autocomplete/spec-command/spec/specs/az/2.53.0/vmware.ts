@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "vmware",
   description: "Commands to manage Azure VMware Solution",
   subcommands: [

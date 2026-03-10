@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "exercism",
   description: "Solve coding exercises in your chosen programming languages",
   subcommands: [

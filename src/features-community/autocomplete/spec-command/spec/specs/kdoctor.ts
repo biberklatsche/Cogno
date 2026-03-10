@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kdoctor",
   description:
     "Tool that helps to set up the environment for Kotlin Multiplatform Mobile app development",

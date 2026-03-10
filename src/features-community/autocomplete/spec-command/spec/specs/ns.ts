@@ -1,12 +1,12 @@
 /**
  * Common options used throughout the CLI
  */
-const cleanOption: Fig.Option = {
+const cleanOption: OptionSpec = {
   name: "--clean",
   description: "Forces rebuilding the native application",
 };
 
-const timeoutOption: Fig.Option = {
+const timeoutOption: OptionSpec = {
   name: "--timeout",
   description:
     "Sets the number of seconds that the NativeScript CLI will wait for the debugger to boot. If not set, the default timeout is 90 seconds",
@@ -15,12 +15,12 @@ const timeoutOption: Fig.Option = {
   },
 };
 
-const emulatorOption: Fig.Option = {
+const emulatorOption: OptionSpec = {
   name: "--emulator",
   description: "Specifies that you want to debug the app in an emulator",
 };
 
-const deviceOption: Fig.Option = {
+const deviceOption: OptionSpec = {
   name: "--device",
   description: "Specifies a connected device/emulator to start and run the app",
   args: {
@@ -38,18 +38,18 @@ const deviceOption: Fig.Option = {
   },
 };
 
-const forceOption: Fig.Option = {
+const forceOption: OptionSpec = {
   name: "--force",
   description:
     "Skips the application compatibility checks and forces npm i to ensure all dependencies are installed",
 };
 
-const noHmrOption: Fig.Option = {
+const noHmrOption: OptionSpec = {
   name: "--no-hmr",
   description: "Disables Hot Module Replacement (HMR)",
 };
 
-const frameworkPathOption: Fig.Option = {
+const frameworkPathOption: OptionSpec = {
   name: "--framework-path",
   description:
     "Sets the path to a NativeScript runtime for the specified platform that you want to use instead of the default runtime. <File Path> must point to a valid npm package",
@@ -59,28 +59,28 @@ const frameworkPathOption: Fig.Option = {
   },
 };
 
-const jsonOption: Fig.Option = {
+const jsonOption: OptionSpec = {
   name: "--json",
   description: "Show the output of the command in JSON format",
 };
 
-const justLaunchOption: Fig.Option = {
+const justLaunchOption: OptionSpec = {
   name: "--justlaunch",
   description: "Does not print the application output in the console",
 };
 
-const releaseOption: Fig.Option = {
+const releaseOption: OptionSpec = {
   name: "--release",
   description:
     "Produces a release build by running webpack in production mode and native build in release mode. Otherwise, produces a debug build",
 };
 
-const bundleOption: Fig.Option = {
+const bundleOption: OptionSpec = {
   name: "--bundle",
   description: "Bundle the application",
 };
 
-const helpOption = (label: string): Fig.Option => {
+const helpOption = (label: string): OptionSpec => {
   return {
     name: ["--help", "-h"],
     description: `Show help for the ${label} subcommand`,
@@ -91,7 +91,7 @@ const helpOption = (label: string): Fig.Option => {
 /**
  * Platform options used across many commands of the CLI
  */
-const androidGeneralOptions: Fig.Option[] = [
+const androidGeneralOptions: OptionSpec[] = [
   {
     name: "--aab",
     description:
@@ -115,7 +115,7 @@ const androidGeneralOptions: Fig.Option[] = [
   },
 ];
 
-const androidKeyOptions: Fig.Option[] = [
+const androidKeyOptions: OptionSpec[] = [
   {
     name: "--key-store-path",
     description:
@@ -155,7 +155,7 @@ const androidKeyOptions: Fig.Option[] = [
   },
 ];
 
-const platformEnvOptions: Fig.Option[] = [
+const platformEnvOptions: OptionSpec[] = [
   {
     name: "--env.aot",
     description: "Creates an Ahead-Of-Time build (Angular only)",
@@ -195,7 +195,7 @@ const platformEnvOptions: Fig.Option[] = [
   },
 ];
 
-const platformGeneralOptions: Fig.Option[] = [
+const platformGeneralOptions: OptionSpec[] = [
   ...platformEnvOptions,
   noHmrOption,
   forceOption,
@@ -293,7 +293,7 @@ const platformOptions = {
           "Specifies the file path where the built .ipa|.apk will be copied. If it points to a non-existent directory path, it will be created. If the specified value is existing directory, the original file name will be used",
         args: {
           name: "path",
-          template: "folders" as Fig.Template,
+          template: "folders" as Template,
         },
       },
       {
@@ -302,7 +302,7 @@ const platformOptions = {
           "Specifies the directory where you want to create the project, if different from the current directory",
         args: {
           name: "directory",
-          template: "folders" as Fig.Template,
+          template: "folders" as Template,
         },
       },
       forceOption,
@@ -367,20 +367,20 @@ const platformOptions = {
 };
 
 // General Commands
-const helpCommand: Fig.Subcommand = {
+const helpCommand: SubcommandSpec = {
   name: "help",
   description: "Open the CLI's documentation in your web browser",
   options: [helpOption("help")],
 };
 
-const infoCommand: Fig.Subcommand = {
+const infoCommand: SubcommandSpec = {
   name: "info",
   description:
     "Displays version information about the NativeScript CLI, core modules, and runtimes",
   options: [helpOption("info")],
 };
 
-const updateCommand: Fig.Subcommand = {
+const updateCommand: SubcommandSpec = {
   name: "update",
   description:
     "Updates the project with the latest versions of platform runtimes, cross-platform modules and webpack",
@@ -399,7 +399,7 @@ const updateCommand: Fig.Subcommand = {
   options: [helpOption("update")],
 };
 
-const packageManagerCommand: Fig.Subcommand = {
+const packageManagerCommand: SubcommandSpec = {
   name: "package-manager",
   description: "Prints the value of the current package manager",
   subcommands: [
@@ -416,7 +416,7 @@ const packageManagerCommand: Fig.Subcommand = {
   options: [helpOption("package-manager")],
 };
 
-const doctorCommand: Fig.Subcommand = {
+const doctorCommand: SubcommandSpec = {
   name: "doctor",
   description:
     "Checks your system for configuration problems which might prevent the NativeScript CLI from working properly for the specified platform, if configured",
@@ -433,7 +433,7 @@ const doctorCommand: Fig.Subcommand = {
   options: [helpOption("doctor")],
 };
 
-const migrateCommand: Fig.Subcommand = {
+const migrateCommand: SubcommandSpec = {
   name: "migrate",
   description:
     "Migrates the app dependencies to a form compatible with NativeScript 6.0",
@@ -441,7 +441,7 @@ const migrateCommand: Fig.Subcommand = {
   options: [helpOption("migrate")],
 };
 
-const proxyCommand: Fig.Subcommand = {
+const proxyCommand: SubcommandSpec = {
   name: "proxy",
   description: "Displays the current proxy settings of the NativeScript CLI",
   subcommands: [
@@ -482,7 +482,7 @@ const proxyCommand: Fig.Subcommand = {
   options: [helpOption("proxy")],
 };
 
-const usageReportingCommand: Fig.Subcommand = {
+const usageReportingCommand: SubcommandSpec = {
   name: "usage-reporting",
   description:
     "Configures anonymous usage reporting for the NativeScript CLI. All data gathered is used strictly for improving the product and will never be used to identify or contact you",
@@ -505,7 +505,7 @@ const usageReportingCommand: Fig.Subcommand = {
   priority: 1,
 };
 
-const errorReportingCommand: Fig.Subcommand = {
+const errorReportingCommand: SubcommandSpec = {
   name: "error-reporting",
   description:
     "Configures anonymous error reporting for the NativeScript CLI. All data gathered is used strictly for improving the product and will never be used to identify or contact you",
@@ -529,7 +529,7 @@ const errorReportingCommand: Fig.Subcommand = {
 };
 
 // Project Development Commands
-const createCommand: Fig.Subcommand = {
+const createCommand: SubcommandSpec = {
   name: "create",
   description:
     "Create a new Nativescript project. Press Enter for an interactive walkthrough",
@@ -559,7 +559,7 @@ const createCommand: Fig.Subcommand = {
               return {
                 name: `@nativescript/${template}`,
                 description: `Template ${template}`,
-              } as Fig.Suggestion;
+              } as Suggestion;
             });
           },
         },
@@ -611,20 +611,20 @@ const createCommand: Fig.Subcommand = {
   ],
 };
 
-const cleanCommand: Fig.Subcommand = {
+const cleanCommand: SubcommandSpec = {
   name: "clean",
   description: "Clean your Nativescript project",
   options: [helpOption("clean")],
 };
 
-const previewCommand: Fig.Subcommand = {
+const previewCommand: SubcommandSpec = {
   name: "preview",
   description:
     "Produces a QR code which can be used to preview the app on a device",
   options: [forceOption, noHmrOption, helpOption("preview")],
 };
 
-const platformCommand: Fig.Subcommand = {
+const platformCommand: SubcommandSpec = {
   name: "platform",
   description:
     "Lists all platforms that the project currently targets. You can build and deploy your project only for these target platforms",
@@ -697,7 +697,7 @@ const platformCommand: Fig.Subcommand = {
   options: [helpOption("platform")],
 };
 
-const runCommand: Fig.Subcommand = {
+const runCommand: SubcommandSpec = {
   name: "run",
   description:
     "Runs your project on all connected devices or in native emulators for the selected platform",
@@ -718,7 +718,7 @@ const runCommand: Fig.Subcommand = {
   options: [...platformOptions.run.both, helpOption("run")],
 };
 
-const debugCommand: Fig.Subcommand = {
+const debugCommand: SubcommandSpec = {
   name: "debug",
   description:
     "Initiates a debugging session for your project on a connected device or native emulator",
@@ -744,7 +744,7 @@ const debugCommand: Fig.Subcommand = {
   options: [helpOption("debug")],
 };
 
-const testCommand: Fig.Subcommand = {
+const testCommand: SubcommandSpec = {
   name: "test",
   description: "Runs unit tests on the selected mobile platform",
   subcommands: [
@@ -780,7 +780,7 @@ const testCommand: Fig.Subcommand = {
   options: [helpOption("test")],
 };
 
-const pluginCommand: Fig.Subcommand = {
+const pluginCommand: SubcommandSpec = {
   name: "plugin",
   description: "Manage the plugins for your project",
   subcommands: [
@@ -880,7 +880,7 @@ const pluginCommand: Fig.Subcommand = {
   options: [helpOption("plugin")],
 };
 
-const resourcesCommand: Fig.Subcommand = {
+const resourcesCommand: SubcommandSpec = {
   name: "resources",
   description: "Manage the plugins for your project",
   subcommands: [
@@ -926,7 +926,7 @@ const resourcesCommand: Fig.Subcommand = {
   options: [helpOption("plugin")],
 };
 
-const prepareCommand: Fig.Subcommand = {
+const prepareCommand: SubcommandSpec = {
   name: "prepare",
   description:
     "Starts a Webpack compilation and prepares the app's App_Resources and the plugins platforms directories",
@@ -964,7 +964,7 @@ const prepareCommand: Fig.Subcommand = {
   ],
 };
 
-const buildCommand: Fig.Subcommand = {
+const buildCommand: SubcommandSpec = {
   name: "build",
   description:
     "Builds the project for iOS and produces an APP or IPA that you can manually deploy in the iOS Simulator or on a device",
@@ -994,7 +994,7 @@ const buildCommand: Fig.Subcommand = {
   ],
 };
 
-const deployCommand: Fig.Subcommand = {
+const deployCommand: SubcommandSpec = {
   name: "deploy",
   description:
     "Prepares, builds and deploys the project to a connected device or native emulator. You must specify the target platform on which you want to deploy. It will deploy the app on all connected devices targeting the selected platform",
@@ -1016,7 +1016,7 @@ const deployCommand: Fig.Subcommand = {
   options: [helpOption("deploy")],
 };
 
-const installCommand: Fig.Subcommand = {
+const installCommand: SubcommandSpec = {
   name: "install",
   description:
     "Installs all dependencies described in a valid package.json or installs a selected NativeScript development module as a dev dependency",
@@ -1046,7 +1046,7 @@ const installCommand: Fig.Subcommand = {
 };
 
 // Publishing Commands
-const appStoreCommand: Fig.Subcommand = {
+const appStoreCommand: SubcommandSpec = {
   name: "appstore",
   description:
     "Lists all application records in iTunes Connect. The list contains name, version and bundle ID for each application record",
@@ -1130,7 +1130,7 @@ const appStoreCommand: Fig.Subcommand = {
 
 // Devices Commands
 
-const deviceCommand: Fig.Subcommand = {
+const deviceCommand: SubcommandSpec = {
   name: ["device", "devices"],
   description:
     "Lists all recognized connected Android or iOS devices with serial number and index, grouped by platform",
@@ -1188,7 +1188,7 @@ const deviceCommand: Fig.Subcommand = {
         //       return {
         //         name: `@nativescript/${template}`,
         //         description: `Template ${template}`,
-        //       } as Fig.Suggestion;
+        //       } as Suggestion;
         //     });
         //   },
         // },
@@ -1210,7 +1210,7 @@ const deviceCommand: Fig.Subcommand = {
  * Command groups
  * (based off the help page when running `ns help`)
  */
-const generalCommands: Array<Fig.Subcommand> = [
+const generalCommands: Array<SubcommandSpec> = [
   helpCommand,
   infoCommand,
   updateCommand,
@@ -1223,7 +1223,7 @@ const generalCommands: Array<Fig.Subcommand> = [
   // autoCompleteCommand,
 ];
 
-const projectDevelopmentCommands: Array<Fig.Subcommand> = [
+const projectDevelopmentCommands: Array<SubcommandSpec> = [
   createCommand,
   cleanCommand,
   previewCommand,
@@ -1239,14 +1239,14 @@ const projectDevelopmentCommands: Array<Fig.Subcommand> = [
   installCommand,
 ];
 
-const publishingCommands: Array<Fig.Subcommand> = [appStoreCommand];
+const publishingCommands: Array<SubcommandSpec> = [appStoreCommand];
 
-const devicesCommand: Array<Fig.Subcommand> = [deviceCommand];
+const devicesCommand: Array<SubcommandSpec> = [deviceCommand];
 
 // Environment Configuration Commands
-// const setupCommand: Fig.Subcommand = {}
+// const setupCommand: SubcommandSpec = {}
 
-const environmentConfigurationCommands: Array<Fig.Subcommand> = [
+const environmentConfigurationCommands: Array<SubcommandSpec> = [
   // setupCommand
 ];
 
@@ -1258,7 +1258,7 @@ const allCommands = [
   ...environmentConfigurationCommands,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ns",
   description:
     "The NativeScript CLI lets you create, build, and deploy NativeScript based apps on iOS and Android devices",

@@ -7,7 +7,7 @@ const podSpecAndFoldersGenerator = filepaths({
   editFileSuggestions: { icon: POD_ICON },
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pod",
   description: "CocoaPods, the Cocoa library package manager",
   subcommands: [

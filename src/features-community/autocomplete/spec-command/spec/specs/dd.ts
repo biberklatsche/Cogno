@@ -1,4 +1,4 @@
-const convValues: Fig.Suggestion[] = [
+const convValues: Suggestion[] = [
   {
     name: "ascii",
     icon: "fig://icon?type=string",
@@ -91,7 +91,7 @@ const convValues: Fig.Suggestion[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dd",
   description: "Convert and copy a file",
   parserDirectives: {

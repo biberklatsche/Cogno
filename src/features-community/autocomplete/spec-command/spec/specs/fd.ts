@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fd",
   description: "A simple, fast and user-friendly alternative to 'find'",
   options: [

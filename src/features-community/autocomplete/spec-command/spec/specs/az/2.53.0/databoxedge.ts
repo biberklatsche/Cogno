@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "databoxedge",
   description: "Support data box edge device and management",
   subcommands: [

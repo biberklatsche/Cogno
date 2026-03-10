@@ -1,6 +1,6 @@
 // If you edit terraform commands or options, please copy our changes on to the terraform spec
 // ARGUMENTS json-out etc
-const workspaceList: Fig.Generator = {
+const workspaceList: Generator = {
   script: ["terragrunt", "workspace", "list"],
   postProcess: function (out) {
     return out.split("\n").map((workspace) => {
@@ -13,7 +13,7 @@ const workspaceList: Fig.Generator = {
   },
 };
 
-const addressList: Fig.Generator = {
+const addressList: Generator = {
   script: ["terragrunt", "state", "list"],
   postProcess: function (out) {
     if (out.includes("No state file was found!") || out.includes("Error")) {
@@ -29,7 +29,7 @@ const addressList: Fig.Generator = {
   },
 };
 
-const generalSubCommandOptions: Fig.Option[] = [
+const generalSubCommandOptions: OptionSpec[] = [
   {
     name: "-lock",
     requiresSeparator: true,
@@ -73,7 +73,7 @@ const generalSubCommandOptions: Fig.Option[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: ["-h", "--help"],
     description:
@@ -269,7 +269,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const terraformCommands: Fig.Subcommand[] = [
+const terraformCommands: SubcommandSpec[] = [
   {
     name: "init",
     description: "Prepare your working directory for other commands",
@@ -379,7 +379,7 @@ const terraformCommands: Fig.Subcommand[] = [
   },
 ];
 
-const terraformOtherCommands: Fig.Subcommand[] = [
+const terraformOtherCommands: SubcommandSpec[] = [
   {
     name: "console",
     description: "Try Terraform expressions at an interactive command prompt",
@@ -571,7 +571,7 @@ const terraformOtherCommands: Fig.Subcommand[] = [
   },
 ];
 
-const terragruntCommands: Fig.Subcommand[] = [
+const terragruntCommands: SubcommandSpec[] = [
   {
     name: "run-all",
     description:
@@ -607,7 +607,7 @@ const terragruntCommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "terragrunt",
   description: "Terragrunt CLI",
   options: globalOptions,

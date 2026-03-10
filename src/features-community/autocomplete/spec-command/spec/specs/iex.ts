@@ -1,6 +1,6 @@
 import elixir from "./elixir";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...elixir,
   name: "iex",
   description: "Elixir Interactive Shell",

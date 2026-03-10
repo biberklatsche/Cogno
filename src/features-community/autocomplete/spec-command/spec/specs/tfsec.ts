@@ -1,4 +1,4 @@
-const workspaceGenerator: Fig.Generator = {
+const workspaceGenerator: Generator = {
   script: ["terraform", "workspace", "list"],
   postProcess: function (out) {
     return out.split("\n").map((workspace) => ({
@@ -8,7 +8,7 @@ const workspaceGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tfsec",
   description:
     "Tfsec is a simple tool to detect potential security vulnerabilities in your terraformed infrastructure",

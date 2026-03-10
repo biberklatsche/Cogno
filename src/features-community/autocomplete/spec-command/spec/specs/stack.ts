@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "stack",
   description: "The Haskell Tool Stack",
   options: [

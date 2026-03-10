@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "wget",
   description: "A non-interactive network retriever",
   args: {

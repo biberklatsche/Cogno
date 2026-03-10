@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "remote-rendering-account",
   description: "Manage remote rendering account with mixed reality",
   subcommands: [

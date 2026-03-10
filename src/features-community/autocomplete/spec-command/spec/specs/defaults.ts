@@ -1,4 +1,4 @@
-const domain: Fig.Arg = {
+const domain: ArgSpec = {
   name: "domain",
   generators: {
     script: ["defaults", "domains"],
@@ -23,11 +23,11 @@ const domain: Fig.Arg = {
   ],
 };
 
-const key: Fig.Arg = {
+const key: ArgSpec = {
   name: "key",
 };
 
-const value: Fig.Arg = {
+const value: ArgSpec = {
   name: "value",
 };
 
@@ -97,7 +97,7 @@ const valueArgs = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "defaults",
   description: "Command line interface to a user's defaults",
   subcommands: [

@@ -1,13 +1,13 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
 // Common Options
-const yesOption: Fig.Option = {
+const yesOption: OptionSpec = {
   name: ["--yes", "-y"],
   description:
     "Automatic yes to prompts. Assume yes to all prompts and run non-interactively",
 };
 
-const dotenvMeOption: Fig.Option = {
+const dotenvMeOption: OptionSpec = {
   name: ["-m", "--dotenvMe"],
   description:
     "Pass .env.me (DOTENV_ME) credential directly (rather than reading from .env.me file)",
@@ -44,7 +44,7 @@ const filenameArg = {
   generators: filepaths({ matches: /^\.env.*$/ }),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dotenv-vault",
   description: "CLI for dotenv-vault",
   options: [

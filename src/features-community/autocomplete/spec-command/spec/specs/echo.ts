@@ -1,4 +1,4 @@
-const environmentVariableGenerator: Fig.Generator = {
+const environmentVariableGenerator: Generator = {
   custom: async (tokens, _, context) => {
     if (tokens.length < 3 || tokens[tokens.length - 1].startsWith("$")) {
       return Object.keys(context.environmentVariables).map((suggestion) => ({
@@ -13,7 +13,7 @@ const environmentVariableGenerator: Fig.Generator = {
   trigger: "$",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "echo",
   description: "Write arguments to the standard output",
   args: {

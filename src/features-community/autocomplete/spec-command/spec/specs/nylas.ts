@@ -4,7 +4,7 @@
  * alvaro.t@nylas.com
  * May 2022
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nylas",
   description: "A command line interface for Nylas's API",
   subcommands: [

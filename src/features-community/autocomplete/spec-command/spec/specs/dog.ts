@@ -1,9 +1,9 @@
-const args: Fig.SingleOrArray<Fig.Arg> = {
+const args: SingleOrArray<ArgSpec> = {
   name: "arguments",
   description: "Human-readable host names, nameservers, types, or classes",
 };
 
-const options: Fig.Option[] = [
+const options: OptionSpec[] = [
   {
     name: ["-q", "--query"],
     description: "Host name or IP address to query",
@@ -78,7 +78,7 @@ const options: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dog",
   description: "A command-line DNS client",
   args,

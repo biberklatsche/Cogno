@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "apptest",
   description:
     "AWS Mainframe Modernization Application Testing provides tools and resources for automated functional equivalence testing for your migration projects",

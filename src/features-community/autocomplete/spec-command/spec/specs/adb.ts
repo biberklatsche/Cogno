@@ -1,4 +1,4 @@
-const installOptions: Fig.Option[] = [
+const installOptions: OptionSpec[] = [
   {
     name: "-l",
     description: "Forward-lock the app",
@@ -72,7 +72,7 @@ const installOptions: Fig.Option[] = [
   },
 ];
 
-const compressionOptions: Fig.Option[] = [
+const compressionOptions: OptionSpec[] = [
   {
     description:
       "Enable compression with a specified algorithm (any, none, brotli)",
@@ -98,7 +98,7 @@ const compressionOptions: Fig.Option[] = [
   },
 ];
 
-const forwardConnectionSuggestions: Fig.Suggestion[] = [
+const forwardConnectionSuggestions: Suggestion[] = [
   {
     name: "tcp",
     insertValue: "tcp:",
@@ -129,7 +129,7 @@ const forwardConnectionSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const reverseConnectionSuggestions: Fig.Suggestion[] = [
+const reverseConnectionSuggestions: Suggestion[] = [
   {
     name: "tcp",
     insertValue: "tcp:",
@@ -148,7 +148,7 @@ const reverseConnectionSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "adb",
   description: "Android Debug Bridge",
   subcommands: [

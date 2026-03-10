@@ -1,4 +1,4 @@
-const sharedOptions: Fig.Option[] = [
+const sharedOptions: OptionSpec[] = [
   {
     name: ["-H", "--host"],
     description: "Set host. Defaults to localhost",
@@ -19,7 +19,7 @@ const sharedOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gatsby",
   description: "Gatsby CLI",
   subcommands: [

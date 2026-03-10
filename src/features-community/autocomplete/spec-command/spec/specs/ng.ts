@@ -25,7 +25,7 @@ const projectsOption = {
     generators: projectsGenerator,
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ng",
   description: "CLI interface for Angular",
   subcommands: [

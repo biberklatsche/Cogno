@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "version",
   description: "Print version information for Cloud SDK components",
   options: [

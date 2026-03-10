@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "artisan",
   description: "Laravel Artisan Command",
   generateSpec: async (_, executeShellCommand) => {

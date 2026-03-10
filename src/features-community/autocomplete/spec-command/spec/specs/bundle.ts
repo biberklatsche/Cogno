@@ -1,4 +1,4 @@
-const gemfileGemsGenerator: Fig.Generator = {
+const gemfileGemsGenerator: Generator = {
   script: ["bundle", "list", "--name-only"],
   postProcess: (out) => {
     return out.split("\n").map((gem) => {
@@ -11,7 +11,7 @@ const gemfileGemsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bundle",
   description: "Ruby Dependency Management",
   subcommands: [

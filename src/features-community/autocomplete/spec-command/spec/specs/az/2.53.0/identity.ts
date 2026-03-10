@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "identity",
   description: "Managed Identities",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sapphire",
   description: "CLI for the Sapphire Framework",
   subcommands: [

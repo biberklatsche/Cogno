@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "auth",
   description: "Manage oauth2 credentials for the Google Cloud SDK",
   subcommands: [

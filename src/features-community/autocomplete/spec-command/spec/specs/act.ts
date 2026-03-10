@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "act",
   description:
     "Run GitHub actions locally by specifying the event name (e.g. `push`) or an action name directly",

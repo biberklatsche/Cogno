@@ -3,38 +3,38 @@
 // valet version 4.0.X
 // 26 March 2023
 
-const global_option_help: Fig.Option = {
+const global_option_help: OptionSpec = {
   name: ["-h", "--help"],
   description:
     "Display help for the given command. When no command is given display help for the list command",
 };
 
-const global_option_quiet: Fig.Option = {
+const global_option_quiet: OptionSpec = {
   name: ["-q", "--quiet"],
   description: "Do not output any message",
 };
 
-const global_option_version: Fig.Option = {
+const global_option_version: OptionSpec = {
   name: ["-V", "--version"],
   description: "Display this application version",
 };
 
-const global_option_ansi: Fig.Option = {
+const global_option_ansi: OptionSpec = {
   name: "--ansi",
   description: "Force (or disable --no-ansi) ANSI output",
 };
 
-const global_option_noansi: Fig.Option = {
+const global_option_noansi: OptionSpec = {
   name: "--no-ansi",
   description: "Force (or disable --no-ansi) ANSI output",
 };
 
-const global_option_nointeraction: Fig.Option = {
+const global_option_nointeraction: OptionSpec = {
   name: ["-n", "--no-interaction"],
   description: "Do not ask any interactive question",
 };
 
-const global_option_verbose: Fig.Option = {
+const global_option_verbose: OptionSpec = {
   name: ["-v", "-vv", "-vvv", "--verbose"],
   description:
     "Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug",
@@ -58,11 +58,11 @@ const global_option_verbose: Fig.Option = {
   },
 };
 
-const global_option_secure: Fig.Option = {
+const global_option_secure: OptionSpec = {
   name: "--secure",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "valet",
   description:
     "Valet is a Laravel development environment for macOS minimalists",

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cut",
   description: "Cut out selected portions of each line of a file",
   args: {

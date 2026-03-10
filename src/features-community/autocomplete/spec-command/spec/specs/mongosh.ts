@@ -2,7 +2,7 @@
 
 import { decodedTextSpanIntersectsWith } from "typescript";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mongosh",
   description:
     "The MongoDB Shell, mongosh  is a fully functional JavaScript and Node.js 14.x REPL environment for interacting with MongoDB deployments",

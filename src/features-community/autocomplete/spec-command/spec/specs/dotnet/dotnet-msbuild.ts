@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "msbuild",
   description:
     "The dotnet msbuild command allows access to a fully functional MSBuild",

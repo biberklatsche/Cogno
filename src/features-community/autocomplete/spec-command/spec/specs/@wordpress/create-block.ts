@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "@wordpress/create-block",
   description:
     "Generates PHP, JS and CSS code for registering a WordPress plugin with blocks",

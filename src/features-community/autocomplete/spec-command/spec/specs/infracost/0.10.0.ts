@@ -1,4 +1,4 @@
-const completion: Fig.Subcommand = {
+const completion: SubcommandSpec = {
   name: "infracost",
   description: "Cloud cost estimates for Terraform",
   subcommands: [
@@ -1024,7 +1024,7 @@ const completion: Fig.Subcommand = {
   ],
 };
 
-const versions: Fig.VersionDiffMap = {};
+const versions: VersionDiffMap = {};
 
 versions["0.10.30"] = {};
 

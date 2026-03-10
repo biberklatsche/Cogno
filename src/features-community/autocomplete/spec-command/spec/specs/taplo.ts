@@ -1,4 +1,4 @@
-const colorOptions: Fig.Option = {
+const colorOptions: OptionSpec = {
   name: "--colors",
   args: {
     name: "COLORS",
@@ -8,17 +8,17 @@ const colorOptions: Fig.Option = {
   description: "Set color values for the output",
 };
 
-const verboseOption: Fig.Option = {
+const verboseOption: OptionSpec = {
   name: "--verbose",
   description: "Enable verbose logging format",
 };
 
-const logSpansOption: Fig.Option = {
+const logSpansOption: OptionSpec = {
   name: "--log-spans",
   description: "Enable logging spans",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "taplo",
   description:
     "Tool for validation, formatting, and querying TOML documents with a jq-like fashion",

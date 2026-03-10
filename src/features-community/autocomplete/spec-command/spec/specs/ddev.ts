@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ddev",
   description: "DDEV-Local local development environment",
   subcommands: [

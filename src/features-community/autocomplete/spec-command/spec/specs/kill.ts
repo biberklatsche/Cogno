@@ -8,7 +8,7 @@ function processIcon(path: string): string {
   return "fig://" + path.slice(0, idx + 4);
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kill",
   description: "Terminate or signal a process",
   args: {

@@ -1,4 +1,4 @@
-const encodingGenerator: Fig.Generator = {
+const encodingGenerator: Generator = {
   script: ["bash", "-c", "iconv -l | command tr ' ' '\\n' | sort"],
   postProcess: (out) =>
     out.split("\n").map((encoding) => ({
@@ -8,7 +8,7 @@ const encodingGenerator: Fig.Generator = {
     })),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iconv",
   description: "Character set conversion",
   options: [

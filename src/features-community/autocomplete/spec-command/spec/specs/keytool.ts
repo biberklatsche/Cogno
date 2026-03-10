@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: ["-h", "-?", "--help", "-help"],
     description: "Show help message",
@@ -9,7 +9,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const repeatedOptions: Fig.Option[] = [
+const repeatedOptions: OptionSpec[] = [
   {
     name: "-alias",
     description: "Alias name of the entry to process",
@@ -80,7 +80,7 @@ const repeatedOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "keytool",
   description: "Key and Certificate Management Tool",
   parserDirectives: {

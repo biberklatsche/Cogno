@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "knex",
   description: "SQL query builder for JavaScript",
   subcommands: [

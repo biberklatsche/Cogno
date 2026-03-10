@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "httpy",
   description: "Programmable command-line HTTP client for the API",
   args: [

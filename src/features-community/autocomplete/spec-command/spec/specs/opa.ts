@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "opa",
   description: "Open Policy Agent (OPA)",
   subcommands: [

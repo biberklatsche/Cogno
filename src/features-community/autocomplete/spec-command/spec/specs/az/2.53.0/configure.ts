@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "configure",
   description: "Manage Azure CLI configuration. This command is interactive",
   options: [

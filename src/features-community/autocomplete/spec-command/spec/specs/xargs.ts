@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xargs",
   description:
     "Execute a command with whitespace-delimited strings (from stdin) as arguments",

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "artifact",
   description:
     "This reference provides descriptions of the low-level AWS Artifact Service API",

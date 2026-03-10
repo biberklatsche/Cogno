@@ -1,4 +1,4 @@
-const applicationGenerator: Fig.Generator = {
+const applicationGenerator: Generator = {
   script: ["mackup", "list"],
   postProcess: (output) => {
     return output
@@ -8,7 +8,7 @@ const applicationGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mackup",
   description: "Mackup",
   options: [

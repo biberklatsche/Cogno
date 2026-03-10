@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "spanner",
   description: "Command groups for Cloud Spanner",
   subcommands: [

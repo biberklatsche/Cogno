@@ -1,4 +1,4 @@
-const listTargets: Fig.Generator = {
+const listTargets: Generator = {
   custom: async (tokens, executeShellCommand) => {
     // Plain target suggestions. These will be overridden if we can find a description for them.
     const { stdout } = await executeShellCommand({
@@ -9,7 +9,7 @@ const listTargets: Fig.Generator = {
       ],
     });
 
-    const targetSuggestions = new Map<string, Fig.Suggestion>();
+    const targetSuggestions = new Map<string, Suggestion>();
 
     for (const target of stdout.split("\n")) {
       if (target === "Makefile") continue;
@@ -71,7 +71,7 @@ const listTargets: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "make",
   args: {
     name: "target",

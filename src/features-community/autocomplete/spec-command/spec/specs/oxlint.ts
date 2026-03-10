@@ -3,7 +3,7 @@ import { filepaths } from "@fig/autocomplete-generators";
 const CATEGORY_EMOJI = "📦";
 const LINT_RULE_EMOJI = "🚨";
 
-const categories: Fig.Suggestion[] = [
+const categories: Suggestion[] = [
   {
     name: "all",
     description: "All lints (except nursery)",
@@ -45,7 +45,7 @@ const categories: Fig.Suggestion[] = [
   },
 ].map((cat) => ({ ...cat, icon: CATEGORY_EMOJI }));
 
-const lintRuleGenerator: Fig.Generator = {
+const lintRuleGenerator: Generator = {
   script: ["oxlint", "--rules"],
   cache: {
     cacheKey: "oxlint-rules",
@@ -95,7 +95,7 @@ const lintRuleGenerator: Fig.Generator = {
         const firstRuleChar = cols[1].charCodeAt(0);
         return firstRuleChar >= 97 && firstRuleChar <= 122;
       })
-      .map<Fig.Suggestion>((cols) => {
+      .map<Suggestion>((cols) => {
         const [, rule, plugin, maybeCheckmark] = cols;
         const isDefault = maybeCheckmark != "";
         return {
@@ -110,7 +110,7 @@ const lintRuleGenerator: Fig.Generator = {
   },
 };
 
-const lintArg: Fig.Arg = {
+const lintArg: ArgSpec = {
   name: "lint",
   description: "Lint rule or category",
   generators: [
@@ -121,12 +121,12 @@ const lintArg: Fig.Arg = {
   ],
 };
 
-const enablePlugin = (plugin: string, displayName = plugin): Fig.Option => ({
+const enablePlugin = (plugin: string, displayName = plugin): OptionSpec => ({
   name: `--${plugin.toLowerCase()}-plugin`,
   description: `Enable the ${displayName} plugin`,
 });
 
-const disablePlugin = (plugin: string, displayName = plugin): Fig.Option => ({
+const disablePlugin = (plugin: string, displayName = plugin): OptionSpec => ({
   name: `--disable-${plugin.toLowerCase()}-plugin`,
   description: `Disable the ${displayName} plugin, which is turned on by default`,
   priority: 49,
@@ -140,7 +140,7 @@ const OXLINTRC: Set<string> = new Set([
   "oxlintrc.json",
 ]);
 
-const configGenerator: Fig.Generator = {
+const configGenerator: Generator = {
   template: ["filepaths", "history"],
   filterTemplateSuggestions: (param) =>
     param
@@ -160,7 +160,7 @@ const configGenerator: Fig.Generator = {
 
 /** Matches, for example, `tsconfig.build.json` */
 const TSCONFIG_JSON = /tsconfig\.w+\.json$/;
-const tsconfigGenerator: Fig.Generator = {
+const tsconfigGenerator: Generator = {
   template: ["filepaths", "history"],
   script: ["ls"],
   filterTemplateSuggestions: (params) =>
@@ -176,7 +176,7 @@ const tsconfigGenerator: Fig.Generator = {
       }),
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "oxlint",
   description: "A high performance linter for the Oxidation Compiler",
   options: [

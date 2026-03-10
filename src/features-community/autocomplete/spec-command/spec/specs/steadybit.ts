@@ -1,5 +1,5 @@
 // https://github.com/steadybit/cli
-const configCommand: Fig.Subcommand = {
+const configCommand: SubcommandSpec = {
   name: "config",
   description: "Show/modify the CLI configuration and authentication profiles",
   subcommands: [
@@ -33,7 +33,7 @@ const configCommand: Fig.Subcommand = {
   ],
 };
 
-const directoryOptionForTaskAndPolicyFiles: Fig.Option = {
+const directoryOptionForTaskAndPolicyFiles: OptionSpec = {
   name: ["-d", "--directory"],
   description: "The directory to search for task and policy files",
   args: {
@@ -42,7 +42,7 @@ const directoryOptionForTaskAndPolicyFiles: Fig.Option = {
   },
 };
 
-const defRepoCommand: Fig.Subcommand = {
+const defRepoCommand: SubcommandSpec = {
   name: "def-repo",
   description:
     "Change versions and verify a task/policy definition repository state",
@@ -79,7 +79,7 @@ const defRepoCommand: Fig.Subcommand = {
   ],
 };
 
-const fileOptionForServiceDefinitions: Fig.Option = {
+const fileOptionForServiceDefinitions: OptionSpec = {
   name: ["-f", "--file"],
   description: "Path to the service definition file",
   args: {
@@ -88,7 +88,7 @@ const fileOptionForServiceDefinitions: Fig.Option = {
   },
 };
 
-const serviceCommand: Fig.Subcommand = {
+const serviceCommand: SubcommandSpec = {
   name: ["service", "service-definition"],
   description: "Configure or verify service definitions",
   subcommands: [
@@ -161,7 +161,7 @@ const serviceCommand: Fig.Subcommand = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "steadybit",
   description: "Command-line interface to interact with the Steadybit API",
   subcommands: [configCommand, defRepoCommand, serviceCommand],

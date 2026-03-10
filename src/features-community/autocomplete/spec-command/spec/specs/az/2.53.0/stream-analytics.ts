@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "stream-analytics",
   description: "Manage Stream Analytics",
   subcommands: [

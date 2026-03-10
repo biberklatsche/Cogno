@@ -1,5 +1,5 @@
 // Options used commonly
-const OPTION_CONFIG: Fig.Option = {
+const OPTION_CONFIG: OptionSpec = {
   name: ["-c", "--config"],
   args: {
     name: "wrangler.toml",
@@ -7,18 +7,18 @@ const OPTION_CONFIG: Fig.Option = {
   },
   description: "Path to configuration file [default: wrangler.toml]",
 };
-const OPTION_ENV: Fig.Option = {
+const OPTION_ENV: OptionSpec = {
   name: ["-e", "--env"],
   args: {
     name: "environment",
   },
   description: "Environment to perform a command on",
 };
-const OPTION_HELP: Fig.Option = {
+const OPTION_HELP: OptionSpec = {
   name: ["-h", "--help"],
   description: "Prints help information",
 };
-const OPTION_VERBOSE: Fig.Option = {
+const OPTION_VERBOSE: OptionSpec = {
   name: "--verbose",
   description: "Toggle verbose output (when applicable)",
 };
@@ -26,7 +26,7 @@ const OPTION_VERBOSE: Fig.Option = {
 /* DOCS: 
 https://developers.cloudflare.com/workers/cli-wrangler/commands 
 */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "wrangler",
   description: "Wrangler CLI for Cloudflare Workers",
   subcommands: [

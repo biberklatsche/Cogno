@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "zip",
   description: "Package and compress (archive) files into zip file",
   args: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "scarb",
   description:
     "Scarb, The build toolchain and package manager for Cairo and Starknet ecosystems",

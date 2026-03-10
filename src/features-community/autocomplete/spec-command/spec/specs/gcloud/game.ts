@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "game",
   description: "Managed Cloud Game Services",
   subcommands: [

@@ -11,7 +11,7 @@ const preferredScriptFilepaths = filepaths({
 });
 
 // Mix spec
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mix",
   description: "Build tool for Elixir",
   icon: constants.elixir_logo_url,

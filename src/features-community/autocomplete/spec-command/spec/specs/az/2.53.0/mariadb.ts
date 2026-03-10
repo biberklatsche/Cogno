@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "mariadb",
   description: "Manage Azure Database for MariaDB servers",
   subcommands: [

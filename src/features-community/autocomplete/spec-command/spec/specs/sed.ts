@@ -1,18 +1,18 @@
-const labelArg: Fig.Arg = {
+const labelArg: ArgSpec = {
   name: "label",
   isOptional: true,
 };
 
-const textArg: Fig.Arg = {
+const textArg: ArgSpec = {
   name: "text",
 };
 
-const filenameArg: Fig.Arg = {
+const filenameArg: ArgSpec = {
   name: "filename",
   template: "filepaths",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sed",
   description: "Stream editor",
   subcommands: [

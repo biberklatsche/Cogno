@@ -1,6 +1,6 @@
 const alignValues = ["left", "center", "right", "bottom", "middle", "top"];
 
-const styleOptions: Fig.Option[] = [
+const styleOptions: OptionSpec[] = [
   {
     name: "--background",
     description: "Background Color",
@@ -46,7 +46,7 @@ const styleOptions: Fig.Option[] = [
 
 const styleOptionGenerator = (element: string) =>
   styleOptions.map(
-    (style): Fig.Option => ({
+    (style): OptionSpec => ({
       ...style,
       name: (style.name as string).replace("--", `--${element}.`),
       description: `${style.description} for ${element}`,
@@ -54,7 +54,7 @@ const styleOptionGenerator = (element: string) =>
     })
   );
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gum",
   description: "A tool for glamorous shell scripts",
   subcommands: [

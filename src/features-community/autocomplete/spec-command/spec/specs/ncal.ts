@@ -1,4 +1,4 @@
-export const monthSuggestions: Fig.Suggestion[] = [
+export const monthSuggestions: Suggestion[] = [
   "january",
   "february",
   "march",
@@ -12,7 +12,7 @@ export const monthSuggestions: Fig.Suggestion[] = [
   "november",
   "december",
 ].map((month) => ({ name: month, icon: "🗓", type: "arg" }));
-const countryCodeSuggestion: Fig.Suggestion[] = [
+const countryCodeSuggestion: Suggestion[] = [
   ["AL", "Albania"],
   ["AT", "Austria"],
   ["AU", "Australia"],
@@ -55,7 +55,7 @@ const countryCodeSuggestion: Fig.Suggestion[] = [
   type: "arg",
 }));
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ncal",
   parserDirectives: {
     optionsMustPrecedeArguments: true,

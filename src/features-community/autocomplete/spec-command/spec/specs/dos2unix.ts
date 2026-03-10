@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dos2unix",
   description: "DOS to Unix file format converter",
   parserDirectives: {

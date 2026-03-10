@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "active-directory",
   description: "Manage Managed Microsoft AD resources",
   subcommands: [

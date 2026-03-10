@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloudhsmv2",
   description:
     "For more information about CloudHSM, see CloudHSM and the  CloudHSM User Guide",

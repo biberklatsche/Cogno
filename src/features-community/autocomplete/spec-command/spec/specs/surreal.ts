@@ -1,4 +1,4 @@
-const authOptions: Fig.Option[] = [
+const authOptions: OptionSpec[] = [
   {
     name: ["--pass", "-p"],
     description:
@@ -24,7 +24,7 @@ const authOptions: Fig.Option[] = [
 const connectionOptionsAndArgs = (
   state: string,
   preposition: string
-): Partial<Fig.Subcommand> => ({
+): Partial<SubcommandSpec> => ({
   options: [
     ...authOptions,
     {
@@ -62,7 +62,7 @@ const connectionOptionsAndArgs = (
   },
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "surreal",
   description:
     "SurrealDB is the ultimate cloud database for tomorrow's applications - https://surrealdb.com/",

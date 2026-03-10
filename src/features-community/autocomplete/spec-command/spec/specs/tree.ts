@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tree",
   description: "Display directories as trees (with optional color/HTML output)",
   args: {

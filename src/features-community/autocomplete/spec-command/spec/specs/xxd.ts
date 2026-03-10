@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xxd",
   description: "Make a hexdump or do the reverse",
   parserDirectives: {

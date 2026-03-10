@@ -1,4 +1,4 @@
-const bucketGenerator: Fig.Generator = {
+const bucketGenerator: Generator = {
   script: ["aws", "s3api", "list-buckets"],
   postProcess: function (out) {
     const json = JSON.parse(out);
@@ -16,7 +16,7 @@ const bucketGenerator: Fig.Generator = {
     });
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "s3api",
   description: null,
   subcommands: [

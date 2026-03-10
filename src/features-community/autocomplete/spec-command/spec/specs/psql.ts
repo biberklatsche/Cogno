@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "psql",
   description: "Psql is a terminal-based front-end to PostgreSQL",
   args: {},

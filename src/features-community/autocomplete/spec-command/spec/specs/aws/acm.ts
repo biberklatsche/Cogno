@@ -2,7 +2,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -45,7 +45,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -100,7 +100,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   listFiles: {
     script: (tokens) => {
       return appendFolderPath(tokens, _prefixFile);
@@ -146,7 +146,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "acm",
   description:
     "Certificate Manager You can use Certificate Manager (ACM) to manage SSL/TLS certificates for your Amazon Web Services-based websites and applications. For more information about using ACM, see the Certificate Manager User Guide",

@@ -28,7 +28,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -53,12 +53,12 @@ const postPrecessGenerator = (
 };
 const customGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["ecs", command];
     for (const option of options) {
@@ -96,7 +96,7 @@ const customGenerator = async (
 };
 const MultiSuggestionsGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   enabled: {
     command: string[];
     parentKey: string;
@@ -104,7 +104,7 @@ const MultiSuggestionsGenerator = async (
   }[]
 ) => {
   try {
-    const list: Fig.Suggestion[][] = [];
+    const list: Suggestion[][] = [];
     const promises: Promise<string>[] = [];
     for (let i = 0; i < enabled.length; i++) {
       promises[i] = executeShellCommand({
@@ -145,7 +145,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -171,7 +171,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const sortSuggestions = (arr: string[], isS3?: boolean): Fig.Suggestion[] => {
+const sortSuggestions = (arr: string[], isS3?: boolean): Suggestion[] => {
   const sortFnStrings = (a, b) => {
     return a.localeCompare(b);
   };
@@ -366,7 +366,7 @@ const generators = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ecs",
   description:
     "Amazon Elastic Container Service Amazon Elastic Container Service (Amazon ECS) is a highly scalable, fast, container management service. It makes it easy to run, stop, and manage Docker containers. You can host your cluster on a serverless infrastructure that's managed by Amazon ECS by launching your services or tasks on Fargate. For more control, you can host your tasks on a cluster of Amazon Elastic Compute Cloud (Amazon EC2) or External (on-premises) instances that you manage. Amazon ECS makes it easy to launch and stop container-based applications with simple API calls. This makes it easy to get the state of your cluster from a centralized service, and gives you access to many familiar Amazon EC2 features. You can use Amazon ECS to schedule the placement of containers across your cluster based on your resource needs, isolation policies, and availability requirements. With Amazon ECS, you don't need to operate your own cluster management and configuration management systems. You also don't need to worry about scaling your management infrastructure",

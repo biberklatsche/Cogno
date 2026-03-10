@@ -1,4 +1,4 @@
-const envVarList: Fig.Generator = {
+const envVarList: Generator = {
   script: ["vercel", "env", "ls"],
   postProcess: function (out) {
     const lines = out.split("\n");
@@ -28,7 +28,7 @@ const domainList = {
   },
 };
 
-const teamList: Fig.Generator = {
+const teamList: Generator = {
   script: ["vercel", "teams", "list"],
   postProcess: function (out) {
     const lines = out.split("\n");
@@ -43,7 +43,7 @@ const teamList: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vercel",
   description: "CLI Interface for Vercel.com",
   args: {

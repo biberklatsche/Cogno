@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "repeat",
   description:
     "Interpret the result as a number and repeat the commands this many times",

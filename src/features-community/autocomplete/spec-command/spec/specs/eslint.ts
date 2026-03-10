@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "eslint",
   description: "Pluggable JavaScript linter",
   options: [

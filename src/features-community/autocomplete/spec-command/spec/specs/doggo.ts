@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "doggo",
   description: "DNS Client for Humans",
   options: [

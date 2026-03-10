@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nu",
   description: "Use the right package manage - upgrade",
   options: [

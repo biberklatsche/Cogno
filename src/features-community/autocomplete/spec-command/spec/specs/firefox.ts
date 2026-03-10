@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "firefox",
   description: "Free open-source web browser developer by Mozilla",
   args: {

@@ -1,6 +1,6 @@
 const DJANGO_ICON_URL = "https://github.com/django.png";
 
-const ALWAYS_AVAILABLE_OPTIONS: Fig.Option[] = [
+const ALWAYS_AVAILABLE_OPTIONS: OptionSpec[] = [
   {
     name: ["-h", "--help"],
     description: "Show this help message and exit",
@@ -49,7 +49,7 @@ const ALWAYS_AVAILABLE_OPTIONS: Fig.Option[] = [
   },
 ];
 
-const DJANGO_NATIVE_COMMANDS: Fig.Subcommand[] = [
+const DJANGO_NATIVE_COMMANDS: SubcommandSpec[] = [
   {
     name: "changepassword",
     icon: DJANGO_ICON_URL,
@@ -1255,7 +1255,7 @@ const DJANGO_NATIVE_COMMANDS: Fig.Subcommand[] = [
   };
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "django-admin",
   description: "Utility script for the Django Web framework",
   icon: DJANGO_ICON_URL,

@@ -4,7 +4,7 @@ type LaunchProfile = {
 
 type LaunchProfiles = Record<string, LaunchProfile>;
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "run",
   description:
     "The dotnet run command provides a convenient option to run your application from the source code with one command. It's useful for fast iterative development from the command line. The command depends on the dotnet build command to build the code. Any requirements for the build, such as that the project must be restored first, apply to dotnet run as well",
@@ -62,7 +62,7 @@ const completionSpec: Fig.Spec = {
           postProcess(out) {
             const profiles: LaunchProfiles = JSON.parse(out).profiles;
 
-            return Object.keys(profiles).map<Fig.Suggestion>((key) => {
+            return Object.keys(profiles).map<Suggestion>((key) => {
               return {
                 name: key,
                 priority: 100,

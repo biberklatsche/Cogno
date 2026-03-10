@@ -1,4 +1,4 @@
-const FQBNs: Fig.Generator = {
+const FQBNs: Generator = {
   script: ["arduino-cli", "board", "list", "--format", "json"],
   postProcess: (output) => {
     try {
@@ -17,7 +17,7 @@ const FQBNs: Fig.Generator = {
     }
   },
 };
-const Ports: Fig.Generator = {
+const Ports: Generator = {
   script: ["arduino-cli", "board", "list", "--format", "json"],
   postProcess: (output) => {
     try {
@@ -37,7 +37,7 @@ const Ports: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "arduino-cli",
   description: "Arduino Command Line Interface",
   subcommands: [

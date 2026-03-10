@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "dla",
   description: "Manage Data Lake Analytics accounts, jobs, and catalogs",
   subcommands: [

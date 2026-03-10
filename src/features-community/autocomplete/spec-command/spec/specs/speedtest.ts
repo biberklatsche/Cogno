@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "speedtest",
   description: "",
   loadSpec: "speedtest-cli",

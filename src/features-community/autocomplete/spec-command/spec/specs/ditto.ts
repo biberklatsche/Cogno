@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ditto",
   description: "Copy directory hierarchies, create and extract archives",
   options: [

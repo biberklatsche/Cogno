@@ -1,6 +1,6 @@
 import YAML from "yaml";
 
-const applicationName: Fig.Generator = {
+const applicationName: Generator = {
   script: ["cat", "copilot/.workspace"],
   // TODO: I feel like there's a better way to do this.
   // There's only ever expected to be one `application` key.
@@ -9,14 +9,14 @@ const applicationName: Fig.Generator = {
       return [];
     }
 
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
 
     try {
       const application = YAML.parse(output).application;
       suggestions.push({
         name: `${application}`,
         icon: "fig://icon?type=aws",
-      }) as Fig.Suggestion;
+      }) as Suggestion;
     } catch (e) {
       console.log(e);
       return [];
@@ -25,13 +25,13 @@ const applicationName: Fig.Generator = {
   },
 };
 
-const appOptionGenerated: Fig.Option = {
+const appOptionGenerated: OptionSpec = {
   name: ["--app", "-a"],
   description: "Name of the application",
   args: { name: "name", generators: applicationName },
 };
 
-const envNameOptionGenerated: Fig.Option = {
+const envNameOptionGenerated: OptionSpec = {
   name: ["--name", "-n"],
   description: "Name of the environment",
   // TODO: Add generator for environment names.
@@ -39,7 +39,7 @@ const envNameOptionGenerated: Fig.Option = {
   args: { name: "name" },
 };
 
-const svcNameOptionGenerated: Fig.Option = {
+const svcNameOptionGenerated: OptionSpec = {
   name: ["--name", "-n"],
   description: "Name of the service",
   // TODO: Add generator for service names.
@@ -47,22 +47,22 @@ const svcNameOptionGenerated: Fig.Option = {
   args: { name: "name" },
 };
 
-const helpOption: Fig.Option = {
+const helpOption: OptionSpec = {
   name: ["--help", "-h"],
   description: "Help for command",
 };
 
-const jsonOption: Fig.Option = {
+const jsonOption: OptionSpec = {
   name: "--json",
   description: "Outputs in JSON format",
 };
 
-const yesOption: Fig.Option = {
+const yesOption: OptionSpec = {
   name: "--yes",
   description: "Skips confirmation prompt",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "copilot",
   description: "👩‍✈️ Launch and manage containerized applications on AWS",
   subcommands: [

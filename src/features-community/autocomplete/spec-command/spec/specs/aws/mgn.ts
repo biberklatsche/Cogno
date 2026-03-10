@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mgn",
   description: "The Application Migration Service service",
   subcommands: [

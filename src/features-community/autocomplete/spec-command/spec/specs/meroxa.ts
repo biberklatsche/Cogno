@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "meroxa",
   description: "The Meroxa CLI",
   subcommands: [

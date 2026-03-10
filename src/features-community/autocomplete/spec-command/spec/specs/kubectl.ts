@@ -15,7 +15,7 @@ const sharedPostProcessChecks = {
   },
 };
 
-const sharedPostProcess: Fig.Generator["postProcess"] = (out) => {
+const sharedPostProcess: Generator["postProcess"] = (out) => {
   if (
     sharedPostProcessChecks.connectedToCluster(out) ||
     sharedPostProcessChecks.generalError(out)
@@ -25,10 +25,10 @@ const sharedPostProcess: Fig.Generator["postProcess"] = (out) => {
   return out.split("\n").map((item) => ({
     name: item,
     icon: "fig://icon?type=kubernetes",
-  })) as Fig.Suggestion[];
+  })) as Suggestion[];
 };
 
-const sharedArgs: Record<string, Fig.Arg> = {
+const sharedArgs: Record<string, ArgSpec> = {
   resourcesArg: {
     name: "Resource Type",
     generators: {
@@ -208,7 +208,7 @@ const sharedArgs: Record<string, Fig.Arg> = {
   },
 };
 
-const sharedOpts: Record<string, Fig.Option> = {
+const sharedOpts: Record<string, OptionSpec> = {
   filename: {
     name: ["-f", "--filename"],
     description:
@@ -317,7 +317,7 @@ const sharedOpts: Record<string, Fig.Option> = {
 
 const sharedOptsArray = Object.values(sharedOpts);
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kubectl",
   description: "",
   subcommands: [
@@ -1625,7 +1625,7 @@ const completionSpec: Fig.Spec = {
                     return sharedPostProcess(out, tokens).map((item) => ({
                       ...item,
                       name: `cronjob/${item.name}`,
-                    })) as Fig.Suggestion[];
+                    })) as Suggestion[];
                   },
                 },
               },

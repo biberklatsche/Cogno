@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nano",
   description: "Nano's ANOther editor, an enhanced free Pico clone",
   args: {

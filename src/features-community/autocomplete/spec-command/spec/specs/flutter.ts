@@ -2,7 +2,7 @@
 
 import { filepaths } from "@fig/autocomplete-generators";
 
-const flutterGenerators: Record<string, Fig.Generator> = {
+const flutterGenerators: Record<string, Generator> = {
   emulators: {
     script: ["flutter", "emulators"],
     postProcess: function (out) {

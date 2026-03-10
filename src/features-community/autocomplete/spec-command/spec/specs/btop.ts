@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "btop",
   description: "Beautifuler htop (interactive process viewer)",
   options: [

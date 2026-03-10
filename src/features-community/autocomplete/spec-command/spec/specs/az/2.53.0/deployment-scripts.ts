@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "deployment-scripts",
   description:
     "Manage deployment scripts at subscription or resource group scope",

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "pipelines",
   description:
     "Manage Azure Pipelines.\n\n\t\tThis command group is a part of the azure-devops extension",

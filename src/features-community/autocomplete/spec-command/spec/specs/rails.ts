@@ -354,7 +354,7 @@ const dbOptions = [
   },
 ];
 
-const defaultCommands: Fig.Subcommand[] = [
+const defaultCommands: SubcommandSpec[] = [
   {
     name: ["c", "console"],
     description: "Interact with your Rails application from the command line",
@@ -529,7 +529,7 @@ const defaultCommands: Fig.Subcommand[] = [
               []
             );
 
-            return dict.reduce<Fig.Suggestion[]>((arr, [plugin, commands]) => {
+            return dict.reduce<Suggestion[]>((arr, [plugin, commands]) => {
               return [
                 ...arr,
                 ...commands.map((name) => ({
@@ -631,10 +631,10 @@ const defaultCommands: Fig.Subcommand[] = [
 ];
 
 // Generator that searches asynchronously for more Rails commands through the help command
-export const railsCommandsGenerator: Fig.Generator = {
+export const railsCommandsGenerator: Generator = {
   custom: async (_, executeShellCommand) => {
     // parse help text to find more commands
-    let commands: Fig.Subcommand[] = [];
+    let commands: SubcommandSpec[] = [];
     try {
       const { stdout: helpText } = await executeShellCommand({
         command: "rails",
@@ -660,7 +660,7 @@ export const railsCommandsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rails",
   description: "Ruby on Rails CLI",
   icon: "https://avatars.githubusercontent.com/u/4223?s=48&v=4",

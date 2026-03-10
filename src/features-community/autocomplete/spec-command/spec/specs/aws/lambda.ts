@@ -210,7 +210,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -235,12 +235,12 @@ const postPrecessGenerator = (
 };
 const listCustomGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["lambda", command];
     for (let i = 0; i < options.length; i++) {
@@ -279,10 +279,10 @@ const listCustomGenerator = async (
 };
 const listCustomSIDGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[]
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["lambda", command];
     for (let i = 0; i < options.length; i++) {
@@ -313,7 +313,7 @@ const listCustomSIDGenerator = async (
 };
 const MultiSuggestionsGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   enabled: {
     command: string[];
     parentKey: string;
@@ -321,7 +321,7 @@ const MultiSuggestionsGenerator = async (
   }[]
 ) => {
   try {
-    const list: Fig.Suggestion[][] = [];
+    const list: Suggestion[][] = [];
     const promises: Promise<string>[] = [];
     for (let i = 0; i < enabled.length; i++) {
       promises[i] = executeShellCommand({
@@ -364,7 +364,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -419,7 +419,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   // --cli-input-json and a few other options takes a JSON string literal, or arbitrary files containing valid JSON.
   // In case the JSON is passed as a file, the filepath must be prefixed by file://
   // See more: https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-parameters-file.html
@@ -820,7 +820,7 @@ const generators: Record<string, Fig.Generator> = {
           return {
             name: parts[parts.length - 1],
           };
-        }) as Fig.Suggestion[];
+        }) as Suggestion[];
       } catch (error) {
         console.error(error);
       }
@@ -866,7 +866,7 @@ const generators: Record<string, Fig.Generator> = {
           return {
             name: parts[parts.length - 1],
           };
-        }) as Fig.Suggestion[];
+        }) as Suggestion[];
       } catch (error) {
         console.error(error);
       }
@@ -923,7 +923,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lambda",
   description:
     "Lambda  Overview  Lambda is a compute service that lets you run code without provisioning or managing servers. Lambda runs your code on a high-availability compute infrastructure and performs all of the administration of the compute resources, including server and operating system maintenance, capacity provisioning and automatic scaling, code monitoring and logging. With Lambda, you can run code for virtually any type of application or backend service. For more information about the Lambda service, see What is Lambda in the Lambda Developer Guide. The Lambda API Reference provides information about each of the API methods, including details about the parameters in each API request and response.   You can use Software Development Kits (SDKs), Integrated Development Environment (IDE) Toolkits, and command line tools to access the API. For installation instructions, see Tools for Amazon Web Services.  For a list of Region-specific endpoints that Lambda supports, see Lambda endpoints and quotas  in the Amazon Web Services General Reference..  When making the API calls, you will need to authenticate your request by providing a signature. Lambda supports signature version 4. For more information, see Signature Version 4 signing process in the Amazon Web Services General Reference..   CA certificates  Because Amazon Web Services SDKs use the CA certificates from your computer, changes to the certificates on the Amazon Web Services servers can cause connection failures when you attempt to use an SDK. You can prevent these failures by keeping your computer's CA certificates and operating system up-to-date. If you encounter this issue in a corporate environment and do not manage your own computer, you might need to ask an administrator to assist with the update process. The following list shows minimum operating system and Java versions:   Microsoft Windows versions that have updates from January 2005 or later installed contain at least one of the required CAs in their trust list.    Mac OS X 10.4 with Java for Mac OS X 10.4 Release 5 (February 2007), Mac OS X 10.5 (October 2007), and later versions contain at least one of the required CAs in their trust list.    Red Hat Enterprise Linux 5 (March 2007), 6, and 7 and CentOS 5, 6, and 7 all contain at least one of the required CAs in their default trusted CA list.    Java 1.4.2_12 (May 2006), 5 Update 2 (March 2005), and all later versions, including Java 6 (December 2006), 7, and 8, contain at least one of the required CAs in their default trusted CA list.    When accessing the Lambda management console or Lambda API endpoints, whether through browsers or programmatically, you will need to ensure your client machines support any of the following CAs:    Amazon Root CA 1   Starfield Services Root Certificate Authority - G2   Starfield Class 2 Certification Authority   Root certificates from the first two authorities are available from Amazon trust services, but keeping your computer up-to-date is the more straightforward solution. To learn more about ACM-provided certificates, see Amazon Web Services Certificate Manager FAQs",

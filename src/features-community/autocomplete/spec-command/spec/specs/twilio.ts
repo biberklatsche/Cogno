@@ -1,7 +1,7 @@
 /* eslint-disable @withfig/fig-linter/no-useless-insertvalue */
 
-/** A version of Fig.Subcommand with a predictable name prop */
-interface TwilioSubcommand extends Fig.Subcommand {
+/** A version of SubcommandSpec with a predictable name prop */
+interface TwilioSubcommand extends SubcommandSpec {
   name: string;
   // Bad documentation is a bug. Descriptions are required.
   description: string;
@@ -46,7 +46,7 @@ function createSeparatedSubcommandTree(
   options: {
     generatorShouldInsertSeparator: boolean;
   }
-): { subcommands?: TwilioSubcommand[]; args: Fig.Arg } {
+): { subcommands?: TwilioSubcommand[]; args: ArgSpec } {
   const flattened = subcommands.flatMap((subcommand) =>
     flattenSubcommands(separator, [], subcommand)
   );
@@ -80,7 +80,7 @@ function createSeparatedSubcommandTree(
           }
 
           return suggest.map((subcommand) => {
-            const suggestion: Fig.Suggestion = { ...subcommand };
+            const suggestion: Suggestion = { ...subcommand };
             suggestion.type ??= "subcommand";
             suggestion.insertValue =
               options.generatorShouldInsertSeparator && subcommand.subcommands
@@ -94,7 +94,7 @@ function createSeparatedSubcommandTree(
   };
 }
 
-const logOption: Fig.Option = {
+const logOption: OptionSpec = {
   name: "-l",
   args: {
     name: "level",
@@ -110,7 +110,7 @@ const logOption: Fig.Option = {
   },
 };
 
-const outputFormatOption: Fig.Option = {
+const outputFormatOption: OptionSpec = {
   name: "-o",
   description: "Format of command output",
   args: {
@@ -125,7 +125,7 @@ const outputFormatOption: Fig.Option = {
   },
 };
 
-const silentOption: Fig.Option = {
+const silentOption: OptionSpec = {
   name: "--silent",
   description:
     'Suppress output and logs. This is a shorthand for "-l none -o none"',
@@ -263,7 +263,7 @@ const feedbackSubcommand: TwilioSubcommand = {
   description: "Provide feedback to the CLI team",
 };
 
-const phoneNumbersBuyOptions: Fig.Option[] = [
+const phoneNumbersBuyOptions: OptionSpec[] = [
   ...persistentOptions,
   {
     name: "--country-code",
@@ -1452,7 +1452,7 @@ const subcommands: TwilioSubcommand[] = [
   updateSubcommand,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "twilio",
   description: "Manage your Twilio resources from your terminal",
   options: [

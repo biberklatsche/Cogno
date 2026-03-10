@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "croc",
   description:
     "Croc is a tool that allows any two computers to simply and securely transfer files and folders",

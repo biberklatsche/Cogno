@@ -1,4 +1,4 @@
-const postProcessBranches: Fig.Generator["postProcess"] = (out, tokens) => {
+const postProcessBranches: Generator["postProcess"] = (out, tokens) => {
   return out
     .split("\n")
     .map((elm) => {
@@ -23,7 +23,7 @@ const postProcessBranches: Fig.Generator["postProcess"] = (out, tokens) => {
 
 async function getGitFlowPrefix(
   type: string,
-  executeShellCommand: Fig.ExecuteCommandFunction
+  executeShellCommand: ExecuteCommandFunction
 ): Promise<string> {
   const { stdout } = await executeShellCommand({
     command: "git",
@@ -32,7 +32,7 @@ async function getGitFlowPrefix(
   return stdout;
 }
 
-export const gitFlowGenerators: Record<string, Fig.Generator> = {
+export const gitFlowGenerators: Record<string, Generator> = {
   typeBranches: {
     custom: async (tokens, executeShellCommand) => {
       const prefix = await getGitFlowPrefix(tokens[1], executeShellCommand);
@@ -51,7 +51,7 @@ export const gitFlowGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "git-flow",
   description:
     "A collection of Git extensions to provide high-level repository operations for Vincent Driessen's branching model",

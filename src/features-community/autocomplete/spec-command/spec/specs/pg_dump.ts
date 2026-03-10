@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pg_dump",
   description: "Dumps a database as a text file or to other formats",
   options: [

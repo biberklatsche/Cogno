@@ -1,5 +1,5 @@
 // TODO: dynamically suggest paths
-const remote: Fig.Arg = {
+const remote: ArgSpec = {
   name: "remote:",
   generators: {
     script: ["rclone", "listremotes"],
@@ -15,7 +15,7 @@ const hashes = [
   "CRC-32",
   "MailruHash",
 ];
-const listOptions: Fig.Option[] = [
+const listOptions: OptionSpec[] = [
   {
     name: "--dirs-only",
     description: "Only list directories",
@@ -29,25 +29,25 @@ const listOptions: Fig.Option[] = [
     description: "Recurse into the listing",
   },
 ];
-const cryptedremote: Fig.Arg = {
+const cryptedremote: ArgSpec = {
   name: "cryptedremote",
   generators: remote.generators,
   // TODO filter by crypted type
 };
 // TODO dynamically sugest path
-const remotePath: Fig.Arg = {
+const remotePath: ArgSpec = {
   name: "remote:path",
   generators: remote.generators,
 };
-const sourcePath: Fig.Arg = {
+const sourcePath: ArgSpec = {
   name: "source:path",
   generators: remote.generators,
 };
-const destPath: Fig.Arg = {
+const destPath: ArgSpec = {
   name: "dest:path",
   generators: remote.generators,
 };
-const checkFlags: Array<Fig.Option> = [
+const checkFlags: Array<OptionSpec> = [
   {
     name: "--combined",
     description: "Make a combined report of changes to this file",
@@ -85,7 +85,7 @@ const checkFlags: Array<Fig.Option> = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rclone",
   description: "The Swiss army knife of cloud storage",
   subcommands: [

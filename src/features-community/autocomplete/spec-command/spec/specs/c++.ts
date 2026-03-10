@@ -1,5 +1,5 @@
 import clangpp from "./clang++";
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...clangpp,
   name: "c++",
   description: "C++ compiler",

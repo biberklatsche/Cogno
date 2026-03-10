@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "base64",
   description: "Encode and decode using Base64 representation",
   parserDirectives: {

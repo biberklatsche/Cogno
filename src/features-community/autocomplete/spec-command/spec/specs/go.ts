@@ -1,4 +1,4 @@
-const buildModeSuggestions: Fig.Suggestion[] = [
+const buildModeSuggestions: Suggestion[] = [
   {
     name: "archive",
     description: "Build the listed non-main packages into .a files",
@@ -40,7 +40,7 @@ const buildModeSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const resolutionAndExecutionOptions: Fig.Option[] = [
+const resolutionAndExecutionOptions: OptionSpec[] = [
   {
     name: "-n",
     description: "Print the commands but do not run them",
@@ -72,7 +72,7 @@ const resolutionAndExecutionOptions: Fig.Option[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   ...resolutionAndExecutionOptions,
   {
     name: "-a",
@@ -221,14 +221,14 @@ do not delete it when exiting`,
   },
 ];
 
-const packagesArg: Fig.Arg = {
+const packagesArg: ArgSpec = {
   name: "packages",
   isVariadic: true,
   isOptional: true,
   template: ["filepaths"],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "go",
   description: "Go is a tool for managing Go source code",
   parserDirectives: {

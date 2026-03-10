@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ampx",
   description: "CLI for Amplify Gen 2",
   subcommands: [

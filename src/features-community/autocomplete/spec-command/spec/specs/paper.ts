@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "paper",
   description: "The Paper CLI",
   subcommands: [

@@ -1,10 +1,10 @@
 import YAML from "yaml";
 import { gitGenerators } from "./git";
 
-const hooksInConfig: Fig.Generator = {
+const hooksInConfig: Generator = {
   script: ["cat", ".pre-commit-config.yaml"],
   postProcess: (output) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
 
     try {
       const repos = YAML.parse(output).repos;
@@ -14,7 +14,7 @@ const hooksInConfig: Fig.Generator = {
           repo.hooks.forEach((hookId) => {
             suggestions.push({
               name: `${hookId.id}`,
-            }) as Fig.Suggestion;
+            }) as Suggestion;
           });
         });
       }
@@ -26,12 +26,12 @@ const hooksInConfig: Fig.Generator = {
   },
 };
 
-const help: Fig.Option = {
+const help: OptionSpec = {
   name: ["-h", "--help"],
   description: "Show help message and exit",
 };
 
-const color: Fig.Option = {
+const color: OptionSpec = {
   name: "--color",
   description: "Whether to use color in output. Defaults to `auto`",
   args: {
@@ -40,7 +40,7 @@ const color: Fig.Option = {
   },
 };
 
-const config: Fig.Option = {
+const config: OptionSpec = {
   name: ["--config", "-c"],
   description: "Path to alternate config file",
   args: {
@@ -49,7 +49,7 @@ const config: Fig.Option = {
   },
 };
 
-const globalOptions: Fig.Option[] = [help, color, config];
+const globalOptions: OptionSpec[] = [help, color, config];
 
 const hookStages = [
   "pre-commit",
@@ -63,7 +63,7 @@ const hookStages = [
   "post-rewrite",
 ];
 
-const hookType: Fig.Option = {
+const hookType: OptionSpec = {
   name: ["-t", "--hook-type"],
   description: "Type of hook to install",
   args: {
@@ -72,7 +72,7 @@ const hookType: Fig.Option = {
   },
 };
 
-const commonRepoOptions: Fig.Option[] = [
+const commonRepoOptions: OptionSpec[] = [
   {
     name: ["--verbose", "-v"],
   },
@@ -182,7 +182,7 @@ const commonRepoOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pre-commit",
   description: "Pre-commit",
   args: {},

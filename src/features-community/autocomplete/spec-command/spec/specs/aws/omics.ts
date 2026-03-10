@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "omics",
   description:
     "This is the AWS HealthOmics API Reference. For an introduction to the service, see What is AWS HealthOmics? in the AWS HealthOmics User Guide",

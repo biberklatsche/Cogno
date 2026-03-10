@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "dedicated-hsm",
   description: "Manage dedicated hsm with hardware security modules",
   subcommands: [

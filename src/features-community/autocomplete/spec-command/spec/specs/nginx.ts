@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nginx",
   description:
     "Nginx (pronounced ``engine x'') is an HTTP and reverse proxy server, a mail proxy server, and a generic TCP/UDP proxy server.  It is known for its high performance, stability, rich feature set, simple configuration, and low resource consumption",

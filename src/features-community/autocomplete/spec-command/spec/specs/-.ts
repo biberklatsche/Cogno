@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "-",
   description:
     "ZSH pre-command modifier that prepends a '-' to the argv[0] string",

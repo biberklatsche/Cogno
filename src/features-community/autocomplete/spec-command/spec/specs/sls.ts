@@ -1,5 +1,5 @@
 import serverless from "./serverless";
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...serverless,
   name: "sls",
 };

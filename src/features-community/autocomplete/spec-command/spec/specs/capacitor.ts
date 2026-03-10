@@ -1,4 +1,4 @@
-const platforms: Fig.Suggestion[] = [
+const platforms: Suggestion[] = [
   { name: "android", icon: "fig://icon?type=android" },
   { name: "ios", icon: "fig://icon?type=apple" },
 ];
@@ -7,7 +7,7 @@ function isPlatform(value: string): value is "ios" | "android" {
   return value === "ios" || value === "android";
 }
 
-const targetGenerator: Fig.Generator = {
+const targetGenerator: Generator = {
   cache: {
     ttl: 1000 * 60, // Only caches targets for one minute, in case a new device is connected
   },
@@ -37,7 +37,7 @@ const targetGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "capacitor",
   description:
     "The Capacitor command-line interface (CLI) tool is used to develop Capacitor apps",

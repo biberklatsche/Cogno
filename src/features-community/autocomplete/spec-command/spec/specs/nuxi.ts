@@ -10,7 +10,7 @@ const TEMPLATES_SUGGESTIONS = [
 ];
 
 // Default Root Dir Argument
-const defaultRootDirArg: Fig.Arg = {
+const defaultRootDirArg: ArgSpec = {
   name: "rootDir",
   description: "The directory of the target application",
   template: "folders",
@@ -18,7 +18,7 @@ const defaultRootDirArg: Fig.Arg = {
 };
 
 // Main Nuxi options
-const mainNuxiOptions: Fig.Option[] = [
+const mainNuxiOptions: OptionSpec[] = [
   {
     name: "--help",
     description: "Show help",
@@ -27,7 +27,7 @@ const mainNuxiOptions: Fig.Option[] = [
 ];
 
 // Main nuxi subcommands
-const mainNuxiSubcommands: Fig.Subcommand[] = [
+const mainNuxiSubcommands: SubcommandSpec[] = [
   {
     name: "info",
     displayName: "Info",
@@ -253,7 +253,7 @@ const mainNuxiSubcommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nuxi",
   description: "Nuxt 3 CLI",
   icon: "https://v3.nuxtjs.org/icon.png",

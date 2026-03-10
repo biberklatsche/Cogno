@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "baremetalinstance",
   description: "(PREVIEW) Manage BareMetal Instances",
   subcommands: [

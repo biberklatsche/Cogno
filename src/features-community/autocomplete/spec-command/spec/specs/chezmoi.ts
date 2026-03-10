@@ -1,6 +1,6 @@
 import { valueList } from "@fig/autocomplete-generators";
 
-const modifiers: Fig.Suggestion[] = [
+const modifiers: Suggestion[] = [
   { name: ["after", "a"], description: "Attribute modifier" },
   { name: ["before", "b"], description: "Attribute modifier" },
   { name: ["empty", "e"], description: "Attribute modifier" },
@@ -52,7 +52,7 @@ const types = valueList({
 // TODO(SeparateRecords): Eventually replace all args that mention
 // "target state" with a generator (chezmoi list) instead of template
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "chezmoi",
   description:
     "Manage your dotfiles across multiple diverse machines, securely",

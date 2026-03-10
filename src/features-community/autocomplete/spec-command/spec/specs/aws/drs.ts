@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "drs",
   description: "AWS Elastic Disaster Recovery Service",
   subcommands: [

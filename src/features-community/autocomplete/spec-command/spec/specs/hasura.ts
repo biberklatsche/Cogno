@@ -1,8 +1,8 @@
-const stringArg: Fig.Arg = {
+const stringArg: ArgSpec = {
   name: "string",
 };
 
-const sharedOptions: Fig.Option[] = [
+const sharedOptions: OptionSpec[] = [
   {
     name: "--envfile",
     description: ".env filename to load ENV vars from",
@@ -42,13 +42,13 @@ const sharedOptions: Fig.Option[] = [
   },
 ];
 
-const adminSecretOption: Fig.Option = {
+const adminSecretOption: OptionSpec = {
   name: "--admin-secret",
   description: "Admin secret for Hasura GraphQL engine",
   args: stringArg,
 };
 
-const certificateAuthorityOption: Fig.Option = {
+const certificateAuthorityOption: OptionSpec = {
   name: "--certificate-authority",
   description: "Path to a cert file for the certificate authority",
   args: {
@@ -57,25 +57,25 @@ const certificateAuthorityOption: Fig.Option = {
   },
 };
 
-const endpointOption: Fig.Option = {
+const endpointOption: OptionSpec = {
   name: "--endpoint",
   description:
     "Http(s) endpoint for Hasura GraphQL engine (env `HASURA_GRAPHQL_ENDPOINT`)",
   args: stringArg,
 };
 
-const insecureSkipTLSVerifyOption: Fig.Option = {
+const insecureSkipTLSVerifyOption: OptionSpec = {
   name: "--insecure-skip-tls-verify",
   description: "Skip TLS verification and disable cert checking",
 };
-const actionsSharedOptions: Fig.Option[] = [
+const actionsSharedOptions: OptionSpec[] = [
   adminSecretOption,
   certificateAuthorityOption,
   endpointOption,
   insecureSkipTLSVerifyOption,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hasura",
   description: "Hasura GraphQL engine command line tool",
   subcommands: [

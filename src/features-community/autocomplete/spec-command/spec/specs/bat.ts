@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bat",
   description: "A cat(1) clone with syntax highlighting and Git integration",
   options: [

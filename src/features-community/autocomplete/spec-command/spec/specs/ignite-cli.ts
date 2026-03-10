@@ -1,4 +1,4 @@
-const generatorsGenerator: Fig.Generator = {
+const generatorsGenerator: Generator = {
   script: ["ls", "ignite/templates"],
   postProcess: (out) => {
     if (out.trim() === "") return [];
@@ -8,7 +8,7 @@ const generatorsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ignite-cli",
   description:
     "Ignite is a CLI that helps you spin up a new React Native app using a battle-tested tech stack",

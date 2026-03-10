@@ -1,5 +1,5 @@
 import completionSpec from "./pro";
-const Spec: Fig.Spec = {
+const Spec: CommandSpec = {
   ...completionSpec,
   name: "ubuntu-advantage",
 };

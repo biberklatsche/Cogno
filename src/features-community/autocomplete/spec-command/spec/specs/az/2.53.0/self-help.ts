@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "self-help",
   description:
     "Azure SelfHelp will help you troubleshoot issues with Azure resources",

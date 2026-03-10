@@ -77,7 +77,7 @@ export interface SpdisplaysDisplayportDevice {
   spdisplays_displayport_valid_error_lane3: string;
 }
 
-const screenNumbers: Fig.Generator = {
+const screenNumbers: Generator = {
   // one thing to note is that this is MacOS specific
   script: ["system_profiler", "SPDisplaysDataType", "-json"],
   postProcess: (output) => {
@@ -90,7 +90,7 @@ const screenNumbers: Fig.Generator = {
     try {
       const data: SPDisplaysDataTypeOutputRoot = JSON.parse(output);
 
-      const screens: Fig.Suggestion[] = [];
+      const screens: Suggestion[] = [];
 
       for (const displayAdapter of data.SPDisplaysDataType) {
         if (displayAdapter.spdisplays_ndrvs) {
@@ -113,7 +113,7 @@ const screenNumbers: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gource",
   description:
     "Gource is an OpenGL-based 3D visualisation tool for source control repositories",

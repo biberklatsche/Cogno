@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "role",
   description:
     "Manage user roles for access control with Azure Active Directory and service principals",

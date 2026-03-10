@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "csdx",
   description: "Content Stack CLI",
   subcommands: [

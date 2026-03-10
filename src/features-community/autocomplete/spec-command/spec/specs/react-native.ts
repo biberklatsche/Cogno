@@ -106,7 +106,7 @@ const iosGetDevicesUdidGenerator = {
   },
 };
 
-const gradleTasksGenerator: Fig.Generator = {
+const gradleTasksGenerator: Generator = {
   script: ["bash", "-c", "cd android/ && ./gradlew tasks"],
   postProcess: (scriptOutput: string) => {
     const tasks = scriptOutput
@@ -118,7 +118,7 @@ const gradleTasksGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "react-native",
   description:
     "Command line tools that ship with react-native in form of the @react-native-community/cli package",

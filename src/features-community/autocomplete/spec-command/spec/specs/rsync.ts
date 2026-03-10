@@ -1,6 +1,6 @@
 import { knownHosts, configHosts } from "./ssh";
 
-const infoArgs: Fig.SingleOrArray<Fig.Arg> = [
+const infoArgs: SingleOrArray<ArgSpec> = [
   { name: "BACKUP", description: "Mention files backed up" },
   {
     name: "COPY",
@@ -48,7 +48,7 @@ const infoArgs: Fig.SingleOrArray<Fig.Arg> = [
   { name: "HELP", description: "Output this help message" },
 ];
 
-const debugArgs: Fig.SingleOrArray<Fig.Arg> = [
+const debugArgs: SingleOrArray<ArgSpec> = [
   { name: "BACKUP", description: "Mention files backed up" },
   {
     name: "COPY",
@@ -96,7 +96,7 @@ const debugArgs: Fig.SingleOrArray<Fig.Arg> = [
   { name: "HELP", description: "Output this help message" },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rsync",
   description:
     "Rsync is a file transfer program capable of efficient remote update via a fast differencing algorithm",

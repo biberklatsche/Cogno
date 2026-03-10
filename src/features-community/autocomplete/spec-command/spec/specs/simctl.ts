@@ -1,6 +1,6 @@
 import { describe } from "node:test";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "simctl",
   description: "",
   subcommands: [

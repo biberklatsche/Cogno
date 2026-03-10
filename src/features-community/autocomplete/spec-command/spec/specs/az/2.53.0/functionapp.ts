@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "functionapp",
   description:
     "Manage function apps. To install the Azure Functions Core tools see https://github.com/Azure/azure-functions-core-tools",

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kafkactl",
   description: "Command-line interface for Apache Kafka",
   subcommands: [

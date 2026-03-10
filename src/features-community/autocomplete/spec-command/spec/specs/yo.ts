@@ -7,7 +7,7 @@ function toTitleCase(str: string): string {
     );
 }
 
-const suggestions: Fig.Suggestion[] = [
+const suggestions: Suggestion[] = [
   {
     name: "doctor",
     description: "Running sanity checks on your system",
@@ -21,7 +21,7 @@ const suggestions: Fig.Suggestion[] = [
 ];
 
 // GENERATORS
-const yeomanGeneratorList: Fig.Generator = {
+const yeomanGeneratorList: Generator = {
   script: ["yo", "--generators"],
   postProcess: function (out) {
     try {
@@ -42,8 +42,8 @@ const yeomanGeneratorList: Fig.Generator = {
                   description: `Help of "${toTitleCase(item)}" generator`,
                 },
               ],
-            }) as Fig.Suggestion
-        ) as Fig.Suggestion[];
+            }) as Suggestion
+        ) as Suggestion[];
     } catch (e) {
       console.error(e);
       return [];
@@ -51,7 +51,7 @@ const yeomanGeneratorList: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "yo",
   description: "Yeoman generator",
   args: {

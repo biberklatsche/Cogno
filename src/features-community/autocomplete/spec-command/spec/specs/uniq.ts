@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "uniq",
   description: "Report or omit repeated line",
   options: [

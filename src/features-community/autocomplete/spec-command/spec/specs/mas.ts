@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mas",
   description: "A simple command line interface for the Mac App Store",
   subcommands: [

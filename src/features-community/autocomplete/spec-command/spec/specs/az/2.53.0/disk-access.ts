@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "disk-access",
   description: "Manage disk access resources",
   subcommands: [

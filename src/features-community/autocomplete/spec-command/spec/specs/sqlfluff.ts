@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sqlfluff",
   description: "A dialect-flexible and configurable SQL linter",
   options: [

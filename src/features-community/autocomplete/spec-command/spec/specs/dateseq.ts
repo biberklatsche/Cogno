@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dateseq",
   description:
     "Nifty command line date and time utilities; fast date calculations and conversion in the shell",

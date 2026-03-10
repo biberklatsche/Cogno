@@ -1,6 +1,6 @@
 import node from "./node";
 
-const versionArg: Fig.Arg = {
+const versionArg: ArgSpec = {
   name: "version",
   suggestions: [
     {
@@ -42,16 +42,16 @@ const versionArg: Fig.Arg = {
   },
   isOptional: false,
 };
-const optionalVersionArg: Fig.Arg = {
+const optionalVersionArg: ArgSpec = {
   ...versionArg,
   isOptional: true,
 };
-const variadicVersionArg: Fig.Arg = {
+const variadicVersionArg: ArgSpec = {
   ...versionArg,
   isVariadic: true,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "n",
   description: "Node version management",
   subcommands: [

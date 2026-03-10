@@ -4,7 +4,7 @@ const configFileGenerator = filepaths({ equals: "nuget.config" });
 
 const nupkgGenerator = filepaths({ extensions: ["nupkg"] });
 
-const sourceCommonOptions: Fig.Option[] = [
+const sourceCommonOptions: OptionSpec[] = [
   {
     name: "--configfile",
     description:
@@ -56,7 +56,7 @@ const sourceCommonOptions: Fig.Option[] = [
   },
 ];
 
-const trustCommonOptions: Fig.Option[] = [
+const trustCommonOptions: OptionSpec[] = [
   {
     name: "--configfile",
     description:
@@ -77,7 +77,7 @@ const trustCommonOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nuget",
   subcommands: [
     {

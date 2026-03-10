@@ -10,7 +10,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -35,12 +35,12 @@ const postPrecessGenerator = (
 };
 const customGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string[],
   options: string[],
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["elasticbeanstalk", ...command];
     for (const option of options) {
@@ -78,13 +78,13 @@ const customGenerator = async (
 };
 const filterManagedAction = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = "",
   filter: string
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   return customGenerator(
     tokens,
     executeShellCommand,
@@ -113,7 +113,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -168,7 +168,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   listFiles: {
     script: (tokens) => {
       return appendFolderPath(tokens, _prefixFile);
@@ -265,7 +265,7 @@ const generators: Record<string, Fig.Generator> = {
             name: parts[parts.length - 1],
             insertValue: `S3Bucket=${parts[parts.length - 1]},S3Key=`,
           };
-        }) as Fig.Suggestion[];
+        }) as Suggestion[];
       } catch (error) {
         console.error(error);
       }
@@ -297,7 +297,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elasticbeanstalk",
   description:
     "AWS Elastic Beanstalk AWS Elastic Beanstalk makes it easy for you to create, deploy, and manage scalable, fault-tolerant applications running on the Amazon Web Services cloud. For more information about this product, go to the AWS Elastic Beanstalk details page. The location of the latest AWS Elastic Beanstalk WSDL is https://elasticbeanstalk.s3.amazonaws.com/doc/2010-12-01/AWSElasticBeanstalk.wsdl. To install the Software Development Kits (SDKs), Integrated Development Environment (IDE) Toolkits, and command line tools that enable you to access the API, go to Tools for Amazon Web Services.  Endpoints  For a list of region-specific endpoints that AWS Elastic Beanstalk supports, go to Regions and Endpoints in the Amazon Web Services Glossary",

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "redis",
   description: "Manage dedicated Redis caches for your Azure applications",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mongocli",
   description: "CLI tool to manage your MongoDB Cloud",
   subcommands: [

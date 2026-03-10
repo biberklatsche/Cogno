@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "ssh",
   description:
     "SSH into resources (Azure VMs, Arc servers, etc) using AAD issued openssh certificates.\n\n\t\tSSH into Arc-enabled servers without requiring a public IP address or SSH into Azure Virtual Machines. AAD issued openssh certificates for authentication currently only supported for Linux",

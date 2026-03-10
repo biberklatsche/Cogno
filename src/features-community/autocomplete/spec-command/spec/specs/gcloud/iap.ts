@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iap",
   description: "Manage IAP policies",
   subcommands: [

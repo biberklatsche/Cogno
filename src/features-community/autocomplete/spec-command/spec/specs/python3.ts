@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "python3",
   description: "Run the python interpreter",
   generateSpec: async (tokens, executeShellCommand) => {

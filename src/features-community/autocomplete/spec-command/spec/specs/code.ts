@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: "-",
     description: "Read from stdin (e.g. 'ps aux | grep code | code -')",
@@ -118,7 +118,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const extensionManagementOptions: Fig.Option[] = [
+const extensionManagementOptions: OptionSpec[] = [
   {
     name: "--extensions-dir",
     description: "Set the root path for extensions",
@@ -193,7 +193,7 @@ const extensionManagementOptions: Fig.Option[] = [
   },
 ];
 
-const troubleshootingOptions: Fig.Option[] = [
+const troubleshootingOptions: OptionSpec[] = [
   {
     name: ["-v", "--version"],
     description: "Print version",
@@ -282,7 +282,7 @@ const troubleshootingOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "code",
   description: "Visual Studio Code",
   args: {

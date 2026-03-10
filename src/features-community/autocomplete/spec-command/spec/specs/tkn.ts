@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tkn",
   description: "CLI for tekton pipelines",
   subcommands: [

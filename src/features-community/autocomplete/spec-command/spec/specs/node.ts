@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Subcommand = {
+const completionSpec: SubcommandSpec = {
   name: "node",
   description: "Run the node interpreter",
   args: {

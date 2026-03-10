@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "freetier",
   description:
     "You can use the Amazon Web Services Free Tier API to query programmatically your Free Tier usage data. Free Tier tracks your monthly usage data for all free tier offers that are associated with your Amazon Web Services account. You can use the Free Tier API to filter and show only the data that you want. Service endpoint The Free Tier API provides the following endpoint:   https://freetier.us-east-1.api.aws   For more information, see Using the Amazon Web Services Free Tier in the Billing User Guide",

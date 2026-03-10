@@ -1,5 +1,5 @@
 // Author: Yavko
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cot",
   icon: "https://coteditor.com/favicon@2x.png",
   description: "Command-line utility for CotEditor",

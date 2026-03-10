@@ -1,4 +1,4 @@
-const postProcessDockerPs: Fig.Generator["postProcess"] = (out) => {
+const postProcessDockerPs: Generator["postProcess"] = (out) => {
   return out.split("\n").map((i) => {
     try {
       const parsedJSON: Record<string, string> = JSON.parse(i);
@@ -13,7 +13,7 @@ const postProcessDockerPs: Fig.Generator["postProcess"] = (out) => {
   });
 };
 
-const sharedPostProcess: Fig.Generator["postProcess"] = (out) => {
+const sharedPostProcess: Generator["postProcess"] = (out) => {
   return out
     .split("\n")
     .map((line) => JSON.parse(line))
@@ -24,7 +24,7 @@ const sharedPostProcess: Fig.Generator["postProcess"] = (out) => {
     }));
 };
 
-const dockerGenerators: Record<string, Fig.Generator> = {
+const dockerGenerators: Record<string, Generator> = {
   runningDockerContainers: {
     script: ["podman", "ps", "--format", "{{ json . }}"],
     postProcess: postProcessDockerPs,
@@ -129,7 +129,7 @@ const containerAndCommandArgs = [
   },
 ];
 
-const sharedCommands: Record<string, Fig.Subcommand> = {
+const sharedCommands: Record<string, SubcommandSpec> = {
   build: {
     name: "build",
     description: "Build an image using instructions from Containerfiles",
@@ -2384,7 +2384,7 @@ default-cgroupns-mode option on the daemon (default)`,
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "podman",
   description: "Manage containers, pods, and images with Podman",
   subcommands: [

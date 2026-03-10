@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "debug",
   description: "Commands for interacting with the Cloud Debugger",
   subcommands: [

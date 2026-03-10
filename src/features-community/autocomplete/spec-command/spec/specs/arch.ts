@@ -6,7 +6,7 @@ const archNames: { name: string; description: string }[] = [
   { name: "arm64e", description: "64-bit arm (Apple Silicon)" },
 ];
 
-const archOptions: Fig.Option[] = archNames.map((arch) => ({
+const archOptions: OptionSpec[] = archNames.map((arch) => ({
   name: "-" + arch.name,
   description: arch.description,
   isRepeatable: true,
@@ -14,7 +14,7 @@ const archOptions: Fig.Option[] = archNames.map((arch) => ({
   icon: "fig://icon?type=cpu",
 }));
 
-const archOption: Fig.Option = {
+const archOption: OptionSpec = {
   name: "-arch",
   isRepeatable: true,
   exclusiveOn: archOptions.map(({ name }) => name as string),
@@ -27,7 +27,7 @@ const archOption: Fig.Option = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "arch",
   description: "Print architecture type or run select architecture",
   parserDirectives: {

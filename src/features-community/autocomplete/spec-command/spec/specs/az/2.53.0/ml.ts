@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "ml",
   description:
     "Manage Azure Machine Learning resources with the Azure CLI ML extension v1",

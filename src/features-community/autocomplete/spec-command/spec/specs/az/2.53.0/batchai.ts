@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "batchai",
   description: "Manage Batch AI resources",
   subcommands: [

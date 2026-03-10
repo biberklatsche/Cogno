@@ -1,4 +1,4 @@
-const getInstalledPackages: Fig.Generator = {
+const getInstalledPackages: Generator = {
   script: ["conda", "list"],
   postProcess: function (out) {
     const lines = out.split("\n");
@@ -17,7 +17,7 @@ const getInstalledPackages: Fig.Generator = {
   },
 };
 
-// const getAllCondaPackages: Fig.Generator = {
+// const getAllCondaPackages: Generator = {
 //   //script: ["conda", "search", "-q"],
 //   script: function (context) {
 //     if (context[context.length - 1] === "") return "";
@@ -38,7 +38,7 @@ const getInstalledPackages: Fig.Generator = {
 //   },
 // };
 
-const getCondaEnvironments: Fig.Generator = {
+const getCondaEnvironments: Generator = {
   script: ["conda", "env", "list"],
   scriptTimeout: 10000,
   cache: {
@@ -47,7 +47,7 @@ const getCondaEnvironments: Fig.Generator = {
   },
   postProcess: function (out) {
     const lines = out.split("\n");
-    const installedPackages: Fig.Suggestion[] = [];
+    const installedPackages: Suggestion[] = [];
     for (let i = 2; i < lines.length; i++) {
       var env_name = lines[i].split(" ")[0];
       installedPackages.push({
@@ -59,11 +59,11 @@ const getCondaEnvironments: Fig.Generator = {
   },
 };
 
-const getCondaConfigs: Fig.Generator = {
+const getCondaConfigs: Generator = {
   script: ["conda", "config", "--show"],
   postProcess: function (out) {
     const lines = out.split("\n");
-    const configs: Fig.Suggestion[] = [];
+    const configs: Suggestion[] = [];
     for (let i = 2; i < lines.length; i++) {
       var config_name = lines[i].split(":")[0];
       if (config_name.includes("-") == false) {
@@ -77,7 +77,7 @@ const getCondaConfigs: Fig.Generator = {
   },
 };
 
-const name_options: Fig.Option[] = [
+const name_options: OptionSpec[] = [
   {
     name: ["-n", "--name"],
     description: "Name of environment",
@@ -95,7 +95,7 @@ const name_options: Fig.Option[] = [
   },
 ];
 
-const remove_options: Fig.Option[] = [
+const remove_options: OptionSpec[] = [
   {
     name: "--dev",
     description:
@@ -172,7 +172,7 @@ const remove_options: Fig.Option[] = [
   { name: ["-y", "--yes"], description: "Do not ask for confirmation" },
 ];
 
-const update_options: Fig.Option[] = [
+const update_options: OptionSpec[] = [
   {
     name: "--file",
     description:
@@ -298,7 +298,7 @@ const update_options: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "conda",
   description: "Conda package manager",
   subcommands: [

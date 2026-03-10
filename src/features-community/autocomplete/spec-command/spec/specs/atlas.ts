@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "atlas",
   description: "CLI tool to manage MongoDB Atlas",
   subcommands: [

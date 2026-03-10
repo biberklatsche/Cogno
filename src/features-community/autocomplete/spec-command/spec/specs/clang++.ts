@@ -5,12 +5,12 @@ import {
   stdHLSLSuggestions,
 } from "./clang";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...clangBase,
   name: "clang++",
   description: "Clang LLVM compiler for C++",
   options: [
-    ...(clangBase as Fig.Subcommand).options,
+    ...(clangBase as SubcommandSpec).options,
     {
       name: "-std",
       description: "Language standard to compile for",

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cdk",
   description: "AWS CDK CLI",
   subcommands: [

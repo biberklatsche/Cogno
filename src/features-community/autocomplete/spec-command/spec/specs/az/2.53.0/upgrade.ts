@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "upgrade",
   description: "Upgrade Azure CLI and extensions",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "http",
   description: "HTTPie: command-line HTTP client for the API era",
   args: [

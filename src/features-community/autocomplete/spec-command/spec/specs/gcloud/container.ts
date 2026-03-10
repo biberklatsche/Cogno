@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "container",
   description: "Deploy and manage clusters of machines for running containers",
   subcommands: [

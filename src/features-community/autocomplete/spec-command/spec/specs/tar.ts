@@ -1,4 +1,4 @@
-const sizeSuffixes: Fig.Suggestion[] = [
+const sizeSuffixes: Suggestion[] = [
   { name: "Blocks", insertValue: "{cursor}b" },
   { name: "Bytes", insertValue: "{cursor}c" },
   { name: "Gigabytes", insertValue: "{cursor}G" },
@@ -9,7 +9,7 @@ const sizeSuffixes: Fig.Suggestion[] = [
   { name: "Words", insertValue: "{cursor}w" },
 ];
 
-const fileOptions: Fig.Option[] = [
+const fileOptions: OptionSpec[] = [
   {
     name: ["f", "-f", "--file"],
     description: "Use archive file or device ARCHIVE",
@@ -84,7 +84,7 @@ const compressionExclusive: string[] = [
 ];
 
 // --create && --append && --update && --list && --extract
-const compressionOptions: Fig.Option[] = [
+const compressionOptions: OptionSpec[] = [
   {
     name: ["a", "-a", "--auto-compress"],
     description: "Use archive suffix to determine the compression program",
@@ -170,7 +170,7 @@ const compressionOptions: Fig.Option[] = [
 ];
 
 // --create && --append && --update
-const dumpOptions: Fig.Option[] = [
+const dumpOptions: OptionSpec[] = [
   {
     name: "--ignore-failed-read",
     description: "Do not exit with nonzero on unreadable files",
@@ -429,7 +429,7 @@ const dumpOptions: Fig.Option[] = [
 ];
 
 // --delete && --diff && --extract && --list
-const occurrenceOption: Fig.Option = {
+const occurrenceOption: OptionSpec = {
   name: "--occurrence",
   description: "Process only the Nth occurrence of each file in the archive",
   args: {
@@ -440,7 +440,7 @@ const occurrenceOption: Fig.Option = {
 };
 
 // --list && --extract
-const readOptions: Fig.Option[] = [
+const readOptions: OptionSpec[] = [
   {
     name: ["n", "-n", "--seek"],
     description: "Assume the archive is seekable",
@@ -478,7 +478,7 @@ const readOptions: Fig.Option[] = [
   },
 ];
 
-const warningSuggestions: Fig.Suggestion[] = [
+const warningSuggestions: Suggestion[] = [
   { name: "all", description: "Enable all warning messages" },
   { name: "none", description: "Disable all warning messages" },
   {
@@ -526,7 +526,7 @@ const overwriteExclusives: string[] = [
   "--to-stdout",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tar",
   description: "Manipulating archive files",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "autocannon",
   description: "Fast HTTP/1.1 benchmarking tool written in Node.js",
   icon: "https://raw.githubusercontent.com/mcollina/autocannon/master/autocannon-logo-icon-100px.png",

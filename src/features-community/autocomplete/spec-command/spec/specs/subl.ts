@@ -1,12 +1,12 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const generateProjects: Fig.Generator = filepaths({
+const generateProjects: Generator = filepaths({
   equals: [".sublime-project", ".sublime-workspace"],
 
   editFileSuggestions: { priority: 76 },
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "subl",
   description: "Sublime Text",
   args: {

@@ -35,7 +35,7 @@ const signals = [
   "usr2",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "killall",
   description: "Kill processes by name",
   args: {

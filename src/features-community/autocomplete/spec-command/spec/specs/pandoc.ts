@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const pandocGenerators: Record<string, Fig.Generator[]> = {
+const pandocGenerators: Record<string, Generator[]> = {
   inputFormats: [
     {
       script: ["pandoc", "--list-input-formats"],
@@ -49,7 +49,7 @@ const pandocGenerators: Record<string, Fig.Generator[]> = {
   yamlJSONFiles: [filepaths({ extensions: ["yaml", "json"] })],
 };
 
-const styleFileArg: Fig.Arg = {
+const styleFileArg: ArgSpec = {
   name: "STYLE|FILE",
   template: "filepaths",
   default: "pygments",
@@ -65,7 +65,7 @@ const styleFileArg: Fig.Arg = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pandoc",
   description: "A universal document converter",
   options: [

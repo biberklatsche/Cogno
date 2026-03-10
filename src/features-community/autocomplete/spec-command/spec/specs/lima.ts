@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lima",
   description: 'Lima is an alias for "limactl shell $LIMA_INSTANCE"',
   args: {

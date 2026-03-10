@@ -1,4 +1,4 @@
-const cliOptions: Record<string, Fig.Option> = {
+const cliOptions: Record<string, OptionSpec> = {
   help: { name: "--help", description: "Show help for command" },
   version: { name: ["-v", "--version"], description: "Show the version" },
   connection: {
@@ -13,7 +13,7 @@ const cliOptions: Record<string, Fig.Option> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "typeorm",
   description: "TypeORM CLI",
   subcommands: [

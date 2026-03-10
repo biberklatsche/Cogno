@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const examplesGenerator: Fig.Generator = {
+const examplesGenerator: Generator = {
   script: ["meteor", "create", "--list"],
   postProcess: (output) => {
     return output
@@ -12,7 +12,7 @@ const examplesGenerator: Fig.Generator = {
   },
 };
 
-const packagesGenerator: Fig.Generator = {
+const packagesGenerator: Generator = {
   script: ["cat", "./.meteor/packages"],
   postProcess: (output) => {
     if (output.includes("No such file or directory")) {
@@ -31,7 +31,7 @@ const packagesGenerator: Fig.Generator = {
   },
 };
 
-const platformGenerator: Fig.Generator = {
+const platformGenerator: Generator = {
   script: ["meteor", "list-platforms"],
   postProcess: (output) => {
     return output.split("\n").map((platform) => {
@@ -40,7 +40,7 @@ const platformGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "meteor",
   description: "Run the meteor command-line tool",
   subcommands: [

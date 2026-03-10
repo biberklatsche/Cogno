@@ -3,7 +3,7 @@ import { createVersionedSpec } from "@fig/autocomplete-helpers";
 const versionRegex = /heroku\/([0-9]+\.[0-9]+\.[0.9]+)/;
 const versionFiles = ["8.0.0", "8.6.0"];
 
-export const getVersionCommand: Fig.GetVersionCommand = async (
+export const getVersionCommand: GetVersionCommand = async (
   executeShellCommand
 ) => {
   const { stdout } = await executeShellCommand({

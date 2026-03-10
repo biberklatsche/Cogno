@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bigtable",
   description: "Manage your Cloud Bigtable storage",
   subcommands: [

@@ -3,7 +3,7 @@
  * Tue, 11 Oct 2022 12:43:14 GMT
  */
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ffmpeg",
   description: "Play, record, convert, and stream audio and video",
 

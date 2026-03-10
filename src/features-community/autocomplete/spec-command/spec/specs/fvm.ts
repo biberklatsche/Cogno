@@ -1,14 +1,14 @@
 const semverRegex =
   /((([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)/gm;
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: ["-h", "--help"],
     description: "Print this usage information",
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fvm",
   description:
     "Flutter Version Management: A cli to manage Flutter SDK versions",
@@ -104,7 +104,7 @@ const completionSpec: Fig.Spec = {
         ],
         generators: {
           script: ["fvm", "releases"],
-          postProcess: function (out): Fig.Suggestion[] {
+          postProcess: function (out): Suggestion[] {
             const matches = out.match(semverRegex);
             const matchesSet = [...new Set(matches)];
             return matchesSet.map((match) => ({ name: match })).reverse();

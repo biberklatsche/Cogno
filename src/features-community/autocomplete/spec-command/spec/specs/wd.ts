@@ -1,4 +1,4 @@
-const warpPointsGenerator: Fig.Generator = {
+const warpPointsGenerator: Generator = {
   custom: async (_, executeCommand, context) => {
     const { stdout } = await executeCommand({
       command: "cat",
@@ -9,7 +9,7 @@ const warpPointsGenerator: Fig.Generator = {
     // find all warp points names
     const iter = stdout.matchAll(/^(\w+)/gm);
 
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
 
     for (const [point] of iter) {
       suggestions.push({
@@ -22,7 +22,7 @@ const warpPointsGenerator: Fig.Generator = {
     return suggestions;
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "wd",
   description: "Warp to directories without using cd",
   args: [

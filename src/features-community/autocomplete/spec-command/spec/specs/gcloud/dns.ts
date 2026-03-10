@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dns",
   description: "Manage your Cloud DNS managed-zones and record-sets",
   subcommands: [

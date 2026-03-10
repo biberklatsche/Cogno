@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "create-remix",
   icon: "https://remix.run/favicon-light.1.png",
   options: [

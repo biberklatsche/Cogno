@@ -1,6 +1,6 @@
 // https://www.gnu.org/software/diffutils
 const groupFormatOptions = (names: string[]) =>
-  names.map<Fig.Option>((name) => ({
+  names.map<OptionSpec>((name) => ({
     name: `--${name}-group-format`,
     description: `Similar, but format ${name} input groups with GFTM`,
     args: {
@@ -22,7 +22,7 @@ M  L+1
   }));
 
 const lineFormatOptions = (names: string[]) =>
-  names.map<Fig.Option>((name) => ({
+  names.map<OptionSpec>((name) => ({
     name: `--${name}-line-format`,
     description: `Format ${name} input lines with LFTM`,
     args: {
@@ -36,7 +36,7 @@ const lineFormatOptions = (names: string[]) =>
     },
   }));
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "diff",
   description: "Compare files line by line",
   args: {

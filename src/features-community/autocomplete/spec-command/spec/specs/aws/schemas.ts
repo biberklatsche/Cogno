@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "schemas",
   description: "Amazon EventBridge Schema Registry",
   subcommands: [

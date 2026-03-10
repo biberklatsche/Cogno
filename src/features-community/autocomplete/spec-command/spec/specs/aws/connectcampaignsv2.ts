@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "connectcampaignsv2",
   description: "Provide APIs to create and manage Amazon Connect Campaigns",
   subcommands: [

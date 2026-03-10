@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vim",
   description: "Vi IMproved, a programmer's text editor",
   args: {

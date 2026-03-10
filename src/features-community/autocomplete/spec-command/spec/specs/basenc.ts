@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "basenc",
   description: "Encode/decode data and print to standard output",
   parserDirectives: {

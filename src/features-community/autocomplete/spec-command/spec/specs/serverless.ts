@@ -1,6 +1,6 @@
 import YAML from "yaml";
 
-const options: Record<string, Fig.Option> = {
+const options: Record<string, OptionSpec> = {
   awsProfile: {
     name: "--aws-profile",
     description: "AWS profile to use with the command",
@@ -172,7 +172,7 @@ const options: Record<string, Fig.Option> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "serverless",
   description: "Zero-friction serverless development",
   options: [
@@ -416,7 +416,7 @@ const completionSpec: Fig.Spec = {
       return;
     }
 
-    const subcommands: Fig.Subcommand[] = services.map((service) => ({
+    const subcommands: SubcommandSpec[] = services.map((service) => ({
       name: service,
       description: tokens.join(","),
       priority: 100,

@@ -1,4 +1,4 @@
-const debugProxyOptions: Fig.Option[] = [
+const debugProxyOptions: OptionSpec[] = [
   {
     name: "--debug",
     description: "Print debugging information",
@@ -19,7 +19,7 @@ const debugProxyOptions: Fig.Option[] = [
   },
 ];
 
-const addonAuth: Fig.Subcommand = {
+const addonAuth: SubcommandSpec = {
   name: ["addons:auth", "addon:auth"],
   description: "Login to add-on provider",
   args: {
@@ -29,7 +29,7 @@ const addonAuth: Fig.Subcommand = {
   options: [...debugProxyOptions],
 };
 
-const addonConfig: Fig.Subcommand = {
+const addonConfig: SubcommandSpec = {
   name: ["addons:config", "addon:config"],
   description: "Configure add-on settings",
   args: {
@@ -39,7 +39,7 @@ const addonConfig: Fig.Subcommand = {
   options: [...debugProxyOptions],
 };
 
-const addonCreate: Fig.Subcommand = {
+const addonCreate: SubcommandSpec = {
   name: ["addons:create", "addon:create"],
   description: "Add an add-on extension to your site",
   args: {
@@ -49,7 +49,7 @@ const addonCreate: Fig.Subcommand = {
   options: [...debugProxyOptions],
 };
 
-const addonDelete: Fig.Subcommand = {
+const addonDelete: SubcommandSpec = {
   name: ["addons:delete", "addon:delete"],
   description: "Remove an add-on extension to your site",
   args: {
@@ -66,7 +66,7 @@ const addonDelete: Fig.Subcommand = {
   ],
 };
 
-const addonList: Fig.Subcommand = {
+const addonList: SubcommandSpec = {
   name: ["addons:list", "addon:list"],
   description: "List currently installed add-ons for site",
   options: [
@@ -78,7 +78,7 @@ const addonList: Fig.Subcommand = {
   ],
 };
 
-const api: Fig.Subcommand = {
+const api: SubcommandSpec = {
   name: "api",
   description: "Run any Netlify API method",
   args: {
@@ -101,7 +101,7 @@ const api: Fig.Subcommand = {
   ],
 };
 
-const build: Fig.Subcommand = {
+const build: SubcommandSpec = {
   name: "build",
   description: "(Beta) Build on your local machine",
   options: [
@@ -124,7 +124,7 @@ const build: Fig.Subcommand = {
   ],
 };
 
-const completion: Fig.Subcommand = {
+const completion: SubcommandSpec = {
   name: "completion",
   description: "(Beta) Generate shell completion script",
   options: [
@@ -140,7 +140,7 @@ const completion: Fig.Subcommand = {
   ],
 };
 
-const completionGenerate: Fig.Subcommand = {
+const completionGenerate: SubcommandSpec = {
   name: "completion:generate",
   description: "Generates completion script",
   options: [
@@ -152,7 +152,7 @@ const completionGenerate: Fig.Subcommand = {
   ],
 };
 
-const completionGenerateAlias: Fig.Subcommand = {
+const completionGenerateAlias: SubcommandSpec = {
   name: "completion:generate:alias",
   description: "Generates completion script for alias",
   options: [
@@ -164,7 +164,7 @@ const completionGenerateAlias: Fig.Subcommand = {
   ],
 };
 
-const deploy: Fig.Subcommand = {
+const deploy: SubcommandSpec = {
   name: "deploy",
   description: "Create a new deploy from the contents of a folder",
   options: [
@@ -262,7 +262,7 @@ const deploy: Fig.Subcommand = {
   ],
 };
 
-const dev: Fig.Subcommand = {
+const dev: SubcommandSpec = {
   name: "dev",
   description: "Local dev server",
   options: [
@@ -324,13 +324,13 @@ const dev: Fig.Subcommand = {
   ],
 };
 
-const devExec: Fig.Subcommand = {
+const devExec: SubcommandSpec = {
   name: "dev:exec",
   description: "Exec command",
   options: [...debugProxyOptions],
 };
 
-const devTrace: Fig.Subcommand = {
+const devTrace: SubcommandSpec = {
   name: "dev:trace",
   description: "Trace command",
   args: {
@@ -376,20 +376,20 @@ const devTrace: Fig.Subcommand = {
   ],
 };
 
-const env: Fig.Subcommand = {
+const env: SubcommandSpec = {
   name: "env",
   description: "(Beta) Control environment variables for the current site",
   options: [...debugProxyOptions],
 };
 
-const envGet: Fig.Subcommand = {
+const envGet: SubcommandSpec = {
   name: "env:get",
   description:
     "Get resolved value of specified environment variable (includes netlify.toml)",
   options: [...debugProxyOptions],
 };
 
-const envImport: Fig.Subcommand = {
+const envImport: SubcommandSpec = {
   name: "env:import",
   description: "Import and set environment variables from .env file",
   args: {
@@ -407,14 +407,14 @@ const envImport: Fig.Subcommand = {
   ],
 };
 
-const envList: Fig.Subcommand = {
+const envList: SubcommandSpec = {
   name: "env:list",
   description:
     "Lists resolved environment variables for site (includes netlify.toml)",
   options: [...debugProxyOptions],
 };
 
-const envSet: Fig.Subcommand = {
+const envSet: SubcommandSpec = {
   name: "env:set",
   description: "Set value of environment variable",
   args: [
@@ -430,7 +430,7 @@ const envSet: Fig.Subcommand = {
   options: [...debugProxyOptions],
 };
 
-const envUnset: Fig.Subcommand = {
+const envUnset: SubcommandSpec = {
   name: ["env:unset", "env:delete", "env:remove"],
   description: "Unset an environment variable which removes it from the UI",
   args: {
@@ -440,7 +440,7 @@ const envUnset: Fig.Subcommand = {
   options: [...debugProxyOptions],
 };
 
-const functionsBuild: Fig.Subcommand = {
+const functionsBuild: SubcommandSpec = {
   name: ["functions:build", "function:build"],
   description: "Build functions locally",
   options: [
@@ -463,7 +463,7 @@ const functionsBuild: Fig.Subcommand = {
   ],
 };
 
-const functionsCreate: Fig.Subcommand = {
+const functionsCreate: SubcommandSpec = {
   name: ["functions:create", "function:create"],
   description: "Create a new function locally",
   args: {
@@ -490,7 +490,7 @@ const functionsCreate: Fig.Subcommand = {
   ],
 };
 
-const functionsInvoke: Fig.Subcommand = {
+const functionsInvoke: SubcommandSpec = {
   name: ["functions:invoke", "function:trigger"],
   description:
     "Trigger a function while in netlify dev with simulated data, good for testing function calls including Netlify's Event Triggered Functions",
@@ -552,7 +552,7 @@ const functionsInvoke: Fig.Subcommand = {
   ],
 };
 
-const functionsList: Fig.Subcommand = {
+const functionsList: SubcommandSpec = {
   name: ["functions:list", "function:list"],
   description: "List functions that exist locally",
   options: [
@@ -579,7 +579,7 @@ const functionsList: Fig.Subcommand = {
   ],
 };
 
-const functionsServe: Fig.Subcommand = {
+const functionsServe: SubcommandSpec = {
   name: ["functions:serve", "function:server"],
   description: "(Beta) Serve functions locally",
   options: [
@@ -606,7 +606,7 @@ const functionsServe: Fig.Subcommand = {
   ],
 };
 
-const init: Fig.Subcommand = {
+const init: SubcommandSpec = {
   name: "init",
   description:
     "Configure continuous deployment for a new or existing site. To create a new site without continuous deployment, use `netlify sites:create`",
@@ -631,7 +631,7 @@ const init: Fig.Subcommand = {
   ],
 };
 
-const link: Fig.Subcommand = {
+const link: SubcommandSpec = {
   name: "link",
   description:
     "Link a local repo or project folder to an existing site on Netlify",
@@ -661,19 +661,19 @@ const link: Fig.Subcommand = {
   ],
 };
 
-const lm: Fig.Subcommand = {
+const lm: SubcommandSpec = {
   name: "lm",
   description: "Handle Netlify Large Media operations",
   options: [...debugProxyOptions],
 };
 
-const lmInfo: Fig.Subcommand = {
+const lmInfo: SubcommandSpec = {
   name: "lm:info",
   description: "Show large media requirements information",
   options: [...debugProxyOptions],
 };
 
-const lmInstall: Fig.Subcommand = {
+const lmInstall: SubcommandSpec = {
   name: ["lm:install", "lm:init"],
   description: "Configures your computer to use Netlify Large Media",
   options: [
@@ -684,7 +684,7 @@ const lmInstall: Fig.Subcommand = {
   ],
 };
 
-const lmSetup: Fig.Subcommand = {
+const lmSetup: SubcommandSpec = {
   name: "lm:setup",
   description: "Configures your site to use Netlify Large Media",
   options: [
@@ -700,7 +700,7 @@ const lmSetup: Fig.Subcommand = {
   ],
 };
 
-const login: Fig.Subcommand = {
+const login: SubcommandSpec = {
   name: "login",
   description: "Login to your Netlify account",
   options: [
@@ -727,7 +727,7 @@ const login: Fig.Subcommand = {
   ],
 };
 
-const open: Fig.Subcommand = {
+const open: SubcommandSpec = {
   name: "open",
   description: "Open settings for the site linked to the current folder",
   options: [
@@ -743,19 +743,19 @@ const open: Fig.Subcommand = {
   ],
 };
 
-const openAdmin: Fig.Subcommand = {
+const openAdmin: SubcommandSpec = {
   name: "open:admin",
   description: "Opens current site admin UI in Netlify",
   options: [...debugProxyOptions],
 };
 
-const openSite: Fig.Subcommand = {
+const openSite: SubcommandSpec = {
   name: "open:site",
   description: "Opens current site url in browser",
   options: [...debugProxyOptions],
 };
 
-const sitesCreate: Fig.Subcommand = {
+const sitesCreate: SubcommandSpec = {
   name: "sites:create",
   description: "Create an empty site (advanced)",
   options: [
@@ -780,7 +780,7 @@ const sitesCreate: Fig.Subcommand = {
   ],
 };
 
-const sitesDelete: Fig.Subcommand = {
+const sitesDelete: SubcommandSpec = {
   name: "sites:delete",
   description: "Delete a site",
   args: {
@@ -797,7 +797,7 @@ const sitesDelete: Fig.Subcommand = {
   ],
 };
 
-const sitesList: Fig.Subcommand = {
+const sitesList: SubcommandSpec = {
   name: "sites:list",
   description: "List all sites you have access to",
   options: [
@@ -809,7 +809,7 @@ const sitesList: Fig.Subcommand = {
   ],
 };
 
-const status: Fig.Subcommand = {
+const status: SubcommandSpec = {
   name: "status",
   description: "Print status information",
   options: [
@@ -821,25 +821,25 @@ const status: Fig.Subcommand = {
   ],
 };
 
-const statusHooks: Fig.Subcommand = {
+const statusHooks: SubcommandSpec = {
   name: "status:hooks",
   description: "Print hook information of the linked site",
   options: [...debugProxyOptions],
 };
 
-const unlink: Fig.Subcommand = {
+const unlink: SubcommandSpec = {
   name: "unlink",
   description: "Unlink a local folder from a Netlify site",
   options: [...debugProxyOptions],
 };
 
-const watch: Fig.Subcommand = {
+const watch: SubcommandSpec = {
   name: "watch",
   description: "Watch for site deploy to finish",
   options: [...debugProxyOptions],
 };
 
-const subcommands: Fig.Subcommand[] = [
+const subcommands: SubcommandSpec[] = [
   addonAuth,
   addonConfig,
   addonCreate,
@@ -884,7 +884,7 @@ const subcommands: Fig.Subcommand[] = [
   watch,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "netlify",
   description: "Netlify command line tool",
   subcommands: [

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "orbital",
   description: "Azure Orbital Ground Station as-a-Service (GSaaS)",
   subcommands: [

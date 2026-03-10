@@ -7,7 +7,7 @@
 // NOTE: replace _prefix_string_for_file_and_folder_suggestions with whatever prefix you'd like e.g. "s3://"
 const _prefix_string_for_file_and_folder_suggestions = "file://";
 
-var customArgument: Fig.Arg = {
+var customArgument: ArgSpec = {
   name: "FILE/FOLDER",
   description:
     "must start with " + _prefix_string_for_file_and_folder_suggestions,
@@ -137,7 +137,7 @@ var customArgument: Fig.Arg = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "trigger_example",
   description: "",
   subcommands: [

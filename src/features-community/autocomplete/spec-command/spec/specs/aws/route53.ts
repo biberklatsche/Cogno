@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "route53",
   description:
     "Amazon Route\u00a053 is a highly available and scalable Domain Name System (DNS) web service. You can use Route\u00a053 to:   Register domain names. For more information, see How domain registration works.   Route internet traffic to the resources for your domain For more information, see How internet traffic is routed to your website or web application.   Check the health of your resources. For more information, see How Route\u00a053 checks the health of your resources",

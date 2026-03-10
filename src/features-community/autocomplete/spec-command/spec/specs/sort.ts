@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sort",
   description: "Sort or merge records (lines) of text and binary files",
   args: {

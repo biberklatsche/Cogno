@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "private-link",
   description: "Private-link association CLI command group",
   subcommands: [

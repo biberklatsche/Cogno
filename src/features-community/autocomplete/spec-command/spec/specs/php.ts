@@ -1,7 +1,7 @@
 // To learn more about Fig's autocomplete standard visit: https://fig.io/docs/concepts/cli-skeleton
 
 const fileExists = async (
-  executeCommand: Fig.ExecuteCommandFunction,
+  executeCommand: ExecuteCommandFunction,
   file: string
 ) => {
   return (
@@ -10,7 +10,7 @@ const fileExists = async (
   );
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "php",
   description: "Run the PHP interpreter",
   generateSpec: async (tokens, executeShellCommand) => {

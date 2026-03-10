@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "acr",
   description: "Manage private registries with Azure Container Registries",
   subcommands: [

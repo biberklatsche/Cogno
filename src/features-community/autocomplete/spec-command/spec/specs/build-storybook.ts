@@ -1,6 +1,6 @@
 import { storybookCommonOptions } from "./start-storybook";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "build-storybook",
   description: "Storybook build CLI tools",
   options: [

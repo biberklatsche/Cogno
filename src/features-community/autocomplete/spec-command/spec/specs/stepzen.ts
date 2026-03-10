@@ -2,7 +2,7 @@
 // Manually coded from https://stepzen.com/docs/cli/cli-commands
 // Coded on stepzen/0.9.33 CLI version
 
-const endpointsGenerator: Fig.Generator = {
+const endpointsGenerator: Generator = {
   script: ["stepzen", "list", "schemas"],
   postProcess: (output) => {
     try {
@@ -10,15 +10,15 @@ const endpointsGenerator: Fig.Generator = {
         return {
           name: endpoint,
           description: "StepZen endpoint",
-        } as Fig.Suggestion;
-      }) as Fig.Suggestion[];
+        } as Suggestion;
+      }) as Suggestion[];
     } catch (e) {
       return [];
     }
   },
 };
 
-const importSchemasGenerator: Fig.Generator = {
+const importSchemasGenerator: Generator = {
   script: [
     "curl",
     "https://api.github.com/repos/steprz/stepzen-schemas/contents",
@@ -34,15 +34,15 @@ const importSchemasGenerator: Fig.Generator = {
             name: repo.name,
             description: "Stepzen schema",
             icon: "📦",
-          } as Fig.Suggestion;
-        }) as Fig.Suggestion[];
+          } as Suggestion;
+        }) as Suggestion[];
     } catch (e) {
       return [];
     }
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "StepZen",
   description:
     "The StepZen CLI is the primary way to build, deploy and test your schemas on StepZen",

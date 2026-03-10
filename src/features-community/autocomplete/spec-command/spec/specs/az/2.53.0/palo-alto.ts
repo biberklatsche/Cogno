@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "palo-alto",
   description: "Manage palo-alto networks resource",
   subcommands: [

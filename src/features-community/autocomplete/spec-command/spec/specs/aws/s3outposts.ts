@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "s3outposts",
   description:
     "Amazon S3 on Outposts provides access to S3 on Outposts operations",

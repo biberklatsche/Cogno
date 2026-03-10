@@ -107,7 +107,7 @@ export interface Owner {
   site_admin: boolean;
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "degit",
   description: "Straightforward project scaffolding",
   args: [

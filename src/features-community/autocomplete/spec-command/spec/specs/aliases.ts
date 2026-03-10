@@ -1,4 +1,4 @@
-const helpAndVersionOptions: Fig.Option[] = [
+const helpAndVersionOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Prints help information",
@@ -11,7 +11,7 @@ const helpAndVersionOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "aliases",
   description: "Bash aliases on steroids, dynamic alias functions for bash",
   subcommands: [

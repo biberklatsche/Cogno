@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "helm",
   description: "The Helm package manager for Kubernetes",
   subcommands: [

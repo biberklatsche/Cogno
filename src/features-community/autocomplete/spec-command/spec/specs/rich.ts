@@ -1,5 +1,5 @@
 const colorNames = new Set<string>();
-type Suggestion1 = Fig.Modify<Fig.Suggestion, { name: string }>;
+type Suggestion1 = Modify<Suggestion, { name: string }>;
 let foregroundSuggestions: Suggestion1[];
 let backgroundSuggestions: Suggestion1[];
 let foregroundSuggestionsColor: Suggestion1[];
@@ -312,7 +312,7 @@ let backgroundSuggestionsColor: Suggestion1[];
   backgroundSuggestionsColor = [...backgroundSuggestions, ...colorSuggestions];
 }
 
-const styleGenerator: Fig.Generator = {
+const styleGenerator: Generator = {
   trigger: " ",
   getQueryTerm: " ",
   custom: async (tokens) => {
@@ -360,7 +360,7 @@ const paddingDisplayName = (
   return `Top: ${top}, right: ${right}, bottom: ${bottom}, left: ${left}`;
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rich",
   description: "Rich text and formatting in the terminal",
   args: {

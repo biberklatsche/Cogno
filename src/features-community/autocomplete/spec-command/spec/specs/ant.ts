@@ -1,4 +1,4 @@
-const tasksGenerator: Fig.Generator = {
+const tasksGenerator: Generator = {
   script: ["bash", "-c", "command ant -p | grep -i '^\\s' | tr -d ' '"],
   postProcess: (out) =>
     out.split("\n").map((task) => ({
@@ -12,7 +12,7 @@ const tasksGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ant",
   description: "A software tool for automating software build processes",
   parserDirectives: {

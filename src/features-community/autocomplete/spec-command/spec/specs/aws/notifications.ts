@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "notifications",
   description:
     "The AWS User Notifications API Reference provides descriptions, API request parameters, and the JSON response for each of the User Notification API actions. User Notification control APIs are currently available in US East (Virginia) - us-east-1.  GetNotificationEvent and ListNotificationEvents APIs are currently available in commercial partition Regions and only return notifications stored in the same Region in which they're called. The User Notifications console can only be used in US East (Virginia). Your data however, is stored in each Region chosen as a notification hub in addition to US East (Virginia)",

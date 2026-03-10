@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "grex",
   description:
     "Command-line tool for generating regular expressions from user-provided test cases",

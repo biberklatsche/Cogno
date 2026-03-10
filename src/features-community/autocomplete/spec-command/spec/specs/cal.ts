@@ -1,6 +1,6 @@
 import { monthSuggestions } from "./ncal";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cal",
   parserDirectives: {
     optionsMustPrecedeArguments: true,

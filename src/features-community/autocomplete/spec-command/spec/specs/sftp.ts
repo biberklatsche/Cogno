@@ -1,6 +1,6 @@
 import { knownHosts, configHosts } from "./ssh";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sftp",
   description: "OpenSSH secure file transfer",
   args: [

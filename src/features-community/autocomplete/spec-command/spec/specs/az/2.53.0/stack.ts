@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "stack",
   description:
     "A deployment stack is a native Azure resource type that enables you to perform operations on a resource collection as an atomic unit",

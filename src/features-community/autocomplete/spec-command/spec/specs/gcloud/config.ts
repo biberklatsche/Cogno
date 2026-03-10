@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "config",
   description: "View and edit Cloud SDK properties",
   subcommands: [

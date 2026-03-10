@@ -7,7 +7,7 @@ interface NodejsVersion {
 }
 
 // Generators
-const versionGenerator: Fig.Generator = {
+const versionGenerator: Generator = {
   script: ["fnm", "list"],
   postProcess: function (out) {
     return out
@@ -48,7 +48,7 @@ const uniqBy = <T = unknown>(arr: T[], callback: (a: T, b: T) => boolean) =>
  *   beta right after it if it exists;
  * - Every other version, sorted;
  */
-const remoteVersionGenerator: Fig.Generator = {
+const remoteVersionGenerator: Generator = {
   script: ["fnm", "list-remote"],
   postProcess: function (out) {
     const parsed = out
@@ -111,31 +111,31 @@ const remoteVersionGenerator: Fig.Generator = {
 };
 
 // Args
-const version: Fig.Arg = {
+const version: ArgSpec = {
   name: "version",
   description:
     "A version string. Can be a partial semver or a LTS version name by the format lts/NAME",
   isOptional: true,
 };
 
-const command: Fig.Arg = {
+const command: ArgSpec = {
   name: "command",
   isCommand: true,
   isVariadic: true,
 };
 
 // Options
-const lts: Fig.Option = {
+const lts: OptionSpec = {
   name: "--lts",
   description: "Install latest LTS",
 };
 
-const installIfMissing: Fig.Option = {
+const installIfMissing: OptionSpec = {
   name: "--install-if-missing",
   description: "Install the version if it isn't installed yet",
 };
 
-const shell: Fig.Option = {
+const shell: OptionSpec = {
   name: "shell",
   description: "The shell syntax to use. Infers when missing",
   args: {
@@ -144,17 +144,17 @@ const shell: Fig.Option = {
   },
 };
 
-const help: Fig.Option = {
+const help: OptionSpec = {
   name: ["--help", "-h"],
   description: "Prints help information",
 };
 
-const fnmVersion: Fig.Option = {
+const fnmVersion: OptionSpec = {
   name: ["--version", "-V"],
   description: "Prints version information",
 };
 
-const arch: Fig.Option = {
+const arch: OptionSpec = {
   name: "--arch",
   description:
     "Override the architecture of the installed Node binary. Defaults to arch of fnm binary",
@@ -165,7 +165,7 @@ const arch: Fig.Option = {
   },
 };
 
-const fnmDir: Fig.Option = {
+const fnmDir: OptionSpec = {
   name: "--fnm-dir",
   description: "The root directory of fnm installations",
   args: {
@@ -174,7 +174,7 @@ const fnmDir: Fig.Option = {
   },
 };
 
-const logLevel: Fig.Option = {
+const logLevel: OptionSpec = {
   name: "--log-level",
   description: "The log level of fnm commands",
   args: {
@@ -184,7 +184,7 @@ const logLevel: Fig.Option = {
   },
 };
 
-const nodeDistMirror: Fig.Option = {
+const nodeDistMirror: OptionSpec = {
   name: "--node-dist-mirror",
   description: "Mirror of https://nodejs.org/dist",
   args: {
@@ -193,7 +193,7 @@ const nodeDistMirror: Fig.Option = {
   },
 };
 
-const versionFileStrategy: Fig.Option = {
+const versionFileStrategy: OptionSpec = {
   name: "--version-file-strategy",
   description: "Strategy for how to resolve the Node version",
   args: {
@@ -214,7 +214,7 @@ const baseOptions = [
   versionFileStrategy,
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fnm",
   description: "Fast Node Manager",
   options: baseOptions,

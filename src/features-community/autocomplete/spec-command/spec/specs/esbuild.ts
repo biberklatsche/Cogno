@@ -5,7 +5,7 @@ const icon =
 
 const ignoreExtensions = new Set(["", "sample", "env"]);
 
-const extensions: Fig.Generator["custom"] = async (_, executeShellCommand) => {
+const extensions: Generator["custom"] = async (_, executeShellCommand) => {
   const { stdout } = await executeShellCommand({
     command: "bash",
     args: [
@@ -19,7 +19,7 @@ const extensions: Fig.Generator["custom"] = async (_, executeShellCommand) => {
     .map((line) => ({ name: "." + line }));
 };
 
-const spec: Fig.Spec = {
+const spec: CommandSpec = {
   name: "esbuild",
   description: "An extremely fast JavaScript bundler",
   icon,
@@ -613,7 +613,7 @@ const spec: Fig.Spec = {
         name: "--version",
         description: "Print the current version and exit",
       },
-    ] as Fig.Option[]
+    ] as OptionSpec[]
   ).map((option) => ({ ...option, icon })),
 };
 

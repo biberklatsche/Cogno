@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "aftman",
   description:
     "A toolchain manager, enabling project-specific command line tools",

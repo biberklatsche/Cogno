@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloud-shell",
   description: "Manage Google Cloud Shell",
   subcommands: [

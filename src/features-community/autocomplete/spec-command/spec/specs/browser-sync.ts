@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "browser-sync",
   description:
     "Keep multiple browsers & devices in sync when building websites",

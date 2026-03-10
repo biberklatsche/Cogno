@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "mysql",
   description: "Manage Azure Database for MySQL servers",
   subcommands: [

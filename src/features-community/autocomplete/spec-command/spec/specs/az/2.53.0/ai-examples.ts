@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "ai-examples",
   description: "Add AI powered examples to help content",
   subcommands: [

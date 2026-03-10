@@ -100,7 +100,7 @@ function getJustfileDumpCommand(justfilePath: string | null): string[] {
 }
 
 /**
- * Get a `Fig.Suggestion[]` containing a suggestion for each recipe and alias.
+ * Get a `Suggestion[]` containing a suggestion for each recipe and alias.
  *
  * If the optional `showRecipeParameters` prop is `true`, the recipe display
  * names will include additional text describing the recipe's parameters, in
@@ -109,8 +109,8 @@ function getJustfileDumpCommand(justfilePath: string | null): string[] {
 function getRecipeSuggestions(
   justfile: Justfile,
   { showRecipeParameters = false } = {}
-): Fig.Suggestion[] {
-  const suggestions: Fig.Suggestion[] = [];
+): Suggestion[] {
+  const suggestions: Suggestion[] = [];
 
   for (const [name, recipe] of Object.entries(justfile.recipes)) {
     if (recipe.private) {
@@ -210,7 +210,7 @@ function getRecipeArityMap(justfile: Justfile): RecipeArityMapping {
  * If the user has provided -f/--justfile, that file will be used. Otherwise,
  * `just` will handle searching for it.
  */
-const dumpJustfile: Fig.Generator["script"] = (tokens) => {
+const dumpJustfile: Generator["script"] = (tokens) => {
   const path = getJustfilePath(tokens);
   return getJustfileDumpCommand(path);
 };
@@ -228,7 +228,7 @@ function processJustfileDump(out: string): Justfile | null {
   }
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "just",
   description: "Just a command runner",
   options: [

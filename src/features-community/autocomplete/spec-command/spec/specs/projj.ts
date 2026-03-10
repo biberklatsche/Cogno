@@ -1,4 +1,4 @@
-const repoGenerator: Fig.Generator = {
+const repoGenerator: Generator = {
   custom: async (_, executeCommand, context) => {
     const { stdout } = await executeCommand({
       command: "cat",
@@ -13,7 +13,7 @@ const repoGenerator: Fig.Generator = {
   },
 };
 
-const hookGenerator: Fig.Generator = {
+const hookGenerator: Generator = {
   custom: async (_, executeCommand, context) => {
     const { stdout } = await executeCommand({
       command: "cat",
@@ -29,7 +29,7 @@ const hookGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "projj",
   description: "Manage repository easily",
   subcommands: [

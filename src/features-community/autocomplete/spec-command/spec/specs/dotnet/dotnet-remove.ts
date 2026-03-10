@@ -2,7 +2,7 @@ import { filepaths } from "@fig/autocomplete-generators";
 
 const projectGenerator = filepaths({ extensions: ["csproj"] });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "remove",
   args: {
     name: "project",

@@ -1,4 +1,4 @@
-const svtplayDlGenerators: Record<string, Fig.Generator> = {
+const svtplayDlGenerators: Record<string, Generator> = {
   listClipboard: {
     script: ["pbpaste"],
     postProcess: function (out) {
@@ -22,7 +22,7 @@ const svtplayDlGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "svtplay-dl",
   description: "Download videos from your favourite play services",
   args: {

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "clear",
   description: "Clear the terminal screen",
   options: [

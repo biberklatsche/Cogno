@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dataproc",
   description: "Create and manage Google Cloud Dataproc clusters and jobs",
   subcommands: [

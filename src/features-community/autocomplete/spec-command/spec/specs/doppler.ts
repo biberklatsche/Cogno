@@ -1,4 +1,4 @@
-const enviornmentsGenerator: Fig.Generator = {
+const enviornmentsGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
     cacheKey: "enviornments",
@@ -18,7 +18,7 @@ const enviornmentsGenerator: Fig.Generator = {
     }
   },
 };
-const configGenerators: Fig.Generator = {
+const configGenerators: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
     cacheKey: "configs",
@@ -38,7 +38,7 @@ const configGenerators: Fig.Generator = {
     }
   },
 };
-const secretsGenerator: Fig.Generator = {
+const secretsGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
     cacheKey: "secrets",
@@ -58,7 +58,7 @@ const secretsGenerator: Fig.Generator = {
     }
   },
 };
-const projectsGenerator: Fig.Generator = {
+const projectsGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
     cacheKey: "projects",
@@ -79,44 +79,44 @@ const projectsGenerator: Fig.Generator = {
   },
 };
 
-const helpCommand: (name?: string) => Fig.Option = (name = "doppler") => ({
+const helpCommand: (name?: string) => OptionSpec = (name = "doppler") => ({
   name: ["-h", "--help"],
   description: `Help for ${name}`,
 });
 
-const configOption: Fig.Option = {
+const configOption: OptionSpec = {
   name: ["-c", "--config"],
   description: "Config (e.g. dev)",
   args: { name: "string", generators: configGenerators },
 };
 
-const fallbackOption: Fig.Option = {
+const fallbackOption: OptionSpec = {
   name: "f",
   description:
     "Path to the fallback file. encrypted secrets are written to this file after each successful fetch. secrets will be read from this file if subsequent connections are unsuccessful",
   args: { name: "string", template: "filepaths" },
 };
 
-const fallbackOnlyOption: Fig.Option = {
+const fallbackOnlyOption: OptionSpec = {
   name: "--fallback-only",
   description:
     "Read all secrets directly from the fallback file, without contacting Doppler. secrets will not be updated. (implies --fallback-readonly)",
 };
 
-const fallbackPassphraseOption: Fig.Option = {
+const fallbackPassphraseOption: OptionSpec = {
   name: "--fallback-passphrase",
   description:
     "Passphrase to use for encrypting the fallback file. by default the passphrase is computed using your current configuration",
   args: { name: "string" },
 };
 
-const fallbackReadonlyOption: Fig.Option = {
+const fallbackReadonlyOption: OptionSpec = {
   name: "--fallback-readonly",
   description:
     "Disable modifying the fallback file. secrets can still be read from the file",
 };
 
-const formatOption: Fig.Option = {
+const formatOption: OptionSpec = {
   name: "--format",
   description:
     'Output format. one of json, env, yaml, docker, env-no-quotes (default "json")',
@@ -126,58 +126,58 @@ const formatOption: Fig.Option = {
   },
 };
 
-const noCacheOption: Fig.Option = {
+const noCacheOption: OptionSpec = {
   name: "--no-cache",
   description:
     "Disable using the fallback file to speed up fetches. the fallback file is only used when the API indicates that it's still current",
 };
 
-const noExitOnWriteFailureOption: Fig.Option = {
+const noExitOnWriteFailureOption: OptionSpec = {
   name: "--no-exit-on-write-failure",
   description: "Do not exit if unable to write the fallback file",
 };
 
-const noFallbackOption: Fig.Option = {
+const noFallbackOption: OptionSpec = {
   name: "--no-fallback",
   description: "Disable reading and writing the fallback file",
 };
 
-const noUpdateConfigOption: Fig.Option = {
+const noUpdateConfigOption: OptionSpec = {
   name: "--no-update-config",
   description: "Do not modify the config file",
 };
 
-const noUpdateConfigOptionOption: Fig.Option = {
+const noUpdateConfigOptionOption: OptionSpec = {
   name: "--no-update-config-options",
   description:
     "Do not remove configured options from the config file (i.e. project and config)",
 };
 
-const passphraseOption: Fig.Option = {
+const passphraseOption: OptionSpec = {
   name: "--passphrase",
   description:
     "Passphrase to use for encrypting the secrets file. the default passphrase is computed using your current configuration",
   args: { name: "string" },
 };
 
-const projectOption: Fig.Option = {
+const projectOption: OptionSpec = {
   name: ["-p", "--project"],
   description: "Project (e.g. backend)",
   args: { name: "string", generators: projectsGenerator },
 };
 
-const rawOption: Fig.Option = {
+const rawOption: OptionSpec = {
   name: "--raw",
   description: "Print the raw secret value without processing variables",
   args: { name: "string" },
 };
 
-const yesOption: Fig.Option = {
+const yesOption: OptionSpec = {
   name: ["--yes", "-y"],
   description: "Proceed without confirmation",
 };
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: "--api-host",
     description:
@@ -266,7 +266,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "doppler",
   description: "The official Doppler CLI",
   subcommands: [

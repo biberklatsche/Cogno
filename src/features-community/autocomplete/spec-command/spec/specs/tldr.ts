@@ -8,7 +8,7 @@ const windows = `${tldrRc}/pages/windows/`;
 
 const isMarkDownRegex = new RegExp(/^.*\.md$/);
 
-const wholeTldrPages: Fig.Generator = {
+const wholeTldrPages: Generator = {
   custom: async (tokens, executeShellCommand, context) => {
     const { stdout } = await executeShellCommand({
       command: "ls",
@@ -34,7 +34,7 @@ const wholeTldrPages: Fig.Generator = {
   },
 };
 
-const linuxTldrPages: Fig.Generator = {
+const linuxTldrPages: Generator = {
   script: ["bash", "-c", `command ls -Al ${linux} 2>/dev/null`],
   postProcess: (out) => {
     return out
@@ -50,7 +50,7 @@ const linuxTldrPages: Fig.Generator = {
   },
 };
 
-const osxTldrPages: Fig.Generator = {
+const osxTldrPages: Generator = {
   script: ["bash", "-c", `command ls -l ${osx} 2>/dev/null`],
   postProcess: (out) => {
     return out
@@ -66,7 +66,7 @@ const osxTldrPages: Fig.Generator = {
   },
 };
 
-const sunosTldrPages: Fig.Generator = {
+const sunosTldrPages: Generator = {
   script: ["bash", "-c", `command ls -l ${sunos} 2>/dev/null`],
   postProcess: (out) => {
     return out
@@ -84,7 +84,7 @@ const sunosTldrPages: Fig.Generator = {
 
 const platformSuggestions = ["linux", "osx", "sunos", "windows", "common"];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tldr",
   description: "A simpler man page than the existing man page",
   args: { generators: wholeTldrPages },

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "connect-contact-lens",
   description:
     "Contact Lens actions     Contact Lens data types    Amazon Connect Contact Lens enables you to analyze conversations between customer and agents, by using speech transcription, natural language processing, and intelligent search capabilities. It performs sentiment analysis, detects issues, and enables you to automatically categorize contacts. Amazon Connect Contact Lens provides both real-time and post-call analytics of customer-agent conversations. For more information, see Analyze conversations using speech analytics in the Amazon Connect Administrator Guide",

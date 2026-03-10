@@ -1,4 +1,4 @@
-const gems: Fig.Generator = {
+const gems: Generator = {
   trigger: () => true,
   custom: async (tokens, executeShellCommand) => {
     const searchTerm = tokens[tokens.length - 1];
@@ -22,7 +22,7 @@ const gems: Fig.Generator = {
   },
 };
 
-const httpProxyOptions: Fig.Option[] = [
+const httpProxyOptions: OptionSpec[] = [
   {
     name: ["-p", "--http-proxy"],
     description: "Use HTTP proxy for remote operations",
@@ -40,7 +40,7 @@ const httpProxyOptions: Fig.Option[] = [
   },
 ];
 
-const localRemoteOptions: Fig.Option[] = [
+const localRemoteOptions: OptionSpec[] = [
   {
     name: ["-l", "--local"],
     description: "Restrict operations to the LOCAL domain",
@@ -80,7 +80,7 @@ const localRemoteOptions: Fig.Option[] = [
   ...httpProxyOptions,
 ];
 
-const installedOptions: Fig.Option[] = [
+const installedOptions: OptionSpec[] = [
   {
     name: ["-i", "--installed"],
     description: "Check for installed gem",
@@ -101,7 +101,7 @@ const installedOptions: Fig.Option[] = [
   },
 ];
 
-const displayOptions: Fig.Option[] = [
+const displayOptions: OptionSpec[] = [
   {
     name: ["-a", "--all"],
     description: "Display all gem versions",
@@ -122,7 +122,7 @@ const displayOptions: Fig.Option[] = [
   },
 ];
 
-const versionsOptions: Fig.Option[] = [
+const versionsOptions: OptionSpec[] = [
   {
     name: "--versions",
     description: "Display only gem names",
@@ -135,7 +135,7 @@ const versionsOptions: Fig.Option[] = [
   },
 ];
 
-const authenticationOptions: Fig.Option[] = [
+const authenticationOptions: OptionSpec[] = [
   {
     name: "--host",
     description:
@@ -164,7 +164,7 @@ const authenticationOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gem",
   description: "Ruby package manager",
   subcommands: [

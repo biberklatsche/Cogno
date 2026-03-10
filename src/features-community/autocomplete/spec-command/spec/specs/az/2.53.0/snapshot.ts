@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "snapshot",
   description:
     "Manage point-in-time copies of managed disks, native blobs, or other snapshots",

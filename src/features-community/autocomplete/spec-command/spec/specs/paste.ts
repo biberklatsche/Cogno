@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "paste",
   description:
     "The paste utility concatenates the corresponding lines of the given input files, replacing all but the last file's newline characters with a single tab character, and writes the resulting lines to standard output.  If end-of-file is reached on an input file while other input files still contain data, the file is treated as if it were an endless source of empty lines",

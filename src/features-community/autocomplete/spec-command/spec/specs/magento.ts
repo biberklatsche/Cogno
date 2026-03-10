@@ -45,7 +45,7 @@ const getCacheTypes = async (executeShellCommand) => {
   return Object.keys(env.cache_types);
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "magento",
   description: "Open-source E-commerce",
   generateSpec: async (tokens, executeShellCommand) => {

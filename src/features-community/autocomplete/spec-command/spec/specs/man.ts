@@ -12,7 +12,7 @@ const sections = {
 };
 
 /** Cache of page suggestions. The key is the first letter of the `name` */
-const pageSuggestionCache = new Map<string, Fig.Suggestion[]>();
+const pageSuggestionCache = new Map<string, Suggestion[]>();
 
 // JS time, so this is in milliseconds
 let lastCachedAt = 0;
@@ -23,7 +23,7 @@ const pageSuggestionCacheTTL = 1000 * 60 * 60;
 let isGeneratingSuggestions = false;
 
 /** Suggests manual pages, caches the list once */
-const generateManualPages: Fig.Generator = {
+const generateManualPages: Generator = {
   // only trigger when the token length transitions to or from 0
   // soon: { on: "threshold", length: 0 }
   trigger: (current, previous) =>
@@ -99,7 +99,7 @@ const generateManualPages: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "man",
   description: "Format and display the on-line manual pages",
   args: {

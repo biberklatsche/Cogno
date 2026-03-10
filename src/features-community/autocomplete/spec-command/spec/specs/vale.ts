@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vale",
   description:
     "A syntax-aware linter for prose built with speed and extensibility in mind",

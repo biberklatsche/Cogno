@@ -1,5 +1,5 @@
 // https://github.com/dotzero/git-profile
-const profiles: Fig.Generator = {
+const profiles: Generator = {
   script: ["git-profile", "list"],
   postProcess: (output) => {
     return Array.from(output.matchAll(/^\[(.+?)\]$/gm)).map((result) => ({
@@ -9,7 +9,7 @@ const profiles: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "git-profile",
   description: "Switch profiles",
   subcommands: [

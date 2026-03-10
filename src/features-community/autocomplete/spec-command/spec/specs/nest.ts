@@ -1,4 +1,4 @@
-const options: Fig.Option[] = [
+const options: OptionSpec[] = [
   {
     name: ["-d", "--dry-run"],
     description:
@@ -36,7 +36,7 @@ const options: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nest",
   description: "Nest CLI",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xcodebuild",
   description: "Build Xcode projects",
   options: [

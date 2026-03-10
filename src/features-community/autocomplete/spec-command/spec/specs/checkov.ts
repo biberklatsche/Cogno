@@ -1,4 +1,4 @@
-const branches: Fig.Generator = {
+const branches: Generator = {
   script: ["git", "branch", "--no-color"],
   postProcess: (output) => {
     if (output.startsWith("fatal:")) {
@@ -10,7 +10,7 @@ const branches: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "checkov",
   description:
     "Checkov scans cloud infrastructure configurations to find misconfigurations before they're deployed",

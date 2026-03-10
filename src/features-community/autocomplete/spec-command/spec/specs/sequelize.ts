@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: "--env",
     description: "The environment to run the command in",
@@ -48,7 +48,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const databaseOptions: Fig.Option[] = [
+const databaseOptions: OptionSpec[] = [
   {
     name: "--charset",
     description: "Pass charset option to dialect, MYSQL only",
@@ -76,7 +76,7 @@ const databaseOptions: Fig.Option[] = [
   },
 ];
 
-const initOptions: Fig.Option[] = [
+const initOptions: OptionSpec[] = [
   {
     name: "--force",
     description: "Will drop the existing config folder and re-create it",
@@ -84,7 +84,7 @@ const initOptions: Fig.Option[] = [
   },
 ];
 
-const migrateOptions: Fig.Option[] = [
+const migrateOptions: OptionSpec[] = [
   {
     name: "--to",
     description: "Migration name to run migrations until",
@@ -97,7 +97,7 @@ const migrateOptions: Fig.Option[] = [
   },
 ];
 
-const seedOneOptions: Fig.Option[] = [
+const seedOneOptions: OptionSpec[] = [
   {
     name: "--seed",
     description: "List of seed files",
@@ -105,7 +105,7 @@ const seedOneOptions: Fig.Option[] = [
   },
 ];
 
-const subCommands: Fig.Subcommand[] = [
+const subCommands: SubcommandSpec[] = [
   {
     name: "db:migrate",
     description: "Run pending migrations",
@@ -234,7 +234,7 @@ const subCommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sequelize",
   description: "The Sequelize Command Line Interface",
   subcommands: subCommands.map((sc) => ({

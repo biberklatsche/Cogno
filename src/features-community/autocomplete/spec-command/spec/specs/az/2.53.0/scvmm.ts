@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "scvmm",
   description: "Commands for managing Arc for SCVMM resources",
   subcommands: [

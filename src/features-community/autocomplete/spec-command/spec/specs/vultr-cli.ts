@@ -1,12 +1,12 @@
-const bareMetalIdArg: Fig.Arg = {
+const bareMetalIdArg: ArgSpec = {
   name: "bareMetalId",
   description: "Bare Metal ID",
 };
-const backupIdArg: Fig.Arg = {
+const backupIdArg: ArgSpec = {
   name: "backupId",
   description: "Backup ID",
 };
-const instance: Fig.Arg = {
+const instance: ArgSpec = {
   name: "instanceID",
   generators: {
     script: ["vultr-cli", "instance", "list"],
@@ -21,7 +21,7 @@ const instance: Fig.Arg = {
   },
 };
 
-const createOptions: Fig.Option[] = [
+const createOptions: OptionSpec[] = [
   {
     name: ["--os", "-o"],
     description:
@@ -56,7 +56,7 @@ const createOptions: Fig.Option[] = [
     },
   },
 ];
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vultr-cli",
   description: "Official command line interface for the Vultr API",
   icon: "https://www.vultr.com/favicon/favicon-32x32.png",

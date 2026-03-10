@@ -6,7 +6,7 @@ const filterMessages = (out: string): string => {
     : out;
 };
 
-const postProcessTrackedFiles: Fig.Generator["postProcess"] = (
+const postProcessTrackedFiles: Generator["postProcess"] = (
   out,
   context
 ) => {
@@ -52,7 +52,7 @@ interface PostProcessBranchesOptions {
 }
 
 const postProcessBranches =
-  (options: PostProcessBranchesOptions = {}): Fig.Generator["postProcess"] =>
+  (options: PostProcessBranchesOptions = {}): Generator["postProcess"] =>
   (out) => {
     const { insertWithoutRemotes = false } = options;
 
@@ -115,7 +115,7 @@ const postProcessBranches =
       });
   };
 
-export const gitGenerators: Record<string, Fig.Generator> = {
+export const gitGenerators: Record<string, Generator> = {
   // Commit history
   commits: {
     script: ["git", "--no-optional-locks", "log", "--oneline"],
@@ -480,7 +480,7 @@ export const gitGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const configSuggestions: Fig.Suggestion[] = [
+const configSuggestions: Suggestion[] = [
   {
     name: "add.ignore-errors",
     description:
@@ -3847,7 +3847,7 @@ const configSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const addOptions: Fig.Option[] = [
+const addOptions: OptionSpec[] = [
   {
     name: ["-n", "--dry-run"],
     description:
@@ -3963,7 +3963,7 @@ const headSuggestions = [
 ];
 
 /** Git finds these commands as "git-<name>" on your PATH */
-const optionalCommands: Record<string, Omit<Fig.Subcommand, "name">> = {
+const optionalCommands: Record<string, Omit<SubcommandSpec, "name">> = {
   open: {
     description: "Open in your browser",
     options: [
@@ -4006,7 +4006,7 @@ const optionalCommands: Record<string, Omit<Fig.Subcommand, "name">> = {
   },
 };
 
-const daemonServices: Fig.Suggestion[] = [
+const daemonServices: Suggestion[] = [
   {
     name: "upload-pack",
     description:
@@ -4024,7 +4024,7 @@ const daemonServices: Fig.Suggestion[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "git",
   description: "Distributed version control system",
   generateSpec: async (_, executeShellCommand) => {

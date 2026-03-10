@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "powerbi",
   description: "Manage PowerBI resources",
   subcommands: [

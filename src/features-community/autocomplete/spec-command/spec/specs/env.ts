@@ -1,4 +1,4 @@
-const enviromentVariables: Fig.Generator = {
+const enviromentVariables: Generator = {
   custom: async (_tokens, _executeCommand, generatorContext) => {
     return Object.values(generatorContext.environmentVariables).map(
       (envVar) => ({
@@ -10,7 +10,7 @@ const enviromentVariables: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "env",
   description: "Set environment and execute command, or print environment",
   options: [

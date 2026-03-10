@@ -1,4 +1,4 @@
-export const stdCSuggestions: Fig.Suggestion[] = [
+export const stdCSuggestions: Suggestion[] = [
   {
     name: ["c89", "c90", "iso9899:1990"],
     description: "ISO C 1990",
@@ -45,7 +45,7 @@ export const stdCSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-export const stdCPPSuggestions: Fig.Suggestion[] = [
+export const stdCPPSuggestions: Suggestion[] = [
   {
     name: ["c++98", "c++03"],
     description: "ISO C++ 1998 with amendments",
@@ -96,7 +96,7 @@ export const stdCPPSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-export const stdOpenCLSuggestions: Fig.Suggestion[] = [
+export const stdOpenCLSuggestions: Suggestion[] = [
   {
     name: "cl1.0",
     description: "OpenCL 1.0",
@@ -119,7 +119,7 @@ export const stdOpenCLSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-export const stdOpenCLCPPSuggestions: Fig.Suggestion[] = [
+export const stdOpenCLCPPSuggestions: Suggestion[] = [
   {
     name: ["clc++", "clc++1.0"],
     description: "C++ for OpenCL 1.0",
@@ -130,7 +130,7 @@ export const stdOpenCLCPPSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-export const stdHLSLSuggestions: Fig.Suggestion[] = [
+export const stdHLSLSuggestions: Suggestion[] = [
   {
     name: "hlsl",
     description: "High Level Shader Language",
@@ -161,7 +161,7 @@ export const stdHLSLSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-export const stdOption: Fig.Option = {
+export const stdOption: OptionSpec = {
   name: "-std",
   description: "Language standard to compile for",
   args: {
@@ -185,7 +185,7 @@ export const stdOption: Fig.Option = {
   requiresSeparator: true,
 };
 
-export const clangBase: Fig.Spec = {
+export const clangBase: CommandSpec = {
   name: "clang",
   description: "Clang LLVM compiler",
   args: {
@@ -4859,7 +4859,7 @@ export const clangBase: Fig.Spec = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...clangBase,
   options: [...clangBase.options, stdOption],
 };

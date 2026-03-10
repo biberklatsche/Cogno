@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "truncate",
   description: "Shrink or extend the size of a file to the specified size",
   options: [

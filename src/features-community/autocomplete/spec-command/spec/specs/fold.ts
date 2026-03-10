@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fold",
   description: "Fold long lines for finite width output device",
   parserDirectives: {

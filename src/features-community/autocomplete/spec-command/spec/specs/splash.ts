@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "splash-cli",
   displayName: "Splash",
   description: "Get stunning wallpapers from Unsplash",

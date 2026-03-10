@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "personalize",
   description:
     "Amazon Personalize is a machine learning service that makes it easy to add individualized recommendations to customers",

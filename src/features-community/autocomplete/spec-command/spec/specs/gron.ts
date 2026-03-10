@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gron",
   description:
     "Gron is a tool to make it easier to understand big blobs of JSON",

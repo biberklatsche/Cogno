@@ -208,7 +208,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -265,12 +265,12 @@ const filterWithPrefix = (token: string, prefix: string): string => {
 };
 const listCustomGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   option: string,
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     const idx = tokens.indexOf(option);
     if (idx < 0) {
@@ -292,7 +292,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     return list.map((elm) => (childKey ? elm[childKey] : elm));
@@ -303,11 +303,11 @@ const postPrecessGenerator = (
 };
 const MultiSuggestionsGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   enabled: Identity[]
 ) => {
   try {
-    const list: Fig.Suggestion[][] = [];
+    const list: Suggestion[][] = [];
     const promises: Promise<string>[] = [];
     for (let i = 0; i < enabled.length; i++) {
       promises[i] = executeShellCommand({
@@ -329,7 +329,7 @@ const MultiSuggestionsGenerator = async (
   }
   return [];
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   getAccountArn: {
     script: ["aws", "sts", "get-caller-identity"],
     postProcess: function (out, tokens) {
@@ -889,7 +889,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iam",
   description:
     "Identity and Access Management Identity and Access Management (IAM) is a web service for securely controlling access to Amazon Web Services services. With IAM, you can centrally manage users, security credentials such as access keys, and permissions that control which Amazon Web Services resources users and applications can access. For more information about IAM, see Identity and Access Management (IAM) and the Identity and Access Management User Guide",

@@ -1,4 +1,4 @@
-const testOptions: Fig.Option[] = [
+const testOptions: OptionSpec[] = [
   {
     name: ["--help", "-h"],
     description: "Help for 'test'",
@@ -81,7 +81,7 @@ const testOptions: Fig.Option[] = [
   },
 ];
 
-const datreeSpec: Fig.Spec = {
+const datreeSpec: CommandSpec = {
   name: "datree",
   description:
     "Datree can be used on the command line to run policies against Kubernetes manifests YAML files or Helm charts",

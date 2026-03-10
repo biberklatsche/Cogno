@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mkfifo",
   description: "Make FIFOs (first-in, first-out)",
   options: [

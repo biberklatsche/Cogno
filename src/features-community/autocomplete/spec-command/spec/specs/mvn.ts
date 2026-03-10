@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mvn",
   description: "Maven - a Java based project management and comprehension tool",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "split",
   description:
     "The split utility reads the given file and breaks it up into files of 1000 lines each (if no options are specified), leaving the file unchanged. If file is a single dash ('-') or absent, split reads from the standard input",

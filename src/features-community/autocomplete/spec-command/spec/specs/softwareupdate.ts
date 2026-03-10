@@ -1,4 +1,4 @@
-const updatesGenerator: Fig.Generator = {
+const updatesGenerator: Generator = {
   script: ["softwareupdate", "--list"],
   postProcess: (out) => {
     return out
@@ -20,7 +20,7 @@ const updatesGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "softwareupdate",
   description:
     "Software Update checks for new and updated versions of your software based on information about your computer and current software",

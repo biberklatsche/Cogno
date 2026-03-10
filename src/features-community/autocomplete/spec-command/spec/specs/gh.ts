@@ -6,7 +6,7 @@ const filterMessages = (out: string): string => {
     : out;
 };
 
-const postProcessRemoteBranches: Fig.Generator["postProcess"] = (out) => {
+const postProcessRemoteBranches: Generator["postProcess"] = (out) => {
   const output = filterMessages(out);
 
   if (output.startsWith("fatal:")) {
@@ -59,7 +59,7 @@ const listRepoMapFunction = (repo: RepoDataType) => ({
   icon: repo.isPrivate ? "🔒" : "👀",
 });
 
-const ghGenerators: Record<string, Fig.Generator> = {
+const ghGenerators: Record<string, Generator> = {
   listCustomRepositories: {
     trigger: "/",
     //execute is script then postProcess
@@ -205,7 +205,7 @@ const ghGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const codespaceOption: Fig.Option = {
+const codespaceOption: OptionSpec = {
   name: ["-c", "--codespace"],
   description: "Name of the codespace",
   args: {
@@ -213,7 +213,7 @@ const codespaceOption: Fig.Option = {
   },
 };
 
-const ghOptions: Record<string, Fig.Option> = {
+const ghOptions: Record<string, OptionSpec> = {
   clone: { name: "--clone", description: "Clone the fork {true|false}" },
   cloneGitFlags: {
     name: "--",
@@ -252,7 +252,7 @@ const ghOptions: Record<string, Fig.Option> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gh",
   description: "GitHub's CLI tool",
   args: {

@@ -1,4 +1,4 @@
-const sortbyArg: Fig.Arg = {
+const sortbyArg: ArgSpec = {
   name: "Sortby",
   default: "none",
   suggestions: [
@@ -27,7 +27,7 @@ const sortbyArg: Fig.Arg = {
     },
   ],
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rg",
   description:
     "Recursively searches current directory for lines matching a pattern",

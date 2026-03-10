@@ -1,6 +1,6 @@
 import { stdCSuggestions, stdCPPSuggestions } from "./clang";
 
-export const stdOption: Fig.Option = {
+export const stdOption: OptionSpec = {
   name: "-std",
   description: "Language standard to compile for",
   args: {
@@ -10,7 +10,7 @@ export const stdOption: Fig.Option = {
   requiresSeparator: true,
 };
 
-export const gccBase: Fig.Spec = {
+export const gccBase: CommandSpec = {
   name: "gcc",
   description: "The default compiler for most linux distributions",
   options: [
@@ -3338,7 +3338,7 @@ export const gccBase: Fig.Spec = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...gccBase,
   options: [...gccBase.options, stdOption],
 };

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "help",
   description:
     "The dotnet help command opens up the reference page for more detailed information about the specified command at docs.microsoft.com",

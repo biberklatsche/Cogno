@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "interactive",
   description:
     "Start interactive mode. Installs the Interactive extension if not installed already",

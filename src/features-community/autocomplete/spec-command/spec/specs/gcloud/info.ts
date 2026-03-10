@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "info",
   description: "Display information about the current gcloud environment",
   options: [

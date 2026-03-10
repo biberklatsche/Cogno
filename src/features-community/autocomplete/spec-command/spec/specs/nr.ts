@@ -1,6 +1,6 @@
 import { npmScriptsGenerator } from "./npm";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nr",
   description: "Use the right package manager - run",
   options: [

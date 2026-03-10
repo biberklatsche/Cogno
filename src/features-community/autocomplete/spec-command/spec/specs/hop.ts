@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hop",
   description: "Interact with Hop in your terminal",
   subcommands: [

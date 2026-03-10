@@ -1,4 +1,4 @@
-const envNameGenerator: Fig.Generator = {
+const envNameGenerator: Generator = {
   script: ["amplify", "env", "list", "--json"],
   postProcess: function (out) {
     const envContent = JSON.parse(out);
@@ -8,7 +8,7 @@ const envNameGenerator: Fig.Generator = {
   },
 };
 
-const amplifyCategories: Fig.Subcommand[] = [
+const amplifyCategories: SubcommandSpec[] = [
   {
     name: "notifications",
   },
@@ -41,7 +41,7 @@ const amplifyCategories: Fig.Subcommand[] = [
   },
 ];
 
-const categoryCommands: Fig.Subcommand[] = [
+const categoryCommands: SubcommandSpec[] = [
   {
     name: "add",
     description:
@@ -74,7 +74,7 @@ const categoryCommands: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "amplify",
   description:
     "A set of tools and services to help front-end web and mobile developers build scalable full stack applications",

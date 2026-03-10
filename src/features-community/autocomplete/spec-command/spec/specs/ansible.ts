@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ansible",
   description:
     "Define and run a single Ansible task 'playbook' against a set of hosts",

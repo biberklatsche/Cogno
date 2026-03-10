@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "quasar",
   description: "Quasar Framework CLI",
   options: [

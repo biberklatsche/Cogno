@@ -1,6 +1,6 @@
 const icon = "https://nextjs.org/static/favicon/favicon-16x16.png";
 
-const hostPortOptions: Fig.Option[] = [
+const hostPortOptions: OptionSpec[] = [
   {
     name: ["-p", "--port"],
     description: "A port number on which to start the application",
@@ -13,14 +13,14 @@ const hostPortOptions: Fig.Option[] = [
   },
 ];
 
-const dirArgument: Fig.Arg = {
+const dirArgument: ArgSpec = {
   name: "dir",
   description: "Represent the directory of the Next.js application",
   template: "folders",
   isOptional: true,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "next",
   description: "Next.js CLI to start, build and export your application",
   options: [

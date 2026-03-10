@@ -29,7 +29,7 @@ type Dependency = Option & {
 const memoizedFetchData = () => {
   let data: Data | undefined;
   return async (
-    executeShellCommand: Fig.ExecuteCommandFunction
+    executeShellCommand: ExecuteCommandFunction
   ): Promise<Data | undefined> => {
     if (data) {
       return data;
@@ -55,12 +55,12 @@ const memoizedFetchData = () => {
 
 const fetchData = memoizedFetchData();
 
-const cache: Fig.Generator["cache"] = {
+const cache: Generator["cache"] = {
   ttl: 1000 * 60 * 60 * 24, // 24 hours, in milliseconds
 };
 
 const delimiter = ",";
-const dependencyGenerator: Fig.Generator = {
+const dependencyGenerator: Generator = {
   cache,
   getQueryTerm: (token) =>
     token.slice(token.lastIndexOf(delimiter) + delimiter.length),
@@ -83,7 +83,7 @@ const dependencyGenerator: Fig.Generator = {
   },
 };
 
-const versionGenerator: Fig.Generator = {
+const versionGenerator: Generator = {
   cache,
   custom: async (_, executeShellCommand) => {
     const data = await fetchData(executeShellCommand);
@@ -96,7 +96,7 @@ const versionGenerator: Fig.Generator = {
   },
 };
 
-const javaVersionGenerator: Fig.Generator = {
+const javaVersionGenerator: Generator = {
   cache,
   custom: async (_, executeShellCommand) => {
     const data = await fetchData(executeShellCommand);
@@ -109,7 +109,7 @@ const javaVersionGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "spring",
   description:
     "The Spring Boot CLI is a command line tool that you can use to bootstrap a new project from start.spring.io or encode a password",

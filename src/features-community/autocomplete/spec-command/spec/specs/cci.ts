@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cci",
   description: "CumulusCI command line interface",
   subcommands: [

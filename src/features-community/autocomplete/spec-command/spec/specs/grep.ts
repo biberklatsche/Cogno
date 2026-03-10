@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "grep",
   description:
     "Matches patterns in input text. Supports simple patterns and regular expressions",

@@ -1,4 +1,4 @@
-const dirArgument: Fig.Arg = {
+const dirArgument: ArgSpec = {
   name: "dir",
   description:
     "The name of the application, as well as the name of the directory to create",
@@ -7,7 +7,7 @@ const dirArgument: Fig.Arg = {
   suggestCurrentToken: true,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "create-t3-app",
   description: "A CLI for creating web applications with the t3 stack",
   icon: "https://create.t3.gg/favicon.svg",

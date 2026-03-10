@@ -1,6 +1,6 @@
 import autojump from "./autojump";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "j",
   ...autojump,
   args: {

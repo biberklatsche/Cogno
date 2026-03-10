@@ -1,4 +1,4 @@
-const projectsAndFoldersGenerator: Fig.Generator = {
+const projectsAndFoldersGenerator: Generator = {
   template: "folders",
   filterTemplateSuggestions: (paths) => {
     return paths.map((file) => {
@@ -11,7 +11,7 @@ const projectsAndFoldersGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xcodeproj",
   description: "Xcodeproj lets you create and modify Xcode projects",
   subcommands: [

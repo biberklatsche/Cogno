@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "bcd",
   description: "Bookmark directories and move to them",
   options: [

@@ -1,4 +1,4 @@
-const smartFolderGenerator: Fig.Generator = {
+const smartFolderGenerator: Generator = {
   // `mdfind -s` only accepts smart folders in ~/Library/Saved\ Searches/
 
   custom: async (_, executeCommand, context) => {
@@ -27,7 +27,7 @@ const smartFolderGenerator: Fig.Generator = {
   trigger: "/",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mdfind",
   description: "Finds files matching a given query",
   parserDirectives: {

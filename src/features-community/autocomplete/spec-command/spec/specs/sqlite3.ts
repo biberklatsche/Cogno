@@ -4,7 +4,7 @@ const dbFilepath = filepaths({
   extensions: ["sql", "sqlite", "sqlite3", "db"],
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sqlite3",
   description: "A command line interface for SQLite version 3",
   parserDirectives: {

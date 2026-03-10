@@ -1,6 +1,6 @@
 import dos2unix from "./dos2unix";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...dos2unix,
   name: "unix2dos",
   description: "Unix to DOS text file format convertor",

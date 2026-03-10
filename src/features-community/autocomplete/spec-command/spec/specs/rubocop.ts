@@ -1,4 +1,4 @@
-const copsGenerator: Fig.Generator = {
+const copsGenerator: Generator = {
   script: ["rubocop", "--show-cops"],
   postProcess: function (out) {
     const cops = out.split("\n\n").map((cop) => {
@@ -25,7 +25,7 @@ const copsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rubocop",
   description:
     "A Ruby static code analyzer and formatter, based on the community Ruby style guide",

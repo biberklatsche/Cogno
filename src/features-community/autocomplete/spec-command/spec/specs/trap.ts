@@ -9,8 +9,8 @@ const re = /(\d+\)\s)?([\w-+]+)/g;
  */
 
 const availableSignalsGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>
+): Generator => ({
   script: ["command", "kill", "-l"],
   postProcess: (output) =>
     [...output.matchAll(re)].map((signal) => ({
@@ -18,7 +18,7 @@ const availableSignalsGenerator = (
     })),
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "trap",
   description:
     "Automatically execute commands after receiving signals by processes or the operating system",

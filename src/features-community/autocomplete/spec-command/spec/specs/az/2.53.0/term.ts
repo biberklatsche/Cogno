@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "term",
   description: "Manage marketplace agreement with marketplaceordering",
   subcommands: [

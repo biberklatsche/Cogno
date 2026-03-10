@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "qldb",
   description: "The resource management API for Amazon QLDB",
   subcommands: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elastic-inference",
   description:
     "Amazon Elastic Inference is no longer available.   Elastic Inference public APIs",

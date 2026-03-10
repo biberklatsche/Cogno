@@ -1,4 +1,4 @@
-const flags: Fig.Option[] = [
+const flags: OptionSpec[] = [
   {
     name: ["--verbose", "-v"],
     description: "Increases the logging verbosity",
@@ -61,7 +61,7 @@ const filePathArg = {
   suggestCurrentToken: true,
 } as const;
 
-const options: Fig.Option[] = [
+const options: OptionSpec[] = [
   {
     name: ["--config", "-c"],
     description: "Sets the configuration file",
@@ -144,7 +144,7 @@ const options: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "git-cliff",
   description: "A highly customizable changelog generator ⛰️",
   options: [...flags, ...options],

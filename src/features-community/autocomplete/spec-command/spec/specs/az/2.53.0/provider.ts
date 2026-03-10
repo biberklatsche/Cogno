@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "provider",
   description: "Manage resource providers",
   subcommands: [

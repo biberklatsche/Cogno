@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "image",
   description: "Manage custom virtual machine images",
   subcommands: [

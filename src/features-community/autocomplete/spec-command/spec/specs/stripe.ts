@@ -1,4 +1,4 @@
-const webhookSuggestions: Fig.Suggestion[] = [
+const webhookSuggestions: Suggestion[] = [
   {
     name: "balance.available",
     description:
@@ -145,7 +145,7 @@ const webhookSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: "--api-key",
     description: "Sets your API key to use for the command",
@@ -195,7 +195,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const sharedOptions: Fig.Option[] = [
+const sharedOptions: OptionSpec[] = [
   {
     name: ["-s", "--show-headers"],
     description: "Shows response HTTP headers",
@@ -252,7 +252,7 @@ const sharedOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "stripe",
   description: "CLI interface for Stripe.com",
   subcommands: [

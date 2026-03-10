@@ -1,4 +1,4 @@
-const listTargets: Fig.Generator = {
+const listTargets: Generator = {
   custom: async (tokens, executeShellCommand, context) => {
     const { stdout } = await executeShellCommand({
       command: "cat",
@@ -6,7 +6,7 @@ const listTargets: Fig.Generator = {
       args: [`${context.environmentVariables["HOME"]}/.config/goto`],
     });
 
-    const targetSuggestions = new Map<string, Fig.Suggestion>();
+    const targetSuggestions = new Map<string, Suggestion>();
 
     for (const target of stdout.split("\n")) {
       const splits = target.split(" ");
@@ -22,7 +22,7 @@ const listTargets: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "goto",
   displayName: "Goto a Folder by alias",
   options: [

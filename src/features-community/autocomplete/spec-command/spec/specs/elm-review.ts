@@ -15,7 +15,7 @@ const reportType = [
 /**
  * Based on [elm-review](https://github.com/jfmengels/node-elm-review), version 2.9.1. Cli tool for reviewing Elm code.
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elm-review",
   description: "",
   subcommands: [

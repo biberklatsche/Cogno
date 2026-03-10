@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ansible-playbook",
   description:
     "Runs Ansible playbooks, executing the defined tasks on the targeted hosts",

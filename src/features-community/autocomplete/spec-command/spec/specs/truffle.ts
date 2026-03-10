@@ -1,4 +1,4 @@
-const truffleCommands: Fig.Suggestion[] = [
+const truffleCommands: Suggestion[] = [
   {
     name: "build",
   },
@@ -70,7 +70,7 @@ const truffleCommands: Fig.Suggestion[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "truffle",
   description:
     "A world class development environment, testing framework and asset pipeline for blockchains using the Ethereum Virtual Machine (EVM), aiming to make life as a developer easier",

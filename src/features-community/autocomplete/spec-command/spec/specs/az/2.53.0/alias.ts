@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "alias",
   description: "Manage Azure CLI Aliases",
   subcommands: [

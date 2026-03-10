@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pkg-config",
   description: "Return metainformation about installed libraries",
   args: {

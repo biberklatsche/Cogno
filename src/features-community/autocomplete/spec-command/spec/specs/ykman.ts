@@ -26,7 +26,7 @@ const configModeGenerator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ykman",
   description: "Configure your YubiKey via the command line",
 

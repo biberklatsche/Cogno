@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iam",
   description: "Manage IAM service accounts and keys",
   subcommands: [

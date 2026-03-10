@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "networkfabric",
   description: "Manage Azure Network Fabric Management Service API",
   subcommands: [

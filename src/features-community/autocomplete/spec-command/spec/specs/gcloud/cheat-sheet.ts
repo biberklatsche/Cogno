@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cheat-sheet",
   description: "Display gcloud cheat sheet",
   options: [

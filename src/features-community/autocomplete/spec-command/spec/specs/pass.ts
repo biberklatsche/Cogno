@@ -1,4 +1,4 @@
-const listPasswords: Fig.Generator = {
+const listPasswords: Generator = {
   custom: async (_tokens, executeCommand, context) => {
     const { stdout } = await executeCommand({
       command: "grep",
@@ -17,7 +17,7 @@ const listPasswords: Fig.Generator = {
   },
 };
 
-const listDirectories: Fig.Generator = {
+const listDirectories: Generator = {
   custom: async (_tokens, executeCommand, context) => {
     const { stdout } = await executeCommand({
       command: "ls",
@@ -33,7 +33,7 @@ const listDirectories: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pass",
   description:
     "Pass - stores, retrieves, generates, and synchronizes passwords securely",

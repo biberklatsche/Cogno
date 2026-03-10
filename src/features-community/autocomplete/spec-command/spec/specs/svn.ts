@@ -1,4 +1,4 @@
-const subcommandsList: Fig.Suggestion[] = [
+const subcommandsList: Suggestion[] = [
   {
     name: "add",
     type: "subcommand",
@@ -149,7 +149,7 @@ const subcommandsList: Fig.Suggestion[] = [
   },
 ];
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: "--username",
     insertValue: "--username '{cursor}'",
@@ -224,7 +224,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "svn",
   description: "The first content tracker",
   subcommands: [

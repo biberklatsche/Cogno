@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nmap",
   description: "Network exploration tool and security / port scanner",
   parserDirectives: {

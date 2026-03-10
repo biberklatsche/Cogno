@@ -2,7 +2,7 @@
 
 const icon = "https://sourcegraph.com/.assets/img/sourcegraph-mark.svg";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "src",
   description: "Interact with Sourcegraph from the command line",
   subcommands: [

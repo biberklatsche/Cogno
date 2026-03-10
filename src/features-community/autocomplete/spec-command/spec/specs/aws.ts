@@ -1,4 +1,4 @@
-export const awsProfileGenerator: Fig.Generator = {
+export const awsProfileGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
     cacheByDirectory: true,
@@ -14,7 +14,7 @@ export const awsProfileGenerator: Fig.Generator = {
     }));
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "aws",
   options: [
     {

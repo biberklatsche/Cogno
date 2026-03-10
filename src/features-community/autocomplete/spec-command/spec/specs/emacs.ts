@@ -3,7 +3,7 @@ Made by Yavko :)
 I made this for fun, I don't actually use emacs so if you do use it
 Here!
 */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "emacs",
   description: "An extensible, customizable, free/libre text editor — and more",
   args: {

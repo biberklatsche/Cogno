@@ -1,16 +1,16 @@
-const prioritySuggestions: (string | Fig.Suggestion)[] = Array.from(
+const prioritySuggestions: (string | Suggestion)[] = Array.from(
   { length: 100 },
   (_, i) => i + 1
 ).map((item) => item.toString());
 
-const timeSuggestions: (string | Fig.Suggestion)[] = [
+const timeSuggestions: (string | Suggestion)[] = [
   "hold",
   "immediate",
   "restart",
   "resume",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lp",
   description: "Print files",
   options: [

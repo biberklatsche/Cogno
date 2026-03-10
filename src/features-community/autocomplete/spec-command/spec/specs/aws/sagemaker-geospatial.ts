@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sagemaker-geospatial",
   description:
     "Provides APIs for creating and managing SageMaker geospatial resources",

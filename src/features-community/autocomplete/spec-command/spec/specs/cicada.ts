@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "cicada",
   description: "Write CI/CD Pipelines in TypeScript",
   subcommands: [

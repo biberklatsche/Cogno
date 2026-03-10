@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "git-quick-stats",
   description:
     "Git quick statistics is a simple and efficient way to access various statistics in git repository",

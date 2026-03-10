@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bedrock-agent-runtime",
   description:
     "Contains APIs related to model invocation and querying of knowledge bases",

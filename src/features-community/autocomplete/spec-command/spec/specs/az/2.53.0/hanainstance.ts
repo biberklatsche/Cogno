@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "hanainstance",
   description: "(PREVIEW) Manage Azure SAP HANA Instance",
   subcommands: [

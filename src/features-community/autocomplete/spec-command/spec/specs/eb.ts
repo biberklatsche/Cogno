@@ -1,4 +1,4 @@
-const generateNames: Fig.Generator = {
+const generateNames: Generator = {
   script: ["eb", "list"],
   postProcess: (str) => {
     const lines: string[] = str
@@ -11,7 +11,7 @@ const generateNames: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "eb",
   description: "AWS Elastic Beanstalk",
   subcommands: [

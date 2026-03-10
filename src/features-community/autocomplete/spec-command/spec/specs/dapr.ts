@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const runningAppsGenerator: Fig.Generator = {
+const runningAppsGenerator: Generator = {
   script: ["dapr", "list", "-A", "-o", "json"],
   postProcess: function (out) {
     try {
@@ -17,11 +17,11 @@ const runningAppsGenerator: Fig.Generator = {
   },
 };
 
-const runtimeVersionsGenerator: Fig.Generator = {
+const runtimeVersionsGenerator: Generator = {
   cache: {
     ttl: 1000 * 60 * 60 * 24 * 2, // 2 days
   },
-  custom: async (context, executeShellCommand): Promise<Fig.Suggestion[]> => {
+  custom: async (context, executeShellCommand): Promise<Suggestion[]> => {
     const queryVersions = [
       "-s",
       "-H",
@@ -43,7 +43,7 @@ const runtimeVersionsGenerator: Fig.Generator = {
       return results.map((item) => ({
         name: item.name,
         description: `Updated: ${item.last_updated}`,
-      })) as Fig.Suggestion[];
+      })) as Suggestion[];
     } catch (error) {
       console.error({ error });
       return [];
@@ -51,7 +51,7 @@ const runtimeVersionsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dapr",
   description: "Dapr CLI",
   subcommands: [

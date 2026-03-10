@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "az",
   subcommands: [
     {
@@ -1213,7 +1213,7 @@ const completion: Fig.Spec = {
   ],
 };
 
-const versions: Fig.VersionDiffMap = { "2.53.0": {} };
+const versions: VersionDiffMap = { "2.53.0": {} };
 
 export { versions };
 export default completion;

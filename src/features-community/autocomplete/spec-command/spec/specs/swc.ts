@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "swc",
   description:
     "SWC is a super-fast compiler written in rust; producing widely-supported javascript from modern standards and typescript",

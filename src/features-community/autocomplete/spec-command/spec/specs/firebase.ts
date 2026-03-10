@@ -1,4 +1,4 @@
-const projectAliasesGenerator: Fig.Generator = {
+const projectAliasesGenerator: Generator = {
   script: ["firebase", "projects:list"], // this calls to a firebase server and is therefore slow
   postProcess: (out) => {
     const getAliasRegex = /^│ (\w.*?)│/gm;
@@ -10,7 +10,7 @@ const projectAliasesGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "firebase",
   description: "",
   subcommands: [

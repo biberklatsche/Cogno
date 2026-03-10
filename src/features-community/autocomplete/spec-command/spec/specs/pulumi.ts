@@ -1,4 +1,4 @@
-const stacksGenerator: Fig.Generator = {
+const stacksGenerator: Generator = {
   cache: {
     cacheByDirectory: true,
   },
@@ -15,7 +15,7 @@ const stacksGenerator: Fig.Generator = {
   },
 };
 
-const stackOption: Fig.Option = {
+const stackOption: OptionSpec = {
   name: ["-s", "--stack"],
   description:
     "The name of the stack to operate on. Defaults to the current stack",
@@ -25,19 +25,19 @@ const stackOption: Fig.Option = {
   },
 };
 
-const yesOption: Fig.Option = {
+const yesOption: OptionSpec = {
   name: ["-y", "--yes"],
   description:
     "Skip confirmation prompts, and proceed with cancellation anyway",
   isDangerous: true,
 };
 
-const jsonOption: Fig.Option = {
+const jsonOption: OptionSpec = {
   name: ["-j", "--json"],
   description: "Emit output as JSON",
 };
 
-const configFileOption: Fig.Option = {
+const configFileOption: OptionSpec = {
   name: "--config-file",
   description:
     "Use the configuration values in the specified file rather than detecting the file name",
@@ -47,13 +47,13 @@ const configFileOption: Fig.Option = {
   },
 };
 
-const messageOption: Fig.Option = {
+const messageOption: OptionSpec = {
   name: ["-m", "--message"],
   description: "Optional message to associate with the destroy operation",
   args: { name: "message" },
 };
 
-const parallelOption: Fig.Option = {
+const parallelOption: OptionSpec = {
   name: ["-p", "--parallel"],
   description:
     "Allow P resource operations to run in parallel at once (1 for no parallelism). Defaults to unbounded. (default 2147483647)",
@@ -64,45 +64,45 @@ const parallelOption: Fig.Option = {
   },
 };
 
-const diffOption: Fig.Option = {
+const diffOption: OptionSpec = {
   name: "--diff",
   description: "Display operation as a rich diff showing the overall change",
 };
 
-const debugOption: Fig.Option = {
+const debugOption: OptionSpec = {
   name: ["-d", "--debug"],
   description: "Print detailed debugging output during resource operations",
 };
 
-const localOption: Fig.Option = {
+const localOption: OptionSpec = {
   name: ["-l", "--local"],
   description: "Use Pulumi in local-only mode",
 };
 
-const skipPreview: Fig.Option = {
+const skipPreview: OptionSpec = {
   name: ["-f", "--skip-preview"],
   description: "Do not perform a preview before performing the destroy",
 };
 
-const targetOption: Fig.Option = {
+const targetOption: OptionSpec = {
   name: ["-t", "--target"],
   description:
     "Specify a single resource URN to destroy. All resources necessary to destroy this target will also be destroyed. Multiple resources can be specified using: --target urn1 --target urn2",
   args: { name: "stringArray" },
 };
 
-const pathOption: Fig.Option = {
+const pathOption: OptionSpec = {
   name: "--path",
   description: "The key contains a path to a property in a map or list to set",
 };
 
-const pathsOption: Fig.Option = {
+const pathsOption: OptionSpec = {
   name: "--path",
   description:
     "Parse the keys as paths in a map or list rather than raw strings",
 };
 
-const suppressPermalinkOption: Fig.Option = {
+const suppressPermalinkOption: OptionSpec = {
   name: "--suppress-permalink",
   description: "Suppress display of the state permalink",
   args: {
@@ -112,7 +112,7 @@ const suppressPermalinkOption: Fig.Option = {
   },
 };
 
-const secretsProviderOption: Fig.Option = {
+const secretsProviderOption: OptionSpec = {
   name: "--secrets-provider",
   description:
     'The type of the provider that should be used to encrypt and decrypt secrets (possible choices: default, passphrase, awskms, azurekeyvault, gcpkms, hashivault) (default "default")',
@@ -130,7 +130,7 @@ const secretsProviderOption: Fig.Option = {
   },
 };
 
-const inheritedOptions: Fig.Option[] = [
+const inheritedOptions: OptionSpec[] = [
   {
     name: "--color",
     description:
@@ -194,7 +194,7 @@ const inheritedOptions: Fig.Option[] = [
   },
 ];
 
-const upDestroyOptions: Fig.Option[] = [
+const upDestroyOptions: OptionSpec[] = [
   stackOption,
   parallelOption,
   messageOption,
@@ -246,7 +246,7 @@ const upDestroyOptions: Fig.Option[] = [
 
 const icon = "https://www.pulumi.com/logos/brand/avatar-on-white.svg";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pulumi",
   description:
     "Pulumi's open source infrastructure as code SDK enables you to create, deploy, and manage infrastructure on any cloud, using your favorite languages",

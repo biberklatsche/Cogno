@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "scenario",
   description: "E2E Scenario Usage Guidance",
   subcommands: [

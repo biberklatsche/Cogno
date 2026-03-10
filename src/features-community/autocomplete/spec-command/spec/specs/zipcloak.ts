@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "zipcloak",
   description: "Encrypt entries in a zipfile",
   args: {

@@ -1,6 +1,6 @@
 const icon =
   "https://raw.githubusercontent.com/appwrite/appwrite/master/public/images/icon.svg";
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "index",
   description: "Appwrite - Open-Source End-to-End Backend Server",
   subcommands: [

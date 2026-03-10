@@ -10,7 +10,7 @@ const supportedElmVersions = [
 /**
  * Based on [elm-format](https://github.com/avh4/elm-format), version 0.8.5. A cli tool for formatting Elm code.
  */
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elm-format",
   description: "Format your code in the Elm idiomatic way",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "command",
   description: "Run an external command",
   // There are other options but they're not common between fish/zsh/bash.

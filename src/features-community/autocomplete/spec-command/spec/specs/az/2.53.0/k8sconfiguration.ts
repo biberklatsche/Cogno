@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "k8sconfiguration",
   description: "Commands to manage Kubernetes configuration",
   subcommands: [

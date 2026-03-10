@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "yank",
   description: "Yank terminal output to clipboard",
   options: [

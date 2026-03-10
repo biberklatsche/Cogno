@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pro",
   description: "Manage Ubuntu Pro services from Canonical",
   subcommands: [

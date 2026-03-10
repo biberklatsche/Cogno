@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "enapter",
   description:
     "Cross-platform device management command-line tool for Enapter Energy Management System Toolkit",

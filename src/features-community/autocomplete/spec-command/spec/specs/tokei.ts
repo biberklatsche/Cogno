@@ -1,9 +1,9 @@
-const languageGenerator: Fig.Generator = {
+const languageGenerator: Generator = {
   script: ["tokei", "--languages"],
   splitOn: "\n",
 };
 
-const compleation: Fig.Spec = {
+const compleation: CommandSpec = {
   name: "tokei",
   description: "Count your code, quickly",
   options: [

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "oci",
   description: "Oracle Cloud Infrastructure CLI",
   subcommands: [

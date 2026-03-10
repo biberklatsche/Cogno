@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "quota",
   description: "Manage Azure Quota Extension API",
   subcommands: [

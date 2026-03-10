@@ -23,14 +23,14 @@ function unixToDateString(unix: number) {
   return new Date(unix * 1000).toLocaleString();
 }
 
-const helpCommand: Fig.Subcommand = {
+const helpCommand: SubcommandSpec = {
   name: "help",
   description: "Display help for command",
   priority: 49,
   args: { name: "command", isOptional: true, template: "help" },
 };
 
-const deviceGenerator: Fig.Generator = {
+const deviceGenerator: Generator = {
   script: ["dcli", "devices", "list", "--json"],
   postProcess: function (out) {
     try {
@@ -50,7 +50,7 @@ const deviceGenerator: Fig.Generator = {
   },
 };
 
-const teamCredentialGenerator: Fig.Generator = {
+const teamCredentialGenerator: Generator = {
   script: ["dcli", "team", "credentials", "list", "--json"],
   postProcess: function (out) {
     try {
@@ -70,7 +70,7 @@ const teamCredentialGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dcli",
   description: "Dashlane CLI",
   icon: "https://avatars.githubusercontent.com/u/2639205?s=200&v=4",

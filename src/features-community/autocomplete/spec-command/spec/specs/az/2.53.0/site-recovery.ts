@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "site-recovery",
   description: "Manage Site Recovery Service",
   subcommands: [

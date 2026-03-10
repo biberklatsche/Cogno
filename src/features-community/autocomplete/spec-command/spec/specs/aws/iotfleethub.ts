@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "iotfleethub",
   description:
     "With Fleet Hub for IoT Device Management you can build stand-alone web applications for monitoring the health of your device fleets",

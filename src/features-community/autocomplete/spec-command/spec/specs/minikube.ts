@@ -1,4 +1,4 @@
-const sharedOpts: Record<string, Fig.Option> = {
+const sharedOpts: Record<string, OptionSpec> = {
   output: {
     name: ["--output", "-o"],
     description: "Format to print stdout in",
@@ -17,7 +17,7 @@ const sharedOpts: Record<string, Fig.Option> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "minikube",
   description:
     "Minikube provisions and manages local Kubernetes clusters optimized for development workflows",

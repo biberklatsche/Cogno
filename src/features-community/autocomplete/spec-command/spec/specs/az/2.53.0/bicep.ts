@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "bicep",
   description:
     "Bicep CLI command group.\n\n\t\tBicep CLI command group. There are two configurations that can be set for the command group, including bicep.check_version and bicep.use_binary_from_path:\n[1] az config set bicep.check_version=True/False\nTurn on/off Bicep CLI version check when executing az bicep commands.\n[2] az config set bicep.use_binary_from_path=True/False/if_found_in_ci\nSpecify whether to use Bicep CLI from PATH or not. The default value is if_found_in_ci",

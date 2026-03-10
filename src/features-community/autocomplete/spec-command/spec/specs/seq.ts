@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "seq",
   description: "Print sequences of numbers. (Defaults to increments of 1)",
   args: [

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "datamigration",
   description: "Manage Data Migration",
   subcommands: [

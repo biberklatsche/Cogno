@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "copyfile",
   description:
     "Oh-My-Zsh plugin that copies the contents of a file to the clipboard",

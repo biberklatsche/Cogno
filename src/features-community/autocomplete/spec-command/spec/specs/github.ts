@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "github",
   description: "Open a git repository in GitHub Desktop",
   args: {

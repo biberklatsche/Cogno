@@ -1,15 +1,15 @@
-const skipPolicyUpdateOption: Fig.Option = {
+const skipPolicyUpdateOption: OptionSpec = {
   name: "--skip-policy-update",
   description: "Skip updating built-in policies [$TRIVY_SKIP_POLICY_UPDATE]",
 };
 
-const removePkgsOption: Fig.Option = {
+const removePkgsOption: OptionSpec = {
   name: "--removed-pkgs",
   description:
     "Detect vulnerabilities of removed packages (default: false) [$TRIVY_REMOVED_PKGS]",
 };
 
-const inputOption: Fig.Option = {
+const inputOption: OptionSpec = {
   name: ["--input", "-i"],
   description: "Input file path instead of image name [$TRIVY_INPUT]",
   args: {
@@ -18,7 +18,7 @@ const inputOption: Fig.Option = {
   },
 };
 
-const configPolicy: Fig.Option = {
+const configPolicy: OptionSpec = {
   name: "--config-policy",
   description:
     "Specify paths to the Rego policy files directory, applying config files [$TRIVY_CONFIG_POLICY]",
@@ -28,7 +28,7 @@ const configPolicy: Fig.Option = {
   },
 };
 
-const regoPolicyOptions: Fig.Option[] = [
+const regoPolicyOptions: OptionSpec[] = [
   configPolicy,
   {
     name: "--config-data",
@@ -50,12 +50,12 @@ const regoPolicyOptions: Fig.Option[] = [
   },
 ];
 
-const clearCacheOption: Fig.Option = {
+const clearCacheOption: OptionSpec = {
   name: ["--clear-cache", "-c"],
   description: "Clear image caches without scanning [$TRIVY_CLEAR_CACHE]",
 };
 
-const ignoreFileOption: Fig.Option = {
+const ignoreFileOption: OptionSpec = {
   name: "--ignorefile",
   description:
     'Specify .trivyignore file (default: ".trivyignore") [$TRIVY_IGNOREFILE]]',
@@ -66,7 +66,7 @@ const ignoreFileOption: Fig.Option = {
   },
 };
 
-const timeoutOption: Fig.Option = {
+const timeoutOption: OptionSpec = {
   name: "--timeout",
   description: "Timeout (default: 5m0s) [$TRIVY_TIMEOUT]",
   args: {
@@ -75,13 +75,13 @@ const timeoutOption: Fig.Option = {
   },
 };
 
-const offlineScanOption: Fig.Option = {
+const offlineScanOption: OptionSpec = {
   name: "--offline-scan",
   description:
     "Do not issue API requests to identify dependencies [$TRIVY_OFFLINE_SCAN]",
 };
 
-const skipOptions: Fig.Option[] = [
+const skipOptions: OptionSpec[] = [
   {
     name: "--skip-files",
     description: "Specify the file paths to skip traversal [$TRIVY_SKIP_FILES]",
@@ -101,7 +101,7 @@ const skipOptions: Fig.Option[] = [
   },
 ];
 
-const severityOption: Fig.Option = {
+const severityOption: OptionSpec = {
   name: ["--severity", "-s"],
   description:
     'Severities of vulnerabilities to be displayed (comma separated) (default: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL") [$TRIVY_SEVERITY]',
@@ -122,7 +122,7 @@ const severityOption: Fig.Option = {
   },
 };
 
-const outputOption: Fig.Option = {
+const outputOption: OptionSpec = {
   name: ["--output", "-o"],
   description: "Output file name [$TRIVY_OUTPUT]",
   args: {
@@ -131,13 +131,13 @@ const outputOption: Fig.Option = {
   },
 };
 
-const skipDBUpdateOption: Fig.Option = {
+const skipDBUpdateOption: OptionSpec = {
   name: ["--skip-db-update", "--skip-update"],
   description:
     "Skip updating vulnerability database [$TRIVY_SKIP_UPDATE, $TRIVY_SKIP_DB_UPDATE]",
 };
 
-const cacheBackendOption: Fig.Option = {
+const cacheBackendOption: OptionSpec = {
   name: "--cache-backend",
   description:
     'Cache backend (e.g. redis://localhost:6379) (default: "fs") [$TRIVY_CACHE_BACKEND]',
@@ -147,7 +147,7 @@ const cacheBackendOption: Fig.Option = {
   },
 };
 
-const templateOptions: Fig.Option = {
+const templateOptions: OptionSpec = {
   name: ["--template", "-t"],
   description: "Output template [$TRIVY_TEMPLATE]",
   args: {
@@ -155,7 +155,7 @@ const templateOptions: Fig.Option = {
   },
 };
 
-const formatOptions: Fig.Option = {
+const formatOptions: OptionSpec = {
   name: ["--format", "-f"],
   description:
     'Format (table, json, sarif, template) (default: "table") [$TRIVY_FORMAT]',
@@ -166,7 +166,7 @@ const formatOptions: Fig.Option = {
   },
 };
 
-const exitCodeOption: Fig.Option = {
+const exitCodeOption: OptionSpec = {
   name: "--exit-code",
   description:
     "Exit code when vulnerabilities were found (default: 0) [$TRIVY_EXIT_CODE]",
@@ -176,7 +176,7 @@ const exitCodeOption: Fig.Option = {
   },
 };
 
-const scanOptions: Fig.Option[] = [
+const scanOptions: OptionSpec[] = [
   templateOptions,
   formatOptions,
   severityOption,
@@ -248,7 +248,7 @@ const scanOptions: Fig.Option[] = [
   ...skipOptions,
 ];
 
-const tokenOptions: Fig.Option[] = [
+const tokenOptions: OptionSpec[] = [
   {
     name: "--token",
     description: "For authentication in client/server mode [$TRIVY_TOKEN]",
@@ -267,7 +267,7 @@ const tokenOptions: Fig.Option[] = [
   },
 ];
 
-const clientServerOptions: Fig.Option[] = [
+const clientServerOptions: OptionSpec[] = [
   ...tokenOptions,
   {
     name: "--custom-headers",
@@ -278,13 +278,13 @@ const clientServerOptions: Fig.Option[] = [
   },
 ];
 
-const insecureOption: Fig.Option = {
+const insecureOption: OptionSpec = {
   name: "--insecure",
   description:
     "Allow insecure server connections when using SSL [$TRIVY_INSECURE]",
 };
 
-const listenOption: Fig.Option = {
+const listenOption: OptionSpec = {
   name: "--listen",
   description: 'Listen address (default: "localhost:4954") [$TRIVY_LISTEN]',
   args: {
@@ -292,12 +292,12 @@ const listenOption: Fig.Option = {
   },
 };
 
-const ignoreUnfixedOption: Fig.Option = {
+const ignoreUnfixedOption: OptionSpec = {
   name: "--ignore-unfixed",
   description: "Display only fixed vulnerabilities [$TRIVY_IGNORE_UNFIXED]",
 };
 
-const remoteServerOption: Fig.Option = {
+const remoteServerOption: OptionSpec = {
   name: "--remote",
   description:
     'Server address (default: "http://localhost:4954") [$TRIVY_REMOTE]',
@@ -307,18 +307,18 @@ const remoteServerOption: Fig.Option = {
   },
 };
 
-const downloadDBOnlyOption: Fig.Option = {
+const downloadDBOnlyOption: OptionSpec = {
   name: "--download-db-only",
   description:
     "Download/update vulnerability database but don't run a scan [$TRIVY_DOWNLOAD_DB_ONLY]",
 };
 
-const resetOption: Fig.Option = {
+const resetOption: OptionSpec = {
   name: "--reset",
   description: "Remove all caches and database [$TRIVY_RESET]",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "trivy",
   description: "A simple and comprehensive vulnerability scanner",
   subcommands: [

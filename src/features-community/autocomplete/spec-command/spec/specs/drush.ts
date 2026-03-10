@@ -33,7 +33,7 @@ interface DrushListOutput {
   commands: DrushCommand[];
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "drush",
   description:
     "Drush is a command line shell and Unix scripting interface for Drupal",
@@ -43,7 +43,7 @@ const completionSpec: Fig.Spec = {
       // eslint-disable-next-line @withfig/fig-linter/no-useless-arrays
       args: ["--format=json"],
     });
-    const subcommands: Fig.Subcommand[] = [];
+    const subcommands: SubcommandSpec[] = [];
 
     try {
       const data: DrushListOutput = JSON.parse(jsonList);

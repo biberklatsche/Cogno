@@ -1,4 +1,4 @@
-const packagesGenerator: Fig.Generator = {
+const packagesGenerator: Generator = {
   script: ["pipx", "list", "--short"],
   postProcess: (out) => {
     return out.split("\n").map((line) => {
@@ -10,7 +10,7 @@ const packagesGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pipx",
   description: "Install and Run Python Applications in Isolated Environments",
   subcommands: [

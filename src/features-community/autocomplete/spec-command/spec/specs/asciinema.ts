@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "asciinema",
   description: "Terminal session recorder",
   options: [

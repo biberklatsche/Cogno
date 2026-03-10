@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pathchk",
   description: "Check pathnames for POSIX portability",
   options: [

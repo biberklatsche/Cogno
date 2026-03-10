@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "bc",
   description: "An arbitrary precision calculator language",
   parserDirectives: {

@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "translate",
   description:
     "Provides translation of the input content from the source language to the target language",

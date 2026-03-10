@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "supabase",
   description: "Supabase CLI",
   subcommands: [

@@ -14,7 +14,7 @@ type FlyApp = {
 
 // Autocompletion generator for Fly apps using flyctl list apps
 // https://fly.io/docs/flyctl/apps-list/
-const flyAppsGenerator: Fig.Generator = {
+const flyAppsGenerator: Generator = {
   script: ["flyctl", "apps", "list", "--json"],
   postProcess: (output) => {
     const json: FlyApp[] = JSON.parse(output);
@@ -37,7 +37,7 @@ const flyAppsGenerator: Fig.Generator = {
 
 // Autocompletion generator for Fly apps using flyctl list orgs
 // https://fly.io/docs/flyctl/orgs-list/
-const flyOrgsGenerator: Fig.Generator = {
+const flyOrgsGenerator: Generator = {
   script: ["fly", "orgs", "list", "--json"],
   postProcess: (output) => {
     const json: Record<string, string> = JSON.parse(output);
@@ -61,7 +61,7 @@ const flyOrgsGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "flyctl",
   description: "The flyctl is a command-line interface for fly.io",
   subcommands: [

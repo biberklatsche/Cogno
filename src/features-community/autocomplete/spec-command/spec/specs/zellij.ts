@@ -1,4 +1,4 @@
-const generateSessions: Fig.Generator = {
+const generateSessions: Generator = {
   script: {
     command: "zellij",
     args: ["list-sessions", "-n"],
@@ -34,7 +34,7 @@ const generateSessions: Fig.Generator = {
   },
 };
 
-const option: Fig.Option[] = [
+const option: OptionSpec[] = [
   {
     name: ["-c", "--config"],
     description: "Change where zellij looks for the configuration file",
@@ -117,7 +117,7 @@ const option: Fig.Option[] = [
   },
 ];
 
-const actionSubcommands: Fig.Subcommand[] = [
+const actionSubcommands: SubcommandSpec[] = [
   {
     name: "clear",
     description: "Clear all buffers for a focused pane",
@@ -338,7 +338,7 @@ const actionSubcommands: Fig.Subcommand[] = [
   },
 ];
 
-const subcommands: Fig.Subcommand[] = [
+const subcommands: SubcommandSpec[] = [
   {
     name: ["action", "ac"],
     description: "Send actions to a specific session",
@@ -1035,7 +1035,7 @@ const subcommands: Fig.Subcommand[] = [
   },
 ];
 
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "zellij",
   description: "A terminal workspace with batteries included",
   options: option,

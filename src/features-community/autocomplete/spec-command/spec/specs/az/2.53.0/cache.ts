@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "cache",
   description:
     "Commands to manage CLI objects cached using the --defer argument",

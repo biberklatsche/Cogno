@@ -1,11 +1,11 @@
-const testsGenerator: Fig.Generator = {
+const testsGenerator: Generator = {
   custom: async (tokens, executeShellCommand) => {
     // TODO: load the list of test files specified in testDir on playwright.config file
-    return [] as Fig.Suggestion[];
+    return [] as Suggestion[];
   },
 };
 
-const browserSuggestions: Fig.Suggestion[] = [
+const browserSuggestions: Suggestion[] = [
   {
     name: "chromium",
     displayName: "Chromium",
@@ -40,13 +40,13 @@ const browserSuggestions: Fig.Suggestion[] = [
   },
 ];
 
-const helpOption: Fig.Option = {
+const helpOption: OptionSpec = {
   name: ["--help", "-h"],
   description: "Display help for command",
   priority: 1,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "playwright",
   description: "",
   subcommands: [

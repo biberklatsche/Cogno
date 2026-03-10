@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "exec",
   description: "Replace the current shell with a program",
   args: {

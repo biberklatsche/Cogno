@@ -8,7 +8,7 @@ const postPrecessGenerator = (
   out: string,
   parentKey: string,
   childKey = ""
-): Fig.Suggestion[] => {
+): Suggestion[] => {
   try {
     const list = JSON.parse(out)[parentKey];
     if (!Array.isArray(list)) {
@@ -33,12 +33,12 @@ const postPrecessGenerator = (
 };
 const customGenerator = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = ""
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["cloudformation", command];
     for (const option of options) {
@@ -76,13 +76,13 @@ const customGenerator = async (
 };
 const customGeneratorWithFilter = async (
   tokens: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction,
+  executeShellCommand: ExecuteCommandFunction,
   command: string,
   options: string[],
   parentKey: string,
   childKey = "",
   filter: string
-): Promise<Fig.Suggestion[]> => {
+): Promise<Suggestion[]> => {
   try {
     let args = ["cloudformation", command];
     for (const option of options) {
@@ -131,7 +131,7 @@ const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   }
   return [...baseLsCommand, folderPath];
 };
-const postProcessFiles = (out: string, prefix: string): Fig.Suggestion[] => {
+const postProcessFiles = (out: string, prefix: string): Suggestion[] => {
   if (out.trim() === prefix) {
     return [
       {
@@ -157,7 +157,7 @@ const filterWithPrefix = (token: string, prefix: string): string => {
   if (!token.startsWith(prefix)) return token;
   return token.slice(token.lastIndexOf("/") + 1);
 };
-const sortSuggestions = (arr: string[], isS3?: boolean): Fig.Suggestion[] => {
+const sortSuggestions = (arr: string[], isS3?: boolean): Suggestion[] => {
   const sortFnStrings = (a, b) => {
     return a.localeCompare(b);
   };
@@ -198,7 +198,7 @@ const sortSuggestions = (arr: string[], isS3?: boolean): Fig.Suggestion[] => {
   });
   return final_array;
 };
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   listFiles: {
     script: (tokens) => {
       return appendFolderPath(tokens, _prefixFile);
@@ -474,7 +474,7 @@ const generators: Record<string, Fig.Generator> = {
           return {
             name: _prefixS3 + parts[parts.length - 1],
           };
-        }) as Fig.Suggestion[];
+        }) as Suggestion[];
       } catch (error) {
         console.error(error);
       }
@@ -488,7 +488,7 @@ const generators: Record<string, Fig.Generator> = {
     },
   },
 };
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloudformation",
   description:
     "CloudFormation CloudFormation allows you to create and manage Amazon Web Services infrastructure deployments predictably and repeatedly. You can use CloudFormation to leverage Amazon Web Services products, such as Amazon Elastic Compute Cloud, Amazon Elastic Block Store, Amazon Simple Notification Service, Elastic Load Balancing, and Amazon EC2 Auto Scaling to build highly reliable, highly scalable, cost-effective applications without creating or configuring the underlying Amazon Web Services infrastructure. With CloudFormation, you declare all your resources and dependencies in a template file. The template defines a collection of resources as a single unit called a stack. CloudFormation creates and deletes all member resources of the stack together and manages all dependencies between the resources for you. For more information about CloudFormation, see the CloudFormation product page. CloudFormation makes use of other Amazon Web Services products. If you need additional technical information about a specific Amazon Web Services product, you can find the product's technical documentation at docs.aws.amazon.com",

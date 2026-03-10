@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: "--format",
     description: "The output format (txt, xml, json, or md)",
@@ -12,7 +12,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "laravel",
   description: "Laravel Installer",
   subcommands: [

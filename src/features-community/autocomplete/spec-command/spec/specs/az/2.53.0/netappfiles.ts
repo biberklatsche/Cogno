@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "netappfiles",
   description: "Manage Azure NetApp Files (ANF) Resources",
   subcommands: [

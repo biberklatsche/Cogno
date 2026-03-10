@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "okta",
   description: "The Okta CLI is the easiest way to get started with Okta!",
   subcommands: [

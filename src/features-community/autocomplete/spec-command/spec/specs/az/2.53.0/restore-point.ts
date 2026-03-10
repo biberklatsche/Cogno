@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "restore-point",
   description: "Manage restore point with res",
   subcommands: [

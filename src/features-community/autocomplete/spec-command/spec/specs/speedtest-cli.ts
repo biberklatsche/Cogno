@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "speedtest-cli",
   description:
     "Command line interface for testing internet bandwidth using speedtest.net",

@@ -1,6 +1,6 @@
 import pipCompletionSpec from "./pip";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   ...pipCompletionSpec,
   name: "pip3",
 };

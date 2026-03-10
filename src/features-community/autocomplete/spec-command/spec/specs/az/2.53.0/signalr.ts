@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "signalr",
   description: "Manage Azure SignalR Service",
   subcommands: [

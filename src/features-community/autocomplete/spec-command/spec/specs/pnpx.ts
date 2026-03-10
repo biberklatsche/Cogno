@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pnpx",
   description: "Execute binaries from npm packages",
   subcommands: [

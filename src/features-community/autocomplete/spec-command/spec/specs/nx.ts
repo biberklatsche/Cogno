@@ -18,67 +18,67 @@ interface NxProject {
 }
 
 interface NxGenerators {
-  configuration: Fig.Generator;
-  generate: Fig.Generator;
-  list: Fig.Generator;
-  project: Fig.Generator;
-  projects: Fig.Generator;
-  run: Fig.Generator;
-  targets: Fig.Generator;
-  workspaceGenerator: Fig.Generator;
+  configuration: Generator;
+  generate: Generator;
+  list: Generator;
+  project: Generator;
+  projects: Generator;
+  run: Generator;
+  targets: Generator;
+  workspaceGenerator: Generator;
 }
 
 interface NxOptions {
-  all: Fig.Option;
-  base: Fig.Option;
-  commitPrefix: Fig.Option;
-  configuration: Fig.Option;
-  createCommits: Fig.Option;
-  defaults: Fig.Option;
-  dryRun: Fig.Option;
-  exclude: Fig.Option;
-  excludeAppliedMigrations: Fig.Option;
-  file: Fig.Option;
-  files: Fig.Option;
-  focus: Fig.Option;
-  force: Fig.Option;
-  from: Fig.Option;
-  graph: Fig.Option;
-  groupByFolder: Fig.Option;
-  head: Fig.Option;
-  help: Fig.Option;
-  host: Fig.Option;
-  ifExists: Fig.Option;
-  includeDependentProjects: Fig.Option;
-  interactive: Fig.Option;
-  libsAndApps: Fig.Option;
-  listGenerators: Fig.Option;
-  nxBail: Fig.Option;
-  nxIgnoreCycles: Fig.Option;
-  open: Fig.Option;
-  outputStyle: Fig.Option;
-  parallel: Fig.Option;
-  port: Fig.Option;
-  project: Fig.Option;
-  projects: Fig.Option;
-  runMigrations: Fig.Option;
-  runner: Fig.Option;
-  select: Fig.Option;
-  skipNxCache: Fig.Option;
-  start: Fig.Option;
-  stop: Fig.Option;
-  targets: Fig.Option;
-  to: Fig.Option;
-  type: Fig.Option;
-  uncommitted: Fig.Option;
-  untracked: Fig.Option;
-  verbose: Fig.Option;
-  version: Fig.Option;
-  view: Fig.Option;
-  watch: Fig.Option;
+  all: OptionSpec;
+  base: OptionSpec;
+  commitPrefix: OptionSpec;
+  configuration: OptionSpec;
+  createCommits: OptionSpec;
+  defaults: OptionSpec;
+  dryRun: OptionSpec;
+  exclude: OptionSpec;
+  excludeAppliedMigrations: OptionSpec;
+  file: OptionSpec;
+  files: OptionSpec;
+  focus: OptionSpec;
+  force: OptionSpec;
+  from: OptionSpec;
+  graph: OptionSpec;
+  groupByFolder: OptionSpec;
+  head: OptionSpec;
+  help: OptionSpec;
+  host: OptionSpec;
+  ifExists: OptionSpec;
+  includeDependentProjects: OptionSpec;
+  interactive: OptionSpec;
+  libsAndApps: OptionSpec;
+  listGenerators: OptionSpec;
+  nxBail: OptionSpec;
+  nxIgnoreCycles: OptionSpec;
+  open: OptionSpec;
+  outputStyle: OptionSpec;
+  parallel: OptionSpec;
+  port: OptionSpec;
+  project: OptionSpec;
+  projects: OptionSpec;
+  runMigrations: OptionSpec;
+  runner: OptionSpec;
+  select: OptionSpec;
+  skipNxCache: OptionSpec;
+  start: OptionSpec;
+  stop: OptionSpec;
+  targets: OptionSpec;
+  to: OptionSpec;
+  type: OptionSpec;
+  uncommitted: OptionSpec;
+  untracked: OptionSpec;
+  verbose: OptionSpec;
+  version: OptionSpec;
+  view: OptionSpec;
+  watch: OptionSpec;
 }
 
-const oneDayCache: Fig.Cache = {
+const oneDayCache: Cache = {
   strategy: "max-age",
   ttl: 60 * 60 * 24,
   cacheByDirectory: true,
@@ -121,7 +121,7 @@ const fillProjectCaches = (projectJson: NxProject) => {
 };
 
 const preProcessProjects = async (
-  executeShellCommand: Fig.ExecuteCommandFunction
+  executeShellCommand: ExecuteCommandFunction
 ) => {
   if (!nxProjectPathCache.length) {
     // get project json paths
@@ -207,7 +207,7 @@ const preProcessProjects = async (
   }
 };
 
-const listMapKeysGenerator = (map: Map<string, unknown>): Fig.Generator => {
+const listMapKeysGenerator = (map: Map<string, unknown>): Generator => {
   return {
     cache: oneDayCache,
     trigger: (newToken, oldToken) =>
@@ -215,10 +215,10 @@ const listMapKeysGenerator = (map: Map<string, unknown>): Fig.Generator => {
     getQueryTerm: (token) => token.split(",").pop(),
     custom: async (
       tokens: string[],
-      executeShellCommand: Fig.ExecuteCommandFunction,
-      generatorContext: Fig.GeneratorContext
+      executeShellCommand: ExecuteCommandFunction,
+      generatorContext: GeneratorContext
     ) => {
-      const suggestions: Fig.Suggestion[] = [];
+      const suggestions: Suggestion[] = [];
       const selected = tokens[tokens.length - 1].split(",");
       await preProcessProjects(executeShellCommand);
 
@@ -238,9 +238,9 @@ const nxGenerators: NxGenerators = {
     cache: oneDayCache,
     custom: async (
       tokens: string[],
-      executeShellCommand: Fig.ExecuteCommandFunction
+      executeShellCommand: ExecuteCommandFunction
     ) => {
-      const suggestions: Fig.Suggestion[] = [];
+      const suggestions: Suggestion[] = [];
 
       const finalToken = [];
       const token = tokens.join(" ");
@@ -319,10 +319,10 @@ const nxGenerators: NxGenerators = {
     // the custom generator
     custom: async (
       _: string[],
-      executeShellCommand: Fig.ExecuteCommandFunction
+      executeShellCommand: ExecuteCommandFunction
     ) => {
       // suggestions to be returned
-      const suggestions: Fig.Suggestion[] = [];
+      const suggestions: Suggestion[] = [];
 
       // pre process projects
       await preProcessProjects(executeShellCommand);
@@ -347,11 +347,11 @@ const nxGenerators: NxGenerators = {
     // the custom generator
     custom: async (
       tokens: string[],
-      executeShellCommand: Fig.ExecuteCommandFunction,
-      generatorContext: Fig.GeneratorContext
+      executeShellCommand: ExecuteCommandFunction,
+      generatorContext: GeneratorContext
     ) => {
       // suggestions to be returned
-      const suggestions: Fig.Suggestion[] = [];
+      const suggestions: Suggestion[] = [];
 
       // get the final token and split it
       const finalToken = tokens[tokens.length - 1].split(":");
@@ -689,9 +689,9 @@ const RUN_DERIVED_BASE_TARGETS_WITH_CONFIGURATION = ["build", "serve"];
  */
 const runDerivedSubcommands = async (
   _: string[],
-  executeShellCommand: Fig.ExecuteCommandFunction
-): Promise<Fig.Spec> => {
-  const subcommands: Fig.Subcommand[] = [];
+  executeShellCommand: ExecuteCommandFunction
+): Promise<CommandSpec> => {
+  const subcommands: SubcommandSpec[] = [];
 
   // pre process projects
   await preProcessProjects(executeShellCommand);
@@ -720,7 +720,7 @@ const runDerivedSubcommands = async (
   };
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "nx",
   description: "Fig completions for Nx by Nrwl",
   generateSpec: runDerivedSubcommands,

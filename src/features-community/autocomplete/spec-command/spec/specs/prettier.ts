@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "prettier",
   description: "Run Prettier from the command line",
   icon: "https://prettier.io/icon.png",

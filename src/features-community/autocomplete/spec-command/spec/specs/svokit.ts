@@ -3,7 +3,7 @@
   Svokit is a library that combines sveltekit with socket.io.
 */
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "svokit",
   description: "Runs built svokit project",
   subcommands: [

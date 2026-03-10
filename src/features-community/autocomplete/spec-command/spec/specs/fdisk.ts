@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fdisk",
   description: "Manipulate disk partition table",
   options: [

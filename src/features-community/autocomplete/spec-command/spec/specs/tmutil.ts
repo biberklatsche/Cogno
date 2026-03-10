@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tmutil",
   description: "Time Machine utility",
   subcommands: [

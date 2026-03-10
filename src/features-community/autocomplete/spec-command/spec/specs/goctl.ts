@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "goctl",
   description: "A cli tool to generate go-zero code",
   subcommands: [

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "wezterm",
   description: "Wez's Terminal Emulator",
   subcommands: [

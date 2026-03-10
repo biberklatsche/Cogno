@@ -1,4 +1,4 @@
-const GlobalOptions: Fig.Option[] = [
+const GlobalOptions: OptionSpec[] = [
   {
     name: ["-v", "--verbose"],
     description: "Enable verbose logging",
@@ -32,7 +32,7 @@ const GlobalOptions: Fig.Option[] = [
   },
 ];
 
-const checkOptions: Fig.Option[] = [
+const checkOptions: OptionSpec[] = [
   {
     name: "--fix",
     description: "Apply fixes to resolve lint violations",
@@ -273,7 +273,7 @@ const checkOptions: Fig.Option[] = [
   },
 ];
 
-const formatOptions: Fig.Option[] = [
+const formatOptions: OptionSpec[] = [
   {
     name: "--check",
     description:
@@ -365,7 +365,7 @@ const formatOptions: Fig.Option[] = [
   },
 ];
 
-const rules: Fig.Suggestion[] = [
+const rules: Suggestion[] = [
   { name: "F401", description: "Unused-import" },
   { name: "F402", description: "Import-shadowed-by-loop-var" },
   { name: "F403", description: "Undefined-local-with-import-star" },
@@ -2871,7 +2871,7 @@ const rules: Fig.Suggestion[] = [
   },
 ];
 
-const subCommands: Fig.Subcommand[] = [
+const subCommands: SubcommandSpec[] = [
   {
     name: "check",
     description: "Run Ruff on the given files or directories",
@@ -3039,7 +3039,7 @@ const subCommands: Fig.Subcommand[] = [
   },
 ];
 
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "ruff",
   description: "Ruff: An extremely fast Python linter",
   subcommands: subCommands,

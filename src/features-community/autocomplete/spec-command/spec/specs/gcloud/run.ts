@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "run",
   description: "Manage your Cloud Run applications",
   subcommands: [

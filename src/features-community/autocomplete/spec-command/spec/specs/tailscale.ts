@@ -12,7 +12,7 @@ const hostsGenerator = ({ append }: HostsGeneratorOptions = {}) => ({
     })),
 });
 
-const spec: Fig.Spec = {
+const spec: CommandSpec = {
   name: "tailscale",
   subcommands: [
     {

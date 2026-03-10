@@ -1,18 +1,18 @@
-const boolArgDefaultFalse: Fig.Arg = {
+const boolArgDefaultFalse: ArgSpec = {
   name: "bool",
   description: "True/false",
   default: "false",
   suggestions: ["true", "false"],
 };
 
-const boolArgDefaultTrue: Fig.Arg = {
+const boolArgDefaultTrue: ArgSpec = {
   name: "bool",
   description: "True/false",
   default: "true",
   suggestions: ["true", "false"],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "micro",
   description: "A modern and intuitive terminal-based text editor",
   subcommands: [

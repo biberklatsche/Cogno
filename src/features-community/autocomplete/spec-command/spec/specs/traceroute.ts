@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "traceroute",
   description: "Print the route packets take to network host",
   options: [

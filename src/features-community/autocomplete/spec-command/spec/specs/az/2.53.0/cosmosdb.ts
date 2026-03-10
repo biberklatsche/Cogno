@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "cosmosdb",
   description: "Manage Azure Cosmos DB database accounts",
   subcommands: [

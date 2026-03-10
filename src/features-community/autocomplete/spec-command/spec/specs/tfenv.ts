@@ -1,4 +1,4 @@
-const generators: Record<string, Fig.Generator> = {
+const generators: Record<string, Generator> = {
   installedVersions: {
     script: ["tfenv", "list"],
     postProcess: function (out) {
@@ -17,7 +17,7 @@ const generators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tfenv",
   description: "Terraform version manager",
   subcommands: [

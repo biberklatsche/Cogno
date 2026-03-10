@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ansible-config",
   description: "View ansible configuration",
   subcommands: [

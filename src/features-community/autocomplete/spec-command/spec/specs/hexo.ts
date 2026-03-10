@@ -1,4 +1,4 @@
-const draftGenerator: Fig.Generator = {
+const draftGenerator: Generator = {
   script: ["bash", "-c", "hexo list post | grep -E ^Draft"],
   postProcess: (out) => {
     return out.split("\n").map(function (file) {
@@ -15,7 +15,7 @@ const draftGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "hexo",
   description: "Command line interface for Hexo, a static site generator",
   subcommands: [

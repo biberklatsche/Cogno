@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xray",
   description:
     "Amazon Web Services X-Ray provides APIs for managing debug traces and retrieving service maps and other data created by processing those traces",

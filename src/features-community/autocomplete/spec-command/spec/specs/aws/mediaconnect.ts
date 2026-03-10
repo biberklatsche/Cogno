@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mediaconnect",
   description: "API for AWS Elemental MediaConnect",
   subcommands: [

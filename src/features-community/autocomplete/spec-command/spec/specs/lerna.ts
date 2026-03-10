@@ -1,4 +1,4 @@
-const getPackages: Fig.Generator = {
+const getPackages: Generator = {
   script: ["lerna", "ls"],
   postProcess: (output) =>
     output.split("\n").map((packageName) => ({
@@ -7,7 +7,7 @@ const getPackages: Fig.Generator = {
     })),
 };
 
-const getBranches: Fig.Generator = {
+const getBranches: Generator = {
   script: ["git", "branch", "--no-color"],
   postProcess: function (out) {
     if (out.startsWith("fatal:")) {
@@ -23,7 +23,7 @@ const getBranches: Fig.Generator = {
   },
 };
 
-const getAllScriptsFromPackages: Fig.Generator = {
+const getAllScriptsFromPackages: Generator = {
   // Get all lerna packages, loop over them and get content of package.json
   script: [
     "bash",
@@ -69,7 +69,7 @@ const SEMVER_NOUNS = [
 
 const packageScopes = ["public", "restricted"];
 
-const npmClientOption: Fig.Option = {
+const npmClientOption: OptionSpec = {
   name: "--npm-client",
   description: "The exececutable to run the script with",
   args: {
@@ -91,7 +91,7 @@ const npmClientOption: Fig.Option = {
   },
 };
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: "--concurrency",
     description:
@@ -141,7 +141,7 @@ const globalOptions: Fig.Option[] = [
   },
 ];
 
-const runOptions: Fig.Option[] = [
+const runOptions: OptionSpec[] = [
   {
     name: "--stream",
     description:
@@ -178,7 +178,7 @@ const runOptions: Fig.Option[] = [
   },
 ];
 
-const filterOptions: Fig.Option[] = [
+const filterOptions: OptionSpec[] = [
   {
     name: "--scope",
     description: "Include only packages with names matching the given glob",
@@ -224,7 +224,7 @@ const filterOptions: Fig.Option[] = [
   },
 ];
 
-const listSubCommand: Fig.Subcommand = {
+const listSubCommand: SubcommandSpec = {
   name: "",
   description: "List local packages",
   options: [
@@ -260,7 +260,7 @@ const listSubCommand: Fig.Subcommand = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "lerna",
   description: "A tool for managing JavaScript projects with multiple packages",
   subcommands: [

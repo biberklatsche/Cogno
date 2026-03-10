@@ -1,4 +1,4 @@
-const ListModelGenerator: Fig.Generator = {
+const ListModelGenerator: Generator = {
   script: ["bash", "-c", "ollama ls | awk '!/NAME/ { print $1 }'"],
   postProcess: (out) => {
     return out
@@ -8,7 +8,7 @@ const ListModelGenerator: Fig.Generator = {
   },
 };
 
-const RunModelGenerator: Fig.Generator = {
+const RunModelGenerator: Generator = {
   script: ["bash", "-c", "ollama ps | awk '!/NAME/ { print $1 }'"],
   postProcess: (out) => {
     return out
@@ -18,7 +18,7 @@ const RunModelGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ollama",
   description:
     "A command-line tool for managing and deploying machine learning models",

@@ -69,7 +69,7 @@ const pluginList = [
   // To be continued ...
 ];
 
-const installedPlugins: Fig.Generator = {
+const installedPlugins: Generator = {
   script: ["fish", "-c", "fisher list"],
   postProcess: (output: string) => {
     if (!output) {
@@ -88,7 +88,7 @@ const installedPlugins: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fisher",
   description: "A plugin manager for Fish",
   subcommands: [

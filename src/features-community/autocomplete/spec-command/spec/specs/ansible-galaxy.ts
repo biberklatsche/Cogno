@@ -1,4 +1,4 @@
-const serverOptions: Fig.Option[] = [
+const serverOptions: OptionSpec[] = [
   {
     name: ["--server", "-s"],
     description: "The Galaxy API server URL",
@@ -23,7 +23,7 @@ const serverOptions: Fig.Option[] = [
   },
 ];
 
-const collectionDownloadOptions: Fig.Option[] = [
+const collectionDownloadOptions: OptionSpec[] = [
   {
     name: "--clear-response-cache",
     description: "Clear the existing server response cache",
@@ -60,7 +60,7 @@ const collectionDownloadOptions: Fig.Option[] = [
   },
 ];
 
-const collectionInitOptions: Fig.Option[] = [
+const collectionInitOptions: OptionSpec[] = [
   {
     name: ["--force", "-f"],
     description: "Force overwriting an existing role or collection",
@@ -88,7 +88,7 @@ const collectionInitOptions: Fig.Option[] = [
   },
 ];
 
-const collectionBuildOptions: Fig.Option[] = [
+const collectionBuildOptions: OptionSpec[] = [
   {
     name: ["--force", "-f"],
     description: "Force overwriting an existing role or collection",
@@ -105,7 +105,7 @@ const collectionBuildOptions: Fig.Option[] = [
   },
 ];
 
-const collectionPublishOptions: Fig.Option[] = [
+const collectionPublishOptions: OptionSpec[] = [
   {
     name: "--no-wait",
     description: "Don't wait for import validation results",
@@ -123,7 +123,7 @@ const collectionPublishOptions: Fig.Option[] = [
   },
 ];
 
-const collectionListOptions: Fig.Option[] = [
+const collectionListOptions: OptionSpec[] = [
   {
     name: ["--collections-path", "-p"],
     description:
@@ -149,7 +149,7 @@ const collectionListOptions: Fig.Option[] = [
   },
 ];
 
-const collectionVerifyOptions: Fig.Option[] = [
+const collectionVerifyOptions: OptionSpec[] = [
   {
     name: ["--collections-path", "-p"],
     description:
@@ -179,7 +179,7 @@ const collectionVerifyOptions: Fig.Option[] = [
   },
 ];
 
-const collectionsListArg: Fig.Arg = {
+const collectionsListArg: ArgSpec = {
   name: "collection",
   description: "Name of the collection",
   isVariadic: true,
@@ -290,7 +290,7 @@ const collectionsListArg: Fig.Arg = {
   ],
 };
 
-const roleInitOptions: Fig.Option[] = [
+const roleInitOptions: OptionSpec[] = [
   {
     name: ["--force", "-f"],
     description: "Force overwriting an existing role or collection",
@@ -331,7 +331,7 @@ const roleInitOptions: Fig.Option[] = [
   },
 ];
 
-const roleRemoveOptions: Fig.Option[] = [
+const roleRemoveOptions: OptionSpec[] = [
   {
     name: ["--roles-path", "--role-path"],
     description: "The path to the directory containing your roles",
@@ -346,7 +346,7 @@ const roleRemoveOptions: Fig.Option[] = [
   },
 ];
 
-const roleListOptions: Fig.Option[] = [
+const roleListOptions: OptionSpec[] = [
   {
     name: ["--roles-path", "--role-path"],
     description: "The path to the directory containing your roles",
@@ -361,7 +361,7 @@ const roleListOptions: Fig.Option[] = [
   },
 ];
 
-const roleSearchOptions: Fig.Option[] = [
+const roleSearchOptions: OptionSpec[] = [
   {
     name: "--platforms",
     description: "List of OS platforms to filter by",
@@ -389,7 +389,7 @@ const roleSearchOptions: Fig.Option[] = [
   },
 ];
 
-const roleImportOptions: Fig.Option[] = [
+const roleImportOptions: OptionSpec[] = [
   {
     name: "--branch",
     description:
@@ -419,7 +419,7 @@ const roleImportOptions: Fig.Option[] = [
   },
 ];
 
-const roleSetupOptions: Fig.Option[] = [
+const roleSetupOptions: OptionSpec[] = [
   {
     name: ["--roles-path", "--role-path"],
     description: "The path to the directory containing your roles",
@@ -450,7 +450,7 @@ const roleSetupOptions: Fig.Option[] = [
   },
 ];
 
-const roleInfoOptions: Fig.Option[] = [
+const roleInfoOptions: OptionSpec[] = [
   {
     name: ["--roles-path", "--role-path"],
     description: "The path to the directory containing your roles",
@@ -469,7 +469,7 @@ const roleInfoOptions: Fig.Option[] = [
   },
 ];
 
-const roleInstallOptions: Fig.Option[] = [
+const roleInstallOptions: OptionSpec[] = [
   {
     name: ["--roles-path", "--role-path"],
     description: "The path to the directory containing your roles",
@@ -506,7 +506,7 @@ const roleInstallOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ansible-galaxy",
   description: "Perform various Role and Collection related operations",
   subcommands: [

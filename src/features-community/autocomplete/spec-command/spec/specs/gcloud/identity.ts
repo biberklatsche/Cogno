@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "identity",
   description: "Manage Cloud Identity Groups and Memberships resources",
   subcommands: [

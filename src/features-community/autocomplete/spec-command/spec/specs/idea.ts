@@ -1,7 +1,7 @@
 export const generateInteliJCompletionSpec = (
   name: string,
   editorName: string
-): Fig.Spec => {
+): CommandSpec => {
   return {
     name,
     description: `${editorName} cli`,

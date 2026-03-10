@@ -8,7 +8,7 @@ const vaporCommands = [
   "build",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vapor",
   description: "Vapor Toolbox (Server-side Swift web framework)",
   subcommands: [

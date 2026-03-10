@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "endpoints",
   description: "Create, enable and manage API services",
   subcommands: [

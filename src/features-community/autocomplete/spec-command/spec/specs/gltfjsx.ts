@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gltfjsx",
   description: "GLTF to JSX converter",
   args: {

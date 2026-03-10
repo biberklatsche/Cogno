@@ -1,10 +1,10 @@
-const FILE_OR_FOLDER: Fig.Arg = {
+const FILE_OR_FOLDER: ArgSpec = {
   name: "file",
   description: "The input file",
   template: "filepaths",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "v",
   description: "The V Programming Language",
   parserDirectives: {

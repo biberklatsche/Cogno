@@ -1,4 +1,4 @@
-const propertySuggestions: (string | Fig.Suggestion)[] = [
+const propertySuggestions: (string | Suggestion)[] = [
   "all",
   "allxml",
   "dpiHeight",
@@ -36,7 +36,7 @@ const propertySuggestions: (string | Fig.Suggestion)[] = [
   "md5",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sips",
   description: "Scriptable image processing system",
   args: {

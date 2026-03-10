@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cloudfront-keyvaluestore",
   description:
     "Amazon CloudFront KeyValueStore Service to View and Update Data in a KVS Resource",

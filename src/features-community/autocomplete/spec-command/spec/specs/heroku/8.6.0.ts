@@ -1,6 +1,6 @@
 import { getAppGenerator } from "./shared";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "heroku",
   subcommands: [
     { name: ["auth:2fa", "2fa", "twofactor"], description: "Check 2fa status" },
@@ -5579,7 +5579,7 @@ const completionSpec: Fig.Spec = {
   ],
 };
 
-const versions: Fig.VersionDiffMap = {};
+const versions: VersionDiffMap = {};
 
 export { versions };
 export default completionSpec;

@@ -1,4 +1,4 @@
-const defaultOptions: Fig.Option[] = [
+const defaultOptions: OptionSpec[] = [
   {
     name: "--verbose",
     description: "Enables verbose diagnostics",
@@ -13,12 +13,12 @@ const defaultOptions: Fig.Option[] = [
   },
 ];
 
-const toolArgs: Fig.Arg = {
+const toolArgs: ArgSpec = {
   isVariadic: true,
   name: "tool@version",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "volta",
   description: "The JavaScript Launcher",
   subcommands: [

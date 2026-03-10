@@ -5,7 +5,7 @@ interface RegistryItem {
   type: string;
 }
 
-const componentGenerator: Fig.Generator = {
+const componentGenerator: Generator = {
   custom: async (_tokens, executeShellCommand) => {
     const { stdout } = await executeShellCommand({
       command: "curl",
@@ -24,7 +24,7 @@ const componentGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "shadcn-ui",
   description: "Shadcn UI CLI",
   subcommands: [

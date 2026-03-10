@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "join",
   description:
     "The join utility performs an 'equality join' on the specified files and writes the result to the standard output. The 'join field' is the field in each file by which the files are compared. The first field in each line is used by default. There is one line in the output for each pair of lines in file1 and file2 which have identical join fields. Each output line consists of the join field, the remaining fields from file1 and then the remaining fields from file2",

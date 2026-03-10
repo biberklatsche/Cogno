@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pkill",
   description:
     "Send  the  specified  signal  (by default SIGTERM) to each specified process",

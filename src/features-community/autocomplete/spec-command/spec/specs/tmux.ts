@@ -1,4 +1,4 @@
-const lsArg = (name: string, command: string): Fig.Arg => ({
+const lsArg = (name: string, command: string): ArgSpec => ({
   name,
   generators: {
     script: ["tmux", command],
@@ -21,7 +21,7 @@ const panesArg = lsArg("src-pane", "lsp");
 const windowsArg = lsArg("window-name", "lsw");
 const buffersArg = lsArg("buffer-name", "lsb");
 
-const formatOption: Fig.Option = {
+const formatOption: OptionSpec = {
   name: "-F",
   description: "Format output",
   args: {
@@ -30,7 +30,7 @@ const formatOption: Fig.Option = {
   },
 };
 
-const flagsOption: Fig.Option = {
+const flagsOption: OptionSpec = {
   name: "-f",
   description: "Set client flags",
   args: {
@@ -47,7 +47,7 @@ const flagsOption: Fig.Option = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "tmux",
   description: "A terminal multiplexer",
   subcommands: [

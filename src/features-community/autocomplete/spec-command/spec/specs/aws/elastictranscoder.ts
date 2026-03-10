@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elastictranscoder",
   description:
     "AWS Elastic Transcoder Service The AWS Elastic Transcoder Service",

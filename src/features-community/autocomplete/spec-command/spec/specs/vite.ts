@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vite",
   description: "Native ESM-powered web dev build tool",
   icon: "https://vitejs.dev/logo.svg",

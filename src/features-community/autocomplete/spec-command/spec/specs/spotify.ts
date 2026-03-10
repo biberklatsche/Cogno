@@ -1,5 +1,5 @@
 // https://github.com/hnarayanan/shpotify
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "spotify",
   description: "CLI to use Spotify from the terminal",
   subcommands: [

@@ -12,7 +12,7 @@ const extractFileArgs = (tokens: string[]): string[] => {
   return files.flatMap((f) => ["-f", f]);
 };
 
-const servicesGenerator: Fig.Generator = {
+const servicesGenerator: Generator = {
   script: (tokens) => {
     const compose = getComposeCommand(tokens);
     const fileArgs = extractFileArgs(tokens);
@@ -21,7 +21,7 @@ const servicesGenerator: Fig.Generator = {
   splitOn: "\n",
 };
 
-const profilesGenerator: Fig.Generator = {
+const profilesGenerator: Generator = {
   script: (tokens) => {
     const compose = getComposeCommand(tokens);
     const fileArgs = extractFileArgs(tokens);
@@ -30,7 +30,7 @@ const profilesGenerator: Fig.Generator = {
   splitOn: "\n",
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "docker-compose",
   description: "Define and run multi-container applications with Docker",
   subcommands: [

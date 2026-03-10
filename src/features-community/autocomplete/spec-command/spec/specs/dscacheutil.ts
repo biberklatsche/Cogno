@@ -14,7 +14,7 @@ interface PostProcessQuery {
 }
 
 const postProcessQuery =
-  (options: PostProcessQuery): Fig.Generator["postProcess"] =>
+  (options: PostProcessQuery): Generator["postProcess"] =>
   (out) => {
     const { attributeKey } = options;
     const values = new Set<string>();
@@ -33,7 +33,7 @@ const postProcessQuery =
     return suggestions;
   };
 
-const dscacheutilGenerators: Record<string, Fig.Generator> = {
+const dscacheutilGenerators: Record<string, Generator> = {
   keys: {
     custom: async (tokens, executeShellCommand) => {
       const category = tokens[tokens.length - 3];
@@ -64,7 +64,7 @@ const dscacheutilGenerators: Record<string, Fig.Generator> = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dscacheutil",
   description: "Utility for managing the Directory Service cache",
   subcommands: [

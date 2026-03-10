@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "policy-troubleshoot",
   description: "Troubleshoot Google Cloud Platform policies",
   subcommands: [

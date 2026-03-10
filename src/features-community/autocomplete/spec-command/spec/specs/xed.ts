@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xed",
   description: "Xcode text editor invocation tool",
   options: [

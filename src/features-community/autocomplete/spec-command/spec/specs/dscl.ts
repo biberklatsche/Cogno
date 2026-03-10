@@ -4,7 +4,7 @@ const satisfies =
   <U extends T>(u: U) =>
     u;
 
-const dsclOptions: Fig.Option[] = [
+const dsclOptions: OptionSpec[] = [
   {
     name: "-p",
     description: "Prompt for password",
@@ -57,7 +57,7 @@ const dsclOptionsWithArgs = new Set<string>(
     .flatMap((option) => option.name)
 );
 
-const generateDsclPath: Fig.Generator = {
+const generateDsclPath: Generator = {
   trigger: "/",
   getQueryTerm: "/",
   custom: async (tokens, executeShellCommand) => {
@@ -100,7 +100,7 @@ const generateDsclPath: Fig.Generator = {
   },
 };
 
-const dsclArgs = satisfies<Record<string, Fig.Arg>>()({
+const dsclArgs = satisfies<Record<string, ArgSpec>>()({
   path: {
     name: "path",
     description: "Path to the record",
@@ -144,13 +144,13 @@ const dsclArgs = satisfies<Record<string, Fig.Arg>>()({
 
 const arg = (
   name: keyof typeof dsclArgs,
-  merge: Partial<Fig.Arg>
-): Fig.Arg => ({
+  merge: Partial<ArgSpec>
+): ArgSpec => ({
   ...dsclArgs[name],
   ...merge,
 });
 
-const dsclSubcommands: Fig.Subcommand = {
+const dsclSubcommands: SubcommandSpec = {
   name: "dscl",
   subcommands: [
     {
@@ -302,7 +302,7 @@ const dsclSubcommands: Fig.Subcommand = {
   ],
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dscl",
   description: "Directory Service command line utility",
   subcommands: dsclSubcommands.subcommands,

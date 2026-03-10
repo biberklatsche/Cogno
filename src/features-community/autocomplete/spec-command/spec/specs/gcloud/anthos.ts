@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "anthos",
   description: "Anthos command Group",
   subcommands: [

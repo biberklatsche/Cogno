@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fzf",
   description: "A general-purpose command-line fuzzy finder",
   options: [

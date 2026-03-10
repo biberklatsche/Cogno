@@ -1,4 +1,4 @@
-const settings: Fig.Suggestion[] = [
+const settings: Suggestion[] = [
   {
     name: ["displaysleep", "dim"],
     description: "Display sleep timer (value in minutes, or 0 to disable)",
@@ -95,7 +95,7 @@ const events: string[] = [
   "wakeorpoweron",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "pmset",
   description: "Power management settings",
   subcommands: [

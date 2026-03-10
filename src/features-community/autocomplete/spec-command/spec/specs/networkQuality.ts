@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "networkQuality",
   description: "Measure the different aspects of network quality",
   options: [
@@ -33,7 +33,7 @@ const completionSpec: Fig.Spec = {
         generators: {
           script: ["networksetup", "-listallhardwareports"],
           postProcess: (out) => {
-            const suggestions: Fig.Suggestion[] = [];
+            const suggestions: Suggestion[] = [];
             const re = /^Hardware Port: (.*?)\n.*?Device: (.*?)$/gms;
             for (const match of out.matchAll(re)) {
               suggestions.push({ name: match[2], description: match[1] });

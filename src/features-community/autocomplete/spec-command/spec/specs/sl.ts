@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sl",
   description:
     "A highly advanced animation program for curing your bad habit of mistyping",

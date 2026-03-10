@@ -1,7 +1,7 @@
 // Deta Space CLI Spec https://github.com/deta/space-cli
 // at latest commit: https://github.com/deta/space-cli/commit/aa93f1476e56268fab0c4444db1e6326feb8f59f
 // using https://github.com/withfig/autocomplete-tools/tree/main/integrations/cobra
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "space",
   description: "Deta Space CLI for mananging Deta Space projects",
   subcommands: [

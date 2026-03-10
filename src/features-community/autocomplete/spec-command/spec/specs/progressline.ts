@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "progressline",
   description: "⏳Track commands progress in a compact one-line format",
 

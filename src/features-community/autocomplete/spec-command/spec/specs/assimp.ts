@@ -1,11 +1,11 @@
-const helpOptions: Fig.Option[] = [
+const helpOptions: OptionSpec[] = [
   {
     name: ["-h", "--help"],
     description: "Detailed help on a command",
   },
 ];
 
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: "-cfast",
     description: "Fast post processing preset, runs just a few important steps",
@@ -20,7 +20,7 @@ const commonOptions: Fig.Option[] = [
   },
 ];
 
-const importExtGenerator: Fig.Generator = {
+const importExtGenerator: Generator = {
   script: ["assimp", "listext"],
   postProcess: function (out) {
     return out.split(";").map((ext) => {
@@ -32,7 +32,7 @@ const importExtGenerator: Fig.Generator = {
   },
 };
 
-const exportExtGenerator: Fig.Generator = {
+const exportExtGenerator: Generator = {
   script: ["assimp", "listexport"],
   postProcess: function (out) {
     return out.split("\n").map((ext) => {
@@ -44,7 +44,7 @@ const exportExtGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "assimp",
   description: "Open Asset Import Library",
   subcommands: [

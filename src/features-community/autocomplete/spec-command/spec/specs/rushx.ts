@@ -1,7 +1,7 @@
 import { npmScriptsGenerator } from "./npm";
 import { yarnScriptParserDirectives } from "./yarn";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rushx",
   description:
     "Run arbitrary package scripts for rush project. analogous to npm run",

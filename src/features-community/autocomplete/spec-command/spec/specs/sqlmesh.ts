@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sqlmesh",
   description: "SQLMesh command line tool",
   options: [

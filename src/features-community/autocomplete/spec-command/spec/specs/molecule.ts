@@ -1,4 +1,4 @@
-const driverNameOption: Fig.Option = {
+const driverNameOption: OptionSpec = {
   name: ["--driver-name", "-d"],
   description: "Name of driver to use. (delegated)",
   args: {
@@ -14,25 +14,25 @@ const driverNameOption: Fig.Option = {
   },
 };
 
-const scenarioNameOption: Fig.Option = {
+const scenarioNameOption: OptionSpec = {
   name: ["--scenario-name", "-s"],
   description: "Name of the scenario to target. (default)",
   args: { name: "TEXT" },
 };
 
-const parallelOption: Fig.Option = {
+const parallelOption: OptionSpec = {
   name: "--parallel",
   description: "Enable parallel mode",
   exclusiveOn: ["--no-parallel"],
 };
 
-const noParallelOption: Fig.Option = {
+const noParallelOption: OptionSpec = {
   name: "--no-parallel",
   description: "Disable parallel mode",
   exclusiveOn: ["--parallel"],
 };
 
-const dependencyNameOption: Fig.Option = {
+const dependencyNameOption: OptionSpec = {
   name: "--dependency-name",
   description: "Name of dependency to initialize. (galaxy)",
   args: {
@@ -41,7 +41,7 @@ const dependencyNameOption: Fig.Option = {
   },
 };
 
-const lintNameOption: Fig.Option = {
+const lintNameOption: OptionSpec = {
   name: "--lint-name",
   description: "Name of lint to initialize. (yamllint)",
   args: {
@@ -50,7 +50,7 @@ const lintNameOption: Fig.Option = {
   },
 };
 
-const provisionerNameOption: Fig.Option = {
+const provisionerNameOption: OptionSpec = {
   name: "--provisioner-name",
   description: "Name of provisioner to initialize. (ansible)",
   args: {
@@ -59,7 +59,7 @@ const provisionerNameOption: Fig.Option = {
   },
 };
 
-const verifierNameOption: Fig.Option = {
+const verifierNameOption: OptionSpec = {
   name: "--verifier-name",
   description: "Name of verifier to initialize. (ansible)",
   args: {
@@ -68,7 +68,7 @@ const verifierNameOption: Fig.Option = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "molecule",
   description: "Molecule aids in the development and testing of Ansible roles",
   subcommands: [

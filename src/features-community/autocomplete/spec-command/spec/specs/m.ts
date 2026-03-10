@@ -1,4 +1,4 @@
-const generateDisks: Fig.Generator = {
+const generateDisks: Generator = {
   script: ["ls", "/dev"],
   postProcess: (out) =>
     out
@@ -12,7 +12,7 @@ const generateDisks: Fig.Generator = {
       })),
 };
 
-const generateVolumes: Fig.Generator = {
+const generateVolumes: Generator = {
   script: ["ls", "/Volumes"],
   postProcess: (out) =>
     out
@@ -26,7 +26,7 @@ const generateVolumes: Fig.Generator = {
       })),
 };
 
-const generateUsers: Fig.Generator = {
+const generateUsers: Generator = {
   script: ["bash", "-c", "m user list | awk '{ print $1 }'"],
   postProcess: (out) =>
     out
@@ -39,7 +39,7 @@ const generateUsers: Fig.Generator = {
       })),
 };
 
-const generateGroups: Fig.Generator = {
+const generateGroups: Generator = {
   script: ["bash", "-c", "m group list | awk '{ print $1 }'"],
   postProcess: (out) =>
     out
@@ -52,12 +52,12 @@ const generateGroups: Fig.Generator = {
       })),
 };
 
-const generateNetworkLocations: Fig.Generator = {
+const generateNetworkLocations: Generator = {
   script: ["bash", "-c", "m network location list | tail -n +2"],
   splitOn: "\n",
 };
 
-const generateServices: Fig.Generator = {
+const generateServices: Generator = {
   script: ["bash", "-c", "launchctl list | awk '{ print $3 }'"],
   splitOn: "\n",
 };
@@ -69,7 +69,7 @@ function getPidIcon(path: string): string {
   }
   return "fig://" + path.slice(0, idx + 4);
 }
-const generatePids: Fig.Generator = {
+const generatePids: Generator = {
   script: ["bash", "-c", "ps axo pid,comm | sed 1d"],
   postProcess: (result) => {
     return result.split("\n").map((line) => {
@@ -85,7 +85,7 @@ const generatePids: Fig.Generator = {
   },
 };
 
-const generateWifiNetworks: Fig.Generator = {
+const generateWifiNetworks: Generator = {
   script: [
     "bash",
     "-c",
@@ -545,7 +545,7 @@ const timezones: string[] = [
   "Pacific/Wallis",
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "m",
   description: "Swiss Army Knife for macOS",
   subcommands: [

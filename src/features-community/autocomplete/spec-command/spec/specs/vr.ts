@@ -1,6 +1,6 @@
 const SCRIPT_KEYWORD = "    • ";
 
-const scriptGenerator: Fig.Generator = {
+const scriptGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",
   },
@@ -13,7 +13,7 @@ const scriptGenerator: Fig.Generator = {
     },
   },
   postProcess: (out) => {
-    const suggestions: Fig.Suggestion[] = [];
+    const suggestions: Suggestion[] = [];
 
     try {
       const lines = out.split("\n").filter(Boolean);
@@ -35,7 +35,7 @@ const scriptGenerator: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vr",
   description: "The npm-style script runner for Deno",
   subcommands: [

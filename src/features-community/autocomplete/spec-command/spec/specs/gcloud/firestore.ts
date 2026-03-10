@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "firestore",
   description: "Manage your Cloud Firestore resources",
   subcommands: [

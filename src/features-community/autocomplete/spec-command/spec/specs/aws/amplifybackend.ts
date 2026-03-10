@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "amplifybackend",
   description: "AWS Amplify Admin API",
   subcommands: [

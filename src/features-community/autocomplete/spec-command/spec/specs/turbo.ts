@@ -16,7 +16,7 @@ interface TurboJSON {
   };
 }
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "turbo",
   description:
     "Turborepo is a high-performance build system for JavaScript and TypeScript codebases",

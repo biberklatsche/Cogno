@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "vimr",
   description: "VimR — Neovim GUI for macOS in Swift",
   args: {

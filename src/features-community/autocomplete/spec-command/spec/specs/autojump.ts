@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "autojump",
   description: "A faster way to navigate your filesystem",
   options: [

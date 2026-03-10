@@ -1,4 +1,4 @@
-const commonOptions: Fig.Option[] = [
+const commonOptions: OptionSpec[] = [
   {
     name: "--debug",
     description: "Set log level to logging.DEBUG (maximize logging output)",
@@ -6,7 +6,7 @@ const commonOptions: Fig.Option[] = [
   { name: ["-h", "--help"], description: "Show this message" },
 ];
 
-const logConfigOptions: Fig.Option[] = [
+const logConfigOptions: OptionSpec[] = [
   {
     name: "--log-level",
     description: "Set the log level by value or name",
@@ -24,7 +24,7 @@ const logConfigOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "jupyter",
   description: "An interactive computing environment for notebook programming",
   subcommands: [

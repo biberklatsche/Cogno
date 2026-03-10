@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "license-manager-linux-subscriptions",
   description:
     "With License Manager, you can discover and track your commercial Linux subscriptions on running Amazon EC2 instances",

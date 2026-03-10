@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "data-catalog",
   description: "Manage Cloud Data Catalog resources",
   subcommands: [

@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "disk-encryption-set",
   description: "Disk Encryption Set resource",
   subcommands: [

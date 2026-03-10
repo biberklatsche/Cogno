@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "leaf",
   description: "Create and interact with your leaf projects",
   options: [

@@ -1,6 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
-const serverList: Fig.Generator = {
+const serverList: Generator = {
   script: ["rancher", "server", "ls"],
   postProcess: function (out) {
     const lines = out.split("\n");
@@ -29,7 +29,7 @@ const serverList: Fig.Generator = {
   },
 };
 
-const generalOptions: Fig.Option[] = [
+const generalOptions: OptionSpec[] = [
   {
     name: ["--format", "-o"],
     description: "Output format: 'json', 'yaml' or custom format",
@@ -48,7 +48,7 @@ const generalOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "rancher",
   description:
     "The Rancher CLI (Command Line Interface) is a unified tool that you can use to interact with Rancher",

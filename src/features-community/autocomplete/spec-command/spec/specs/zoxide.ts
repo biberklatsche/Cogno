@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "zoxide",
   description: "A smarter cd command for your terminal",
   subcommands: [

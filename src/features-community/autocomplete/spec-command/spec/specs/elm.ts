@@ -1,4 +1,4 @@
-const packageList: Fig.Generator = {
+const packageList: Generator = {
   script: [
     "curl",
     "-sH",
@@ -17,7 +17,7 @@ const packageList: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "elm",
   description: "Fig spec for the Elm language cli",
   subcommands: [

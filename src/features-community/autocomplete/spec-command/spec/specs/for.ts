@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "for",
   description: "Perform a set of commands multiple times",
   args: [

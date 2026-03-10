@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "spatial-anchors-account",
   description: "Manage spatial anchor account with mixed reality",
   subcommands: [

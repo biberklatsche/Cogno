@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "cdk8s",
   description: "CDK for K8s",
   subcommands: [

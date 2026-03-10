@@ -1,4 +1,4 @@
-const submitOptions: Fig.Option[] = [
+const submitOptions: OptionSpec[] = [
   {
     name: "--always",
     description:
@@ -82,7 +82,7 @@ const submitOptions: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "gt",
   description: "Graphite.dev CLI",
   subcommands: [

@@ -1,13 +1,13 @@
 const icon = "https://remix.run/favicon-dark.1.png";
 
-const dirArgument: Fig.Arg = {
+const dirArgument: ArgSpec = {
   name: "dir",
   description: "Represent the directory of the Remix application",
   template: "folders",
   isOptional: true,
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "remix",
   description: "Remix CLI to start, build and export your application",
   options: [

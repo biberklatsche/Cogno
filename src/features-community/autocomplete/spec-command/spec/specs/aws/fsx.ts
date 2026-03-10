@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "fsx",
   description:
     "Amazon FSx is a fully managed service that makes it easy for storage and application administrators to launch and use shared file storage",

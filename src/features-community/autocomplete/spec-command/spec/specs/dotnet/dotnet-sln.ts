@@ -2,7 +2,7 @@ import { filepaths } from "@fig/autocomplete-generators";
 
 const slnGenerator = filepaths({ extensions: ["sln"] });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sln",
   args: {
     name: "solution",

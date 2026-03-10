@@ -2,7 +2,7 @@ import { filepaths } from "@fig/autocomplete-generators";
 
 const PRIORITY_TOP_THRESHOLD = 76;
 
-const generateGlobalFlags = (subcommandName: string): Fig.Option[] => [
+const generateGlobalFlags = (subcommandName: string): OptionSpec[] => [
   {
     name: ["-h", "--help"],
     description: `Help for ${subcommandName}`,
@@ -14,8 +14,8 @@ const generateGlobalFlags = (subcommandName: string): Fig.Option[] => [
 ];
 
 const instanceNameGenerator = (
-  suggestOptions?: Partial<Fig.Suggestion>
-): Fig.Generator => ({
+  suggestOptions?: Partial<Suggestion>
+): Generator => ({
   script: ["limactl", "list", "--quiet"],
   postProcess: (output) =>
     output.split("\n").map((instanceName) => ({
@@ -31,7 +31,7 @@ const yamlFilepathsGenerator = filepaths({
   editFileSuggestions: { priority: PRIORITY_TOP_THRESHOLD },
 });
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "limactl",
   description: "Control the Lima(Linux virtual machines)",
   subcommands: [
@@ -262,7 +262,7 @@ completionSpec.subcommands.push({
     isOptional: true,
     suggestions: [
       ...completionSpec.subcommands.map(
-        (subcommand): Fig.Suggestion => ({
+        (subcommand): Suggestion => ({
           name: subcommand.name,
           description: subcommand.description,
           type: "subcommand",

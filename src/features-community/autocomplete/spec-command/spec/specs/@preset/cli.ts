@@ -1,4 +1,4 @@
-const applyOptions: Fig.Option[] = [
+const applyOptions: OptionSpec[] = [
   {
     name: ["--path", "-p"],
     description: "Path to a sub-directory in which to look for a preset",
@@ -23,7 +23,7 @@ const applyOptions: Fig.Option[] = [
   },
 ];
 
-const applyArguments: Fig.Arg[] = [
+const applyArguments: ArgSpec[] = [
   {
     name: "resolvable",
     description: "Repository identifier or path to the preset",
@@ -37,7 +37,7 @@ const applyArguments: Fig.Arg[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "preset",
   description: "Elegant, ecosystem-agnostic scaffolding tool",
   subcommands: [

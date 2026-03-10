@@ -1,7 +1,7 @@
 // page https://hasseg.org/trash/
 // made by yavko®
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "trash",
   description: "Trash, move files/folders to the trash",
   args: {

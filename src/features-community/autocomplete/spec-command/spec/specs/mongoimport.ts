@@ -2,7 +2,7 @@
 
 import { filepaths } from "@fig/autocomplete-generators";
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "mongoimport",
   description:
     "Import data from a JSON, CSV, or TSV file into a MongoDB instance",

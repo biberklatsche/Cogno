@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "projects",
   description: "Create and manage project access policies",
   subcommands: [

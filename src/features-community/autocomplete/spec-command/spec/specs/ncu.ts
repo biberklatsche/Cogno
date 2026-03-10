@@ -1,56 +1,56 @@
 interface NcuOptions {
-  cache: Fig.Option;
-  cacheClear: Fig.Option;
-  cacheExpiration: Fig.Option;
-  cacheFile: Fig.Option;
-  color: Fig.Option;
-  concurrency: Fig.Option;
-  configFileName: Fig.Option;
-  configFilePath: Fig.Option;
-  cwd: Fig.Option;
-  deep: Fig.Option;
-  dep: Fig.Option;
-  deprecated: Fig.Option;
-  doctor: Fig.Option;
-  doctorInstall: Fig.Option;
-  doctorTest: Fig.Option;
-  enginesNode: Fig.Option;
-  errorLevel: Fig.Option;
-  filter: Fig.Option;
-  filterResults: Fig.Option;
-  filterVersion: Fig.Option;
-  format: Fig.Option;
-  global: Fig.Option;
-  groupFunction: Fig.Option;
-  help: Fig.Option;
-  interactive: Fig.Option;
-  jsonAll: Fig.Option;
-  jsonDeps: Fig.Option;
-  jsonUpgraded: Fig.Option;
-  loglevel: Fig.Option;
-  mergeConfig: Fig.Option;
-  minimal: Fig.Option;
-  packageData: Fig.Option;
-  packageFile: Fig.Option;
-  packageManager: Fig.Option;
-  peer: Fig.Option;
-  pre: Fig.Option;
-  prefix: Fig.Option;
-  registry: Fig.Option;
-  reject: Fig.Option;
-  rejectVersion: Fig.Option;
-  removeRange: Fig.Option;
-  retry: Fig.Option;
-  root: Fig.Option;
-  silent: Fig.Option;
-  stdin: Fig.Option;
-  target: Fig.Option;
-  timeout: Fig.Option;
-  upgrade: Fig.Option;
-  verbose: Fig.Option;
-  version: Fig.Option;
-  workspace: Fig.Option;
-  workspaces: Fig.Option;
+  cache: OptionSpec;
+  cacheClear: OptionSpec;
+  cacheExpiration: OptionSpec;
+  cacheFile: OptionSpec;
+  color: OptionSpec;
+  concurrency: OptionSpec;
+  configFileName: OptionSpec;
+  configFilePath: OptionSpec;
+  cwd: OptionSpec;
+  deep: OptionSpec;
+  dep: OptionSpec;
+  deprecated: OptionSpec;
+  doctor: OptionSpec;
+  doctorInstall: OptionSpec;
+  doctorTest: OptionSpec;
+  enginesNode: OptionSpec;
+  errorLevel: OptionSpec;
+  filter: OptionSpec;
+  filterResults: OptionSpec;
+  filterVersion: OptionSpec;
+  format: OptionSpec;
+  global: OptionSpec;
+  groupFunction: OptionSpec;
+  help: OptionSpec;
+  interactive: OptionSpec;
+  jsonAll: OptionSpec;
+  jsonDeps: OptionSpec;
+  jsonUpgraded: OptionSpec;
+  loglevel: OptionSpec;
+  mergeConfig: OptionSpec;
+  minimal: OptionSpec;
+  packageData: OptionSpec;
+  packageFile: OptionSpec;
+  packageManager: OptionSpec;
+  peer: OptionSpec;
+  pre: OptionSpec;
+  prefix: OptionSpec;
+  registry: OptionSpec;
+  reject: OptionSpec;
+  rejectVersion: OptionSpec;
+  removeRange: OptionSpec;
+  retry: OptionSpec;
+  root: OptionSpec;
+  silent: OptionSpec;
+  stdin: OptionSpec;
+  target: OptionSpec;
+  timeout: OptionSpec;
+  upgrade: OptionSpec;
+  verbose: OptionSpec;
+  version: OptionSpec;
+  workspace: OptionSpec;
+  workspaces: OptionSpec;
 }
 
 const optionsDict: NcuOptions = {
@@ -415,7 +415,7 @@ const optionsDict: NcuOptions = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "ncu",
   description:
     "Upgrade your npm package.json dependencies to the latest versions, ignoring specified versions",

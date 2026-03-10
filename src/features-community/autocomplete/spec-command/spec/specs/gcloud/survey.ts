@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "survey",
   description: "Invoke a customer satisfaction survey for Cloud SDK",
   options: [

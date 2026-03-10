@@ -1,4 +1,4 @@
-const WebpackConfigFileArgument: Fig.SingleOrArray<Fig.Arg> = [
+const WebpackConfigFileArgument: SingleOrArray<ArgSpec> = [
   {
     name: "config",
     suggestions: [
@@ -15,7 +15,7 @@ const WebpackConfigFileArgument: Fig.SingleOrArray<Fig.Arg> = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "webpack",
   description: "",
   subcommands: [

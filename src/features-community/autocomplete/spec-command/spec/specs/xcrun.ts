@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "xcrun",
   description:
     "Find and execute the named command line tool from the active xCode developer directory",

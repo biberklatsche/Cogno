@@ -1,4 +1,4 @@
-const completion: Fig.Spec = {
+const completion: CommandSpec = {
   name: "cmake",
   description:
     "Command-line interface of the cross-platform buildsystem generator CMake",

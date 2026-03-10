@@ -1,4 +1,4 @@
-const options: Fig.Option[] = [
+const options: OptionSpec[] = [
   {
     name: "--file",
     description: "The premake5.lua file",
@@ -95,7 +95,7 @@ const options: Fig.Option[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "premake",
   description: "Premake CLI",
   subcommands: [

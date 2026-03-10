@@ -1,55 +1,55 @@
-const dartEntryPoint: Fig.Arg = {
+const dartEntryPoint: ArgSpec = {
   name: "dart-entry-point",
   description: "The Dart file containing the main function",
 };
 
-const portOrBindAddress: Fig.Arg = {
+const portOrBindAddress: ArgSpec = {
   name: "port-or-address",
   description: "Port to observe",
 };
 
-const offline: Fig.Option = {
+const offline: OptionSpec = {
   name: "--offline",
   description: "Use cached packages instead of accessing the network",
   exclusiveOn: ["--no-offline"],
 };
 
-const noOffline: Fig.Option = {
+const noOffline: OptionSpec = {
   name: "--no-offline",
   description: "Do not use cached packages instead of accessing the network",
   exclusiveOn: ["--offline"],
 };
 
-const dryRun: Fig.Option = {
+const dryRun: OptionSpec = {
   name: ["-n", "--dry-run"],
   description: "Report what dependencies would change but don't change any",
 };
 
-const precompile: Fig.Option = {
+const precompile: OptionSpec = {
   name: "--precompile",
   description: "Precompile executables in immediate dependencies",
   exclusiveOn: ["--no-precompile"],
 };
 
-const noPrecompile: Fig.Option = {
+const noPrecompile: OptionSpec = {
   name: "--no-precompile",
   description: "Do not precompile executables in immediate dependencies",
   exclusiveOn: ["--precompile"],
 };
 
-const enableAsserts: Fig.Option = {
+const enableAsserts: OptionSpec = {
   name: "--enable-asserts",
   description: "Enable assert statements",
   exclusiveOn: ["--no-enable-asserts"],
 };
 
-const noEnableAsserts: Fig.Option = {
+const noEnableAsserts: OptionSpec = {
   name: "--no-enable-asserts",
   description: "Do not enable assert statements",
   exclusiveOn: ["--enable-asserts"],
 };
 
-const define: Fig.Subcommand = {
+const define: SubcommandSpec = {
   name: ["-D", "--define"],
   description:
     "Define an environment declaration. To specify multiple declarations, use multiple options or use commas to separate key-value pairs. For example: dart compile aot-snapshot -D a=1,b=2 main.dart",
@@ -60,7 +60,7 @@ const define: Fig.Subcommand = {
   },
 };
 
-const verbosity: Fig.Option = {
+const verbosity: OptionSpec = {
   name: "--verbosity",
   description: "Sets the verbosity level of the compilation",
   args: {
@@ -80,14 +80,14 @@ const verbosity: Fig.Option = {
   },
 };
 
-const globalOptions: Fig.Option[] = [
+const globalOptions: OptionSpec[] = [
   {
     name: ["-h", "--help"],
     description: "Print this usage information",
   },
 ];
 
-const compileOptions: Fig.Subcommand[] = [
+const compileOptions: SubcommandSpec[] = [
   {
     name: ["-o", "--output"],
     description: "Write the output to <file-name>",
@@ -96,7 +96,7 @@ const compileOptions: Fig.Subcommand[] = [
   verbosity,
 ];
 
-const aotOptions: Fig.Subcommand[] = [
+const aotOptions: SubcommandSpec[] = [
   define,
   {
     name: "--enable-asserts",
@@ -128,7 +128,7 @@ const aotOptions: Fig.Subcommand[] = [
   },
 ];
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "dart",
   description: "A command-line utility for Dart development",
   options: [

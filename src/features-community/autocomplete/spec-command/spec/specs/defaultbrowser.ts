@@ -1,4 +1,4 @@
-const getInstalledBrowsers: Fig.Generator = {
+const getInstalledBrowsers: Generator = {
   script: ["defaultbrowser"],
   postProcess: function (out) {
     return out.split("\n").map((line) => {
@@ -14,7 +14,7 @@ const getInstalledBrowsers: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "defaultbrowser",
   description: "Change your default browser from the CLI",
   args: { isOptional: true, generators: getInstalledBrowsers },

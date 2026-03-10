@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "whois",
   description: "Query a database for information about a domain registrant",
   args: {

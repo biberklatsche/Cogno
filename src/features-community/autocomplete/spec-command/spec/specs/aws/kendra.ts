@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "kendra",
   description: "Amazon Kendra is a service for indexing large document sets",
   subcommands: [

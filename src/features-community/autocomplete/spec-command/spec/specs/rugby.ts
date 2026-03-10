@@ -1,5 +1,5 @@
 // Print plans list if there is .rugby/plans.yml file
-const planList: Fig.Generator = {
+const planList: Generator = {
   script: ["rugby", "plan", "list"],
   postProcess: (output) => {
     if (output === "") {
@@ -16,7 +16,7 @@ const planList: Fig.Generator = {
   },
 };
 
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   description:
     "Cache Cocoa 🌱 pods for faster rebuild and indexing Xcode project. https://github.com/swiftyfinch/Rugby",
   name: "rugby",

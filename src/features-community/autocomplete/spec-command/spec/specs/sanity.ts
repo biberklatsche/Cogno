@@ -1,4 +1,4 @@
-const completionSpec: Fig.Spec = {
+const completionSpec: CommandSpec = {
   name: "sanity",
   description:
     "Sanity CLI tool for managing Sanity installations, managing plugins, schemas and datasets",
