@@ -1,3 +1,4 @@
+import type { CommandSpec, Suggestion } from "../spec.types";
 const settings: Suggestion[] = [
   {
     name: ["displaysleep", "dim"],

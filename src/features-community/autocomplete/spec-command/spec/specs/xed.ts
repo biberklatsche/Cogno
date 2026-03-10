@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "xed",
   description: "Xcode text editor invocation tool",

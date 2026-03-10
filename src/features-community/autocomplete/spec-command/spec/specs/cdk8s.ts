@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "cdk8s",
   description: "CDK for K8s",

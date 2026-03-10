@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const ttl = 30000;
 const awsPrincipals = [
   "a4b.amazonaws.com",

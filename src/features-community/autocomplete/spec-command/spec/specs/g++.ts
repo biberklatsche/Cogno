@@ -1,6 +1,7 @@
 import { gccBase } from "./gcc";
 import { stdCPPSuggestions } from "./clang";
 
+import type { CommandSpec, SubcommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   ...gccBase,
   name: "g++",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "dbt",
   description: "CLI for dbt - Data Build Tool",

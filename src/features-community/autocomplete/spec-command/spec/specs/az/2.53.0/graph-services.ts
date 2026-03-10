@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "graph-services",
   description: "Make operations on Microsoft.GraphServices resource types",

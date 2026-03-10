@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "config",
   description: "View and edit Cloud SDK properties",

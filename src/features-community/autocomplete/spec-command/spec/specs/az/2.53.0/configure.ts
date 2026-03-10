@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "configure",
   description: "Manage Azure CLI configuration. This command is interactive",

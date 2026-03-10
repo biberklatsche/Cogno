@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const statistics = ["SampleCount", "Average", "Sum", "Minimum", "Maximum"];
 const alarmStates = ["OK", "ALARM", "INSUFFICIENT_DATA"];
 const metricTypes = ["CompositeAlarm", "MetricAlarm"];

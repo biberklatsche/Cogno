@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "dns-resolver",
   description: "Manage Dns Resolver",

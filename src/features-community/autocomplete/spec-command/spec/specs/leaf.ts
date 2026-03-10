@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "leaf",
   description: "Create and interact with your leaf projects",

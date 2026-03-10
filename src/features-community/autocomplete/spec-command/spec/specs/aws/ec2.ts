@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../../spec.types";
 const postProcessAWS: Generator["postProcess"] = (out) => {
   if (out.startsWith("fatal:")) {
     return [];

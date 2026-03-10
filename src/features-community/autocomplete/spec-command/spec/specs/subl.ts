@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator } from "../spec.types";
 const generateProjects: Generator = filepaths({
   equals: [".sublime-project", ".sublime-workspace"],
 

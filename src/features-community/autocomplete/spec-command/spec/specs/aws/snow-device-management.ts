@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "snow-device-management",
   description: "Amazon Web Services Snow Device Management documentation",

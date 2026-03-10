@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "marketplacecommerceanalytics",
   description: "Provides AWS Marketplace business intelligence data on-demand",

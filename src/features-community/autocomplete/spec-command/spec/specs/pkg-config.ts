@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "pkg-config",
   description: "Return metainformation about installed libraries",

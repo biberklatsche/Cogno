@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const databases: Generator = {
   script: ["fin", "db", "list"],
   postProcess: (output) => {

@@ -1,5 +1,6 @@
 // Compatibility: macOS
 
+import type { CommandSpec } from "../spec.types";
 function processIcon(path: string): string {
   const idx = path.indexOf(".app/");
   if (idx === -1) {

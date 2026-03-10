@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "acr",
   description: "Manage private registries with Azure Container Registries",

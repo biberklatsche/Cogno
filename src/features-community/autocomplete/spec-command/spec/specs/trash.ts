@@ -1,6 +1,7 @@
 // page https://hasseg.org/trash/
 // made by yavko®
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "trash",
   description: "Trash, move files/folders to the trash",

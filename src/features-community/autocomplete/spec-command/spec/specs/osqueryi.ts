@@ -1,5 +1,6 @@
 import { valueList } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../spec.types";
 const tables = [
   "account_policy_data",
   "acpi_tables",

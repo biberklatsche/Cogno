@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "finspace-data",
   description: "The FinSpace APIs let you take actions inside the FinSpace",

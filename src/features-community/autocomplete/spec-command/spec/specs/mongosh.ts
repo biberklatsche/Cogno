@@ -2,6 +2,7 @@
 
 import { decodedTextSpanIntersectsWith } from "typescript";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mongosh",
   description:

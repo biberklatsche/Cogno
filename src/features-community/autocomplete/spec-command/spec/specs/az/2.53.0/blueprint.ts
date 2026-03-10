@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "blueprint",
   description: "Commands to manage blueprint",

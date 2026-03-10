@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "csvmware",
   description: "Manage Azure VMware Solution by CloudSimple",

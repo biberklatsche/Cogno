@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "upgrade",
   description: "Upgrade Azure CLI and extensions",

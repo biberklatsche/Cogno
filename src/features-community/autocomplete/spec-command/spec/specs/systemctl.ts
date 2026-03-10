@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator } from "../spec.types";
 type Unit = {
   unit: string;
   load: "loaded" | "not-found" | "bad-setting" | "error" | "masked";

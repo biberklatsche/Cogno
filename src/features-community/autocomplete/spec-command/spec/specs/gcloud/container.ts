@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "container",
   description: "Deploy and manage clusters of machines for running containers",

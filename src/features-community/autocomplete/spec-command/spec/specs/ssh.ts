@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const knownHostRegex = /(?:[a-zA-Z0-9-]+\.)+[a-zA-Z0-9]+/; // will match numerical IPs as well as domains/subdomains
 
 const resolveAbsolutePath = (

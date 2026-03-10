@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec } from "../spec.types";
 const generateSessions: Generator = {
   script: {
     command: "zellij",

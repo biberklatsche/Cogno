@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../../spec.types";
 type SearchResultData = {
   id: string;
   title: string;

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "sql",
   description: "Manage Azure SQL Databases and Data Warehouses",

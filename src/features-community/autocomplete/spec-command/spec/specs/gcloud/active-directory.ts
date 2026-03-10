@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "active-directory",
   description: "Manage Managed Microsoft AD resources",

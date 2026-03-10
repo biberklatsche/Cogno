@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "arcdata",
   description: "Commands for using Azure Arc-enabled data services",

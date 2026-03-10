@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "vim",
   description: "Vi IMproved, a programmer's text editor",

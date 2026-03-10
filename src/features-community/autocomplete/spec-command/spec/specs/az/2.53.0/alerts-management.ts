@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "alerts-management",
   description: "Manage Azure Alerts Management Service Resource",

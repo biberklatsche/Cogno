@@ -1,5 +1,6 @@
 import fig from "./fig";
 
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const sharedArgs = {
   UID: {
     name: "UID",

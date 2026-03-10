@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "bit",
   description: "Bit documentation: https://bit.dev/docs",

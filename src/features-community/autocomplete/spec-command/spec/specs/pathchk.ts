@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "pathchk",
   description: "Check pathnames for POSIX portability",

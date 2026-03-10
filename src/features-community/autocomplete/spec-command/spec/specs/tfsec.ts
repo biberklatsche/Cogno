@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const workspaceGenerator: Generator = {
   script: ["terraform", "workspace", "list"],
   postProcess: function (out) {

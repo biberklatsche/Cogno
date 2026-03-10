@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generateDisks: Generator = {
   script: ["ls", "/dev"],
   postProcess: (out) =>

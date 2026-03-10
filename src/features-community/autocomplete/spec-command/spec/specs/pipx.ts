@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const packagesGenerator: Generator = {
   script: ["pipx", "list", "--short"],
   postProcess: (out) => {

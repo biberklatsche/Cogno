@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const contexts: Generator = {
   script: ["okteto", "context", "list"],
   cache: {

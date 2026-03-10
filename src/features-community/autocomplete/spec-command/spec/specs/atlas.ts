@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "atlas",
   description: "CLI tool to manage MongoDB Atlas",

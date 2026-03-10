@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const tldrRc = `~/.tldrc/tldr`;
 const android = `${tldrRc}/pages/android/`;
 const common = `${tldrRc}/pages/common/`;

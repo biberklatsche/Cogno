@@ -1,5 +1,6 @@
 import { isVariableDeclaration } from "typescript";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "nc",
   description: "Arbitrary TCP and UDP connections and listens",

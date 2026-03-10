@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../spec.types";
 type VersionsJSON = {
   latest: string;
   versions: string[];

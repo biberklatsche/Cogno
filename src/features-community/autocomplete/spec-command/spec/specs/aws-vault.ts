@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, SubcommandSpec } from "../spec.types";
 const profilesGenerator: Generator = {
   script: ["aws-vault", "list", "--profiles"],
   postProcess(out) {

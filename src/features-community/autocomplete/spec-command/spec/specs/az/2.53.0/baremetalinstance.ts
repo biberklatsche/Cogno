@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "baremetalinstance",
   description: "(PREVIEW) Manage BareMetal Instances",

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const enviromentVariables: Generator = {
   custom: async (_tokens, _executeCommand, generatorContext) => {
     return Object.values(generatorContext.environmentVariables).map(

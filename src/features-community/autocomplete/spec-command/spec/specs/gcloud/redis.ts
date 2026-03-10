@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "redis",
   description: "Manage Cloud Memorystore Redis resources",

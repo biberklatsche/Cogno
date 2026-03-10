@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "alexaforbusiness",
   description: "Alexa for Business has been retired and is no longer supported",

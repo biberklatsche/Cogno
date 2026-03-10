@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const compileFiles = filepaths({
   extensions: ["c", "cc", "cpp", "m", "mm", "M", "f", "f90", "f95"],
 });

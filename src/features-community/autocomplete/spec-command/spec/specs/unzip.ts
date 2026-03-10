@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "unzip",
   description: "Extract compressed files in a ZIP archive",

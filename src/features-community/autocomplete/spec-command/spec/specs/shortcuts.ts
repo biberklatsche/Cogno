@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { ArgSpec, CommandSpec, SubcommandSpec } from "../spec.types";
 const shortcut: ArgSpec = {
   generators: {
     script: ["shortcuts", "list"],

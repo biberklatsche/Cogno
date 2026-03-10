@@ -4,6 +4,7 @@
 // Specs generated using autocomplete-tools/packages/cobra v1.1.3
 // https://github.com/BogDAAAMN/flyctl/commit/c0f338a6f3c59acc8286a8c82836fc2e73124b6f
 
+import type { CommandSpec, Generator } from "../spec.types";
 type FlyApp = {
   ID: string;
   Status: string;

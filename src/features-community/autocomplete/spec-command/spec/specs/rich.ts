@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const colorNames = new Set<string>();
 type Suggestion1 = Modify<Suggestion, { name: string }>;
 let foregroundSuggestions: Suggestion1[];

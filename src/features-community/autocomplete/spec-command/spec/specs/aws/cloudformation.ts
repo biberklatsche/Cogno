@@ -1,4 +1,5 @@
 import awsRegions from "./regions";
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const callAs = ["SELF", "DELEGATED_ADMIN"];
 const typeSuggestion = ["RESOURCE", "MODULE"];
 const permissionModel = ["SERVICE_MANAGED", "SELF_MANAGED"];

@@ -1,5 +1,6 @@
 import { npmScriptsGenerator } from "./npm";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "nr",
   description: "Use the right package manager - run",

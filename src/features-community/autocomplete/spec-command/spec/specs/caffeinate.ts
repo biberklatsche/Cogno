@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "caffeinate",
   description: "Prevent the system from sleeping on behalf of a utility",

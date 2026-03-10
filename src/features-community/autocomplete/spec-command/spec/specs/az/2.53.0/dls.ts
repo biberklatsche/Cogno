@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "dls",
   description: "Manage Data Lake Store accounts and filesystems",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "sf",
   description: "Manage and administer Azure Service Fabric clusters",

@@ -1,5 +1,6 @@
 // Fig autocomplete spec for the CircleCI CLI.
 // The full spec can be found at https://circleci-public.github.io/circleci-cli/index.html
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "circleci",
   description: "CircleCI CLI",

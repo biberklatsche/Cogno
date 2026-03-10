@@ -1,4 +1,5 @@
 import awsRegions from "./regions";
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const ttl = 30000;
 const appendFolderPath = (tokens: string[], prefix: string): string[] => {
   const baseLsCommand = ["ls", "-1ApL"];

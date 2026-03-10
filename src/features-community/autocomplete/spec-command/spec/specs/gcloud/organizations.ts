@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "organizations",
   description: "Create and manage Google Cloud Platform Organizations",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "scheduler",
   description: "Manage Cloud Scheduler jobs and schedules",

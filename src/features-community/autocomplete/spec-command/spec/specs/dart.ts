@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const dartEntryPoint: ArgSpec = {
   name: "dart-entry-point",
   description: "The Dart file containing the main function",

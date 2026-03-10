@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "od",
   description: "Octal, decimal, hex, ASCII dump",

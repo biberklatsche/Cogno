@@ -1,3 +1,4 @@
+import type { Generator } from "../../spec.types";
 export const getAppGenerator: Generator = {
   script: ["heroku", "apps", "--all", "--json"],
   cache: {

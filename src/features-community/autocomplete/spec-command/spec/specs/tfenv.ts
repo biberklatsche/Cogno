@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generators: Record<string, Generator> = {
   installedVersions: {
     script: ["tfenv", "list"],

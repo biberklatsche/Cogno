@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, Suggestion } from "../spec.types";
 const sizeSuffixes: Suggestion[] = [
   { name: "Blocks", insertValue: "{cursor}b" },
   { name: "Bytes", insertValue: "{cursor}c" },

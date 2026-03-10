@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../../spec.types";
 const bucketGenerator: Generator = {
   script: ["aws", "s3api", "list-buckets"],
   postProcess: function (out) {

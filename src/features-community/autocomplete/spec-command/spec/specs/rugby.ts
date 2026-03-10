@@ -1,4 +1,5 @@
 // Print plans list if there is .rugby/plans.yml file
+import type { CommandSpec, Generator } from "../spec.types";
 const planList: Generator = {
   script: ["rugby", "plan", "list"],
   postProcess: (output) => {

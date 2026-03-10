@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const getInstalledBrowsers: Generator = {
   script: ["defaultbrowser"],
   postProcess: function (out) {

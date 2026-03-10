@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const TASKS_PRIORITY = 80;
 const TASKFILE_FLAGS = ["-t", "--taskfile"];
 const DIRECTORY_FLAGS = ["-d", "--dir"];

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const getCipherAlgorithms: Generator = {
   script: ["gpg", "--version"],
   postProcess: (out, context) => {

@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec, SingleOrArray } from "../spec.types";
 const args: SingleOrArray<ArgSpec> = {
   name: "arguments",
   description: "Human-readable host names, nameservers, types, or classes",

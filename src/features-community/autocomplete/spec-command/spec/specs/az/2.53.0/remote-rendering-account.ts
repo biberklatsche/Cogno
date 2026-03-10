@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "remote-rendering-account",
   description: "Manage remote rendering account with mixed reality",

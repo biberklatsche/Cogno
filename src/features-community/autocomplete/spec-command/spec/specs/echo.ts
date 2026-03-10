@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const environmentVariableGenerator: Generator = {
   custom: async (tokens, _, context) => {
     if (tokens.length < 3 || tokens[tokens.length - 1].startsWith("$")) {

@@ -1,5 +1,6 @@
 import prismaSpec from "./prisma";
 
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const prismaCommands = (prismaSpec as SubcommandSpec).subcommands;
 
 const commonOptions: OptionSpec[] = [

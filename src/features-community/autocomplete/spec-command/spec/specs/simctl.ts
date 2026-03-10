@@ -1,5 +1,6 @@
 import { describe } from "node:test";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "simctl",
   description: "",

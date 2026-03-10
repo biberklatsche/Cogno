@@ -1,4 +1,5 @@
 // Template Suggestions
+import type { ArgSpec, CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const TEMPLATES_SUGGESTIONS = [
   "component",
   "composable",

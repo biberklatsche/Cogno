@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "k8sconfiguration",
   description: "Commands to manage Kubernetes configuration",

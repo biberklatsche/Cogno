@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const allOptions = [
   "-A",
   "-a",

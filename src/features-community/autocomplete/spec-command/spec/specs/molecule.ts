@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const driverNameOption: OptionSpec = {
   name: ["--driver-name", "-d"],
   description: "Name of driver to use. (delegated)",

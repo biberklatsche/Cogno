@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const getInstalledPackages: Generator = {
   script: ["conda", "list"],
   postProcess: function (out) {

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const stacksGenerator: Generator = {
   cache: {
     cacheByDirectory: true,

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "whereis",
   description: "Locate the binary, source, and manual page files for a command",

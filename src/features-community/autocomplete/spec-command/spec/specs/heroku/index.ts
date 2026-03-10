@@ -1,5 +1,6 @@
 import { createVersionedSpec } from "@fig/autocomplete-helpers";
 
+import type { GetVersionCommand } from "../../spec.types";
 const versionRegex = /heroku\/([0-9]+\.[0-9]+\.[0.9]+)/;
 const versionFiles = ["8.0.0", "8.6.0"];
 

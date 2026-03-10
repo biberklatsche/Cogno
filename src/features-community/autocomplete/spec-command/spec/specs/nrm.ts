@@ -1,5 +1,6 @@
 import { dependenciesGenerator } from "./npm";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "nrm",
   description: "Use the right package manage - remove",

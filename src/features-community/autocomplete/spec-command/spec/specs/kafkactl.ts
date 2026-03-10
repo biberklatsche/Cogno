@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "kafkactl",
   description: "Command-line interface for Apache Kafka",

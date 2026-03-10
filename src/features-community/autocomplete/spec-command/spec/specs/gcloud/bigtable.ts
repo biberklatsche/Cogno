@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "bigtable",
   description: "Manage your Cloud Bigtable storage",

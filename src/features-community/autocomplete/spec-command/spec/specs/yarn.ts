@@ -1,5 +1,6 @@
 import { npmScriptsGenerator, npmSearchGenerator } from "./npm";
 
+import type { ArgSpec, CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 export const yarnScriptParserDirectives: ArgSpec["parserDirectives"] = {
   alias: async (token, executeShellCommand) => {
     const npmPrefix = await executeShellCommand({

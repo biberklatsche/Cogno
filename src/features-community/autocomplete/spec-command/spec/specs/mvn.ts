@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mvn",
   description: "Maven - a Java based project management and comprehension tool",

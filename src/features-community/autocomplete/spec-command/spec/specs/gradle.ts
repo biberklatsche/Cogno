@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const consoleModeArg: ArgSpec = {
   name: "mode",
   default: "auto",

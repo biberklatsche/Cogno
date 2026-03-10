@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const versionList: Generator = {
   script: ["pyenv", "install", "-l"],
   postProcess: function (out) {

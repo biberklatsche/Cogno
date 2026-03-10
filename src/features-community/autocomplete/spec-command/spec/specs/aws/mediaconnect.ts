@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "mediaconnect",
   description: "API for AWS Elemental MediaConnect",

@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const sharedOpts: Record<string, OptionSpec> = {
   output: {
     name: ["--output", "-o"],

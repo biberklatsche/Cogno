@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, SubcommandSpec, Suggestion } from "../spec.types";
 const PRIORITY_TOP_THRESHOLD = 76;
 const HOUR_IN_MILLISECONDS = 3600000;
 

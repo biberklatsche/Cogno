@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mkinitcpio",
   description: "Create an initial ramdisk environment",

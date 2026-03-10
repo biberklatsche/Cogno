@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "firefox",
   description: "Free open-source web browser developer by Mozilla",

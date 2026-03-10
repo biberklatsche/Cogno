@@ -1,5 +1,6 @@
 import sshSpec from "./ssh";
 
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const globalOptions: OptionSpec[] = [
   { name: ["-l", "--login"], description: "Remote host login" },
   {

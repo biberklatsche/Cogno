@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "spring-cloud",
   description: "Commands to manage Azure Spring Cloud",

@@ -1,4 +1,5 @@
 import {
+import type { CommandSpec } from "../spec.types";
   generateDocs,
   generateInstalledDenoScripts,
   generateLintRules,

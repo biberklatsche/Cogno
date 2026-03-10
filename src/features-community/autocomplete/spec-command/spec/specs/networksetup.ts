@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const hardwareports: Generator = {
   script: ["networksetup", "-listallhardwareports"],
   postProcess: (out) => {

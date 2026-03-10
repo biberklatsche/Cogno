@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const smartFolderGenerator: Generator = {
   // `mdfind -s` only accepts smart folders in ~/Library/Saved\ Searches/
 

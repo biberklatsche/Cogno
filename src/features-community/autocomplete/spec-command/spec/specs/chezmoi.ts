@@ -1,5 +1,6 @@
 import { valueList } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Suggestion } from "../spec.types";
 const modifiers: Suggestion[] = [
   { name: ["after", "a"], description: "Attribute modifier" },
   { name: ["before", "b"], description: "Attribute modifier" },

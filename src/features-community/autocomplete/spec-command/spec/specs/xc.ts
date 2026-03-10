@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 /**
  * https://github.com/joerdav/xc
  * xc - Simple, Convenient, Markdown-based task runner.

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "deployment-manager",
   description: "Manage deployments of cloud resources",

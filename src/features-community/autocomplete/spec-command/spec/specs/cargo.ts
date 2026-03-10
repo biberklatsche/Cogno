@@ -1,5 +1,6 @@
 import { filepaths, keyValue } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 const rustEditions: Suggestion[] = [
   {
     name: "2015",

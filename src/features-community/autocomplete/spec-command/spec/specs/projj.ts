@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const repoGenerator: Generator = {
   custom: async (_, executeCommand, context) => {
     const { stdout } = await executeCommand({

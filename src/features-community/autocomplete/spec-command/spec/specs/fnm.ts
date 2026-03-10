@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 interface NodejsVersion {
   major: number;
   minor: number;

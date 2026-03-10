@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, SingleOrArray } from "../spec.types";
 const WebpackConfigFileArgument: SingleOrArray<ArgSpec> = [
   {
     name: "config",

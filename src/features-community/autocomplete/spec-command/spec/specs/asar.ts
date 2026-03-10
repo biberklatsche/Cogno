@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "asar",
   description: "A simple extensive tar-like archive format with indexing",

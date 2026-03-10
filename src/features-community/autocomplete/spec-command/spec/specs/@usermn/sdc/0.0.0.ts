@@ -1,3 +1,4 @@
+import type { SubcommandSpec, VersionDiffMap } from "../../../spec.types";
 const completion: SubcommandSpec = {
   name: "sdc",
   description: '"setup dominic\'s computer" cli tool',

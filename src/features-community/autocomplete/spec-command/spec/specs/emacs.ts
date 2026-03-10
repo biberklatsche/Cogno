@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 /* 
 Made by Yavko :)
 I made this for fun, I don't actually use emacs so if you do use it

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "customlocation",
   description: "Commands to Create, Get, List and Delete CustomLocations",

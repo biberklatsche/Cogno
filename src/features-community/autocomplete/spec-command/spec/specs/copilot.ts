@@ -1,5 +1,6 @@
 import YAML from "yaml";
 
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const applicationName: Generator = {
   script: ["cat", "copilot/.workspace"],
   // TODO: I feel like there's a better way to do this.

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "components",
   description: "List, install, update, or remove Google Cloud SDK components",

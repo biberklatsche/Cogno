@@ -1,5 +1,6 @@
 import { createNpmSearchHandler, npmSearchGenerator } from "./npm";
 
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const pathOption = (description: string): OptionSpec => ({
   name: ["-p", "--path"],
   description,

@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const scriptPathArgs: ArgSpec = {
   name: "script path",
   isScript: true,

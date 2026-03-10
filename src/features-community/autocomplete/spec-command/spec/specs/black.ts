@@ -1,4 +1,5 @@
 // https://github.com/psf/black
+import type { CommandSpec, Generator } from "../spec.types";
 const blackVersions: Generator = {
   script: ["gh", "release", "list", "--repo", "psf/black"],
   cache: {

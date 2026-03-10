@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, SubcommandSpec } from "../spec.types";
 type Device = {
   deviceId: string;
   deviceName: string;

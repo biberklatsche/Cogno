@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, Generator } from "../spec.types";
 const genericPathArg: ArgSpec = {
   name: "PATH",
   template: "filepaths",

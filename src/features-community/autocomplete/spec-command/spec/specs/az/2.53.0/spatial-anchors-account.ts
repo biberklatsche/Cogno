@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "spatial-anchors-account",
   description: "Manage spatial anchor account with mixed reality",

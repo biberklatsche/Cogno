@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "wrk",
   description: "Wrk - a HTTP benchmarking tool",

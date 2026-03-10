@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "vm",
   description: "Manage Linux or Windows virtual machines",

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const platforms: Suggestion[] = [
   { name: "android", icon: "fig://icon?type=android" },
   { name: "ios", icon: "fig://icon?type=apple" },

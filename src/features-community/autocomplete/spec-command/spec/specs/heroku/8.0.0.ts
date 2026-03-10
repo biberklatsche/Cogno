@@ -1,5 +1,6 @@
 import { getAppGenerator } from "./shared";
 
+import type { CommandSpec, VersionDiffMap } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "heroku",
   description:

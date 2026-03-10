@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const allPluginsGenerator: Generator = {
   script: ["ansible-doc", "--list", "--json"],
   postProcess: function (output) {

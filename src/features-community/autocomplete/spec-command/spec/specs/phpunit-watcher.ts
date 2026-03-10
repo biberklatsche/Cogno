@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const tests: Generator = {
   script: ["phpunit", "--list-tests"],
   postProcess: function (out) {

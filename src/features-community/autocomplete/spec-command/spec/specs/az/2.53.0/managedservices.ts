@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "managedservices",
   description: "Manage the registration assignments and definitions in Azure",

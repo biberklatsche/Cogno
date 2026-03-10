@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { SubcommandSpec } from "../spec.types";
 const completionSpec: SubcommandSpec = {
   name: "elixir",
   description: "Elixir Language",

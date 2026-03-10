@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const cliOptions: Record<string, OptionSpec> = {
   help: { name: "--help", description: "Show help for command" },
   version: { name: ["-v", "--version"], description: "Show the version" },

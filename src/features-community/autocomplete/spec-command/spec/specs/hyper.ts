@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "hyper",
   description: "Hyper is an Electron-based terminal",

@@ -1,5 +1,6 @@
 import { stdCSuggestions, stdCPPSuggestions } from "./clang";
 
+import type { CommandSpec, OptionSpec } from "../spec.types";
 export const stdOption: OptionSpec = {
   name: "-std",
   description: "Language standard to compile for",

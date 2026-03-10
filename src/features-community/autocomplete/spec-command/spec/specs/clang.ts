@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, Suggestion } from "../spec.types";
 export const stdCSuggestions: Suggestion[] = [
   {
     name: ["c89", "c90", "iso9899:1990"],

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generateSysctlNames: Generator = {
   script: ["sysctl", "-A", "-N"],
   postProcess: (out) => {

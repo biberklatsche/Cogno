@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const updatesGenerator: Generator = {
   script: ["softwareupdate", "--list"],
   postProcess: (out) => {

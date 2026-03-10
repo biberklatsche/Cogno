@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 type SearchResult = {
   level: string;
   count: number;

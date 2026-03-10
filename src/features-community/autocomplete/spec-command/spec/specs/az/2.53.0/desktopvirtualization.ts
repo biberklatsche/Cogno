@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "desktopvirtualization",
   description: "Manage desktop virtualization",

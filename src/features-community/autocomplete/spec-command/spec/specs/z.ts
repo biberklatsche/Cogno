@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 interface ZSuggestion {
   name: string;
   path: string;

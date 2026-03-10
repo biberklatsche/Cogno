@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "iot",
   description: "Manage Internet of Things (IoT) assets",

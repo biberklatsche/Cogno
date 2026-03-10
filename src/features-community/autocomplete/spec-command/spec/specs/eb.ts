@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generateNames: Generator = {
   script: ["eb", "list"],
   postProcess: (str) => {

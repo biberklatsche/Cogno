@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generatePackages: Generator = {
   // TODO: use the same as for npm and yarn package.json reverse lookup
   script: [

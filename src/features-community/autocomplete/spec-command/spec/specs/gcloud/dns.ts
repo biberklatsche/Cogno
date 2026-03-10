@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "dns",
   description: "Manage your Cloud DNS managed-zones and record-sets",

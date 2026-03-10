@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "sort",
   description: "Sort or merge records (lines) of text and binary files",

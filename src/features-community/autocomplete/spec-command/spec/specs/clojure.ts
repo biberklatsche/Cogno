@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, SingleOrArray } from "../spec.types";
 /**
  * Adds brackets to some content.
  *

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "debug",
   description: "Commands for interacting with the Cloud Debugger",

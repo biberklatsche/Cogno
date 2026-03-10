@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "adp",
   description: "Manage Azure Autonomous Development Platform resources",

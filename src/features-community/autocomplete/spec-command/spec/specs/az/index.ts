@@ -1,4 +1,5 @@
 import { createVersionedSpec } from "@fig/autocomplete-helpers";
+import type { GetVersionCommand } from "../../spec.types";
 const versionFiles = ["2.53.0"];
 export const getVersionCommand: GetVersionCommand = async (
   executeShellCommand

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "kafka",
   description: "The operations for managing an Amazon MSK cluster",

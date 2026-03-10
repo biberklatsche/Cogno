@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "arcappliance",
   description: "Commands to manage Arc resource bridge",

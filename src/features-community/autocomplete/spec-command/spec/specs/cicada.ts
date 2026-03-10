@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completion: CommandSpec = {
   name: "cicada",
   description: "Write CI/CD Pipelines in TypeScript",

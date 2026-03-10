@@ -1,5 +1,6 @@
 import { monthSuggestions } from "./ncal";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "cal",
   parserDirectives: {

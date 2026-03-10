@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const commonOptions: OptionSpec[] = [
   {
     name: ["-h", "-?", "--help", "-help"],

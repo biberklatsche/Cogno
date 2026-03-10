@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 /**
  * The structure of the JSON data returned from dumping a justfile.
  *

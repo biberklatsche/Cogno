@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "survey",
   description: "Invoke a customer satisfaction survey for Cloud SDK",

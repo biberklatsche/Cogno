@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "cloud-service",
   description: "Manage cloud service (extended support)",

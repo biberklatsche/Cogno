@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "fd",
   description: "A simple, fast and user-friendly alternative to 'find'",

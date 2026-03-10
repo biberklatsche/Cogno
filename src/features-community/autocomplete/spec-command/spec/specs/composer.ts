@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 const composerIcon =
   "https://getcomposer.org/img/logo-composer-transparent5.png";
 

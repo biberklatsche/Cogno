@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const projects: Generator = {
   script: ["tmuxinator", "list", "-n"],
   postProcess: (output) => {

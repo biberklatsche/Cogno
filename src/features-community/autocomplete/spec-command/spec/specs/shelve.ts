@@ -1,3 +1,4 @@
+import type { CommandSpec, SubcommandSpec } from "../spec.types";
 const shelveSubcommands: SubcommandSpec[] = [
   {
     name: ["create", "c", "init"],

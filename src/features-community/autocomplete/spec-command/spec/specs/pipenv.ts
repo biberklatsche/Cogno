@@ -2,6 +2,7 @@
 import { filepaths } from "@fig/autocomplete-generators";
 import { packageList } from "./pip";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "pipenv",
   description: "Python package manager",

@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const config: OptionSpec = {
   name: ["--config", "-c"],
   description: "The config file to use",

@@ -1,5 +1,6 @@
 import YAML from "yaml";
 
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const options: Record<string, OptionSpec> = {
   awsProfile: {
     name: "--aws-profile",

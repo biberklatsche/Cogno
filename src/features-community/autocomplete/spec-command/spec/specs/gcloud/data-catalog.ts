@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "data-catalog",
   description: "Manage Cloud Data Catalog resources",

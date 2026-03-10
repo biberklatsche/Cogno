@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "identity",
   description: "Manage Cloud Identity Groups and Memberships resources",

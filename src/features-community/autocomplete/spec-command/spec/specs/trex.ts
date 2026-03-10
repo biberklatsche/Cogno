@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const dependenciesGenerator: Generator = {
   script: ["cat", "import_map.json"],
   postProcess: function (out) {

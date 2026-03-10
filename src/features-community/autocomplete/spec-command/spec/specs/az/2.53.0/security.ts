@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "security",
   description: "Manage your security posture with Microsoft Defender for Cloud",

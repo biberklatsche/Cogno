@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const testsGenerator: Generator = {
   custom: async (tokens, executeShellCommand) => {
     // TODO: load the list of test files specified in testDir on playwright.config file

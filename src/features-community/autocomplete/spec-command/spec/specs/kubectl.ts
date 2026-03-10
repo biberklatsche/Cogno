@@ -1,4 +1,5 @@
 // Internal scripts for this spec, not to be confused with the script property
+import type { ArgSpec, CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const scripts = {
   types: ["kubectl", "api-resources", "-o", "name"],
   typeWithoutName: function (type) {

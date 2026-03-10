@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mob",
   description: "Fast git handover for remote collaboration with mob.sh",

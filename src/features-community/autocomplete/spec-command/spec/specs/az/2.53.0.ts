@@ -1,3 +1,4 @@
+import type { CommandSpec, VersionDiffMap } from "../../spec.types";
 const completion: CommandSpec = {
   name: "az",
   subcommands: [

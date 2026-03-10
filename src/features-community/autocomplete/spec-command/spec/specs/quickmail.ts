@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const bodyTempalates: Generator = {
   script: ["quickmail", "template", "listall"],
   postProcess: (output) => {

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "btop",
   description: "Beautifuler htop (interactive process viewer)",

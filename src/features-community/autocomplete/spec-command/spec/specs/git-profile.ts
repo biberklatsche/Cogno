@@ -1,4 +1,5 @@
 // https://github.com/dotzero/git-profile
+import type { CommandSpec, Generator } from "../spec.types";
 const profiles: Generator = {
   script: ["git-profile", "list"],
   postProcess: (output) => {

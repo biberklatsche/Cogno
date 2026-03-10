@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mkfifo",
   description: "Make FIFOs (first-in, first-out)",

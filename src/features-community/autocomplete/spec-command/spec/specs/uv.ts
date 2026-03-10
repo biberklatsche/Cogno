@@ -1,5 +1,6 @@
 // ////////////////////////////////////////////////////////////////// Generators //////////////////////////////////////////////////////////////////
 
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec } from "../spec.types";
 const dependenciesGenerator: Generator = {
   script: {
     command: "bash",

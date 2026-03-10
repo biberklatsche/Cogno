@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const defaultNgrokOptions: Array<OptionSpec> = [
   {
     description: "Path to log file, 'stdout', 'stderr' or 'false'",

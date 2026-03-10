@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../spec.types";
 const POD_ICON =
   "https://raw.githubusercontent.com/vscode-icons/vscode-icons/master/icons/file_type_ruby.svg";
 const podSpecAndFoldersGenerator = filepaths({

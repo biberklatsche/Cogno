@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const commonOptions: OptionSpec[] = [
   {
     name: "--env",

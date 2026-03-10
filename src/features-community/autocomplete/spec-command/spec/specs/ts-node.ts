@@ -1,6 +1,7 @@
 import { dependenciesGenerator } from "./npm";
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "ts-node",
   description: "Run the TypeScript interpreter for Node.JS",

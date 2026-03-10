@@ -1,4 +1,5 @@
 import { filepaths } from "@fig/autocomplete-generators";
+import type { CommandSpec } from "../spec.types";
 const bwLogo32x32 = "https://bitwarden.com/images/icon_32x32.png";
 
 const completionSpec: CommandSpec = {

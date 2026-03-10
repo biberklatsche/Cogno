@@ -1,3 +1,4 @@
+import type { CommandSpec, SubcommandSpec } from "../spec.types";
 const icatCommand: SubcommandSpec = {
   name: "icat",
   description: "A cat like utility to display images in the terminal",

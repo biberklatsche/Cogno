@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const bareMetalIdArg: ArgSpec = {
   name: "bareMetalId",
   description: "Bare Metal ID",

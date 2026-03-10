@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "policy-troubleshoot",
   description: "Troubleshoot Google Cloud Platform policies",

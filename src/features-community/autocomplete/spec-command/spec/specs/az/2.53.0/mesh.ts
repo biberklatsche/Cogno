@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "mesh",
   description: "(PREVIEW) Manage Azure Service Fabric Mesh Resources",

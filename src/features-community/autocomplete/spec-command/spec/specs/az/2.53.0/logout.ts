@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "logout",
   description: "Log out to remove access to Azure subscriptions",

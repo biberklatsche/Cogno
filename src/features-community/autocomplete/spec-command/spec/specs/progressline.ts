@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "progressline",
   description: "⏳Track commands progress in a compact one-line format",

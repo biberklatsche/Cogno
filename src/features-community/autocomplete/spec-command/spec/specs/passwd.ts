@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generateUsers: Generator = {
   script: ["bash", "-c", "dscl . -list /Users | grep -E -v '^_'"],
   postProcess: (out) =>

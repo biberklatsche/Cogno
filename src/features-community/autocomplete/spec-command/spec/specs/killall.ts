@@ -1,5 +1,6 @@
 // Linux incompatible
 
+import type { CommandSpec } from "../spec.types";
 const signals = [
   "hup",
   "int",

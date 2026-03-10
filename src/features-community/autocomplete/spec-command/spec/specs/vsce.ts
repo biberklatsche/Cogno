@@ -1,6 +1,7 @@
 import { filepaths } from "@fig/autocomplete-generators";
 import { gitGenerators } from "./git";
 
+import type { CommandSpec, Generator } from "../spec.types";
 const targetSuggestions: string[] = [
   "win32-x64",
   "win32-ia32",

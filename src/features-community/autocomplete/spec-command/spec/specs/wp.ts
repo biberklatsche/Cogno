@@ -3,6 +3,7 @@
 // 19 June 2021
 
 // To learn more about Fig's autocomplete standard visit: https://fig.io/docs/concepts/cli-skeleton
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const global_parameter_path: OptionSpec = {
   name: "--path",
   requiresSeparator: true,

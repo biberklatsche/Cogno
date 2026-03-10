@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "sha1sum",
   description: "Print or check SHA1 (160-bit) checksums",

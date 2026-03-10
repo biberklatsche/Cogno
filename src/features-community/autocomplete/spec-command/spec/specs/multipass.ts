@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const sharedOpts: Record<string, OptionSpec> = {
   help: {
     name: ["-h", "--help"],

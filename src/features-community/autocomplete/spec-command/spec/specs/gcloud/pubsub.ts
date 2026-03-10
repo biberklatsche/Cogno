@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "pubsub",
   description: "Manage Cloud Pub/Sub topics, subscriptions, and snapshots",

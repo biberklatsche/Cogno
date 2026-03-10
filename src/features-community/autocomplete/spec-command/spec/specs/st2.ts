@@ -1,5 +1,6 @@
 import { existingUsersandGroups } from "./chown";
 
+import type { ArgSpec, CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const helpOption: OptionSpec = {
   name: ["-h", "--help"],
   description: "Show this help and exit",

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const boilerplates: Generator = {
   script: ["gibo", "list"],
   splitOn: "\n",

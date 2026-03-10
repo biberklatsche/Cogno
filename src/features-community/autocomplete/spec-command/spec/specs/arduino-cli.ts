@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const FQBNs: Generator = {
   script: ["arduino-cli", "board", "list", "--format", "json"],
   postProcess: (output) => {

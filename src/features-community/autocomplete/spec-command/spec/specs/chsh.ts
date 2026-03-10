@@ -1,4 +1,5 @@
 // TODO: this does not work on macos
+import type { CommandSpec, Generator } from "../spec.types";
 const shells: Generator = {
   script: ["chsh", "-l"],
   postProcess: (output) => {

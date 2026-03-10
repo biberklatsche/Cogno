@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "http",
   description: "HTTPie: command-line HTTP client for the API era",

@@ -1,5 +1,6 @@
 import { clangBase } from "./clang";
 
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const colorOption: OptionSpec = {
   name: "--color",
   description: "Enable or disable colored message",

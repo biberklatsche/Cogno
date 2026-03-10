@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const spec: CommandSpec = {
   name: "create-redwood-app",
   icon: "https://avatars.githubusercontent.com/u/45050444?s=48&v=4",

@@ -1,5 +1,6 @@
 import { storybookCommonOptions } from "./start-storybook";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "build-storybook",
   description: "Storybook build CLI tools",

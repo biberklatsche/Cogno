@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "builds",
   description: "Create and manage builds for Google Cloud Build",

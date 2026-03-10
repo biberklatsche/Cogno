@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 export const existingUsersandGroups: Generator = {
   custom: async function (tokens, executeShellCommand) {
     const colonAdded = tokens.find((token) => token.includes(":"));

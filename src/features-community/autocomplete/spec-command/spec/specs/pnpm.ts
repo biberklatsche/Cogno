@@ -3,6 +3,7 @@
 import { npmScriptsGenerator, npmSearchGenerator } from "./npm";
 import { dependenciesGenerator, nodeClis } from "./yarn";
 
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec } from "../spec.types";
 const filterMessages = (out: string): string => {
   return out.startsWith("warning:") || out.startsWith("error:")
     ? out.split("\n").slice(1).join("\n")

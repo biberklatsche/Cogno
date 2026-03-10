@@ -1,6 +1,7 @@
 import YAML from "yaml";
 import { gitGenerators } from "./git";
 
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const hooksInConfig: Generator = {
   script: ["cat", ".pre-commit-config.yaml"],
   postProcess: (output) => {

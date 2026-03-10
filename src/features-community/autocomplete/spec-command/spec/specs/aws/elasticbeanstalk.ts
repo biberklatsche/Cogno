@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const attributes: string[] = [
   "HealthStatus",
   "Color",

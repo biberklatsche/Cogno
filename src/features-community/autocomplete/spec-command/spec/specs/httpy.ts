@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "httpy",
   description: "Programmable command-line HTTP client for the API",

@@ -1,4 +1,5 @@
 import { filepaths } from "@fig/autocomplete-generators";
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const restoreRestoreExactOptions: OptionSpec[] = [
   {
     name: "--source",

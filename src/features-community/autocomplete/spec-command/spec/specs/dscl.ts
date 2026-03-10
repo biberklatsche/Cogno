@@ -1,4 +1,5 @@
 // https://stackoverflow.com/a/70994696/6183068
+import type { ArgSpec, CommandSpec, Generator, OptionSpec, SubcommandSpec } from "../spec.types";
 const satisfies =
   <T>() =>
   <U extends T>(u: U) =>

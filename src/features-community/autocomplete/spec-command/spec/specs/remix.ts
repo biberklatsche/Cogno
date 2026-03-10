@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const icon = "https://remix.run/favicon-dark.1.png";
 
 const dirArgument: ArgSpec = {

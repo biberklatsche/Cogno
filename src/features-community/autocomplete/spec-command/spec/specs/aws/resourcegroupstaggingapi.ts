@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "resourcegroupstaggingapi",
   description: "Resource Groups Tagging API",

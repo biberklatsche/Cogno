@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 interface BinConsoleJSON {
   commands: {
     name: string;

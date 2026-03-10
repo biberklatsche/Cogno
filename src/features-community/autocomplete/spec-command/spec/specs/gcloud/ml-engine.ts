@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "ml-engine",
   description: "Manage AI Platform jobs and models",

@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const tcp_rdp_ssh_smb_options: OptionSpec[] = [
   {
     name: ["--hostname", "--tunnel-host", "-T"],

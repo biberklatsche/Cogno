@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "vimr",
   description: "VimR — Neovim GUI for macOS in Swift",

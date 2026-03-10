@@ -1,3 +1,4 @@
+import type { Generator, Suggestion } from "../../spec.types";
 /* eslint-disable @withfig/fig-linter/no-missing-default-export */
 
 import { filepaths, valueList } from "@fig/autocomplete-generators";

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const tasksGenerator: Generator = {
   script: ["bash", "-c", "command ant -p | grep -i '^\\s' | tr -d ' '"],
   postProcess: (out) =>

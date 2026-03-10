@@ -1,5 +1,6 @@
 // To learn more about Fig's autocomplete standard visit: https://fig.io/docs/concepts/cli-skeleton
 
+import type { CommandSpec } from "../spec.types";
 const fileExists = async (
   executeCommand: ExecuteCommandFunction,
   file: string

@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const lsArg = (name: string, command: string): ArgSpec => ({
   name,
   generators: {

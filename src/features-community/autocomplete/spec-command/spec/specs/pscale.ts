@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const authOptions: OptionSpec[] = [
   {
     name: "--client-id",

@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator } from "../spec.types";
 const packageList: Generator = {
   script: [
     "curl",

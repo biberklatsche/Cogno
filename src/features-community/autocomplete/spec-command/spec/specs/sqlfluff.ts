@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "sqlfluff",
   description: "A dialect-flexible and configurable SQL linter",

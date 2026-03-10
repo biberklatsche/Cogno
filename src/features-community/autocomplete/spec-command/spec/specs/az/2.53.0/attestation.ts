@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "attestation",
   description: "Manage Microsoft Azure Attestation (MAA)",

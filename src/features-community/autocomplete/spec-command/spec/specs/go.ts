@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec, Suggestion } from "../spec.types";
 const buildModeSuggestions: Suggestion[] = [
   {
     name: "archive",

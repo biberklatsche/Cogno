@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "fzf",
   description: "A general-purpose command-line fuzzy finder",

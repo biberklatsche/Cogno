@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const ICONS = {
   help: "https://raw.githubusercontent.com/expo/expo-cli/master/assets/fig/help.png",
   version:

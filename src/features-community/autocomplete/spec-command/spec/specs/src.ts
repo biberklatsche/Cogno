@@ -1,5 +1,6 @@
 // See https://github.com/sourcegraph/src-cli
 
+import type { CommandSpec } from "../spec.types";
 const icon = "https://sourcegraph.com/.assets/img/sourcegraph-mark.svg";
 
 const completionSpec: CommandSpec = {

@@ -1,4 +1,5 @@
 // TODO: dynamically suggest paths
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const remote: ArgSpec = {
   name: "remote:",
   generators: {

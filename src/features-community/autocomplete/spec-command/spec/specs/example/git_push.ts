@@ -19,6 +19,7 @@
 
 // <arg1> [arg2...] -> This is just one argument that is NOT optional and is variadic
 
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "git_push_example",
   description: "",

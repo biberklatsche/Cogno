@@ -1,4 +1,5 @@
 // https://github.com/hnarayanan/shpotify
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "spotify",
   description: "CLI to use Spotify from the terminal",

@@ -1,6 +1,7 @@
 // TODO: suggest available s3 endpoints
 import awsRegions from "./regions";
 
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const storageClasses = [
   "STANDARD",
   "REDUCED_REDUNDANCY",

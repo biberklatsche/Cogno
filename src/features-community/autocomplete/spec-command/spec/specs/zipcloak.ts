@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "zipcloak",
   description: "Encrypt entries in a zipfile",

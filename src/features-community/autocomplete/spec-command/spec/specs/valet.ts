@@ -3,6 +3,7 @@
 // valet version 4.0.X
 // 26 March 2023
 
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const global_option_help: OptionSpec = {
   name: ["-h", "--help"],
   description:

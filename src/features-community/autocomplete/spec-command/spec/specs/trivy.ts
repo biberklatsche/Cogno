@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const skipPolicyUpdateOption: OptionSpec = {
   name: "--skip-policy-update",
   description: "Skip updating built-in policies [$TRIVY_SKIP_POLICY_UPDATE]",

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 export const awsProfileGenerator: Generator = {
   cache: {
     strategy: "stale-while-revalidate",

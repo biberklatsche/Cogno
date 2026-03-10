@@ -1,5 +1,6 @@
 // If you edit terraform commands or options, please copy our changes on to the terraform spec
 // ARGUMENTS json-out etc
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec } from "../spec.types";
 const workspaceList: Generator = {
   script: ["terragrunt", "workspace", "list"],
   postProcess: function (out) {

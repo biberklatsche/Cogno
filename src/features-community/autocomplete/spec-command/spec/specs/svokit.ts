@@ -1,4 +1,5 @@
 // can be found at https://github.com/mavthedev/svokit.io
+import type { CommandSpec } from "../spec.types";
 /*
   Svokit is a library that combines sveltekit with socket.io.
 */

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const ClusterGenerator: Generator = {
   script: ["kind", "get", "clusters"],
   postProcess: (out) => {

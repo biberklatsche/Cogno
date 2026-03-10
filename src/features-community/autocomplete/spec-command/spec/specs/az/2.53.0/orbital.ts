@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "orbital",
   description: "Azure Orbital Ground Station as-a-Service (GSaaS)",

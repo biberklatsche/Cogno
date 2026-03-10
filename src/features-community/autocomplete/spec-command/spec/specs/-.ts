@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "-",
   description:
@@ -5,7 +6,7 @@ const completionSpec: CommandSpec = {
   hidden: true,
   args: {
     isCommand: true,
-  },
+  }
 };
 
 export default completionSpec;

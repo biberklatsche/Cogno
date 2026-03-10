@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "psql",
   description: "Psql is a terminal-based front-end to PostgreSQL",

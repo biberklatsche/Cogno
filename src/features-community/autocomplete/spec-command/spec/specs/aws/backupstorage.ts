@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "backupstorage",
   description: "The frontend service for Cryo Storage",

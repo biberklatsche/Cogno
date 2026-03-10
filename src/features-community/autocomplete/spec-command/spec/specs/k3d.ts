@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const ClusterGenerator: Generator = {
   script: ["k3d", "cluster", "list", "--no-headers"],
   postProcess: (out) => {

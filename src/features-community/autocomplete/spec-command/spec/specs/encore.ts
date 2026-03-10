@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "encore",
   description: "Encore is the fastest way of developing backend applications",

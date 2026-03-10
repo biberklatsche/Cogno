@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "sql",
   description: "Create and manage Google Cloud SQL databases",

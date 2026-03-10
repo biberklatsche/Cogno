@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, OptionSpec } from "../../spec.types";
 const configFileGenerator = filepaths({ equals: "nuget.config" });
 
 const nupkgGenerator = filepaths({ extensions: ["nupkg"] });

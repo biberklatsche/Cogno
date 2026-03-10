@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "create-remix",
   icon: "https://remix.run/favicon-light.1.png",

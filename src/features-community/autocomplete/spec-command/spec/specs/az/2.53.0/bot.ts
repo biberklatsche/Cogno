@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "bot",
   description: "Manage Microsoft Azure Bot Service",

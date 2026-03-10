@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 function toTitleCase(str: string): string {
   return str
     .trim()

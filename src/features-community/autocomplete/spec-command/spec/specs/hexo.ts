@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const draftGenerator: Generator = {
   script: ["bash", "-c", "hexo list post | grep -E ^Draft"],
   postProcess: (out) => {

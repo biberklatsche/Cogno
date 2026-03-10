@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 interface NcuOptions {
   cache: OptionSpec;
   cacheClear: OptionSpec;

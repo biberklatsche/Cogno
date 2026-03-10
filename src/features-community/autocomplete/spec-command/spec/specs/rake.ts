@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "rake",
   description: "A ruby build program with capabilities similar to make",

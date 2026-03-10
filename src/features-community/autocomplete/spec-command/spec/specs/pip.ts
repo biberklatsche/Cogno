@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const listPackages: Generator = {
   script: ["pip", "list"],
   postProcess: function (out) {

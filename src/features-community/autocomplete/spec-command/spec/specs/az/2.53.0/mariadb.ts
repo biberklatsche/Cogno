@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "mariadb",
   description: "Manage Azure Database for MariaDB servers",

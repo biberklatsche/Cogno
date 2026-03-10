@@ -1,3 +1,4 @@
+import type { CommandSpec, Suggestion } from "../spec.types";
 const FAVICONS = {
   vanilla:
     "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png?20120221235433",

@@ -1,6 +1,7 @@
 import { npmScriptsGenerator } from "./npm";
 import { yarnScriptParserDirectives } from "./yarn";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "rushx",
   description:

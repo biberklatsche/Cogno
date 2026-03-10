@@ -1,4 +1,5 @@
 import {
+import type { ArgSpec, CommandSpec, Generator, OptionSpec, SingleOrArray } from "../spec.types";
   keyValueList,
   filepaths,
   valueList,

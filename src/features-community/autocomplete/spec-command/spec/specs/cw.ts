@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 export const themesGenerator: Generator = {
   script: ["cw", "theme", "--list"],
   postProcess: (output) => {

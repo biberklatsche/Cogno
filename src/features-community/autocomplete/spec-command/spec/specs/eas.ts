@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const generateRange = (start: number, end: number): Array<string> => {
   return Array.from(
     { length: end - start + 1 },

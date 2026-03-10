@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const runningAppsGenerator: Generator = {
   script: ["dapr", "list", "-A", "-o", "json"],
   postProcess: function (out) {

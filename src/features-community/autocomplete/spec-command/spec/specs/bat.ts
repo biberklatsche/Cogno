@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "bat",
   description: "A cat(1) clone with syntax highlighting and Git integration",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "xcode-select",
   description: "Active developer directory for Xcode tools",

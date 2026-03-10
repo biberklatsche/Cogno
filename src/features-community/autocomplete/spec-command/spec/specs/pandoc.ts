@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { ArgSpec, CommandSpec, Generator } from "../spec.types";
 const pandocGenerators: Record<string, Generator[]> = {
   inputFormats: [
     {

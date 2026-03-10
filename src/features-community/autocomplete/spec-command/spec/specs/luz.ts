@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "luz",
   description: "A next-generation build system for Apple Darwin-based systems",

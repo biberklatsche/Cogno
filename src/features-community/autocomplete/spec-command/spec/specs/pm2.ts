@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { ArgSpec, CommandSpec, Generator, OptionSpec } from "../spec.types";
 const generators: Record<string, Generator> = {
   jsonFileGenerator: filepaths({ extensions: ["json"] }),
 };

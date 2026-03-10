@@ -1,5 +1,6 @@
 import { keyValue } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "jmeter",
   description: "Apache JMeter - 100% Java Load Testing Tool",

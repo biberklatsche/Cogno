@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "pinpoint-sms-voice",
   description: "Pinpoint SMS and Voice Messaging public facing APIs",

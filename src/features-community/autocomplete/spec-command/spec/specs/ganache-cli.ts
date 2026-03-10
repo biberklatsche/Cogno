@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "ganache-cli",
   description: "Fast Ethereum RPC client",

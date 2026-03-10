@@ -1,4 +1,5 @@
 // https://github.com/steadybit/cli
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const configCommand: SubcommandSpec = {
   name: "config",
   description: "Show/modify the CLI configuration and authentication profiles",

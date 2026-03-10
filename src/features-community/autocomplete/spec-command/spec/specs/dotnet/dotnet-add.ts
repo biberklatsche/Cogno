@@ -1,5 +1,6 @@
 import {ArgSpec} from "@cogno/community-features/autocomplete/spec-command/spec/spec.types";
 
+import type { ArgSpec, CommandSpec, Generator, Suggestion } from "../../spec.types";
 type PackageSearchResultData = {
   id: string;
   title: string;

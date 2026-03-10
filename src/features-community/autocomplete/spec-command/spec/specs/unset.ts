@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const environmentVariableGenerator: Generator = {
   script: ["env"],
   postProcess: (out) =>

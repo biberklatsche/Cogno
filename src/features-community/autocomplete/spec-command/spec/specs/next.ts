@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const icon = "https://nextjs.org/static/favicon/favicon-16x16.png";
 
 const hostPortOptions: OptionSpec[] = [

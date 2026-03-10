@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const infoLines = {
   name: "Information lines",
   suggestions: [

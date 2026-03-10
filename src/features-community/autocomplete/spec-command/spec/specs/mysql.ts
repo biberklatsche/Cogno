@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mysql",
   description: "Mysql is a terminal-based front-end to MySQL",

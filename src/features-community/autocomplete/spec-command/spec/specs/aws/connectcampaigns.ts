@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "connectcampaigns",
   description: "Provide APIs to create and manage Amazon Connect Campaigns",

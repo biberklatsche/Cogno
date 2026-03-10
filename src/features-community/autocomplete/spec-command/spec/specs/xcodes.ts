@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const processXcodeList = (out: string, tokens: string[]) =>
   out
     .split("\n")

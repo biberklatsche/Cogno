@@ -1,3 +1,4 @@
+import type { CommandSpec, Suggestion } from "../../spec.types";
 const tags = ["TAGS"];
 const launchTypes = ["EC2", "FARGATE", "EXTERNAL"];
 const schedulingStrategy = ["REPLICA", "DAEMON"];

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const warpPointsGenerator: Generator = {
   custom: async (_, executeCommand, context) => {
     const { stdout } = await executeCommand({

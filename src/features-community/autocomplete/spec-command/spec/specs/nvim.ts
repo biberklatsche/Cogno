@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "nvim",
   description: "Hyperextensible Vim-based text editor",

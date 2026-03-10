@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const ListModelGenerator: Generator = {
   script: ["bash", "-c", "ollama ls | awk '!/NAME/ { print $1 }'"],
   postProcess: (out) => {

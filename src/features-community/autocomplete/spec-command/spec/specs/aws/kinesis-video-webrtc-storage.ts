@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "kinesis-video-webrtc-storage",
   description: "Webrtc",

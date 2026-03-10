@@ -1,4 +1,5 @@
 // Node version of the CLI, there is also a Java version, Ref https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/chapter_155931263126.html
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "suitecloud",
   description: "SuiteCloud CLI",

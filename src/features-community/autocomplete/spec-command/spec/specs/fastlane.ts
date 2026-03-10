@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "fastlane",
   description:

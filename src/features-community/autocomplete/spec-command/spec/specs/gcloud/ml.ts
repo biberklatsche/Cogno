@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "ml",
   description: "Use Google Cloud machine learning capabilities",

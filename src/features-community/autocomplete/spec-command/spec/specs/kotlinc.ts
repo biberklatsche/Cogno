@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "kotlinc",
   description: "Kotlin compiler for JVM",

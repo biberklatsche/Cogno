@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "dla",
   description: "Manage Data Lake Analytics accounts, jobs, and catalogs",

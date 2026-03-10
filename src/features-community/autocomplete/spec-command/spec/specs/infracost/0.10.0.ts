@@ -1,3 +1,4 @@
+import type { SubcommandSpec, VersionDiffMap } from "../../spec.types";
 const completion: SubcommandSpec = {
   name: "infracost",
   description: "Cloud cost estimates for Terraform",

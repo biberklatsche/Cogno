@@ -7,6 +7,7 @@
 
 // Fig generator for runtime options. Manually coded from
 // https://docs.deta.sh/docs/cli/commands#deta-new
+import type { CommandSpec, Suggestion } from "../spec.types";
 const runtimes: Suggestion[] = [
   "node12",
   "node14",

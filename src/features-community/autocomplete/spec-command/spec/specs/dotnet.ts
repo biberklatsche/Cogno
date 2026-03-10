@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, SubcommandSpec } from "../spec.types";
 const DOTNET_ICON =
   "https://upload.wikimedia.org/wikipedia/commons/7/7d/Microsoft_.NET_logo.svg";
 

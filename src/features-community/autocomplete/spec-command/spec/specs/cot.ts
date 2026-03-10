@@ -1,4 +1,5 @@
 // Author: Yavko
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "cot",
   icon: "https://coteditor.com/favicon@2x.png",

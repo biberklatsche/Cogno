@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "scvmm",
   description: "Commands for managing Arc for SCVMM resources",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "truncate",
   description: "Shrink or extend the size of a file to the specified size",

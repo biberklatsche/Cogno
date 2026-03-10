@@ -1,4 +1,5 @@
 // args
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const version: ArgSpec = {
   name: "version",
   description: "Node version",

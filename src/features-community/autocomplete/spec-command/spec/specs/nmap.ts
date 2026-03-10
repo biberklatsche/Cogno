@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "nmap",
   description: "Network exploration tool and security / port scanner",

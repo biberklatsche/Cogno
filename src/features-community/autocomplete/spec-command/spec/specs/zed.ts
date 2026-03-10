@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "zed",
   description: "A lightning-fast, collaborative code editor written in Rust",

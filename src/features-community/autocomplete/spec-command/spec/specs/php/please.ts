@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 interface Argument {
   name: string;
   is_required: boolean;

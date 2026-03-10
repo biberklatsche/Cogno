@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "palera1n",
   description: "Jailbreaking tool for iOS/iPadOS 15.x-16.x arm64",

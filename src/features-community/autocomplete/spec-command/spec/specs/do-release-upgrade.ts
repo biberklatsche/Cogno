@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const modeArg: ArgSpec = {
   name: "mode",
   suggestions: ["desktop", "server"],

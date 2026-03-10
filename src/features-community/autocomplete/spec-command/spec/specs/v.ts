@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const FILE_OR_FOLDER: ArgSpec = {
   name: "file",
   description: "The input file",

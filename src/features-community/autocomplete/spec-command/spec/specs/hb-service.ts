@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "hb-service",
   description: "The hb-service command is provided by homebridge-config-ui-x",

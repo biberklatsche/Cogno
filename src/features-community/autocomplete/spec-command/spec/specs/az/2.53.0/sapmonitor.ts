@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "sapmonitor",
   description: "(PREVIEW) Manage Azure SAP Monitor",

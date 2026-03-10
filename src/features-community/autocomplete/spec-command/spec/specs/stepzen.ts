@@ -2,6 +2,7 @@
 // Manually coded from https://stepzen.com/docs/cli/cli-commands
 // Coded on stepzen/0.9.33 CLI version
 
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const endpointsGenerator: Generator = {
   script: ["stepzen", "list", "schemas"],
   postProcess: (output) => {

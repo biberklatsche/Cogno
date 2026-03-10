@@ -1,4 +1,5 @@
 import { filepaths } from "@fig/autocomplete-generators";
+import type { CommandSpec, Generator } from "../spec.types";
 const dtmGenerators: Record<string, Generator> = {
   plugins: {
     script: ["dtm", "list", "plugins"],

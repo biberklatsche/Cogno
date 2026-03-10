@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec } from "../spec.types";
 const serverOptions: OptionSpec[] = [
   {
     name: ["--server", "-s"],

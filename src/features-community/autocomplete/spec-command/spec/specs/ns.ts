@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 /**
  * Common options used throughout the CLI
  */

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 /*
  * Certain shells output signals as "1) SIGHUP 2) SIGINT 3) SIGQUIT" (bash, zsh, ...)
  * Other shells output looks like "HUP INT QUIT" (fish, csh, ...)

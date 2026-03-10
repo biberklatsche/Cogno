@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 export const storybookCommonOptions: OptionSpec[] = [
   {
     name: "--help",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "storage-mover",
   description: "Manage top-level Storage Mover resource",

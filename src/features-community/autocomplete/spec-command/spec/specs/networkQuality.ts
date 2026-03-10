@@ -1,3 +1,4 @@
+import type { CommandSpec, Suggestion } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "networkQuality",
   description: "Measure the different aspects of network quality",

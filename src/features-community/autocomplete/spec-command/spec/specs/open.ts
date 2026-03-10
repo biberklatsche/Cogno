@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 export const generateApps = (unquotedPath: string): Generator => ({
   cache: { strategy: "stale-while-revalidate" },
   script: [

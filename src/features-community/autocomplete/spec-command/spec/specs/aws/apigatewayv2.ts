@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "apigatewayv2",
   description: "Amazon API Gateway V2",

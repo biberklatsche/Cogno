@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 enum ICONS {
   npm = "fig://icon?type=npm",
   yarn = "fig://icon?type=yarn",

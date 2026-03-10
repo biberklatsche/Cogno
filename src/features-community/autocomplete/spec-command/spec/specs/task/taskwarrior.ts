@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../../spec.types";
 const RECURRING_STRINGS = [
   "daily",
   "day",

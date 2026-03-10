@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec } from "../spec.types";
 const getPackages: Generator = {
   script: ["lerna", "ls"],
   postProcess: (output) =>

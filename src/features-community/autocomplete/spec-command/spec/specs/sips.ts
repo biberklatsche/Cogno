@@ -1,3 +1,4 @@
+import type { CommandSpec, Suggestion } from "../spec.types";
 const propertySuggestions: (string | Suggestion)[] = [
   "all",
   "allxml",

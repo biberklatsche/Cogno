@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "resource-mover",
   description: "Manage Resource Mover Service API",

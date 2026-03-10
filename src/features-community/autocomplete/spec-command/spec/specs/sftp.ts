@@ -1,5 +1,6 @@
 import { knownHosts, configHosts } from "./ssh";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "sftp",
   description: "OpenSSH secure file transfer",

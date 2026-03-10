@@ -1,5 +1,6 @@
 import { valueList } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const sections = {
   "1": "General commands",
   "2": "System calls",

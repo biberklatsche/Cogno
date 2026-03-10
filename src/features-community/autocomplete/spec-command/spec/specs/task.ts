@@ -1,6 +1,7 @@
 import goTask from "./task/go-task";
 import taskWarrior from "./task/taskwarrior";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "task",
   // loadSpec doesn't work for root commands (https://github.com/withfig/autocomplete/issues/223)

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "connectedmachine",
   description: "Manage an Azure Arc-Enabled Server",

@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const sortbyArg: ArgSpec = {
   name: "Sortby",
   default: "none",

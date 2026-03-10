@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const postProcessBranches: Generator["postProcess"] = (out, tokens) => {
   return out
     .split("\n")

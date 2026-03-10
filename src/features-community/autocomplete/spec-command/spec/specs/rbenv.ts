@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, Generator, OptionSpec } from "../spec.types";
 const installVersionsGenerator: Generator = {
   script: ["rbenv", "install", "-L"],
   postProcess: function (out) {

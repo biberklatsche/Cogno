@@ -1,5 +1,6 @@
 import { ai } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 const filterMessages = (out: string): string => {
   return out.startsWith("warning:") || out.startsWith("error:")
     ? out.split("\n").slice(1).join("\n")

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 export interface SPDisplaysDataTypeOutputRoot {
   SPDisplaysDataType: SpdisplaysDataType[];
 }

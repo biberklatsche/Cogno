@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, Generator } from "../spec.types";
 const serviceOrDomain: ArgSpec = {
   name: "service",
   description: "Service or domain target",

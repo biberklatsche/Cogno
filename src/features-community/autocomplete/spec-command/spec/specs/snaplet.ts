@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 type Snapshots = {
   name: string;
   status: "SUCCESS" | "ERROR";

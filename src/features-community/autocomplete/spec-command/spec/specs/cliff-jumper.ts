@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const monoRepoDescription = [
   "Whether the package to be bumped resides in a mono repo,",
   "which enables Lerna-like scanning for what kind of version bump should be applied",

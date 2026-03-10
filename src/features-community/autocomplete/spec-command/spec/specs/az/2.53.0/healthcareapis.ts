@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "healthcareapis",
   description: "Manage Healthcare Apis",

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const postProcessCfList =
   (description: string, leadingLines: number) => (out: string) =>
     out

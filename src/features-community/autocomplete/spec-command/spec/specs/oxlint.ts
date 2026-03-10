@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { ArgSpec, CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const CATEGORY_EMOJI = "📦";
 const LINT_RULE_EMOJI = "🚨";
 

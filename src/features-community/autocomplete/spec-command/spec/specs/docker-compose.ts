@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const getComposeCommand = (tokens: string[]) =>
   tokens[0] === "docker" ? ["docker", "compose"] : ["docker-compose"];
 

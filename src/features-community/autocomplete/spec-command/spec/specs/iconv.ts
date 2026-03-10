@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const encodingGenerator: Generator = {
   script: ["bash", "-c", "iconv -l | command tr ' ' '\\n' | sort"],
   postProcess: (out) =>

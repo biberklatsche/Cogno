@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "cli-translator",
   description: "Translate ARM template or REST API to CLI scripts",

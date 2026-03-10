@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "cli",
   description: "Manage packages and bundle versions in Capgo Cloud",

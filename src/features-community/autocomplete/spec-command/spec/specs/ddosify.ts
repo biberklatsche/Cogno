@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "ddosify",
   description: "High-performance load testing tool, written in Golang",

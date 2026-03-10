@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const PRIORITY_TOP_THRESHOLD = 76;
 
 const generateGlobalFlags = (subcommandName: string): OptionSpec[] => [

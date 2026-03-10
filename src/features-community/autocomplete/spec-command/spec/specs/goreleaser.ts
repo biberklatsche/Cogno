@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "goreleaser",
   description: "Deliver Go binaries as fast and easily as possible",

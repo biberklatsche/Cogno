@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const exclusiveOptions = ["-A", "-F", "-G", "-M", "-P", "-g", "-p", "-u"];
 
 const completionSpec: CommandSpec = {

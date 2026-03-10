@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const backupRetentionPeriodDays: Suggestion[] = [
   { name: "7", description: "7" },
   { name: "14", description: "14" },

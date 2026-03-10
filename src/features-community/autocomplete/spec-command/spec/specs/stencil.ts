@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "stencil",
   description: "CLI to build Stencil projects and generate components",

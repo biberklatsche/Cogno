@@ -2,6 +2,7 @@
 
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { Generator } from "../spec.types";
 const flutterGenerators: Record<string, Generator> = {
   emulators: {
     script: ["flutter", "emulators"],

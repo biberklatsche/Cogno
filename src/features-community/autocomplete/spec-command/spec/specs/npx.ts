@@ -1,5 +1,6 @@
 import autocannon from "./autocannon";
 
+import type { CommandSpec, Suggestion } from "../spec.types";
 export const npxSuggestions: Suggestion[] = [
   {
     name: autocannon.name,

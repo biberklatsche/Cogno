@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const DigitalOceanCTLCompletionSpec: CommandSpec = {
   name: "doctl",
   description: "The official DigitalOcean command line interface (CLI)",

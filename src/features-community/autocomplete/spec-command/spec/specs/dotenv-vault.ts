@@ -1,6 +1,7 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
 // Common Options
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const yesOption: OptionSpec = {
   name: ["--yes", "-y"],
   description:

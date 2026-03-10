@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "dms",
   description: "Manage Azure Data Migration Service (classic) instances",

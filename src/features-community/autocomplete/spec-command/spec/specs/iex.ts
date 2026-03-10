@@ -1,5 +1,6 @@
 import elixir from "./elixir";
 
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   ...elixir,
   name: "iex",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "xdg-open",
   description: "Opens a file or URL in the user's preferred application",

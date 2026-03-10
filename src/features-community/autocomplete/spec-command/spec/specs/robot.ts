@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const tagsGenerator: Generator = {
   script: [
     "bash",

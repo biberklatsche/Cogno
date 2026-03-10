@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "seq",
   description: "Print sequences of numbers. (Defaults to increments of 1)",

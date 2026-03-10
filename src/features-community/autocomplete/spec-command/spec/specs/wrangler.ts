@@ -1,4 +1,5 @@
 // Options used commonly
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const OPTION_CONFIG: OptionSpec = {
   name: ["-c", "--config"],
   args: {

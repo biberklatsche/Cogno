@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const shortFormatArg: ArgSpec = {
   name: "-f",
   suggestions: ["rich", "plain", "md"],

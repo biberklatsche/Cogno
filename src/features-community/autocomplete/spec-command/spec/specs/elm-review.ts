@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 /**
  * The report type is either `json` or `ndjson`
  */

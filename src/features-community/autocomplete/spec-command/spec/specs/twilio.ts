@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 /* eslint-disable @withfig/fig-linter/no-useless-insertvalue */
 
 /** A version of SubcommandSpec with a predictable name prop */

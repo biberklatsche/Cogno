@@ -1,4 +1,5 @@
 // Author: Yavko
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "eleventy",
   icon: "https://www.11ty.dev/favicon.ico",

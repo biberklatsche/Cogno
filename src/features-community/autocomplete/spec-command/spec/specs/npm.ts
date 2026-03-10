@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 function uninstallSubcommand(named: string | string[]): SubcommandSpec {
   return {
     name: named,

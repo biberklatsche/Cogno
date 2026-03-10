@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../spec.types";
 const dbFilepath = filepaths({
   extensions: ["sql", "sqlite", "sqlite3", "db"],
 });

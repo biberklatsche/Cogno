@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "hanainstance",
   description: "(PREVIEW) Manage Azure SAP HANA Instance",

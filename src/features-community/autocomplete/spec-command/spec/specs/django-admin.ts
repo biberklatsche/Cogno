@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const DJANGO_ICON_URL = "https://github.com/django.png";
 
 const ALWAYS_AVAILABLE_OPTIONS: OptionSpec[] = [

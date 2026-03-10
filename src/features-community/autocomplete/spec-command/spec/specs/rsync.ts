@@ -1,5 +1,6 @@
 import { knownHosts, configHosts } from "./ssh";
 
+import type { ArgSpec, CommandSpec, SingleOrArray } from "../spec.types";
 const infoArgs: SingleOrArray<ArgSpec> = [
   { name: "BACKUP", description: "Mention files backed up" },
   {

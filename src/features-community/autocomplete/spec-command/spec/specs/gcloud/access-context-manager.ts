@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "access-context-manager",
   description: "Manage Access Context Manager resources",

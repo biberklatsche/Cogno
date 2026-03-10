@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "lsd",
   description: "An ls command with a lot of pretty colors and some other stuff",

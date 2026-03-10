@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec, Suggestion } from "../spec.types";
 const installOptions: OptionSpec[] = [
   {
     name: "-l",

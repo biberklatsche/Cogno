@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "cheat-sheet",
   description: "Display gcloud cheat sheet",

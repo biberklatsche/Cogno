@@ -1,4 +1,5 @@
 import {
+import type { CommandSpec, SubcommandSpec } from "../spec.types";
   clangBase,
   stdCPPSuggestions,
   stdOpenCLCPPSuggestions,

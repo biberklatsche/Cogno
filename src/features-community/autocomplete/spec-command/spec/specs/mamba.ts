@@ -1,4 +1,5 @@
 // Interface for the json output of packages
+import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 interface Package {
   baseURL: string;
   buildNumber: number;

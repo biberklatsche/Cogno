@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "cosmosdb",
   description: "Manage Azure Cosmos DB database accounts",

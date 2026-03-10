@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const sessionid: Generator = {
   script: ["bash", "-c", "cat .nextflow/history | awk '{ print $7 }'"],
   postProcess: (output) => {

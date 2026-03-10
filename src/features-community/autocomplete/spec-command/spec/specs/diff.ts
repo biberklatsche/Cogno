@@ -1,4 +1,5 @@
 // https://www.gnu.org/software/diffutils
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const groupFormatOptions = (names: string[]) =>
   names.map<OptionSpec>((name) => ({
     name: `--${name}-group-format`,

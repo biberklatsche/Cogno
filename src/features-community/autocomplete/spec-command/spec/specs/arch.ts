@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const archNames: { name: string; description: string }[] = [
   { name: "i386", description: "32-bit intel" },
   { name: "x86_64", description: "64-bit intel" },

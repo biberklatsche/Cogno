@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, SubcommandSpec } from "../spec.types";
 const postProcessDockerPs: Generator["postProcess"] = (out) => {
   return out.split("\n").map((i) => {
     try {

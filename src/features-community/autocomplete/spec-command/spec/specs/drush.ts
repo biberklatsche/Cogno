@@ -1,3 +1,4 @@
+import type { CommandSpec, SubcommandSpec } from "../spec.types";
 interface DrushArgument {
   name: string;
   is_required: boolean;

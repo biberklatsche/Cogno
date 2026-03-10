@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "oci",
   description: "Oracle Cloud Infrastructure CLI",

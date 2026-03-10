@@ -1,3 +1,4 @@
+import type { SubcommandSpec, VersionDiffMap } from "../../spec.types";
 const completion: SubcommandSpec = {
   name: "shopify",
   options: [

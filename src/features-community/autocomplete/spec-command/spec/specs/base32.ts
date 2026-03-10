@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "base32",
   description: "Base32 encode/decode data and print to standard output",

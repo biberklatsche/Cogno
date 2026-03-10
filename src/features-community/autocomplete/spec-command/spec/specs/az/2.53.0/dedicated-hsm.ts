@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "dedicated-hsm",
   description: "Manage dedicated hsm with hardware security modules",

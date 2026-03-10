@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const boolArgDefaultFalse: ArgSpec = {
   name: "bool",
   description: "True/false",

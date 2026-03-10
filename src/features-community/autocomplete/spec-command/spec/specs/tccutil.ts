@@ -1,5 +1,6 @@
 import { generateBundleIds } from "./open";
 
+import type { CommandSpec, Suggestion } from "../spec.types";
 const commands: Suggestion[] = [
   {
     name: "reset",

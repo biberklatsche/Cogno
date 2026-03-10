@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 /**
  * The Qodana CLI repo: https://github.com/JetBrains/qodana-cli
  */

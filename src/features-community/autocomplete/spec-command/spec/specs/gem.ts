@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const gems: Generator = {
   trigger: () => true,
   custom: async (tokens, executeShellCommand) => {

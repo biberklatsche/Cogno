@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "auth",
   description: "Manage oauth2 credentials for the Google Cloud SDK",

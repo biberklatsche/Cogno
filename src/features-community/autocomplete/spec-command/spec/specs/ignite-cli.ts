@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const generatorsGenerator: Generator = {
   script: ["ls", "ignite/templates"],
   postProcess: (out) => {

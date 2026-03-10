@@ -1,4 +1,5 @@
 // https://tailordev.github.io/Watson/
+import type { CommandSpec, Generator } from "../spec.types";
 const listProjects: Generator = {
   script: ["watson", "projects"],
   postProcess: (output) => {

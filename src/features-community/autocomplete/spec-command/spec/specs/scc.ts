@@ -1,4 +1,5 @@
 import {
+import type { CommandSpec, Suggestion } from "../spec.types";
   valueList,
   keyValueList,
   KeyValueSuggestions,

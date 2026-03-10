@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
   name: "stack-hci",
   description: "Manage Azure Stack HCI",

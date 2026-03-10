@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const copsGenerator: Generator = {
   script: ["rubocop", "--show-cops"],
   postProcess: function (out) {

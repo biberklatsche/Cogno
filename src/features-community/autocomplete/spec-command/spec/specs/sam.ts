@@ -1,5 +1,6 @@
 import { awsProfileGenerator } from "./aws";
 
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const configEnvOption: OptionSpec = {
   name: "--config-env",
   description:

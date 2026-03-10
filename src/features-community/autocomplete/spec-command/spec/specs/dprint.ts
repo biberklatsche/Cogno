@@ -1,3 +1,4 @@
+import type { ArgSpec, CommandSpec, OptionSpec, SubcommandSpec } from "../spec.types";
 const helpSubcommand: SubcommandSpec = {
   name: "help",
   description: "Prints the help of the given subcommand(s)",

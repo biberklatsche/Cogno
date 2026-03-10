@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec } from "../../spec.types";
 const slnGenerator = filepaths({ extensions: ["sln"] });
 
 const completionSpec: CommandSpec = {

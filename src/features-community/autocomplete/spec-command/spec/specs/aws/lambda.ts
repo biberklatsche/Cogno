@@ -1,4 +1,5 @@
 import awsRegions from "./regions";
+import type { CommandSpec, Generator, Suggestion } from "../../spec.types";
 const awsPrincipals = [
   "a4b.amazonaws.com",
   "acm-pca.amazonaws.com",

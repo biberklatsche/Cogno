@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "mediapackage-vod",
   description: "AWS Elemental MediaPackage VOD",

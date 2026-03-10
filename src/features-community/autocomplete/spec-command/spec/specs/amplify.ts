@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, SubcommandSpec } from "../spec.types";
 const envNameGenerator: Generator = {
   script: ["amplify", "env", "list", "--json"],
   postProcess: function (out) {

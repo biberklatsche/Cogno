@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const packages: Generator = {
   // only trigger when the token length transitions to or from 0
   trigger: (current, previous) =>

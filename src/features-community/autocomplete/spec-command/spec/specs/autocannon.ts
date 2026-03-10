@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "autocannon",
   description: "Fast HTTP/1.1 benchmarking tool written in Node.js",

@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "mailsy",
   description: "⚡️ Quickly generate a disposable email straight from terminal",

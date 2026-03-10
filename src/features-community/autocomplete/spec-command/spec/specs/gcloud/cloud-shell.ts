@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "cloud-shell",
   description: "Manage Google Cloud Shell",

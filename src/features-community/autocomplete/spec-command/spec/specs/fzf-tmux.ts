@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "fzf-tmux",
   description: "Opens a fuzzy finder in a tmux pane",

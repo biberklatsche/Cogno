@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "okta",
   description: "The Okta CLI is the easiest way to get started with Okta!",

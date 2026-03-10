@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const icon =
   "https://raw.githubusercontent.com/appwrite/appwrite/master/public/images/icon.svg";
 const completionSpec: CommandSpec = {

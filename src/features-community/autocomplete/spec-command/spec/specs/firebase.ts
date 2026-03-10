@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const projectAliasesGenerator: Generator = {
   script: ["firebase", "projects:list"], // this calls to a firebase server and is therefore slow
   postProcess: (out) => {

@@ -1,5 +1,6 @@
 import prismaSpec from "./prisma";
 
+import type { CommandSpec, Generator, SubcommandSpec } from "../spec.types";
 const icon = "https://avatars.githubusercontent.com/u/45050444?s=200&v=4";
 
 const scripts: Generator = {

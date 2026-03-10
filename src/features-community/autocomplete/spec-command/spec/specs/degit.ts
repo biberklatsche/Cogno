@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 export interface Repository {
   id: number;
   node_id: string;

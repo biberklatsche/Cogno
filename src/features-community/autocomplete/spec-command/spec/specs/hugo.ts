@@ -1,3 +1,4 @@
+import type { CommandSpec, OptionSpec } from "../spec.types";
 const help = (name: string): OptionSpec => ({
   name: ["-h", "--help"],
   description: `help for ${name}`,

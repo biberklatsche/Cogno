@@ -1,5 +1,6 @@
 import { filepaths } from "@fig/autocomplete-generators";
 
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const serverList: Generator = {
   script: ["rancher", "server", "ls"],
   postProcess: function (out) {

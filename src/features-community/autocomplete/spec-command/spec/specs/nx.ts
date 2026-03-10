@@ -1,5 +1,6 @@
 // Docs - https://nx.dev/packages/nx/documents
 
+import type { CommandSpec, Generator, OptionSpec, SubcommandSpec, Suggestion } from "../spec.types";
 interface NxWorkspace {
   projects: {
     [key: string]: NxProject;

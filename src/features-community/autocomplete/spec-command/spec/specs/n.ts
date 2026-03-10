@@ -1,5 +1,6 @@
 import node from "./node";
 
+import type { ArgSpec, CommandSpec } from "../spec.types";
 const versionArg: ArgSpec = {
   name: "version",
   suggestions: [

@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const listTargets: Generator = {
   custom: async (tokens, executeShellCommand, context) => {
     const { stdout } = await executeShellCommand({

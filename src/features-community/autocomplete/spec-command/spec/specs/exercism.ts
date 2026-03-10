@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "exercism",
   description: "Solve coding exercises in your chosen programming languages",

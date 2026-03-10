@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 /**
  * Nylas CLI
  * Fig Autocomplete by "Blag aka Alvaro Tejada Galindo"

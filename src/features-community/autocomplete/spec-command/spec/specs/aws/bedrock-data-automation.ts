@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../../spec.types";
 const completionSpec: CommandSpec = {
   name: "bedrock-data-automation",
   description: "Amazon Bedrock Keystone Build",

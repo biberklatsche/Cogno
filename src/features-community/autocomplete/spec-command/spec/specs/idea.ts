@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 export const generateInteliJCompletionSpec = (
   name: string,
   editorName: string

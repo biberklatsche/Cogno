@@ -1,3 +1,4 @@
+import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "pro",
   description: "Manage Ubuntu Pro services from Canonical",

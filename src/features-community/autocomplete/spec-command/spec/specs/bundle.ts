@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator } from "../spec.types";
 const gemfileGemsGenerator: Generator = {
   script: ["bundle", "list", "--name-only"],
   postProcess: (out) => {

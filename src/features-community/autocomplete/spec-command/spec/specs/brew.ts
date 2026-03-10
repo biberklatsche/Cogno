@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, OptionSpec } from "../spec.types";
 const servicesGenerator = (action: string): Generator => ({
   script: ["bash", "-c", "brew services list | sed -e 's/ .*//' | tail -n +2"],
   postProcess: function (out) {

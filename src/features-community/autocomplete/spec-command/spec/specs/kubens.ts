@@ -1,3 +1,4 @@
+import type { CommandSpec, Suggestion } from "../spec.types";
 const completionSpec: CommandSpec = {
   name: "kubens",
   description: "Switch between Kubernetes-namespaces",

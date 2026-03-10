@@ -1,3 +1,4 @@
+import type { CommandSpec, Generator, SubcommandSpec, Suggestion } from "../../spec.types";
 type SearchResultData = {
   id: string;
   title: string;
