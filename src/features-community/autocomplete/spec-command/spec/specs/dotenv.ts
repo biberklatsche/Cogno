@@ -2,38 +2,25 @@
 // https://github.com/bkeepers/dotenv
 import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "dotenv",
-  description: "Loads environment variables from .env",
-  args: {
-    isCommand: true,
-  },
-  options: [
-    {
-      name: "-f",
-      exclusiveOn: ["-h", "-v", "-t"],
-      description: "List of env files to parse",
-      args: {
-        template: "filepaths",
-      },
-    },
-    {
-      name: ["-h", "--help"],
-      exclusiveOn: ["-f", "-v", "-t"],
-      description: "Display help",
-    },
-    {
-      name: ["-v", "--version"],
-      exclusiveOn: ["-f", "-h", "-t"],
-      description: "Show version",
-    },
-    {
-      name: ["-t", "--template"],
-      exclusiveOn: ["-f", "-h", "-v"],
-      description: "Create a template env file",
-      args: {
-        template: "filepaths",
-      },
-    },
-  ],
+    name: "dotenv",
+    description: "Loads environment variables from .env",
+    options: [
+        {
+            name: "-f",
+            description: "List of env files to parse"
+        },
+        {
+            name: ["-h", "--help"],
+            description: "Display help"
+        },
+        {
+            name: ["-v", "--version"],
+            description: "Show version"
+        },
+        {
+            name: ["-t", "--template"],
+            description: "Create a template env file"
+        }
+    ]
 };
 export default completionSpec;

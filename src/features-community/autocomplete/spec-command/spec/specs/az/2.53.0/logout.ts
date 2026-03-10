@@ -1,15 +1,13 @@
 import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
-  name: "logout",
-  description: "Log out to remove access to Azure subscriptions",
-  options: [
-    {
-      name: "--username",
-      description:
-        "Account user, if missing, logout the current active account",
-      args: { name: "username" },
-    },
-  ],
+    name: "logout",
+    description: "Log out to remove access to Azure subscriptions",
+    options: [
+        {
+            name: "--username",
+            description: "Account user, if missing, logout the current active account",
+            args: { name: "username" }
+        }
+    ]
 };
-
 export default completion;

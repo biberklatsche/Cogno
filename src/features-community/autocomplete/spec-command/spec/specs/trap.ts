@@ -4,38 +4,27 @@ import type { CommandSpec, Generator, Suggestion } from "../spec.types";
  * Other shells output looks like "HUP INT QUIT" (fish, csh, ...)
  */
 const re = /(\d+\)\s)?([\w-+]+)/g;
-
 /*
  * Generators
  */
-
-const availableSignalsGenerator = (
-  suggestOptions?: Partial<Suggestion>
-): Generator => ({
-  script: ["command", "kill", "-l"],
-  postProcess: (output) =>
-    [...output.matchAll(re)].map((signal) => ({
-      name: signal[2],
+const availableSignalsGenerator = (suggestOptions?: Partial<Suggestion>): Generator => ({
+    script: ["command", "kill", "-l"],
+    postProcess: (output) => [...output.matchAll(re)].map((signal) => ({
+        name: signal[2],
     })),
 });
-
 const completionSpec: CommandSpec = {
-  name: "trap",
-  description:
-    "Automatically execute commands after receiving signals by processes or the operating system",
-  options: [
-    {
-      name: ["--print", "-p"],
-      description: "Prints all defined signal handlers",
-    },
-    {
-      name: ["--help", "-h"],
-      description: "Displays help about using this command",
-    },
-  ],
-  args: [
-    { name: "function name", isOptional: true },
-    { name: "reason", generators: availableSignalsGenerator() },
-  ],
+    name: "trap",
+    description: "Automatically execute commands after receiving signals by processes or the operating system",
+    options: [
+        {
+            name: ["--print", "-p"],
+            description: "Prints all defined signal handlers"
+        },
+        {
+            name: ["--help", "-h"],
+            description: "Displays help about using this command"
+        }
+    ]
 };
 export default completionSpec;

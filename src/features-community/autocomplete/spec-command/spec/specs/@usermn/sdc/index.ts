@@ -1,14 +1,10 @@
 import { createVersionedSpec } from "@fig/autocomplete-helpers";
 import type { GetVersionCommand } from "../../../spec.types";
 const versionFiles = ["0.0.0"];
-export const getVersionCommand: GetVersionCommand = async (
-  executeShellCommand
-) => {
-  return (
-    await executeShellCommand({
-      command: "npx",
-      args: ["@usermn/sdc", "--version"],
-    })
-  ).stdout;
+export const getVersionCommand: GetVersionCommand = async (executeShellCommand) => {
+    return (await executeShellCommand({
+        command: "npx",
+        args: ["@usermn/sdc", "--version"],
+    })).stdout;
 };
 export default createVersionedSpec("@usermn/sdc", versionFiles);

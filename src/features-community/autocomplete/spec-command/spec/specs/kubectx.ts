@@ -1,89 +1,27 @@
 import type { CommandSpec, Suggestion } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "kubectx",
-  description: "Switch between Kubernetes-contexts",
-  additionalSuggestions: [
-    {
-      name: "-",
-      priority: 85,
-      description: "Switch to previous context",
-      icon: "fig://icon?type=asterisk",
-    },
-  ],
-  parserDirectives: {
-    flagsArePosixNoncompliant: true,
-  },
-  options: [
-    {
-      name: ["--help", "-h"],
-      description: "Show help for kubectx",
-    },
-    {
-      name: ["--current", "-c"],
-      description: "Show current context",
-    },
-    {
-      name: ["--unset", "-u"],
-      description: "Unset the current context",
-    },
-    {
-      name: "-d",
-      description: "Delete context",
-      isDangerous: true,
-      args: {
-        name: "context",
-        isVariadic: true,
-        generators: {
-          script: ["kubectx"],
-          postProcess: (out) => {
-            const contexts = out.split("\n").map((item) => ({
-              name: item,
-              priority: 95,
-              icon: "fig://icon?type=kubernetes",
-            }));
-
-            return [
-              {
-                name: ".",
-                description: "Delete current context",
-                priority: 90,
-                icon: "fig://icon?type=asterisk",
-              },
-              ...contexts,
-            ] as Suggestion[];
-          },
+    name: "kubectx",
+    description: "Switch between Kubernetes-contexts",
+    options: [
+        {
+            name: ["--help", "-h"],
+            description: "Show help for kubectx"
         },
-      },
-    },
-  ],
-  args: {
-    name: "context",
-    generators: [
-      {
-        script: ["bash", "-c", "kubectx | grep -v $(kubectx -c)"],
-        postProcess: (out) =>
-          out.split("\n").map((item) => ({
-            name: item,
-            priority: 90,
-            icon: "fig://icon?type=kubernetes",
-          })) as Suggestion[],
-      },
-      {
-        script: ["kubectx", "-c"],
-        postProcess: (out) => {
-          return !out
-            ? []
-            : [
-                {
-                  name: out,
-                  priority: 100,
-                  icon: "⭐️",
-                },
-              ];
+        {
+            name: ["--current", "-c"],
+            description: "Show current context"
         },
-      },
-    ],
-    isOptional: true,
-  },
+        {
+            name: ["--unset", "-u"],
+            description: "Unset the current context"
+        },
+        {
+            name: "-d",
+            description: "Delete context",
+            args: {
+                name: "context"
+            }
+        }
+    ]
 };
 export default completionSpec;

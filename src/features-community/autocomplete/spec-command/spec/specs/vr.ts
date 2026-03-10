@@ -1,98 +1,79 @@
 import type { CommandSpec, Generator, Suggestion } from "../spec.types";
 const SCRIPT_KEYWORD = "    • ";
-
 const scriptGenerator: Generator = {
-  cache: {
-    strategy: "stale-while-revalidate",
-  },
-  script: {
-    command: "vr",
-    // eslint-disable-next-line @withfig/fig-linter/no-empty-array-values
-    args: [],
-    env: {
-      NO_COLOR: "1",
+    cache: {
+        strategy: "stale-while-revalidate",
     },
-  },
-  postProcess: (out) => {
-    const suggestions: Suggestion[] = [];
-
-    try {
-      const lines = out.split("\n").filter(Boolean);
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.startsWith(SCRIPT_KEYWORD)) continue;
-
-        suggestions.push({
-          name: line.replace(SCRIPT_KEYWORD, ""),
-          ...(lines[i + 1] && { description: lines[i + 1].trim() }),
-        });
-      }
-    } catch (error) {
-      console.error(error);
-    }
-
-    return suggestions;
-  },
-};
-
-const completionSpec: CommandSpec = {
-  name: "vr",
-  description: "The npm-style script runner for Deno",
-  subcommands: [
-    {
-      name: "run",
-      description: "Run a script",
-      args: {
-        name: "script",
-        generators: scriptGenerator,
-      },
-    },
-    {
-      name: "export",
-      description: "Export one or more scripts as standalone executable files",
-      args: {
-        name: "script",
-        isVariadic: true,
-        generators: scriptGenerator,
-      },
-    },
-    {
-      name: "upgrade",
-      description:
-        "Upgrade Velociraptor to the latest version or to a specific one",
-      args: {
-        name: "version",
-        isOptional: true,
-      },
-      options: [
-        {
-          name: ["-o", "--out-dir"],
-          description: "The folder where the scripts will be exported",
-          args: {
-            name: "dir",
-          },
+    script: {
+        command: "vr",
+        env: {
+            NO_COLOR: "1",
         },
-      ],
     },
-  ],
-
-  options: [
-    {
-      name: ["--help", "-h"],
-      description: "Show help for Velociraptor",
-      isPersistent: true,
+    postProcess: (out) => {
+        const suggestions: Suggestion[] = [];
+        try {
+            const lines = out.split("\n").filter(Boolean);
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line.startsWith(SCRIPT_KEYWORD))
+                    continue;
+                suggestions.push({
+                    name: line.replace(SCRIPT_KEYWORD, ""),
+                    ...(lines[i + 1] && { description: lines[i + 1].trim() }),
+                });
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
+        return suggestions;
     },
-    {
-      name: ["-V", "--version"],
-      description: "Show the version number for Velociraptor",
-    },
-  ],
-
-  args: {
-    name: "script",
-    generators: scriptGenerator,
-  },
 };
-
+const completionSpec: CommandSpec = {
+    name: "vr",
+    description: "The npm-style script runner for Deno",
+    subcommands: [
+        {
+            name: "run",
+            description: "Run a script",
+            args: {
+                name: "script"
+            }
+        },
+        {
+            name: "export",
+            description: "Export one or more scripts as standalone executable files",
+            args: {
+                name: "script"
+            }
+        },
+        {
+            name: "upgrade",
+            description: "Upgrade Velociraptor to the latest version or to a specific one",
+            args: {
+                name: "version"
+            },
+            options: [
+                {
+                    name: ["-o", "--out-dir"],
+                    description: "The folder where the scripts will be exported",
+                    args: {
+                        name: "dir"
+                    }
+                }
+            ]
+        }
+    ],
+    options: [
+        {
+            name: ["--help", "-h"],
+            description: "Show help for Velociraptor"
+        },
+        {
+            name: ["-V", "--version"],
+            description: "Show the version number for Velociraptor"
+        }
+    ]
+};
 export default completionSpec;

@@ -1,106 +1,96 @@
 import type { CommandSpec, Generator, OptionSpec, Suggestion } from "../spec.types";
 const testsGenerator: Generator = {
-  custom: async (tokens, executeShellCommand) => {
-    // TODO: load the list of test files specified in testDir on playwright.config file
-    return [] as Suggestion[];
-  },
+    custom: async (tokens, executeShellCommand) => {
+        // TODO: load the list of test files specified in testDir on playwright.config file
+        return [] as Suggestion[];
+    },
 };
-
 const browserSuggestions: Suggestion[] = [
-  {
-    name: "chromium",
-    displayName: "Chromium",
-  },
-  {
-    name: "chrome",
-    displayName: "Chrome",
-  },
-  {
-    name: "chrome-beta",
-    displayName: "Chrome Beta",
-  },
-  {
-    name: "msedge",
-    displayName: "Microsoft Edge",
-  },
-  {
-    name: "msedge-beta",
-    displayName: "Microsoft Edge Beta",
-  },
-  {
-    name: "msedge-dev",
-    displayName: "Microsoft Edge Dev",
-  },
-  {
-    name: "firefox",
-    displayName: "Firefox",
-  },
-  {
-    name: "webkit",
-    displayName: "WebKit",
-  },
+    {
+        name: "chromium",
+        displayName: "Chromium",
+    },
+    {
+        name: "chrome",
+        displayName: "Chrome",
+    },
+    {
+        name: "chrome-beta",
+        displayName: "Chrome Beta",
+    },
+    {
+        name: "msedge",
+        displayName: "Microsoft Edge",
+    },
+    {
+        name: "msedge-beta",
+        displayName: "Microsoft Edge Beta",
+    },
+    {
+        name: "msedge-dev",
+        displayName: "Microsoft Edge Dev",
+    },
+    {
+        name: "firefox",
+        displayName: "Firefox",
+    },
+    {
+        name: "webkit",
+        displayName: "WebKit",
+    }
 ];
-
 const helpOption: OptionSpec = {
-  name: ["--help", "-h"],
-  description: "Display help for command",
-  priority: 1,
+    name: ["--help", "-h"],
+    description: "Display help for command"
 };
-
 const completionSpec: CommandSpec = {
-  name: "playwright",
-  description: "",
-  subcommands: [
-    {
-      name: "test",
-      description: "Run tests with Playwright Test",
-      args: {
-        name: "tests",
-        description: "Test files to run",
-        isOptional: true,
-        isVariadic: true,
-        template: ["filepaths", "folders"],
-      },
-      options: [
+    name: "playwright",
+    description: "",
+    subcommands: [
         {
-          name: "-g",
-          description: "Run the test with the title",
-          args: {
-            name: "title",
-          },
+            name: "test",
+            description: "Run tests with Playwright Test",
+            args: {
+                name: "tests",
+                description: "Test files to run"
+            },
+            options: [
+                {
+                    name: "-g",
+                    description: "Run the test with the title",
+                    args: {
+                        name: "title"
+                    }
+                },
+                {
+                    name: "--headed",
+                    description: "Run tests in headed browsers"
+                },
+                helpOption
+            ]
         },
         {
-          name: "--headed",
-          description: "Run tests in headed browsers",
-        },
-        helpOption,
-      ],
-    },
-    {
-      name: "install",
-      description: "Running without arguments will install default browsers",
-      args: {
-        name: "browsers",
-        description: "Browser to install",
-        isOptional: true,
-        isVariadic: true,
-        suggestions: browserSuggestions,
-      },
-      options: [
+            name: "install",
+            description: "Running without arguments will install default browsers",
+            args: {
+                name: "browsers",
+                description: "Browser to install"
+            },
+            options: [
+                {
+                    name: "--with-deps",
+                    description: "Install system dependencies for browsers"
+                },
+                helpOption
+            ]
+        }
+    ],
+    options: [
         {
-          name: "--with-deps",
-          description: "Install system dependencies for browsers",
+            name: ["--version", "-V"],
+            description: "Output the version number"
         },
-        helpOption,
-      ],
-    },
-  ],
-  options: [
-    {
-      name: ["--version", "-V"],
-      description: "Output the version number",
-    },
-    helpOption,
-  ],
+        helpOption
+    ]
 };
 export default completionSpec;

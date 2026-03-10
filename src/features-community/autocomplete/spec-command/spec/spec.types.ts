@@ -57,15 +57,6 @@ export type ParserDirectives = {
 export type ArgSpec = {
     name: string;
     description?: string;
-    isOptional?: boolean;
-    isVariadic?: boolean;
-    suggestions?: ReadonlyArray<Suggestion | string>;
-    generators?: SingleOrArray<Generator>;
-    template?: string | string[];
-    parserDirectives?: ParserDirectives;
-    default?: string;
-    debounce?: number;
-    [key: string]: unknown;
 };
 
 export type OptionSpec = {
@@ -74,13 +65,6 @@ export type OptionSpec = {
     args?: ArgSpec | ArgSpec[];
     isRepeatable?: boolean;
     providers?: SpecProviderBinding[];
-    exclusiveOn?: string[];
-    dependsOn?: string[];
-    hidden?: boolean;
-    priority?: number;
-    icon?: string;
-    insertValue?: string;
-    [key: string]: unknown;
 };
 
 export type SubcommandSpec = {
@@ -90,12 +74,6 @@ export type SubcommandSpec = {
     providers?: SpecProviderBinding[];
     subcommands?: Array<string | SubcommandSpec>;
     options?: Array<string | OptionSpec>;
-    isDangerous?: boolean;
-    hidden?: boolean;
-    icon?: string;
-    priority?: number;
-    loadSpec?: string | CommandSpec | (() => Promise<CommandSpec>);
-    [key: string]: unknown;
 };
 
 export type CommandSpec = {
@@ -109,11 +87,6 @@ export type CommandSpec = {
     providers?: SpecProviderBinding[];
     shells?: ShellConstraint[];
     excludeShells?: ShellConstraint[];
-    args?: ArgSpec | ArgSpec[];
-    hidden?: boolean;
-    loadSpec?: string | CommandSpec | (() => Promise<CommandSpec>);
-    parserDirectives?: ParserDirectives;
-    [key: string]: unknown;
 };
 
 export type VersionDiffMap = Record<string, unknown>;

@@ -1,316 +1,271 @@
 import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "splash-cli",
-  displayName: "Splash",
-  description: "Get stunning wallpapers from Unsplash",
-  subcommands: [
-    {
-      name: "settings",
-      description: "Manage settings",
-      icon: "⚙️",
-      subcommands: [
+    name: "splash-cli",
+    description: "Get stunning wallpapers from Unsplash",
+    subcommands: [
         {
-          name: "get",
-          args: {
-            name: "config key",
-            description: "Config key",
-            isOptional: true,
-          },
+            name: "settings",
+            description: "Manage settings",
+            subcommands: [
+                {
+                    name: "get",
+                    args: {
+                        name: "config key",
+                        description: "Config key"
+                    }
+                },
+                {
+                    name: "set",
+                    description: "Setup the configuration"
+                },
+                {
+                    name: "restore",
+                    description: "Restore default settings"
+                }
+            ]
         },
         {
-          name: "set",
-          description: "Setup the configuration",
+            name: "aliases",
+            description: "Manage aliases",
+            subcommands: [
+                {
+                    name: "get",
+                    description: "Get an alias",
+                    args: {
+                        name: "alias"
+                    }
+                },
+                {
+                    name: "set",
+                    description: "Set an alias",
+                    args: [
+                        {
+                            name: "key"
+                        },
+                        {
+                            name: "value"
+                        }
+                    ]
+                },
+                {
+                    name: "help",
+                    description: "Show help menu"
+                }
+            ]
         },
         {
-          name: "restore",
-          description: "Restore default settings",
-        },
-      ],
-    },
-    {
-      name: "aliases",
-      description: "Manage aliases",
-      icon: "🔗",
-      subcommands: [
-        {
-          name: "get",
-          description: "Get an alias",
-          args: {
-            name: "alias",
-          },
-        },
-        {
-          name: "set",
-          description: "Set an alias",
-          args: [
-            {
-              name: "key",
-            },
-            {
-              name: "value",
-            },
-          ],
-        },
-        {
-          name: "help",
-          description: "Show help menu",
-        },
-      ],
-    },
-    {
-      name: "collection",
-      description: "Manage collections",
-      icon: "🗃",
-      subcommands: [
-        {
-          name: "get",
-          description: "Get a collection",
-          args: {
-            name: "collection id",
-          },
+            name: "collection",
+            description: "Manage collections",
+            subcommands: [
+                {
+                    name: "get",
+                    description: "Get a collection",
+                    args: {
+                        name: "collection id"
+                    }
+                },
+                {
+                    name: "delete",
+                    description: "Delete a collection",
+                    args: {
+                        name: "collection id"
+                    }
+                },
+                {
+                    name: "create",
+                    description: "Create a collection"
+                },
+                {
+                    name: "photos:add",
+                    description: "Add photos to a collection"
+                },
+                {
+                    name: "photos:remove",
+                    description: "Remove photos to a collection"
+                },
+                {
+                    name: "help",
+                    description: "Show help for this command"
+                }
+            ]
         },
         {
-          name: "delete",
-          description: "Delete a collection",
-          args: {
-            name: "collection id",
-          },
+            name: "dir",
+            description: "Manage SplashCLI download directory",
+            subcommands: [
+                {
+                    name: "get",
+                    description: "Get the download directory path"
+                },
+                {
+                    name: "set",
+                    description: "Set the download directory path",
+                    args: {
+                        name: "path"
+                    }
+                },
+                {
+                    name: "clean",
+                    description: "Delete all the downloaded photos"
+                },
+                {
+                    name: "count",
+                    description: "Count all the downloaded photos"
+                },
+                {
+                    name: "help",
+                    description: "Show help for this command"
+                }
+            ]
         },
         {
-          name: "create",
-          description: "Create a collection",
+            name: "user",
+            subcommands: [
+                {
+                    name: "login",
+                    description: "Login with your Unsplash account"
+                },
+                {
+                    name: "logout",
+                    description: "Removes all user data"
+                },
+                {
+                    name: "liked",
+                    description: "List last 10 liked photos"
+                },
+                {
+                    name: "collections",
+                    description: "List all user's collections"
+                },
+                {
+                    name: "get",
+                    description: "Get user infos"
+                },
+                {
+                    name: ["edit", "update"],
+                    description: "Update user infos"
+                },
+                {
+                    name: "help",
+                    description: "Help Menu"
+                }
+            ]
+        }
+    ],
+    options: [
+        {
+            name: ["--help", "-h"],
+            description: "Help Message"
         },
         {
-          name: "photos:add",
-          description: "Add photos to a collection",
+            name: ["--version", "-v"],
+            description: "Prints `splash-cli` version"
         },
         {
-          name: "photos:remove",
-          description: "Remove photos to a collection",
+            name: "--scale",
+            description: "Scale of the image",
+            args: {
+                name: "scale"
+            }
         },
         {
-          name: "help",
-          description: "Show help for this command",
-        },
-      ],
-    },
-    {
-      name: "dir",
-      description: "Manage SplashCLI download directory",
-      icon: "📁",
-      subcommands: [
-        {
-          name: "get",
-          icon: "📁",
-          description: "Get the download directory path",
+            name: "--screen",
+            description: "Set wallpaper on selected screen",
+            args: {
+                name: "screen"
+            }
         },
         {
-          name: "set",
-          icon: "📁",
-          description: "Set the download directory path",
-          args: {
-            name: "path",
-          },
+            name: ["-s", "--save"],
+            description: "Save photo without setting as wallpaper",
+            args: {
+                name: "path"
+            }
         },
         {
-          name: "clean",
-          description: "Delete all the downloaded photos",
-          isDangerous: true,
-          icon: "🗑️",
+            name: "--set",
+            description: "Set wallpaper from local file",
+            args: {
+                name: "filepath"
+            }
         },
         {
-          name: "count",
-          description: "Count all the downloaded photos",
-          icon: "📈",
+            name: ["-i", "--info"],
+            description: "Show image exif data"
         },
         {
-          name: "help",
-          description: "Show help for this command",
+            name: ["-q", "--quiet"],
+            description: "Hide output"
         },
-      ],
-    },
-    {
-      name: "user",
-      subcommands: [
+        // Image Manipulation
         {
-          name: "login",
-          description: "Login with your Unsplash account",
-        },
-        {
-          name: "logout",
-          description: "Removes all user data",
+            name: "--rotate",
+            description: "Rotate image",
+            args: {
+                name: "degrees"
+            }
         },
         {
-          name: "liked",
-          description: "List last 10 liked photos",
-          icon: "❤️",
+            name: "--colorspace",
+            description: "Define image colorspace",
+            args: {
+                name: "colorspace"
+            }
         },
         {
-          name: "collections",
-          description: "List all user's collections",
-          icon: "🗃",
+            name: "--flip",
+            description: "Flip image on the Y axis"
         },
         {
-          name: "get",
-          description: "Get user infos",
-          icon: "🔍",
+            name: ["-f", "--featured"],
+            isRepeatable: false,
+            description: "Limit to only featured photos"
         },
         {
-          name: ["edit", "update"],
-          description: "Update user infos",
-          icon: "🧪",
+            name: "--query",
+            isRepeatable: false,
+            description: "Filter by keywords",
+            args: {
+                name: "querystring"
+            }
         },
         {
-          name: "help",
-          description: "Help Menu",
+            name: "--orientation",
+            description: "Filter by orientation",
+            args: {
+                name: "orientation"
+            }
         },
-      ],
-    },
-  ],
-  options: [
-    {
-      name: ["--help", "-h"],
-      description: "Help Message",
-      icon: "📚",
-    },
-    {
-      name: ["--version", "-v"],
-      description: "Prints `splash-cli` version",
-    },
-    {
-      name: "--scale",
-      icon: "🔎",
-      description: "Scale of the image",
-      args: {
-        name: "scale",
-        default: "auto",
-        suggestions: ["auto", "fill", "fit", "stretch", "center"],
-      },
-    },
-    {
-      name: "--screen",
-      icon: "🖥",
-      description: "Set wallpaper on selected screen",
-      args: {
-        name: "screen",
-        default: "all",
-        suggestions: ["all", "main"],
-      },
-    },
-    {
-      name: ["-s", "--save"],
-      description: "Save photo without setting as wallpaper",
-      icon: "💾",
-      args: {
-        isOptional: true,
-        name: "path",
-        default: ".",
-        template: "folders",
-      },
-    },
-    {
-      name: "--set",
-      description: "Set wallpaper from local file",
-      args: {
-        name: "filepath",
-        template: "filepaths",
-      },
-    },
-    {
-      name: ["-i", "--info"],
-      description: "Show image exif data",
-      icon: "📋",
-    },
-    {
-      name: ["-q", "--quiet"],
-      description: "Hide output",
-      icon: "💤",
-    },
-
-    // Image Manipulation
-    {
-      name: "--rotate",
-      icon: "🔄",
-      description: "Rotate image",
-      args: {
-        name: "degrees",
-        suggestions: ["90", "180", "270"],
-      },
-    },
-    {
-      name: "--colorspace",
-      description: "Define image colorspace",
-      icon: "🎨",
-      args: {
-        name: "colorspace",
-        default: "srgb",
-        suggestions: ["srgb", "rgb", "cmyk", "lab", "b-w"],
-      },
-    },
-    {
-      name: "--flip",
-      description: "Flip image on the Y axis",
-      icon: "🔁",
-    },
-    {
-      name: ["-f", "--featured"],
-      icon: "🎉",
-      isRepeatable: false,
-      description: "Limit to only featured photos",
-    },
-    {
-      name: "--query",
-      isRepeatable: false,
-      description: "Filter by keywords",
-      args: {
-        name: "querystring",
-      },
-    },
-    {
-      name: "--orientation",
-      icon: "🔄",
-      description: "Filter by orientation",
-      args: {
-        name: "orientation",
-        default: "landscape",
-        suggestions: ["landscape", "portrait", "squarish"],
-      },
-    },
-
-    // Source
-    {
-      name: ["-c", "--curated"],
-      description: "Random Curated photo",
-    },
-    {
-      name: ["-u", "--user"],
-      description: "Random photo from user",
-      icon: "🙋‍♂️",
-      args: {
-        name: "username",
-      },
-    },
-    {
-      name: "--collection",
-      description: "Random photo from collection",
-      icon: "🗃",
-      args: {
-        name: "collection id",
-      },
-    },
-    {
-      name: "--id",
-      description: "Get photo by ID",
-      args: {
-        name: "photo_id",
-      },
-    },
-    {
-      name: "--day",
-      icon: "🏝",
-      description: "Photo of the day",
-    },
-  ],
+        // Source
+        {
+            name: ["-c", "--curated"],
+            description: "Random Curated photo"
+        },
+        {
+            name: ["-u", "--user"],
+            description: "Random photo from user",
+            args: {
+                name: "username"
+            }
+        },
+        {
+            name: "--collection",
+            description: "Random photo from collection",
+            args: {
+                name: "collection id"
+            }
+        },
+        {
+            name: "--id",
+            description: "Get photo by ID",
+            args: {
+                name: "photo_id"
+            }
+        },
+        {
+            name: "--day",
+            description: "Photo of the day"
+        }
+    ]
 };
-
 export default completionSpec;

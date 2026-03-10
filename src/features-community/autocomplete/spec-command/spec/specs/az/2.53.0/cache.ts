@@ -1,68 +1,58 @@
 import type { CommandSpec } from "../../../spec.types";
 const completion: CommandSpec = {
-  name: "cache",
-  description:
-    "Commands to manage CLI objects cached using the --defer argument",
-  subcommands: [
-    {
-      name: "delete",
-      description: "Delete an object from the cache",
-      options: [
+    name: "cache",
+    description: "Commands to manage CLI objects cached using the --defer argument",
+    subcommands: [
         {
-          name: ["--name", "-n"],
-          description: "The resource name",
-          args: { name: "name" },
-          isRequired: true,
+            name: "delete",
+            description: "Delete an object from the cache",
+            options: [
+                {
+                    name: ["--name", "-n"],
+                    description: "The resource name",
+                    args: { name: "name" }
+                },
+                {
+                    name: ["--resource-group", "-g"],
+                    description: "Name of resource group. You can configure the default group using az configure --defaults group=<name>",
+                    args: { name: "resource-group" }
+                },
+                {
+                    name: ["--resource-type", "-t"],
+                    description: "The resource type",
+                    args: { name: "resource-type" }
+                }
+            ]
         },
         {
-          name: ["--resource-group", "-g"],
-          description:
-            "Name of resource group. You can configure the default group using az configure --defaults group=<name>",
-          args: { name: "resource-group" },
-          isRequired: true,
+            name: "list",
+            description: "List the contents of the object cache"
         },
         {
-          name: ["--resource-type", "-t"],
-          description: "The resource type",
-          args: { name: "resource-type" },
-          isRequired: true,
-        },
-      ],
-    },
-    {
-      name: "list",
-      description: "List the contents of the object cache",
-    },
-    {
-      name: "purge",
-      description: "Clear the entire CLI object cache",
-    },
-    {
-      name: "show",
-      description: "Show the contents of a specific object in the cache",
-      options: [
-        {
-          name: ["--name", "-n"],
-          description: "The resource name",
-          args: { name: "name" },
-          isRequired: true,
+            name: "purge",
+            description: "Clear the entire CLI object cache"
         },
         {
-          name: ["--resource-group", "-g"],
-          description:
-            "Name of resource group. You can configure the default group using az configure --defaults group=<name>",
-          args: { name: "resource-group" },
-          isRequired: true,
-        },
-        {
-          name: ["--resource-type", "-t"],
-          description: "The resource type",
-          args: { name: "resource-type" },
-          isRequired: true,
-        },
-      ],
-    },
-  ],
+            name: "show",
+            description: "Show the contents of a specific object in the cache",
+            options: [
+                {
+                    name: ["--name", "-n"],
+                    description: "The resource name",
+                    args: { name: "name" }
+                },
+                {
+                    name: ["--resource-group", "-g"],
+                    description: "Name of resource group. You can configure the default group using az configure --defaults group=<name>",
+                    args: { name: "resource-group" }
+                },
+                {
+                    name: ["--resource-type", "-t"],
+                    description: "The resource type",
+                    args: { name: "resource-type" }
+                }
+            ]
+        }
+    ]
 };
-
 export default completion;

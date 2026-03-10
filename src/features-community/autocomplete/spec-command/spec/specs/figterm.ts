@@ -1,17 +1,16 @@
 import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "figterm",
-  description: "Fig's terminal layer",
-  options: [
-    {
-      name: ["--help", "-h"],
-      description: "Print help information",
-    },
-    {
-      name: ["--version", "-V"],
-      description: "Print version information",
-    },
-  ],
+    name: "figterm",
+    description: "Fig's terminal layer",
+    options: [
+        {
+            name: ["--help", "-h"],
+            description: "Print help information"
+        },
+        {
+            name: ["--version", "-V"],
+            description: "Print version information"
+        }
+    ]
 };
-
 export default completionSpec;

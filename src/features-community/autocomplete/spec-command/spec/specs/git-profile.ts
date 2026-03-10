@@ -1,39 +1,36 @@
 // https://github.com/dotzero/git-profile
 import type { CommandSpec, Generator } from "../spec.types";
 const profiles: Generator = {
-  script: ["git-profile", "list"],
-  postProcess: (output) => {
-    return Array.from(output.matchAll(/^\[(.+?)\]$/gm)).map((result) => ({
-      name: result[1],
-      description: `Use profile "${result[1]}"`,
-    }));
-  },
+    script: ["git-profile", "list"],
+    postProcess: (output) => {
+        return Array.from(output.matchAll(/^\[(.+?)\]$/gm)).map((result) => ({
+            name: result[1],
+            description: `Use profile "${result[1]}"`,
+        }));
+    },
 };
-
 const completionSpec: CommandSpec = {
-  name: "git-profile",
-  description: "Switch profiles",
-  subcommands: [
-    {
-      name: "use",
-      description: "Use a profile",
-      args: {
-        name: "profile",
-        description: "Profile you want to apply in this repository",
-        generators: profiles,
-      },
-    },
-  ],
-  options: [
-    {
-      name: ["--help", "-h"],
-      description: "Help for git-profile script",
-    },
-    {
-      name: ["--config", "-c"],
-      description: 'Config file (default "~/.gitprofile")',
-    },
-  ],
+    name: "git-profile",
+    description: "Switch profiles",
+    subcommands: [
+        {
+            name: "use",
+            description: "Use a profile",
+            args: {
+                name: "profile",
+                description: "Profile you want to apply in this repository"
+            }
+        }
+    ],
+    options: [
+        {
+            name: ["--help", "-h"],
+            description: "Help for git-profile script"
+        },
+        {
+            name: ["--config", "-c"],
+            description: 'Config file (default "~/.gitprofile")'
+        }
+    ]
 };
-
 export default completionSpec;

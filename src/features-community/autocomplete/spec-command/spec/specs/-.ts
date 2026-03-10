@@ -1,12 +1,6 @@
 import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "-",
-  description:
-    "ZSH pre-command modifier that prepends a '-' to the argv[0] string",
-  hidden: true,
-  args: {
-    isCommand: true,
-  }
+    name: "-",
+    description: "ZSH pre-command modifier that prepends a '-' to the argv[0] string"
 };
-
 export default completionSpec;

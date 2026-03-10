@@ -1,11 +1,5 @@
 import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "dotslash",
-  args: {
-    // This was previously just "filepaths", however, we added folders so
-    // users of ohmyzsh could cd into a folder by typing the folder name without `cd`
-    template: ["filepaths", "folders"],
-  },
+    name: "dotslash"
 };
-
 export default completionSpec;

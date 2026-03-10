@@ -1,50 +1,44 @@
 import type { CommandSpec } from "../spec.types";
 const completionSpec: CommandSpec = {
-  name: "progressline",
-  description: "⏳Track commands progress in a compact one-line format",
-
-  options: [
-    {
-      name: ["--help", "-h"],
-      description: "Show help for progressline",
-    },
-    {
-      name: ["--log-all", "-a"],
-      description: "Log all lines above the progress line",
-    },
-    {
-      name: ["--static-text", "-t"],
-      description:
-        "Set static text to display instead of the latest stdin data",
-      args: {
-        name: "text",
-      },
-    },
-    {
-      name: ["--activity-style", "-s"],
-      args: {
-        name: "style",
-        default: "dots",
-        suggestions: ["dots", "kitt", "snake"],
-      },
-      description: "Set style of the activity indicator",
-    },
-    {
-      name: ["--original-log-path", "-l"],
-      description: "Save the original log to a file",
-      args: {
-        name: "path",
-        template: "filepaths",
-      },
-    },
-    {
-      name: ["--log-matches", "-m"],
-      description:
-        "Log above progress line lines matching the given regular expressions",
-      args: {
-        name: "regex",
-      },
-    },
-  ],
+    name: "progressline",
+    description: "⏳Track commands progress in a compact one-line format",
+    options: [
+        {
+            name: ["--help", "-h"],
+            description: "Show help for progressline"
+        },
+        {
+            name: ["--log-all", "-a"],
+            description: "Log all lines above the progress line"
+        },
+        {
+            name: ["--static-text", "-t"],
+            description: "Set static text to display instead of the latest stdin data",
+            args: {
+                name: "text"
+            }
+        },
+        {
+            name: ["--activity-style", "-s"],
+            args: {
+                name: "style"
+            },
+            description: "Set style of the activity indicator"
+        },
+        {
+            name: ["--original-log-path", "-l"],
+            description: "Save the original log to a file",
+            args: {
+                name: "path"
+            }
+        },
+        {
+            name: ["--log-matches", "-m"],
+            description: "Log above progress line lines matching the given regular expressions",
+            args: {
+                name: "regex"
+            }
+        }
+    ]
 };
 export default completionSpec;
