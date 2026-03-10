@@ -15,8 +15,8 @@ import {TelegramBotRelayService} from "./notification/+state/telegram-bot-relay.
 import {ConfigService, RealConfigService} from "./config/+state/config.service";
 import {CoreHostWiringService} from "./app-host/core-host-wiring.service";
 import {CoreHostSideMenuLifecycleRuntimeService} from "./app-host/core-host-side-menu-lifecycle-runtime.service";
-import {TerminalSearchService} from "@cogno/open-features/terminal-search/terminal-search.service";
-import {NotificationService} from "@cogno/open-features/notification/notification.service";
+import {TerminalSearchService} from "@cogno/community-features/terminal-search/terminal-search.service";
+import {NotificationService} from "@cogno/community-features/notification/notification.service";
 import {
     commandRunnerToken,
     commandPaletteHostPortToken,

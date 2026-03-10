@@ -5,7 +5,7 @@ import {
   NotificationHostPortContract,
   NotificationSettingsContract,
 } from "@cogno/core-sdk";
-import { NotificationService } from "@cogno/open-features/notification/notification.service";
+import { NotificationService } from "@cogno/community-features/notification/notification.service";
 import { getDestroyRef } from "../__test__/destroy-ref";
 
 describe("NotificationService", () => {

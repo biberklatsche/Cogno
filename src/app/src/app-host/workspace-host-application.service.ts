@@ -1,8 +1,8 @@
 import {DestroyRef, Injectable, signal, WritableSignal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import { GridConfig, TabConfig } from "@cogno/core-sdk";
-import { WorkspaceConfiguration } from "@cogno/open-features/workspace/workspace.model";
-import { WorkspaceRepository } from "@cogno/open-features/workspace/workspace.repository";
+import { WorkspaceConfiguration } from "@cogno/community-features/workspace/workspace.model";
+import { WorkspaceRepository } from "@cogno/community-features/workspace/workspace.repository";
 import {AppBus} from "../app-bus/app-bus";
 import {IdCreator} from "../common/id-creator/id-creator";
 import {SideMenuService} from "../menu/side-menu/+state/side-menu.service";

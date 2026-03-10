@@ -136,7 +136,7 @@ importers:
 
   src/core-sdk: {}
 
-  src/open-features: {}
+  src/community-features: {}
 
   src/pro-features: {}
 

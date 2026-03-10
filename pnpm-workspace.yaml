@@ -3,5 +3,5 @@ packages:
   - "src/core-sdk"
   - "src/core-host"
   - "src/ui-kit"
-  - "src/open-features"
+  - "src/community-features"
   - "src/pro-features"

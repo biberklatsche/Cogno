@@ -12,11 +12,6 @@ import {
   communityFeatureSideMenuFeatureDefinitions,
   communityFeatureTerminalAutocompleteSuggestorDefinitions,
 } from "@cogno/community-features";
-import {
-  proFeatureDatabaseMigrations,
-  proFeatureSideMenuFeatureDefinitions,
-  proFeatureTerminalAutocompleteSuggestorDefinitions,
-} from "@cogno/pro-features";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
 
@@ -29,10 +24,7 @@ export class CoreHostWiringService {
   >();
   private readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
     TerminalAutocompleteSuggestorDefinitionContract
-  > = [
-    ...communityFeatureTerminalAutocompleteSuggestorDefinitions,
-    ...proFeatureTerminalAutocompleteSuggestorDefinitions,
-  ];
+  > = [...communityFeatureTerminalAutocompleteSuggestorDefinitions];
 
   private readonly coreHostBootstrapHost = new CoreHostBootstrapHost<
     Type<unknown>,
@@ -44,12 +36,10 @@ export class CoreHostWiringService {
     this.coreHostBootstrapHost.registerSideMenuFeatures([
       ...sideMenuFeatureDefinitions,
       ...communityFeatureSideMenuFeatureDefinitions,
-      ...proFeatureSideMenuFeatureDefinitions,
     ]);
     this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
     this.databaseMigrationService.registerFeatureMigrations([
       ...communityFeatureDatabaseMigrations,
-      ...proFeatureDatabaseMigrations,
     ]);
   }
 

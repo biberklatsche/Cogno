@@ -12,7 +12,7 @@ export default defineConfig({
     ],
     include: [
       'src/app/src/**/*.spec.ts',
-      'src/open-features/**/*.spec.ts',
+      'src/community-features/**/*.spec.ts',
       'src/pro-features/**/*.ts',
     ],
     exclude: [
@@ -23,7 +23,7 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       include: [
         'src/app/src/**/*.ts',
-        'src/open-features/**/*.ts',
+        'src/community-features/**/*.ts',
         'src/pro-features/**/*.ts',
       ],
       exclude: [

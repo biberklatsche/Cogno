@@ -30,7 +30,7 @@
             ]
           },
           "configurations": {
-            "production": {
+            "pro": {
               "budgets": [
                 {
                   "type": "initial",
@@ -53,13 +53,42 @@
               },
               "outputHashing": "all"
             },
+            "community": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "5mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/src/app-host/core-host-wiring.service.ts",
+                  "with": "src/app/src/app-host/core-host-wiring-community.service.ts"
+                }
+              ]
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "pro"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -67,11 +96,14 @@
             "port": 1420
           },
           "configurations": {
-            "production": {
-              "buildTarget": "cogno:build:production"
+            "pro": {
+              "buildTarget": "cogno:build:pro"
             },
             "development": {
               "buildTarget": "cogno:build:development"
+            },
+            "community": {
+              "buildTarget": "cogno:build:community"
             }
           },
           "defaultConfiguration": "development"

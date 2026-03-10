@@ -8,11 +8,11 @@ import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provide
 import { GitBranchesSpecProvider } from "./spec/providers/git-branches.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 
-export const openFeatureTerminalAutocompleteSuggestorDefinitions: ReadonlyArray<
+export const communityFeatureTerminalAutocompleteSuggestorDefinitions: ReadonlyArray<
   TerminalAutocompleteSuggestorDefinitionContract
 > = [
   {
-    id: "open-features:spec-command",
+    id: "community-features:spec-command",
     createSuggestor: ({ filesystem, commandRunner }) =>
       new SpecCommandSuggestor(
         new AssetCommandSpecRegistry(),

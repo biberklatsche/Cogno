@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Signal} from '@angular/core';
 import { Icon, IconComponent } from "@cogno/ui-kit";
-import {AppNotificationToast, AppNotificationToastId, Notification, NotificationService} from "@cogno/open-features/notification/notification.service";
+import {AppNotificationToast, AppNotificationToastId, Notification, NotificationService} from "@cogno/community-features/notification/notification.service";
 
 @Component({
     selector: 'app-notification-toast-stack',
