@@ -1,0 +1,87 @@
+#!/bin/zsh
+# Cogno2 Integration Script for Zsh
+# Provides OSC markers, prompt hooks, and shell integration features
+
+if [[ -n "${COGNO_ZSH_INTEGRATION_LOADED}" ]]; then
+  return 0
+fi
+typeset -g COGNO_ZSH_INTEGRATION_LOADED=1
+
+setopt PROMPT_SUBST
+autoload -Uz add-zsh-hook
+
+# State
+typeset -g COGNO_COUNT=0
+typeset -g COGNO_LAST_CMD=""
+typeset -g COGNO_CMD_SEEN=0
+
+# Extract command name: trim, drop leading KEY=VALUE prefixes, take first token
+_cogno_extract_command_name() {
+  local line="$1"
+  line="${line#${line%%[![:space:]]*}}"
+
+  local assignment_re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+'
+  while [[ "$line" =~ $assignment_re ]]; do
+    line="${line#${MATCH}}"
+  done
+
+  line="${line#${line%%[![:space:]]*}}"
+  if [[ -z "$line" ]]; then
+    print -r -- ""
+    return
+  fi
+
+  print -r -- "${line%%[[:space:]]*}"
+}
+
+_cogno_preexec() {
+  # $1 = command line as entered
+  COGNO_LAST_CMD="$1"
+  COGNO_CMD_SEEN=1
+}
+
+_cogno_precmd() {
+  local last_ec=$?
+
+  ((COGNO_COUNT++))
+
+  local ts="$COGNO_COUNT"
+
+  local host="${HOST%%.*}"
+  local cwd="$PWD"
+
+  local cmd=""
+  local command_exists="false"
+  if (( COGNO_CMD_SEEN )); then
+    cmd="$COGNO_LAST_CMD"
+    local command_name
+    command_name="$(_cogno_extract_command_name "$COGNO_LAST_CMD")"
+    if [[ -n "$command_name" ]] && whence -w -- "$command_name" >/dev/null 2>&1; then
+      command_exists="true"
+    fi
+  fi
+
+  # Sanitize command for OSC payload
+  cmd="${cmd//$'\r'/}"
+  cmd="${cmd//$'\n'/\\n}"
+  cmd="${cmd//$'\e'/}"
+  cmd="${cmd//$'\a'/}"
+  cmd="${cmd//;/\\;}"
+  cmd="${cmd//|/\\|}"
+
+  # Compute and insert commandExists into the existing OSC payload
+  local osc=$'\e]733;COGNO:PROMPT;'"returnCode=${last_ec};user=${USER};machine=${host};directory=${cwd};id=${ts};command=${cmd};commandExists=${command_exists};"$'\e\\'
+
+  print -n -r -- "$osc"
+
+  # Reset for next prompt
+  COGNO_CMD_SEEN=0
+  COGNO_LAST_CMD=""
+
+  return $last_ec
+}
+
+add-zsh-hook preexec _cogno_preexec
+add-zsh-hook precmd  _cogno_precmd
+
+PROMPT=$'\n^^#${COGNO_COUNT}\n'

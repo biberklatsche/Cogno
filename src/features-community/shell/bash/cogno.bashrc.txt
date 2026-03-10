@@ -1,0 +1,81 @@
+#!/bin/bash
+# Cogno2 Bootstrap Script for Bash
+# This script is loaded as the rcfile when shell integration is enabled
+
+# Guard against double loading
+if [[ -n "${COGNO_BASH_BOOTSTRAPPED}" ]]; then
+    return 0
+fi
+export COGNO_BASH_BOOTSTRAPPED=1
+
+# Logging function
+_cogno_log() {
+    if [[ -n "${COGNO_LOG_DIR}" && -n "${COGNO_SESSION_ID}" ]]; then
+        local log_file="${COGNO_LOG_DIR}/shell-bootstrap-${COGNO_SESSION_ID}.log"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$log_file" 2>/dev/null
+    fi
+}
+
+_cogno_log "Bash bootstrap started"
+
+# Use login-shell PATH as baseline if provided by backend
+if [[ -n "${COGNO_LOGIN_PATH}" ]]; then
+    _cogno_log "Applying COGNO_LOGIN_PATH baseline"
+    export PATH="${COGNO_LOGIN_PATH}"
+fi
+
+# Optionally load user's Bash startup files (only if COGNO_ALLOW_USER_RC=1)
+# We run with --rcfile, so login startup files are not loaded automatically.
+# Load them manually to replicate login shell behavior.
+if [[ "${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    # Load system-wide profile first (like -l does)
+    if [[ -f /etc/profile ]]; then
+        _cogno_log "Loading /etc/profile"
+        source /etc/profile
+    fi
+
+    # Load user profile
+    if [[ -f "${HOME}/.bash_profile" ]]; then
+        _cogno_log "Loading user .bash_profile"
+        source "${HOME}/.bash_profile"
+    elif [[ -f "${HOME}/.bash_login" ]]; then
+        _cogno_log "Loading user .bash_login"
+        source "${HOME}/.bash_login"
+    elif [[ -f "${HOME}/.profile" ]]; then
+        _cogno_log "Loading user .profile"
+        source "${HOME}/.profile"
+    fi
+
+    # Load interactive rc file
+    if [[ -f "${HOME}/.bashrc" ]]; then
+        _cogno_log "Loading user .bashrc"
+        source "${HOME}/.bashrc"
+    fi
+fi
+
+# Apply PATH prefix after user startup files, so Cogno CLI stays available.
+if [[ -n "${COGNO_PATH_PREFIX}" ]]; then
+    _cogno_log "Applying PATH prefix: ${COGNO_PATH_PREFIX}"
+    export PATH="${COGNO_PATH_PREFIX}:${PATH}"
+fi
+
+# Ensure "cogno" command resolves directly to the current executable path.
+if [[ -n "${COGNO_CLI_PATH}" ]] && ! command -v cogno >/dev/null 2>&1; then
+    _cogno_log "Installing cogno function for ${COGNO_CLI_PATH}"
+    cogno() {
+        "${COGNO_CLI_PATH}" "$@"
+    }
+fi
+
+# Load Cogno integration
+if [[ -n "${COGNO_INTEGRATION_ROOT}" ]]; then
+    _cogno_integration_script="${COGNO_INTEGRATION_ROOT}/bash/integration.bash"
+    if [[ -f "${_cogno_integration_script}" ]]; then
+        _cogno_log "Loading integration script"
+        source "${_cogno_integration_script}"
+    else
+        _cogno_log "WARNING: Integration script not found: ${_cogno_integration_script}"
+    fi
+fi
+
+_cogno_log "Bash bootstrap completed"
