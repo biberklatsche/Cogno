@@ -14,7 +14,7 @@ import {NgComponentOutlet} from '@angular/common';
 import {DialogConfig} from './dialog-config';
 import {DialogRef} from './dialog-ref';
 import {DIALOG_DATA} from './dialog.tokens';
-import { IconComponent } from "@cogno/ui-kit";
+import { IconComponent } from "@cogno/core-ui";
 
 @Component({
   selector: 'app-dialog',

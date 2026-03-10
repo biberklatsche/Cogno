@@ -136,11 +136,11 @@ importers:
 
   src/core-sdk: {}
 
-  src/community-features: {}
+  src/features-community: {}
 
-  src/pro-features: {}
+  src/features-pro: {}
 
-  src/ui-kit: {}
+  src/core-ui: {}
 
 packages:
 

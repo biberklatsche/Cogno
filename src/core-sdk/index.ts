@@ -15,3 +15,7 @@ export * from "./command-runner.contract";
 export * from "./filesystem.contract";
 export * from "./terminal-autocomplete.contract";
 export * from "./shell-support.contract";
+export * from "./path-adapter.contract";
+export * from "./shell-context.contract";
+export * from "./base-path.adapter";
+export * from "./shell-path-adapter-definition.contract";

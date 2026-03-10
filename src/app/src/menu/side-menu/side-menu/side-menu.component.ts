@@ -9,7 +9,7 @@ import {
     Signal,
     ViewChild
 } from '@angular/core';
-import { IconComponent } from "@cogno/ui-kit";
+import { IconComponent } from "@cogno/core-ui";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
 import {TooltipDirective} from "../../../common/tooltip/tooltip.directive";

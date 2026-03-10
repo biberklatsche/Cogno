@@ -9,12 +9,12 @@
       "@cogno/core-sdk/*": ["src/core-sdk/*"],
       "@cogno/core-host": ["src/core-host/index.ts"],
       "@cogno/core-host/*": ["src/core-host/*"],
-      "@cogno/ui-kit": ["src/ui-kit/index.ts"],
-      "@cogno/ui-kit/*": ["src/ui-kit/*"],
-      "@cogno/community-features": ["src/community-features/index.ts"],
-      "@cogno/community-features/*": ["src/community-features/*"],
-      "@cogno/pro-features": ["src/pro-features/index.ts"],
-      "@cogno/pro-features/*": ["src/pro-features/*"]
+      "@cogno/core-ui": ["src/core-ui/index.ts"],
+      "@cogno/core-ui/*": ["src/core-ui/*"],
+      "@cogno/community-features": ["src/features-community/index.ts"],
+      "@cogno/community-features/*": ["src/features-community/*"],
+      "@cogno/pro-features": ["src/features-pro/index.ts"],
+      "@cogno/pro-features/*": ["src/features-pro/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "strict": true,

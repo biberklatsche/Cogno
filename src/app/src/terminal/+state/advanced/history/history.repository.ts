@@ -1,4 +1,4 @@
-import {IPathAdapter} from "../adapter/base/path-adapter.interface";
+import { IPathAdapter } from "@cogno/core-sdk";
 import {DB} from "../../../../_tauri/db";
 import {isWslContext, ShellContext} from "../model/models";
 import {Hash} from "../../../../common/hash/hash";

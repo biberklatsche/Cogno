@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "pnpm workspace:lint && pnpm lint:architecture",
-    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/app/src/**/*.ts\" \"src/core-sdk/**/*.ts\" \"src/core-host/**/*.ts\" \"src/community-features/**/*.ts\" \"src/pro-features/**/*.ts\"",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/app/src/**/*.ts\" \"src/core-sdk/**/*.ts\" \"src/core-host/**/*.ts\" \"src/features-community/**/*.ts\" \"src/features-pro/**/*.ts\"",
     "workspace:build": "pnpm -r --if-present run build",
     "workspace:test": "pnpm -r --if-present run test",
     "workspace:lint": "pnpm -r --if-present run lint",

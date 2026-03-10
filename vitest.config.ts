@@ -12,8 +12,9 @@ export default defineConfig({
     ],
     include: [
       'src/app/src/**/*.spec.ts',
-      'src/community-features/**/*.spec.ts',
-      'src/pro-features/**/*.ts',
+      'src/core-host/**/*.spec.ts',
+      'src/features-community/**/*.spec.ts',
+      'src/features-pro/**/*.spec.ts',
     ],
     exclude: [
       'src/app/src/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts',
@@ -23,8 +24,9 @@ export default defineConfig({
       reportsDirectory: 'coverage',
       include: [
         'src/app/src/**/*.ts',
-        'src/community-features/**/*.ts',
-        'src/pro-features/**/*.ts',
+        'src/core-host/**/*.ts',
+        'src/features-community/**/*.ts',
+        'src/features-pro/**/*.ts',
       ],
       exclude: [
         'src/app/src/_tauri/**',

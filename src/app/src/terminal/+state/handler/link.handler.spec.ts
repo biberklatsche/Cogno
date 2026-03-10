@@ -4,6 +4,9 @@ import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.fa
 import { TerminalStateManager } from "../state";
 import { LinkHandler } from "./link.handler";
 import { Opener } from "../../../_tauri/opener";
+import { PathFactory } from "@cogno/core-host";
+import { communityFeatureShellPathAdapterDefinitions } from "@cogno/community-features";
+import { proFeatureShellPathAdapterDefinitions } from "@cogno/pro-features";
 
 describe("LinkHandler", () => {
     let handler: LinkHandler;
@@ -12,6 +15,10 @@ describe("LinkHandler", () => {
     let provider: any;
 
     beforeEach(() => {
+        PathFactory.setDefinitions([
+            ...communityFeatureShellPathAdapterDefinitions,
+            ...proFeatureShellPathAdapterDefinitions,
+        ]);
         const bus = new AppBus();
         stateManager = new TerminalStateManager(bus);
         stateManager.initialize("term-1", "PowerShell" as any);
@@ -71,7 +78,7 @@ describe("LinkHandler", () => {
     });
 
     it("resolves bare relative paths against cwd", () => {
-        const line = TerminalMockFactory.createLine("Open src/app/terminal/+state/advanced/adapter/path.factory.spec.ts");
+        const line = TerminalMockFactory.createLine("Open src/core-host/path/path.factory.spec.ts");
         vi.mocked(terminal.buffer.active.getLine).mockReturnValue(line);
 
         let links: any[] | undefined;
@@ -82,7 +89,7 @@ describe("LinkHandler", () => {
         expect(links).toHaveLength(1);
         links![0].activate(new MouseEvent("click", { ctrlKey: true }), links![0].text);
 
-        expect(Opener.openPath).toHaveBeenCalledWith("/c/work/src/app/terminal/+state/advanced/adapter/path.factory.spec.ts");
+        expect(Opener.openPath).toHaveBeenCalledWith("/c/work/src/core-host/path/path.factory.spec.ts");
     });
 
     it("shows hover hint for ctrl+click on links", () => {

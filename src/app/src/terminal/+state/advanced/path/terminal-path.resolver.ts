@@ -1,4 +1,4 @@
-import { IPathAdapter } from "../adapter/base/path-adapter.interface";
+import { IPathAdapter } from "@cogno/core-sdk";
 
 export class TerminalPathResolver {
     resolvePathForOpen(candidate: string, cwd: string | undefined, pathAdapter: IPathAdapter | undefined): string | undefined {

@@ -3,7 +3,7 @@ import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 
 import { Logger } from "../../../../_tauri/logger";
-import { IPathAdapter } from "../adapter/base/path-adapter.interface";
+import { IPathAdapter } from "@cogno/core-sdk";
 import { ShellContext } from "../model/models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
 import {ExecutedCommand} from "./terminal-command-history.store";

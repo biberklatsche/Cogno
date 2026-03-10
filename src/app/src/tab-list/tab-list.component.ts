@@ -2,9 +2,9 @@ import {Component, ElementRef, OnDestroy, Signal, ViewChild, effect} from '@angu
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";
-import { IconComponent } from "@cogno/ui-kit";
+import { IconComponent } from "@cogno/core-ui";
 import {ShellType} from "../config/+models/config";
-import { Icon } from "@cogno/ui-kit";
+import { Icon } from "@cogno/core-ui";
 import {TabId} from "@cogno/core-sdk";
 import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../menu/context-menu-overlay/context-menu-overlay.types";

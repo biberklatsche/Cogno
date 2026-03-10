@@ -10,7 +10,7 @@ import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
 import {ConfigService} from "../../../config/+state/config.service";
 import {KeybindService} from "../../../keybinding/keybind.service";
-import { Icon } from "@cogno/ui-kit";
+import { Icon } from "@cogno/core-ui";
 import {ActionName} from "../../../action/action.models";
 
 /**

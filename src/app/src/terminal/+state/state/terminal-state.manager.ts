@@ -15,8 +15,8 @@ import {Command} from "./command.model";
 import {TerminalId} from "../../../grid-list/+model/model";
 
 import {OS} from "../../../_tauri/os";
-import {IPathAdapter} from "../advanced/adapter/base/path-adapter.interface";
-import {PathFactory} from "../advanced/adapter/path.factory";
+import { IPathAdapter } from "@cogno/core-sdk";
+import { PathFactory } from "@cogno/core-host";
 import {ShellContext} from "../advanced/model/models";
 import {TerminalCommandHistoryStore} from "../advanced/history/terminal-command-history.store";
 import {TerminalHistoryPersistenceService} from "../advanced/history/terminal-history-persistence.service";

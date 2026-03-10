@@ -2,7 +2,7 @@ import {Component} from '@angular/core';
 import {TerminalStateManager} from '../+state/state';
 import {toSignal} from "@angular/core/rxjs-interop";
 import {map} from "rxjs";
-import { IconComponent } from "@cogno/ui-kit";
+import { IconComponent } from "@cogno/core-ui";
 import {TerminalSession} from "../+state/terminal.session";
 import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";

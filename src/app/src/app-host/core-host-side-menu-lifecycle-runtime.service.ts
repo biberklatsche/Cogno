@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Injector } from "@angular/core";
 import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
-import { Icon } from "@cogno/ui-kit";
+import { Icon } from "@cogno/core-ui";
 import { KeybindService } from "../keybinding/keybind.service";
 import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
