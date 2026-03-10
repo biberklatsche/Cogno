@@ -7,8 +7,8 @@ import {
 import { CommandSpecSource } from "./spec/command-spec.source";
 import {
     CommandSpec,
-    FigOptionSpec,
-    FigSubcommandSpec,
+    OptionSpec,
+    SubcommandSpec,
     ShellConstraint,
     SpecProviderBinding,
     SpecSuggestionProvider
@@ -85,32 +85,32 @@ function primaryName(name: string | string[]): string {
     return namesOf(name)[0] ?? "";
 }
 
-function toSubcommands(source?: Array<string | FigSubcommandSpec>): FigSubcommandSpec[] {
+function toSubcommands(source?: Array<string | SubcommandSpec>): SubcommandSpec[] {
     if (!source?.length) return [];
     return source.map(s => (typeof s === "string" ? { name: s } : s));
 }
 
-function toOptions(source?: Array<string | FigOptionSpec>): FigOptionSpec[] {
+function toOptions(source?: Array<string | OptionSpec>): OptionSpec[] {
     if (!source?.length) return [];
     return source.map(s => (typeof s === "string" ? { name: s } : s));
 }
 
-function optionArgCount(option: FigOptionSpec): number {
+function optionArgCount(option: OptionSpec): number {
     if (!option.args) return 0;
     return Array.isArray(option.args) ? option.args.length : 1;
 }
 
-function subcommandArgCount(subcommand: FigSubcommandSpec): number {
+function subcommandArgCount(subcommand: SubcommandSpec): number {
     if (!subcommand.args) return 0;
     return Array.isArray(subcommand.args) ? subcommand.args.length : 1;
 }
 
-function firstOptionArgName(option: FigOptionSpec): string | undefined {
+function firstOptionArgName(option: OptionSpec): string | undefined {
     if (!option.args) return undefined;
     return Array.isArray(option.args) ? option.args[0]?.name : option.args.name;
 }
 
-function firstSubcommandArgName(subcommand: FigSubcommandSpec): string | undefined {
+function firstSubcommandArgName(subcommand: SubcommandSpec): string | undefined {
     if (!subcommand.args) return undefined;
     return Array.isArray(subcommand.args) ? subcommand.args[0]?.name : subcommand.args.name;
 }
@@ -123,21 +123,21 @@ function subcommandDescription(subcommand: PreparedNode): string | undefined {
     return subcommand.description;
 }
 
-function normalizeOptionDescription(option: FigOptionSpec): string | undefined {
+function normalizeOptionDescription(option: OptionSpec): string | undefined {
     const own = option.description?.trim();
     if (own) return own;
     const argName = firstOptionArgName(option);
     return argName ? `arg: ${argName}` : undefined;
 }
 
-function normalizeSubcommandDescription(subcommand: FigSubcommandSpec): string | undefined {
+function normalizeSubcommandDescription(subcommand: SubcommandSpec): string | undefined {
     const own = subcommand.description?.trim();
     if (own) return own;
     const argName = firstSubcommandArgName(subcommand);
     return argName ? `arg: ${argName}` : undefined;
 }
 
-function prepareOption(option: FigOptionSpec): PreparedOption | undefined {
+function prepareOption(option: OptionSpec): PreparedOption | undefined {
     const names = dedupe(namesOf(option.name));
     if (!names.length) return undefined;
     return {
@@ -150,7 +150,7 @@ function prepareOption(option: FigOptionSpec): PreparedOption | undefined {
     };
 }
 
-function prepareNode(node: FigSubcommandSpec): PreparedNode | undefined {
+function prepareNode(node: SubcommandSpec): PreparedNode | undefined {
     const names = dedupe(namesOf(node.name));
     if (!names.length) return undefined;
 
@@ -594,7 +594,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         const cached = this._preparedSpecByCommand.get(spec.name);
         if (cached) return cached;
 
-        const rootSource: FigSubcommandSpec = {
+        const rootSource: SubcommandSpec = {
             name: ROOT_NAME,
             description: spec.description,
             options: toOptions(spec.options),

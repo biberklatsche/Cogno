@@ -19,3 +19,4 @@ export * from "./path-adapter.contract";
 export * from "./shell-context.contract";
 export * from "./base-path.adapter";
 export * from "./shell-path-adapter-definition.contract";
+export * from "./shell-definition.contract";

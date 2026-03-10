@@ -1,8 +1,8 @@
 import {
     CommandSpec,
-    FigArgSpec,
-    FigOptionSpec,
-    FigSubcommandSpec,
+    ArgSpec,
+    OptionSpec,
+    SubcommandSpec,
     ShellConstraint,
     SpecProviderBinding
 } from "../spec.types";
@@ -120,10 +120,10 @@ function normalizeNames(name: string | string[] | undefined): string[] {
     return dedupe(raw);
 }
 
-function normalizeArgs(args?: FigArgSpec | FigArgSpec[]): FigArgSpec[] | undefined {
+function normalizeArgs(args?: ArgSpec | ArgSpec[]): ArgSpec[] | undefined {
     if (!args) return undefined;
     const raw = Array.isArray(args) ? args : [args];
-    const out: FigArgSpec[] = [];
+    const out: ArgSpec[] = [];
     const seen = new Set<string>();
     for (const arg of raw) {
         const name = arg.name?.trim();
@@ -137,9 +137,9 @@ function normalizeArgs(args?: FigArgSpec | FigArgSpec[]): FigArgSpec[] | undefin
     return out.length ? out : undefined;
 }
 
-function normalizeOptions(source?: Array<string | FigOptionSpec>): FigOptionSpec[] | undefined {
+function normalizeOptions(source?: Array<string | OptionSpec>): OptionSpec[] | undefined {
     if (!source?.length) return undefined;
-    const out: FigOptionSpec[] = [];
+    const out: OptionSpec[] = [];
     const seen = new Set<string>();
     for (const item of source) {
         const normalized = normalizeOption(item);
@@ -152,7 +152,7 @@ function normalizeOptions(source?: Array<string | FigOptionSpec>): FigOptionSpec
     return out.length ? out : undefined;
 }
 
-function normalizeOption(source: string | FigOptionSpec): FigOptionSpec | undefined {
+function normalizeOption(source: string | OptionSpec): OptionSpec | undefined {
     if (typeof source === "string") {
         const names = normalizeNames(source);
         if (!names.length) return undefined;
@@ -170,9 +170,9 @@ function normalizeOption(source: string | FigOptionSpec): FigOptionSpec | undefi
     };
 }
 
-function normalizeSubcommands(source?: Array<string | FigSubcommandSpec>): FigSubcommandSpec[] | undefined {
+function normalizeSubcommands(source?: Array<string | SubcommandSpec>): SubcommandSpec[] | undefined {
     if (!source?.length) return undefined;
-    const byPrimary = new Map<string, FigSubcommandSpec>();
+    const byPrimary = new Map<string, SubcommandSpec>();
     for (const item of source) {
         const normalized = normalizeSubcommand(item);
         if (!normalized) continue;
@@ -200,7 +200,7 @@ function normalizeSubcommands(source?: Array<string | FigSubcommandSpec>): FigSu
     return byPrimary.size ? [...byPrimary.values()] : undefined;
 }
 
-function normalizeSubcommand(source: string | FigSubcommandSpec): FigSubcommandSpec | undefined {
+function normalizeSubcommand(source: string | SubcommandSpec): SubcommandSpec | undefined {
     if (typeof source === "string") {
         const names = normalizeNames(source);
         if (!names.length) return undefined;
@@ -247,9 +247,9 @@ function dedupeSubcommandOptions(
 }
 
 function mergeLegacySubcommandOptions(
-    subcommands: FigSubcommandSpec[] | undefined,
+    subcommands: SubcommandSpec[] | undefined,
     legacy: Record<string, string[]> | undefined
-): FigSubcommandSpec[] | undefined {
+): SubcommandSpec[] | undefined {
     if (!legacy || Object.keys(legacy).length === 0) return subcommands;
     const next = [...(subcommands ?? [])];
 

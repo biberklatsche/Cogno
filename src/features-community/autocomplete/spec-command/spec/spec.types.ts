@@ -2,26 +2,26 @@ import { AutocompleteQueryContextContract, ShellTypeContract } from "@cogno/core
 
 export type ShellConstraint = ShellTypeContract;
 
-export type FigArgSpec = {
+export type ArgSpec = {
     name: string;
     description?: string;
 };
 
-export type FigOptionSpec = {
+export type OptionSpec = {
     name: string | string[];
     description?: string;
-    args?: FigArgSpec | FigArgSpec[];
+    args?: ArgSpec | ArgSpec[];
     isRepeatable?: boolean;
     providers?: SpecProviderBinding[];
 };
 
-export type FigSubcommandSpec = {
+export type SubcommandSpec = {
     name: string | string[];
     description?: string;
-    args?: FigArgSpec | FigArgSpec[];
+    args?: ArgSpec | ArgSpec[];
     providers?: SpecProviderBinding[];
-    subcommands?: Array<string | FigSubcommandSpec>;
-    options?: Array<string | FigOptionSpec>;
+    subcommands?: Array<string | SubcommandSpec>;
+    options?: Array<string | OptionSpec>;
 };
 
 export type CommandSpec = {
@@ -29,8 +29,8 @@ export type CommandSpec = {
     source?: "fig";
     sourceUrl?: string;
     description?: string;
-    subcommands?: Array<string | FigSubcommandSpec>;
-    options?: Array<string | FigOptionSpec>;
+    subcommands?: Array<string | SubcommandSpec>;
+    options?: Array<string | OptionSpec>;
     subcommandOptions?: Record<string, string[]>;
     providers?: SpecProviderBinding[];
     shells?: ShellConstraint[];
