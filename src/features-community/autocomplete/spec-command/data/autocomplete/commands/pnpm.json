@@ -658,7 +658,7 @@
       "description": "Shows all packages that depend on the specified package",
       "args": [
         {
-          "name": "Scripts"
+          "name": "package"
         }
       ],
       "options": [
@@ -720,6 +720,14 @@
       "args": [
         {
           "name": "Scripts"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "npm-scripts",
+          "kind": "script",
+          "source": "npm-script",
+          "baseScore": 60
         }
       ],
       "options": [
@@ -1334,7 +1342,7 @@
           "description": "Shows all packages that depend on the specified package",
           "args": [
             {
-              "name": "Scripts"
+              "name": "package"
             }
           ],
           "options": [
@@ -1396,6 +1404,14 @@
           "args": [
             {
               "name": "Scripts"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "npm-scripts",
+              "kind": "script",
+              "source": "npm-script",
+              "baseScore": 60
             }
           ],
           "options": [

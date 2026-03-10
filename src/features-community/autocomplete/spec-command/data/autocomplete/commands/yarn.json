@@ -1,6 +1,17 @@
 {
   "name": "yarn",
   "description": "Manage packages and run scripts",
+  "providers": [
+    {
+      "providerId": "npm-scripts",
+      "kind": "script",
+      "source": "npm-script",
+      "baseScore": 60,
+      "when": {
+        "maxArgs": 1
+      }
+    }
+  ],
   "options": [
     {
       "name": "--disable-pnp",
@@ -4172,6 +4183,14 @@
         {
           "name": "env",
           "description": "Lists environment variables available to scripts"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "npm-scripts",
+          "kind": "script",
+          "source": "npm-script",
+          "baseScore": 60
         }
       ],
       "options": [

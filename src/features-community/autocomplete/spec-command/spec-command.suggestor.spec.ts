@@ -107,6 +107,34 @@ describe("SpecCommandSuggestor", () => {
         expect(result.some(v => v.label === "build")).toBe(true);
     });
 
+    it("suggests npm scripts via provider for yarn, yarn run, and pnpm run", async () => {
+        const fs = filesystem();
+        vi.mocked(fs.exists).mockResolvedValue(true);
+        vi.mocked(fs.readTextFile).mockResolvedValue(JSON.stringify({
+            scripts: {
+                test: "vitest",
+                build: "ng build",
+            },
+        }));
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry(defaults),
+            [new NpmScriptsSpecProvider(fs)]
+        );
+
+        const yarnShortcutResult = await suggestor.suggest(commandContext("yarn "));
+        expect(yarnShortcutResult.some(v => v.label === "test")).toBe(true);
+        expect(yarnShortcutResult.some(v => v.label === "build")).toBe(true);
+
+        const yarnResult = await suggestor.suggest(commandContext("yarn run "));
+        expect(yarnResult.some(v => v.label === "test")).toBe(true);
+        expect(yarnResult.some(v => v.label === "build")).toBe(true);
+
+        const pnpmResult = await suggestor.suggest(commandContext("pnpm run "));
+        expect(pnpmResult.some(v => v.label === "test")).toBe(true);
+        expect(pnpmResult.some(v => v.label === "build")).toBe(true);
+    });
+
     it("suggests directory entries for cd via filesystem provider", async () => {
         const fs = filesystem();
         vi.mocked(fs.list).mockResolvedValue([

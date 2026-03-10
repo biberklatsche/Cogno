@@ -26,6 +26,14 @@ describe("CommandSpecRegistry", () => {
         const run = (npm!.subcommands as any[]).find(v => (typeof v === "string" ? v === "run" : v.name === "run"));
         expect(run).toBeDefined();
         expect(run.providers?.some((p: any) => p.providerId === "npm-scripts")).toBe(true);
+
+        const yarn = createCommandSpecsFixture().find(v => v.name === "yarn");
+        const yarnRun = (yarn!.subcommands as any[]).find(v => (typeof v === "string" ? v === "run" : v.name === "run"));
+        expect(yarnRun.providers?.some((p: any) => p.providerId === "npm-scripts")).toBe(true);
+
+        const pnpm = createCommandSpecsFixture().find(v => v.name === "pnpm");
+        const pnpmRun = (pnpm!.subcommands as any[]).find(v => (typeof v === "string" ? v === "run" : v.name === "run"));
+        expect(pnpmRun.providers?.some((p: any) => p.providerId === "npm-scripts")).toBe(true);
     });
 
     it("keeps shell constraints from command specs", () => {
