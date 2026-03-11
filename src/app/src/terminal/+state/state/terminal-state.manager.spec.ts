@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "./terminal-state.manager";
 import { ShellType } from "../../../config/+models/config";
@@ -8,6 +8,9 @@ import {Config} from "../../../config/+models/config";
 import {Observable} from "rxjs";
 import {ShellProfile} from "../../../config/+models/shell-config";
 import {PromptSegment} from "../../../config/+models/prompt-config";
+import { PathFactory } from "@cogno/core-host";
+import { communityFeatureShellPathAdapterDefinitions } from "@cogno/community-features";
+import { proFeatureShellPathAdapterDefinitions } from "@cogno/pro-features";
 
 class ConfigServiceMockForNotificationBadge extends ConfigService {
     constructor(private readonly notificationBadgeEnabledState: { value: boolean }) {
@@ -36,6 +39,13 @@ class ConfigServiceMockForNotificationBadge extends ConfigService {
 }
 
 describe("TerminalStateManager", () => {
+    beforeEach(() => {
+        PathFactory.setDefinitions([
+            ...communityFeatureShellPathAdapterDefinitions,
+            ...proFeatureShellPathAdapterDefinitions,
+        ]);
+    });
+
     it("should keep only the focused terminal state manager focused", () => {
         const bus = new AppBus();
         const firstTerminalStateManager = new TerminalStateManager(bus, undefined, undefined, getDestroyRef());

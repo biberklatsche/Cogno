@@ -3,6 +3,9 @@ import { PromptMarkerRenderer } from './prompt-renderer';
 import { TerminalStateManager } from '../../state';
 import { PromptSegment } from '../../../../config/+models/prompt-config';
 import { AppBus } from '../../../../app-bus/app-bus';
+import { PathFactory } from '@cogno/core-host';
+import { communityFeatureShellPathAdapterDefinitions } from '@cogno/community-features';
+import { proFeatureShellPathAdapterDefinitions } from '@cogno/pro-features';
 
 describe('PromptMarkerRenderer', () => {
     let stateManager: TerminalStateManager;
@@ -10,6 +13,10 @@ describe('PromptMarkerRenderer', () => {
     let hostElement: HTMLElement;
 
     beforeEach(() => {
+        PathFactory.setDefinitions([
+            ...communityFeatureShellPathAdapterDefinitions,
+            ...proFeatureShellPathAdapterDefinitions,
+        ]);
         busMock = new AppBus();
         vi.spyOn(busMock, 'publish');
         stateManager = new TerminalStateManager(busMock);
