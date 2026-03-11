@@ -114,5 +114,32 @@ describe("TerminalStateManager", () => {
 
         expect(terminalStateManager.hasUnreadNotification).toBe(false);
     });
+
+    it("should store bounded terminal progress state", () => {
+        const bus = new AppBus();
+        const terminalStateManager = new TerminalStateManager(bus, undefined, undefined, getDestroyRef());
+        terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
+
+        terminalStateManager.setProgress("warning", 132);
+
+        expect(terminalStateManager.state.progress).toEqual({
+            state: "warning",
+            value: 100,
+        });
+    });
+
+    it("should clear terminal progress when hidden state is set", () => {
+        const bus = new AppBus();
+        const terminalStateManager = new TerminalStateManager(bus, undefined, undefined, getDestroyRef());
+        terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
+
+        terminalStateManager.setProgress("default", 55);
+        terminalStateManager.setProgress("hidden", 55);
+
+        expect(terminalStateManager.state.progress).toEqual({
+            state: "hidden",
+            value: 0,
+        });
+    });
 });
 

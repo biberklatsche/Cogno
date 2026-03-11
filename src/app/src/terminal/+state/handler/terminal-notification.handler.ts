@@ -17,6 +17,10 @@ export class TerminalNotificationHandler implements ITerminalHandler {
     registerTerminal(terminal: Terminal): IDisposable {
         this._disposables = [];
         this._disposables.push(terminal.parser.registerOscHandler(9, (data: string) => {
+            if (this.tryHandleProgress(data)) {
+                return true;
+            }
+
             const message = (data ?? "").replace(/\r/g, "").replace(/\n+/g, " ").trim();
             if (!message) return true;
 
@@ -41,6 +45,36 @@ export class TerminalNotificationHandler implements ITerminalHandler {
             return true;
         }));
         return this;
+    }
+
+    private tryHandleProgress(data: string | undefined): boolean {
+        const match = /^\s*4;([^;]*)(?:;(.*))?\s*$/.exec(data ?? "");
+        if (!match) {
+            return false;
+        }
+
+        const state = Number.parseInt(match[1] ?? "", 10);
+        const progress = Number.parseInt(match[2] ?? "0", 10);
+
+        switch (state) {
+            case 0:
+                this.stateManager.setProgress("hidden", 0);
+                return true;
+            case 1:
+                this.stateManager.setProgress("default", progress);
+                return true;
+            case 2:
+                this.stateManager.setProgress("error", progress);
+                return true;
+            case 3:
+                this.stateManager.setProgress("indeterminate", 0);
+                return true;
+            case 4:
+                this.stateManager.setProgress("warning", progress);
+                return true;
+            default:
+                return false;
+        }
     }
 
     dispose(): void {

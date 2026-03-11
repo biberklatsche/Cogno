@@ -5,6 +5,7 @@ import {DestroyRef, Injectable} from "@angular/core";
 import {AppBus} from "../../../app-bus/app-bus";
 import {
     INITIAL_STATE,
+    TerminalProgressState,
     TerminalCursorPosition,
     TerminalDimensions,
     TerminalInput,
@@ -184,6 +185,16 @@ export class TerminalStateManager {
 
     clearUnreadNotification(): void {
         this.updateState({hasUnreadNotification: false});
+    }
+
+    setProgress(state: TerminalProgressState, value: number): void {
+        const normalizedValue = Math.max(0, Math.min(100, Math.round(value)));
+        this.updateState({
+            progress: {
+                state,
+                value: state === "hidden" ? 0 : normalizedValue,
+            }
+        });
     }
 
     private isTerminalNotificationBadgeEnabled(): boolean {

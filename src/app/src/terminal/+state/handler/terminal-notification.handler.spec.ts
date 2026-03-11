@@ -9,12 +9,13 @@ describe("TerminalNotificationHandler", () => {
     let handler: TerminalNotificationHandler;
     let mockTerminal: Terminal;
     let mockBus: AppBus;
-    let mockStateManager: Pick<TerminalStateManager, 'markUnreadNotification' | 'terminalId'>;
+    let mockStateManager: Pick<TerminalStateManager, 'markUnreadNotification' | 'setProgress' | 'terminalId'>;
 
     beforeEach(() => {
         mockBus = new AppBus();
         mockStateManager = {
             markUnreadNotification: vi.fn(),
+            setProgress: vi.fn(),
             terminalId: "test-terminal-id"
         };
         handler = new TerminalNotificationHandler(mockBus, mockStateManager as TerminalStateManager);
@@ -61,6 +62,33 @@ describe("TerminalNotificationHandler", () => {
 
         expect(result).toBe(true);
         expect(publishSpy).not.toHaveBeenCalled();
+    });
+
+    it("updates terminal progress for OSC 9;4 progress payloads", () => {
+        const publishSpy = vi.spyOn(mockBus, "publish");
+        handler.registerTerminal(mockTerminal);
+        const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls.find(call =>
+            call[0] === 9
+        )![1];
+
+        const result = oscHandler("4;1;42");
+
+        expect(result).toBe(true);
+        expect(mockStateManager.setProgress).toHaveBeenCalledWith("default", 42);
+        expect(mockStateManager.markUnreadNotification).not.toHaveBeenCalled();
+        expect(publishSpy).not.toHaveBeenCalled();
+    });
+
+    it("hides terminal progress for OSC 9;4 reset payloads", () => {
+        handler.registerTerminal(mockTerminal);
+        const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls.find(call =>
+            call[0] === 9
+        )![1];
+
+        const result = oscHandler("4;0;0");
+
+        expect(result).toBe(true);
+        expect(mockStateManager.setProgress).toHaveBeenCalledWith("hidden", 0);
     });
 
     it("disposes registered handlers", () => {

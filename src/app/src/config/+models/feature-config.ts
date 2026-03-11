@@ -37,6 +37,12 @@ export const FeatureCommandPaletteSchema = z.object({
     mode: FeatureModeEnum.optional(),
 });
 
+export const FeatureTerminalSchema = z.object({
+    progress_bar: z.object({
+        enabled: z.boolean().optional().describe('Show the progress bar in the terminal header.'),
+    }).optional(),
+});
+
 export const FeatureTerminalSearchSchema = z.object({
     mode: FeatureModeEnum.optional(),
     match_background_color: HexColorSchema.optional(),

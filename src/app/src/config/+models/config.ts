@@ -13,6 +13,7 @@ import {Scrollbar, ScrollbarSchema} from "./scrollbar-config";
 import {
     FeatureCommandPaletteSchema,
     FeatureNotificationSchema,
+    FeatureTerminalSchema,
     FeatureTerminalSearchSchema,
     FeatureWorkspaceSchema
 } from "./feature-config";
@@ -45,6 +46,7 @@ export const ConfigSchema = z.object({
     workspace: FeatureWorkspaceSchema.optional(),
     notification: FeatureNotificationSchema.optional(),
     command_palette: FeatureCommandPaletteSchema.optional(),
+    terminal: FeatureTerminalSchema.optional(),
     terminal_search: FeatureTerminalSearchSchema.optional(),
     prompt: PromptConfigSchema.optional(),
 }).strict();

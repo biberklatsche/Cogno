@@ -192,5 +192,15 @@ describe('ConfigReader', () => {
         expect(result.config.notification?.highlight_terminal_on_activity).toBe(false);
         expect(result.config.notification?.max_notifications_in_overview).toBe(42);
     });
+
+    it('parses terminal progress bar visibility setting', () => {
+        const text = `
+      terminal.progress_bar.enabled=false
+    `;
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+
+        expect(result.diagnostics.length).toBe(0);
+        expect(result.config.terminal?.progress_bar?.enabled).toBe(false);
+    });
 });
 

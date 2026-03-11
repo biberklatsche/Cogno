@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, computed} from '@angular/core';
 import {TerminalStateManager} from '../+state/state';
 import {toSignal} from "@angular/core/rxjs-interop";
 import {map} from "rxjs";
@@ -7,6 +7,7 @@ import {TerminalSession} from "../+state/terminal.session";
 import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
+import {ConfigService} from "../../config/+state/config.service";
 
 @Component({
   selector: 'app-terminal-header',
@@ -17,6 +18,14 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
   ],
   template: `
     <div class="terminal-header">
+      @if (visibleProgress(); as currentProgress) {
+        <span class="progress-track" [class.is-indeterminate]="currentProgress.state === 'indeterminate'">
+          <span
+            class="progress-bar"
+            [style.width.%]="currentProgress.value"
+          ></span>
+        </span>
+      }
       <span class="command-row">
         @if (commandOutOfView(); as command) {
           <span class="command">
@@ -60,6 +69,28 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
       padding: 4px 8px 2px 8px;
       background: #00000000;
       font-family: var(--font-family);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-track {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 2px;
+      background: color-mix(in srgb, var(--highlight-color) 18%, transparent);
+      pointer-events: none;
+    }
+
+    .progress-bar {
+      display: block;
+      height: 100%;
+      background: var(--highlight-color);
+      transition: width 120ms ease-out;
+    }
+
+    .progress-track.is-indeterminate .progress-bar {
+      width: 35% !important;
+      animation: terminal-header-progress-indeterminate 1s linear infinite;
     }
 
     .command-row {
@@ -118,6 +149,15 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
         margin: 0 0.25rem;
       }
     }
+
+    @keyframes terminal-header-progress-indeterminate {
+      from {
+        transform: translateX(-120%);
+      }
+      to {
+        transform: translateX(320%);
+      }
+    }
   `
 })
 export class TerminalHeaderComponent {
@@ -126,6 +166,7 @@ export class TerminalHeaderComponent {
     private stateManager: TerminalStateManager,
     private terminalSession: TerminalSession,
     private menu: ContextMenuOverlayService,
+    private configService: ConfigService,
   ) {
   }
 
@@ -138,6 +179,24 @@ export class TerminalHeaderComponent {
   ));
 
   isNotificationBadgeVisible = toSignal(this.stateManager.hasUnreadNotification$, { initialValue: false });
+  progress = toSignal(this.stateManager.state$.pipe(
+      map(state => state.progress)
+  ), {
+      initialValue: this.stateManager.state.progress
+  });
+
+  isOsc9ProgressBarEnabled = toSignal(this.configService.config$.pipe(
+      map(config => config.terminal?.progress_bar?.enabled ?? true)
+  ), {
+      initialValue: this.getInitialOsc9ProgressBarEnabled()
+  });
+
+  visibleProgress = computed(() => {
+      const progress = this.progress();
+      return this.isOsc9ProgressBarEnabled() && progress?.state !== 'hidden'
+          ? progress
+          : undefined;
+  });
 
   formatDuration(ms: number): string {
     if (ms < 1000) return `${ms}ms`;
@@ -157,5 +216,13 @@ export class TerminalHeaderComponent {
       {items},
       {horizontalAlign: 'right'}
     );
+  }
+
+  private getInitialOsc9ProgressBarEnabled(): boolean {
+      try {
+          return this.configService.config.terminal?.progress_bar?.enabled ?? true;
+      } catch {
+          return true;
+      }
   }
 }

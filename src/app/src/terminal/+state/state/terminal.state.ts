@@ -27,6 +27,13 @@ export type TerminalInput = {
     text: string,
 }
 
+export type TerminalProgressState = "hidden" | "default" | "error" | "indeterminate" | "warning";
+
+export type TerminalProgress = {
+    state: TerminalProgressState;
+    value: number;
+};
+
 export type TerminalState = {
     terminalId: string;
     shellContext: ShellContext;
@@ -39,6 +46,7 @@ export type TerminalState = {
     isInFullScreenMode: boolean;
     isPaneMaximized: boolean;
     hasUnreadNotification: boolean;
+    progress: TerminalProgress;
     commandStartTime: number | undefined;
     input: TerminalInput;
     cwd: string;
@@ -65,6 +73,10 @@ export const INITIAL_STATE: TerminalState = {
     isInFullScreenMode: false,
     isPaneMaximized: false,
     hasUnreadNotification: false,
+    progress: {
+        state: "hidden",
+        value: 0,
+    },
     commandStartTime: undefined,
     input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
 }

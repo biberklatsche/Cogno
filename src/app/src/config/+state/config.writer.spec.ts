@@ -160,4 +160,16 @@ describe('ConfigWriter', () => {
       const text = ConfigWriter.toDotString(config, false);
       expect(text).toContain('keybind = a=b\nkeybind = c=d');
   });
+
+  it('renders terminal progress bar config', () => {
+      const config = {
+          terminal: {
+              progress_bar: {
+                  enabled: false,
+              }
+          }
+      } as any;
+      const text = ConfigWriter.toDotString(config, false);
+      expect(text).toContain('terminal.progress_bar.enabled = false');
+  });
 });

@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PathFactory } from "@cogno/core-host";
+import { communityFeatureShellPathAdapterDefinitions } from "@cogno/community-features";
+import { proFeatureShellPathAdapterDefinitions } from "@cogno/pro-features";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { QueryContext } from "../autocomplete.types";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
@@ -32,6 +35,10 @@ function cdContext(fragment: string): QueryContext {
 
 describe("Autocomplete History Suggestors", () => {
     beforeEach(() => {
+        PathFactory.setDefinitions([
+            ...communityFeatureShellPathAdapterDefinitions,
+            ...proFeatureShellPathAdapterDefinitions,
+        ]);
         vi.restoreAllMocks();
     });
 
