@@ -42,7 +42,7 @@ import {ColorName} from "../../common/color/color";
                             [disabled]="item.disabled"
                             (click)="onItemClick(item)"
                             role="menuitem">
-                        <span>{{ item.label }}</span>
+                        <span class="label">{{ item.label }}</span>
                         <span class="keybinding">{{ item.actionName | actionkeybinding }}</span>
                     </button>
                 }
@@ -144,6 +144,11 @@ import {ColorName} from "../../common/color/color";
             .header {
                 margin: 4px;
                 opacity: 0.5;
+                text-transform: capitalize;
+            }
+            
+            .label {
+                text-transform: capitalize;
             }
             
             .sep {

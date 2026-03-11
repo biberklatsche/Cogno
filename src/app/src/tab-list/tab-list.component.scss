@@ -41,6 +41,7 @@
   max-width: 240px;
   min-width: max(calc(16px + 2 * 8px), var(--tab-min, 32px));
   container-type: inline-size;
+  font-family: var(--app-font-family), Roboto, sans-serif;
 
   &.is-active {
     color: var(--foreground-color);
@@ -73,6 +74,10 @@
   &.is-dragging {
     border-style: dashed;
   }
+}
+
+.inline-input {
+  font-family: var(--app-font-family), Roboto, sans-serif;
 }
 
 .animate-tab-enter {

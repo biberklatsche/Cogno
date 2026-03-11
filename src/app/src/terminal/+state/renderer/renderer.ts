@@ -99,6 +99,7 @@ export class Renderer implements IRenderer, IDisposable {
         if (!this._ligaturesAddon) {
             this._ligaturesAddon = new LigaturesAddon();
         }
+        console.log('###############useLigatures');
         this._terminal.loadAddon(this._ligaturesAddon);
     }
 

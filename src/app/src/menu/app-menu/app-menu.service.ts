@@ -17,7 +17,7 @@ export class AppMenuService {
 
   public buildMenu(): ContextMenuItem[] {
     const terminalItems = this.configService.getOrderedShellProfiles(9).map((profile, index) => ({
-      label: profile.isDefault ? `${profile.name} (Default)` : profile.name,
+      label: profile.name,
       actionName: `open_shell_${index + 1}`,
       action: () => this.bus.publish(ActionFired.create(`open_shell_${index + 1}`)),
     } satisfies ContextMenuItem));
