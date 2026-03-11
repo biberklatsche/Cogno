@@ -1,6 +1,9 @@
 // Vitest setup file
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import '@angular/compiler';
+import { PathFactory } from '@cogno/core-host';
+import { communityFeatureShellPathAdapterDefinitions } from '@cogno/community-features';
+import { proFeatureShellPathAdapterDefinitions } from '@cogno/pro-features';
 
 // Globally mock our Tauri wrapper modules to default implementations from TauriMockFactory
 vi.mock('/src/app/src/_tauri/fs.ts', async () => {
@@ -65,6 +68,13 @@ vi.mock('/src/app/src/_tauri/script.ts', async () => {
 });
 
 // Reset all mocks between tests to keep isolation similar to Jest
+beforeEach(() => {
+  PathFactory.setDefinitions([
+    ...communityFeatureShellPathAdapterDefinitions,
+    ...proFeatureShellPathAdapterDefinitions,
+  ]);
+});
+
 afterEach(() => {
   vi.clearAllMocks();
 });

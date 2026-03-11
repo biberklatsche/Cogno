@@ -95,6 +95,30 @@ function toOptions(source?: Array<string | OptionSpec>): OptionSpec[] {
     return source.map(s => (typeof s === "string" ? { name: s } : s));
 }
 
+function mergeLegacySubcommandOptions(spec: CommandSpec): SubcommandSpec[] {
+    const subcommands = toSubcommands(spec.subcommands).map(sub => ({ ...sub }));
+    const legacyEntries = Object.entries(spec.subcommandOptions ?? {});
+
+    for (const [subcommandName, legacyOptions] of legacyEntries) {
+        const normalizedLegacyOptions = toOptions(legacyOptions);
+        const existing = subcommands.find(sub =>
+            namesOf(sub.name).some(alias => alias.toLowerCase() === subcommandName.toLowerCase())
+        );
+
+        if (existing) {
+            existing.options = [...toOptions(existing.options), ...normalizedLegacyOptions];
+            continue;
+        }
+
+        subcommands.push({
+            name: subcommandName,
+            options: normalizedLegacyOptions,
+        });
+    }
+
+    return subcommands;
+}
+
 function optionArgCount(option: OptionSpec): number {
     if (!option.args) return 0;
     return Array.isArray(option.args) ? option.args.length : 1;
@@ -598,7 +622,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
             name: ROOT_NAME,
             description: spec.description,
             options: toOptions(spec.options),
-            subcommands: toSubcommands(spec.subcommands),
+            subcommands: mergeLegacySubcommandOptions(spec),
         };
         const root = prepareNode(rootSource) ?? {
             names: [ROOT_NAME],
