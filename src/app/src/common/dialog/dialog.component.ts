@@ -16,6 +16,16 @@ import {DialogRef} from './dialog-ref';
 import {DIALOG_DATA} from './dialog.tokens';
 import { IconComponent } from "@cogno/core-ui";
 
+type ResizeDirection =
+  | 'n'
+  | 's'
+  | 'e'
+  | 'w'
+  | 'ne'
+  | 'nw'
+  | 'se'
+  | 'sw';
+
 @Component({
   selector: 'app-dialog',
   standalone: true,
@@ -73,11 +83,73 @@ import { IconComponent } from "@cogno/core-ui";
 
       .resize-handle {
         position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 12px;
-        height: 12px;
+        z-index: 1;
+      }
+
+      .resize-handle.edge-n,
+      .resize-handle.edge-s {
+        left: 10px;
+        right: 10px;
+        height: 10px;
+      }
+
+      .resize-handle.edge-e,
+      .resize-handle.edge-w {
+        top: 10px;
+        bottom: 10px;
+        width: 10px;
+      }
+
+      .resize-handle.edge-n {
+        top: -5px;
+        cursor: ns-resize;
+      }
+
+      .resize-handle.edge-s {
+        bottom: -5px;
+        cursor: ns-resize;
+      }
+
+      .resize-handle.edge-e {
+        right: -5px;
+        cursor: ew-resize;
+      }
+
+      .resize-handle.edge-w {
+        left: -5px;
+        cursor: ew-resize;
+      }
+
+      .resize-handle.corner-ne,
+      .resize-handle.corner-nw,
+      .resize-handle.corner-se,
+      .resize-handle.corner-sw {
+        width: 14px;
+        height: 14px;
+      }
+
+      .resize-handle.corner-ne {
+        top: -5px;
+        right: -5px;
+        cursor: nesw-resize;
+      }
+
+      .resize-handle.corner-nw {
+        top: -5px;
+        left: -5px;
         cursor: nwse-resize;
+      }
+
+      .resize-handle.corner-se {
+        right: -5px;
+        bottom: -5px;
+        cursor: nwse-resize;
+      }
+
+      .resize-handle.corner-sw {
+        left: -5px;
+        bottom: -5px;
+        cursor: nesw-resize;
       }
     `
   ],
@@ -101,7 +173,14 @@ import { IconComponent } from "@cogno/core-ui";
           <ng-container *ngComponentOutlet="component(); injector: contentInjector"></ng-container>
       </div>
       @if (config().resizable) {
-        <div class="resize-handle" (mousedown)="startResize($event)"></div>
+        <div class="resize-handle edge-n" (mousedown)="startResize($event, 'n')"></div>
+        <div class="resize-handle edge-s" (mousedown)="startResize($event, 's')"></div>
+        <div class="resize-handle edge-e" (mousedown)="startResize($event, 'e')"></div>
+        <div class="resize-handle edge-w" (mousedown)="startResize($event, 'w')"></div>
+        <div class="resize-handle corner-ne" (mousedown)="startResize($event, 'ne')"></div>
+        <div class="resize-handle corner-nw" (mousedown)="startResize($event, 'nw')"></div>
+        <div class="resize-handle corner-se" (mousedown)="startResize($event, 'se')"></div>
+        <div class="resize-handle corner-sw" (mousedown)="startResize($event, 'sw')"></div>
       }
     </div>
   `
@@ -122,6 +201,9 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   private resizeStartMouseY = 0;
   private resizeStartWidthPixels = 0;
   private resizeStartHeightPixels = 0;
+  private resizeStartLeftPixels = 0;
+  private resizeStartTopPixels = 0;
+  private resizeDirection: ResizeDirection | null = null;
   private positionTopOverride: string | null = null;
   private positionLeftOverride: string | null = null;
   private widthOverride: string | null = null;
@@ -143,6 +225,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.isMoveActive = false;
     this.isResizeActive = false;
+    this.resizeDirection = null;
   }
 
   onBackdropClick() {
@@ -171,6 +254,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   onDocumentMouseUp(): void {
     this.isMoveActive = false;
     this.isResizeActive = false;
+    this.resizeDirection = null;
   }
 
   @HostListener('window:resize')
@@ -201,7 +285,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     mouseEvent.preventDefault();
   }
 
-  startResize(mouseEvent: MouseEvent): void {
+  startResize(mouseEvent: MouseEvent, direction: ResizeDirection): void {
     if (!this.config().resizable) return;
     if (mouseEvent.button !== 0) return;
 
@@ -215,6 +299,9 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     this.resizeStartMouseY = mouseEvent.clientY;
     this.resizeStartWidthPixels = panelRect.width;
     this.resizeStartHeightPixels = panelRect.height;
+    this.resizeStartLeftPixels = panelRect.left;
+    this.resizeStartTopPixels = panelRect.top;
+    this.resizeDirection = direction;
     this.isResizeActive = true;
     mouseEvent.preventDefault();
   }
@@ -263,29 +350,55 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
 
   private updatePanelSizeFromMouse(mouseEvent: MouseEvent): void {
     const panelElement = this.getPanelElement();
-    if (panelElement === null) return;
+    if (panelElement === null || this.resizeDirection === null) return;
 
-    const panelRect = panelElement.getBoundingClientRect();
-    const panelLeftPixels = this.parsePixelValue(this.positionLeftOverride) ?? panelRect.left;
-    const panelTopPixels = this.parsePixelValue(this.positionTopOverride) ?? panelRect.top;
+    const minimumWidthPixels = Math.min(320, window.innerWidth);
+    const minimumHeightPixels = Math.min(220, window.innerHeight);
+    const deltaX = mouseEvent.clientX - this.resizeStartMouseX;
+    const deltaY = mouseEvent.clientY - this.resizeStartMouseY;
 
-    const maximumWidthPixels = Math.max(0, window.innerWidth - panelLeftPixels);
-    const maximumHeightPixels = Math.max(0, window.innerHeight - panelTopPixels);
-    const minimumWidthPixels = Math.min(320, maximumWidthPixels);
-    const minimumHeightPixels = Math.min(220, maximumHeightPixels);
-    const widthPixels = this.clampNumber(
-      this.resizeStartWidthPixels + mouseEvent.clientX - this.resizeStartMouseX,
-      minimumWidthPixels,
-      maximumWidthPixels
-    );
-    const heightPixels = this.clampNumber(
-      this.resizeStartHeightPixels + mouseEvent.clientY - this.resizeStartMouseY,
-      minimumHeightPixels,
-      maximumHeightPixels
-    );
+    let nextLeftPixels = this.resizeStartLeftPixels;
+    let nextTopPixels = this.resizeStartTopPixels;
+    let nextWidthPixels = this.resizeStartWidthPixels;
+    let nextHeightPixels = this.resizeStartHeightPixels;
 
-    this.widthOverride = `${widthPixels}px`;
-    this.heightOverride = `${heightPixels}px`;
+    if (this.resizeDirection.includes('e')) {
+      nextWidthPixels = this.resizeStartWidthPixels + deltaX;
+    }
+    if (this.resizeDirection.includes('s')) {
+      nextHeightPixels = this.resizeStartHeightPixels + deltaY;
+    }
+    if (this.resizeDirection.includes('w')) {
+      nextWidthPixels = this.resizeStartWidthPixels - deltaX;
+      nextLeftPixels = this.resizeStartLeftPixels + deltaX;
+    }
+    if (this.resizeDirection.includes('n')) {
+      nextHeightPixels = this.resizeStartHeightPixels - deltaY;
+      nextTopPixels = this.resizeStartTopPixels + deltaY;
+    }
+
+    if (nextWidthPixels < minimumWidthPixels) {
+      if (this.resizeDirection.includes('w')) {
+        nextLeftPixels -= minimumWidthPixels - nextWidthPixels;
+      }
+      nextWidthPixels = minimumWidthPixels;
+    }
+    if (nextHeightPixels < minimumHeightPixels) {
+      if (this.resizeDirection.includes('n')) {
+        nextTopPixels -= minimumHeightPixels - nextHeightPixels;
+      }
+      nextHeightPixels = minimumHeightPixels;
+    }
+
+    nextLeftPixels = this.clampNumber(nextLeftPixels, 0, Math.max(0, window.innerWidth - nextWidthPixels));
+    nextTopPixels = this.clampNumber(nextTopPixels, 0, Math.max(0, window.innerHeight - nextHeightPixels));
+    nextWidthPixels = this.clampNumber(nextWidthPixels, minimumWidthPixels, window.innerWidth - nextLeftPixels);
+    nextHeightPixels = this.clampNumber(nextHeightPixels, minimumHeightPixels, window.innerHeight - nextTopPixels);
+
+    this.positionLeftOverride = `${nextLeftPixels}px`;
+    this.positionTopOverride = `${nextTopPixels}px`;
+    this.widthOverride = `${nextWidthPixels}px`;
+    this.heightOverride = `${nextHeightPixels}px`;
   }
 
   private getPanelElement(): HTMLElement | null {
