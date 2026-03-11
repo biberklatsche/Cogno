@@ -109,7 +109,74 @@ describe('TabListService', () => {
             } as any;
             bus.publish(event);
 
-            expect(spy).toHaveBeenCalledWith(expect.objectContaining({ id: 'new-t', title: 'Shell' }));
+            expect(spy).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'new-t', title: 'Shell', activeShellType: 'PowerShell' }),
+                false,
+                { shellName: 'test' }
+            );
+            expect(event.performed).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should handle new_tab action with a specific shell profile', () => {
+            vi.spyOn(IdCreator, 'newTabId').mockReturnValue('new-shell-tab');
+            const publishSpy = vi.spyOn(bus, 'publish');
+
+            const event = {
+                type: 'ActionFired',
+                payload: 'new_tab',
+                path: ['app', 'action'],
+                args: ['test'],
+                trigger: { all: false }
+            } as any;
+            bus.publish(event);
+
+            expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'TabAdded',
+                payload: expect.objectContaining({
+                    tabId: 'new-shell-tab',
+                    shellName: 'test'
+                })
+            }));
+        });
+
+        it('should handle open_shell_1 like new_tab with the first shell profile', () => {
+            vi.spyOn(IdCreator, 'newTabId').mockReturnValue('slot-1-tab');
+            const publishSpy = vi.spyOn(bus, 'publish');
+
+            const event = {
+                type: 'ActionFired',
+                payload: 'open_shell_1',
+                path: ['app', 'action'],
+                trigger: { all: false }
+            } as any;
+            bus.publish(event);
+
+            expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'TabAdded',
+                payload: expect.objectContaining({
+                    tabId: 'slot-1-tab',
+                    shellName: 'test'
+                })
+            }));
+            expect(event.performed).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should do nothing for open_shell_2 when no second shell profile exists', () => {
+            const publishSpy = vi.spyOn(bus, 'publish');
+
+            const event = {
+                type: 'ActionFired',
+                payload: 'open_shell_2',
+                path: ['app', 'action'],
+                trigger: { all: false }
+            } as any;
+            bus.publish(event);
+
+            expect(publishSpy).not.toHaveBeenCalledWith(expect.objectContaining({
+                type: 'TabAdded'
+            }));
             expect(event.performed).toBe(true);
             expect(event.defaultPrevented).toBe(true);
         });

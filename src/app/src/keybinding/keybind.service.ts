@@ -27,7 +27,12 @@ export class KeybindService {
     private readonly listeners = new Map<Key, ListenerStack>();
     private readonly _lastFiredKeybinding = signal<string | undefined>(undefined);
 
-    constructor(keyboardMappingService: KeyboardMappingService, configService: ConfigService, bus: AppBus, ref: DestroyRef) {
+    constructor(
+        keyboardMappingService: KeyboardMappingService,
+        configService: ConfigService,
+        bus: AppBus,
+        ref: DestroyRef,
+    ) {
         keyboardMappingService.loadLayout().then(s => this._keybindMatcher.initKeyCodeMapping(s.keymapInfo.mapping));
         configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(c => this._keybindMatcher.initBindings(c.keybind || []));
         window.addEventListener("keydown", (e) => {

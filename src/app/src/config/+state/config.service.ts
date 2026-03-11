@@ -20,6 +20,11 @@ import {Path} from "../../_tauri/path";
 import {CliConfigOverrides} from "../../_tauri/cli-config-overrides";
 import { CoreHostWiringService } from "../../app-host/core-host-wiring.service";
 
+export interface ShellProfileEntry {
+    readonly name: string;
+    readonly profile: ShellProfile;
+    readonly isDefault: boolean;
+}
 
 export abstract class ConfigService {
     abstract get config(): Config;
@@ -30,6 +35,8 @@ export abstract class ConfigService {
      * If name is missing or invalid, default is used.
      */
     abstract getShellProfileOrDefault(name?: string): ShellProfile;
+    abstract getOrderedShellProfiles(limit?: number): ShellProfileEntry[];
+    abstract getShellProfileByShortcutIndex(index: number): ShellProfileEntry | undefined;
 
     abstract getPromptSegments(): PromptSegment[];
 }
@@ -83,6 +90,48 @@ export class RealConfigService extends ConfigService {
 
         // 3) Fallback: first profile
         return { ...profiles[profileNames[0]] };
+    }
+
+    getOrderedShellProfiles(limit?: number): ShellProfileEntry[] {
+        const config = this._config.value;
+        if (!config) throw new Error('Config is not loaded!');
+
+        const shell = config.shell;
+        if (!shell?.profiles) {
+            return [];
+        }
+
+        const orderedNames: string[] = [];
+        const profileNames = Object.keys(shell.profiles);
+        const appendIfValid = (profileName: string | undefined) => {
+            if (!profileName || !shell.profiles[profileName] || orderedNames.includes(profileName)) {
+                return;
+            }
+            orderedNames.push(profileName);
+        };
+
+        appendIfValid(shell.default);
+        for (const profileName of shell.order ?? []) {
+            appendIfValid(profileName);
+        }
+        for (const profileName of profileNames) {
+            appendIfValid(profileName);
+        }
+
+        const profiles = orderedNames.map((profileName) => ({
+            name: profileName,
+            profile: { ...shell.profiles[profileName] },
+            isDefault: profileName === shell.default,
+        }));
+
+        return limit === undefined ? profiles : profiles.slice(0, limit);
+    }
+
+    getShellProfileByShortcutIndex(index: number): ShellProfileEntry | undefined {
+        if (index < 1 || index > 9) {
+            return undefined;
+        }
+        return this.getOrderedShellProfiles(9)[index - 1];
     }
 
     getPromptSegments(): PromptSegment[] {

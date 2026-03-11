@@ -23,6 +23,16 @@ export const ShellConfigSchema = z.object({
     order: z.array(z.string().min(1)).optional(),
     profiles: ShellProfilesSchema,
 }).superRefine((s, ctx) => {
+    const profileNames = Object.keys(s.profiles);
+
+    if (profileNames.length > 9) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["profiles"],
+            message: "At most 9 shell profiles may be defined.",
+        });
+    }
+
     // default muss existieren
     if (!s.profiles[s.default]) {
         ctx.addIssue({

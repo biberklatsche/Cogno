@@ -28,7 +28,11 @@ export class TabListService {
         return this._showRename.asReadonly();
     }
 
-    constructor(private bus: AppBus, configService: ConfigService, destroyRef: DestroyRef) {
+    constructor(
+        private bus: AppBus,
+        private readonly configService: ConfigService,
+        destroyRef: DestroyRef,
+    ) {
         this.bus.onType$('SelectTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: SelectTabAction) => {
             this.selectTab(event.payload!);
             event.propagationStopped = true;
@@ -39,12 +43,13 @@ export class TabListService {
         });
         this.bus.onType$('CreateTab').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: CreateTabAction) => {
             if (!event.payload?.tabId) return;
+            const shellName = event.payload.shellName;
             this.addTab({
                 id: event.payload.tabId,
                 title: event.payload.title ?? 'Shell',
-                activeShellType: 'unknown',
+                activeShellType: configService.getShellProfileOrDefault(shellName).shell_type,
                 isActive: event.payload.isActive ?? true
-            });
+            }, false, { shellName, workingDir: event.payload.workingDir });
             event.propagationStopped = true;
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
@@ -60,7 +65,20 @@ export class TabListService {
             .subscribe((event: ActionFiredEvent) => {
                 switch (event.payload) {
                     case 'new_tab':
-                        this.addTab({id: IdCreator.newTabId(), title: 'Shell', activeShellType: configService.config.shell?.profiles[configService.config.shell?.default]?.shell_type ?? 'unknown', isActive: true});
+                        this.openShell(event.args?.[0] ?? this.configService.getShellProfileByShortcutIndex(1)?.name);
+                        event.performed = !event.trigger?.all;
+                        event.defaultPrevented = true;
+                        break;
+                    case 'open_shell_1':
+                    case 'open_shell_2':
+                    case 'open_shell_3':
+                    case 'open_shell_4':
+                    case 'open_shell_5':
+                    case 'open_shell_6':
+                    case 'open_shell_7':
+                    case 'open_shell_8':
+                    case 'open_shell_9':
+                        this.openShell(this.resolveShellNameByAction(event.payload));
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
@@ -127,7 +145,7 @@ export class TabListService {
         }
     }
 
-    addTab(tab: Tab, silent: boolean = false) {
+    addTab(tab: Tab, silent: boolean = false, paneConfig?: { shellName?: string; workingDir?: string }) {
         const tabList = [...this._tabList.value];
         if(tabList.some(s => s.id === tab?.id)) return;
         if(tab.isActive){
@@ -138,7 +156,15 @@ export class TabListService {
         tabList.push(tab);
         this._tabList.next(tabList);
         if(silent) return;
-        this.bus.publish({type: 'TabAdded', payload: {tabId: tab.id, isActive: tab.isActive}});
+        this.bus.publish({
+            type: 'TabAdded',
+            payload: {
+                tabId: tab.id,
+                isActive: tab.isActive,
+                shellName: paneConfig?.shellName,
+                workingDir: paneConfig?.workingDir,
+            }
+        });
     }
 
     removeTab(tabId?: TabId) {
@@ -256,5 +282,23 @@ export class TabListService {
         const safeIndex = currentIndex >= 0 ? currentIndex : 0;
         const nextIndex = (safeIndex + direction + tabs.length) % tabs.length;
         this.selectTab(tabs[nextIndex].id);
+    }
+
+    private openShell(shellName?: string): void {
+        if (!shellName) {
+            return;
+        }
+        this.addTab({
+            id: IdCreator.newTabId(),
+            title: 'Shell',
+            activeShellType: this.configService.getShellProfileOrDefault(shellName).shell_type,
+            isActive: true
+        }, false, { shellName });
+    }
+
+    private resolveShellNameByAction(actionName: string): string | undefined {
+        const shellIndex = Number.parseInt(actionName.replace('open_shell_', ''), 10);
+        const shellProfile = this.configService.getShellProfileByShortcutIndex(shellIndex);
+        return shellProfile?.name;
     }
 }

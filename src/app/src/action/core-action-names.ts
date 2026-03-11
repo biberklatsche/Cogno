@@ -42,4 +42,13 @@ export const coreActionNames: ReadonlyArray<string> = [
   "select_word_left",
   "select_text_to_end_of_line",
   "select_text_to_start_of_line",
+  "open_shell_1",
+  "open_shell_2",
+  "open_shell_3",
+  "open_shell_4",
+  "open_shell_5",
+  "open_shell_6",
+  "open_shell_7",
+  "open_shell_8",
+  "open_shell_9",
 ] as const;
