@@ -17,14 +17,6 @@ import {
   communityFeatureSideMenuFeatureDefinitions,
   communityFeatureTerminalAutocompleteSuggestorDefinitions,
 } from "@cogno/community-features";
-import {
-  proFeatureDatabaseMigrations,
-  proFeatureShellDefinitions,
-  proFeatureShellPathAdapterDefinitions,
-  proFeatureShellSupportDefinitions,
-  proFeatureSideMenuFeatureDefinitions,
-  proFeatureTerminalAutocompleteSuggestorDefinitions,
-} from "@cogno/pro-features";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
 
@@ -37,18 +29,11 @@ export class CoreHostWiringService {
   >();
   private readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
     TerminalAutocompleteSuggestorDefinitionContract
-  > = [
-    ...communityFeatureTerminalAutocompleteSuggestorDefinitions,
-    ...proFeatureTerminalAutocompleteSuggestorDefinitions,
-  ];
+  > = [...communityFeatureTerminalAutocompleteSuggestorDefinitions];
   private readonly shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract> = [
     ...communityFeatureShellSupportDefinitions,
-    ...proFeatureShellSupportDefinitions,
   ];
-  private readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract> = [
-    ...communityFeatureShellDefinitions,
-    ...proFeatureShellDefinitions,
-  ];
+  private readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract> = [...communityFeatureShellDefinitions];
 
   private readonly coreHostBootstrapHost = new CoreHostBootstrapHost<
     Type<unknown>,
@@ -57,20 +42,13 @@ export class CoreHostWiringService {
   >(this.sideMenuFeatureRegistryHost);
 
   constructor(private readonly databaseMigrationService: DatabaseMigrationService) {
-    PathFactory.setDefinitions([
-      ...communityFeatureShellPathAdapterDefinitions,
-      ...proFeatureShellPathAdapterDefinitions,
-    ]);
+    PathFactory.setDefinitions([...communityFeatureShellPathAdapterDefinitions]);
     this.coreHostBootstrapHost.registerSideMenuFeatures([
       ...sideMenuFeatureDefinitions,
       ...communityFeatureSideMenuFeatureDefinitions,
-      ...proFeatureSideMenuFeatureDefinitions,
     ]);
     this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
-    this.databaseMigrationService.registerFeatureMigrations([
-      ...communityFeatureDatabaseMigrations,
-      ...proFeatureDatabaseMigrations,
-    ]);
+    this.databaseMigrationService.registerFeatureMigrations([...communityFeatureDatabaseMigrations]);
   }
 
   getRequiredSideMenuFeatureDefinitionById(

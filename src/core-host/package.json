@@ -4,10 +4,5 @@
   "private": true,
   "type": "module",
   "main": "index.ts",
-  "types": "index.ts",
-  "scripts": {
-    "build": "tsc --noEmit -p ../../tsconfig.app.json",
-    "test": "vitest run --passWithNoTests",
-    "lint": "tsc --noEmit -p ../../tsconfig.app.json"
-  }
+  "types": "index.ts"
 }

@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": [ "vitest/globals", "vite/client" ],
+    "types": ["vitest/globals", "vite/client"],
     "esModuleInterop": true,
     "emitDecoratorMetadata": true
   }

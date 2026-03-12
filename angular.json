@@ -81,13 +81,7 @@
                 },
                 "fonts": false
               },
-              "outputHashing": "all",
-              "fileReplacements": [
-                {
-                  "replace": "src/app/src/app-host/core-host-wiring.service.ts",
-                  "with": "src/app/src/app-host/core-host-wiring-community.service.ts"
-                }
-              ]
+              "outputHashing": "all"
             },
             "development": {
               "optimization": false,
@@ -95,7 +89,7 @@
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "pro"
+          "defaultConfiguration": "community"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
