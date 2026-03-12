@@ -47,7 +47,7 @@ describe("TerminalFileDropService", () => {
             await Promise.resolve();
             expect(AppWindow.setFocus).toHaveBeenCalled();
             vi.runAllTimers();
-            expect(terminalSession.focus).toHaveBeenCalledTimes(2);
+            expect(terminalSession.focus).toHaveBeenCalledTimes(1);
         } finally {
             vi.useRealTimers();
         }
