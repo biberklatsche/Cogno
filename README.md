@@ -200,4 +200,3 @@ Direkt mit Tauri CLI:
 ```bash
 npx tauri build --bundles app,dmg
 ```
-
