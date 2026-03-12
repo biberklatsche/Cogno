@@ -1,6 +1,0 @@
-{
-  "name": "while",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/while.ts",
-  "description": "Repeat a command while this is true"
-}

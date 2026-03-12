@@ -1,0 +1,10 @@
+{
+  "name": "unset",
+  "description": "Named variable shall be undefined",
+  "options": [
+    {
+      "name": "-v",
+      "description": "Variable definition will be unset"
+    }
+  ]
+}

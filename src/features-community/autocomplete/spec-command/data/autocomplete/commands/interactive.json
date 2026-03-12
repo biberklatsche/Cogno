@@ -1,0 +1,27 @@
+{
+  "name": "interactive",
+  "description": "Start interactive mode. Installs the Interactive extension if not installed already",
+  "options": [
+    {
+      "name": [
+        "--style",
+        "-s"
+      ],
+      "description": "The colors of the shell",
+      "args": [
+        {
+          "name": "style"
+        }
+      ]
+    },
+    {
+      "name": "--update",
+      "description": "Update the Interactive extension to the latest available",
+      "args": [
+        {
+          "name": "update"
+        }
+      ]
+    }
+  ]
+}

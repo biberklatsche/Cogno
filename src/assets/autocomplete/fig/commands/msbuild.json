@@ -1,6 +1,0 @@
-{
-  "name": "msbuild",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/dotnet/dotnet-msbuild.ts",
-  "description": "The dotnet msbuild command allows access to a fully functional MSBuild"
-}

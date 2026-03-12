@@ -1,0 +1,20 @@
+{
+  "name": "rushx",
+  "description": "Run arbitrary package scripts for rush project. analogous to npm run",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Show this help message and exit"
+    },
+    {
+      "name": [
+        "-q",
+        "--quiet"
+      ],
+      "description": "Hide rushx startup information"
+    }
+  ]
+}

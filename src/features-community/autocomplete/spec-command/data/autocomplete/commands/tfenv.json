@@ -1,0 +1,65 @@
+{
+  "name": "tfenv",
+  "description": "Terraform version manager",
+  "options": [
+    {
+      "name": [
+        "-v",
+        "--version"
+      ],
+      "description": "View your current tfenv version"
+    },
+    {
+      "name": "--help",
+      "description": "View commands"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "install",
+      "description": "Install a specific version of Terraform",
+      "args": [
+        {
+          "name": "version",
+          "description": "Possible Terraform Version"
+        }
+      ]
+    },
+    {
+      "name": "use",
+      "description": "Switch to a version to use",
+      "args": [
+        {
+          "name": "version",
+          "description": "Installed Terraform Version"
+        }
+      ]
+    },
+    {
+      "name": "uninstall",
+      "description": "Uninstall a specific version of Terraform",
+      "args": [
+        {
+          "name": "version",
+          "description": "Installed Terraform Version"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List all installed versions"
+    },
+    {
+      "name": "list-remote",
+      "description": "List all installable versions"
+    },
+    {
+      "name": "version-name",
+      "description": "Print current version"
+    },
+    {
+      "name": "init",
+      "description": "Update environment to use tfenv correctly"
+    }
+  ]
+}

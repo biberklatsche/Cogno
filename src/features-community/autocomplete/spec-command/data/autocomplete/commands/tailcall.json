@@ -1,0 +1,56 @@
+{
+  "name": "tailcall",
+  "description": "TailCall CLI for managing and optimizing GraphQL configurations",
+  "subcommands": [
+    {
+      "name": "check",
+      "description": "Validate a composition spec",
+      "args": [
+        {
+          "name": "FILE_PATHS"
+        }
+      ],
+      "options": [
+        {
+          "name": "--n-plus-one-queries",
+          "description": "Detect N+1 issues"
+        },
+        {
+          "name": "--schema",
+          "description": "Display the schema of the composition spec"
+        },
+        {
+          "name": "--format",
+          "description": "Change the format of the input file"
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Launch the GraphQL Server for the specific configuration",
+      "args": [
+        {
+          "name": "PATHS"
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Bootstrap a new TailCall project",
+      "args": [
+        {
+          "name": "FILE_PATH"
+        }
+      ]
+    },
+    {
+      "name": "gen",
+      "description": "Generate GraphQL configurations from various sources",
+      "args": [
+        {
+          "name": "CONFIG_FILE"
+        }
+      ]
+    }
+  ]
+}

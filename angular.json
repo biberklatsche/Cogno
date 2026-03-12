@@ -9,28 +9,35 @@
     "cogno": {
       "projectType": "application",
       "root": "",
-      "sourceRoot": "src",
+      "sourceRoot": "src/app/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/cogno",
-            "index": "src/index.html",
-            "browser": "src/main.ts",
+            "index": "src/app/index.html",
+            "browser": "src/app/main.ts",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
             "loader": {
               ".sql": "text"
             },
-            "assets": ["src/assets"],
+            "assets": [
+              "src/app/assets",
+              {
+                "glob": "**/*",
+                "input": "src/features-community/autocomplete/spec-command/data/autocomplete",
+                "output": "/feature-data/community/spec-command"
+              }
+            ],
             "styles": [
-              "src/assets/styles/styles.css",
+              "src/app/assets/styles/styles.css",
               "node_modules/@xterm/xterm/css/xterm.css"
             ]
           },
           "configurations": {
-            "production": {
+            "pro": {
               "budgets": [
                 {
                   "type": "initial",
@@ -39,7 +46,7 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
+                  "maximumWarning": "3kb",
                   "maximumError": "4kb"
                 }
               ],
@@ -53,13 +60,42 @@
               },
               "outputHashing": "all"
             },
+            "community": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "5mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "3kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/src/app-host/core-host-wiring.service.ts",
+                  "with": "src/app/src/app-host/core-host-wiring-community.service.ts"
+                }
+              ]
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "pro"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -67,11 +103,14 @@
             "port": 1420
           },
           "configurations": {
-            "production": {
-              "buildTarget": "cogno:build:production"
+            "pro": {
+              "buildTarget": "cogno:build:pro"
             },
             "development": {
               "buildTarget": "cogno:build:development"
+            },
+            "community": {
+              "buildTarget": "cogno:build:community"
             }
           },
           "defaultConfiguration": "development"

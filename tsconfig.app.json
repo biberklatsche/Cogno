@@ -5,6 +5,6 @@
     "outDir": "./out-tsc/app",
     "types": ["vite/client"]
   },
-  "files": ["src/main.ts"],
-  "include": ["src/**/*.d.ts"]
+  "files": ["src/app/main.ts"],
+  "include": ["src/app/**/*.d.ts"]
 }

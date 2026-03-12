@@ -1,6 +1,0 @@
-{
-  "name": "bin-console",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/php/bin-console.ts",
-  "description": "Symfony bin/console command"
-}

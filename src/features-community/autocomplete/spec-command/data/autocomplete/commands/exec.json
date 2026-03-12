@@ -1,0 +1,4 @@
+{
+  "name": "exec",
+  "description": "Replace the current shell with a program"
+}

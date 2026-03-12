@@ -1,0 +1,563 @@
+{
+  "name": "ngrok",
+  "description": "Tunnel local ports to public URLs and inspect traffic",
+  "subcommands": [
+    {
+      "name": "help",
+      "description": "Shows a list of commands or help for one command",
+      "args": [
+        {
+          "name": "command"
+        }
+      ]
+    },
+    {
+      "name": "http",
+      "description": "Start an HTTP tunnel",
+      "args": [
+        {
+          "name": "host"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "--log",
+            "-log"
+          ],
+          "description": "Path to log file, 'stdout', 'stderr' or 'false'",
+          "args": [
+            {
+              "name": "value"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--log-format",
+            "-log-format"
+          ],
+          "description": "Log record format: 'term', 'logfmt', 'json'"
+        },
+        {
+          "name": [
+            "--log-level",
+            "-log-level"
+          ],
+          "description": "Logging level",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--config",
+            "-config"
+          ],
+          "description": "Path to config files; they are merged if multiple",
+          "args": [
+            {
+              "name": "config file"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--region",
+            "-region"
+          ],
+          "description": "Ngrok server region [us, eu, au, ap, sa, jp, in] (default: us)"
+        },
+        {
+          "name": [
+            "--authtoken",
+            "-authtoken"
+          ],
+          "description": "Ngrok.com authtoken identifying a user",
+          "args": [
+            {
+              "name": "authtoken"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--hostname",
+            "-hostname"
+          ],
+          "description": "Host tunnel on custom hostname (requires DNS CNAME)",
+          "args": [
+            {
+              "name": "hostname"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--subdomain",
+            "-subdomain"
+          ],
+          "description": "Host tunnel on a custom subdomain",
+          "args": [
+            {
+              "name": "subdomain"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--auth",
+            "-auth"
+          ],
+          "description": "Enforce basic auth on tunnel endpoint, 'user:password'",
+          "args": [
+            {
+              "name": "user:password"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--bind-tls",
+            "-bind-tls"
+          ],
+          "description": "Listen for http, https or both: true/false/both",
+          "args": [
+            {
+              "name": "true/false/both"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--host-header",
+            "-host-header"
+          ],
+          "description": "Set Host header; if 'rewrite' use local address hostname"
+        },
+        {
+          "name": [
+            "--introspection",
+            "-introspection"
+          ],
+          "description": "Enable/disable http introspection"
+        }
+      ]
+    },
+    {
+      "name": "authtoken",
+      "description": "Save authtoken to configuration file",
+      "args": [
+        {
+          "name": "authtoken"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "--log",
+            "-log"
+          ],
+          "description": "Path to log file, 'stdout', 'stderr' or 'false'",
+          "args": [
+            {
+              "name": "value"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--log-format",
+            "-log-format"
+          ],
+          "description": "Log record format: 'term', 'logfmt', 'json'"
+        },
+        {
+          "name": [
+            "--log-level",
+            "-log-level"
+          ],
+          "description": "Logging level",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--config",
+            "-config"
+          ],
+          "description": "Path to config files; they are merged if multiple",
+          "args": [
+            {
+              "name": "config file"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "credits",
+      "description": "Prints author and licensing information"
+    },
+    {
+      "name": "start",
+      "description": "Start tunnels by name from the configuration file",
+      "args": [
+        {
+          "name": "tunnels"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "--log",
+            "-log"
+          ],
+          "description": "Path to log file, 'stdout', 'stderr' or 'false'",
+          "args": [
+            {
+              "name": "value"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--log-format",
+            "-log-format"
+          ],
+          "description": "Log record format: 'term', 'logfmt', 'json'"
+        },
+        {
+          "name": [
+            "--log-level",
+            "-log-level"
+          ],
+          "description": "Logging level",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--config",
+            "-config"
+          ],
+          "description": "Path to config files; they are merged if multiple",
+          "args": [
+            {
+              "name": "config file"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--region",
+            "-region"
+          ],
+          "description": "Ngrok server region [us, eu, au, ap, sa, jp, in] (default: us)"
+        },
+        {
+          "name": [
+            "--authtoken",
+            "-authtoken"
+          ],
+          "description": "Ngrok.com authtoken identifying a user",
+          "args": [
+            {
+              "name": "authtoken"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--all",
+            "-all"
+          ],
+          "description": "Start all tunnels in the configuration file"
+        },
+        {
+          "name": [
+            "--none",
+            "-none"
+          ],
+          "description": "Start running no tunnels"
+        }
+      ]
+    },
+    {
+      "name": "tcp",
+      "description": "Start a TCP tunnel",
+      "args": [
+        {
+          "name": "port"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "--log",
+            "-log"
+          ],
+          "description": "Path to log file, 'stdout', 'stderr' or 'false'",
+          "args": [
+            {
+              "name": "value"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--log-format",
+            "-log-format"
+          ],
+          "description": "Log record format: 'term', 'logfmt', 'json'"
+        },
+        {
+          "name": [
+            "--log-level",
+            "-log-level"
+          ],
+          "description": "Logging level",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--config",
+            "-config"
+          ],
+          "description": "Path to config files; they are merged if multiple",
+          "args": [
+            {
+              "name": "config file"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--authtoken",
+            "-authtoken"
+          ],
+          "description": "Ngrok.com authtoken identifying a user",
+          "args": [
+            {
+              "name": "authtoken"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--region",
+            "-region"
+          ],
+          "description": "Ngrok server region [us, eu, au, ap, sa, jp, in] (default: us)"
+        },
+        {
+          "name": [
+            "--remote-addr",
+            "-remote-addr"
+          ],
+          "description": "Bind remote address (requires you reserve an address)",
+          "args": [
+            {
+              "name": "remote address"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tls",
+      "description": "Start a TLS tunnel",
+      "args": [
+        {
+          "name": "port"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "--log",
+            "-log"
+          ],
+          "description": "Path to log file, 'stdout', 'stderr' or 'false'",
+          "args": [
+            {
+              "name": "value"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--log-format",
+            "-log-format"
+          ],
+          "description": "Log record format: 'term', 'logfmt', 'json'"
+        },
+        {
+          "name": [
+            "--log-level",
+            "-log-level"
+          ],
+          "description": "Logging level",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--config",
+            "-config"
+          ],
+          "description": "Path to config files; they are merged if multiple",
+          "args": [
+            {
+              "name": "config file"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--authtoken",
+            "-authtoken"
+          ],
+          "description": "Ngrok.com authtoken identifying a user",
+          "args": [
+            {
+              "name": "authtoken"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--region",
+            "-region"
+          ],
+          "description": "Ngrok server region [us, eu, au, ap, sa, jp, in] (default: us)"
+        },
+        {
+          "name": [
+            "--hostname",
+            "-hostname"
+          ],
+          "description": "Host tunnel on custom hostname (requires DNS CNAME)",
+          "args": [
+            {
+              "name": "hostname"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--subdomain",
+            "-subdomain"
+          ],
+          "description": "Host tunnel on a custom subdomain",
+          "args": [
+            {
+              "name": "subdomain"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--client-cas",
+            "-client-cas"
+          ],
+          "args": [
+            {
+              "name": "certificate"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--crt",
+            "-crt"
+          ],
+          "args": [
+            {
+              "name": "certificate"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--key",
+            "-key"
+          ],
+          "args": [
+            {
+              "name": "certificate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "description": "Update ngrok to the latest version",
+      "options": [
+        {
+          "name": [
+            "--log",
+            "-log"
+          ],
+          "description": "Path to log file, 'stdout', 'stderr' or 'false'",
+          "args": [
+            {
+              "name": "value"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--log-format",
+            "-log-format"
+          ],
+          "description": "Log record format: 'term', 'logfmt', 'json'"
+        },
+        {
+          "name": [
+            "--log-level",
+            "-log-level"
+          ],
+          "description": "Logging level",
+          "args": [
+            {
+              "name": "level"
+            }
+          ]
+        },
+        {
+          "name": [
+            "--channel",
+            "-channel"
+          ],
+          "description": "Update channel (stable, beta)",
+          "args": [
+            {
+              "name": "channel"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "version",
+      "description": "Print the version string"
+    }
+  ]
+}

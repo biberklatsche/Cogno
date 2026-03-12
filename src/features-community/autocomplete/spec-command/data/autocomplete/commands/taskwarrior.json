@@ -1,0 +1,623 @@
+{
+  "name": "taskwarrior",
+  "description": "A command line todo manager",
+  "options": [
+    {
+      "name": "--version",
+      "description": "This is the only conventional command line argument that Taskwarrior supports, and is intended for add-on scripts to verify the version number of an installed Taskwarrior without invoking the mechanisms that create default files"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "active",
+      "description": "Shows all tasks matching the filter, that are started but not completed",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "all",
+      "description": "Shows all tasks matching the filter, including parents of recurring tasks",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "blocked",
+      "description": "Shows all tasks matching the filter, that are currently blocked by other tasks",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "blocking",
+      "description": "Shows all tasks matching the filter, that block other tasks",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "burndown.daily",
+      "description": "Shows a graphical burndown chart, by day. Is affected by the context",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "burndown.weekly",
+      "description": "Shows a graphical burndown chart, by week.  Note that 'burndown' is an alias to the 'burndown.weekly' report. Is affected by the context",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "burndown.monthly",
+      "description": "Shows a graphical burndown chart, by month. Is affected by the context",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "calendar",
+      "description": "Shows a monthly calendar with due tasks marked",
+      "args": [
+        {
+          "name": "year",
+          "description": "The year number"
+        },
+        {
+          "name": "month",
+          "description": "The year number"
+        },
+        {
+          "name": "due",
+          "description": "Show tasks that are due"
+        }
+      ]
+    },
+    {
+      "name": "commands",
+      "description": "Shows all the supported commands, with some details of each"
+    },
+    {
+      "name": "diagnostics",
+      "description": "Shows diagnostic information, of the kind needed when reporting a problem"
+    },
+    {
+      "name": "logo",
+      "description": "Displays the Taskwarrior logo"
+    },
+    {
+      "name": "news",
+      "description": "Guides the user through important release notes anytime a new version of Taskwarrior is installed"
+    },
+    {
+      "name": "reports",
+      "description": "Lists all supported reports"
+    },
+    {
+      "name": "completed",
+      "description": "Shows all tasks matching the filter that are completed",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "count",
+      "description": "Display only a count of tasks matching the filter. Is affected by the context",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Exports all tasks in the JSON format matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ghistory.annual",
+      "description": "Shows a graphical report of task status by year",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ghistory.monthly",
+      "description": "Shows a graphical report of task status by month",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ghistory.weekly",
+      "description": "Shows a graphical report of task status by week",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ghistory.daily",
+      "description": "Shows a graphical report of task status by day",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "description": "Shows the long usage text"
+    },
+    {
+      "name": "history.annual",
+      "description": "Shows a report of task history by year",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "history.monthly",
+      "description": "Shows a report of task history by month",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "history.weekly",
+      "description": "Shows a report of task history by week",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "history.daily",
+      "description": "Shows a report of task history by day",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ids",
+      "description": "Applies the filter then extracts only the task IDs and presents them as a space-separated list",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "uuids",
+      "description": "Applies the filter on all tasks (even deleted and completed tasks) then extracts only the task UUIDs and presents them as a space-separated list",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "udas",
+      "description": "Shows a list of UDAs that are defined, including their name, type, label, and allowed values"
+    },
+    {
+      "name": "information",
+      "description": "Shows all data and metadata for the specified tasks",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "long",
+      "description": "Provides the most detailed listing of tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ls",
+      "description": "Provides a short listing of tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "minimal",
+      "description": "Provides a minimal listing of tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "newest",
+      "description": "Shows the newest tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "next",
+      "description": "Shows a page of the most urgent tasks, sorted by urgency, which is a calculated value",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "ready",
+      "description": "Shows a page of the most urgent ready tasks, sorted by urgency with started tasks first",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "oldest",
+      "description": "Shows the oldest tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "overdue",
+      "description": "Shows all incomplete tasks matching the filter that are beyond their due date",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "projects",
+      "description": "Lists all project names that are current used by pending tasks, and the number of tasks for each",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "recurring",
+      "description": "Shows all recurring tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "unblocked",
+      "description": "Shows all tasks that are not currently blocked by other tasks, matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "waiting",
+      "description": "Shows all waiting tasks matching the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "add",
+      "description": "Adds a new pending task to the task list",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "annotate",
+      "description": "Adds an annotation to an existing task",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "append",
+      "description": "Appends description text to an existing task",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": [
+        "delete",
+        "rm"
+      ],
+      "description": "Deletes the specified task from the task list",
+      "args": [
+        {
+          "name": "Task",
+          "description": "The task to delete"
+        }
+      ]
+    },
+    {
+      "name": "denotate",
+      "description": "Deletes an annotation for the specified task",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "done",
+      "description": "Marks the specified task as done",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "duplicate",
+      "description": "Duplicates the specified task and allows modifications",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "edit",
+      "description": "Launches a text editor to let you modify all aspects of a task directly",
+      "args": [
+        {
+          "name": "Task",
+          "description": "The task to edit"
+        }
+      ]
+    },
+    {
+      "name": "log",
+      "description": "Adds a new task that is already completed, to the task list",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "modify",
+      "description": "Modifies the existing task with provided information",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "prepend",
+      "description": "Prepends description text to and existing task",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "purge",
+      "description": "Permanently removes the specified tasks from the data files",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Marks the specified tasks as started",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "stop",
+      "description": "Removes the start time from the specified task",
+      "args": [
+        {
+          "name": "mods",
+          "description": "Changes to apply to the selected tasks"
+        }
+      ]
+    },
+    {
+      "name": "context",
+      "description": "Sets the currently active context",
+      "args": [
+        {
+          "name": "name"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "delete",
+          "description": "Deletes the context with the name",
+          "args": [
+            {
+              "name": "name"
+            }
+          ]
+        },
+        {
+          "name": "define",
+          "description": "Defines a new context with the name and definition filter",
+          "args": [
+            {
+              "name": "name"
+            },
+            {
+              "name": "mods",
+              "description": "Changes to apply to the selected tasks"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "Outputs a list of available contexts along with their definitions"
+        },
+        {
+          "name": "none",
+          "description": "Clears the currently active context, if any was set"
+        },
+        {
+          "name": "show",
+          "description": "Shows the currently active context, along with its definition"
+        }
+      ]
+    },
+    {
+      "name": "stats",
+      "description": "Shows statistics of the tasks defined by the filter",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "summary",
+      "description": "Shows a report of aggregated task status by project",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "tags",
+      "description": "Show a list of all tags used",
+      "args": [
+        {
+          "name": "filters",
+          "description": "Task search criteria"
+        }
+      ]
+    },
+    {
+      "name": "timesheet",
+      "description": "Shows a weekly report of tasks completed and started",
+      "args": [
+        {
+          "name": "weeks"
+        }
+      ]
+    },
+    {
+      "name": "undo",
+      "description": "Reverts the most recent action"
+    },
+    {
+      "name": "version",
+      "description": "Shows the Taskwarrior version number"
+    }
+  ]
+}

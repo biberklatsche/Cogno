@@ -112,8 +112,16 @@ impl ShellSpawner {
 
     fn get_integration_args(&self, shell_type: &str) -> Result<Vec<String>, String> {
         match shell_type {
-            "Bash" | "GitBash" => {
-                let rcfile = self.integration_root.join("bash").join("cogno.bashrc");
+            "Bash" => {
+                let rcfile = self.integration_root.join("bash").join("bootstrap.bash");
+                // Add --rcfile to load our integration
+                Ok(vec![
+                    "--rcfile".to_string(),
+                    rcfile.to_string_lossy().to_string(),
+                ])
+            }
+            "GitBash" => {
+                let rcfile = self.integration_root.join("gitbash").join("bootstrap.bash");
                 // Add --rcfile to load our integration
                 Ok(vec![
                     "--rcfile".to_string(),
@@ -129,7 +137,7 @@ impl ShellSpawner {
                 Ok(vec![])
             }
             "PowerShell" => {
-                let integration_script = self.integration_root.join("pwsh").join("integration.ps1");
+                let integration_script = self.integration_root.join("pwsh").join("bootstrap.ps1");
                 Ok(vec![
                     "-NoExit".to_string(),
                     "-NoProfile".to_string(),

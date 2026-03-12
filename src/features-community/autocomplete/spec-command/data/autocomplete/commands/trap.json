@@ -1,0 +1,20 @@
+{
+  "name": "trap",
+  "description": "Automatically execute commands after receiving signals by processes or the operating system",
+  "options": [
+    {
+      "name": [
+        "--print",
+        "-p"
+      ],
+      "description": "Prints all defined signal handlers"
+    },
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Displays help about using this command"
+    }
+  ]
+}

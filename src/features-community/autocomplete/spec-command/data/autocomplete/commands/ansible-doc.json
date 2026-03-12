@@ -1,0 +1,121 @@
+{
+  "name": "ansible-doc",
+  "description": "Displays information on modules installed in Ansible libraries",
+  "options": [
+    {
+      "name": "--metadata-dump",
+      "description": "For internal testing only Dump json metadata for all plugins"
+    },
+    {
+      "name": "--playbook-dir",
+      "description": "Sets the relative path for many features including roles/ group_vars/ etc",
+      "args": [
+        {
+          "name": "BASEDIR",
+          "description": "Base directory"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "description": "Shows version number, config file location, module search path, module location, executable location and exit"
+    },
+    {
+      "name": [
+        "--list_files",
+        "-F"
+      ],
+      "description": "Show plugin names and their source files without summaries (implies --list)"
+    },
+    {
+      "name": [
+        "--module-path",
+        "-M"
+      ],
+      "description": "Prepend colon-separated path(s) to module library"
+    },
+    {
+      "name": [
+        "--entry-point",
+        "-E"
+      ],
+      "description": "Select the entry point for role(s)",
+      "args": [
+        {
+          "name": "ENTRY_POINT"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show help and exit"
+    },
+    {
+      "name": [
+        "--json",
+        "-j"
+      ],
+      "description": "Change output into json format"
+    },
+    {
+      "name": [
+        "--list",
+        "-l"
+      ],
+      "description": "List available plugins; a supplied argument will be used for filtering (can be a namespace or full collection name)",
+      "args": [
+        {
+          "name": "NAMESPACE|COLLECTION"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--roles-path",
+        "-r"
+      ],
+      "description": "The path to the directory containing your roles",
+      "args": [
+        {
+          "name": "PATH"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--snippet",
+        "-s"
+      ],
+      "description": "Show playbook snippet for these plugin types: inventory, lookup, module",
+      "args": [
+        {
+          "name": "PLUGIN_TYPE"
+        }
+      ]
+    },
+    {
+      "name": [
+        "--type",
+        "-t"
+      ],
+      "description": "Choose which plugin type (defaults to \"module\")",
+      "args": [
+        {
+          "name": "PLUGIN_TYPE"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "description": "Verbose mode (-vvv for more, -vvvv to enable connection debugging)"
+    },
+    {
+      "name": "-v",
+      "description": "Verbose mode (-vvv for more, -vvvv to enable connection debugging)",
+      "isRepeatable": true
+    }
+  ]
+}

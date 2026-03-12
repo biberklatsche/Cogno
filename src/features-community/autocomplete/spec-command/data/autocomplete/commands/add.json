@@ -1,0 +1,94 @@
+{
+  "name": "add",
+  "subcommands": [
+    {
+      "name": "package",
+      "description": "The package reference to add",
+      "args": [
+        {
+          "name": "id"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-f",
+            "--framework"
+          ],
+          "description": "Adds a package reference only when targeting a specific framework",
+          "args": [
+            {
+              "name": "framework"
+            }
+          ]
+        },
+        {
+          "name": "--interactive",
+          "description": "Allows the command to stop and wait for user input or action. For example, to complete authentication"
+        },
+        {
+          "name": [
+            "-n",
+            "--no-restore"
+          ],
+          "description": "Adds a package reference without performing a restore preview and compatibility check"
+        },
+        {
+          "name": "--package-directory",
+          "description": "The directory where to restore the packages. The default package restore location is %userprofile%.nugetpackages on Windows and ~/.nuget/packages on macOS and Linux",
+          "args": [
+            {
+              "name": "directory"
+            }
+          ]
+        },
+        {
+          "name": "--prerelease",
+          "description": "Allows prerelease packages to be installed. Available since .NET Core 5 SDK"
+        },
+        {
+          "name": [
+            "-s",
+            "--source"
+          ],
+          "description": "The URI of the NuGet package source to use during the restore operation"
+        },
+        {
+          "name": [
+            "-v",
+            "--version"
+          ],
+          "description": "Version of the package",
+          "args": [
+            {
+              "name": "version"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reference",
+      "description": "The dotnet add reference command provides a convenient option to add project references to a project. After running the command, the <ProjectReference> elements are added to the project file",
+      "args": [
+        {
+          "name": "path"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-f",
+            "--framework"
+          ],
+          "description": "Adds a package reference only when targeting a specific framework",
+          "args": [
+            {
+              "name": "framework"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

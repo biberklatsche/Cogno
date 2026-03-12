@@ -1,6 +1,0 @@
-{
-  "name": "rails",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/rails.ts",
-  "description": "Ruby on Rails CLI"
-}

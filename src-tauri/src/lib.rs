@@ -3,6 +3,7 @@ pub mod commands;
 
 use crate::cli::Cli;
 use clap::Parser;
+use commands::command_runner::command_runner_execute;
 use commands::config::get_default_config;
 use commands::crypto::decrypt;
 use commands::crypto::encrypt;
@@ -13,7 +14,7 @@ use commands::environment::{
 use commands::fonts::list_fonts;
 use commands::keyboard::get_keyboard_layout;
 use commands::processes::{pty_get_process_tree_by_pid, pty_get_process_tree_by_terminal_id};
-use commands::pty::{pty_kill, pty_resize, pty_spawn, pty_write, PtyState};
+use commands::pty::{pty_execute_shell_action, pty_kill, pty_resize, pty_spawn, pty_write, PtyState};
 use commands::shells::list_shells;
 use commands::window::new_window;
 use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
@@ -47,6 +48,7 @@ pub fn run(cli: Cli) {
         }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
+            command_runner_execute,
             get_default_config,
             list_fonts,
             list_shells,
@@ -55,6 +57,7 @@ pub fn run(cli: Cli) {
             encrypt,
             pty_spawn,
             pty_write,
+            pty_execute_shell_action,
             pty_resize,
             pty_kill,
             pty_get_process_tree_by_pid,

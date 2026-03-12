@@ -1,0 +1,1802 @@
+{
+  "name": "fig",
+  "description": "The CLI for Fig",
+  "options": [
+    {
+      "name": [
+        "-h",
+        "--help"
+      ],
+      "description": "Print help information"
+    },
+    {
+      "name": [
+        "-V",
+        "--version"
+      ],
+      "description": "Print version information"
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "app",
+      "description": "Interact with the desktop app",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "install",
+          "description": "Install the Fig app",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "onboarding",
+          "description": "Run the Fig tutorial again",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "running",
+          "description": "Check if Fig is running",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "launch",
+          "description": "Launch the Fig desktop app",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "restart",
+          "description": "Restart the Fig desktop app",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "quit",
+          "description": "Quit the Fig desktop app",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "set-path",
+          "description": "Set the internal psudo-terminal path",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "uninstall",
+          "description": "Uninstall the Fig app",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "prompts",
+          "description": "Prompts shown on terminal startup",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hook",
+      "description": "Hook commands",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "editbuffer",
+          "args": [
+            {
+              "name": "session-id"
+            },
+            {
+              "name": "integration"
+            },
+            {
+              "name": "tty"
+            },
+            {
+              "name": "pid"
+            },
+            {
+              "name": "histno"
+            },
+            {
+              "name": "cursor"
+            },
+            {
+              "name": "text"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "event",
+          "args": [
+            {
+              "name": "event-name"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "hide",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "init",
+          "args": [
+            {
+              "name": "pid"
+            },
+            {
+              "name": "tty"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "integration-ready",
+          "args": [
+            {
+              "name": "integration"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "keyboard-focus-changed",
+          "args": [
+            {
+              "name": "app-identifier"
+            },
+            {
+              "name": "focused-session-id"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "pre-exec",
+          "args": [
+            {
+              "name": "pid"
+            },
+            {
+              "name": "tty"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "prompt",
+          "args": [
+            {
+              "name": "pid"
+            },
+            {
+              "name": "tty"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "ssh",
+          "args": [
+            {
+              "name": "pid"
+            },
+            {
+              "name": "tty"
+            },
+            {
+              "name": "control-path"
+            },
+            {
+              "name": "remote-dest"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": "--prompt"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "debug",
+      "description": "Debug Fig",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "app",
+          "description": "Debug fig app",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "build",
+          "description": "Switch build",
+          "args": [
+            {
+              "name": "build"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "autocomplete-window",
+          "description": "Toggle/set autocomplete window debug mode",
+          "args": [
+            {
+              "name": "mode"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "logs",
+          "description": "Show fig debug logs",
+          "args": [
+            {
+              "name": "files"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "ime",
+          "description": "Fig input method editor",
+          "args": [
+            {
+              "name": "command"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "prompt-accessibility",
+          "description": "Prompt accessibility",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "sample",
+          "description": "Sample fig process",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "unix-socket",
+          "description": "Debug fig unix sockets",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "verify-codesign",
+          "description": "Debug fig codesign verification",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "shell-integrations",
+          "description": "Toggle shell integrations",
+          "args": [
+            {
+              "name": "mode"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "accessibility",
+          "args": [
+            {
+              "name": "action"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "description": "Customize appearance & behavior",
+      "args": [
+        {
+          "name": "key"
+        },
+        {
+          "name": "value"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-d",
+            "--delete"
+          ],
+          "description": "Delete"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "init",
+          "description": "Reload the settings listener",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "docs",
+          "description": "Get the settings documentation",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "open",
+          "description": "Open the settings file",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "sync",
+          "description": "Sync the current settings",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tips",
+      "description": "Enable/disable fig tips",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "enable",
+          "description": "Enable fig tips",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "disable",
+          "description": "Disable fig tips",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "reset",
+          "description": "Reset the tips to the default",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "prompt",
+          "description": "Show the tips",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "install",
+      "description": "Install fig cli components",
+      "options": [
+        {
+          "name": "--daemon",
+          "description": "Install only the daemon"
+        },
+        {
+          "name": "--dotfiles",
+          "description": "Install only the shell integrations"
+        },
+        {
+          "name": "--no-confirm",
+          "description": "Don't confirm automatic installation"
+        },
+        {
+          "name": "--force",
+          "description": "Force installation of fig"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "uninstall",
+      "description": "Uninstall fig",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "description": "Update dotfiles",
+      "options": [
+        {
+          "name": [
+            "-y",
+            "--no-confirm"
+          ],
+          "description": "Force update"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "daemon",
+      "description": "Run the daemon",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "diagnostic",
+      "description": "Run diagnostic tests",
+      "options": [
+        {
+          "name": [
+            "-f",
+            "--format"
+          ],
+          "description": "The format of the output",
+          "args": [
+            {
+              "name": "format"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "description": "Force limited diagnostic output"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Generate the dotfiles for the given shell",
+      "args": [
+        {
+          "name": "shell"
+        },
+        {
+          "name": "when"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "source",
+      "description": "Sync your latest dotfiles",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "theme",
+      "description": "Get or set theme",
+      "args": [
+        {
+          "name": "theme"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "invite",
+      "description": "Invite friends to Fig",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "tweet",
+      "description": "Tweet about Fig",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "issue",
+      "description": "Create a new Github issue",
+      "args": [
+        {
+          "name": "description"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-f",
+            "--force"
+          ],
+          "description": "Force issue creation"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "login",
+      "description": "Login to Fig",
+      "options": [
+        {
+          "name": [
+            "-r",
+            "--refresh"
+          ],
+          "description": "Manually refresh the auth token"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "logout",
+      "description": "Logout of Fig",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "user",
+      "description": "Details about the current user",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "doctor",
+      "description": "Check Fig is properly configured",
+      "options": [
+        {
+          "name": "--verbose",
+          "description": "Run all doctor tests, with no fixes"
+        },
+        {
+          "name": "--strict",
+          "description": "Error on warnings"
+        },
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "completion",
+      "description": "Generate the completion spec for Fig",
+      "args": [
+        {
+          "name": "shell"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": [
+        "internal",
+        "_"
+      ],
+      "description": "Internal subcommands used for Fig",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "prompt-dotfiles-changed",
+          "description": "Prompt the user that the dotfiles have changes Also use for `fig source` internals",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "local-state",
+          "description": "Change the local-state file",
+          "args": [
+            {
+              "name": "key"
+            },
+            {
+              "name": "value"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-d",
+                "--delete"
+              ],
+              "description": "Delete the state"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ],
+          "subcommands": [
+            {
+              "name": "init",
+              "description": "Reload the state listener",
+              "options": [
+                {
+                  "name": "--help",
+                  "description": "Print help information"
+                },
+                {
+                  "name": "--version",
+                  "description": "Print version information"
+                }
+              ]
+            },
+            {
+              "name": "open",
+              "description": "Open the state file",
+              "options": [
+                {
+                  "name": "--help",
+                  "description": "Print help information"
+                },
+                {
+                  "name": "--version",
+                  "description": "Print version information"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "callback",
+          "description": "Callback used for the internal psudoterminal",
+          "args": [
+            {
+              "name": "handler-id"
+            },
+            {
+              "name": "filename"
+            },
+            {
+              "name": "exit-code"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "install",
+          "description": "Install fig cli",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": "--daemon",
+              "description": "Install only the daemon"
+            },
+            {
+              "name": "--dotfiles",
+              "description": "Install only the shell integrations"
+            },
+            {
+              "name": "--no-confirm",
+              "description": "Don't confirm automatic installation"
+            },
+            {
+              "name": "--force",
+              "description": "Force installation of fig"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "uninstall",
+          "description": "Uninstall fig cli",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": "--daemon",
+              "description": "Uninstall only the daemon"
+            },
+            {
+              "name": "--dotfiles",
+              "description": "Uninstall only the shell integrations"
+            },
+            {
+              "name": "--binary",
+              "description": "Uninstall only the binary"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "warn-user-when-uninstalling-incorrectly",
+          "description": "Notify the user that they are uninstalling incorrectly",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "animation",
+          "options": [
+            {
+              "name": [
+                "-f",
+                "--filename"
+              ],
+              "args": [
+                {
+                  "name": "filename"
+                }
+              ]
+            },
+            {
+              "name": [
+                "-r",
+                "--rate"
+              ],
+              "args": [
+                {
+                  "name": "rate"
+                }
+              ]
+            },
+            {
+              "name": [
+                "-b",
+                "--before-text"
+              ],
+              "args": [
+                {
+                  "name": "before-text"
+                }
+              ]
+            },
+            {
+              "name": [
+                "-a",
+                "--after-text"
+              ],
+              "args": [
+                {
+                  "name": "after-text"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "get-shell",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "launch",
+      "description": "Launch the Fig desktop app",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "quit",
+      "description": "Quit the Fig desktop app",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "restart",
+      "description": "Restart the Fig desktop app",
+      "args": [
+        {
+          "name": "process"
+        }
+      ],
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "alpha",
+      "description": "(LEGACY) Old way to launch mission control",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "onboarding",
+      "description": "Run the Fig tutorial",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "plugins",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ],
+      "subcommands": [
+        {
+          "name": "sync",
+          "description": "Sync the current plugins (this will not update plugins that are already installed)",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "update",
+          "description": "Update the installed plugins",
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "add",
+          "description": "Install a specific plugin from the plugin store",
+          "args": [
+            {
+              "name": "plugin"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Uninstall a specific plugin",
+          "args": [
+            {
+              "name": "plugin"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List all plugins available in the plugin store",
+          "options": [
+            {
+              "name": [
+                "-f",
+                "--format"
+              ],
+              "description": "The output format",
+              "args": [
+                {
+                  "name": "format"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-i",
+                "--installed"
+              ],
+              "description": "Only list plugins that are installed"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        },
+        {
+          "name": "help",
+          "description": "Print this message or the help of the given subcommand(s)",
+          "args": [
+            {
+              "name": "subcommand"
+            }
+          ],
+          "options": [
+            {
+              "name": "--version",
+              "description": "Print version information"
+            },
+            {
+              "name": [
+                "-h",
+                "--help"
+              ],
+              "description": "Print help information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "app:running",
+      "description": "(LEGACY) Old hook that was being used somewhere",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "bg:ssh",
+      "description": "(LEGACY) Old ssh hook that might be in ~/.ssh/config",
+      "options": [
+        {
+          "name": [
+            "-h",
+            "--help"
+          ],
+          "description": "Print help information"
+        }
+      ]
+    },
+    {
+      "name": "help",
+      "description": "Print this message or the help of the given subcommand(s)",
+      "args": [
+        {
+          "name": "subcommand"
+        }
+      ]
+    }
+  ]
+}

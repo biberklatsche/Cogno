@@ -1,0 +1,20 @@
+{
+  "name": "kubens",
+  "description": "Switch between Kubernetes-namespaces",
+  "options": [
+    {
+      "name": [
+        "--help",
+        "-h"
+      ],
+      "description": "Show help for kubens"
+    },
+    {
+      "name": [
+        "--current",
+        "-c"
+      ],
+      "description": "Show current namespace"
+    }
+  ]
+}

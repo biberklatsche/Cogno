@@ -1,6 +1,0 @@
-{
-  "name": "drush",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/drush.ts",
-  "description": "Drush is a command line shell and Unix scripting interface for Drupal"
-}

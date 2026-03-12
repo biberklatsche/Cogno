@@ -1,6 +1,0 @@
-{
-  "name": "defaultbrowser",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/defaultbrowser.ts",
-  "description": "Change your default browser from the CLI"
-}

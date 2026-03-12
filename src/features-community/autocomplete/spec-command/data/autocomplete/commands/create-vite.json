@@ -1,0 +1,14 @@
+{
+  "name": "create-vite",
+  "description": "Create a new project powered by Vite",
+  "options": [
+    {
+      "name": "--template",
+      "args": [
+        {
+          "name": "template"
+        }
+      ]
+    }
+  ]
+}

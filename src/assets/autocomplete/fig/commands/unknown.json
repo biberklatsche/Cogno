@@ -1,6 +1,0 @@
-{
-  "name": "-",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/-.ts",
-  "description": "ZSH pre-command modifier that prepends a '-' to the argv[0] string"
-}

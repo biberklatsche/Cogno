@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Cogno2",
+  "version": "0.1.0",
+  "identifier": "rocks.cogno.community",
+  "build": {
+    "beforeDevCommand": "pnpm start",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build:community",
+    "frontendDist": "../dist/cogno/browser"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**/*", "$HOME/.cogno-dev/**", "$HOME/.cogno/**", "$HOME/.cogno2-dev/**", "$HOME/.cogno2/**", "$HOME/.cogno2/shell-integration/zsh/.zshrc", "$HOME/.cogno2-dev/shell-integration/zsh/.zshrc"]
+      },
+      "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline'; img-src 'self' asset: file: data: blob: http://asset.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/16x16.png",
+      "icons/32x32.png",
+      "icons/48x48.png",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/256x256.png",
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "resources": [
+      "../src/app/assets/**/*",
+      "src/default_windows.config",
+      "src/default_linux.config",
+      "src/default_macos.config"
+    ]
+  }
+}

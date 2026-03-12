@@ -1,0 +1,15 @@
+{
+  "name": "trigger_example",
+  "description": "",
+  "subcommands": [
+    {
+      "name": "test",
+      "args": [
+        {
+          "name": "FILE/FOLDER",
+          "description": "must start with file://"
+        }
+      ]
+    }
+  ]
+}

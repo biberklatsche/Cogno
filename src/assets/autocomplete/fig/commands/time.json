@@ -1,6 +1,0 @@
-{
-  "name": "time",
-  "source": "fig",
-  "sourceUrl": "https://github.com/withfig/autocomplete/tree/master/src/time.ts",
-  "description": "Time how long a command takes!"
-}

@@ -1,0 +1,51 @@
+{
+  "name": "git_push_example",
+  "description": "",
+  "options": [
+    {
+      "name": "--all"
+    },
+    {
+      "name": "--mirror"
+    },
+    {
+      "name": "--tags"
+    },
+    {
+      "name": [
+        "-n",
+        "--dry-run"
+      ]
+    },
+    {
+      "name": "--receive-pack",
+      "args": [
+        {
+          "name": "git-receive-pack"
+        }
+      ]
+    },
+    {
+      "name": [
+        "-u",
+        "--set-upstream"
+      ]
+    },
+    {
+      "name": "-o",
+      "args": [
+        {
+          "name": "string"
+        }
+      ]
+    },
+    {
+      "name": "--push-option",
+      "args": [
+        {
+          "name": "string"
+        }
+      ]
+    }
+  ]
+}

@@ -22,6 +22,8 @@ struct Session {
     writer: Box<dyn Write + Send>,
     should_exit: Arc<AtomicBool>,
     shell_process_id: Option<u32>,
+    shell_type: String,
+    line_editor_pipe_name: Option<String>,
 }
 
 pub struct PtyState {
@@ -61,6 +63,7 @@ pub async fn pty_spawn(
     let dev_mode = options.dev_mode.unwrap_or(false);
     let spawner = ShellSpawner::new(dev_mode)?;
     let (program, args, env, working_dir) = spawner.prepare_spawn(&options.profile)?;
+    let line_editor_pipe_name = env.get("COGNO_LINE_EDITOR_PIPE_NAME").cloned();
 
     let pty_system = native_pty_system();
 
@@ -116,6 +119,8 @@ pub async fn pty_spawn(
         writer,
         should_exit: should_exit.clone(),
         shell_process_id,
+        shell_type: options.profile.shell_type.clone(),
+        line_editor_pipe_name,
     };
 
     {
@@ -244,6 +249,36 @@ pub fn pty_write(
 }
 
 #[tauri::command]
+pub fn pty_execute_shell_action(
+    state: State<'_, PtyState>,
+    terminal_id: String,
+    action: String,
+    payload_json: Option<String>,
+) -> Result<(), String> {
+    let sessions = state.sessions.lock().unwrap();
+
+    let Some(session) = sessions.get(&terminal_id) else {
+        return Err(format!("Session not found: {}", terminal_id));
+    };
+
+    if session.shell_type != "PowerShell" {
+        return Err(format!(
+            "Shell actions are not supported for shell type: {}",
+            session.shell_type
+        ));
+    }
+
+    let Some(pipe_name) = session.line_editor_pipe_name.as_deref() else {
+        return Err(format!(
+            "Shell session {} does not expose a line editor pipe",
+            terminal_id
+        ));
+    };
+
+    write_shell_action_to_pipe(pipe_name, &action, payload_json.as_deref())
+}
+
+#[tauri::command]
 pub fn pty_resize(
     state: State<'_, PtyState>,
     terminal_id: String,
@@ -284,4 +319,43 @@ pub fn pty_kill(
     } else {
         Err(format!("Session not found: {}", terminal_id))
     }
+}
+
+#[cfg(windows)]
+fn write_shell_action_to_pipe(
+    pipe_name: &str,
+    action: &str,
+    payload_json: Option<&str>,
+) -> Result<(), String> {
+    let pipe_path = format!(r"\\.\pipe\{}", pipe_name);
+    let mut pipe = std::fs::OpenOptions::new()
+        .write(true)
+        .open(&pipe_path)
+        .map_err(|e| format!("Failed to open line editor pipe {}: {}", pipe_path, e))?;
+
+    let message = serde_json::json!({
+        "action": action,
+        "payload": payload_json
+            .and_then(|payload| serde_json::from_str::<serde_json::Value>(payload).ok())
+            .unwrap_or(serde_json::Value::Null),
+    })
+    .to_string();
+
+    pipe.write_all(message.as_bytes())
+        .map_err(|e| format!("Failed to write shell action to {}: {}", pipe_path, e))?;
+    pipe.write_all(b"\n")
+        .map_err(|e| format!("Failed to terminate shell action on {}: {}", pipe_path, e))?;
+    pipe.flush()
+        .map_err(|e| format!("Failed to flush line editor pipe {}: {}", pipe_path, e))?;
+
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn write_shell_action_to_pipe(
+    _pipe_name: &str,
+    _action: &str,
+    _payload_json: Option<&str>,
+) -> Result<(), String> {
+    Err("Shell actions via pipe are currently only supported on Windows".to_string())
 }

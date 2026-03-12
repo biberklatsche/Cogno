@@ -3,6 +3,19 @@
   "compileOnSave": false,
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
+    "baseUrl": ".",
+    "paths": {
+      "@cogno/core-sdk": ["src/core-sdk/index.ts"],
+      "@cogno/core-sdk/*": ["src/core-sdk/*"],
+      "@cogno/core-host": ["src/core-host/index.ts"],
+      "@cogno/core-host/*": ["src/core-host/*"],
+      "@cogno/core-ui": ["src/core-ui/index.ts"],
+      "@cogno/core-ui/*": ["src/core-ui/*"],
+      "@cogno/community-features": ["src/features-community/index.ts"],
+      "@cogno/community-features/*": ["src/features-community/*"],
+      "@cogno/pro-features": ["src/features-pro/index.ts"],
+      "@cogno/pro-features/*": ["src/features-pro/*"]
+    },
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitOverride": true,
