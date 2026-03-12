@@ -12,9 +12,7 @@
       "@cogno/core-ui": ["src/core-ui/index.ts"],
       "@cogno/core-ui/*": ["src/core-ui/*"],
       "@cogno/community-features": ["src/features-community/index.ts"],
-      "@cogno/community-features/*": ["src/features-community/*"],
-      "@cogno/pro-features": ["src/features-pro/index.ts"],
-      "@cogno/pro-features/*": ["src/features-pro/*"]
+      "@cogno/community-features/*": ["src/features-community/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "strict": true,

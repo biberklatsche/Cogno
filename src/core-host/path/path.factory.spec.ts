@@ -6,17 +6,9 @@ import {
   ZshPathAdapter,
   communityFeatureShellPathAdapterDefinitions,
 } from "@cogno/community-features";
-import {
-  FishPathAdapter,
-  GitBashPathAdapter,
-  proFeatureShellPathAdapterDefinitions,
-} from "@cogno/pro-features";
 
 beforeAll(() => {
-  PathFactory.setDefinitions([
-    ...communityFeatureShellPathAdapterDefinitions,
-    ...proFeatureShellPathAdapterDefinitions,
-  ]);
+  PathFactory.setDefinitions([...communityFeatureShellPathAdapterDefinitions]);
 });
 
 describe("PathFactory", () => {
@@ -28,19 +20,9 @@ describe("PathFactory", () => {
     expect(PathFactory.createAdapter({ shellType: "ZSH", backendOs: "macos" })).toBeInstanceOf(ZshPathAdapter);
   });
 
-  it("should create FishPathAdapter", () => {
-    expect(PathFactory.createAdapter({ shellType: "Fish", backendOs: "linux" })).toBeInstanceOf(FishPathAdapter);
-  });
-
   it("should create PowerShellPathAdapter", () => {
     expect(PathFactory.createAdapter({ shellType: "PowerShell", backendOs: "windows" })).toBeInstanceOf(
       PowerShellPathAdapter,
-    );
-  });
-
-  it("should create GitBashPathAdapter", () => {
-    expect(PathFactory.createAdapter({ shellType: "GitBash", backendOs: "windows" })).toBeInstanceOf(
-      GitBashPathAdapter,
     );
   });
 

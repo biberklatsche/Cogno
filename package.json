@@ -1,5 +1,5 @@
 {
-  "name": "Cogno2",
+  "name": "cogno2",
   "version": "0.1.0",
   "license": "FSL-1.1-MIT",
   "licenseText": "SEE LICENSE IN LICENSE",
@@ -8,20 +8,16 @@
     "dev": "ng serve --configuration development",
     "lint": "pnpm lint:code && pnpm lint:architecture",
     "lint:code": "pnpm exec biome check .",
-    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/app/src/**/*.ts\" \"src/core-sdk/**/*.ts\" \"src/core-host/**/*.ts\" \"src/features-community/**/*.ts\" \"src/features-pro/**/*.ts\"",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/app/src/**/*.ts\" \"src/core-sdk/**/*.ts\" \"src/core-host/**/*.ts\" \"src/features-community/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "check:full": "pnpm lint && pnpm typecheck && pnpm test:coverage",
     "build:dev": "pnpm lint && ng build --configuration development",
-    "build:community": "pnpm lint && ng build --configuration community",
-    "build:pro": "pnpm lint && ng build --configuration pro",
-    "build:desktop:community": "pnpm exec tauri build --config src-tauri/tauri.community.conf.json",
-    "build:desktop:pro": "pnpm exec tauri build --config src-tauri/tauri.pro.conf.json",
-    "release:build": "node ./scripts/release-build.mjs",
-    "release:build:pro": "node ./scripts/release-build.mjs --edition pro",
-    "release:build:community": "node ./scripts/release-build.mjs --edition community"
+    "build": "pnpm lint && ng build --configuration production",
+    "build:desktop": "pnpm exec tauri build --config src-tauri/tauri.conf.json",
+    "release:build": "node ./scripts/release-build.mjs"
   },
   "private": true,
   "dependencies": {

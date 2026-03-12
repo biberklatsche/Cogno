@@ -10,7 +10,6 @@ import {ShellProfile} from "../../../config/+models/shell-config";
 import {PromptSegment} from "../../../config/+models/prompt-config";
 import { PathFactory } from "@cogno/core-host";
 import { communityFeatureShellPathAdapterDefinitions } from "@cogno/community-features";
-import { proFeatureShellPathAdapterDefinitions } from "@cogno/pro-features";
 
 class ConfigServiceMockForNotificationBadge extends ConfigService {
     constructor(private readonly notificationBadgeEnabledState: { value: boolean }) {
@@ -42,7 +41,6 @@ describe("TerminalStateManager", () => {
     beforeEach(() => {
         PathFactory.setDefinitions([
             ...communityFeatureShellPathAdapterDefinitions,
-            ...proFeatureShellPathAdapterDefinitions,
         ]);
     });
 
@@ -142,4 +140,3 @@ describe("TerminalStateManager", () => {
         });
     });
 });
-

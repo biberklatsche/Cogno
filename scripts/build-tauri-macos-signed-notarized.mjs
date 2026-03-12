@@ -22,25 +22,12 @@ if (commandLineArguments.includes("--help") || commandLineArguments.includes("-h
   console.log("Builds the macOS app bundle, creates a DMG and optionally signs/notarizes it.");
   console.log("");
   console.log("Usage:");
-  console.log("  node ./scripts/build-tauri-macos-signed-notarized.mjs [community|pro]");
+  console.log("  node ./scripts/build-tauri-macos-signed-notarized.mjs");
   process.exit(0);
 }
 
-const releaseVariantArgument = commandLineArguments[0] ?? "pro";
-const releaseVariantConfigurationByName = {
-  community: {
-    tauriConfigPath: "src-tauri/tauri.community.conf.json",
-  },
-  pro: {
-    tauriConfigPath: "src-tauri/tauri.pro.conf.json",
-  },
-};
-const releaseVariantConfiguration = releaseVariantConfigurationByName[releaseVariantArgument];
-
-if (releaseVariantConfiguration === undefined) {
-  throw new Error(
-    `Unknown release variant "${releaseVariantArgument}". Supported variants: ${Object.keys(releaseVariantConfigurationByName).join(", ")}`,
-  );
+if (commandLineArguments.length > 0) {
+  throw new Error("This script no longer accepts an edition argument.");
 }
 
 const APP_PATH = "src-tauri/target/release/bundle/macos/Cogno2.app";
@@ -120,18 +107,10 @@ function resolveSigningIdentity() {
 }
 
 // ─── 1. Build ─────────────────────────────────────────────────────────────────
-step(`Building app (${releaseVariantArgument})`);
+step("Building app");
 run(
   "pnpm",
-  [
-    "exec",
-    "tauri",
-    "build",
-    "--bundles",
-    "app",
-    "--config",
-    releaseVariantConfiguration.tauriConfigPath,
-  ],
+  ["exec", "tauri", "build", "--bundles", "app", "--config", "src-tauri/tauri.conf.json"],
   "tauri build",
 );
 

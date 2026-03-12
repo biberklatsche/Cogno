@@ -1,5 +1,5 @@
 import { Injectable, Type } from "@angular/core";
-import { CoreHostBootstrapHost, PathFactory, SideMenuFeatureRegistryHost } from "@cogno/core-host";
+import { CoreHostFeatureRegistryHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
 import {
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
@@ -9,14 +9,7 @@ import {
 import { ActionName } from "../action/action.models";
 import { Icon } from "@cogno/core-ui";
 import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
-import {
-  communityFeatureShellDefinitions,
-  communityFeatureShellPathAdapterDefinitions,
-  communityFeatureDatabaseMigrations,
-  communityFeatureShellSupportDefinitions,
-  communityFeatureSideMenuFeatureDefinitions,
-  communityFeatureTerminalAutocompleteSuggestorDefinitions,
-} from "@cogno/community-features";
+import { communityApplicationFeatureCollection } from "@cogno/community-features";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
 
@@ -27,28 +20,24 @@ export class CoreHostWiringService {
     Icon,
     ActionName
   >();
-  private readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
-    TerminalAutocompleteSuggestorDefinitionContract
-  > = [...communityFeatureTerminalAutocompleteSuggestorDefinitions];
-  private readonly shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract> = [
-    ...communityFeatureShellSupportDefinitions,
-  ];
-  private readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract> = [...communityFeatureShellDefinitions];
-
-  private readonly coreHostBootstrapHost = new CoreHostBootstrapHost<
+  private readonly coreHostFeatureRegistryHost = new CoreHostFeatureRegistryHost<
     Type<unknown>,
     Icon,
     ActionName
   >(this.sideMenuFeatureRegistryHost);
 
   constructor(private readonly databaseMigrationService: DatabaseMigrationService) {
-    PathFactory.setDefinitions([...communityFeatureShellPathAdapterDefinitions]);
-    this.coreHostBootstrapHost.registerSideMenuFeatures([
-      ...sideMenuFeatureDefinitions,
-      ...communityFeatureSideMenuFeatureDefinitions,
-    ]);
+    this.coreHostFeatureRegistryHost.registerFeatureCollection({
+      ...communityApplicationFeatureCollection,
+      sideMenuFeatureDefinitions: [
+        ...sideMenuFeatureDefinitions,
+        ...communityApplicationFeatureCollection.sideMenuFeatureDefinitions,
+      ],
+    });
     this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
-    this.databaseMigrationService.registerFeatureMigrations([...communityFeatureDatabaseMigrations]);
+    this.databaseMigrationService.registerFeatureMigrations(
+      this.coreHostFeatureRegistryHost.getDatabaseMigrations(),
+    );
   }
 
   getRequiredSideMenuFeatureDefinitionById(
@@ -66,20 +55,20 @@ export class CoreHostWiringService {
   getSideMenuFeatureDefinitions(): ReadonlyArray<
     SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName>
   > {
-    return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitions();
+    return this.coreHostFeatureRegistryHost.getSideMenuFeatureDefinitions();
   }
 
   getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<
     TerminalAutocompleteSuggestorDefinitionContract
   > {
-    return this.terminalAutocompleteSuggestorDefinitions;
+    return this.coreHostFeatureRegistryHost.getTerminalAutocompleteSuggestorDefinitions();
   }
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
-    return this.shellSupportDefinitions;
+    return this.coreHostFeatureRegistryHost.getShellSupportDefinitions();
   }
 
   getShellDefinitions(): ReadonlyArray<ShellDefinitionContract> {
-    return this.shellDefinitions;
+    return this.coreHostFeatureRegistryHost.getShellDefinitions();
   }
 }

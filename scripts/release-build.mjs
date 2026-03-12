@@ -18,11 +18,7 @@ import { extname, join, relative, resolve } from "node:path";
 const artifactRootDirectoryPath = "release-artifacts";
 const packageJsonPath = "package.json";
 const tauriCargoTomlPath = "src-tauri/Cargo.toml";
-const tauriConfigPathByEdition = {
-  community: "src-tauri/tauri.community.conf.json",
-  pro: "src-tauri/tauri.pro.conf.json",
-};
-const supportedEditions = ["community", "pro"];
+const tauriConfigPath = "src-tauri/tauri.conf.json";
 const supportedChannels = ["dev", "release"];
 const supportedPlatforms = {
   darwin: "macos",
@@ -41,10 +37,8 @@ function main() {
   }
 
   const currentPlatformName = resolveCurrentPlatformName();
-  const releaseEdition = parsedArguments.edition ?? "pro";
   const releaseChannel = parsedArguments.channel ?? "release";
 
-  validateEdition(releaseEdition);
   validateChannel(releaseChannel);
 
   if (!parsedArguments.allowDirtyWorkingTree) {
@@ -55,7 +49,6 @@ function main() {
   const releaseVersion = normalizeTagToVersion(releaseTag);
   const loadedEnvironment = loadReleaseEnvironment({
     releaseChannel,
-    releaseEdition,
     currentPlatformName,
   });
 
@@ -64,7 +57,6 @@ function main() {
   const releaseOutputDirectoryPath = join(
     artifactRootDirectoryPath,
     releaseTag,
-    releaseEdition,
     currentPlatformName,
   );
 
@@ -73,7 +65,6 @@ function main() {
   if (!parsedArguments.skipBuild) {
     runBuild({
       loadedEnvironment,
-      releaseEdition,
       releaseTag,
       releaseVersion,
       currentPlatformName,
@@ -82,7 +73,6 @@ function main() {
 
   const collectedArtifacts = collectArtifacts({
     currentPlatformName,
-    releaseEdition,
     releaseOutputDirectoryPath,
     releaseVersion,
   });
@@ -95,7 +85,6 @@ function main() {
     collectedArtifacts,
     currentPlatformName,
     releaseChannel,
-    releaseEdition,
     releaseTag,
     releaseVersion,
   });
@@ -109,7 +98,6 @@ function main() {
       loadedEnvironment,
       manifest,
       releaseChannel,
-      releaseEdition,
       releaseOutputDirectoryPath,
       releaseTag,
       currentPlatformName,
@@ -119,7 +107,6 @@ function main() {
   console.log("");
   console.log("Release build completed.");
   console.log(`Tag: ${releaseTag}`);
-  console.log(`Edition: ${releaseEdition}`);
   console.log(`Channel: ${releaseChannel}`);
   console.log(`Platform: ${currentPlatformName}`);
   console.log(`Artifacts: ${collectedArtifacts.length}`);
@@ -154,10 +141,6 @@ function parseCommandLineArguments(commandLineArguments) {
         parsedArguments.tag = requireArgumentValue(currentArgument, nextArgument);
         currentArgumentIndex += 1;
         break;
-      case "--edition":
-        parsedArguments.edition = requireArgumentValue(currentArgument, nextArgument);
-        currentArgumentIndex += 1;
-        break;
       case "--channel":
         parsedArguments.channel = requireArgumentValue(currentArgument, nextArgument);
         currentArgumentIndex += 1;
@@ -187,7 +170,6 @@ function printHelp() {
   console.log("");
   console.log("Options:");
   console.log("  --tag <tag>         Build metadata for a specific Git tag.");
-  console.log("  --edition <value>   community | pro (default: pro)");
   console.log("  --channel <value>   dev | release (default: release)");
   console.log(
     "  --skip-build        Reuse existing bundle output and only collect/upload artifacts.",
@@ -199,9 +181,7 @@ function printHelp() {
   console.log("Loaded secret files from ~/.cogno-secrets when present:");
   console.log("  release.common.env");
   console.log("  release.<platform>.env");
-  console.log("  release.<edition>.env");
   console.log("  release.<channel>.env");
-  console.log("  release.<platform>.<edition>.env");
   console.log("");
   console.log("Upload configuration via environment variables:");
   console.log("  COGNO_RELEASE_RCLONE_REMOTE");
@@ -215,14 +195,6 @@ function requireArgumentValue(argumentName, argumentValue) {
   }
 
   return argumentValue;
-}
-
-function validateEdition(releaseEdition) {
-  if (!supportedEditions.includes(releaseEdition)) {
-    throw new Error(
-      `Unsupported edition "${releaseEdition}". Supported editions: ${supportedEditions.join(", ")}.`,
-    );
-  }
 }
 
 function validateChannel(releaseChannel) {
@@ -269,14 +241,12 @@ function normalizeTagToVersion(releaseTag) {
   return releaseTag.startsWith("v") ? releaseTag.slice(1) : releaseTag;
 }
 
-function loadReleaseEnvironment({ releaseChannel, releaseEdition, currentPlatformName }) {
+function loadReleaseEnvironment({ releaseChannel, currentPlatformName }) {
   const secretDirectoryPath = join(homedir(), ".cogno-secrets");
   const environmentFileNames = [
     "release.common.env",
     `release.${currentPlatformName}.env`,
-    `release.${releaseEdition}.env`,
     `release.${releaseChannel}.env`,
-    `release.${currentPlatformName}.${releaseEdition}.env`,
   ];
   const mergedEnvironment = { ...process.env };
 
@@ -344,18 +314,10 @@ function validateVersionConsistency(releaseVersion) {
     throw new Error(`Could not read version from ${tauriCargoTomlPath}.`);
   }
 
-  const tauriVersions = Object.values(tauriConfigPathByEdition).map((currentTauriConfigPath) => {
-    const currentTauriConfig = JSON.parse(readFileSync(currentTauriConfigPath, "utf-8"));
-    return {
-      path: currentTauriConfigPath,
-      version: currentTauriConfig.version,
-    };
-  });
-
   const discoveredVersions = [
     { path: packageJsonPath, version: packageVersion },
     { path: tauriCargoTomlPath, version: cargoVersionMatch[1] },
-    ...tauriVersions,
+    { path: tauriConfigPath, version: JSON.parse(readFileSync(tauriConfigPath, "utf-8")).version },
   ];
 
   for (const currentVersionRecord of discoveredVersions) {
@@ -372,37 +334,24 @@ function recreateDirectory(directoryPath) {
   mkdirSync(directoryPath, { recursive: true });
 }
 
-function runBuild({
-  loadedEnvironment,
-  releaseEdition,
-  releaseTag,
-  releaseVersion,
-  currentPlatformName,
-}) {
+function runBuild({ loadedEnvironment, releaseTag, releaseVersion, currentPlatformName }) {
   console.log("");
-  console.log(
-    `Building ${releaseEdition} ${releaseVersion} for ${currentPlatformName} from tag ${releaseTag}`,
-  );
+  console.log(`Building ${releaseVersion} for ${currentPlatformName} from tag ${releaseTag}`);
 
   if (currentPlatformName === "macos") {
-    runCommand("node", ["./scripts/build-tauri-macos-signed-notarized.mjs", releaseEdition], {
+    runCommand("node", ["./scripts/build-tauri-macos-signed-notarized.mjs"], {
       environmentVariables: loadedEnvironment,
     });
     return;
   }
 
-  runCommand("pnpm", [`build:desktop:${releaseEdition}`], {
+  runCommand("pnpm", ["build:desktop"], {
     environmentVariables: loadedEnvironment,
     runnerType: "pnpm-run",
   });
 }
 
-function collectArtifacts({
-  currentPlatformName,
-  releaseEdition,
-  releaseOutputDirectoryPath,
-  releaseVersion,
-}) {
+function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, releaseVersion }) {
   const sourceBundleDirectoryPath = join("src-tauri", "target", "release", "bundle");
   const discoveredArtifactPaths = findBundleArtifacts({
     currentPlatformName,
@@ -417,7 +366,6 @@ function collectArtifacts({
       currentArtifactExtension,
       currentArtifactKind,
       currentPlatformName,
-      releaseEdition,
       releaseVersion,
     });
     const targetArtifactPath = join(releaseOutputDirectoryPath, targetArtifactFileName);
@@ -520,18 +468,11 @@ function createTargetArtifactFileName({
   currentArtifactExtension,
   currentArtifactKind,
   currentPlatformName,
-  releaseEdition,
   releaseVersion,
 }) {
   return (
-    [
-      "cogno2",
-      releaseEdition,
-      releaseVersion,
-      currentPlatformName,
-      process.arch,
-      currentArtifactKind,
-    ].join("-") + currentArtifactExtension
+    ["cogno2", releaseVersion, currentPlatformName, process.arch, currentArtifactKind].join("-") +
+    currentArtifactExtension
   );
 }
 
@@ -561,7 +502,6 @@ function createManifest({
   collectedArtifacts,
   currentPlatformName,
   releaseChannel,
-  releaseEdition,
   releaseTag,
   releaseVersion,
 }) {
@@ -575,7 +515,6 @@ function createManifest({
     })),
     channel: releaseChannel,
     createdAt: new Date().toISOString(),
-    edition: releaseEdition,
     platform: currentPlatformName,
     tag: releaseTag,
     version: releaseVersion,
@@ -587,7 +526,6 @@ function uploadArtifacts({
   loadedEnvironment,
   manifest,
   releaseChannel,
-  releaseEdition,
   releaseOutputDirectoryPath,
   releaseTag,
   currentPlatformName,
@@ -601,8 +539,8 @@ function uploadArtifacts({
   }
 
   const rcloneBasePath = loadedEnvironment.COGNO_RELEASE_RCLONE_BASE_PATH ?? "cogno2";
-  const versionedRelativeDirectoryPath = `${rcloneBasePath}/${releaseChannel}/${releaseTag}/${releaseEdition}/${currentPlatformName}`;
-  const latestRelativeDirectoryPath = `${rcloneBasePath}/${releaseChannel}/latest/${releaseEdition}/${currentPlatformName}`;
+  const versionedRelativeDirectoryPath = `${rcloneBasePath}/${releaseChannel}/${releaseTag}/${currentPlatformName}`;
+  const latestRelativeDirectoryPath = `${rcloneBasePath}/${releaseChannel}/latest/${currentPlatformName}`;
   const remoteDestination = `${rcloneRemoteName}:${versionedRelativeDirectoryPath}`;
   const remoteLatestDestination = `${rcloneRemoteName}:${latestRelativeDirectoryPath}`;
 
@@ -618,7 +556,6 @@ function uploadArtifacts({
     loadedEnvironment,
     manifest,
     releaseChannel,
-    releaseEdition,
     releaseTag,
     currentPlatformName,
     versionedRelativeDirectoryPath,
@@ -636,7 +573,6 @@ function createLatestDirectory({
   loadedEnvironment,
   manifest,
   releaseChannel,
-  releaseEdition,
   releaseTag,
   currentPlatformName,
   versionedRelativeDirectoryPath,
@@ -645,7 +581,6 @@ function createLatestDirectory({
     artifactRootDirectoryPath,
     "latest",
     releaseChannel,
-    releaseEdition,
     currentPlatformName,
   );
 
@@ -661,7 +596,7 @@ function createLatestDirectory({
         versionedRelativeDirectoryPath,
       }),
     })),
-    latestPath: `${releaseChannel}/latest/${releaseEdition}/${currentPlatformName}/manifest.json`,
+    latestPath: `${releaseChannel}/latest/${currentPlatformName}/manifest.json`,
     tag: releaseTag,
   };
 
@@ -674,7 +609,6 @@ function createLatestDirectory({
     const latestArtifactFileName = createLatestArtifactFileName({
       artifactKind: currentArtifact.kind,
       artifactFileName: currentArtifact.fileName,
-      releaseEdition,
       currentPlatformName,
     });
 
@@ -700,18 +634,12 @@ function createPublicArtifactUrl({
   return `${normalizedPublicBaseUrl}/${versionedRelativeDirectoryPath}/${artifactFileName}`;
 }
 
-function createLatestArtifactFileName({
-  artifactKind,
-  artifactFileName,
-  releaseEdition,
-  currentPlatformName,
-}) {
+function createLatestArtifactFileName({ artifactKind, artifactFileName, currentPlatformName }) {
   const artifactExtension = determineTargetArtifactExtension(artifactFileName);
 
   return (
-    ["cogno2", releaseEdition, currentPlatformName, process.arch, "latest", artifactKind].join(
-      "-",
-    ) + artifactExtension
+    ["cogno2", currentPlatformName, process.arch, "latest", artifactKind].join("-") +
+    artifactExtension
   );
 }
 

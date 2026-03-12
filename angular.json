@@ -37,30 +37,7 @@
             ]
           },
           "configurations": {
-            "pro": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "5mb",
-                  "maximumError": "5mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "3kb",
-                  "maximumError": "4kb"
-                }
-              ],
-              "optimization": {
-                "scripts": true,
-                "styles": {
-                  "minify": true,
-                  "inlineCritical": false
-                },
-                "fonts": false
-              },
-              "outputHashing": "all"
-            },
-            "community": {
+            "production": {
               "budgets": [
                 {
                   "type": "initial",
@@ -89,7 +66,7 @@
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "community"
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -97,14 +74,11 @@
             "port": 1420
           },
           "configurations": {
-            "pro": {
-              "buildTarget": "cogno:build:pro"
+            "production": {
+              "buildTarget": "cogno:build:production"
             },
             "development": {
               "buildTarget": "cogno:build:development"
-            },
-            "community": {
-              "buildTarget": "cogno:build:community"
             }
           },
           "defaultConfiguration": "development"

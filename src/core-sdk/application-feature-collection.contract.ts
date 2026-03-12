@@ -1,0 +1,23 @@
+import { DatabaseMigrationContract } from "./database-migration.contract";
+import { ShellDefinitionContract } from "./shell-definition.contract";
+import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition.contract";
+import { ShellSupportDefinitionContract } from "./shell-support.contract";
+import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition.contract";
+import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-autocomplete.contract";
+
+export interface ApplicationFeatureCollectionContract<
+  TComponent = unknown,
+  TIcon = string,
+  TActionName = string,
+> {
+  readonly databaseMigrations: ReadonlyArray<DatabaseMigrationContract>;
+  readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract>;
+  readonly shellPathAdapterDefinitions: ReadonlyArray<ShellPathAdapterDefinitionContract>;
+  readonly shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>;
+  readonly sideMenuFeatureDefinitions: ReadonlyArray<
+    SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
+  >;
+  readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
+    TerminalAutocompleteSuggestorDefinitionContract
+  >;
+}

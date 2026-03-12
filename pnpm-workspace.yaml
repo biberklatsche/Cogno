@@ -4,4 +4,3 @@ packages:
   - "src/core-host"
   - "src/core-ui"
   - "src/features-community"
-  - "src/features-pro"

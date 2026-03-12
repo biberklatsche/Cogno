@@ -8,13 +8,15 @@ import {
 export class PathFactory {
   private static definitionsByShellType = new Map<ShellTypeContract, ShellPathAdapterDefinitionContract>();
 
+  static registerDefinitions(definitions: ReadonlyArray<ShellPathAdapterDefinitionContract>): void {
+    for (const definition of definitions) {
+      this.definitionsByShellType.set(definition.shellType, definition);
+    }
+  }
+
   static setDefinitions(definitions: ReadonlyArray<ShellPathAdapterDefinitionContract>): void {
-    this.definitionsByShellType = new Map(
-      definitions.map(definition => [definition.shellType, definition] satisfies [
-        ShellTypeContract,
-        ShellPathAdapterDefinitionContract,
-      ]),
-    );
+    this.definitionsByShellType.clear();
+    this.registerDefinitions(definitions);
   }
 
   static resetDefinitions(): void {
