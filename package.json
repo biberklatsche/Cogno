@@ -21,7 +21,9 @@
     "tauri": "tauri",
     "tauri:build:pro": "tauri build --config src-tauri/tauri.pro.conf.json",
     "tauri:build:community": "tauri build --config src-tauri/tauri.community.conf.json",
-    "release": "node ./scripts/build-tauri-macos-signed-notarized.mjs",
+    "release": "node ./scripts/build-tauri-macos-signed-notarized.mjs pro",
+    "release:pro": "node ./scripts/build-tauri-macos-signed-notarized.mjs pro",
+    "release:community": "node ./scripts/build-tauri-macos-signed-notarized.mjs community",
     "generate-icon": "tauri icon ./icon/icon.png"
   },
   "private": true,
