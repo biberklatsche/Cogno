@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Build, sign, notarize and staple Cogno2 DMG
 
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import {
     cpSync,
     existsSync,
@@ -16,8 +16,17 @@ import { homedir, tmpdir } from "os";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const CREDENTIALS_FILE = join(homedir(), ".apple", "credentials");
-const SIGNING_IDENTITY = "Developer ID Application: Lars Wolfram (28K66AW32D)";
-const releaseVariantArgument = process.argv[2] ?? "pro";
+const commandLineArguments = process.argv.slice(2);
+
+if (commandLineArguments.includes("--help") || commandLineArguments.includes("-h")) {
+    console.log("Builds the macOS app bundle, creates a DMG and optionally signs/notarizes it.");
+    console.log("");
+    console.log("Usage:");
+    console.log("  node ./scripts/build-tauri-macos-signed-notarized.mjs [community|pro]");
+    process.exit(0);
+}
+
+const releaseVariantArgument = commandLineArguments[0] ?? "pro";
 const releaseVariantConfigurationByName = {
     community: {
         tauriConfigPath: "src-tauri/tauri.community.conf.json"
@@ -40,9 +49,9 @@ const DMG_PATH = join(DMG_DIR, "cogno.dmg");
 const DMG_VOLUME_NAME = "Cogno2";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function run(cmd, label) {
+function run(commandName, commandArguments, label) {
     console.log(`\n▶ ${label}...`);
-    execSync(cmd, { stdio: "inherit" });
+    execFileSync(commandName, commandArguments, { stdio: "inherit" });
 }
 
 function step(label) {
@@ -60,41 +69,65 @@ function createDiskImageFromApp() {
     symlinkSync("/Applications", applicationsSymlinkPath);
 
     try {
-        run(
-            `hdiutil create -volname "${DMG_VOLUME_NAME}" -srcfolder "${temporaryDirectory}" -ov -format UDZO "${DMG_PATH}"`,
-            "hdiutil create"
-        );
+        run("hdiutil", ["create", "-volname", DMG_VOLUME_NAME, "-srcfolder", temporaryDirectory, "-ov", "-format", "UDZO", DMG_PATH], "hdiutil create");
     } finally {
         rmSync(temporaryDirectory, { force: true, recursive: true });
     }
 }
 
-// ─── Read credentials ─────────────────────────────────────────────────────────
-const credentials = JSON.parse(readFileSync(CREDENTIALS_FILE, "utf-8"));
-const { appleId, teamId, appleIdPassword } = credentials;
+function resolveAppleCredentials() {
+    const appleId = process.env.COGNO_APPLE_ID;
+    const teamId = process.env.COGNO_APPLE_TEAM_ID;
+    const appleIdPassword = process.env.COGNO_APPLE_APP_PASSWORD;
+
+    if (
+        appleId !== undefined &&
+        teamId !== undefined &&
+        appleIdPassword !== undefined
+    ) {
+        return {
+            appleId,
+            appleIdPassword,
+            teamId
+        };
+    }
+
+    if (!existsSync(CREDENTIALS_FILE)) {
+        return undefined;
+    }
+
+    const credentials = JSON.parse(readFileSync(CREDENTIALS_FILE, "utf-8"));
+
+    return {
+        appleId: credentials.appleId,
+        appleIdPassword: credentials.appleIdPassword,
+        teamId: credentials.teamId
+    };
+}
+
+function resolveSigningIdentity() {
+    return process.env.COGNO_APPLE_SIGNING_IDENTITY;
+}
 
 // ─── 1. Build ─────────────────────────────────────────────────────────────────
 step(`Building app (${releaseVariantArgument})`);
-run(
-    `npm run tauri build -- --bundles app --config ${releaseVariantConfiguration.tauriConfigPath}`,
-    "tauri build"
-);
+run("pnpm", ["exec", "tauri", "build", "--bundles", "app", "--config", releaseVariantConfiguration.tauriConfigPath], "tauri build");
 
 // ─── 2. Sign ──────────────────────────────────────────────────────────────────
-step("Signing app");
-run(
-    `codesign --force --deep \
-    --sign "${SIGNING_IDENTITY}" \
-    --options runtime \
-    --timestamp \
-    "${APP_PATH}"`,
-    "codesign"
-);
-run(
-    `codesign --verify --deep --verbose=2 "${APP_PATH}"`,
-    "verify signature"
-);
-console.log("✔ Signing done");
+const signingIdentity = resolveSigningIdentity();
+
+if (signingIdentity !== undefined && signingIdentity.length > 0) {
+    step("Signing app");
+    run(
+        "codesign",
+        ["--force", "--deep", "--sign", signingIdentity, "--options", "runtime", "--timestamp", APP_PATH],
+        "codesign"
+    );
+    run("codesign", ["--verify", "--deep", "--verbose=2", APP_PATH], "verify signature");
+    console.log("✔ Signing done");
+} else {
+    console.log("\nSkipping signing because COGNO_APPLE_SIGNING_IDENTITY is not configured.");
+}
 
 // ─── 3. Create DMG ────────────────────────────────────────────────────────────
 step("Creating DMG");
@@ -113,20 +146,34 @@ if (!existsSync(DMG_PATH)) {
 console.log(`✔ DMG created: ${DMG_PATH}`);
 
 // ─── 4. Notarize ──────────────────────────────────────────────────────────────
-step("Notarizing DMG (this may take a few minutes)");
-run(
-    `xcrun notarytool submit "${DMG_PATH}" \
-    --apple-id "${appleId}" \
-    --team-id "${teamId}" \
-    --password "${appleIdPassword}" \
-    --wait`,
-    "notarytool"
-);
-console.log("✔ Notarization accepted");
+const appleCredentials = resolveAppleCredentials();
 
-// ─── 5. Staple ────────────────────────────────────────────────────────────────
-step("Stapling ticket");
-run(`xcrun stapler staple "${DMG_PATH}"`, "stapler");
+if (appleCredentials !== undefined && signingIdentity !== undefined && signingIdentity.length > 0) {
+    step("Notarizing DMG (this may take a few minutes)");
+    run(
+        "xcrun",
+        [
+            "notarytool",
+            "submit",
+            DMG_PATH,
+            "--apple-id",
+            appleCredentials.appleId,
+            "--team-id",
+            appleCredentials.teamId,
+            "--password",
+            appleCredentials.appleIdPassword,
+            "--wait"
+        ],
+        "notarytool"
+    );
+    console.log("✔ Notarization accepted");
+
+    // ─── 5. Staple ────────────────────────────────────────────────────────────
+    step("Stapling ticket");
+    run("xcrun", ["stapler", "staple", DMG_PATH], "stapler");
+} else {
+    console.log("\nSkipping notarization because Apple credentials or signing identity are missing.");
+}
 
 console.log(`\n${"═".repeat(60)}`);
 console.log(`✅ Done! DMG is ready: ${DMG_PATH}`);
