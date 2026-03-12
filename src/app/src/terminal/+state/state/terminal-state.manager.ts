@@ -258,6 +258,19 @@ export class TerminalStateManager {
         return this._pathAdapter;
     }
 
+    renderPathForInsertion(path: string): string | undefined {
+        if (!this._pathAdapter) {
+            return undefined;
+        }
+
+        try {
+            const normalizedPath = this._pathAdapter.normalize(path);
+            return this._pathAdapter.render(normalizedPath, { purpose: "insert_arg" });
+        } catch {
+            return undefined;
+        }
+    }
+
     // ---- History Zugriff ----
 
     get commands$(): Observable<Command[]> {

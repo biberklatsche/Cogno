@@ -22,7 +22,7 @@ describe('FocusHandler', () => {
     it('should register event listeners on terminal textarea', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
       const addEventListenerSpy = vi.spyOn(mockTerminal.textarea!, 'addEventListener');
-      
+
       handler.registerTerminal(mockTerminal);
 
       expect(addEventListenerSpy).toHaveBeenCalledWith('focus', expect.any(Function));
@@ -45,7 +45,7 @@ describe('FocusHandler', () => {
 
       const focusCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'focus')![1] as Function;
       const blurCallback = vi.mocked(mockTerminal.textarea!.addEventListener).mock.calls.find(call => call[0] === 'blur')![1] as Function;
-      
+
       focusCallback();
       expect(handler.hasFocus()).toBe(true);
 
@@ -91,7 +91,7 @@ describe('FocusHandler', () => {
 
     it('should blur terminal when BlurTerminal event for this id is received', () => {
       const blurSpy = vi.spyOn(mockTerminal, 'blur');
-      
+
       mockBus.publish({ type: 'BlurTerminal', payload: terminalId, path: ['app', 'terminal'], phase: 'target' });
 
       expect(blurSpy).toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('FocusHandler', () => {
     it('should unsubscribe on dispose', () => {
       mockTerminal = TerminalMockFactory.createTerminal();
       handler.registerTerminal(mockTerminal);
-      
+
       const focusSpy = vi.spyOn(mockTerminal, 'focus');
       handler.dispose();
 

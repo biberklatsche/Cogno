@@ -81,6 +81,7 @@ export class TauriMockFactory {
       isVisible: vi.fn().mockResolvedValue(true),
       isMaximized: vi.fn().mockResolvedValue(false),
       isMinimized: vi.fn().mockResolvedValue(false),
+      setFocus: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
       minimize: vi.fn().mockResolvedValue(undefined),
       unminimize: vi.fn().mockResolvedValue(undefined),
@@ -89,6 +90,7 @@ export class TauriMockFactory {
       windowSize$: new Observable(s => s.next({ width: 800, height: 600 })),
       onCloseRequested$: new Subject(),
       onFocusChanged$: new Observable(s => s.next(true)),
+      onDragDrop$: new Subject(),
     };
   }
 
