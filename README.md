@@ -164,13 +164,13 @@ Tauri requires Rust and a working build toolchain, see [Tauri V2](https://v2.tau
 
 The repository is split into a thin app entry and reusable packages:
 
-- `apps/cogno`: base application entry
-- `packages/app-shell`: Angular app shell and bootstrap
-- `packages/app-assets`: shared styles, fonts, icons and static feature data
-- `packages/base-features`: open feature set
-- `src/core-sdk`: public contracts
-- `src/core-host`: host infrastructure
-- `src/core-ui`: shared UI building blocks
+- `src/app`: base application entry
+- `src/packages/app-shell`: Angular app shell and bootstrap
+- `src/packages/app-assets`: shared styles, fonts, icons and static feature data
+- `src/packages/base-features`: open feature set
+- `src/packages/core-sdk`: public contracts
+- `src/packages/core-host`: host infrastructure
+- `src/packages/core-ui`: shared UI building blocks
 
 Useful commands:
 

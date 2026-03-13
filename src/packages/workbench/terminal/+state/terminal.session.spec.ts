@@ -6,7 +6,7 @@ import {getStateManager, getConfigService, getAppBus} from "../../../__test__/te
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { CoreHostWiringService } from "../../app-host/core-host-wiring.service";
+import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
 import { PathFactory } from "@cogno/core-host";

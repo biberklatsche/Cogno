@@ -25,7 +25,7 @@ import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { CoreHostWiringService } from "../../app-host/core-host-wiring.service";
+import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
 import {DialogRef, DialogService} from "../../common/dialog";

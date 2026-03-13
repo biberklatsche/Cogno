@@ -1,17 +1,17 @@
-import { Injectable, Type } from "@angular/core";
+import { Injectable, type Type } from "@angular/core";
 import { CoreHostFeatureRegistryHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
-import {
+import type {
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-sdk";
-import { ActionName } from "../action/action.models";
-import { Icon } from "@cogno/core-ui";
-import { sideMenuFeatureDefinitions } from "../menu/side-menu/+state/side-menu-feature-definitions";
+import type { ActionName } from "@cogno/app-shell/action/action.models";
+import { sideMenuFeatureDefinitions } from "@cogno/app-shell/menu/side-menu/+state/side-menu-feature-definitions";
 import { baseApplicationFeatureCollection } from "@cogno/base-features";
-import { DatabaseMigrationService } from "./database-migration.service";
-import { coreDatabaseMigrations } from "./database-migrations";
+import type { Icon } from "@cogno/core-ui";
+import { DatabaseMigrationService } from "@cogno/app-shell/app-host/database-migration.service";
+import { coreDatabaseMigrations } from "@cogno/app-shell/app-host/database-migrations";
 
 @Injectable({ providedIn: "root" })
 export class CoreHostWiringService {

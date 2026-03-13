@@ -133,19 +133,18 @@ importers:
         specifier: 4.0.18
         version: 4.0.18(@types/node@25.0.10)(happy-dom@20.8.3)(sass@1.97.3)
 
-  apps/cogno: {}
+  src/app: {}
 
-  packages/app-shell: {}
+  src/packages/app-shell: {}
 
-  src/core-host: {}
+  src/packages/core-host: {}
 
-  src/core-sdk: {}
+  src/packages/core-sdk: {}
 
-  src/core-ui: {}
+  src/packages/core-ui: {}
 
-  packages/base-features: {}
+  src/packages/base-features: {}
 
-  src/features-pro: {}
 
 packages:
 

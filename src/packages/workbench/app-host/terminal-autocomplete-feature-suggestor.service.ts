@@ -7,7 +7,7 @@ import {
   ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
 } from "@cogno/core-sdk";
-import { CoreHostWiringService } from "./core-host-wiring.service";
+import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAutocompleteFeatureSuggestorService {

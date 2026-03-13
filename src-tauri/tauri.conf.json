@@ -42,7 +42,7 @@
       "icons/icon.icns"
     ],
     "resources": [
-      "../packages/app-assets/src/assets/**/*",
+      "../src/packages/app-assets/src/assets/**/*",
       "src/default_windows.config",
       "src/default_linux.config",
       "src/default_macos.config"

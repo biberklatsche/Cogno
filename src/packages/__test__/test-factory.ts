@@ -16,7 +16,7 @@ import {TerminalStateManager} from "../app-shell/terminal/+state/state";
 import {ShellType} from "../app-shell/config/+models/config";
 import {TerminalSession} from "../app-shell/terminal/+state/terminal.session";
 import { TerminalAutocompleteFeatureSuggestorService } from "../app-shell/app-host/terminal-autocomplete-feature-suggestor.service";
-import { CoreHostWiringService } from "../app-shell/app-host/core-host-wiring.service";
+import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
