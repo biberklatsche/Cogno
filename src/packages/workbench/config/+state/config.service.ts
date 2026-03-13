@@ -18,7 +18,7 @@ import {ShellIntegrationWriter} from "../shell-integration.writer";
 import {Hash} from "../../common/hash/hash";
 import {Path} from "../../_tauri/path";
 import {CliConfigOverrides} from "../../_tauri/cli-config-overrides";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 export interface ShellProfileEntry {
     readonly name: string;
@@ -157,7 +157,7 @@ export class RealConfigService extends ConfigService {
         private appBus: AppBus,
         private destroy: DestroyRef,
         private shells: ShellConfigurator,
-        private coreHostWiringService: CoreHostWiringService,
+        private wiringService: AppWiringService,
     ) {
         super();
 
@@ -226,7 +226,7 @@ export class RealConfigService extends ConfigService {
                 },
             };
 
-            await this.shells.apply(userConfig, this.coreHostWiringService.getShellSupportDefinitions());
+            await this.shells.apply(userConfig, this.wiringService.getShellSupportDefinitions());
             await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
         }
 
@@ -239,7 +239,7 @@ export class RealConfigService extends ConfigService {
         );
 
         // Ensure shell integration scripts are installed
-        await ShellIntegrationWriter.ensure(this.coreHostWiringService.getShellSupportDefinitions());
+        await ShellIntegrationWriter.ensure(this.wiringService.getShellSupportDefinitions());
 
         if (config.enable_watch_config) {
             setTimeout(async () => {

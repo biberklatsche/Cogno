@@ -16,7 +16,7 @@ import {TerminalStateManager} from "../workbench/terminal/+state/state";
 import {ShellType} from "../workbench/config/+models/config";
 import {TerminalSession} from "../workbench/terminal/+state/terminal.session";
 import { TerminalAutocompleteFeatureSuggestorService } from "../workbench/app-host/terminal-autocomplete-feature-suggestor.service";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -32,7 +32,7 @@ let selectionHandler: SelectionHandler | undefined;
 let stateManager: TerminalStateManager | undefined;
 let terminalSession: TerminalSession | undefined;
 let terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService | undefined;
-let coreHostWiringService: CoreHostWiringService | undefined;
+let appWiringService: AppWiringService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -60,7 +60,7 @@ export function getTerminalSession(): TerminalSession {
             getStateManager(),
             getTerminalAutocompleteFeatureSuggestorService(),
             { open: () => ({ close: () => undefined }) } as any,
-            getCoreHostWiringService(),
+            getAppWiringService(),
         );
     }
     return terminalSession;
@@ -81,13 +81,13 @@ export function getConfigService(): ConfigServiceMock {
     return configService;
 }
 
-export function getCoreHostWiringService(): CoreHostWiringService {
-    if (!coreHostWiringService) {
-        coreHostWiringService = {
+export function getAppWiringService(): AppWiringService {
+    if (!appWiringService) {
+        appWiringService = {
             getShellDefinitions: vi.fn().mockReturnValue([]),
-        } as unknown as CoreHostWiringService;
+        } as unknown as AppWiringService;
     }
-    return coreHostWiringService;
+    return appWiringService;
 }
 
 export function getKeybindService(): KeybindService {
@@ -187,5 +187,5 @@ export function clear() {
     stateManager = undefined;
     terminalSession = undefined;
     terminalAutocompleteFeatureSuggestorService = undefined;
-    coreHostWiringService = undefined;
+    appWiringService = undefined;
 }

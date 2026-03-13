@@ -14,20 +14,20 @@ import { DatabaseMigrationService } from "@cogno/workbench/app-host/database-mig
 import { coreDatabaseMigrations } from "@cogno/workbench/app-host/database-migrations";
 
 @Injectable({ providedIn: "root" })
-export class CoreHostWiringService {
+export class AppWiringService {
   private readonly sideMenuFeatureRegistryHost = new SideMenuFeatureRegistryHost<
     Type<unknown>,
     Icon,
     ActionName
   >();
-  private readonly coreHostFeatureRegistryHost = new CoreHostFeatureRegistryHost<
+  private readonly featureRegistryHost = new CoreHostFeatureRegistryHost<
     Type<unknown>,
     Icon,
     ActionName
   >(this.sideMenuFeatureRegistryHost);
 
   constructor(private readonly databaseMigrationService: DatabaseMigrationService) {
-    this.coreHostFeatureRegistryHost.registerFeatureCollection({
+    this.featureRegistryHost.registerFeatureCollection({
       ...featureApplicationFeatureCollection,
       sideMenuFeatureDefinitions: [
         ...sideMenuFeatureDefinitions,
@@ -36,7 +36,7 @@ export class CoreHostWiringService {
     });
     this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
     this.databaseMigrationService.registerFeatureMigrations(
-      this.coreHostFeatureRegistryHost.getDatabaseMigrations(),
+      this.featureRegistryHost.getDatabaseMigrations(),
     );
   }
 
@@ -55,20 +55,20 @@ export class CoreHostWiringService {
   getSideMenuFeatureDefinitions(): ReadonlyArray<
     SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName>
   > {
-    return this.coreHostFeatureRegistryHost.getSideMenuFeatureDefinitions();
+    return this.featureRegistryHost.getSideMenuFeatureDefinitions();
   }
 
   getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<
     TerminalAutocompleteSuggestorDefinitionContract
   > {
-    return this.coreHostFeatureRegistryHost.getTerminalAutocompleteSuggestorDefinitions();
+    return this.featureRegistryHost.getTerminalAutocompleteSuggestorDefinitions();
   }
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
-    return this.coreHostFeatureRegistryHost.getShellSupportDefinitions();
+    return this.featureRegistryHost.getShellSupportDefinitions();
   }
 
   getShellDefinitions(): ReadonlyArray<ShellDefinitionContract> {
-    return this.coreHostFeatureRegistryHost.getShellDefinitions();
+    return this.featureRegistryHost.getShellDefinitions();
   }
 }

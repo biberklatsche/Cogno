@@ -11,7 +11,7 @@ import {AppBus} from "../../app-bus/app-bus";
 import {AppWindow} from "../../_tauri/window";
 import {ActionFired, ActionName} from "../../action/action.models";
 import {Config, FeatureMode} from "../../config/+models/config";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +23,7 @@ export class NativeMenuService {
   constructor(
     private bus: AppBus,
     private keybindService: KeybindService,
-    private readonly coreHostWiringService: CoreHostWiringService,
+    private readonly wiringService: AppWiringService,
     configService: ConfigService,
     ref: DestroyRef,
   ) {
@@ -86,7 +86,7 @@ export class NativeMenuService {
           ],
       });
 
-      const sideMenuFeatureDefinitions = this.coreHostWiringService
+      const sideMenuFeatureDefinitions = this.wiringService
         .getSideMenuFeatureDefinitions();
       const sortedSideMenuFeatureDefinitions = [...sideMenuFeatureDefinitions].sort(
         (firstFeatureDefinition, secondFeatureDefinition) => firstFeatureDefinition.order - secondFeatureDefinition.order,

@@ -7,21 +7,21 @@ import {
   ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
 } from "@cogno/core-sdk";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAutocompleteFeatureSuggestorService {
   private sharedSuggestors?: ReadonlyArray<TerminalAutocompleteSuggestorContract>;
 
   constructor(
-    private readonly coreHostWiringService: CoreHostWiringService,
+    private readonly wiringService: AppWiringService,
     @Inject(filesystemToken) private readonly filesystem: FilesystemContract,
     @Inject(commandRunnerToken) private readonly commandRunner: CommandRunnerContract,
   ) {}
 
   getSharedSuggestors(): ReadonlyArray<TerminalAutocompleteSuggestorContract> {
     if (!this.sharedSuggestors) {
-      this.sharedSuggestors = this.coreHostWiringService
+      this.sharedSuggestors = this.wiringService
         .getTerminalAutocompleteSuggestorDefinitions()
         .map((definition) => definition.createSuggestor({
           filesystem: this.filesystem,

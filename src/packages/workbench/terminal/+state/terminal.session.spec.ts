@@ -6,7 +6,7 @@ import {getStateManager, getConfigService, getAppBus} from "../../../__test__/te
 import {ShellProfile} from "../../config/+models/shell-config";
 import {ConfigService} from "../../config/+state/config.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
 import { PathFactory } from "@cogno/core-host";
@@ -45,7 +45,7 @@ describe('TerminalSession', () => {
     let mockFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService;
     let mockDialogService: DialogService;
     let mockProcessInfoDialogReference: DialogRef<void>;
-    let mockCoreHostWiringService: CoreHostWiringService;
+    let mockWiringService: AppWiringService;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -77,9 +77,9 @@ describe('TerminalSession', () => {
             open: vi.fn().mockReturnValue(mockProcessInfoDialogReference)
         } as unknown as DialogService;
 
-        mockCoreHostWiringService = {
+        mockWiringService = {
             getShellDefinitions: vi.fn().mockReturnValue([]),
-        } as unknown as CoreHostWiringService;
+        } as unknown as AppWiringService;
 
         session = new TerminalSession(
             mockConfigService,
@@ -87,7 +87,7 @@ describe('TerminalSession', () => {
             getStateManager(),
             mockFeatureSuggestorService,
             mockDialogService,
-            mockCoreHostWiringService,
+            mockWiringService,
         );
     });
 
@@ -100,7 +100,7 @@ describe('TerminalSession', () => {
             getStateManager(),
             mockFeatureSuggestorService,
             mockDialogService,
-            mockCoreHostWiringService,
+            mockWiringService,
         );
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));

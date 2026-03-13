@@ -25,7 +25,7 @@ import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
 import {DialogRef, DialogService} from "../../common/dialog";
@@ -63,7 +63,7 @@ export class TerminalSession {
         private stateManager: TerminalStateManager,
         private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
         private dialog: DialogService,
-        private coreHostWiringService: CoreHostWiringService,
+        private wiringService: AppWiringService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -112,7 +112,7 @@ export class TerminalSession {
         if(this.shellProfile.enable_shell_integration) {
             this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
-            const shellDefinition = this.coreHostWiringService
+            const shellDefinition = this.wiringService
                 .getShellDefinitions()
                 .find(definition => definition.support.shellType === this.shellProfile?.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineEditor(

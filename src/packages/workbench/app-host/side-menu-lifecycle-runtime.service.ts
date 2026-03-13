@@ -6,14 +6,14 @@ import { Icon } from "@cogno/core-ui";
 import { KeybindService } from "../keybinding/keybind.service";
 import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
-export class CoreHostSideMenuLifecycleRuntimeService {
+export class SideMenuLifecycleRuntimeService {
   private readonly lifecycleFeatureHandles: SideMenuFeature[] = [];
 
   constructor(
-    private readonly coreHostWiringService: CoreHostWiringService,
+    private readonly wiringService: AppWiringService,
     private readonly injector: Injector,
     private readonly sideMenuService: SideMenuService,
     private readonly appBus: AppBus,
@@ -25,7 +25,7 @@ export class CoreHostSideMenuLifecycleRuntimeService {
   }
 
   private initializeLifecycleFeatures(): void {
-    const sideMenuFeatureDefinitions = this.coreHostWiringService.getSideMenuFeatureDefinitions();
+    const sideMenuFeatureDefinitions = this.wiringService.getSideMenuFeatureDefinitions();
 
     for (const sideMenuFeatureDefinition of sideMenuFeatureDefinitions) {
       let sideMenuFeatureHandle: SideMenuFeature | undefined;

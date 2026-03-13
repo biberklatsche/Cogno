@@ -26,14 +26,14 @@ import {
 } from "@cogno/core-sdk";
 import { CommandPaletteHostPortAdapterService } from "@cogno/workbench/app-host/command-palette-host-port.adapter.service";
 import { CommandRunnerHostService } from "@cogno/workbench/app-host/command-runner-host.service";
-import { CoreHostSideMenuLifecycleRuntimeService } from "@cogno/workbench/app-host/core-host-side-menu-lifecycle-runtime.service";
+import { SideMenuLifecycleRuntimeService } from "@cogno/workbench/app-host/side-menu-lifecycle-runtime.service";
 import { DatabaseAccessHostService } from "@cogno/workbench/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/workbench/app-host/filesystem-host.service";
 import { NotificationHostPortAdapterService } from "@cogno/workbench/app-host/notification-host-port.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/workbench/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/workbench/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/workbench/app-host/workspace-host-port.adapter.service";
-import { CoreHostWiringService } from "./app-host/core-host-wiring.service";
+import { AppWiringService } from "./app-host/app-wiring.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -56,8 +56,8 @@ export const appConfig: ApplicationConfig = {
       inject(CliActionService);
       inject(NativeMenuService);
       inject(WindowService);
-      inject(CoreHostWiringService);
-      inject(CoreHostSideMenuLifecycleRuntimeService);
+      inject(AppWiringService);
+      inject(SideMenuLifecycleRuntimeService);
       inject(CommandPaletteHostPortAdapterService);
       inject(NotificationHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);

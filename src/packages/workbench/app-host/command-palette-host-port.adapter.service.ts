@@ -10,7 +10,7 @@ import { coreActionNames } from "../action/core-action-names";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "../keybinding/keybind.service";
-import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteHostPortAdapterService implements CommandPaletteHostPortContract {
@@ -20,7 +20,7 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
     private readonly appBus: AppBus,
     configService: ConfigService,
     private readonly keybindService: KeybindService,
-    private readonly coreHostWiringService: CoreHostWiringService,
+    private readonly wiringService: AppWiringService,
   ) {
     this.commandEntries$ = configService.config$.pipe(
       map(() => this.buildCommandEntries()),
@@ -38,7 +38,7 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
   }
 
   private buildCommandEntries(): ReadonlyArray<CommandPaletteCommandEntryContract> {
-    const sideMenuActionNames = this.coreHostWiringService
+    const sideMenuActionNames = this.wiringService
       .getSideMenuFeatureDefinitions()
       .map((sideMenuFeatureDefinition) => sideMenuFeatureDefinition.actionName);
 
