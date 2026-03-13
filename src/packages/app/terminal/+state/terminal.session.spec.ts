@@ -160,6 +160,12 @@ describe('TerminalSession', () => {
 
     it('should only show available notification channels in header menu', () => {
         (mockConfigService as any).setConfig({
+            notification: {
+                long_running_commands: {
+                    enabled: true,
+                    minimum_duration_seconds: 10,
+                },
+            },
             notifications: {
                 app: { available: true, enabled: false },
                 os: { available: false, enabled: false },
@@ -168,11 +174,97 @@ describe('TerminalSession', () => {
         session.initialize(terminalId, mockShellProfile);
 
         const items = session.buildHeaderMenu();
+        expect(items[0]).toEqual(expect.objectContaining({ header: true, label: 'Command Alerts' }));
+        const longRunningCommandToggle = items.find(i => i.label === 'Long Commands');
+        expect(items).toContainEqual(expect.objectContaining({ header: true, label: 'Channels' }));
+        expect(items[items.findIndex(i => i.label === 'Process Info') - 1]).toEqual(expect.objectContaining({ separator: true }));
         const appToggle = items.find(i => i.label === 'App');
+        expect(longRunningCommandToggle).toBeDefined();
+        expect(longRunningCommandToggle?.toggle).toBe(true);
+        expect(longRunningCommandToggle?.toggled).toBe(true);
         expect(appToggle).toBeDefined();
         expect(appToggle?.toggle).toBe(true);
         expect(appToggle?.toggled).toBe(false);
         expect(items.find(i => i.label === 'OS')).toBeUndefined();
+    });
+
+    it('should allow toggling long-running command notifications from the header menu', () => {
+        (mockConfigService as any).setConfig({
+            notification: {
+                long_running_commands: {
+                    enabled: true,
+                    minimum_duration_seconds: 10,
+                },
+            },
+            notifications: {
+                app: { available: true, enabled: true },
+            },
+        });
+        session.initialize(terminalId, mockShellProfile);
+
+        const toggleItem = session.buildHeaderMenu().find(item => item.label === 'Long Commands');
+        expect(toggleItem?.toggled).toBe(true);
+
+        toggleItem?.action?.(toggleItem);
+
+        expect(toggleItem?.toggled).toBe(false);
+    });
+
+    it('should publish a notification when a long-running command has finished', () => {
+        (mockConfigService as any).setConfig({
+            notification: {
+                long_running_commands: {
+                    enabled: true,
+                    minimum_duration_seconds: 10,
+                },
+            },
+            notifications: {
+                app: { available: true, enabled: true },
+            },
+        });
+        session.initialize(terminalId, mockShellProfile);
+
+        (session as any).completedCommandNotificationHandler.handleCompletedCommand({
+            command: 'pnpm test',
+            duration: 12_000,
+            directory: '/workspace',
+            returnCode: 0,
+        });
+
+        expect(mockBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+            path: ['notification'],
+            type: 'Notification',
+            payload: expect.objectContaining({
+                header: 'Long-running command finished',
+                terminalId,
+                channels: { app: true, os: false },
+            }),
+        }));
+    });
+
+    it('should not publish a notification when a command is shorter than the configured threshold', () => {
+        (mockConfigService as any).setConfig({
+            notification: {
+                long_running_commands: {
+                    enabled: true,
+                    minimum_duration_seconds: 10,
+                },
+            },
+            notifications: {
+                app: { available: true, enabled: true },
+            },
+        });
+        session.initialize(terminalId, mockShellProfile);
+        vi.clearAllMocks();
+
+        (session as any).completedCommandNotificationHandler.handleCompletedCommand({
+            command: 'pnpm test',
+            duration: 9_000,
+            directory: '/workspace',
+            returnCode: 0,
+        });
+
+        expect(mockBus.publish).not.toHaveBeenCalled();
     });
 
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {

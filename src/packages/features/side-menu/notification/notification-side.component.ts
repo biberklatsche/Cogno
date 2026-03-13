@@ -1,12 +1,14 @@
 import { Component, Signal } from "@angular/core";
+import { IconComponent } from "@cogno/core-ui";
 import { Notification, NotificationId, NotificationService } from "./notification.service";
 
 @Component({
   selector: "app-notification-side",
   standalone: true,
+  imports: [IconComponent],
   template: `
     <section class="notification-header">
-      <strong>Notifications</strong>
+      <div></div>
       <button class="button" type="button" [disabled]="notifications().length === 0" (click)="clearAll()">
         Clear all
       </button>
@@ -25,7 +27,9 @@ import { Notification, NotificationId, NotificationService } from "./notificatio
           @if (notification.count > 1) {
             <div class="count" title="Occurrences">{{ notification.count }}</div>
           }
-          <button class="button icon-button" (click)="remove(notification.id)">x</button>
+          <button class="button icon-button" type="button" (click)="remove(notification.id)">
+            <app-icon name="mdiClose"></app-icon>
+          </button>
         </section>
       }
     </section>

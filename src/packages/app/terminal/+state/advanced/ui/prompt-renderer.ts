@@ -1,5 +1,5 @@
 import { PromptSegment } from "../../../../config/+models/prompt-config";
-import {timespan} from "../../../../common/timespan/timespan.pipe";
+import {timespan} from "../../../../common/timespan/timespan";
 import {Command, TerminalStateManager} from "../../state";
 
 type PromptRecord = {

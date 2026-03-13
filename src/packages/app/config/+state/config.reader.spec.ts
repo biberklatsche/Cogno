@@ -163,6 +163,8 @@ describe('ConfigReader', () => {
       notifications.os.available=true
       notifications.os.enabled=false
       notification.highlight_terminal_on_activity=false
+      notification.long_running_commands.enabled=true
+      notification.long_running_commands.minimum_duration_seconds=15
       notification.overview.max_items=42
     `;
         const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
@@ -174,6 +176,8 @@ describe('ConfigReader', () => {
         expect(result.config.notifications?.os?.available).toBe(true);
         expect(result.config.notifications?.os?.enabled).toBe(false);
         expect(result.config.notification?.highlight_terminal_on_activity).toBe(false);
+        expect(result.config.notification?.long_running_commands?.enabled).toBe(true);
+        expect(result.config.notification?.long_running_commands?.minimum_duration_seconds).toBe(15);
         expect(result.config.notification?.overview?.max_items).toBe(42);
     });
 

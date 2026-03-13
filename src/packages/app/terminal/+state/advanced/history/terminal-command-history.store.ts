@@ -6,6 +6,7 @@ import { OscDataType } from "../model/models";
 
 export type ExecutedCommand = {
     command: string;
+    duration?: number;
     directory: string;
     returnCode?: number;
     commandExists?: boolean;
@@ -43,6 +44,7 @@ export class TerminalCommandHistoryStore {
             if (lastCommand.command && lastCommand.directory) {
                 executedCommand = {
                     command: lastCommand.command,
+                    duration: lastCommand.duration,
                     directory: lastCommand.directory,
                     returnCode: lastCommand.returnCode,
                     commandExists: lastCommand.commandExists,

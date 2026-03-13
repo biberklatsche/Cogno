@@ -20,6 +20,7 @@ import { IPathAdapter } from "@cogno/core-sdk";
 import { PathFactory } from "@cogno/core-host";
 import {ShellContext} from "../advanced/model/models";
 import {TerminalCommandHistoryStore} from "../advanced/history/terminal-command-history.store";
+import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";
 import {TerminalHistoryPersistenceService} from "../advanced/history/terminal-history-persistence.service";
 import {ShellProfile} from "../../../config/+models/shell-config";
 import {deriveShellContext} from "./terminal-shell-context.util";
@@ -281,9 +282,10 @@ export class TerminalStateManager {
         return this._historyStore.commands;
     }
 
-    updateCommand(data: Record<string, string>): void {
+    updateCommand(data: Record<string, string>): ExecutedCommand | undefined {
         const executedCommand = this._historyStore.updateCommand(data);
         this._historyPersistence.onCommandExecuted(executedCommand);
+        return executedCommand;
     }
 
     updateCommands(commands: Command[]): void {

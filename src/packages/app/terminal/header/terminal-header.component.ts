@@ -8,6 +8,7 @@ import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 import {ConfigService} from "../../config/+state/config.service";
+import { timespan } from "../../common/timespan/timespan";
 
 @Component({
   selector: 'app-terminal-header',
@@ -199,11 +200,7 @@ export class TerminalHeaderComponent {
   });
 
   formatDuration(ms: number): string {
-    if (ms < 1000) return `${ms}ms`;
-    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}m ${seconds}s`;
+    return timespan(ms);
   }
 
   openMenu(event: Event): void {

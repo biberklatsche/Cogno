@@ -37,6 +37,7 @@ import {
 import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
 import {NotificationChannels} from "../../notification/+bus/events";
 import { NotificationChannelContract } from "@cogno/core-sdk";
+import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 
 type NotificationChannelId = string;
 
@@ -53,6 +54,7 @@ export class TerminalSession {
     private disposed: boolean = false;
     private processInfoDialogReference?: DialogRef<void>;
     private sessionNotificationChannels?: NotificationChannels;
+    private readonly completedCommandNotificationHandler: CompletedCommandNotificationHandler;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -71,12 +73,19 @@ export class TerminalSession {
             this.renderer,
             this.pty
         ];
+        this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(
+            this.configService,
+            this.bus,
+            () => this.terminalId,
+            () => this.getSessionNotificationChannels(),
+        );
     }
 
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
         this.terminalId = terminalId;
         this.shellProfile = shellProfile;
         this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
+        this.completedCommandNotificationHandler.initialize();
         this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
         this.subscription.add(
             this.bus.onType$('PaneMaximizedChanged').subscribe((event: PaneMaximizedChangedEvent) => {
@@ -112,7 +121,11 @@ export class TerminalSession {
 
         if(this.shellProfile.enable_shell_integration) {
             this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
-            this.disposables.push(this.renderer.register(new CommandLineObserver(this.stateManager, this.configService.getPromptSegments())));
+            this.disposables.push(this.renderer.register(new CommandLineObserver(
+                this.stateManager,
+                this.configService.getPromptSegments(),
+                this.completedCommandNotificationHandler.handleCompletedCommand,
+            )));
             const shellDefinition = this.wiringService
                 .getShellDefinitions()
                 .find(definition => definition.support.shellType === this.shellProfile?.shell_type);
@@ -258,12 +271,24 @@ export class TerminalSession {
 
     private buildNotificationContextMenuItems(): ContextMenuItem[] {
         const availableNotificationChannels = this.getAvailableNotificationChannels();
+        const items: ContextMenuItem[] = [];
+
+        items.push({header: true, label: 'Command Alerts'});
+        items.push({
+            label: "Long Commands",
+            toggle: true,
+            toggled: this.completedCommandNotificationHandler.isLongRunningCommandNotificationEnabled(),
+            closeOnSelect: false,
+            action: (item?: ContextMenuItem) => this.completedCommandNotificationHandler.toggleLongRunningCommandNotifications(item),
+        });
+
         if (availableNotificationChannels.length === 0) {
             return [];
         }
 
         const channels = this.getSessionNotificationChannels();
-        const items: ContextMenuItem[] = [];
+        items.push({separator: true});
+        items.push({header: true, label: 'Channels'});
 
         for (const notificationChannel of availableNotificationChannels) {
             items.push({
@@ -274,10 +299,8 @@ export class TerminalSession {
                 action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel(notificationChannel.id, item),
             });
         }
-        if (items.length > 0) {
-            items.push({separator: true});
-            items.unshift({header: true, label: 'Notification'})
-        }
+
+        items.push({separator: true});
 
         return items;
     }

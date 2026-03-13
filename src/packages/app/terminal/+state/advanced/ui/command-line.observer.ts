@@ -6,6 +6,7 @@ import OscParser from "../osc/cogno-osc.parser";
 import {MarkerManager} from "./marker-manager";
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {debounceTime, Subject} from "rxjs";
+import { ExecutedCommand } from "../history/terminal-command-history.store";
 
 export class CommandLineObserver implements ITerminalHandler {
 
@@ -14,7 +15,11 @@ export class CommandLineObserver implements ITerminalHandler {
     private _markerManager: MarkerManager;
     private _refreshMarkerSubject = new Subject<void>();
 
-    constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
+    constructor(
+        private stateManager: TerminalStateManager,
+        promptSegments: PromptSegment[],
+        private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
+    ) {
         this._markerManager = new MarkerManager(stateManager, promptSegments);
 
         // Debounce marker refresh to improve performance with long outputs
@@ -80,10 +85,13 @@ export class CommandLineObserver implements ITerminalHandler {
                 const kv = OscParser.parse(data);
                 if(!kv) return true;
                 kv['duration'] = this.stateManager.getCommandDuration()?.toString() ?? '';
-                this.stateManager.updateCommand(kv);
+                const executedCommand = this.stateManager.updateCommand(kv);
                 const directory = kv['directory'];
                 if (directory && directory.trim()) {
                     this.stateManager.updateCwd(directory);
+                }
+                if (executedCommand) {
+                    this.commandCompletedHandler?.(executedCommand);
                 }
                 return true;
             }));

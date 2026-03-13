@@ -17,6 +17,20 @@ export const FeatureWorkspaceSchema = z.object({
 export const FeatureNotificationSchema = z.object({
   mode: FeatureModeEnum.optional(),
   highlight_terminal_on_activity: z.boolean().optional(),
+  long_running_commands: z
+    .object({
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Show a notification after a long-running command has finished."),
+      minimum_duration_seconds: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe("Notify only when a command ran for at least this many seconds."),
+    })
+    .optional(),
   overview: z
     .object({
       max_items: z.number().int().min(0).optional(),
