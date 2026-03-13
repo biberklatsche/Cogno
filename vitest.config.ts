@@ -14,23 +14,23 @@ export default defineConfig({
       },
     ],
     include: [
-      "src/packages/app-shell/**/*.spec.ts",
+      "src/packages/workbench/**/*.spec.ts",
       "src/packages/core-host/**/*.spec.ts",
-      "src/packages/base-features/**/*.spec.ts",
+      "src/packages/features/**/*.spec.ts",
     ],
     exclude: [
-      "src/packages/app-shell/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
+      "src/packages/workbench/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
     ],
     coverage: {
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       include: [
-        "src/packages/app-shell/**/*.ts",
+        "src/packages/workbench/**/*.ts",
         "src/packages/core-host/**/*.ts",
-        "src/packages/base-features/**/*.ts",
+        "src/packages/features/**/*.ts",
       ],
       exclude: [
-        "src/packages/app-shell/_tauri/**",
+        "src/packages/workbench/_tauri/**",
         "**/*.spec.ts",
         "**/*.test.ts",
         "**/__test__/tauri_mocks/**",

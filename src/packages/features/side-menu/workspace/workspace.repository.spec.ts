@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseAccessContract } from "@cogno/core-sdk";
-import { WorkspaceConfiguration } from "@cogno/base-features/side-menu/workspace/workspace.model";
-import { WorkspaceRepository } from "@cogno/base-features/side-menu/workspace/workspace.repository";
+import { WorkspaceConfiguration } from "@cogno/features/side-menu/workspace/workspace.model";
+import { WorkspaceRepository } from "@cogno/features/side-menu/workspace/workspace.repository";
 
 describe("WorkspaceRepository", () => {
   let workspaceRepository: WorkspaceRepository;

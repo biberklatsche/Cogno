@@ -9,7 +9,7 @@ import {Observable} from "rxjs";
 import {ShellProfile} from "../../../config/+models/shell-config";
 import {PromptSegment} from "../../../config/+models/prompt-config";
 import { PathFactory } from "@cogno/core-host";
-import { baseFeatureShellPathAdapterDefinitions } from "@cogno/base-features";
+import { featureShellPathAdapterDefinitions } from "@cogno/features";
 
 class ConfigServiceMockForNotificationBadge extends ConfigService {
     constructor(private readonly notificationBadgeEnabledState: { value: boolean }) {
@@ -40,7 +40,7 @@ class ConfigServiceMockForNotificationBadge extends ConfigService {
 describe("TerminalStateManager", () => {
     beforeEach(() => {
         PathFactory.setDefinitions([
-            ...baseFeatureShellPathAdapterDefinitions,
+            ...featureShellPathAdapterDefinitions,
         ]);
     });
 

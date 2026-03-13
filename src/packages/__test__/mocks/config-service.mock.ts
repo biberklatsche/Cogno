@@ -1,6 +1,6 @@
-import {ConfigService, ShellProfileEntry} from "../../app-shell/config/+state/config.service";
-import {Config} from "../../app-shell/config/+models/config";
-import {ShellProfile} from "../../app-shell/config/+models/shell-config";
+import {ConfigService, ShellProfileEntry} from "../../workbench/config/+state/config.service";
+import {Config} from "../../workbench/config/+models/config";
+import {ShellProfile} from "../../workbench/config/+models/shell-config";
 import {BehaviorSubject, Observable} from "rxjs";
 import {filter} from "rxjs/operators";
 

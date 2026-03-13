@@ -1,49 +1,58 @@
+const packageRootPattern = "^src/packages/";
+const coreSdkPattern = "^src/packages/core-sdk/";
+const coreHostPattern = "^src/packages/core-host/";
+const coreUiPattern = "^src/packages/core-ui/";
+const featuresPattern = "^src/packages/features/";
+const workbenchPattern = "^src/packages/workbench/";
+const knownCognoAliasPattern =
+  "^@cogno/(?!app(?:$|/)|workbench(?:$|/)|features(?:$|/)|core-sdk(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|pro-features(?:$|/)).+";
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
     {
       name: "core-sdk-is-isolated",
       severity: "error",
-      comment: "core-sdk darf keine anderen Module importieren.",
-      from: { path: "^src/packages/core-sdk/" },
-      to: { path: "^(src/packages/app-shell|src/packages/core-host|src/packages/base-features)/" },
+      comment: "core-sdk must not import other internal modules.",
+      from: { path: coreSdkPattern },
+      to: { path: "^(src/packages/workbench|src/packages/core-host|src/packages/features)/" },
     },
     {
-      name: "core-host-must-not-import-app",
+      name: "core-host-must-not-import-workbench",
       severity: "error",
-      comment: "core-host darf app nicht importieren.",
-      from: { path: "^src/packages/core-host/" },
-      to: { path: "^src/packages/app-shell/" },
+      comment: "core-host must not depend on the UI and host workbench.",
+      from: { path: coreHostPattern },
+      to: { path: workbenchPattern },
     },
     {
       name: "core-host-must-not-import-features",
       severity: "error",
-      comment: "core-host darf nicht von konkreten Features abhängen.",
-      from: { path: "^src/packages/core-host/" },
-      to: { path: "^src/packages/base-features/" },
+      comment: "core-host must not depend on concrete features.",
+      from: { path: coreHostPattern },
+      to: { path: featuresPattern },
     },
     {
       name: "core-ui-is-isolated",
       severity: "error",
-      comment: "core-ui darf keine anderen internen Module importieren.",
-      from: { path: "^src/packages/core-ui/" },
-      to: { path: "^(src/packages/app-shell|src/packages/core-sdk|src/packages/core-host|src/packages/base-features)/" },
+      comment: "core-ui must not import other internal modules.",
+      from: { path: coreUiPattern },
+      to: { path: "^(src/packages/workbench|src/packages/core-sdk|src/packages/core-host|src/packages/features)/" },
     },
     {
-      name: "base-features-only-core-sdk",
+      name: "features-must-not-import-workbench-or-core-host",
       severity: "error",
-      comment: "base-features darf nur gegen core-sdk und core-ui entwickeln.",
-      from: { path: "^src/packages/base-features/" },
-      to: { path: "^(src/packages/app-shell|src/packages/core-host)" },
+      comment: "features must not depend on workbench or core-host.",
+      from: { path: featuresPattern },
+      to: { path: "^(src/packages/workbench|src/packages/core-host)/" },
     },
     {
       name: "known-cogno-aliases-only",
       severity: "error",
-      comment: "Nur definierte @cogno/* Aliase sind erlaubt.",
-      from: { path: "^src/" },
+      comment: "Only defined @cogno/* aliases are allowed.",
+      from: { path: packageRootPattern },
       to: {
         dependencyTypes: ["unknown"],
-        path: "^@cogno/(?!app(?:$|/)|app-shell$|core-sdk$|core-host$|core-ui$|base-features$|pro-features$).+",
+        path: knownCognoAliasPattern,
       },
     },
   ],
@@ -61,7 +70,8 @@ module.exports = {
       path: [
         "^dist/",
         "^coverage/",
-        "^src/packages/app-assets/src/assets/",
+        "^\\.angular/",
+        "^src/packages/assets/src/assets/",
         "\\.spec\\.ts$",
         "\\.test\\.ts$",
       ],

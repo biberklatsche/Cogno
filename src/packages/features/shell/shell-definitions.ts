@@ -2,16 +2,16 @@ import { bashShellDefinition } from "./bash/bash.shell-definition";
 import { powerShellShellDefinition } from "./powershell/powershell.shell-definition";
 import { zshShellDefinition } from "./zsh/zsh.shell-definition";
 
-export const baseFeatureShellDefinitions = [
+export const featureShellDefinitions = [
   bashShellDefinition,
   zshShellDefinition,
   powerShellShellDefinition,
 ] as const;
 
-export const baseFeatureShellSupportDefinitions = baseFeatureShellDefinitions.map(
+export const featureShellSupportDefinitions = featureShellDefinitions.map(
   definition => definition.support,
 );
 
-export const baseFeatureShellPathAdapterDefinitions = baseFeatureShellDefinitions.map(
+export const featureShellPathAdapterDefinitions = featureShellDefinitions.map(
   definition => definition.pathAdapter,
 );

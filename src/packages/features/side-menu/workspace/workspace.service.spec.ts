@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
 import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-sdk";
-import { WorkspaceService } from "@cogno/base-features/side-menu/workspace/workspace.service";
+import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("WorkspaceService", () => {

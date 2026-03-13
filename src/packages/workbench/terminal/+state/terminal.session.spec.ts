@@ -10,7 +10,7 @@ import { CoreHostWiringService } from "@cogno/app/app-host/core-host-wiring.serv
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
 import { PathFactory } from "@cogno/core-host";
-import { baseFeatureShellPathAdapterDefinitions } from "@cogno/base-features";
+import { featureShellPathAdapterDefinitions } from "@cogno/features";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -50,7 +50,7 @@ describe('TerminalSession', () => {
 
     beforeEach(() => {
         PathFactory.setDefinitions([
-            ...baseFeatureShellPathAdapterDefinitions,
+            ...featureShellPathAdapterDefinitions,
         ]);
         mockConfigService = getConfigService() as unknown as ConfigService;
         mockBus = getAppBus();

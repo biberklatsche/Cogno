@@ -1,6 +1,6 @@
 import { TerminalAutocompleteSuggestorDefinitionContract } from "@cogno/core-sdk";
 import { specCommandSuggestorDefinition } from "./spec-command/spec-command.suggestor-definition";
 
-export const baseFeatureTerminalAutocompleteSuggestorDefinitions: ReadonlyArray<
+export const featureTerminalAutocompleteSuggestorDefinitions: ReadonlyArray<
   TerminalAutocompleteSuggestorDefinitionContract
 > = [specCommandSuggestorDefinition];

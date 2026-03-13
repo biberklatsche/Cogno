@@ -9,7 +9,7 @@
     "dev:web": "ng serve --configuration development",
     "lint": "pnpm lint:code && pnpm lint:architecture",
     "lint:code": "pnpm exec biome check .",
-    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/packages/app-shell/**/*.ts\" \"src/packages/core-sdk/**/*.ts\" \"src/packages/core-host/**/*.ts\" \"src/packages/base-features/**/*.ts\"",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/packages/workbench/**/*.ts\" \"src/packages/core-sdk/**/*.ts\" \"src/packages/core-host/**/*.ts\" \"src/packages/features/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

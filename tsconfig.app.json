@@ -6,5 +6,5 @@
     "types": ["vite/client"]
   },
   "files": ["src/app/main.ts"],
-  "include": ["src/packages/app-shell/**/*.d.ts"]
+  "include": ["src/packages/workbench/**/*.d.ts"]
 }

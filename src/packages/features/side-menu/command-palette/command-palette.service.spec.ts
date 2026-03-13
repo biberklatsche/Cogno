@@ -4,7 +4,7 @@ import {
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
 } from "@cogno/core-sdk";
-import { CommandPaletteService } from "@cogno/base-features/side-menu/command-palette/command-palette.service";
+import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("CommandPaletteService", () => {

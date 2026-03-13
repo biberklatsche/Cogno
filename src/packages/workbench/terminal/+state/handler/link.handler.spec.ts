@@ -5,7 +5,7 @@ import { TerminalStateManager } from "../state";
 import { LinkHandler } from "./link.handler";
 import { Opener } from "../../../_tauri/opener";
 import { PathFactory } from "@cogno/core-host";
-import { baseFeatureShellPathAdapterDefinitions } from "@cogno/base-features";
+import { featureShellPathAdapterDefinitions } from "@cogno/features";
 
 describe("LinkHandler", () => {
     let handler: LinkHandler;
@@ -15,7 +15,7 @@ describe("LinkHandler", () => {
 
     beforeEach(() => {
         PathFactory.setDefinitions([
-            ...baseFeatureShellPathAdapterDefinitions,
+            ...featureShellPathAdapterDefinitions,
         ]);
         const bus = new AppBus();
         stateManager = new TerminalStateManager(bus);

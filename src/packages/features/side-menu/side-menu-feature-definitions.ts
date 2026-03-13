@@ -5,7 +5,7 @@ import { notificationSideMenuFeatureDefinition } from "./notification/notificati
 import { terminalSearchSideMenuFeatureDefinition } from "./terminal-search/terminal-search.feature-definition";
 import { workspaceSideMenuFeatureDefinition } from "./workspace/workspace.feature-definition";
 
-export const baseFeatureSideMenuFeatureDefinitions = [
+export const featureSideMenuFeatureDefinitions = [
   workspaceSideMenuFeatureDefinition,
   commandPaletteSideMenuFeatureDefinition,
   notificationSideMenuFeatureDefinition,

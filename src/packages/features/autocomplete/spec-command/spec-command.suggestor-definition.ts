@@ -7,7 +7,7 @@ import { GitBranchesSpecProvider } from "./spec/providers/git-branches.spec-prov
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 
 export const specCommandSuggestorDefinition: TerminalAutocompleteSuggestorDefinitionContract = {
-  id: "base-features:spec-command",
+  id: "features:spec-command",
   createSuggestor: ({ filesystem, commandRunner }) =>
     new SpecCommandSuggestor(
       new AssetCommandSpecRegistry(),

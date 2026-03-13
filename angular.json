@@ -24,15 +24,15 @@
               ".sql": "text"
             },
             "assets": [
-              "src/packages/app-assets/src/assets",
+              "src/packages/assets/src/assets",
               {
                 "glob": "**/*",
-                "input": "src/packages/base-features/autocomplete/spec-command/data",
+                "input": "src/packages/features/autocomplete/spec-command/data",
                 "output": "/feature-data/base/spec-command"
               }
             ],
             "styles": [
-              "src/packages/app-assets/src/assets/styles/styles.css",
+              "src/packages/assets/src/assets/styles/styles.css",
               "node_modules/@xterm/xterm/css/xterm.css"
             ]
           },
