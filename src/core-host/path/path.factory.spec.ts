@@ -4,11 +4,11 @@ import {
   BashPathAdapter,
   PowerShellPathAdapter,
   ZshPathAdapter,
-  communityFeatureShellPathAdapterDefinitions,
-} from "@cogno/community-features";
+  baseFeatureShellPathAdapterDefinitions,
+} from "@cogno/base-features";
 
 beforeAll(() => {
-  PathFactory.setDefinitions([...communityFeatureShellPathAdapterDefinitions]);
+  PathFactory.setDefinitions([...baseFeatureShellPathAdapterDefinitions]);
 });
 
 describe("PathFactory", () => {

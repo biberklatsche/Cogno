@@ -10,23 +10,27 @@ export default defineConfig({
     alias: [
       {
         find: "@xterm/addon-ligatures",
-        replacement: "/src/app/__test__/mocks/xterm-addon-ligatures-mock.ts",
+        replacement: "/packages/__test__/mocks/xterm-addon-ligatures-mock.ts",
       },
     ],
     include: [
-      "src/app/src/**/*.spec.ts",
+      "packages/app-shell/**/*.spec.ts",
       "src/core-host/**/*.spec.ts",
-      "src/features-community/**/*.spec.ts",
+      "packages/base-features/**/*.spec.ts",
     ],
     exclude: [
-      "src/app/src/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
+      "packages/app-shell/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
     ],
     coverage: {
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
-      include: ["src/app/src/**/*.ts", "src/core-host/**/*.ts", "src/features-community/**/*.ts"],
+      include: [
+        "packages/app-shell/**/*.ts",
+        "src/core-host/**/*.ts",
+        "packages/base-features/**/*.ts",
+      ],
       exclude: [
-        "src/app/src/_tauri/**",
+        "packages/app-shell/_tauri/**",
         "**/*.spec.ts",
         "**/*.test.ts",
         "**/__test__/tauri_mocks/**",

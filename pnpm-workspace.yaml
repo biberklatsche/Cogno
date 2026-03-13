@@ -1,6 +1,8 @@
 packages:
-  - "src/app"
+  - "apps/cogno"
+  - "packages/app-shell"
+  - "packages/app-assets"
   - "src/core-sdk"
   - "src/core-host"
   - "src/core-ui"
-  - "src/features-community"
+  - "packages/base-features"

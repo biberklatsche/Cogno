@@ -8,31 +8,31 @@
   "projects": {
     "cogno": {
       "projectType": "application",
-      "root": "",
-      "sourceRoot": "src/app/src",
+      "root": "apps/cogno",
+      "sourceRoot": "apps/cogno",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/cogno",
-            "index": "src/app/index.html",
-            "browser": "src/app/main.ts",
+            "index": "apps/cogno/index.html",
+            "browser": "packages/app-shell/main.ts",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
             "loader": {
               ".sql": "text"
             },
             "assets": [
-              "src/app/assets",
+              "packages/app-assets/src/assets",
               {
                 "glob": "**/*",
-                "input": "src/features-community/autocomplete/spec-command/data/autocomplete",
-                "output": "/feature-data/community/spec-command"
+                "input": "packages/base-features/autocomplete/spec-command/data",
+                "output": "/feature-data/base/spec-command"
               }
             ],
             "styles": [
-              "src/app/assets/styles/styles.css",
+              "packages/app-assets/src/assets/styles/styles.css",
               "node_modules/@xterm/xterm/css/xterm.css"
             ]
           },

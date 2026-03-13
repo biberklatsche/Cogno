@@ -160,6 +160,30 @@ Notes:
 
 Tauri requires Rust and a working build toolchain, see [Tauri V2](https://v2.tauri.app/)
 
+## Repository Layout
+
+The repository is split into a thin app entry and reusable packages:
+
+- `apps/cogno`: base application entry
+- `packages/app-shell`: Angular app shell and bootstrap
+- `packages/app-assets`: shared styles, fonts, icons and static feature data
+- `packages/base-features`: open feature set
+- `src/core-sdk`: public contracts
+- `src/core-host`: host infrastructure
+- `src/core-ui`: shared UI building blocks
+
+Useful commands:
+
+```bash
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm build:desktop
+pnpm run release:build -- --tag v0.1.0 --skip-upload
+```
+
 ### macOS: Signierter und notarisiert Build
 
 Konfiguration:

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "rocks.cogno",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm dev:web",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist/cogno/browser"
@@ -42,7 +42,7 @@
       "icons/icon.icns"
     ],
     "resources": [
-      "../src/app/assets/**/*",
+      "../packages/app-assets/src/assets/**/*",
       "src/default_windows.config",
       "src/default_linux.config",
       "src/default_macos.config"

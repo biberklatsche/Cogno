@@ -5,10 +5,11 @@
   "licenseText": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.8.1",
   "scripts": {
-    "dev": "ng serve --configuration development",
+    "dev": "pnpm exec tauri dev --config src-tauri/tauri.conf.json",
+    "dev:web": "ng serve --configuration development",
     "lint": "pnpm lint:code && pnpm lint:architecture",
     "lint:code": "pnpm exec biome check .",
-    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/app/src/**/*.ts\" \"src/core-sdk/**/*.ts\" \"src/core-host/**/*.ts\" \"src/features-community/**/*.ts\"",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"packages/app-shell/**/*.ts\" \"src/core-sdk/**/*.ts\" \"src/core-host/**/*.ts\" \"packages/base-features/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

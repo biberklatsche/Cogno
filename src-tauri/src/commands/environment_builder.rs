@@ -1,3 +1,4 @@
+use crate::app_identity::get_app_identity;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use uuid::Uuid;
@@ -27,7 +28,10 @@ impl EnvironmentBuilder {
         // Mandatory environment variables
         env.insert("COGNO".to_string(), "1".to_string());
         env.insert("TERM".to_string(), "xterm-256color".to_string());
-        env.insert("TERM_PROGRAM".to_string(), "cogno2".to_string());
+        env.insert(
+            "TERM_PROGRAM".to_string(),
+            get_app_identity().term_program_name.to_string(),
+        );
         env.insert("COGNO_SESSION_ID".to_string(), session_id.clone());
 
         if enable_integration {

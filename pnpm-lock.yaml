@@ -133,7 +133,9 @@ importers:
         specifier: 4.0.18
         version: 4.0.18(@types/node@25.0.10)(happy-dom@20.8.3)(sass@1.97.3)
 
-  src/app: {}
+  apps/cogno: {}
+
+  packages/app-shell: {}
 
   src/core-host: {}
 
@@ -141,7 +143,7 @@ importers:
 
   src/core-ui: {}
 
-  src/features-community: {}
+  packages/base-features: {}
 
   src/features-pro: {}
 

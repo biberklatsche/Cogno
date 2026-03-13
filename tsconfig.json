@@ -11,8 +11,10 @@
       "@cogno/core-host/*": ["src/core-host/*"],
       "@cogno/core-ui": ["src/core-ui/index.ts"],
       "@cogno/core-ui/*": ["src/core-ui/*"],
-      "@cogno/community-features": ["src/features-community/index.ts"],
-      "@cogno/community-features/*": ["src/features-community/*"]
+      "@cogno/app-shell": ["packages/app-shell/main.ts"],
+      "@cogno/app-shell/*": ["packages/app-shell/*"],
+      "@cogno/base-features": ["packages/base-features/index.ts"],
+      "@cogno/base-features/*": ["packages/base-features/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "strict": true,
