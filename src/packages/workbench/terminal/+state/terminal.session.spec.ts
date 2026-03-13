@@ -205,4 +205,22 @@ describe('TerminalSession', () => {
         session.dispose();
         expect(mockProcessInfoDialogReference.close).toHaveBeenCalledTimes(1);
     });
+
+    it("should inject dropped file paths as shell-safe terminal input", () => {
+        session.initialize(terminalId, mockShellProfile);
+
+        session.insertPaths([
+            "C:\\temp\\plain.txt",
+            "C:\\temp\\with space.txt",
+        ]);
+
+        expect(mockBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+            path: ["app", "terminal"],
+            type: "InjectTerminalInput",
+            payload: {
+                terminalId,
+                text: "/c/temp/plain.txt '/c/temp/with space.txt'",
+            },
+        }));
+    });
 });

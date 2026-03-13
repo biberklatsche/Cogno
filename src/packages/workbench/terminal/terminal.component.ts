@@ -19,6 +19,7 @@ import {TerminalCommandHistoryStore} from "./+state/advanced/history/terminal-co
 import {TerminalHistoryPersistenceService} from "./+state/advanced/history/terminal-history-persistence.service";
 import {TerminalAutocompleteService} from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import {TerminalAutocompleteComponent} from "./+state/advanced/autocomplete/terminal-autocomplete.component";
+import { TerminalFileDropService } from "./terminal-file-drop.service";
 
 @Component({
     selector: 'app-terminal',
@@ -34,6 +35,7 @@ import {TerminalAutocompleteComponent} from "./+state/advanced/autocomplete/term
         TerminalCommandHistoryStore,
         TerminalHistoryPersistenceService,
         TerminalAutocompleteService,
+        TerminalFileDropService,
         TerminalSession,
         TerminalStateManager
     ],
@@ -52,7 +54,8 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         private menu: ContextMenuOverlayService,
         private terminalSession: TerminalSession,
         private terminalStateManager: TerminalStateManager,
-        private terminalAutocomplete: TerminalAutocompleteService
+        private terminalAutocomplete: TerminalAutocompleteService,
+        private terminalFileDropService: TerminalFileDropService,
     ) {
         this.isFocused = toSignal(this.terminalStateManager.isFocused$);
     }
@@ -67,6 +70,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     ngAfterViewInit(): void {
         this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
         this.terminalSession.initializeTerminal(this.terminalContainer.nativeElement);
+        this.terminalFileDropService.initialize(this.terminalContainer.nativeElement);
     }
 
     onContextMenu(event: MouseEvent) {

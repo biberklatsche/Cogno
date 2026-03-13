@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import type { CloseRequestedEvent } from "@tauri-apps/api/window";
+import type { CloseRequestedEvent, DragDropEvent } from "@tauri-apps/api/window";
 import { Observable } from "rxjs";
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { distinctUntilChanged } from "rxjs/operators";
@@ -11,6 +11,7 @@ export const AppWindow = {
     isVisible(): Promise<boolean>{ return win.isVisible()},
     isMaximized(): Promise<boolean>{return win.isMaximized()},
     isMinimized(): Promise<boolean>{return win.isMinimized()},
+    setFocus(): Promise<void> {return win.setFocus()},
     close(): Promise<void> {return win.close()},
     minimize(): Promise<void> {return win.minimize()},
     unminimize(): Promise<void> {return win.unminimize()},
@@ -130,6 +131,31 @@ export const AppWindow = {
             }
         };
     }).pipe(distinctUntilChanged()),
+
+    onDragDrop$: new Observable<DragDropEvent>((subscriber) => {
+        let unlisten: UnlistenFn | null = null;
+        let unsubscribed = false;
+
+        win
+            .onDragDropEvent((event) => {
+                subscriber.next(event.payload);
+            })
+            .then((fn) => {
+                if (unsubscribed) {
+                    try { fn(); } catch {}
+                } else {
+                    unlisten = fn;
+                }
+            })
+            .catch((err) => subscriber.error(err));
+
+        return () => {
+            unsubscribed = true;
+            if (unlisten) {
+                try { unlisten(); } catch {}
+            }
+        };
+    }),
 }
 
 export type WindowSize = { width: number, height: number };

@@ -197,6 +197,29 @@ export class TerminalSession {
         this.focusHandler?.focus();
     }
 
+    insertPaths(paths: readonly string[]): void {
+        if (!this.terminalId) {
+            return;
+        }
+
+        const renderedPaths = paths
+            .map((path) => this.renderInsertablePath(path))
+            .filter((path): path is string => Boolean(path));
+
+        if (renderedPaths.length === 0) {
+            return;
+        }
+
+        this.bus.publish({
+            path: ["app", "terminal"],
+            type: "InjectTerminalInput",
+            payload: {
+                terminalId: this.terminalId,
+                text: renderedPaths.join(" "),
+            },
+        });
+    }
+
     private openProcessInfoDialog(): void {
         if (!this.terminalId) {
             return;
@@ -226,6 +249,10 @@ export class TerminalSession {
             state$: this.stateManager.state$,
             commands$: this.stateManager.commands$,
         };
+    }
+
+    private renderInsertablePath(path: string): string | undefined {
+        return this.stateManager.renderPathForInsertion(path);
     }
 
     private buildNotificationContextMenuItems(): ContextMenuItem[] {
