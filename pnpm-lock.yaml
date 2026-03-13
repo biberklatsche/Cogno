@@ -135,7 +135,7 @@ importers:
 
   src/app: {}
 
-  src/packages/workbench: {}
+  src/packages/app: {}
 
   src/packages/core-host: {}
 

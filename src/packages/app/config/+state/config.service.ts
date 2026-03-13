@@ -18,7 +18,7 @@ import {ShellIntegrationWriter} from "../shell-integration.writer";
 import {Hash} from "../../common/hash/hash";
 import {Path} from "../../_tauri/path";
 import {CliConfigOverrides} from "../../_tauri/cli-config-overrides";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
 
 export interface ShellProfileEntry {
     readonly name: string;

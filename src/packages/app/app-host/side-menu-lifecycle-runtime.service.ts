@@ -6,7 +6,7 @@ import { Icon } from "@cogno/core-ui";
 import { KeybindService } from "../keybinding/keybind.service";
 import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class SideMenuLifecycleRuntimeService {

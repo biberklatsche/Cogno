@@ -165,7 +165,7 @@ Tauri requires Rust and a working build toolchain, see [Tauri V2](https://v2.tau
 The repository is split into a thin app entry and reusable packages:
 
 - `src/app`: base application entry
-- `src/packages/workbench`: Angular app shell and bootstrap
+- `src/packages/app`: Angular app shell and bootstrap
 - `src/packages/assets`: shared styles, fonts, icons and static feature data
 - `src/packages/features`: open feature set
 - `src/packages/core-sdk`: public contracts

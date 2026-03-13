@@ -3,9 +3,9 @@ const coreSdkPattern = "^src/packages/core-sdk/";
 const coreHostPattern = "^src/packages/core-host/";
 const coreUiPattern = "^src/packages/core-ui/";
 const featuresPattern = "^src/packages/features/";
-const workbenchPattern = "^src/packages/workbench/";
+const appPackagePattern = "^src/packages/app/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|workbench(?:$|/)|features(?:$|/)|core-sdk(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|pro-features(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|features(?:$|/)|core-sdk(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|pro-features(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -15,14 +15,14 @@ module.exports = {
       severity: "error",
       comment: "core-sdk must not import other internal modules.",
       from: { path: coreSdkPattern },
-      to: { path: "^(src/packages/workbench|src/packages/core-host|src/packages/features)/" },
+      to: { path: "^(src/packages/app|src/packages/core-host|src/packages/features)/" },
     },
     {
-      name: "core-host-must-not-import-workbench",
+      name: "core-host-must-not-import-app",
       severity: "error",
-      comment: "core-host must not depend on the UI and host workbench.",
+      comment: "core-host must not depend on the reusable app implementation.",
       from: { path: coreHostPattern },
-      to: { path: workbenchPattern },
+      to: { path: appPackagePattern },
     },
     {
       name: "core-host-must-not-import-features",
@@ -36,14 +36,14 @@ module.exports = {
       severity: "error",
       comment: "core-ui must not import other internal modules.",
       from: { path: coreUiPattern },
-      to: { path: "^(src/packages/workbench|src/packages/core-sdk|src/packages/core-host|src/packages/features)/" },
+      to: { path: "^(src/packages/app|src/packages/core-sdk|src/packages/core-host|src/packages/features)/" },
     },
     {
-      name: "features-must-not-import-workbench-or-core-host",
+      name: "features-must-not-import-app-or-core-host",
       severity: "error",
-      comment: "features must not depend on workbench or core-host.",
+      comment: "features must not depend on app or core-host.",
       from: { path: featuresPattern },
-      to: { path: "^(src/packages/workbench|src/packages/core-host)/" },
+      to: { path: "^(src/packages/app|src/packages/core-host)/" },
     },
     {
       name: "known-cogno-aliases-only",

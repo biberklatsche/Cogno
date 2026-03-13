@@ -11,7 +11,7 @@ import {AppBus} from "../../app-bus/app-bus";
 import {AppWindow} from "../../_tauri/window";
 import {ActionFired, ActionName} from "../../action/action.models";
 import {Config, FeatureMode} from "../../config/+models/config";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
 
 @Injectable({
   providedIn: 'root'

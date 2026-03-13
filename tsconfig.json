@@ -11,9 +11,10 @@
       "@cogno/core-host/*": ["src/packages/core-host/*"],
       "@cogno/core-ui": ["src/packages/core-ui/index.ts"],
       "@cogno/core-ui/*": ["src/packages/core-ui/*"],
-      "@cogno/workbench/*": ["src/packages/workbench/*"],
-      "@cogno/app": ["src/app/main.ts"],
-      "@cogno/app/*": ["src/app/*"],
+      "@cogno/app": ["src/packages/app/app.component.ts"],
+      "@cogno/app/*": ["src/packages/app/*"],
+      "@cogno/app-setup": ["src/app/main.ts"],
+      "@cogno/app-setup/*": ["src/app/*"],
       "@cogno/features": ["src/packages/features/index.ts"],
       "@cogno/features/*": ["src/packages/features/*"]
     },

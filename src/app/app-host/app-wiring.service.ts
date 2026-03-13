@@ -6,12 +6,12 @@ import type {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-sdk";
-import type { ActionName } from "@cogno/workbench/action/action.models";
-import { sideMenuFeatureDefinitions } from "@cogno/workbench/menu/side-menu/+state/side-menu-feature-definitions";
+import type { ActionName } from "@cogno/app/action/action.models";
+import { sideMenuFeatureDefinitions } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { featureApplicationFeatureCollection } from "@cogno/features";
 import type { Icon } from "@cogno/core-ui";
-import { DatabaseMigrationService } from "@cogno/workbench/app-host/database-migration.service";
-import { coreDatabaseMigrations } from "@cogno/workbench/app-host/database-migrations";
+import { DatabaseMigrationService } from "@cogno/app/app-host/database-migration.service";
+import { coreDatabaseMigrations } from "@cogno/app/app-host/database-migrations";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {

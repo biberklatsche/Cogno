@@ -5,14 +5,14 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { CliActionService } from "@cogno/workbench/cli-command/cli-action.service";
-import { GlobalErrorHandler } from "@cogno/workbench/common/error/global-error.handler";
-import { ConfigService, RealConfigService } from "@cogno/workbench/config/+state/config.service";
-import { KeybindService } from "@cogno/workbench/keybinding/keybind.service";
-import { NativeMenuService } from "@cogno/workbench/menu/native-menu/native-menu.service";
-import { TelegramBotRelayService } from "@cogno/workbench/notification/+state/telegram-bot-relay.service";
-import { StyleService } from "@cogno/workbench/style/style.service";
-import { WindowService } from "@cogno/workbench/window/window.service";
+import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
+import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
+import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
+import { KeybindService } from "@cogno/app/keybinding/keybind.service";
+import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
+import { TelegramBotRelayService } from "@cogno/app/notification/+state/telegram-bot-relay.service";
+import { StyleService } from "@cogno/app/style/style.service";
+import { WindowService } from "@cogno/app/window/window.service";
 import { NotificationService } from "@cogno/features/side-menu/notification/notification.service";
 import { TerminalSearchService } from "@cogno/features/side-menu/terminal-search/terminal-search.service";
 import {
@@ -24,15 +24,15 @@ import {
   terminalSearchHostPortToken,
   workspaceHostPortToken,
 } from "@cogno/core-sdk";
-import { CommandPaletteHostPortAdapterService } from "@cogno/workbench/app-host/command-palette-host-port.adapter.service";
-import { CommandRunnerHostService } from "@cogno/workbench/app-host/command-runner-host.service";
-import { SideMenuLifecycleRuntimeService } from "@cogno/workbench/app-host/side-menu-lifecycle-runtime.service";
-import { DatabaseAccessHostService } from "@cogno/workbench/app-host/database-access-host.service";
-import { FilesystemHostService } from "@cogno/workbench/app-host/filesystem-host.service";
-import { NotificationHostPortAdapterService } from "@cogno/workbench/app-host/notification-host-port.adapter.service";
-import { TerminalSearchHostPortAdapterService } from "@cogno/workbench/app-host/terminal-search-host-port.adapter.service";
-import { WorkspaceHostApplicationService } from "@cogno/workbench/app-host/workspace-host-application.service";
-import { WorkspaceHostPortAdapterService } from "@cogno/workbench/app-host/workspace-host-port.adapter.service";
+import { CommandPaletteHostPortAdapterService } from "@cogno/app/app-host/command-palette-host-port.adapter.service";
+import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
+import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
+import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
+import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
+import { NotificationHostPortAdapterService } from "@cogno/app/app-host/notification-host-port.adapter.service";
+import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
+import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
+import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
 import { AppWiringService } from "./app-host/app-wiring.service";
 
 export const appConfig: ApplicationConfig = {
