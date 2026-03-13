@@ -51,6 +51,16 @@ That keeps the user config readable while still exposing the full settings surfa
 cogno config show --defaults
 ```
 
+User files live in the Cogno home directory:
+
+- `~/.cogno2`
+- in development builds: `~/.cogno2-dev`
+
+There you will find:
+
+- the user settings
+- generated shell integration scripts under `shell-integration/`
+
 
 ## Development
 
