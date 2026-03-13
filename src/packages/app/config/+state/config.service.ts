@@ -9,7 +9,7 @@ import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ShellConfigurator} from "../shell-configurator";
 import {DefaultConfig} from "../../_tauri/default-config";
-import {ConfigWriter} from "./config.writer";
+import {InitialConfigOverridesWriter} from "./initial-config-overrides.writer";
 import {ActionFired} from "../../action/action.models";
 import {Opener} from "../../_tauri/opener";
 import {ShellProfile} from "../+models/shell-config";
@@ -204,6 +204,7 @@ export class RealConfigService extends ConfigService {
 
     private async loadConfig() {
         this._unwatch?.unsubscribe();
+        const settingsExtensions = this.wiringService.getSettingsExtensions();
 
         const configDir = Environment.configDir();
         if (!await Fs.exists(configDir)) {
@@ -216,26 +217,20 @@ export class RealConfigService extends ConfigService {
             await Fs.mkdir(configFileDirectoryPath, {recursive: true});
         }
 
-        if (!await Fs.exists(path)) {
-            // Initial config in new format
-            const userConfig: Config = {
-                shell: {
-                    default: '',
-                    order: [],
-                    profiles: {},
-                },
-            };
+        const defaultConfigString = await DefaultConfig.read();
 
+        if (!await Fs.exists(path)) {
+            const userConfig = ConfigReader.fromStringToConfig(defaultConfigString, "", settingsExtensions);
             await this.shells.apply(userConfig, this.wiringService.getShellSupportDefinitions());
-            await Fs.writeTextFile(path, ConfigWriter.toDotString(userConfig));
+            await Fs.writeTextFile(path, InitialConfigOverridesWriter.toDotString(userConfig));
         }
 
-        const defaultConfigString = await DefaultConfig.read();
         let userConfigString = await Fs.readTextFile(path);
         userConfigString = await this.applyCliSetOverrides(userConfigString);
         const {config, diagnostics} = ConfigReader.fromStringToConfigWithDiagnostics(
             defaultConfigString,
-            userConfigString
+            userConfigString,
+            settingsExtensions,
         );
 
         // Ensure shell integration scripts are installed

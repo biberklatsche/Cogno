@@ -12,6 +12,8 @@ export * from "./side-menu/workspace/workspace.repository";
 export * from "./side-menu/workspace/workspace.service";
 export * from "./side-menu/side-menu-feature-definitions";
 export * from "./feature-application-feature.collection";
+export * from "./feature-settings.schemas";
+export * from "./feature-settings.extension";
 export * from "./autocomplete/terminal-autocomplete-suggestor-definitions";
 export * from "./autocomplete/spec-command/spec-command.suggestor-definition";
 export * from "./autocomplete/spec-command/spec-command.suggestor";

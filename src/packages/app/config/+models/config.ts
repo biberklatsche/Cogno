@@ -16,12 +16,12 @@ import {
     FeatureTerminalSchema,
     FeatureTerminalSearchSchema,
     FeatureWorkspaceSchema
-} from "./feature-config";
+} from "@cogno/features/feature-settings.schemas";
 import {KeybindsSchema, Keybinding} from "./keybind-config";
 
 export {HexColor, FeatureMode, Font, Color, Cursor, Padding, ShellConfig, ShellType, Selection, Scrollbar, Keybinding};
 
-export const ConfigSchema = z.object({
+export const baseConfigSchemaShape = {
     keybind: KeybindsSchema.optional(),
     enable_webgl: z.boolean().optional(),
     enable_watch_config: z.boolean().optional(),
@@ -43,12 +43,20 @@ export const ConfigSchema = z.object({
     selection: SelectionSchema.optional(),
     menu: MenuSchema.optional(),
     scrollbar: ScrollbarSchema.optional(),
+    prompt: PromptConfigSchema.optional(),
+} satisfies z.ZodRawShape;
+
+export const featureConfigSchemaShape = {
     workspace: FeatureWorkspaceSchema.optional(),
     notification: FeatureNotificationSchema.optional(),
     command_palette: FeatureCommandPaletteSchema.optional(),
     terminal: FeatureTerminalSchema.optional(),
     terminal_search: FeatureTerminalSearchSchema.optional(),
-    prompt: PromptConfigSchema.optional(),
+} satisfies z.ZodRawShape;
+
+export const ConfigSchema = z.object({
+    ...baseConfigSchemaShape,
+    ...featureConfigSchemaShape,
 }).strict();
 
-export type Config = z.infer<typeof ConfigSchema>;
+export type Config = z.infer<typeof ConfigSchema> & Record<string, unknown>;

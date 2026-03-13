@@ -2,6 +2,7 @@ import { Type } from "@angular/core";
 import { ApplicationFeatureCollectionContract } from "@cogno/core-sdk";
 import { featureTerminalAutocompleteSuggestorDefinitions } from "./autocomplete/terminal-autocomplete-suggestor-definitions";
 import { featureDatabaseMigrations } from "./database-migrations";
+import { featureSettingsExtension } from "./feature-settings.extension";
 import {
   featureShellDefinitions,
   featureShellPathAdapterDefinitions,
@@ -15,5 +16,6 @@ export const featureApplicationFeatureCollection = {
   shellPathAdapterDefinitions: featureShellPathAdapterDefinitions,
   shellSupportDefinitions: featureShellSupportDefinitions,
   sideMenuFeatureDefinitions: featureSideMenuFeatureDefinitions,
+  settingsExtensions: [featureSettingsExtension],
   terminalAutocompleteSuggestorDefinitions: featureTerminalAutocompleteSuggestorDefinitions,
 } as const satisfies ApplicationFeatureCollectionContract<Type<unknown>, string, string>;

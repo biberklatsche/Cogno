@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { ConfigWriter } from './config.writer';
+import { InitialConfigOverridesWriter } from './initial-config-overrides.writer';
 import { ConfigReader } from './config.reader';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,7 +16,7 @@ beforeAll(() => {
   DEFAULTS = ConfigReader.fromStringToConfig(defaultText, '');
 });
 
-describe('ConfigWriter', () => {
+describe('InitialConfigOverridesWriter', () => {
 
   it('toDotString can render without comments when asComments=false', () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
@@ -24,7 +24,7 @@ describe('ConfigWriter', () => {
     if (!curr.scrollbar) curr.scrollbar = {};
     curr.scrollbar.scrollback_lines = 1234;
 
-    const text = ConfigWriter.toDotString(curr, false);
+    const text = InitialConfigOverridesWriter.toDotString(curr, false);
     const lines = text.trimEnd().split('\n');
 
     // Ensure no comment lines are present
@@ -42,7 +42,7 @@ describe('ConfigWriter', () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
     curr.enable_webgl = true;
 
-    const text = ConfigWriter.toDotString(curr, true);
+    const text = InitialConfigOverridesWriter.toDotString(curr, true);
     // Since we don't know the exact descriptions without looking at ConfigSchema closely,
     // we check for general presence of comments.
     expect(text).toContain('# ');
@@ -61,7 +61,7 @@ describe('ConfigWriter', () => {
     
     // We can't easily pass a custom schema to toDotString without changing the signature,
     // but we can test it through the public API with different config structures.
-    const text = ConfigWriter.toDotString(mockConfig, true);
+    const text = InitialConfigOverridesWriter.toDotString(mockConfig, true);
     expect(text).toContain('scrollbar.slider_color = 11111');
   });
 
@@ -69,7 +69,7 @@ describe('ConfigWriter', () => {
       const config = {
           some_array: [1, 2, 'three']
       } as any;
-      const text = ConfigWriter.toDotString(config, false);
+      const text = InitialConfigOverridesWriter.toDotString(config, false);
       expect(text).toContain('some_array = [1,2,three]');
   });
 
@@ -82,7 +82,7 @@ describe('ConfigWriter', () => {
               d: 2
           }
       } as any;
-      const text = ConfigWriter.toDotString(config, false);
+      const text = InitialConfigOverridesWriter.toDotString(config, false);
       const lines = text.trim().split('\n');
       expect(lines).toContain('a.b.c = 1');
       expect(lines).toContain('a.d = 2');
@@ -107,7 +107,7 @@ describe('ConfigWriter', () => {
       // We need to call private methods or find a way to use our schema.
       // Since toDotString uses ConfigSchema, we can't easily swap it.
       // But we can call the private toDotProperties via casting.
-      const lines = (ConfigWriter as any).toDotProperties(config, "", schema, true);
+      const lines = (InitialConfigOverridesWriter as any).toDotProperties(config, "", schema, true);
       const text = lines.join('\n');
       
       expect(text).toContain('# A sub value');
@@ -119,23 +119,23 @@ describe('ConfigWriter', () => {
       const s2 = z.string().optional().describe('desc2');
       const s3 = z.string().nullable().describe('desc3');
       
-      expect((ConfigWriter as any).getSchemaDescription(s1)).toBe('desc1');
-      expect((ConfigWriter as any).getSchemaDescription(s2)).toBe('desc2');
-      expect((ConfigWriter as any).getSchemaDescription(s3)).toBe('desc3');
+      expect((InitialConfigOverridesWriter as any).getSchemaDescription(s1)).toBe('desc1');
+      expect((InitialConfigOverridesWriter as any).getSchemaDescription(s2)).toBe('desc2');
+      expect((InitialConfigOverridesWriter as any).getSchemaDescription(s3)).toBe('desc3');
   });
 
   it('handles extractShape with union/intersection (fallback)', () => {
       const s = z.union([z.string(), z.number()]);
-      const res = (ConfigWriter as any).getChildSchema(s, 'anything');
+      const res = (InitialConfigOverridesWriter as any).getChildSchema(s, 'anything');
       expect(res).toBeUndefined();
   });
 
   it('handles getChildSchema with null parent', () => {
-      expect((ConfigWriter as any).getChildSchema(null, 'key')).toBeUndefined();
+      expect((InitialConfigOverridesWriter as any).getChildSchema(null, 'key')).toBeUndefined();
   });
 
   it('handles getChildSchema with schema that has no _def', () => {
-      expect((ConfigWriter as any).getChildSchema({}, 'key')).toBeUndefined();
+      expect((InitialConfigOverridesWriter as any).getChildSchema({}, 'key')).toBeUndefined();
   });
 
   it('renders complex values via JSON.stringify', () => {
@@ -145,19 +145,19 @@ describe('ConfigWriter', () => {
       // We need to bypass the isPlainObject check for the leaf value to trigger renderValue with object
       // But toDotProperties recursion will treat it as plain object.
       // We can test renderValue directly.
-      expect((ConfigWriter as any).renderValue({a:1})).toBe('{"a":1}');
+      expect((InitialConfigOverridesWriter as any).renderValue({a:1})).toBe('{"a":1}');
   });
 
   it('handles getSchemaDescription with null/undefined', () => {
-      expect((ConfigWriter as any).getSchemaDescription(null)).toBeUndefined();
-      expect((ConfigWriter as any).getSchemaDescription(undefined)).toBeUndefined();
+      expect((InitialConfigOverridesWriter as any).getSchemaDescription(null)).toBeUndefined();
+      expect((InitialConfigOverridesWriter as any).getSchemaDescription(undefined)).toBeUndefined();
   });
 
   it('renders keybinds multiline', () => {
       const config = {
           keybind: ['a=b', 'c=d']
       } as any;
-      const text = ConfigWriter.toDotString(config, false);
+      const text = InitialConfigOverridesWriter.toDotString(config, false);
       expect(text).toContain('keybind = a=b\nkeybind = c=d');
   });
 
@@ -169,7 +169,7 @@ describe('ConfigWriter', () => {
               }
           }
       } as any;
-      const text = ConfigWriter.toDotString(config, false);
+      const text = InitialConfigOverridesWriter.toDotString(config, false);
       expect(text).toContain('terminal.progress_bar.enabled = false');
   });
 });

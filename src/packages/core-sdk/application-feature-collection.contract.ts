@@ -1,3 +1,4 @@
+import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
 import { DatabaseMigrationContract } from "./database-migration.contract";
 import { ShellDefinitionContract } from "./shell-definition.contract";
 import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition.contract";
@@ -17,6 +18,7 @@ export interface ApplicationFeatureCollectionContract<
   readonly sideMenuFeatureDefinitions: ReadonlyArray<
     SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
   >;
+  readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
   readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
     TerminalAutocompleteSuggestorDefinitionContract
   >;

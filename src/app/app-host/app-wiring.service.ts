@@ -1,6 +1,7 @@
 import { Injectable, type Type } from "@angular/core";
 import { CoreHostFeatureRegistryHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
 import type {
+  ApplicationSettingsExtensionContract,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
@@ -56,6 +57,10 @@ export class AppWiringService {
     SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName>
   > {
     return this.featureRegistryHost.getSideMenuFeatureDefinitions();
+  }
+
+  getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
+    return this.featureRegistryHost.getSettingsExtensions();
   }
 
   getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<

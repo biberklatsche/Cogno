@@ -1,5 +1,6 @@
 import {
   ApplicationFeatureCollectionContract,
+  ApplicationSettingsExtensionContract,
   DatabaseMigrationContract,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
@@ -17,6 +18,7 @@ export class CoreHostFeatureRegistryHost<
   private readonly databaseMigrations: DatabaseMigrationContract[] = [];
   private readonly shellDefinitions: ShellDefinitionContract[] = [];
   private readonly shellSupportDefinitions: ShellSupportDefinitionContract[] = [];
+  private readonly settingsExtensions: ApplicationSettingsExtensionContract[] = [];
   private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] = [];
 
   constructor(
@@ -33,6 +35,7 @@ export class CoreHostFeatureRegistryHost<
     this.databaseMigrations.push(...applicationFeatureCollection.databaseMigrations);
     this.shellDefinitions.push(...applicationFeatureCollection.shellDefinitions);
     this.shellSupportDefinitions.push(...applicationFeatureCollection.shellSupportDefinitions);
+    this.settingsExtensions.push(...applicationFeatureCollection.settingsExtensions);
     this.terminalAutocompleteSuggestorDefinitions.push(
       ...applicationFeatureCollection.terminalAutocompleteSuggestorDefinitions,
     );
@@ -60,6 +63,10 @@ export class CoreHostFeatureRegistryHost<
     SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
   > {
     return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitions();
+  }
+
+  getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
+    return this.settingsExtensions;
   }
 
   getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<
