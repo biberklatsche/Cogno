@@ -1,86 +1,74 @@
-# ⚡ Cogno 2.0 – Terminal Productivity, Reimagined with Tauri
+# Cogno
 
-> The next evolution of the modern developer terminal.
+Terminal work, without terminal chaos.
 
-Cogno 2.0 is the spiritual successor of [Cogno](https://gitlab.com/cogno-rockers/cogno) — now rebuilt on **Tauri** for better performance, security, and native system integration.
+## What Cogno Is
 
----
+Cogno is a terminal workspace built for heavy daily shell use:
 
-## ✨ What's new in Cogno 2.0?
+- autocomplete for 1000+ CLI commands
+- multiple tabs and split panes
+- editor-like input behavior
+- command palette and terminal search
+- simple configuration
+- and more...
 
-Cogno 2.0 retains the familiar features you love — like autocomplete, remote shell support, workspaces, and many more — but under the hood, it's powered by **Tauri** instead of Electron.
+The goal is simple: make terminal work feel organized instead of noisy.
 
-This architectural shift brings major improvements:
+## Current Features
 
-- 🪶 **Massively reduced bundle size** (from ~200 MB down to ~10 MB)
-- 🚀 **Startup time under 100 ms** on most machines
-- 🔒 **Stronger native security** (isolated system APIs, no Node.js context)
-- 🛠️ **Written in Rust for speed & safety**
+- multiple tabs with custom titles and colors
+- split panes with drag-and-drop rearranging
+- saved workspaces
+- command palette
+- terminal search with highlights
+- shell integration for supported shells
+- smart history and autocomplete
+- editor-like input behavior
+- process information for active shells
+- configurable shortcuts
+- drag and drop for file paths, tabs, and panes
+- local CLI for config and actions
+- OS and in-app OSC 9 notifications
+- OSC 9 progress / loading bar support
 
-> 👉 Looking for the original Electron-based version? Check out [Cogno 1.x on GitLab](https://gitlab.com/cogno-rockers/cogno)
+## Why It Exists
 
----
+Heavy terminal use becomes messy fast.
 
-## 🧠 Why Tauri?
+Once you work across several repositories, long-running processes, repeated commands, and multiple shells at once, a plain terminal window stops feeling like enough.
 
-Electron has served us well, but Tauri offers a modern native-first approach:
+Cogno focuses on flow: keeping terminal work organized without getting in the way.
 
-| Feature           | Electron           | Tauri (Cogno 2.0)      |
-|-------------------|--------------------|-------------------------|
-| Core language     | JavaScript + Node  | Rust + Web frontend     |
-| Bundle size       | ~200–250 MB        | ~10-20 MB                |
-| RAM usage         | High (~200–500 MB) | Very low (~50–80 MB)    |
-| App isolation     | Weak               | Strong + secure APIs    |
-| Dev experience    | Node ecosystem     | Web + Rust power        |
+## Quick Start
 
-Cogno 2.0 embraces this shift fully — no Node.js runtime, no Electron overhead, and full control over file system, shell processes, and security.
+### Prerequisites
 
----
+- Node.js
+- `pnpm`
+- Rust toolchain
+- Tauri prerequisites for your platform
 
-## 📦 Status
-
-**Work in progress**  
-This is an ongoing rebuild. Features are being reintroduced one by one in the Tauri-native architecture.
-
-### 🦀 Rust (Backend)
-- [x] Launch shell process
-- [x] Detect available fonts
-- [x] Detect available shells
-- [x] AES crypto module
-- [x] File operations
-- [ ] Autoupdate process
-- [ ] Save window settings
-
-### 🌐 Frontend
-- [x] Load settings
-- [ ] Edit settings
-- [ ] Save settings
-- [ ] Watch settings file
-- [x] Integrate xterm.js
-- [ ] Custom window styling
-- [ ] Grid management
-- [ ] Tabs management
-- [ ] Load workspaces
-- [ ] Save workspaces
-- [ ] Edit workspaces
-- [ ] Simple DB implementation
-- [ ] Autoupdate process
----
-
-## 🔗 Original Cogno
-
-The original version of [Cogno (1.x)]((https://gitlab.com/cogno-rockers/cogno)), built on Electron, is still actively maintained by me.
-However, as development on Cogno 2.0 progresses, my focus is shifting more and more to this new Tauri-based version.
-New features and improvements will primarily land here going forward.
-
----
-
-## 🧩 CLI usage
-
-The `cogno` binary supports running the app, reading config, and triggering actions.
+### Install
 
 ```bash
-cogno [--config <path>] [--set k=v ...]
+pnpm install
+```
+### Run
+```bash
+pnpm dev
+```
+###Build
+```bash
+pnpm build
+pnpm build:desktop
+```
+## CLI
+
+Cogno exposes a local CLI for inspecting config and triggering actions.
+
+```bash
+cogno [--config <path>] [--set key=value ...]
   run
   action
     list
@@ -91,136 +79,76 @@ cogno [--config <path>] [--set k=v ...]
     path
 ```
 
-### Options
-
-- `--config <path>`: Use a different config file for this process.
-- `--set k=v`: Override config key `k` with value `v` for this process only. You can pass `--set` multiple times.
-
-### Commands
-
-- `run`: Starts Cogno normally. This is optional because it is the default command.
-- `action list`: Prints all supported `ACTION_NAMES`.
-- `action run <name> [args...]`: Runs an action by name. Extra args are forwarded to the action.
-- `config path`: Prints the path of the active config file.
-- `config get <key>`: Prints one resolved config value by key.
-- `config show`: Prints the active config content.
-- `config show --defaults`: Prints bundled default config content.
-
-### Examples
-
+Examples:
 ```bash
-# Start with the default config
-cogno
-
-# Start with a custom config file
-cogno --config /tmp/cogno.config
-
-# Read one config key with a temporary override
-cogno --set shell.default=PowerShell config get shell.default
-
-# List and run actions
+cogno --help
+cogno config show --defaults
+cogno config get shell.default
 cogno action list
 cogno action run open_config
 ```
+## Configuration
 
----
+Cogno ships with bundled defaults and keeps user overrides small.
 
-## Telegram Notification Relay
+That keeps the user config readable while still exposing the full settings surface through:
 
-You can forward notifications to a Telegram bot and forward Telegram replies back into the currently focused terminal.
-
-Config keys:
-
-```ini
-notification.highlight_terminal_on_activity = true
-notification.max_notifications_in_overview = 30
-
-notification.app.available = true
-notification.app.enabled = true
-notification.app.notification_duration_seconds = 5
-
-notification.os.available = true
-notification.os.enabled = false
-
-notification.telegram.available = true
-notification.telegram.enabled = true
-notification.telegram.bot_token = <your_bot_token>
-notification.telegram.chat_id = <your_chat_id>
-notification.telegram.forward_replies_to_terminal = true
+```bash
+cogno config show --defaults
 ```
 
-Notes:
-- Replies are injected as terminal input and executed with newline.
-- Replies are accepted only from the configured `chat_id`.
-- When no terminal is focused, the reply is stored as an in-app warning notification.
+## Supported Shells
 
----
+Cogno currently supports workflows around:
 
-## 🛠️ Build instructions
+- Bash
+- Zsh
+- PowerShell
+- Git Bash
 
-Tauri requires Rust and a working build toolchain, see [Tauri V2](https://v2.tauri.app/)
+Shell integration and shell-aware features continue to evolve over time.
 
-## Repository Layout
+## Development
 
-The repository is split into a thin app entry and reusable packages:
+Main areas:
 
-- `src/app`: base application entry
-- `src/packages/app`: Angular app shell and bootstrap
-- `src/packages/assets`: shared styles, fonts, icons and static feature data
-- `src/packages/features`: open feature set
-- `src/packages/core-sdk`: public contracts
-- `src/packages/core-host`: host infrastructure
-- `src/packages/core-ui`: shared UI building blocks
+- src/app
+- src/packages/features
+- src/packages/core-sdk
+- src/packages/core-host
+- src/packages/core-ui
+- src-tauri
 
 Useful commands:
 
 ```bash
-pnpm dev
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
 pnpm build:desktop
-pnpm run release:build -- --tag v0.1.0 --skip-upload
 ```
 
-### macOS: Signierter und notarisiert Build
+## Status
 
-Konfiguration:
-- `src-tauri/tauri.conf.json` nutzt `bundle.macOS` mit `hardenedRuntime` und `entitlements`.
-- `src-tauri/entitlements.plist` ist hinterlegt.
+Cogno is under active development and already usable, but parts of the architecture and feature set are still evolving.
 
-Erforderliche Umgebungsvariablen:
-- Code Signing:
-  - `APPLE_SIGNING_IDENTITY` oder `APPLE_CERTIFICATE` (+ `APPLE_CERTIFICATE_PASSWORD`)
-- Notarisierung:
-  - `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`
-  - oder alternativ `APPLE_API_KEY`, `APPLE_API_ISSUER`, `APPLE_API_KEY_PATH`
-- Optional:
-  - `APPLE_PROVIDER_SHORT_NAME`
+The current direction is straightforward:
 
-Alternative wie in der alten Electron-App:
-- `scripts/build-tauri-macos-signed-notarized.mjs` liest automatisch `~/.apple/credentials`
-- Erwartetes Format:
+- keep the terminal fast
+- keep the workspace clear
+- keep the architecture clean enough to grow
+- keep the shell integration practical and robust
+- expand terminal protocol support over time
 
-```json
-{
-  "appleId": "dein@apple.id",
-  "teamId": "ABCDE12345",
-  "appleIdPassword": "xxxx-xxxx-xxxx-xxxx"
-}
-```
+## Open Source
 
-Die Werte werden auf `APPLE_ID`, `APPLE_TEAM_ID` und `APPLE_PASSWORD` gemappt.
+Cogno is open source and built in the open.
 
-Build ausführen:
+The goal is to make the core terminal genuinely useful for daily work, grow it with community feedback, and keep the foundation strong as the project evolves.
 
-```bash
-npm run tauri:build:macos:signed-notarized
-```
+## Origin
 
-Direkt mit Tauri CLI:
+Cogno is the successor to the original Electron-based Cogno project:
 
-```bash
-npx tauri build --bundles app,dmg
-```
+[Original Cogno project](https://gitlab.com/cogno-rockers/cogno)
