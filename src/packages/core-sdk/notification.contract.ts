@@ -25,11 +25,14 @@ export interface NotificationChannelDispatchRequestContract {
 export interface NotificationChannelContract {
   readonly displayName: string;
   readonly id: string;
+  readonly sortOrder: number;
   isAvailable?(): boolean;
   dispatch(notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract): Promise<void> | void;
 }
 
 export interface NotificationReplyChannelContract extends NotificationChannelContract {
-  startReceivingReplies?(): Promise<void> | void;
+  startReceivingReplies?(
+    settings: Readonly<Record<string, unknown>>,
+  ): Promise<void> | void;
   stopReceivingReplies?(): Promise<void> | void;
 }

@@ -37,6 +37,10 @@ describe("NotificationDispatchService", () => {
           available: true,
           enabled: false,
         },
+        "reply-channel": {
+          available: true,
+          enabled: true,
+        },
       },
     } as Config);
     dispatchNotificationMock = vi.fn();
@@ -86,6 +90,7 @@ describe("NotificationDispatchService", () => {
     createService([notificationReplyChannel], destroyRef);
 
     expect(startReceivingRepliesMock).toHaveBeenCalledTimes(1);
+    expect(startReceivingRepliesMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
 
     destroyRef.destroy();
 
@@ -117,6 +122,7 @@ function createNotificationChannel({
   return {
     displayName: id.toUpperCase(),
     id,
+    sortOrder: 100,
     dispatch,
   };
 }

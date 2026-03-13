@@ -9,6 +9,7 @@ import { NotificationOs } from "../../_tauri/notification";
 export class OsNotificationChannelService implements NotificationChannelContract {
   readonly displayName = "OS";
   readonly id = "os";
+  readonly sortOrder = 200;
 
   async dispatch(notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract): Promise<void> {
     await NotificationOs.send(

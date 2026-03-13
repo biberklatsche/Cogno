@@ -350,9 +350,12 @@ export class TerminalSession {
 
     private getAvailableNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
         const availability = this.getNotificationAvailability();
-        return this.getRegisteredNotificationChannels().filter(
-            (notificationChannel) => availability[notificationChannel.id] ?? false,
-        );
+        return this.getRegisteredNotificationChannels()
+            .filter((notificationChannel) => availability[notificationChannel.id] ?? false)
+            .sort(
+                (leftNotificationChannel, rightNotificationChannel) =>
+                    rightNotificationChannel.sortOrder - leftNotificationChannel.sortOrder,
+            );
     }
 
     private getRegisteredNotificationChannels(): ReadonlyArray<NotificationChannelContract> {

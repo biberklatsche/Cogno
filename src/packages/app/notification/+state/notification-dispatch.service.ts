@@ -18,7 +18,12 @@ export class NotificationDispatchService {
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
-    this.startReplyChannels();
+    this.configService.config$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => {
+        void this.reconcileReplyChannels();
+      });
+
     this.appBus
       .on$({ path: ["notification"], type: "Notification" })
       .pipe(takeUntilDestroyed(destroyRef))
@@ -80,11 +85,22 @@ export class NotificationDispatchService {
     return settings;
   }
 
-  private startReplyChannels(): void {
+  private async reconcileReplyChannels(): Promise<void> {
     for (const notificationChannel of this.appWiringService.getNotificationChannels()) {
-      if (isNotificationReplyChannel(notificationChannel)) {
-        void notificationChannel.startReceivingReplies?.();
+      if (!isNotificationReplyChannel(notificationChannel)) {
+        continue;
       }
+
+      const notificationChannelSettings = this.getNotificationChannelSettings(notificationChannel.id);
+      const channelAvailable = notificationChannelSettings.available ?? true;
+      const channelEnabled = notificationChannelSettings.enabled ?? false;
+
+      if (channelAvailable && channelEnabled) {
+        await notificationChannel.startReceivingReplies?.(notificationChannelSettings);
+        continue;
+      }
+
+      await notificationChannel.stopReceivingReplies?.();
     }
   }
 

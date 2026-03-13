@@ -10,6 +10,7 @@ import type { AppNotificationToast, AppNotificationToastId } from "./app-notific
 export class AppNotificationChannelService implements NotificationChannelContract {
   readonly displayName = "App";
   readonly id = "app";
+  readonly sortOrder = 300;
 
   private appNotificationToastIdCounter = 0;
   private readonly appNotificationToastTimerById = new Map<
