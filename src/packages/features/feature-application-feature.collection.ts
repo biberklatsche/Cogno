@@ -12,6 +12,7 @@ import { featureSideMenuFeatureDefinitions } from "./side-menu/side-menu-feature
 
 export const featureApplicationFeatureCollection = {
   databaseMigrations: featureDatabaseMigrations,
+  notificationChannels: [],
   shellDefinitions: featureShellDefinitions,
   shellPathAdapterDefinitions: featureShellPathAdapterDefinitions,
   shellSupportDefinitions: featureShellSupportDefinitions,

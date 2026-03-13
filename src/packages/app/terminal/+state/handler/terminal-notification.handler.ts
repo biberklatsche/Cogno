@@ -25,7 +25,7 @@ export class TerminalNotificationHandler implements ITerminalHandler {
             if (!message) return true;
 
             const channels = this.channelResolver?.();
-            if (channels && !channels.app && !channels.os && !channels.telegram) {
+            if (channels && !hasEnabledNotificationChannel(channels)) {
                 return true;
             }
             this.stateManager.markUnreadNotification();
@@ -83,4 +83,8 @@ export class TerminalNotificationHandler implements ITerminalHandler {
             this._disposables = undefined;
         }
     }
+}
+
+function hasEnabledNotificationChannel(notificationChannels: NotificationChannels): boolean {
+    return Object.values(notificationChannels).some(Boolean);
 }

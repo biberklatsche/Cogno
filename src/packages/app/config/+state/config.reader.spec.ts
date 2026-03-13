@@ -17,7 +17,7 @@ describe('ConfigReader', () => {
         const text = `
       # comment
       ; another comment
-      enable_webgl=true
+      terminal.webgl=true
       scrollbar.scrollback_lines=12345
       cursor.blink=false
       shell.default=default
@@ -30,7 +30,7 @@ describe('ConfigReader', () => {
         const parsed = ConfigReader.fromStringToConfig(defaultText, text);
 
         // Basic values
-        expect(parsed.enable_webgl).toBe(true);
+        expect(parsed.terminal?.webgl).toBe(true);
         expect(parsed.scrollbar!.scrollback_lines).toBe(12345);
         expect(parsed.cursor!.blink).toBe(false);
 
@@ -45,13 +45,13 @@ describe('ConfigReader', () => {
 
     it('fills defaults from default config and keeps overrides', () => {
         const text = `
-      enable_webgl=true
+      terminal.webgl=true
     `;
 
         const settings = ConfigReader.fromStringToConfig(defaultText, text);
 
         // Override applied
-        expect(settings.enable_webgl).toBe(true);
+        expect(settings.terminal?.webgl).toBe(true);
 
         // Defaults from default file are present
         expect(settings.scrollbar!.scrollback_lines).toBe(100000);
@@ -79,9 +79,9 @@ describe('ConfigReader', () => {
     });
 
     it('single-arg overload still works (no defaults)', () => {
-        const proper = `enable_webgl=false\nscrollbar.scrollback_lines=9999\n`;
+        const proper = `terminal.webgl=false\nscrollbar.scrollback_lines=9999\n`;
         const settings = ConfigReader.fromStringToConfig(proper);
-        expect(settings.enable_webgl).toBe(false);
+        expect(settings.terminal?.webgl).toBe(false);
         expect(settings.scrollbar!.scrollback_lines).toBe(9999);
     });
 
@@ -155,42 +155,38 @@ describe('ConfigReader', () => {
         expect(config.font!.family).toContain('ui-monospace');
     });
 
-    it('accepts numeric telegram chat_id and normalizes it to string', () => {
+    it('parses notification channels and overview settings', () => {
         const text = `
-      notification.telegram.enabled=true
-      notification.telegram.bot_token=test-token
-      notification.telegram.chat_id=184274027
-    `;
-        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
-
-        expect(result.diagnostics.some(d => d.message.includes('notification.telegram.chat_id'))).toBe(false);
-        expect(result.config.notification?.telegram?.chat_id).toBe('184274027');
-    });
-
-    it('parses notification channel availability and defaults', () => {
-        const text = `
-      notification.app.available=true
-      notification.app.enabled=true
-      notification.app.notification_duration_seconds=7
-      notification.os.available=true
-      notification.os.enabled=false
-      notification.telegram.available=true
-      notification.telegram.enabled=true
+      notifications.app.available=true
+      notifications.app.enabled=true
+      notifications.app.duration_seconds=7
+      notifications.os.available=true
+      notifications.os.enabled=false
       notification.highlight_terminal_on_activity=false
-      notification.max_notifications_in_overview=42
+      notification.overview.max_items=42
     `;
         const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
 
         expect(result.diagnostics.length).toBe(0);
-        expect(result.config.notification?.app?.available).toBe(true);
-        expect(result.config.notification?.app?.enabled).toBe(true);
-        expect(result.config.notification?.app?.notification_duration_seconds).toBe(7);
-        expect(result.config.notification?.os?.available).toBe(true);
-        expect(result.config.notification?.os?.enabled).toBe(false);
-        expect(result.config.notification?.telegram?.available).toBe(true);
-        expect(result.config.notification?.telegram?.enabled).toBe(true);
+        expect(result.config.notifications?.app?.available).toBe(true);
+        expect(result.config.notifications?.app?.enabled).toBe(true);
+        expect(result.config.notifications?.app?.duration_seconds).toBe(7);
+        expect(result.config.notifications?.os?.available).toBe(true);
+        expect(result.config.notifications?.os?.enabled).toBe(false);
         expect(result.config.notification?.highlight_terminal_on_activity).toBe(false);
-        expect(result.config.notification?.max_notifications_in_overview).toBe(42);
+        expect(result.config.notification?.overview?.max_items).toBe(42);
+    });
+
+    it('parses search color settings', () => {
+        const text = `
+      search.match.background_color=2f8fda55
+      search.active_match.border_color=f5e663
+    `;
+        const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+
+        expect(result.diagnostics.length).toBe(0);
+        expect(result.config.search?.match?.background_color).toBe('2f8fda55');
+        expect(result.config.search?.active_match?.border_color).toBe('f5e663');
     });
 
     it('parses terminal progress bar visibility setting', () => {
@@ -203,4 +199,3 @@ describe('ConfigReader', () => {
         expect(result.config.terminal?.progress_bar?.enabled).toBe(false);
     });
 });
-

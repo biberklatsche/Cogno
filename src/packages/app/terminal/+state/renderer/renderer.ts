@@ -38,21 +38,21 @@ export class Renderer implements IRenderer, IDisposable {
         this._terminal = new Terminal({
             overviewRuler: {width: config.scrollbar!.width, showBottomBorder: false, showTopBorder: false},
             scrollback: config.scrollbar!.scrollback_lines,
-            tabStopWidth: config.tab_stop_width,
+            tabStopWidth: config.terminal?.tab_stop_width,
             scrollSensitivity: config.scrollbar!.sensitivity,
             fastScrollSensitivity: config.scrollbar!.fast_scroll_sensitivity,
             scrollOnUserInput: config.scrollbar!.scroll_on_user_input,
             smoothScrollDuration: config.scrollbar!.smooth_scroll_duration,
-            allowTransparency: config.allow_transparency,
+            allowTransparency: config.terminal?.allow_transparency,
             altClickMovesCursor: config.cursor!.alt_click_moves_cursor,
             customGlyphs: config.font!.custom_glyphs,
             drawBoldTextInBrightColors: config.font!.draw_bold_text_in_bright_colors,
-            ignoreBracketedPasteMode: config.ignore_bracketed_paste_mode,
-            minimumContrastRatio: config.minimum_contrast_ratio,
+            ignoreBracketedPasteMode: config.terminal?.ignore_bracketed_paste_mode,
+            minimumContrastRatio: config.terminal?.minimum_contrast_ratio,
             rescaleOverlappingGlyphs: config.font!.rescale_overlapping_glyphs,
             rightClickSelectsWord: config.selection!.right_click_selects_word,
-            screenReaderMode: config.screen_reader_mode,
-            wordSeparator: config.word_separator,
+            screenReaderMode: config.terminal?.screen_reader_mode,
+            wordSeparator: config.terminal?.word_separator,
             windowsPty: OS.platform() === 'windows' ? {backend: 'conpty'} : undefined,
             allowProposedApi: true,
             windowOptions: {
@@ -70,7 +70,7 @@ export class Renderer implements IRenderer, IDisposable {
         this._terminal.loadAddon(this._searchAddon);
         this._terminal.loadAddon(this._unicodeAddon);
         this._terminal.unicode.activeVersion = '11';
-        if(config.enable_webgl) {
+        if(config.terminal?.webgl) {
             this.useWebGl();
         }
     }

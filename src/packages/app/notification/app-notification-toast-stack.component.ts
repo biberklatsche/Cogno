@@ -1,6 +1,8 @@
 import {ChangeDetectionStrategy, Component, Signal} from '@angular/core';
 import { Icon, IconComponent } from "@cogno/core-ui";
-import {AppNotificationToast, AppNotificationToastId, Notification, NotificationService} from "@cogno/features/side-menu/notification/notification.service";
+import type { Notification } from "@cogno/features/side-menu/notification/notification.service";
+import { AppNotificationChannelService } from "./+state/app-notification-channel.service";
+import type { AppNotificationToast, AppNotificationToastId } from "./+state/app-notification-toast.models";
 
 @Component({
     selector: 'app-notification-toast-stack',
@@ -113,12 +115,12 @@ import {AppNotificationToast, AppNotificationToastId, Notification, Notification
 export class AppNotificationToastStackComponent {
     readonly appNotificationToasts: Signal<AppNotificationToast[]>;
 
-    constructor(private notificationService: NotificationService) {
-        this.appNotificationToasts = this.notificationService.appNotificationToasts;
+    constructor(private appNotificationChannelService: AppNotificationChannelService) {
+        this.appNotificationToasts = this.appNotificationChannelService.appNotificationToasts;
     }
 
     dismiss(toastId: AppNotificationToastId): void {
-        this.notificationService.dismissAppNotificationToast(toastId);
+        this.appNotificationChannelService.dismissAppNotificationToast(toastId);
     }
 
     getIcon(type?: Notification['type']): Icon {

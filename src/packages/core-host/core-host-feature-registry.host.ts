@@ -2,6 +2,7 @@ import {
   ApplicationFeatureCollectionContract,
   ApplicationSettingsExtensionContract,
   DatabaseMigrationContract,
+  NotificationChannelContract,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
@@ -16,6 +17,7 @@ export class CoreHostFeatureRegistryHost<
   TActionName = string,
 > {
   private readonly databaseMigrations: DatabaseMigrationContract[] = [];
+  private readonly notificationChannels: NotificationChannelContract[] = [];
   private readonly shellDefinitions: ShellDefinitionContract[] = [];
   private readonly shellSupportDefinitions: ShellSupportDefinitionContract[] = [];
   private readonly settingsExtensions: ApplicationSettingsExtensionContract[] = [];
@@ -33,6 +35,7 @@ export class CoreHostFeatureRegistryHost<
     applicationFeatureCollection: ApplicationFeatureCollectionContract<TComponent, TIcon, TActionName>,
   ): void {
     this.databaseMigrations.push(...applicationFeatureCollection.databaseMigrations);
+    this.notificationChannels.push(...applicationFeatureCollection.notificationChannels);
     this.shellDefinitions.push(...applicationFeatureCollection.shellDefinitions);
     this.shellSupportDefinitions.push(...applicationFeatureCollection.shellSupportDefinitions);
     this.settingsExtensions.push(...applicationFeatureCollection.settingsExtensions);
@@ -49,6 +52,10 @@ export class CoreHostFeatureRegistryHost<
 
   getDatabaseMigrations(): ReadonlyArray<DatabaseMigrationContract> {
     return this.databaseMigrations;
+  }
+
+  getNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
+    return this.notificationChannels;
   }
 
   getShellDefinitions(): ReadonlyArray<ShellDefinitionContract> {

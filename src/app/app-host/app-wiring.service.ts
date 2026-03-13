@@ -2,6 +2,7 @@ import { Injectable, type Type } from "@angular/core";
 import { CoreHostFeatureRegistryHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
 import type {
   ApplicationSettingsExtensionContract,
+  NotificationChannelContract,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
@@ -9,6 +10,8 @@ import type {
 } from "@cogno/core-sdk";
 import type { ActionName } from "@cogno/app/action/action.models";
 import { sideMenuFeatureDefinitions } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
+import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
 import { featureApplicationFeatureCollection } from "@cogno/features";
 import type { Icon } from "@cogno/core-ui";
 import { DatabaseMigrationService } from "@cogno/app/app-host/database-migration.service";
@@ -27,7 +30,11 @@ export class AppWiringService {
     ActionName
   >(this.sideMenuFeatureRegistryHost);
 
-  constructor(private readonly databaseMigrationService: DatabaseMigrationService) {
+  constructor(
+    private readonly appNotificationChannelService: AppNotificationChannelService,
+    private readonly databaseMigrationService: DatabaseMigrationService,
+    private readonly osNotificationChannelService: OsNotificationChannelService,
+  ) {
     this.featureRegistryHost.registerFeatureCollection({
       ...featureApplicationFeatureCollection,
       sideMenuFeatureDefinitions: [
@@ -61,6 +68,14 @@ export class AppWiringService {
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
     return this.featureRegistryHost.getSettingsExtensions();
+  }
+
+  getNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
+    return [
+      this.appNotificationChannelService,
+      this.osNotificationChannelService,
+      ...this.featureRegistryHost.getNotificationChannels(),
+    ];
   }
 
   getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<

@@ -37,11 +37,55 @@ function registerSettingsSchemaShape(
 ): void {
   const mutableTargetSchemaShape = targetSchemaShape as Record<string, ZodRawShape[string]>;
   for (const [settingsKey, settingsSchema] of Object.entries(extensionSchemaShape)) {
-    if (settingsKey in targetSchemaShape) {
-      throw new Error(`Duplicate settings schema key: ${settingsKey}`);
+    const existingSettingsSchema = mutableTargetSchemaShape[settingsKey];
+    if (existingSettingsSchema !== undefined) {
+      mutableTargetSchemaShape[settingsKey] = mergeSettingsSchema(
+        existingSettingsSchema,
+        settingsSchema,
+        settingsKey,
+      ) as ZodRawShape[string];
+      continue;
     }
     mutableTargetSchemaShape[settingsKey] = settingsSchema;
   }
+}
+
+function mergeSettingsSchema(
+  existingSettingsSchema: unknown,
+  incomingSettingsSchema: unknown,
+  settingsKey: string,
+): unknown {
+  const existingObjectSchema = unwrapOptionalObjectSchema(existingSettingsSchema);
+  const incomingObjectSchema = unwrapOptionalObjectSchema(incomingSettingsSchema);
+  if (existingObjectSchema === undefined || incomingObjectSchema === undefined) {
+    throw new Error(`Duplicate settings schema key: ${settingsKey}`);
+  }
+
+  const mergedObjectShape: ZodRawShape = { ...existingObjectSchema.shape };
+  registerSettingsSchemaShape(mergedObjectShape, incomingObjectSchema.shape);
+
+  let mergedSchema: unknown = z.object(mergedObjectShape);
+  if (isOptionalSchema(existingSettingsSchema) || isOptionalSchema(incomingSettingsSchema)) {
+    mergedSchema = (mergedSchema as z.ZodObject<ZodRawShape>).optional();
+  }
+
+  return mergedSchema;
+}
+
+function unwrapOptionalObjectSchema(schema: unknown): z.ZodObject<ZodRawShape> | undefined {
+  if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) {
+    return unwrapOptionalObjectSchema(schema.unwrap());
+  }
+
+  if (schema instanceof z.ZodObject) {
+    return schema;
+  }
+
+  return undefined;
+}
+
+function isOptionalSchema(schema: unknown): boolean {
+  return schema instanceof z.ZodOptional;
 }
 
 function mergeSettingsObjects(

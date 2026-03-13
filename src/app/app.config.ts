@@ -10,7 +10,7 @@ import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
-import { TelegramBotRelayService } from "@cogno/app/notification/+state/telegram-bot-relay.service";
+import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
 import { NotificationService } from "@cogno/features/side-menu/notification/notification.service";
@@ -20,7 +20,6 @@ import {
   commandRunnerToken,
   databaseAccessToken,
   filesystemToken,
-  notificationHostPortToken,
   terminalSearchHostPortToken,
   workspaceHostPortToken,
 } from "@cogno/core-sdk";
@@ -29,7 +28,6 @@ import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-hos
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
-import { NotificationHostPortAdapterService } from "@cogno/app/app-host/notification-host-port.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
@@ -43,14 +41,13 @@ export const appConfig: ApplicationConfig = {
     { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
     { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
     { provide: filesystemToken, useExisting: FilesystemHostService },
-    { provide: notificationHostPortToken, useExisting: NotificationHostPortAdapterService },
     { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
     { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
       inject(StyleService);
+      inject(NotificationDispatchService);
       inject(NotificationService);
-      inject(TelegramBotRelayService);
       inject(WorkspaceHostApplicationService);
       inject(KeybindService);
       inject(CliActionService);
@@ -59,7 +56,6 @@ export const appConfig: ApplicationConfig = {
       inject(AppWiringService);
       inject(SideMenuLifecycleRuntimeService);
       inject(CommandPaletteHostPortAdapterService);
-      inject(NotificationHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);
       inject(TerminalSearchService);

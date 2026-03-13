@@ -162,7 +162,9 @@ describe('StyleService', () => {
     it('should set background image properties when path is provided', async () => {
       const configWithImage = {
         ...baseConfig,
-        allow_transparency: true,
+        terminal: {
+          allow_transparency: true,
+        },
         background_image: {
           path: '/path/to/image.png',
           opacity: 50,
@@ -182,7 +184,9 @@ describe('StyleService', () => {
     it('should resolve ~/ paths for background images', async () => {
       const configWithTildePath = {
         ...baseConfig,
-        allow_transparency: true,
+        terminal: {
+          allow_transparency: true,
+        },
         background_image: {
           path: '~/.cogno2-dev/background-image.png',
           opacity: 50,

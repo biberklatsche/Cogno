@@ -36,8 +36,9 @@ import {
 } from "../system-info/terminal-system-info-dialog.component";
 import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
 import {NotificationChannels} from "../../notification/+bus/events";
+import { NotificationChannelContract } from "@cogno/core-sdk";
 
-type NotificationChannel = keyof NotificationChannels;
+type NotificationChannelId = string;
 
 @Injectable()
 export class TerminalSession {
@@ -256,40 +257,21 @@ export class TerminalSession {
     }
 
     private buildNotificationContextMenuItems(): ContextMenuItem[] {
-        const availability = this.getNotificationAvailability();
-        const hasAnyAvailableChannel = availability.app || availability.os || availability.telegram;
-        if (!hasAnyAvailableChannel) {
+        const availableNotificationChannels = this.getAvailableNotificationChannels();
+        if (availableNotificationChannels.length === 0) {
             return [];
         }
 
         const channels = this.getSessionNotificationChannels();
         const items: ContextMenuItem[] = [];
 
-        if (availability.app) {
+        for (const notificationChannel of availableNotificationChannels) {
             items.push({
-                label: 'App',
+                label: notificationChannel.displayName,
                 toggle: true,
-                toggled: channels.app,
+                toggled: channels[notificationChannel.id] ?? false,
                 closeOnSelect: false,
-                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('app', item),
-            });
-        }
-        if (availability.os) {
-            items.push({
-                label: 'OS',
-                toggle: true,
-                toggled: channels.os,
-                closeOnSelect: false,
-                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('os', item),
-            });
-        }
-        if (availability.telegram) {
-            items.push({
-                label: 'Telegram',
-                toggle: true,
-                toggled: channels.telegram,
-                closeOnSelect: false,
-                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel('telegram', item),
+                action: (item?: ContextMenuItem) => this.toggleSessionNotificationChannel(notificationChannel.id, item),
             });
         }
         if (items.length > 0) {
@@ -307,17 +289,17 @@ export class TerminalSession {
         return this.sessionNotificationChannels;
     }
 
-    private toggleSessionNotificationChannel(channel: NotificationChannel, item?: ContextMenuItem): void {
+    private toggleSessionNotificationChannel(notificationChannelId: NotificationChannelId, item?: ContextMenuItem): void {
         const availability = this.getNotificationAvailability();
-        if (!availability[channel]) {
+        if (!availability[notificationChannelId]) {
             return;
         }
 
         const channels = this.getSessionNotificationChannels();
-        const nextValue = !channels[channel];
+        const nextValue = !(channels[notificationChannelId] ?? false);
         this.sessionNotificationChannels = {
             ...channels,
-            [channel]: nextValue,
+            [notificationChannelId]: nextValue,
         };
         if (item?.toggle) {
             item.toggled = nextValue;
@@ -327,28 +309,53 @@ export class TerminalSession {
     private getDefaultSessionNotificationChannels(): NotificationChannels {
         const availability = this.getNotificationAvailability();
         const defaults = this.getNotificationDefaults();
-        return {
-            app: availability.app && defaults.app,
-            os: availability.os && defaults.os,
-            telegram: availability.telegram && defaults.telegram,
-        };
+        const notificationChannels: Record<string, boolean> = {};
+        for (const notificationChannel of this.getRegisteredNotificationChannels()) {
+            notificationChannels[notificationChannel.id] =
+                (availability[notificationChannel.id] ?? false)
+                && (defaults[notificationChannel.id] ?? false);
+        }
+        return notificationChannels;
     }
 
     private getNotificationAvailability(): NotificationChannels {
-        const notificationConfig = this.configService.config.notification;
-        return {
-            app: notificationConfig?.app?.available ?? true,
-            os: notificationConfig?.os?.available ?? true,
-            telegram: notificationConfig?.telegram?.available ?? true,
-        };
+        const notificationsConfig = this.configService.config.notifications as
+            | Readonly<Record<string, { readonly available?: boolean }>>
+            | undefined;
+        const notificationAvailability: Record<string, boolean> = {};
+
+        for (const notificationChannel of this.getRegisteredNotificationChannels()) {
+            const notificationChannelConfiguration = notificationsConfig?.[notificationChannel.id];
+            notificationAvailability[notificationChannel.id] =
+                (notificationChannelConfiguration?.available ?? true)
+                && (notificationChannel.isAvailable?.() ?? true);
+        }
+
+        return notificationAvailability;
     }
 
     private getNotificationDefaults(): NotificationChannels {
-        const notificationConfig = this.configService.config.notification;
-        return {
-            app: notificationConfig?.app?.enabled ?? true,
-            os: notificationConfig?.os?.enabled ?? false,
-            telegram: notificationConfig?.telegram?.enabled ?? false,
-        };
+        const notificationsConfig = this.configService.config.notifications as
+            | Readonly<Record<string, { readonly enabled?: boolean }>>
+            | undefined;
+        const notificationDefaults: Record<string, boolean> = {};
+
+        for (const notificationChannel of this.getRegisteredNotificationChannels()) {
+            notificationDefaults[notificationChannel.id] =
+                notificationsConfig?.[notificationChannel.id]?.enabled ?? false;
+        }
+
+        return notificationDefaults;
+    }
+
+    private getAvailableNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
+        const availability = this.getNotificationAvailability();
+        return this.getRegisteredNotificationChannels().filter(
+            (notificationChannel) => availability[notificationChannel.id] ?? false,
+        );
+    }
+
+    private getRegisteredNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
+        return this.wiringService.getNotificationChannels();
     }
 }

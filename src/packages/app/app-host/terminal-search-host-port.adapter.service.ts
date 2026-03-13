@@ -39,8 +39,8 @@ export class TerminalSearchHostPortAdapterService implements TerminalSearchHostP
 
     this.terminalSearchColorConfig$ = this.configService.config$.pipe(
       map((configuration) => ({
-        matchBackgroundColor: configuration.terminal_search?.match_background_color,
-        matchBorderColor: configuration.terminal_search?.match_border_color,
+        matchBackgroundColor: configuration.search?.match?.background_color,
+        matchBorderColor: configuration.search?.match?.border_color,
       })),
     );
   }

@@ -1,39 +1,35 @@
-import { InjectionToken } from "@angular/core";
-import { Observable } from "rxjs";
-
 export type NotificationTypeContract = "error" | "success" | "warning" | "info";
 
-export interface NotificationChannelsContract {
-  readonly app: boolean;
-  readonly os: boolean;
-  readonly telegram: boolean;
-}
+export type NotificationChannelsContract = Readonly<Record<string, boolean>>;
 
 export interface NotificationEventPayloadContract {
   readonly header: string;
   readonly body?: string;
+  readonly source?: string;
+  readonly terminalId?: string;
   readonly timestamp?: Date;
   readonly type?: NotificationTypeContract;
   readonly channels?: Partial<NotificationChannelsContract>;
 }
 
-export interface NotificationSettingsContract {
-  readonly appEnabled: boolean;
-  readonly osEnabled: boolean;
-  readonly telegramEnabled: boolean;
-  readonly appAvailable: boolean;
-  readonly osAvailable: boolean;
-  readonly telegramAvailable: boolean;
-  readonly appNotificationDurationSeconds: number;
-  readonly maxNotifications: number;
+export interface NotificationChannelSettingsContract {
+  readonly available?: boolean;
+  readonly enabled?: boolean;
 }
 
-export interface NotificationHostPortContract {
-  readonly notificationEvent$: Observable<NotificationEventPayloadContract>;
-  readonly notificationSettings$: Observable<NotificationSettingsContract>;
-  sendOsNotification(header: string, body?: string): Promise<void>;
+export interface NotificationChannelDispatchRequestContract {
+  readonly notification: NotificationEventPayloadContract;
+  readonly settings: Readonly<Record<string, unknown>>;
 }
 
-export const notificationHostPortToken = new InjectionToken<NotificationHostPortContract>(
-  "notification-host-port-token",
-);
+export interface NotificationChannelContract {
+  readonly displayName: string;
+  readonly id: string;
+  isAvailable?(): boolean;
+  dispatch(notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract): Promise<void> | void;
+}
+
+export interface NotificationReplyChannelContract extends NotificationChannelContract {
+  startReceivingReplies?(): Promise<void> | void;
+  stopReceivingReplies?(): Promise<void> | void;
+}

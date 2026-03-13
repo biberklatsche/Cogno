@@ -37,7 +37,9 @@ describe('Renderer', () => {
             cursor: {
                 alt_click_moves_cursor: false
             },
-            tab_stop_width: 8,
+            terminal: {
+                tab_stop_width: 8,
+            },
             selection: {
                 right_click_selects_word: true
             },
@@ -81,7 +83,7 @@ describe('Renderer', () => {
     });
 
     it('should use WebGL addon if enabled in config', () => {
-        mockConfig.enable_webgl = true;
+        mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
         renderer = new Renderer(mockConfig);
         const terminalInstance = vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
         expect(WebglAddon).toHaveBeenCalled();

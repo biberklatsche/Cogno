@@ -10,6 +10,7 @@ import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
 import {DialogService} from "../../common/dialog";
 import {DialogRef} from "../../common/dialog/dialog-ref";
 import { PathFactory } from "@cogno/core-host";
+import { NotificationChannelContract } from "@cogno/core-sdk";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 
 // Mocking dependencies that are not passed in constructor but used internally
@@ -79,6 +80,10 @@ describe('TerminalSession', () => {
 
         mockWiringService = {
             getShellDefinitions: vi.fn().mockReturnValue([]),
+            getNotificationChannels: vi.fn().mockReturnValue([
+                { displayName: "App", id: "app", dispatch: vi.fn() },
+                { displayName: "OS", id: "os", dispatch: vi.fn() },
+            ] satisfies ReadonlyArray<NotificationChannelContract>),
         } as unknown as AppWiringService;
 
         session = new TerminalSession(
@@ -92,7 +97,7 @@ describe('TerminalSession', () => {
     });
 
     it('should initialize with correct renderer settings based on config', () => {
-        const config = { enable_webgl: true, font: { family: 'Fira Code' } } as any;
+        const config = { terminal: { webgl: true }, font: { family: 'Fira Code' } } as any;
         (mockConfigService as any).setConfig(config);
         session = new TerminalSession(
             mockConfigService,
@@ -103,7 +108,7 @@ describe('TerminalSession', () => {
             mockWiringService,
         );
         
-        expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ enable_webgl: true }));
+        expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
     });
 
     it('should initialize terminal and register handlers', () => {
@@ -155,10 +160,9 @@ describe('TerminalSession', () => {
 
     it('should only show available notification channels in header menu', () => {
         (mockConfigService as any).setConfig({
-            notification: {
+            notifications: {
                 app: { available: true, enabled: false },
                 os: { available: false, enabled: false },
-                telegram: { available: false, enabled: false },
             }
         });
         session.initialize(terminalId, mockShellProfile);
@@ -169,7 +173,6 @@ describe('TerminalSession', () => {
         expect(appToggle?.toggle).toBe(true);
         expect(appToggle?.toggled).toBe(false);
         expect(items.find(i => i.label === 'OS')).toBeUndefined();
-        expect(items.find(i => i.label === 'Telegram')).toBeUndefined();
     });
 
     it('should publish TerminalRemoved event and dispose resources on dispose', () => {

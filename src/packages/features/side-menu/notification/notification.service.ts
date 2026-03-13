@@ -1,18 +1,12 @@
-import { DestroyRef, Inject, Injectable, Signal, computed, signal } from "@angular/core";
+import { DestroyRef, Injectable, Signal, computed, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FeatureModeContract } from "@cogno/core-sdk";
-import {
-  NotificationChannelsContract,
-  NotificationEventPayloadContract,
-  NotificationHostPortContract,
-  NotificationSettingsContract,
-  NotificationTypeContract,
-  notificationHostPortToken,
-} from "@cogno/core-sdk";
+import { NotificationTypeContract } from "@cogno/core-sdk";
+import { AppBus } from "@cogno/app/app-bus/app-bus";
+import { ConfigService } from "@cogno/app/config/+state/config.service";
 
 export type NotificationId = number;
 export type NotificationType = NotificationTypeContract;
-export type AppNotificationToastId = number;
 
 export type Notification = {
   readonly id: NotificationId;
@@ -23,62 +17,30 @@ export type Notification = {
   readonly timestamp: Date;
 };
 
-export type AppNotificationToast = {
-  readonly id: AppNotificationToastId;
-  readonly header: string;
-  readonly body?: string;
-  readonly type: NotificationType;
-  readonly timestamp: Date;
-};
-
-const defaultNotificationSettings: NotificationSettingsContract = {
-  appEnabled: true,
-  osEnabled: false,
-  telegramEnabled: false,
-  appAvailable: true,
-  osAvailable: true,
-  telegramAvailable: true,
-  appNotificationDurationSeconds: 5,
-  maxNotifications: 30,
-};
-
 @Injectable({ providedIn: "root" })
 export class NotificationService {
   private notificationEnabled = true;
   private sideMenuIconUpdater?: (iconName: string) => void;
 
-  private appNotificationToastIdCounter = 0;
-  private readonly appNotificationToastTimerById = new Map<AppNotificationToastId, ReturnType<typeof setTimeout>>();
-
   private readonly notificationMapSignal = signal<Record<NotificationId, Notification>>({});
-  private readonly appNotificationToastsSignal = signal<AppNotificationToast[]>([]);
-  private readonly notificationSettingsSignal = signal<NotificationSettingsContract>(defaultNotificationSettings);
 
   readonly notifications: Signal<Notification[]> = computed(() =>
     Object.values(this.notificationMapSignal()).sort(
       (leftNotification, rightNotification) => rightNotification.timestamp.getTime() - leftNotification.timestamp.getTime(),
     ),
   );
-  readonly appNotificationToasts: Signal<AppNotificationToast[]> = this.appNotificationToastsSignal.asReadonly();
 
   constructor(
-    @Inject(notificationHostPortToken)
-    private readonly notificationHostPort: NotificationHostPortContract,
+    private readonly appBus: AppBus,
+    private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
-    this.notificationHostPort.notificationSettings$
+    this.appBus
+      .on$({ path: ["notification"], type: "Notification" })
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((notificationSettings) => {
-        this.notificationSettingsSignal.set(notificationSettings);
+      .subscribe((notificationEvent) => {
+        this.handleNotificationEvent(notificationEvent.payload);
       });
-
-    this.notificationHostPort.notificationEvent$
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((notificationEventPayload) => {
-        this.handleNotificationEvent(notificationEventPayload);
-      });
-
-    destroyRef.onDestroy(() => this.clearAllAppNotificationToasts());
   }
 
   setSideMenuIconUpdater(sideMenuIconUpdater: (iconName: string) => void): void {
@@ -110,28 +72,18 @@ export class NotificationService {
 
   clear(): void {
     this.notificationMapSignal.set({});
-    this.clearAllAppNotificationToasts();
     this.sideMenuIconUpdater?.("mdiBell");
-  }
-
-  dismissAppNotificationToast(toastId: AppNotificationToastId): void {
-    this.clearAppNotificationToastTimer(toastId);
-    this.appNotificationToastsSignal.update((appNotificationToasts) =>
-      appNotificationToasts.filter((appNotificationToast) => appNotificationToast.id !== toastId),
-    );
   }
 
   getNotificationCount(): number {
     return this.notifications().length;
   }
 
-  private handleNotificationEvent(notificationEventPayload: NotificationEventPayloadContract): void {
+  private handleNotificationEvent(notificationEventPayload: unknown): void {
     if (!this.notificationEnabled) {
       return;
     }
-
-    const notificationChannels = this.resolveNotificationChannels(notificationEventPayload.channels);
-    if (!notificationChannels.app && !notificationChannels.os && !notificationChannels.telegram) {
+    if (!isNotificationPayload(notificationEventPayload)) {
       return;
     }
 
@@ -159,45 +111,10 @@ export class NotificationService {
         };
       }
 
-      return this.trimNotificationMap(nextNotificationMap, this.notificationSettingsSignal().maxNotifications);
+      return this.trimNotificationMap(nextNotificationMap, this.getMaxNotifications());
     });
 
     this.sideMenuIconUpdater?.("mdiBellBadge");
-
-    if (notificationChannels.os) {
-      void this.notificationHostPort.sendOsNotification(notificationEventPayload.header, notificationEventPayload.body);
-    }
-
-    if (notificationChannels.app) {
-      const appNotificationDurationSeconds = this.notificationSettingsSignal().appNotificationDurationSeconds;
-      if (appNotificationDurationSeconds <= 0) {
-        return;
-      }
-
-      const toastId = this.showAppNotificationToast({
-        header: notificationEventPayload.header,
-        body: notificationEventPayload.body,
-        type: notificationEventPayload.type ?? "info",
-        timestamp,
-      });
-
-      const timer = setTimeout(() => {
-        this.dismissAppNotificationToast(toastId);
-      }, appNotificationDurationSeconds * 1000);
-      this.appNotificationToastTimerById.set(toastId, timer);
-    }
-  }
-
-  private resolveNotificationChannels(
-    eventChannels?: Partial<NotificationChannelsContract>,
-  ): NotificationChannelsContract {
-    const notificationSettings = this.notificationSettingsSignal();
-
-    return {
-      app: notificationSettings.appAvailable && (eventChannels?.app ?? notificationSettings.appEnabled),
-      os: notificationSettings.osAvailable && (eventChannels?.os ?? notificationSettings.osEnabled),
-      telegram: notificationSettings.telegramAvailable && (eventChannels?.telegram ?? notificationSettings.telegramEnabled),
-    };
   }
 
   private trimNotificationMap(
@@ -222,42 +139,6 @@ export class NotificationService {
     return trimmedNotificationMap;
   }
 
-  private showAppNotificationToast(toast: Omit<AppNotificationToast, "id">): AppNotificationToastId {
-    this.appNotificationToastIdCounter += 1;
-    const toastId = this.appNotificationToastIdCounter;
-    const nextToast: AppNotificationToast = { ...toast, id: toastId };
-
-    this.appNotificationToastsSignal.update((appNotificationToasts) => {
-      const nextToastList = [...appNotificationToasts, nextToast];
-      while (nextToastList.length > 3) {
-        const removedToast = nextToastList.shift();
-        if (removedToast) {
-          this.clearAppNotificationToastTimer(removedToast.id);
-        }
-      }
-      return nextToastList;
-    });
-
-    return toastId;
-  }
-
-  private clearAppNotificationToastTimer(toastId: AppNotificationToastId): void {
-    const timer = this.appNotificationToastTimerById.get(toastId);
-    if (!timer) {
-      return;
-    }
-    clearTimeout(timer);
-    this.appNotificationToastTimerById.delete(toastId);
-  }
-
-  private clearAllAppNotificationToasts(): void {
-    for (const timer of this.appNotificationToastTimerById.values()) {
-      clearTimeout(timer);
-    }
-    this.appNotificationToastTimerById.clear();
-    this.appNotificationToastsSignal.set([]);
-  }
-
   private createNotificationId(header: string, body?: string): number {
     const text = `${header}|${body ?? ""}`;
     let hash = 0;
@@ -267,4 +148,23 @@ export class NotificationService {
     }
     return hash;
   }
+
+  private getMaxNotifications(): number {
+    return this.configService.config.notification?.overview?.max_items ?? 30;
+  }
+}
+
+function isNotificationPayload(
+  notificationPayload: unknown,
+): notificationPayload is {
+  readonly body?: string;
+  readonly header: string;
+  readonly timestamp?: Date;
+  readonly type?: NotificationTypeContract;
+} {
+  return (
+    typeof notificationPayload === "object" &&
+    notificationPayload !== null &&
+    typeof (notificationPayload as { header?: unknown }).header === "string"
+  );
 }

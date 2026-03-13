@@ -13,8 +13,9 @@ import {Scrollbar, ScrollbarSchema} from "./scrollbar-config";
 import {
     FeatureCommandPaletteSchema,
     FeatureNotificationSchema,
+    FeatureNotificationsSchema,
+    FeatureSearchSchema,
     FeatureTerminalSchema,
-    FeatureTerminalSearchSchema,
     FeatureWorkspaceSchema
 } from "@cogno/features/feature-settings.schemas";
 import {KeybindsSchema, Keybinding} from "./keybind-config";
@@ -23,17 +24,7 @@ export {HexColor, FeatureMode, Font, Color, Cursor, Padding, ShellConfig, ShellT
 
 export const baseConfigSchemaShape = {
     keybind: KeybindsSchema.optional(),
-    enable_webgl: z.boolean().optional(),
     enable_watch_config: z.boolean().optional(),
-
-    inactive_overlay_opacity: z.number().int().min(0, 'Opacity must be at least 0').max(100, 'Opacity must be at most 100').optional(),
-    ignore_bracketed_paste_mode: z.boolean().optional(),
-    minimum_contrast_ratio: z.number().optional(),
-
-    screen_reader_mode: z.boolean().optional(),
-    allow_transparency: z.boolean().optional(),
-    tab_stop_width: z.number().optional(),
-    word_separator: z.string().optional(),
     font: FontSchema.optional(),
     color: ColorSchema.optional(),
     cursor: CursorSchema.optional(),
@@ -49,9 +40,10 @@ export const baseConfigSchemaShape = {
 export const featureConfigSchemaShape = {
     workspace: FeatureWorkspaceSchema.optional(),
     notification: FeatureNotificationSchema.optional(),
+    notifications: FeatureNotificationsSchema.optional(),
     command_palette: FeatureCommandPaletteSchema.optional(),
     terminal: FeatureTerminalSchema.optional(),
-    terminal_search: FeatureTerminalSearchSchema.optional(),
+    search: FeatureSearchSchema.optional(),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z.object({

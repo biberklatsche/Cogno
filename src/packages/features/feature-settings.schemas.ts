@@ -17,12 +17,19 @@ export const FeatureWorkspaceSchema = z.object({
 export const FeatureNotificationSchema = z.object({
   mode: FeatureModeEnum.optional(),
   highlight_terminal_on_activity: z.boolean().optional(),
-  max_notifications_in_overview: z.number().int().min(0).optional(),
+  overview: z
+    .object({
+      max_items: z.number().int().min(0).optional(),
+    })
+    .optional(),
+});
+
+export const FeatureNotificationsSchema = z.object({
   app: z
     .object({
       available: z.boolean().optional(),
       enabled: z.boolean().optional(),
-      notification_duration_seconds: z.number().int().min(0).optional(),
+      duration_seconds: z.number().int().min(0).optional(),
     })
     .optional(),
   os: z
@@ -31,20 +38,6 @@ export const FeatureNotificationSchema = z.object({
       enabled: z.boolean().optional(),
     })
     .optional(),
-  telegram: z
-    .object({
-      available: z.boolean().optional(),
-      enabled: z.boolean().optional(),
-      bot_token: z.string().min(1).optional(),
-      chat_id: z.union([z.string().min(1), z.number().int()]).transform(value => String(value)).optional(),
-      forward_notifications: z.boolean().optional(),
-      forward_replies_to_terminal: z.boolean().optional(),
-    })
-    .optional(),
-  mark_terminal_on_notification: z.boolean().optional(),
-  mark_terminal: z.boolean().optional(),
-  app_notification_duration_seconds: z.number().int().min(0).optional(),
-  max_notifications: z.number().int().min(0).optional(),
 });
 
 export const FeatureCommandPaletteSchema = z.object({
@@ -52,6 +45,19 @@ export const FeatureCommandPaletteSchema = z.object({
 });
 
 export const FeatureTerminalSchema = z.object({
+  webgl: z.boolean().optional(),
+  inactive_overlay_opacity: z
+    .number()
+    .int()
+    .min(0, "Opacity must be at least 0")
+    .max(100, "Opacity must be at most 100")
+    .optional(),
+  ignore_bracketed_paste_mode: z.boolean().optional(),
+  minimum_contrast_ratio: z.number().optional(),
+  screen_reader_mode: z.boolean().optional(),
+  allow_transparency: z.boolean().optional(),
+  tab_stop_width: z.number().optional(),
+  word_separator: z.string().optional(),
   progress_bar: z
     .object({
       enabled: z.boolean().optional().describe("Show the progress bar in the terminal header."),
@@ -59,12 +65,20 @@ export const FeatureTerminalSchema = z.object({
     .optional(),
 });
 
-export const FeatureTerminalSearchSchema = z.object({
+export const FeatureSearchSchema = z.object({
   mode: FeatureModeEnum.optional(),
-  match_background_color: HexColorSchema.optional(),
-  match_border_color: HexColorSchema.optional(),
-  match_overview_ruler_color: HexColorSchema.optional(),
-  active_match_background_color: HexColorSchema.optional(),
-  active_match_border_color: HexColorSchema.optional(),
-  active_match_overview_ruler_color: HexColorSchema.optional(),
+  match: z
+    .object({
+      background_color: HexColorSchema.optional(),
+      border_color: HexColorSchema.optional(),
+      overview_ruler_color: HexColorSchema.optional(),
+    })
+    .optional(),
+  active_match: z
+    .object({
+      background_color: HexColorSchema.optional(),
+      border_color: HexColorSchema.optional(),
+      overview_ruler_color: HexColorSchema.optional(),
+    })
+    .optional(),
 });

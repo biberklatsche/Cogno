@@ -1,20 +1,19 @@
-import {MessageBase} from "../../app-bus/app-bus";
-import {NotificationTypeContract} from "@cogno/core-sdk";
-import {TerminalId} from "../../grid-list/+model/model";
+import { NotificationChannelsContract, NotificationTypeContract } from "@cogno/core-sdk";
+import { MessageBase } from "../../app-bus/app-bus";
+import { TerminalId } from "../../grid-list/+model/model";
 
-export type NotificationSource = 'local' | 'telegram';
-export type NotificationChannels = {
-    app: boolean;
-    os: boolean;
-    telegram: boolean;
-};
+export type NotificationSource = string;
+export type NotificationChannels = NotificationChannelsContract;
 
-export type NotificationEvent = MessageBase<"Notification", {
-    header: string;
-    body?: string;
-    timestamp?: Date;
-    type?: NotificationTypeContract;
-    source?: NotificationSource;
-    terminalId?: TerminalId;
-    channels?: Partial<NotificationChannels>;
-}>
+export type NotificationEvent = MessageBase<
+  "Notification",
+  {
+    readonly body?: string;
+    readonly channels?: Partial<NotificationChannels>;
+    readonly header: string;
+    readonly source?: NotificationSource;
+    readonly terminalId?: TerminalId;
+    readonly timestamp?: Date;
+    readonly type?: NotificationTypeContract;
+  }
+>;

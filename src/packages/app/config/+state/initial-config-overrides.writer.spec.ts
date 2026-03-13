@@ -20,7 +20,7 @@ describe('InitialConfigOverridesWriter', () => {
 
   it('toDotString can render without comments when asComments=false', () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
-    curr.enable_webgl = true;
+    curr.terminal = { ...(curr.terminal ?? {}), webgl: true };
     if (!curr.scrollbar) curr.scrollbar = {};
     curr.scrollbar.scrollback_lines = 1234;
 
@@ -31,7 +31,7 @@ describe('InitialConfigOverridesWriter', () => {
     expect(lines.some(l => l.startsWith('#'))).toBe(false);
 
     // Contains some expected values
-    expect(lines).toContain('enable_webgl = true');
+    expect(lines).toContain('terminal.webgl = true');
     expect(lines).toContain('scrollbar.scrollback_lines = 1234');
 
     // trailing newline is present according to implementation
@@ -40,13 +40,13 @@ describe('InitialConfigOverridesWriter', () => {
 
   it('renders with comments and descriptions from schema', () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
-    curr.enable_webgl = true;
+    curr.terminal = { ...(curr.terminal ?? {}), webgl: true };
 
     const text = InitialConfigOverridesWriter.toDotString(curr, true);
     // Since we don't know the exact descriptions without looking at ConfigSchema closely,
     // we check for general presence of comments.
     expect(text).toContain('# ');
-    expect(text).toContain('enable_webgl = true');
+    expect(text).toContain('terminal.webgl = true');
   });
 
   it('handles edge cases in unwrapSchema and extractShape', () => {

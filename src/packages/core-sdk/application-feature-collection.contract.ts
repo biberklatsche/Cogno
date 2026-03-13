@@ -1,5 +1,6 @@
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
 import { DatabaseMigrationContract } from "./database-migration.contract";
+import { NotificationChannelContract } from "./notification.contract";
 import { ShellDefinitionContract } from "./shell-definition.contract";
 import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition.contract";
 import { ShellSupportDefinitionContract } from "./shell-support.contract";
@@ -18,6 +19,7 @@ export interface ApplicationFeatureCollectionContract<
   readonly sideMenuFeatureDefinitions: ReadonlyArray<
     SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
   >;
+  readonly notificationChannels: ReadonlyArray<NotificationChannelContract>;
   readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
   readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
     TerminalAutocompleteSuggestorDefinitionContract

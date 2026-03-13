@@ -12,7 +12,7 @@ export const terminalSearchSideMenuFeatureDefinition = {
   order: 40,
   actionName: "open_terminal_search",
   targetComponent: TerminalSearchSideComponent,
-  configPath: "terminal_search",
+  configPath: "search",
   createLifecycle: (injector, sideMenuFeatureHandle) =>
     injector.get(TerminalSearchSideMenuLifecycle).create(sideMenuFeatureHandle),
 } as const satisfies SideMenuFeatureDefinitionContract<Type<unknown>, string, string>;

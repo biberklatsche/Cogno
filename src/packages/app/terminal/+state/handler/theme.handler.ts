@@ -42,7 +42,7 @@ export class ThemeHandler implements ITerminalHandler {
             scrollbarSliderHoverBackground: `#${config.scrollbar!.slider_hover_color}`,
             scrollbarSliderActiveBackground: `#${config.scrollbar!.slider_active_color}`,
 
-            background: config.allow_transparency ? '#00000000' : `#${config.color!.background}`,
+            background: config.terminal?.allow_transparency ? '#00000000' : `#${config.color!.background}`,
             cursor: `#${config.cursor!.color}`,
             cursorAccent: `#${config.cursor!.accent_color}`,
             foreground: `#${config.color!.foreground}`,
