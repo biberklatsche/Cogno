@@ -15,6 +15,12 @@ Cogno is a terminal workspace built for heavy daily shell use:
 
 Built with Tauri, Angular, and Rust.
 
+## License
+
+The project source code in this repository is licensed under `MPL-2.0`,
+except for `src/packages/features`, which is licensed under `MIT`, unless a
+file or directory contains a different third-party license notice.
+
 ## CLI
 
 Cogno also exposes a local CLI.
