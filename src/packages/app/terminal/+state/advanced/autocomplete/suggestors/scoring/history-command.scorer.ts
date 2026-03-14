@@ -2,23 +2,29 @@ import { CommandHistoryRow } from "../../../history/history.repository";
 
 const SCORING = {
     weights: {
-        text: 0.40,
-        cwd: 0.20,
-        select: 0.18,
-        exec: 0.10,
-        recencySelect: 0.07,
-        recencyExec: 0.05,
+        text: 0.34,
+        cwd: 0.18,
+        select: 0.14,
+        exec: 0.08,
+        recencySelect: 0.06,
+        recencyExec: 0.04,
+        transitionProbability: 0.11,
+        transitionCount: 0.03,
+        transitionRecency: 0.02,
     },
     saturation: {
         cwd: 8,
         select: 10,
         exec: 20,
+        transition: 5,
     },
     halfLifeMs: {
         select: 3 * 24 * 60 * 60 * 1000,
         exec: 7 * 24 * 60 * 60 * 1000,
+        transition: 7 * 24 * 60 * 60 * 1000,
     },
     sameCommandBonus: 8,
+    transitionPrior: 1,
 } as const;
 
 export class HistoryCommandScorer {
@@ -93,13 +99,26 @@ export class HistoryCommandScorer {
             this.safeAge(now, row.lastExecAt || row.cwdLastExecAt),
             SCORING.halfLifeMs.exec
         );
+        const transitionProbabilityScore = this.transitionProbability(
+            row.transitionCount,
+            row.outgoingTransitionCount,
+            corpusSize
+        );
+        const transitionCountScore = this.sat(row.transitionCount, SCORING.saturation.transition);
+        const transitionRecencyScore = this.recencyDecay(
+            this.safeAge(now, row.lastTransitionAt),
+            SCORING.halfLifeMs.transition
+        );
         const blended =
             (SCORING.weights.text * textScore) +
             (SCORING.weights.cwd * cwdScore) +
             (SCORING.weights.select * selectScore) +
             (SCORING.weights.exec * execScore) +
             (SCORING.weights.recencySelect * recencySelectScore) +
-            (SCORING.weights.recencyExec * recencyExecScore);
+            (SCORING.weights.recencyExec * recencyExecScore) +
+            (SCORING.weights.transitionProbability * transitionProbabilityScore) +
+            (SCORING.weights.transitionCount * transitionCountScore) +
+            (SCORING.weights.transitionRecency * transitionRecencyScore);
 
         const rowCommandToken = this.firstToken(row.command);
         const sameCommandBonus = (!!inputCommandToken && rowCommandToken === inputCommandToken)
@@ -127,6 +146,25 @@ export class HistoryCommandScorer {
     private static sat(value: number, k: number): number {
         if (value <= 0) return 0;
         return value / (value + k);
+    }
+
+    private static transitionProbability(
+        transitionCount: number,
+        outgoingTransitionCount: number,
+        candidateCount: number
+    ): number {
+        if (transitionCount <= 0 || outgoingTransitionCount <= 0 || candidateCount <= 0) {
+            return 0;
+        }
+
+        const smoothingPrior = SCORING.transitionPrior;
+        const smoothedNumerator = transitionCount + smoothingPrior;
+        const smoothedDenominator = outgoingTransitionCount + (smoothingPrior * candidateCount);
+        if (smoothedDenominator <= 0) {
+            return 0;
+        }
+
+        return smoothedNumerator / smoothedDenominator;
     }
 
     private static recencyDecay(ageMs: number, halfLifeMs: number): number {

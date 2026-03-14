@@ -1,18 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PathFactory } from "@cogno/core-host";
+import { ShellContextContract } from "@cogno/core-sdk";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { QueryContext } from "../autocomplete.types";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./history-directory.suggestor";
 
+const shellContext: ShellContextContract = { shellType: "Bash", backendOs: "macos" };
 const baseHistoryRow = {
     lastSelectAt: 0,
     cwdExecCount: 0,
     cwdSelectCount: 0,
     cwdLastExecAt: 0,
     cwdLastSelectAt: 0,
+    transitionCount: 0,
+    outgoingTransitionCount: 0,
+    lastTransitionAt: 0,
 };
 const baseDirHistoryRow = {
     lastSelectAt: 0,
@@ -27,7 +32,7 @@ function cdContext(fragment: string): QueryContext {
         replaceStart: 3,
         replaceEnd: 3 + fragment.length,
         cwd: "/Users/larswolfram/projects",
-        shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+        shellContext,
         fragment,
     };
 }
@@ -121,7 +126,7 @@ describe("Autocomplete History Suggestors", () => {
             replaceStart: 0,
             replaceEnd: 3,
             cwd: "/Users/larswolfram/projects",
-            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            shellContext,
             query: "npm",
         };
 
@@ -146,7 +151,7 @@ describe("Autocomplete History Suggestors", () => {
             replaceStart: 0,
             replaceEnd: 3,
             cwd: "/Users/larswolfram/projects",
-            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            shellContext,
             query: "npm",
         };
 
@@ -171,7 +176,7 @@ describe("Autocomplete History Suggestors", () => {
             replaceStart: 4,
             replaceEnd: 6,
             cwd: "/Users/larswolfram/projects",
-            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            shellContext,
             fragment: "te",
         };
 
@@ -199,7 +204,7 @@ describe("Autocomplete History Suggestors", () => {
             replaceStart: 0,
             replaceEnd: 5,
             cwd: "/Users/larswolfram/projects",
-            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            shellContext,
             query: "npm t",
         };
 
@@ -249,11 +254,64 @@ describe("Autocomplete History Suggestors", () => {
             replaceStart: 0,
             replaceEnd: 5,
             cwd: "/Users/larswolfram/projects",
-            shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+            shellContext,
             query: "gi pu",
         };
 
         const result = await suggestor.suggest(ctx);
         expect(result[0].label).toBe("git push");
+    });
+
+    it("HistoryCommandSuggestor boosts strong previous-to-next transitions", async () => {
+        const now = Date.now();
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                {
+                    command: "docker compose build",
+                    execCount: 6,
+                    selectCount: 3,
+                    lastExecAt: now - 60_000,
+                    lastSelectAt: now - 30_000,
+                    cwdExecCount: 2,
+                    cwdSelectCount: 1,
+                    cwdLastExecAt: now - 60_000,
+                    cwdLastSelectAt: now - 30_000,
+                    transitionCount: 9,
+                    outgoingTransitionCount: 12,
+                    lastTransitionAt: now - 15_000,
+                },
+                {
+                    command: "docker compose up",
+                    execCount: 12,
+                    selectCount: 7,
+                    lastExecAt: now - 60_000,
+                    lastSelectAt: now - 30_000,
+                    cwdExecCount: 4,
+                    cwdSelectCount: 2,
+                    cwdLastExecAt: now - 60_000,
+                    cwdLastSelectAt: now - 30_000,
+                    transitionCount: 1,
+                    outgoingTransitionCount: 12,
+                    lastTransitionAt: now - (14 * 24 * 60 * 60 * 1000),
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const context: QueryContext = {
+            mode: "command",
+            beforeCursor: "docker compose",
+            inputText: "docker compose",
+            cursorIndex: 14,
+            replaceStart: 0,
+            replaceEnd: 14,
+            cwd: "/Users/larswolfram/projects",
+            shellContext,
+            query: "docker compose",
+        };
+
+        const result = await suggestor.suggest(context);
+        expect(result[0].label).toBe("docker compose build");
+        expect(result[0].score).toBeGreaterThan(result[1].score);
     });
 });

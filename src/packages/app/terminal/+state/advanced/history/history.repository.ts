@@ -30,6 +30,9 @@ export type CommandHistoryRow = {
     cwdSelectCount: number;
     cwdLastExecAt: number;
     cwdLastSelectAt: number;
+    transitionCount: number;
+    outgoingTransitionCount: number;
+    lastTransitionAt: number;
 };
 
 function nowMs(): number { return Date.now(); }
@@ -191,6 +194,54 @@ export class HistoryRepository {
         });
     }
 
+    async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {
+        const previousCommand = previousCommandRaw.trim();
+        const nextCommand = nextCommandRaw.trim();
+        if (!previousCommand || !nextCommand || previousCommand === nextCommand) {
+            return;
+        }
+
+        const timestamp = nowMs();
+
+        await this.tx(async () => {
+            const previousCommandId = await this.ensureCommandId(previousCommand);
+            const nextCommandId = await this.ensureCommandId(nextCommand);
+
+            await this.exec(
+                `INSERT INTO command_transition_stat(
+                    context_id,
+                    previous_command_id,
+                    next_command_id,
+                    transition_count,
+                    last_transition_at,
+                    created_at,
+                    deleted_at
+                ) VALUES(?, ?, ?, 1, ?, ?, NULL)
+                ON CONFLICT(context_id, previous_command_id, next_command_id) DO UPDATE SET
+                    transition_count = command_transition_stat.transition_count + 1,
+                    last_transition_at = excluded.last_transition_at,
+                    deleted_at = NULL`,
+                [this.contextId, previousCommandId, nextCommandId, timestamp, timestamp]
+            );
+
+            await this.exec(
+                `INSERT INTO command_transition_outgoing_stat(
+                    context_id,
+                    previous_command_id,
+                    outgoing_count,
+                    last_transition_at,
+                    created_at,
+                    deleted_at
+                ) VALUES(?, ?, 1, ?, ?, NULL)
+                ON CONFLICT(context_id, previous_command_id) DO UPDATE SET
+                    outgoing_count = command_transition_outgoing_stat.outgoing_count + 1,
+                    last_transition_at = excluded.last_transition_at,
+                    deleted_at = NULL`,
+                [this.contextId, previousCommandId, timestamp, timestamp]
+            );
+        });
+    }
+
     async deleteCommandExecution(commandRaw: string, cwdRaw: string): Promise<void> {
         const command = commandRaw.trim();
         if (!command) return;
@@ -245,10 +296,16 @@ export class HistoryRepository {
         );
     }
 
-    async searchCommands(fragmentRaw: string, cwdRaw: string, limit: number = 50): Promise<CommandHistoryRow[]> {
+    async searchCommands(
+        fragmentRaw: string,
+        cwdRaw: string,
+        previousCommandRaw?: string,
+        limit: number = 50,
+    ): Promise<CommandHistoryRow[]> {
         const fragment = fragmentRaw.trim().toLowerCase();
         const q = `%${fragment}%`;
         const cwd = safeNormalize(this.adapter, cwdRaw) ?? "";
+        const previousCommandId = await this.findActiveCommandId(previousCommandRaw);
         return this.sel<CommandHistoryRow[]>(
             `SELECT
                  c.command_text AS command,
@@ -259,10 +316,22 @@ export class HistoryRepository {
                  CAST(COALESCE(SUM(CASE WHEN p.path = ? THEN cs.exec_count ELSE 0 END), 0) AS INTEGER) AS cwdExecCount,
                  CAST(COALESCE(SUM(CASE WHEN p.path = ? THEN cs.select_count ELSE 0 END), 0) AS INTEGER) AS cwdSelectCount,
                  CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_exec_at ELSE 0 END), 0) AS INTEGER) AS cwdLastExecAt,
-                 CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_select_at ELSE 0 END), 0) AS INTEGER) AS cwdLastSelectAt
+                 CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_select_at ELSE 0 END), 0) AS INTEGER) AS cwdLastSelectAt,
+                 CAST(COALESCE(MAX(commandTransitionStat.transition_count), 0) AS INTEGER) AS transitionCount,
+                 CAST(COALESCE(MAX(commandTransitionOutgoingStat.outgoing_count), 0) AS INTEGER) AS outgoingTransitionCount,
+                 CAST(COALESCE(MAX(commandTransitionStat.last_transition_at), 0) AS INTEGER) AS lastTransitionAt
              FROM command_stat cs
                       JOIN command c ON c.id = cs.command_id
                       JOIN path p ON p.id = cs.cwd_path_id
+                      LEFT JOIN command_transition_stat commandTransitionStat
+                                ON commandTransitionStat.context_id = cs.context_id
+                               AND commandTransitionStat.previous_command_id = ?
+                               AND commandTransitionStat.next_command_id = c.id
+                               AND commandTransitionStat.deleted_at IS NULL
+                      LEFT JOIN command_transition_outgoing_stat commandTransitionOutgoingStat
+                                ON commandTransitionOutgoingStat.context_id = cs.context_id
+                               AND commandTransitionOutgoingStat.previous_command_id = ?
+                               AND commandTransitionOutgoingStat.deleted_at IS NULL
              WHERE cs.context_id = ?
                AND cs.deleted_at IS NULL
                AND c.deleted_at IS NULL
@@ -270,7 +339,7 @@ export class HistoryRepository {
              GROUP BY c.id
              ORDER BY SUM(cs.select_count) DESC, SUM(cs.exec_count) DESC, MAX(cs.last_exec_at) DESC
              LIMIT ?`,
-            [cwd, cwd, cwd, cwd, this.contextId, q, limit]
+            [cwd, cwd, cwd, cwd, previousCommandId, previousCommandId, this.contextId, q, limit]
         );
     }
 
@@ -432,6 +501,29 @@ export class HistoryRepository {
             [commandText]
         );
         if (rows.length === 0) throw new Error("ensureCommandId failed");
+        this._commandCache.set(commandText, rows[0].id);
+        return rows[0].id;
+    }
+
+    private async findActiveCommandId(commandTextRaw?: string): Promise<number | null> {
+        const commandText = commandTextRaw?.trim();
+        if (!commandText) {
+            return null;
+        }
+
+        const cachedCommandId = this._commandCache.get(commandText);
+        if (cachedCommandId !== undefined) {
+            return cachedCommandId;
+        }
+
+        const rows = await this.sel<IdRow[]>(
+            `SELECT id FROM command WHERE command_text = ? AND deleted_at IS NULL LIMIT 1`,
+            [commandText]
+        );
+        if (rows.length === 0) {
+            return null;
+        }
+
         this._commandCache.set(commandText, rows[0].id);
         return rows[0].id;
     }

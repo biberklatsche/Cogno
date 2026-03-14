@@ -13,6 +13,12 @@ type ReturnCodePolicy = {
     defaultAllowedCodes: Set<number>;
     perCommandAllowedCodes: Map<string, Set<number>>;
 };
+type RecentCommandExecution = {
+    command: string;
+    timestamp: number;
+};
+
+const TRANSITION_RETENTION_WINDOW_MS = 30 * 60 * 1000;
 
 function firstToken(commandRaw: string): string {
     const trimmed = commandRaw.trim();
@@ -30,6 +36,7 @@ export class TerminalHistoryPersistenceService {
         perCommandAllowedCodes: new Map<string, Set<number>>(),
     };
     private _lastCwdRaw = "";
+    private _recentCommandExecution?: RecentCommandExecution;
 
     constructor() {
         this._actions$
@@ -66,7 +73,23 @@ export class TerminalHistoryPersistenceService {
 
     onCommandExecuted(executedCommand: ExecutedCommand | undefined): void {
         if (!this.shouldPersistCommand(executedCommand)) return;
-        this.enqueue(repo => repo.upsertCommandExecution(executedCommand!.command, executedCommand!.directory));
+        if (!executedCommand) return;
+
+        const persistedCommand = executedCommand.command.trim();
+        const recentPreviousCommand = this.getRecentTransitionSourceCommand();
+
+        this.enqueue(async (repo) => {
+            await repo.upsertCommandExecution(persistedCommand, executedCommand.directory);
+
+            if (recentPreviousCommand) {
+                await repo.upsertCommandTransition(recentPreviousCommand, persistedCommand);
+            }
+        });
+
+        this._recentCommandExecution = {
+            command: persistedCommand,
+            timestamp: Date.now(),
+        };
     }
 
     setDefaultAllowedReturnCodes(codes: number[]): void {
@@ -100,7 +123,7 @@ export class TerminalHistoryPersistenceService {
     async searchCommands(fragment: string, cwdRaw: string, limit: number = 50): Promise<CommandHistoryRow[]> {
         const repo = this._repo$.value;
         if (!repo) return [];
-        return repo.searchCommands(fragment, cwdRaw, limit);
+        return repo.searchCommands(fragment, cwdRaw, this.getRecentTransitionSourceCommand(), limit);
     }
 
     markDirectorySelected(pathRaw: string): void {
@@ -135,5 +158,20 @@ export class TerminalHistoryPersistenceService {
 
     private enqueue(action: PersistenceAction): void {
         this._actions$.next(action);
+    }
+
+    private getRecentTransitionSourceCommand(): string | undefined {
+        const recentCommandExecution = this._recentCommandExecution;
+        if (!recentCommandExecution) {
+            return undefined;
+        }
+
+        const ageInMilliseconds = Date.now() - recentCommandExecution.timestamp;
+        if (ageInMilliseconds > TRANSITION_RETENTION_WINDOW_MS) {
+            this._recentCommandExecution = undefined;
+            return undefined;
+        }
+
+        return recentCommandExecution.command;
     }
 }
