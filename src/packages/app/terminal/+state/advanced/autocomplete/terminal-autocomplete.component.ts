@@ -80,7 +80,7 @@ import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.d
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 8px;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-            z-index: 11;
+            z-index: 110;
             padding: 4px;
         }
 
