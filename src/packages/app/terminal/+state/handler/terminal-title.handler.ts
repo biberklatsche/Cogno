@@ -13,12 +13,6 @@ export class TerminalTitleHandler implements ITerminalHandler{
 
     registerTerminal(terminal: Terminal): IDisposable {
         this._disposables = [];
-        /*this._disposables.push(terminal.parser
-            .registerOscHandler(0, (title: string) => {
-                console.log('################### TerminalTitleHandler0', {terminalId: this._terminalId, title});
-                this._bus.publish({type: "TerminalTitleChanged", payload: {oscCode: 0, terminalId: this._terminalId, title}})
-                return true;
-            }));*/
         this._disposables.push(terminal.parser
             .registerOscHandler(2, (title: string) => {
                 this._bus.publish({type: "TerminalTitleChanged", payload: {oscCode: 2, terminalId: this._terminalId, title}})

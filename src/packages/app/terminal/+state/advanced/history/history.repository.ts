@@ -241,11 +241,9 @@ export class HistoryRepository {
         const cwd = safeNormalize(this.adapter, cwdRaw);
         if (!cwd) return;
         const parent = this.adapter.parentOf(cwd);
-        console.log("############das schon", command, cwd);
         await this.tx(async () => {
             const cwdId = await this.ensurePathId(cwd, parent);
             const cmdId = await this.ensureCommandId(command);
-            console.log("############upsertCommandExecution", command, cwd);
             await this.exec(
                 `INSERT INTO command_stat(
                     context_id, cwd_path_id, command_id,
@@ -265,7 +263,6 @@ export class HistoryRepository {
 
     async upsertCommandPatternExecution(commandRaw: string): Promise<void> {
         const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
-        console.log("############upsertCommandPatternExecution", commandRaw, commandPatternOccurrence);
         if (commandPatternOccurrence === undefined) {
             return;
         }
