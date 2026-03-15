@@ -38,6 +38,42 @@ describe('InitialConfigOverridesWriter', () => {
     expect(text.endsWith('\n')).toBe(true);
   });
 
+  it('writes only overrides compared to defaults', () => {
+    const currentConfig: Config = JSON.parse(JSON.stringify(DEFAULTS));
+    currentConfig.scrollbar = { ...(currentConfig.scrollbar ?? {}), scrollback_lines: 1234 };
+    currentConfig.shell = {
+      ...(currentConfig.shell ?? {}),
+      default: 'zsh',
+      order: ['zsh'],
+      profiles: {
+        zsh: {
+          shell_type: 'ZSH',
+          path: '/bin/zsh',
+          args: [],
+          env: {},
+          working_dir: '~',
+          load_user_rc: true,
+          enable_shell_integration: true,
+          inject_cogno_cli: true,
+        },
+      },
+    };
+
+    const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS, false);
+
+    expect(text).toContain('scrollbar.scrollback_lines = 1234');
+    expect(text).toContain('shell.default = zsh');
+    expect(text).not.toContain('font.family');
+  });
+
+  it('writes nothing when config matches defaults exactly', () => {
+    const currentConfig: Config = JSON.parse(JSON.stringify(DEFAULTS));
+
+    const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS, false);
+
+    expect(text).toBe('');
+  });
+
   it('renders with comments and descriptions from schema', () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
     curr.terminal = { ...(curr.terminal ?? {}), webgl: true };

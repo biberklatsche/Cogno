@@ -222,7 +222,8 @@ export class RealConfigService extends ConfigService {
         if (!await Fs.exists(path)) {
             const userConfig = ConfigReader.fromStringToConfig(defaultConfigString, "", settingsExtensions);
             await this.shells.apply(userConfig, this.wiringService.getShellSupportDefinitions());
-            await Fs.writeTextFile(path, InitialConfigOverridesWriter.toDotString(userConfig));
+            const defaultConfig = ConfigReader.fromStringToConfig(defaultConfigString, "", settingsExtensions);
+            await Fs.writeTextFile(path, InitialConfigOverridesWriter.toDotString(userConfig, defaultConfig));
         }
 
         let userConfigString = await Fs.readTextFile(path);
