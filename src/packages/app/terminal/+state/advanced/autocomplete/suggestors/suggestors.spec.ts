@@ -111,10 +111,12 @@ describe("Autocomplete History Suggestors", () => {
     });
 
     it("HistoryCommandSuggestor returns ranked command suggestions", async () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
         const persistence = {
             searchCommands: vi.fn().mockResolvedValue([
-                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: 1, ...baseHistoryRow },
-                { command: "npm run build", execCount: 2, selectCount: 1, lastExecAt: 1, ...baseHistoryRow },
+                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: now - 60_000, ...baseHistoryRow },
+                { command: "npm run build", execCount: 2, selectCount: 1, lastExecAt: now - 3_600_000, ...baseHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
@@ -133,6 +135,8 @@ describe("Autocomplete History Suggestors", () => {
 
         const result = await suggestor.suggest(ctx);
         expect(result.length).toBe(2);
+        expect(result[0].description).toBe("last executed: 1 minute ago");
+        expect(result[1].description).toBe("last executed: 1 hour ago");
     });
 
     it("HistoryCommandPatternSuggestor returns learned pattern suggestions", async () => {
