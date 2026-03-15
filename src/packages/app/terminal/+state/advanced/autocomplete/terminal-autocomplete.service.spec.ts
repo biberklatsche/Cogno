@@ -92,6 +92,9 @@ describe("TerminalAutocompleteService", () => {
         const persistence = {
             searchDirectories: vi.fn().mockResolvedValue([]),
             searchCommands: vi.fn().mockResolvedValue([]),
+            searchCommandPatterns: vi.fn().mockResolvedValue([]),
+            markCommandPatternsShown: vi.fn(),
+            markCommandPatternSelected: vi.fn(),
             markDirectorySelected: vi.fn(),
             markCommandSelected: vi.fn(),
         } as unknown as TerminalHistoryPersistenceService;
@@ -149,6 +152,35 @@ describe("TerminalAutocompleteService", () => {
         expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion")).toBe(true);
     });
 
+    it("tracks shown and selected feedback for history patterns", async () => {
+        const persistence = (service as any).persistence;
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "git commit -am {arg1}",
+            insertText: "git commit -am {arg1}",
+            detail: "pattern",
+            score: 120,
+            source: "history-pattern",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedPatternSignature: "stable:git|stable:commit|stable:-am|slot:0",
+            completionBehavior: "continue",
+        }], "dummy-pattern"));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "git co", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect(persistence.markCommandPatternsShown).toHaveBeenCalledWith([
+            "stable:git|stable:commit|stable:-am|slot:0",
+        ]);
+
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+
+        expect(persistence.markCommandPatternSelected).toHaveBeenCalledWith(
+            "stable:git|stable:commit|stable:-am|slot:0",
+        );
+    });
+
     it("cycles filter mode via action and does not apply suggestion", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [
             makeSuggestionWithSource("git status", "history-cmd", 90),
@@ -190,6 +222,9 @@ describe("TerminalAutocompleteService", () => {
         const persistence = {
             searchDirectories: vi.fn().mockResolvedValue([]),
             searchCommands: vi.fn().mockResolvedValue([]),
+            searchCommandPatterns: vi.fn().mockResolvedValue([]),
+            markCommandPatternsShown: vi.fn(),
+            markCommandPatternSelected: vi.fn(),
             markDirectorySelected: vi.fn(),
             markCommandSelected: vi.fn(),
         } as unknown as TerminalHistoryPersistenceService;
@@ -491,36 +526,6 @@ describe("TerminalAutocompleteService", () => {
         expect(view.suggestions).toHaveLength(1);
         expect(view.suggestions[0].label).toBe("rails");
         expect(view.suggestions[0].description).toBe("Ruby on Rails CLI");
-    });
-
-    it("merges same label from npm-script and spec-sub into one suggestion", async () => {
-        service.registerSuggestor(new DummySuggestor(async () => [{
-            label: "test",
-            insertText: "test",
-            detail: "spec subcommand",
-            score: 135,
-            source: "spec-sub",
-            replaceStart: 8,
-            replaceEnd: 10,
-        }], "dummy-spec-sub"));
-        service.registerSuggestor(new DummySuggestor(async () => [{
-            label: "test",
-            insertText: "test",
-            detail: "npm script",
-            score: 145,
-            source: "npm-script",
-            replaceStart: 8,
-            replaceEnd: 10,
-        }], "dummy-npm-script"));
-
-        fakeState.emit({ ...fakeState.state, input: { text: "npm run te", cursorIndex: 10, maxCursorIndex: 10 } });
-        await vi.advanceTimersByTimeAsync(400);
-
-        const view = (service as any)._viewState.value;
-        expect(view.suggestions).toHaveLength(1);
-        expect(view.suggestions[0].label).toBe("test");
-        expect(view.suggestions[0].source).toBe("npm-script + spec-sub");
-        expect(view.suggestions[0].score).toBe(153);
     });
 
     it("merges identical directory labels from history and filesystem into one suggestion", async () => {

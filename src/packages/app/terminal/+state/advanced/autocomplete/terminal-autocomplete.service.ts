@@ -10,6 +10,7 @@ import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
+import { HistoryCommandPatternSuggestor } from "./suggestors/history-command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
@@ -112,6 +113,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     private registerDefaultSuggestors(): void {
         this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
+        this.registerSuggestor(new HistoryCommandPatternSuggestor(this.persistence));
         this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
         for (const suggestor of this.featureSuggestorService.getSharedSuggestors()) {
             this.registerSuggestor(suggestor);
@@ -242,6 +244,12 @@ export class TerminalAutocompleteService implements OnDestroy {
             return;
         }
 
+        this.persistence.markCommandPatternsShown(
+            visibleSuggestions
+                .map((suggestion) => suggestion.selectedPatternSignature)
+                .filter((signature): signature is string => typeof signature === "string" && signature.length > 0),
+        );
+
         const position = this.computePanelPosition(state, visibleSuggestions, this.readRenderedPanelHeight());
         this.takeVisibleOwnership();
 
@@ -358,6 +366,9 @@ export class TerminalAutocompleteService implements OnDestroy {
         }
         if (suggestion.selectedCommand && this.stateManager.state.cwd) {
             this.persistence.markCommandSelected(suggestion.selectedCommand, this.stateManager.state.cwd);
+        }
+        if (suggestion.selectedPatternSignature) {
+            this.persistence.markCommandPatternSelected(suggestion.selectedPatternSignature);
         }
 
         this.bus.publish({
@@ -517,6 +528,7 @@ export class TerminalAutocompleteService implements OnDestroy {
                     description: item.description ?? existing.suggestion.description,
                     selectedPath: item.selectedPath ?? existing.suggestion.selectedPath,
                     selectedCommand: item.selectedCommand ?? existing.suggestion.selectedCommand,
+                    selectedPatternSignature: item.selectedPatternSignature ?? existing.suggestion.selectedPatternSignature,
                 };
             } else {
                 if (!existing.suggestion.detail && item.detail) {
@@ -530,6 +542,9 @@ export class TerminalAutocompleteService implements OnDestroy {
                 }
                 if (!existing.suggestion.selectedCommand && item.selectedCommand) {
                     existing.suggestion.selectedCommand = item.selectedCommand;
+                }
+                if (!existing.suggestion.selectedPatternSignature && item.selectedPatternSignature) {
+                    existing.suggestion.selectedPatternSignature = item.selectedPatternSignature;
                 }
             }
         }

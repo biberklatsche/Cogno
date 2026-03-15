@@ -236,7 +236,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     matches(context: AutocompleteQueryContextContract): boolean {
         return (
             context.mode === "command" ||
-            context.mode === "npm-script" ||
             context.mode === "cd"
         ) && this.inputPattern.test(context.beforeCursor);
     }
@@ -248,10 +247,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     async suggest(context: AutocompleteQueryContextContract): Promise<AutocompleteSuggestionContract[]> {
         if (context.mode === "cd") {
             return this.suggestCommandArgs("cd", context.fragment, context.replaceStart, context);
-        }
-
-        if (context.mode === "npm-script") {
-            return this.suggestCommandArgs("npm", context.fragment, context.replaceStart, context);
         }
 
         if (context.mode !== "command") return [];

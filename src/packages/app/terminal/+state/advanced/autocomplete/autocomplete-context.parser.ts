@@ -30,17 +30,6 @@ export class AutocompleteContextParser {
             };
         }
 
-        const npmPrefix = beforeCursor.match(/^\s*npm\s+/);
-        if (npmPrefix) {
-            return {
-                ...base,
-                mode: "npm-script",
-                fragment: beforeCursor.slice(npmPrefix[0].length),
-                replaceStart: npmPrefix[0].length,
-                replaceEnd: cursorIndex,
-            };
-        }
-
         return {
             ...base,
             mode: "command",

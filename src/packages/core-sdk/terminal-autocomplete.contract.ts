@@ -18,6 +18,7 @@ export type AutocompleteSuggestionContract = {
   matchRanges?: AutocompleteMatchRangeContract[];
   selectedPath?: string;
   selectedCommand?: string;
+  selectedPatternSignature?: string;
   completionBehavior?: "final" | "continue";
 };
 
@@ -41,15 +42,9 @@ export type CommandAutocompleteQueryContextContract = BaseAutocompleteQueryConte
   query: string;
 };
 
-export type NpmScriptAutocompleteQueryContextContract = BaseAutocompleteQueryContextContract & {
-  mode: "npm-script";
-  fragment: string;
-};
-
 export type AutocompleteQueryContextContract =
   | CdAutocompleteQueryContextContract
-  | CommandAutocompleteQueryContextContract
-  | NpmScriptAutocompleteQueryContextContract;
+  | CommandAutocompleteQueryContextContract;
 
 export interface TerminalAutocompleteSuggestorContract {
   readonly id: string;

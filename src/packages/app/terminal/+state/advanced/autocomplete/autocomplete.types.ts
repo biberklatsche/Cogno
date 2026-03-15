@@ -22,5 +22,4 @@ export type AutocompleteViewState = {
 export type BaseQueryContext = Extract<AutocompleteQueryContextContract, { shellContext: ShellContextContract }>;
 export type CdQueryContext = Extract<AutocompleteQueryContextContract, { mode: "cd" }>;
 export type CommandQueryContext = Extract<AutocompleteQueryContextContract, { mode: "command" }>;
-export type NpmScriptQueryContext = Extract<AutocompleteQueryContextContract, { mode: "npm-script" }>;
 export type QueryContext = AutocompleteQueryContextContract;

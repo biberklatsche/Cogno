@@ -5,6 +5,7 @@ import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { Logger } from "../../../../_tauri/logger";
 import { IPathAdapter } from "@cogno/core-sdk";
 import { ShellContext } from "../model/models";
+import { LearnedCommandPattern } from "./command-pattern.models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
 import {ExecutedCommand} from "./terminal-command-history.store";
 
@@ -76,9 +77,11 @@ export class TerminalHistoryPersistenceService {
         if (!executedCommand) return;
 
         const persistedCommand = executedCommand.command.trim();
+        const timestamp = Date.now();
         const recentPreviousCommand = this.getRecentTransitionSourceCommand();
 
         this.enqueue(async (repo) => {
+            await repo.upsertCommandPatternExecution(persistedCommand);
             await repo.upsertCommandExecution(persistedCommand, executedCommand.directory);
 
             if (recentPreviousCommand) {
@@ -88,7 +91,7 @@ export class TerminalHistoryPersistenceService {
 
         this._recentCommandExecution = {
             command: persistedCommand,
-            timestamp: Date.now(),
+            timestamp,
         };
     }
 
@@ -111,7 +114,10 @@ export class TerminalHistoryPersistenceService {
 
     deleteCommandExecution(commandRaw: string, cwdRaw: string): void {
         if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
-        this.enqueue(repo => repo.deleteCommandExecution(commandRaw, cwdRaw));
+        this.enqueue(async (repo) => {
+            await repo.deleteCommandPatternExecution(commandRaw);
+            await repo.deleteCommandExecution(commandRaw, cwdRaw);
+        });
     }
 
     async searchDirectories(fragment: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
@@ -126,6 +132,17 @@ export class TerminalHistoryPersistenceService {
         return repo.searchCommands(fragment, cwdRaw, this.getRecentTransitionSourceCommand(), limit);
     }
 
+    async searchCommandPatterns(fragment: string, limit: number = 50): Promise<LearnedCommandPattern[]> {
+        const repo = this._repo$.value;
+        if (!repo) return [];
+        return repo.searchCommandPatterns(fragment, limit);
+    }
+
+    markCommandPatternsShown(signatureKeys: readonly string[]): void {
+        if (signatureKeys.length === 0) return;
+        this.enqueue(repo => repo.markCommandPatternsShown(signatureKeys));
+    }
+
     markDirectorySelected(pathRaw: string): void {
         if (!pathRaw?.trim()) return;
         this.enqueue(repo => repo.markDirectorySelected(pathRaw));
@@ -134,6 +151,11 @@ export class TerminalHistoryPersistenceService {
     markCommandSelected(commandRaw: string, cwdRaw: string): void {
         if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
         this.enqueue(repo => repo.markCommandSelected(commandRaw, cwdRaw));
+    }
+
+    markCommandPatternSelected(signatureKey: string): void {
+        if (!signatureKey?.trim()) return;
+        this.enqueue(repo => repo.markCommandPatternSelected(signatureKey));
     }
 
     private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {

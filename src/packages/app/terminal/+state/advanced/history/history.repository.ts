@@ -2,6 +2,11 @@ import { IPathAdapter } from "@cogno/core-sdk";
 import {DB} from "../../../../_tauri/db";
 import {isWslContext, ShellContext} from "../model/models";
 import {Hash} from "../../../../common/hash/hash";
+import { CommandPatternLearner } from "./command-pattern-learner";
+import { LearnedCommandPattern, CommandPatternSlotStatistics, CommandSignaturePart } from "./command-pattern.models";
+import { CommandSignatureBuilder } from "./command-signature-builder";
+import { CommandTokenClassifier } from "./command-token-classifier";
+import { CommandTokenizer } from "./command-tokenizer";
 
 type IdRow = { id: number };
 type PathRow = {
@@ -33,6 +38,44 @@ export type CommandHistoryRow = {
     transitionCount: number;
     outgoingTransitionCount: number;
     lastTransitionAt: number;
+};
+type CommandPatternStatRow = {
+    signatureKey: string;
+    signaturePartsJson: string;
+    patternText: string;
+    stableTokenCount: number;
+    nonOptionStableTokenCount: number;
+    variableSlotCount: number;
+    totalCount: number;
+    lastSeenAt: number;
+    shownCount: number;
+    selectedCount: number;
+    lastShownAt?: number;
+    lastSelectedAt?: number;
+};
+type CommandPatternSlotStatRow = {
+    signatureKey: string;
+    slotIndex: number;
+    totalCount: number;
+    distinctValueCount: number;
+    topValue: string;
+    topValueCount: number;
+};
+type CommandPatternSlotValueCountRow = {
+    valueCount: number;
+};
+type CommandPatternSlotStatExistingRow = {
+    totalCount: number;
+    distinctValueCount: number;
+    topValue: string;
+    topValueCount: number;
+};
+type CommandPatternStatCountRow = {
+    totalCount: number;
+};
+type CommandPatternSlotValueStatRow = {
+    slotValue: string;
+    valueCount: number;
 };
 
 function nowMs(): number { return Date.now(); }
@@ -69,6 +112,11 @@ export class HistoryRepository {
     private _inTransaction = false;
     private readonly _pathCache = new Map<string, { id: number; parentId: number | null }>();
     private readonly _commandCache = new Map<string, number>();
+    private readonly commandPatternLearner = new CommandPatternLearner(
+        new CommandTokenizer(),
+        new CommandTokenClassifier(),
+        new CommandSignatureBuilder(),
+    );
 
     private constructor(
         private readonly contextId: number,
@@ -194,6 +242,66 @@ export class HistoryRepository {
         });
     }
 
+    async upsertCommandPatternExecution(commandRaw: string): Promise<void> {
+        const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
+        if (commandPatternOccurrence === undefined) {
+            return;
+        }
+
+        const timestamp = nowMs();
+
+        await this.tx(async () => {
+            await this.exec(
+                `INSERT INTO command_pattern_stat(
+                    context_id,
+                    signature_key,
+                    signature_parts_json,
+                    pattern_text,
+                    stable_token_count,
+                    non_option_stable_token_count,
+                    variable_slot_count,
+                    total_count,
+                    last_seen_at,
+                    shown_count,
+                    selected_count,
+                    last_shown_at,
+                    last_selected_at,
+                    created_at,
+                    deleted_at
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, 1, ?, 0, 0, NULL, NULL, ?, NULL)
+                ON CONFLICT(context_id, signature_key) DO UPDATE SET
+                    signature_parts_json = excluded.signature_parts_json,
+                    pattern_text = excluded.pattern_text,
+                    stable_token_count = excluded.stable_token_count,
+                    non_option_stable_token_count = excluded.non_option_stable_token_count,
+                    variable_slot_count = excluded.variable_slot_count,
+                    total_count = command_pattern_stat.total_count + 1,
+                    last_seen_at = excluded.last_seen_at,
+                    deleted_at = NULL`,
+                [
+                    this.contextId,
+                    commandPatternOccurrence.signature.key,
+                    JSON.stringify(commandPatternOccurrence.signature.parts),
+                    commandPatternOccurrence.patternText,
+                    commandPatternOccurrence.stableTokenCount,
+                    commandPatternOccurrence.nonOptionStableTokenCount,
+                    commandPatternOccurrence.variableSlotCount,
+                    timestamp,
+                    timestamp,
+                ],
+            );
+
+            for (const slotValue of commandPatternOccurrence.slotValues) {
+                await this.upsertCommandPatternSlotValue(
+                    commandPatternOccurrence.signature.key,
+                    slotValue.slotIndex,
+                    slotValue.value,
+                    timestamp,
+                );
+            }
+        });
+    }
+
     async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {
         const previousCommand = previousCommandRaw.trim();
         const nextCommand = nextCommandRaw.trim();
@@ -270,6 +378,86 @@ export class HistoryRepository {
         });
     }
 
+    async deleteCommandPatternExecution(commandRaw: string): Promise<void> {
+        const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
+        if (commandPatternOccurrence === undefined) {
+            return;
+        }
+
+        const timestamp = nowMs();
+
+        await this.tx(async () => {
+            const existingPatternRows = await this.sel<CommandPatternStatCountRow[]>(
+                `SELECT total_count AS totalCount
+                 FROM command_pattern_stat
+                 WHERE context_id = ?
+                   AND signature_key = ?
+                   AND deleted_at IS NULL
+                 LIMIT 1`,
+                [this.contextId, commandPatternOccurrence.signature.key],
+            );
+            const existingPattern = existingPatternRows[0];
+            if (existingPattern === undefined) {
+                return;
+            }
+
+            for (const slotValue of commandPatternOccurrence.slotValues) {
+                await this.decrementCommandPatternSlotValue(
+                    commandPatternOccurrence.signature.key,
+                    slotValue.slotIndex,
+                    slotValue.value,
+                    timestamp,
+                );
+            }
+
+            if (existingPattern.totalCount <= 1) {
+                await this.exec(
+                    `UPDATE command_pattern_stat
+                     SET total_count = 0,
+                         deleted_at = ?
+                     WHERE context_id = ?
+                       AND signature_key = ?
+                       AND deleted_at IS NULL`,
+                    [timestamp, this.contextId, commandPatternOccurrence.signature.key],
+                );
+
+                await this.exec(
+                    `UPDATE command_pattern_slot_stat
+                     SET total_count = 0,
+                         distinct_value_count = 0,
+                         top_value = '',
+                         top_value_count = 0,
+                         deleted_at = ?
+                     WHERE context_id = ?
+                       AND signature_key = ?
+                       AND deleted_at IS NULL`,
+                    [timestamp, this.contextId, commandPatternOccurrence.signature.key],
+                );
+
+                await this.exec(
+                    `UPDATE command_pattern_slot_value_stat
+                     SET value_count = 0,
+                         deleted_at = ?
+                     WHERE context_id = ?
+                       AND signature_key = ?
+                       AND deleted_at IS NULL`,
+                    [timestamp, this.contextId, commandPatternOccurrence.signature.key],
+                );
+
+                return;
+            }
+
+            await this.exec(
+                `UPDATE command_pattern_stat
+                 SET total_count = total_count - 1
+                 WHERE context_id = ?
+                   AND signature_key = ?
+                   AND deleted_at IS NULL`,
+                [this.contextId, commandPatternOccurrence.signature.key],
+            );
+        });
+    }
+
     async searchDirectories(fragmentRaw: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
         const fragment = fragmentRaw.trim().toLowerCase();
         const q = `%${fragment}%`;
@@ -340,6 +528,129 @@ export class HistoryRepository {
              ORDER BY SUM(cs.select_count) DESC, SUM(cs.exec_count) DESC, MAX(cs.last_exec_at) DESC
              LIMIT ?`,
             [cwd, cwd, cwd, cwd, previousCommandId, previousCommandId, this.contextId, q, limit]
+        );
+    }
+
+    async searchCommandPatterns(fragmentRaw: string, limit: number = 50): Promise<LearnedCommandPattern[]> {
+        const fragment = fragmentRaw.trim().toLowerCase();
+        if (!fragment) {
+            return [];
+        }
+
+        const seedToken = firstToken(fragment);
+        const q = `%${seedToken}%`;
+        const patternRows = await this.sel<CommandPatternStatRow[]>(
+            `SELECT
+                signature_key AS signatureKey,
+                signature_parts_json AS signaturePartsJson,
+                pattern_text AS patternText,
+                stable_token_count AS stableTokenCount,
+                non_option_stable_token_count AS nonOptionStableTokenCount,
+                variable_slot_count AS variableSlotCount,
+                total_count AS totalCount,
+                last_seen_at AS lastSeenAt
+                ,shown_count AS shownCount
+                ,selected_count AS selectedCount
+                ,last_shown_at AS lastShownAt
+                ,last_selected_at AS lastSelectedAt
+            FROM command_pattern_stat
+            WHERE context_id = ?
+              AND deleted_at IS NULL
+              AND LOWER(pattern_text) LIKE ?
+            ORDER BY total_count DESC, last_seen_at DESC
+            LIMIT ?`,
+            [this.contextId, q, limit],
+        );
+
+        if (patternRows.length === 0) {
+            return [];
+        }
+
+        const signatureKeys = patternRows.map((patternRow) => patternRow.signatureKey);
+        const placeholders = signatureKeys.map(() => "?").join(", ");
+        const slotRows = await this.sel<CommandPatternSlotStatRow[]>(
+            `SELECT
+                signature_key AS signatureKey,
+                slot_index AS slotIndex,
+                total_count AS totalCount,
+                distinct_value_count AS distinctValueCount,
+                top_value AS topValue,
+                top_value_count AS topValueCount
+            FROM command_pattern_slot_stat
+            WHERE context_id = ?
+              AND deleted_at IS NULL
+              AND signature_key IN (${placeholders})
+            ORDER BY signature_key, slot_index`,
+            [this.contextId, ...signatureKeys],
+        );
+
+        const slotRowsBySignatureKey = new Map<string, CommandPatternSlotStatistics[]>();
+        for (const slotRow of slotRows) {
+            const existingSlotRows = slotRowsBySignatureKey.get(slotRow.signatureKey) ?? [];
+            existingSlotRows.push({
+                slotIndex: slotRow.slotIndex,
+                totalCount: slotRow.totalCount,
+                distinctValueCount: slotRow.distinctValueCount,
+                topValue: slotRow.topValue,
+                topValueCount: slotRow.topValueCount,
+            });
+            slotRowsBySignatureKey.set(slotRow.signatureKey, existingSlotRows);
+        }
+
+        return patternRows.map((patternRow) => ({
+            signature: {
+                key: patternRow.signatureKey,
+                parts: JSON.parse(patternRow.signaturePartsJson) as CommandSignaturePart[],
+            },
+            totalCount: patternRow.totalCount,
+            stableTokenCount: patternRow.stableTokenCount,
+            nonOptionStableTokenCount: patternRow.nonOptionStableTokenCount,
+            variableSlotCount: patternRow.variableSlotCount,
+            lastSeenAt: patternRow.lastSeenAt,
+            shownCount: patternRow.shownCount,
+            selectedCount: patternRow.selectedCount,
+            lastShownAt: patternRow.lastShownAt ?? undefined,
+            lastSelectedAt: patternRow.lastSelectedAt ?? undefined,
+            slotStatistics: slotRowsBySignatureKey.get(patternRow.signatureKey) ?? [],
+        }));
+    }
+
+    async markCommandPatternsShown(signatureKeys: readonly string[]): Promise<void> {
+        const uniqueSignatureKeys = [...new Set(signatureKeys.map((signatureKey) => signatureKey.trim()).filter(Boolean))];
+        if (uniqueSignatureKeys.length === 0) {
+            return;
+        }
+
+        const timestamp = nowMs();
+        const placeholders = uniqueSignatureKeys.map(() => "?").join(", ");
+        await this.exec(
+            `UPDATE command_pattern_stat
+             SET shown_count = shown_count + 1,
+                 last_shown_at = ?,
+                 deleted_at = NULL
+             WHERE context_id = ?
+               AND signature_key IN (${placeholders})
+               AND deleted_at IS NULL`,
+            [timestamp, this.contextId, ...uniqueSignatureKeys],
+        );
+    }
+
+    async markCommandPatternSelected(signatureKeyRaw: string): Promise<void> {
+        const signatureKey = signatureKeyRaw.trim();
+        if (!signatureKey) {
+            return;
+        }
+
+        const timestamp = nowMs();
+        await this.exec(
+            `UPDATE command_pattern_stat
+             SET selected_count = selected_count + 1,
+                 last_selected_at = ?,
+                 deleted_at = NULL
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND deleted_at IS NULL`,
+            [timestamp, this.contextId, signatureKey],
         );
     }
 
@@ -526,6 +837,209 @@ export class HistoryRepository {
 
         this._commandCache.set(commandText, rows[0].id);
         return rows[0].id;
+    }
+
+    private async upsertCommandPatternSlotValue(
+        signatureKey: string,
+        slotIndex: number,
+        slotValue: string,
+        timestamp: number,
+    ): Promise<void> {
+        const existingSlotValueRows = await this.sel<CommandPatternSlotValueCountRow[]>(
+            `SELECT value_count AS valueCount
+             FROM command_pattern_slot_value_stat
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?
+               AND slot_value = ?
+             LIMIT 1`,
+            [this.contextId, signatureKey, slotIndex, slotValue],
+        );
+        const existingSlotValueCount = existingSlotValueRows[0]?.valueCount ?? 0;
+        const nextSlotValueCount = existingSlotValueCount + 1;
+        const isNewDistinctValue = existingSlotValueCount === 0;
+
+        await this.exec(
+            `INSERT INTO command_pattern_slot_value_stat(
+                context_id,
+                signature_key,
+                slot_index,
+                slot_value,
+                value_count,
+                last_seen_at,
+                created_at,
+                deleted_at
+            ) VALUES(?, ?, ?, ?, 1, ?, ?, NULL)
+            ON CONFLICT(context_id, signature_key, slot_index, slot_value) DO UPDATE SET
+                value_count = command_pattern_slot_value_stat.value_count + 1,
+                last_seen_at = excluded.last_seen_at,
+                deleted_at = NULL`,
+            [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
+        );
+
+        const existingSlotStatRows = await this.sel<CommandPatternSlotStatExistingRow[]>(
+            `SELECT
+                total_count AS totalCount,
+                distinct_value_count AS distinctValueCount,
+                top_value AS topValue,
+                top_value_count AS topValueCount
+             FROM command_pattern_slot_stat
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?
+             LIMIT 1`,
+            [this.contextId, signatureKey, slotIndex],
+        );
+
+        const existingSlotStat = existingSlotStatRows[0];
+        if (existingSlotStat === undefined) {
+            await this.exec(
+                `INSERT INTO command_pattern_slot_stat(
+                    context_id,
+                    signature_key,
+                    slot_index,
+                    total_count,
+                    distinct_value_count,
+                    top_value,
+                    top_value_count,
+                    last_seen_at,
+                    created_at,
+                    deleted_at
+                ) VALUES(?, ?, ?, 1, 1, ?, 1, ?, ?, NULL)`,
+                [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
+            );
+            return;
+        }
+
+        const nextDistinctValueCount = existingSlotStat.distinctValueCount + (isNewDistinctValue ? 1 : 0);
+        const shouldReplaceTopValue = nextSlotValueCount > existingSlotStat.topValueCount;
+        const nextTopValue = shouldReplaceTopValue ? slotValue : existingSlotStat.topValue;
+        const nextTopValueCount = shouldReplaceTopValue ? nextSlotValueCount : existingSlotStat.topValueCount;
+
+        await this.exec(
+            `UPDATE command_pattern_slot_stat
+             SET total_count = ?,
+                 distinct_value_count = ?,
+                 top_value = ?,
+                 top_value_count = ?,
+                 last_seen_at = ?,
+                 deleted_at = NULL
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?`,
+            [
+                existingSlotStat.totalCount + 1,
+                nextDistinctValueCount,
+                nextTopValue,
+                nextTopValueCount,
+                timestamp,
+                this.contextId,
+                signatureKey,
+                slotIndex,
+            ],
+        );
+    }
+
+    private async decrementCommandPatternSlotValue(
+        signatureKey: string,
+        slotIndex: number,
+        slotValue: string,
+        timestamp: number,
+    ): Promise<void> {
+        const existingSlotValueRows = await this.sel<CommandPatternSlotValueCountRow[]>(
+            `SELECT value_count AS valueCount
+             FROM command_pattern_slot_value_stat
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?
+               AND slot_value = ?
+               AND deleted_at IS NULL
+             LIMIT 1`,
+            [this.contextId, signatureKey, slotIndex, slotValue],
+        );
+        const existingSlotValueCount = existingSlotValueRows[0]?.valueCount;
+        if (existingSlotValueCount === undefined) {
+            return;
+        }
+
+        const nextSlotValueCount = Math.max(0, existingSlotValueCount - 1);
+        await this.exec(
+            `UPDATE command_pattern_slot_value_stat
+             SET value_count = ?,
+                 deleted_at = CASE WHEN ? <= 0 THEN ? ELSE NULL END
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?
+               AND slot_value = ?
+               AND deleted_at IS NULL`,
+            [
+                nextSlotValueCount,
+                nextSlotValueCount,
+                timestamp,
+                this.contextId,
+                signatureKey,
+                slotIndex,
+                slotValue,
+            ],
+        );
+
+        const remainingSlotValueRows = await this.sel<CommandPatternSlotValueStatRow[]>(
+            `SELECT
+                slot_value AS slotValue,
+                value_count AS valueCount
+             FROM command_pattern_slot_value_stat
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?
+               AND deleted_at IS NULL
+               AND value_count > 0
+             ORDER BY value_count DESC, slot_value ASC`,
+            [this.contextId, signatureKey, slotIndex],
+        );
+
+        if (remainingSlotValueRows.length === 0) {
+            await this.exec(
+                `UPDATE command_pattern_slot_stat
+                 SET total_count = 0,
+                     distinct_value_count = 0,
+                     top_value = '',
+                     top_value_count = 0,
+                     deleted_at = ?
+                 WHERE context_id = ?
+                   AND signature_key = ?
+                   AND slot_index = ?
+                   AND deleted_at IS NULL`,
+                [timestamp, this.contextId, signatureKey, slotIndex],
+            );
+            return;
+        }
+
+        const nextTotalCount = remainingSlotValueRows.reduce(
+            (totalCount, currentRow) => totalCount + currentRow.valueCount,
+            0,
+        );
+        const topSlotValueRow = remainingSlotValueRows[0];
+
+        await this.exec(
+            `UPDATE command_pattern_slot_stat
+             SET total_count = ?,
+                 distinct_value_count = ?,
+                 top_value = ?,
+                 top_value_count = ?,
+                 deleted_at = NULL
+             WHERE context_id = ?
+               AND signature_key = ?
+               AND slot_index = ?`,
+            [
+                nextTotalCount,
+                remainingSlotValueRows.length,
+                topSlotValueRow.slotValue,
+                topSlotValueRow.valueCount,
+                this.contextId,
+                signatureKey,
+                slotIndex,
+            ],
+        );
     }
 
     // ---- DB wrappers with retry + tx ----

@@ -62,7 +62,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
     }
 
     private resolveFragment(context: SpecProviderContext): string {
-        if (context.queryContext.mode === "cd" || context.queryContext.mode === "npm-script") {
+        if (context.queryContext.mode === "cd") {
             return context.queryContext.fragment;
         }
 
@@ -157,6 +157,10 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
                 },
             });
         }
+
+        candidates.sort((leftCandidate, rightCandidate) =>
+            leftCandidate.entryNameLower.localeCompare(rightCandidate.entryNameLower)
+        );
 
         this.setCache(cacheKey, {
             expiresAt: now + FilesystemSpecProvider.CACHE_TTL_MS,

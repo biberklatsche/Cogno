@@ -15,11 +15,11 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
     constructor(private readonly persistence: TerminalHistoryPersistenceService) {}
 
     matches(context: QueryContext): boolean {
-        return (context.mode === "command" || context.mode === "npm-script") && this.inputPattern.test(context.beforeCursor);
+        return context.mode === "command" && this.inputPattern.test(context.beforeCursor);
     }
 
     async suggest(context: QueryContext): Promise<AutocompleteSuggestion[]> {
-        const query = context.mode === "npm-script" ? "npm" : context.mode === "command" ? context.query : "";
+        const query = context.mode === "command" ? context.query : "";
         if (!query) return [];
         const queryTokens = HistoryCommandScorer.uniqueTokens(query);
         if (queryTokens.length === 0) return [];

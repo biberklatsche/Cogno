@@ -32,9 +32,9 @@ describe("AutocompleteContextParser", () => {
         expect((ctx as any).fragment).toBe("");
     });
 
-    it("parses npm script context for 'npm '", () => {
+    it("parses 'npm ' as normal command context", () => {
         const ctx = AutocompleteContextParser.parse(baseState("npm ", 4));
-        expect(ctx?.mode).toBe("npm-script");
-        expect((ctx as any).fragment).toBe("");
+        expect(ctx?.mode).toBe("command");
+        expect((ctx as any).query).toBe("npm");
     });
 });

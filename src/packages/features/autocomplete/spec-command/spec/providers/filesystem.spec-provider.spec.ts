@@ -179,4 +179,32 @@ describe("FilesystemSpecProvider", () => {
         expect(result.some(r => r.label === "package.json")).toBe(true);
         expect(result.some(r => r.label === "Projects")).toBe(false);
     });
+
+    it("returns filesystem suggestions sorted by name", async () => {
+        vi.mocked(filesystem.list).mockResolvedValue([
+            { name: "zeta.txt", path: "/Users/larswolfram/projects/zeta.txt", kind: "file" },
+            { name: "alpha.txt", path: "/Users/larswolfram/projects/alpha.txt", kind: "file" },
+            { name: "Beta.txt", path: "/Users/larswolfram/projects/Beta.txt", kind: "file" },
+        ]);
+        vi.mocked(filesystem.toDisplayPath).mockImplementation((path, cwd) => path.replace(`${cwd}/`, ""));
+
+        const provider = new FilesystemSpecProvider(filesystem);
+        const result = await provider.suggest({
+            queryContext: commandContext("cat "),
+            command: "cat",
+            args: [],
+            binding: {
+                providerId: "filesystem",
+                params: {
+                    kinds: ["file"],
+                },
+            },
+        });
+
+        expect(result.map((suggestion) => suggestion.label)).toEqual([
+            "alpha.txt",
+            "Beta.txt",
+            "zeta.txt",
+        ]);
+    });
 });

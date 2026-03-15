@@ -131,7 +131,7 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
     }
 
     private resolveQuery(context: SpecProviderContext): string {
-        if (context.queryContext.mode === "cd" || context.queryContext.mode === "npm-script") {
+        if (context.queryContext.mode === "cd") {
             return context.queryContext.fragment;
         }
 
