@@ -11,44 +11,59 @@ export interface IDatabase {
 }
 
 let _db: TauriDatabase;
-let txQueue: Promise<void> = Promise.resolve();
+let operationQueue: Promise<void> = Promise.resolve();
+let activeTransactionCount = 0;
+
+async function runSerialized<T>(operation: () => Promise<T>): Promise<T> {
+    if (activeTransactionCount > 0) {
+        return operation();
+    }
+
+    const previousOperation = operationQueue;
+    let releaseOperationQueue: () => void = () => undefined;
+    operationQueue = new Promise<void>((resolve) => {
+        releaseOperationQueue = resolve;
+    });
+
+    await previousOperation;
+    try {
+        return await operation();
+    } finally {
+        releaseOperationQueue();
+    }
+}
+
 export const DB: IDatabase = {
 
     async load(path: string): Promise<void> {
         _db = await TauriDatabase.load(path);
     },
     async execute(query: string, params?: unknown[]): Promise<void> {
-        await _db.execute(query, params);
+        await runSerialized(() => _db.execute(query, params));
     },
     async select<T = unknown>(query: string, params?: unknown[]): Promise<T> {
-        return _db.select<T>(query, params);
+        return runSerialized(() => _db.select<T>(query, params));
     },
     async transaction<T>(fn: () => Promise<T>): Promise<T> {
-        // Serialize transactions per DB connection to avoid overlapping BEGIN calls.
-        const previous = txQueue;
-        let release!: () => void;
-        txQueue = new Promise<void>(resolve => {
-            release = resolve;
-        });
-
-        await previous;
-        try {
-            await _db.execute("BEGIN IMMEDIATE;");
+        return runSerialized(async () => {
+            activeTransactionCount += 1;
             try {
-                const result = await fn();
-                await _db.execute("COMMIT;");
-                return result;
-            } catch (e) {
+                await _db.execute("BEGIN IMMEDIATE;");
                 try {
-                    await _db.execute("ROLLBACK;");
-                } catch {
-                    // Transaction may already be closed by SQLite.
+                    const result = await fn();
+                    await _db.execute("COMMIT;");
+                    return result;
+                } catch (error) {
+                    try {
+                        await _db.execute("ROLLBACK;");
+                    } catch {
+                    }
+                    throw error;
                 }
-                throw e;
+            } finally {
+                activeTransactionCount -= 1;
             }
-        } finally {
-            release();
-        }
+        });
     }
 
 }

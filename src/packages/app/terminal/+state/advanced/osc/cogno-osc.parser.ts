@@ -24,7 +24,6 @@ const OscParser = {
             const rawVal = part.slice(eq + 1);
             out[key] = decodeValue(rawVal);
         }
-
         return out;
     }
 };

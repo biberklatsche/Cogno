@@ -20,6 +20,7 @@ const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
 const MAX_SUGGESTIONS = 20;
 const PANEL_MAX_VISIBLE_ITEMS = 6;
+const MAX_TOP_HISTORY_SUGGESTIONS = 3;
 
 const PANEL_MIN_WIDTH = 280;
 const PANEL_MAX_WIDTH = 920;
@@ -303,18 +304,17 @@ export class TerminalAutocompleteService implements OnDestroy {
             return deduped.slice(0, MAX_SUGGESTIONS);
         }
 
-        return this.trimWithSourceBalance(deduped);
+        return this.prioritizeHistorySuggestions(deduped).slice(0, MAX_SUGGESTIONS);
     }
 
-    private trimWithSourceBalance(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
-        if (items.length <= MAX_SUGGESTIONS) return items;
-
+    private prioritizeHistorySuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
         const history = items.filter(item => this.isHistorySuggestion(item));
-        const reservedHistory = history.slice(0, Math.min(3, history.length));
+        const reservedHistory = history.slice(0, MAX_TOP_HISTORY_SUGGESTIONS);
         const used = new Set(reservedHistory);
-        const rest = items.filter(item => !used.has(item));
+        const nonHistory = items.filter(item => !this.isHistorySuggestion(item));
+        const additionalHistory = history.filter(item => !used.has(item));
 
-        return [...reservedHistory, ...rest].slice(0, MAX_SUGGESTIONS);
+        return [...reservedHistory, ...nonHistory, ...additionalHistory];
     }
 
     private applyFilterMode(items: AutocompleteSuggestion[], mode: SuggestionFilterMode): AutocompleteSuggestion[] {
@@ -324,29 +324,7 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (mode === "context-only") {
             return items.filter(item => !this.isHistorySuggestion(item));
         }
-        return this.balanceVisibleTopInAllMode(items);
-    }
-
-    private balanceVisibleTopInAllMode(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
-        if (items.length <= 1) return items;
-
-        const visibleCap = Math.min(PANEL_MAX_VISIBLE_ITEMS, items.length);
-        const history = items.filter(item => this.isHistorySuggestion(item));
-        const nonHistory = items.filter(item => !this.isHistorySuggestion(item));
-
-        const targetHistory = Math.min(Math.floor(visibleCap / 2), history.length);
-        const targetNonHistory = Math.min(visibleCap - targetHistory, nonHistory.length);
-
-        const topHistory = history.slice(0, targetHistory);
-        const topNonHistory = nonHistory.slice(0, targetNonHistory);
-        const top = [...topHistory, ...topNonHistory];
-
-        const used = new Set(top);
-        const rest = items
-            .filter(item => !used.has(item))
-            .sort((a, b) => b.score - a.score);
-
-        return [...top, ...rest];
+        return this.prioritizeHistorySuggestions(items);
     }
 
     private applySelectedSuggestion(index: number): void {

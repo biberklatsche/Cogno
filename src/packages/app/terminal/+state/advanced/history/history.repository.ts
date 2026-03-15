@@ -96,6 +96,27 @@ function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
 }
 
+async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
+    const delaysInMilliseconds = [0, 10, 30, 80];
+    let lastError: unknown;
+
+    for (let index = 0; index < delaysInMilliseconds.length; index += 1) {
+        try {
+            if (delaysInMilliseconds[index] > 0) {
+                await sleep(delaysInMilliseconds[index]);
+            }
+            return await operation();
+        } catch (error) {
+            lastError = error;
+            if (!isLockError(error) || index === delaysInMilliseconds.length - 1) {
+                break;
+            }
+        }
+    }
+
+    throw lastError;
+}
+
 function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
     try {
         return adapter.normalize(raw);
@@ -124,7 +145,7 @@ export class HistoryRepository {
     ) {}
 
     static async createForContext(shellContext: ShellContext, adapter: IPathAdapter): Promise<HistoryRepository> {
-        const contextId = await HistoryRepository.ensureContextId(shellContext);
+        const contextId = await withRetry(() => HistoryRepository.ensureContextId(shellContext));
         return new HistoryRepository(contextId, adapter);
     }
 
@@ -220,11 +241,11 @@ export class HistoryRepository {
         const cwd = safeNormalize(this.adapter, cwdRaw);
         if (!cwd) return;
         const parent = this.adapter.parentOf(cwd);
-
+        console.log("############das schon", command, cwd);
         await this.tx(async () => {
             const cwdId = await this.ensurePathId(cwd, parent);
             const cmdId = await this.ensureCommandId(command);
-
+            console.log("############upsertCommandExecution", command, cwd);
             await this.exec(
                 `INSERT INTO command_stat(
                     context_id, cwd_path_id, command_id,
@@ -1055,37 +1076,24 @@ export class HistoryRepository {
     private async tx(fn: () => Promise<void>): Promise<void> {
         // Prevent nested transactions
         if (this._inTransaction) {
+            console.warn("######_inTransaction");
             // Already in a transaction, just execute fn
             await fn();
             return;
         }
 
         // Retry the entire transaction as a unit
-        await this.withRetry(async () => {
+        await withRetry(async () => {
             this._inTransaction = true;
             try {
                 await DB.transaction(fn);
                 this._inTransaction = false;
             } catch (e) {
+                console.error("#####B transaction failed", e);
                 this._inTransaction = false;
                 throw e;
             }
         });
     }
 
-    private async withRetry<T>(op: () => Promise<T>): Promise<T> {
-        const delays = [0, 10, 30, 80];
-        let lastErr: unknown;
-
-        for (let i = 0; i < delays.length; i++) {
-            try {
-                if (delays[i] > 0) await sleep(delays[i]);
-                return await op();
-            } catch (e) {
-                lastErr = e;
-                if (!isLockError(e) || i === delays.length - 1) break;
-            }
-        }
-        throw lastErr;
-    }
 }
