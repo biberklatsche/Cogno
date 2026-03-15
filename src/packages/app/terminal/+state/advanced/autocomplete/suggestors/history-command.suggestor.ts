@@ -2,44 +2,11 @@ import { TerminalHistoryPersistenceService } from "../../history/terminal-histor
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { HistoryCommandScorer } from "./scoring/history-command.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
+import { formatTimeAgo } from "../../../../../common/timespan/timespan";
 
 function consistsOnlyOfPromptWords(command: string, promptWords: Set<string>): boolean {
     const words = HistoryCommandScorer.tokenizeWords(command);
     return words.length > 0 && words.every(word => promptWords.has(word));
-}
-
-function formatTimeAgo(timestamp: number, now: number): string {
-    if (!Number.isFinite(timestamp) || timestamp <= 0) {
-        return "last executed: unknown";
-    }
-
-    const ageInSeconds = Math.max(0, Math.round((now - timestamp) / 1000));
-    if (ageInSeconds < 60) {
-        return "last executed: just now";
-    }
-
-    const ageInMinutes = Math.round(ageInSeconds / 60);
-    if (ageInMinutes < 60) {
-        return `last executed: ${ageInMinutes} minute${ageInMinutes === 1 ? "" : "s"} ago`;
-    }
-
-    const ageInHours = Math.round(ageInMinutes / 60);
-    if (ageInHours < 24) {
-        return `last executed: ${ageInHours} hour${ageInHours === 1 ? "" : "s"} ago`;
-    }
-
-    const ageInDays = Math.round(ageInHours / 24);
-    if (ageInDays < 30) {
-        return `last executed: ${ageInDays} day${ageInDays === 1 ? "" : "s"} ago`;
-    }
-
-    const ageInMonths = Math.round(ageInDays / 30.4);
-    if (ageInMonths < 12) {
-        return `last executed: ${ageInMonths} month${ageInMonths === 1 ? "" : "s"} ago`;
-    }
-
-    const ageInYears = Math.round(ageInDays / 365.25);
-    return `last executed: ${ageInYears} year${ageInYears === 1 ? "" : "s"} ago`;
 }
 
 export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
@@ -84,7 +51,7 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
                 return {
                     label: row.command,
                     detail: `exec: ${row.execCount}, selected: ${row.selectCount}`,
-                    description: formatTimeAgo(row.lastExecAt, now),
+                    description: `last executed: ${formatTimeAgo(row.lastExecAt, now) || "unknown"}`,
                     insertText: row.command,
                     score,
                     source: "history-cmd",
