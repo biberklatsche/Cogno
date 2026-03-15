@@ -1,0 +1,82 @@
+{
+  "name": "cogno",
+  "description": "Cogno CLI",
+  "options": [
+    {
+      "name": "--config",
+      "description": "Use config file from a custom path for this process.",
+      "args": [
+        {
+          "name": "path"
+        }
+      ]
+    },
+    {
+      "name": "--set",
+      "description": "Override config values for this process only.",
+      "args": [
+        {
+          "name": "key=value"
+        }
+      ],
+      "isRepeatable": true
+    }
+  ],
+  "subcommands": [
+    {
+      "name": "run",
+      "description": "Start Cogno."
+    },
+    {
+      "name": "action",
+      "description": "Work with action commands",
+      "subcommands": [
+        {
+          "name": "list",
+          "description": "Print all supported action names"
+        },
+        {
+          "name": "run",
+          "description": "Run one action by name and optional colon-style args",
+          "args": [
+            {
+              "name": "name"
+            },
+            {
+              "name": "args"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Read configuration values",
+      "subcommands": [
+        {
+          "name": "show",
+          "description": "Show full config content",
+          "options": [
+            {
+              "name": "--defaults",
+              "description": "Show bundled default config instead of active config"
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "description": "Get one config value by key",
+          "args": [
+            {
+              "name": "key"
+            }
+          ]
+        },
+        {
+          "name": "path",
+          "description": "Print path of the active config file"
+        }
+      ]
+    }
+  ]
+}

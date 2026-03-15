@@ -1,5 +1,10 @@
 [
   {
+    "name": "cogno",
+    "file": "cogno.json",
+    "description": "Cogno CLI"
+  },
+  {
     "name": "-",
     "file": ".json"
   },
