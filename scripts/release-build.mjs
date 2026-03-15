@@ -41,18 +41,29 @@ function main() {
 
   validateChannel(releaseChannel);
 
+  if (parsedArguments.testBuild && parsedArguments.tag !== undefined) {
+    throw new Error('The arguments "--test" and "--tag" cannot be combined.');
+  }
+
   if (!parsedArguments.allowDirtyWorkingTree) {
     assertWorkingTreeIsClean();
   }
 
-  const releaseTag = parsedArguments.tag ?? resolveHeadTag();
-  const releaseVersion = normalizeTagToVersion(releaseTag);
+  const projectVersion = resolveValidatedProjectVersion();
+  const releaseTag =
+    parsedArguments.tag ??
+    (parsedArguments.testBuild ? createTestBuildTag(projectVersion) : resolveHeadTag());
+  const releaseVersion = parsedArguments.testBuild
+    ? projectVersion
+    : normalizeTagToVersion(releaseTag);
   const loadedEnvironment = loadReleaseEnvironment({
     releaseChannel,
     currentPlatformName,
   });
 
-  validateVersionConsistency(releaseVersion);
+  if (!parsedArguments.testBuild) {
+    validateVersionConsistency(releaseVersion, projectVersion);
+  }
 
   const releaseOutputDirectoryPath = join(
     artifactRootDirectoryPath,
@@ -92,7 +103,9 @@ function main() {
 
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
 
-  if (!parsedArguments.skipUpload) {
+  const shouldSkipUpload = parsedArguments.skipUpload || parsedArguments.testBuild;
+
+  if (!shouldSkipUpload) {
     uploadArtifacts({
       collectedArtifacts,
       loadedEnvironment,
@@ -110,6 +123,7 @@ function main() {
   console.log(`Channel: ${releaseChannel}`);
   console.log(`Platform: ${currentPlatformName}`);
   console.log(`Artifacts: ${collectedArtifacts.length}`);
+  console.log(`Upload skipped: ${shouldSkipUpload ? "yes" : "no"}`);
   console.log(`Output directory: ${resolve(releaseOutputDirectoryPath)}`);
   console.log(`Manifest: ${resolve(manifestPath)}`);
 }
@@ -120,6 +134,7 @@ function parseCommandLineArguments(commandLineArguments) {
     help: false,
     skipBuild: false,
     skipUpload: false,
+    testBuild: false,
   };
 
   for (
@@ -151,6 +166,9 @@ function parseCommandLineArguments(commandLineArguments) {
       case "--skip-upload":
         parsedArguments.skipUpload = true;
         break;
+      case "--test":
+        parsedArguments.testBuild = true;
+        break;
       case "--allow-dirty":
         parsedArguments.allowDirtyWorkingTree = true;
         break;
@@ -170,6 +188,7 @@ function printHelp() {
   console.log("");
   console.log("Options:");
   console.log("  --tag <tag>         Build metadata for a specific Git tag.");
+  console.log("  --test              Test a release build without a Git tag and skip upload.");
   console.log("  --channel <value>   dev | release (default: release)");
   console.log(
     "  --skip-build        Reuse existing bundle output and only collect/upload artifacts.",
@@ -241,6 +260,10 @@ function normalizeTagToVersion(releaseTag) {
   return releaseTag.startsWith("v") ? releaseTag.slice(1) : releaseTag;
 }
 
+function createTestBuildTag(projectVersion) {
+  return `test-v${projectVersion}`;
+}
+
 function loadReleaseEnvironment({ releaseChannel, currentPlatformName }) {
   const secretDirectoryPath = join(homedir(), ".cogno-secrets");
   const environmentFileNames = [
@@ -304,7 +327,7 @@ function stripWrappingQuotes(variableValue) {
   return variableValue;
 }
 
-function validateVersionConsistency(releaseVersion) {
+function resolveValidatedProjectVersion() {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
   const packageVersion = packageJson.version;
   const cargoTomlContent = readFileSync(tauriCargoTomlPath, "utf-8");
@@ -320,12 +343,24 @@ function validateVersionConsistency(releaseVersion) {
     { path: tauriConfigPath, version: JSON.parse(readFileSync(tauriConfigPath, "utf-8")).version },
   ];
 
+  const [firstVersionRecord] = discoveredVersions;
+
   for (const currentVersionRecord of discoveredVersions) {
-    if (currentVersionRecord.version !== releaseVersion) {
+    if (currentVersionRecord.version !== firstVersionRecord.version) {
       throw new Error(
-        `Version mismatch: tag resolves to "${releaseVersion}" but ${currentVersionRecord.path} contains "${currentVersionRecord.version}".`,
+        `Version mismatch between project files: expected "${firstVersionRecord.version}" but ${currentVersionRecord.path} contains "${currentVersionRecord.version}".`,
       );
     }
+  }
+
+  return firstVersionRecord.version;
+}
+
+function validateVersionConsistency(releaseVersion, projectVersion) {
+  if (projectVersion !== releaseVersion) {
+    throw new Error(
+      `Version mismatch: tag resolves to "${releaseVersion}" but project files contain "${projectVersion}".`,
+    );
   }
 }
 

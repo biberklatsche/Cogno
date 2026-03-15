@@ -18,7 +18,9 @@
     "build:dev": "pnpm lint && ng build --configuration development",
     "build": "pnpm lint && ng build --configuration production",
     "build:desktop": "pnpm exec tauri build --config src-tauri/tauri.conf.json",
-    "release:build": "node ./scripts/release-build.mjs"
+    "release:build": "node ./scripts/release-build.mjs",
+    "release:build:test": "node ./scripts/release-build.mjs --test",
+    "release:test": "node ./scripts/release-build.mjs --test"
   },
   "private": true,
   "dependencies": {
