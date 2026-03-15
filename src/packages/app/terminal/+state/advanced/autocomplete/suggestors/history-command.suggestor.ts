@@ -4,6 +4,8 @@ import { HistoryCommandScorer } from "./scoring/history-command.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
 import { formatTimeAgo } from "../../../../../common/timespan/timespan";
 
+const MAX_HISTORY_COMMAND_SUGGESTIONS = 3;
+
 function consistsOnlyOfPromptWords(command: string, promptWords: Set<string>): boolean {
     const words = HistoryCommandScorer.tokenizeWords(command);
     return words.length > 0 && words.every(word => promptWords.has(word));
@@ -62,6 +64,9 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
                 } satisfies AutocompleteSuggestion;
             });
 
-        return suggestions.filter((item): item is AutocompleteSuggestion => item !== null);
+        return suggestions
+            .filter((item): item is AutocompleteSuggestion => item !== null)
+            .sort((leftSuggestion, rightSuggestion) => rightSuggestion.score - leftSuggestion.score)
+            .slice(0, MAX_HISTORY_COMMAND_SUGGESTIONS);
     }
 }

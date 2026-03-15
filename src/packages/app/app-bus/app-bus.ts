@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
-import { Observable, Subject, fromEvent, race } from "rxjs";
-import { filter, take, timeout as rxTimeout } from "rxjs/operators";
+import { Observable, Subject, fromEvent } from "rxjs";
+import { filter, take, takeUntil, timeout as rxTimeout } from "rxjs/operators";
 import {AppMessage} from "./messages";
 
 export type BusPath = string[];
@@ -84,7 +84,7 @@ export class AppBus {
         if (opts.timeoutMs != null) one = one.pipe(rxTimeout({ first: opts.timeoutMs }));
         if (opts.signal) {
             const abort$ = fromEvent(opts.signal, "abort").pipe(take(1));
-            one = race(one, abort$);
+            one = one.pipe(takeUntil(abort$));
         }
         return one;
     }

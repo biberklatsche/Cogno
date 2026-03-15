@@ -117,6 +117,8 @@ describe("Autocomplete History Suggestors", () => {
             searchCommands: vi.fn().mockResolvedValue([
                 { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: now - 60_000, ...baseHistoryRow },
                 { command: "npm run build", execCount: 2, selectCount: 1, lastExecAt: now - 3_600_000, ...baseHistoryRow },
+                { command: "npm run lint", execCount: 1, selectCount: 0, lastExecAt: now - 7_200_000, ...baseHistoryRow },
+                { command: "npm outdated", execCount: 1, selectCount: 0, lastExecAt: now - 10_800_000, ...baseHistoryRow },
             ]),
         } as unknown as TerminalHistoryPersistenceService;
 
@@ -134,9 +136,10 @@ describe("Autocomplete History Suggestors", () => {
         };
 
         const result = await suggestor.suggest(ctx);
-        expect(result.length).toBe(2);
+        expect(result.length).toBe(3);
         expect(result[0].description).toBe("last executed: 1 minute ago");
         expect(result[1].description).toBe("last executed: 1 hour ago");
+        expect(result.map((item) => item.label)).not.toContain("npm outdated");
     });
 
     it("HistoryCommandPatternSuggestor returns learned pattern suggestions", async () => {
