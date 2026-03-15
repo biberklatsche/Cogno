@@ -37,10 +37,8 @@ export class ContextMenuOverlayService {
     this.lastOpenEventTs = this.isMouseEvent(pointOrEvent) ? pointOrEvent.timeStamp : performance.now();
     const horizontalAlign: ContextMenuHorizontalAlign = options?.horizontalAlign ?? 'left';
 
-    // Close existing overlay first
     this.close();
 
-    // Create host
     const host = document.createElement('div');
     host.classList.add('menu-overlay-host');
     Object.assign(host.style, {
@@ -48,29 +46,25 @@ export class ContextMenuOverlayService {
       left: point.x + 'px',
       top: point.y + 2 + 'px',
       zIndex: '100000',
-      visibility: 'hidden', // position first, then reveal after clamp
+      visibility: 'hidden',
     } as CSSStyleDeclaration);
 
     document.body.appendChild(host);
 
-    // Create component
     const compRef = createComponent(component, {
       environmentInjector: this.env,
       hostElement: host,
     });
 
-    // Provide default close() to component if it declares one
     const instance = compRef.instance as T;
     instance.close = instance.close ?? (() => this.close());
 
-    // Apply inputs
     if (inputs) {
       Object.assign(instance, inputs);
     }
 
     this.appRef.attachView(compRef.hostView);
 
-    // Position within viewport after first paint/layout
     requestAnimationFrame(() => {
       if (horizontalAlign === 'right') {
         const rect = host.getBoundingClientRect();
@@ -80,9 +74,7 @@ export class ContextMenuOverlayService {
       host.style.visibility = 'visible';
     });
 
-    // Outside click/pointer close
     const pointerListener = (ev: PointerEvent) => {
-      // Ignore the very event that triggered open
       if (Math.abs(ev.timeStamp - this.lastOpenEventTs) < 2) return;
       if (!host.contains(ev.target as Node)) {
         this.close();
@@ -90,13 +82,11 @@ export class ContextMenuOverlayService {
     };
     document.addEventListener('pointerdown', pointerListener, true);
 
-    // ESC close
     const keyListener = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') this.close();
     };
     document.addEventListener('keydown', keyListener, true);
 
-    // Close on resize (keeps simple and prevents desync)
     const sr = () => this.close();
     window.addEventListener('resize', sr, true);
 
@@ -154,20 +144,17 @@ export class ContextMenuOverlayService {
   private repositionWithinViewport(host: HTMLDivElement) {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const padding = 8; // keep a little gap to the viewport edges
+    const padding = 8;
 
-    // Measure current size/pos
     let rect = host.getBoundingClientRect();
     let left = rect.left;
     let top = rect.top;
     let w = rect.width;
     let h = rect.height;
 
-    // Constrain size if menu is larger than viewport
     const maxW = Math.max(0, vw - padding * 2);
     const maxH = Math.max(0, vh - padding * 2);
 
-    // Apply size constraints first so the next measurement reflects scrollbars, etc.
     if (w > maxW) {
       host.style.maxWidth = maxW + 'px';
       host.style.overflowX = 'auto';
@@ -177,12 +164,10 @@ export class ContextMenuOverlayService {
       host.style.overflowY = 'auto';
     }
 
-    // Re-measure after constraints possibly changed layout
     rect = host.getBoundingClientRect();
     w = rect.width;
     h = rect.height;
 
-    // Clamp position within viewport with padding
     if (left + w > vw - padding) left = Math.max(padding, vw - padding - w);
     if (top + h > vh - padding) top = Math.max(padding, vh - padding - h);
     if (left < padding) left = padding;

@@ -49,10 +49,6 @@ export class PromptMarkerRenderer {
         hostElement.appendChild(markerElement);
     }
 
-    /* ------------------------------------------------------------------ */
-    /* DOM creation                                                        */
-    /* ------------------------------------------------------------------ */
-
     private createMarkerElement(command: Command): HTMLDivElement {
         const element = document.createElement('div');
         element.classList.add('cogno-marker');
@@ -101,9 +97,6 @@ export class PromptMarkerRenderer {
         markerElement.appendChild(span);
     }
 
-    /* ------------------------------------------------------------------ */
-    /* record building                                                     */
-    /* ------------------------------------------------------------------ */
     private buildRecord(command: Command): PromptRecord {
         return this.createCommandRecord(command);
     }
@@ -128,10 +121,6 @@ export class PromptMarkerRenderer {
             isInput: false,
         };
     }
-
-    /* ------------------------------------------------------------------ */
-    /* segment resolution                                                  */
-    /* ------------------------------------------------------------------ */
 
     private resolveSegmentText(
         segment: PromptSegment,
@@ -165,10 +154,6 @@ export class PromptMarkerRenderer {
                 return String(value);
         }
     }
-
-    /* ------------------------------------------------------------------ */
-    /* conditional evaluation                                              */
-    /* ------------------------------------------------------------------ */
 
     private evaluateWhen(expression: string, record: PromptRecord): boolean {
         const parsed = this.parseExpression(expression);
@@ -225,10 +210,6 @@ export class PromptMarkerRenderer {
         }
         return left !== right;
     }
-
-    /* ------------------------------------------------------------------ */
-    /* styling                                                             */
-    /* ------------------------------------------------------------------ */
 
     private applyStyles(element: HTMLElement, segment: PromptSegment): void {
         this.applyColors(element, segment);

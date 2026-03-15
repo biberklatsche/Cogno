@@ -3,22 +3,16 @@ import { Observable, Subject, fromEvent, race } from "rxjs";
 import { filter, take, timeout as rxTimeout } from "rxjs/operators";
 import {AppMessage} from "./messages";
 
-// ---------------------------------------------------------
-// Basics
-// ---------------------------------------------------------
 export type BusPath = string[];
 export type Phase = "capture" | "target" | "bubble";
 
 function key(path: BusPath) { return path.join("/"); }
 function buildChain(path: BusPath) { return path.map((_, i) => path.slice(0, i + 1)); }
 
-// ---------------------------------------------------------
-// Common Message Model (Events + Actions)
-// ---------------------------------------------------------
 export type MessageBase<T extends string = string, P = unknown> = {
     type: T;
     payload?: P;
-    path?: BusPath;     // default ["app"]
+    path?: BusPath;
 
     performed?: boolean;
     defaultPrevented?: boolean;
@@ -34,16 +28,11 @@ export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, 
     args?: string[];
 }
 
-// Unified handler: can short-circuit (command-style)
 export type MessageHandler<M extends MessageBase = MessageBase> =
     (msg: M, ctx: { path: BusPath }) => "handled" | true | void;
 
-// ---------------------------------------------------------
-// One bus for everything
-// ---------------------------------------------------------
 @Injectable({ providedIn: "root" })
 export class AppBus {
-    // Subjects per path
     private subjects: Map<string, Subject<AppMessage>> = new Map();
 
     private subjectFor(path: BusPath): Subject<AppMessage> {
@@ -56,7 +45,6 @@ export class AppBus {
         return s;
     }
 
-    // Reactive subscription (optionally filter by type/phase)
     public on$<K extends AppMessage["type"]>(opts: {
         path: BusPath;
         type?: K | K[];
@@ -82,7 +70,6 @@ export class AppBus {
         return this.on$<K>({ path: opts?.path ?? ["app"], type, phase: opts?.phase });
     }
 
-    // One-shot Observable / Promise
     public once$<K extends AppMessage["type"]>(opts: {
         path: BusPath;
         type?: K | K[];
@@ -97,7 +84,6 @@ export class AppBus {
         if (opts.timeoutMs != null) one = one.pipe(rxTimeout({ first: opts.timeoutMs }));
         if (opts.signal) {
             const abort$ = fromEvent(opts.signal, "abort").pipe(take(1));
-            // @ts-ignore rxjs race array
             one = race(one, abort$);
         }
         return one;
@@ -110,29 +96,20 @@ export class AppBus {
         return this.once$<K>({ path: opts?.path ?? ["app"], type, phase: opts?.phase });
     }
 
-    /**
-     * publish:
-     * - executes along path chain (capture → target → bubble)
-     * - aborts if:
-     *   * defaultPrevented or propagationStopped is set in existing event flags
-     */
     public publish(msg: AppMessage): {propagationStopped: boolean, defaultPrevented: boolean, performed?: boolean } {
         const path = msg.path ?? ["app"];
         const chain = buildChain(path);
 
-        // capture
         for (const p of chain.slice(0, -1)) {
             msg.phase = "capture";
             this.subjectFor(p).next(msg);
             if (msg.propagationStopped) return {propagationStopped: msg.propagationStopped, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed};
         }
 
-        // target
         msg.phase = "target";
         this.subjectFor(chain[chain.length - 1]).next(msg);
         if (msg.propagationStopped) return {propagationStopped: msg.propagationStopped, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed};
 
-        // bubble
         for (const p of [...chain].reverse().slice(1)){
             msg.phase = "bubble";
             this.subjectFor(p).next(msg);
