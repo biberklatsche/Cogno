@@ -265,6 +265,7 @@ export class HistoryRepository {
 
     async upsertCommandPatternExecution(commandRaw: string): Promise<void> {
         const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
+        console.log("############upsertCommandPatternExecution", commandRaw, commandPatternOccurrence);
         if (commandPatternOccurrence === undefined) {
             return;
         }
