@@ -56,7 +56,7 @@ function runAndCapture(commandName, commandArguments, label) {
 }
 
 function escapeAppleScriptString(value) {
-  return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
+  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
 }
 
 function styleMountedDiskImage() {
@@ -97,7 +97,7 @@ function createDiskImageFromApp() {
   const temporaryDirectory = mkdtempSync(join(tmpdir(), "cogno2-dmg-"));
   const temporaryAppPath = join(temporaryDirectory, "Cogno2.app");
   const applicationsSymlinkPath = join(temporaryDirectory, "Applications");
-  let mountedVolumeDevice = undefined;
+  let mountedVolumeDevice;
 
   cpSync(APP_PATH, temporaryAppPath, { recursive: true });
   symlinkSync("/Applications", applicationsSymlinkPath);
@@ -121,7 +121,15 @@ function createDiskImageFromApp() {
 
     mountedVolumeDevice = runAndCapture(
       "hdiutil",
-      ["attach", DMG_STAGING_PATH, "-mountpoint", `/Volumes/${DMG_VOLUME_NAME}`, "-noautoopen", "-readwrite", "-nobrowse"],
+      [
+        "attach",
+        DMG_STAGING_PATH,
+        "-mountpoint",
+        `/Volumes/${DMG_VOLUME_NAME}`,
+        "-noautoopen",
+        "-readwrite",
+        "-nobrowse",
+      ],
       "attach staging image",
     )
       .split("\n")
