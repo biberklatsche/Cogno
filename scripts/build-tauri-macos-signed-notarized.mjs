@@ -34,6 +34,11 @@ const APP_PATH = "src-tauri/target/release/bundle/macos/Cogno2.app";
 const DMG_DIR = "src-tauri/target/release/bundle/dmg";
 const DMG_PATH = join(DMG_DIR, "cogno.dmg");
 const DMG_VOLUME_NAME = "Cogno2";
+const DMG_STAGING_FILE_NAME = "cogno-staging.dmg";
+const DMG_STAGING_PATH = join(DMG_DIR, DMG_STAGING_FILE_NAME);
+const DMG_WINDOW_BOUNDS = { left: 160, top: 120, right: 780, bottom: 460 };
+const DMG_APP_ICON_POSITION = { x: 170, y: 190 };
+const DMG_APPLICATIONS_ICON_POSITION = { x: 450, y: 190 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function run(commandName, commandArguments, label) {
@@ -45,12 +50,54 @@ function step(label) {
   console.log(`\n${"─".repeat(60)}\n▶ ${label}`);
 }
 
+function runAndCapture(commandName, commandArguments, label) {
+  console.log(`\n▶ ${label}...`);
+  return execFileSync(commandName, commandArguments, { encoding: "utf-8" }).trim();
+}
+
+function escapeAppleScriptString(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
+}
+
+function styleMountedDiskImage() {
+  const finderWindowBounds = `{${DMG_WINDOW_BOUNDS.left}, ${DMG_WINDOW_BOUNDS.top}, ${DMG_WINDOW_BOUNDS.right}, ${DMG_WINDOW_BOUNDS.bottom}}`;
+
+  const appleScript = `
+tell application "Finder"
+  tell disk "${escapeAppleScriptString(DMG_VOLUME_NAME)}"
+    open
+    delay 1
+    set currentContainerWindow to container window
+    set current view of currentContainerWindow to icon view
+    set toolbar visible of currentContainerWindow to false
+    set statusbar visible of currentContainerWindow to false
+    set pathbar visible of currentContainerWindow to false
+    set sidebar width of currentContainerWindow to 0
+    set bounds of currentContainerWindow to ${finderWindowBounds}
+    set currentIconViewOptions to the icon view options of currentContainerWindow
+    set arrangement of currentIconViewOptions to not arranged
+    set icon size of currentIconViewOptions to 128
+    set text size of currentIconViewOptions to 16
+    set position of item "Cogno2.app" to {${DMG_APP_ICON_POSITION.x}, ${DMG_APP_ICON_POSITION.y}}
+    set position of item "Applications" to {${DMG_APPLICATIONS_ICON_POSITION.x}, ${DMG_APPLICATIONS_ICON_POSITION.y}}
+    close
+    open
+    update without registering applications
+    delay 2
+  end tell
+end tell
+`;
+
+  run("osascript", ["-e", appleScript], "style dmg Finder window");
+}
+
 function createDiskImageFromApp() {
   mkdirSync(DMG_DIR, { recursive: true });
 
   const temporaryDirectory = mkdtempSync(join(tmpdir(), "cogno2-dmg-"));
   const temporaryAppPath = join(temporaryDirectory, "Cogno2.app");
   const applicationsSymlinkPath = join(temporaryDirectory, "Applications");
+  let mountedVolumeDevice = undefined;
 
   cpSync(APP_PATH, temporaryAppPath, { recursive: true });
   symlinkSync("/Applications", applicationsSymlinkPath);
@@ -66,12 +113,49 @@ function createDiskImageFromApp() {
         temporaryDirectory,
         "-ov",
         "-format",
-        "UDZO",
-        DMG_PATH,
+        "UDRW",
+        DMG_STAGING_PATH,
       ],
-      "hdiutil create",
+      "hdiutil create staging image",
+    );
+
+    mountedVolumeDevice = runAndCapture(
+      "hdiutil",
+      ["attach", DMG_STAGING_PATH, "-mountpoint", `/Volumes/${DMG_VOLUME_NAME}`, "-noautoopen", "-readwrite", "-nobrowse"],
+      "attach staging image",
+    )
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("/dev/"))
+      ?.split(/\s+/)[0];
+
+    if (mountedVolumeDevice === undefined) {
+      throw new Error("Unable to determine mounted disk device for staging DMG.");
+    }
+
+    styleMountedDiskImage();
+
+    run("hdiutil", ["detach", mountedVolumeDevice], "detach staging image");
+    mountedVolumeDevice = undefined;
+
+    run(
+      "hdiutil",
+      ["convert", DMG_STAGING_PATH, "-ov", "-format", "UDZO", "-o", DMG_PATH],
+      "convert staging image to final dmg",
     );
   } finally {
+    if (mountedVolumeDevice !== undefined) {
+      try {
+        run("hdiutil", ["detach", mountedVolumeDevice, "-force"], "force detach staging image");
+      } catch {
+        console.warn("Unable to force-detach staging image during cleanup.");
+      }
+    }
+
+    if (existsSync(DMG_STAGING_PATH)) {
+      rmSync(DMG_STAGING_PATH);
+    }
+
     rmSync(temporaryDirectory, { force: true, recursive: true });
   }
 }
@@ -145,6 +229,11 @@ step("Creating DMG");
 if (existsSync(DMG_PATH)) {
   rmSync(DMG_PATH);
   console.log(`  Removed old DMG: ${DMG_PATH}`);
+}
+
+if (existsSync(DMG_STAGING_PATH)) {
+  rmSync(DMG_STAGING_PATH);
+  console.log(`  Removed old staging DMG: ${DMG_STAGING_PATH}`);
 }
 
 createDiskImageFromApp();
