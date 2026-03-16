@@ -2,13 +2,21 @@
 // Build the macOS DMG with Tauri and optionally notarize/staple it.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 const credentialsFilePath = join(homedir(), ".apple", "credentials");
 const tauriConfigPath = "src-tauri/tauri.conf.json";
-const dmgPath = "src-tauri/target/release/bundle/dmg/cogno.dmg";
+const dmgDirectoryPath = "src-tauri/target/release/bundle/dmg";
 const entitlementsPath = "src-tauri/entitlements.plist";
 const commandLineArguments = process.argv.slice(2);
 
@@ -105,8 +113,30 @@ function buildMacosDmg() {
   }
 }
 
+function resolveBuiltDmgPath() {
+  if (!existsSync(dmgDirectoryPath)) {
+    throw new Error(`DMG directory was not created: ${dmgDirectoryPath}`);
+  }
+
+  const discoveredDmgPaths = readdirSync(dmgDirectoryPath)
+    .filter((currentFileName) => currentFileName.endsWith(".dmg"))
+    .map((currentFileName) => join(dmgDirectoryPath, currentFileName));
+
+  if (discoveredDmgPaths.length === 0) {
+    throw new Error(`No DMG artifact found in directory: ${dmgDirectoryPath}`);
+  }
+
+  return discoveredDmgPaths.sort((leftDmgPath, rightDmgPath) => {
+    const leftModificationTime = statSync(leftDmgPath).mtimeMs;
+    const rightModificationTime = statSync(rightDmgPath).mtimeMs;
+
+    return rightModificationTime - leftModificationTime;
+  })[0];
+}
+
 step("Building DMG");
 buildMacosDmg();
+const dmgPath = resolveBuiltDmgPath();
 
 if (!existsSync(dmgPath)) {
   throw new Error(`DMG was not created at expected path: ${dmgPath}`);
