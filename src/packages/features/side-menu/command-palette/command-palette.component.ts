@@ -19,7 +19,7 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
       class="search-input"
     />
     @if (commandList().length > 0) {
-      <ul #commandListElement class="command-list">
+      <ul #commandListElement class="commandList">
         @for (command of commandList(); track command.label) {
           <li (click)="fireAction(command)" class="command" [class.selected]="command.isSelected">
             <span class="label">{{ command.label }}</span>

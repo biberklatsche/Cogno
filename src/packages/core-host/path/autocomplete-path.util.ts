@@ -64,7 +64,7 @@ export class AutocompletePathUtil {
     static appendDirectorySeparator(path: string, shellContext: ShellContextContract): string {
         if (!path) return path;
         if (path.endsWith("/") || path.endsWith("\\")) return path;
-        return `${path}/`;
+        return `${path}${shellContext.shellType === "PowerShell" ? "\\" : "/"}`;
     }
 
     static shortenParentTraversalDisplay(path: string): string {
