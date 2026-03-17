@@ -58,6 +58,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     private readonly _keydownHandler: (event: KeyboardEvent) => void;
     private _hostElement?: HTMLElement;
     private _lastInputSignature: string;
+    private _manualTriggerInputSignature?: string;
     private readonly _filterMode = new BehaviorSubject<SuggestionFilterMode>("all");
     private _latestSuggestions: AutocompleteSuggestion[] = [];
     private _latestContext: QueryContext | null = null;
@@ -128,6 +129,13 @@ export class TerminalAutocompleteService implements OnDestroy {
                 .pipe(debounceTime(REFRESH_DEBOUNCE_MS))
                 .subscribe(terminalState => {
                     const viewState = this._viewState.value;
+                    const currentInputSignature = this.inputSignature(terminalState);
+                    if (
+                        this._manualTriggerInputSignature !== undefined
+                        && currentInputSignature !== this._manualTriggerInputSignature
+                    ) {
+                        this._manualTriggerInputSignature = undefined;
+                    }
                     if (!this.hasInputChanged(terminalState)) {
                         if (viewState.visible && (!terminalState.isFocused || terminalState.isCommandRunning)) {
                             this.hide();
@@ -143,6 +151,11 @@ export class TerminalAutocompleteService implements OnDestroy {
         this._subscription.add(
             this.bus.on$(ActionFired.listener())
                 .subscribe((event: ActionFiredEvent) => {
+                    if (event.payload === "trigger_autocomplete") {
+                        void this.handleTriggerAutocompleteAction(event);
+                        return;
+                    }
+
                     if (event.payload !== "cycle_completion_mode") return;
 
                     const view = this._viewState.value;
@@ -216,9 +229,20 @@ export class TerminalAutocompleteService implements OnDestroy {
             this.hide();
             return;
         }
+        if (this.inputSignature(state) === this._manualTriggerInputSignature) {
+            return;
+        }
+        await this.showSuggestions(state, false);
+    }
+
+    private async showSuggestionsOnDemand(state: TerminalState): Promise<void> {
+        await this.showSuggestions(state, true);
+    }
+
+    private async showSuggestions(state: TerminalState, allowEmptyInput: boolean): Promise<void> {
         if (this.shouldHideForState(state)) return;
 
-        const context = AutocompleteContextParser.parse(state);
+        const context = this.resolveQueryContext(state, allowEmptyInput);
         if (!context) {
             this.hide();
             return;
@@ -268,6 +292,52 @@ export class TerminalAutocompleteService implements OnDestroy {
             suggestions: visibleSuggestions,
         });
         queueMicrotask(() => this.repositionUsingRenderedPanelHeight());
+    }
+
+    private resolveQueryContext(state: TerminalState, allowEmptyInput: boolean): QueryContext | undefined {
+        const parsedContext = AutocompleteContextParser.parse(state);
+        if (parsedContext) {
+            return parsedContext;
+        }
+
+        if (!allowEmptyInput) {
+            return undefined;
+        }
+
+        const inputText = state.input.text;
+        const cursorIndex = state.input.cursorIndex;
+        const beforeCursor = inputText.padEnd(cursorIndex, " ").slice(0, cursorIndex);
+        if (beforeCursor.trim().length > 0) {
+            return undefined;
+        }
+
+        return {
+            mode: "command",
+            beforeCursor,
+            inputText,
+            cursorIndex,
+            replaceStart: 0,
+            replaceEnd: cursorIndex,
+            cwd: state.cwd,
+            shellContext: state.shellContext,
+            query: "",
+        };
+    }
+
+    private async handleTriggerAutocompleteAction(event: ActionFiredEvent): Promise<void> {
+        if (!this.stateManager.isFocused) {
+            return;
+        }
+
+        this._suppressUntilTyping = false;
+        this._manualTriggerInputSignature = this.inputSignature(this.stateManager.state);
+        await this.showSuggestionsOnDemand(this.stateManager.state);
+
+        if (this._viewState.value.visible) {
+            event.performed = true;
+            event.defaultPrevented = true;
+            event.propagationStopped = true;
+        }
     }
 
     private shouldHideForState(state: TerminalState): boolean {

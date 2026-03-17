@@ -372,6 +372,62 @@ describe("TerminalAutocompleteService", () => {
         expect((service as any)._viewState.value.visible).toBe(false);
     });
 
+    it("does not open automatically on empty input without the explicit trigger", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git"), makeSuggestion("npm test")]));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "", cursorIndex: 0, maxCursorIndex: 0 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect((service as any)._viewState.value.visible).toBe(false);
+    });
+
+    it("opens autocomplete on trigger_autocomplete with empty input using an empty filter", async () => {
+        service.registerSuggestor(new DummySuggestor(async (context) => {
+            expect(context.mode).toBe("command");
+            expect(context.query).toBe("");
+            return [makeSuggestion("git"), makeSuggestion("npm test")];
+        }));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "", cursorIndex: 0, maxCursorIndex: 0 },
+        });
+        await vi.advanceTimersByTimeAsync(50);
+
+        bus.publish(ActionFired.create("trigger_autocomplete", { all: false, unconsumed: false, performable: true }));
+        await vi.advanceTimersByTimeAsync(50);
+
+        const view = (service as any)._viewState.value;
+        expect(view.visible).toBe(true);
+        expect(view.suggestions.map((suggestion: AutocompleteSuggestion) => suggestion.label)).toEqual([
+            "git",
+            "npm test",
+        ]);
+    });
+
+    it("opens autocomplete on trigger_autocomplete without requiring a new input change", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+
+        fakeState.emit({
+            ...fakeState.state,
+            input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+        });
+        await vi.advanceTimersByTimeAsync(400);
+        expect((service as any)._viewState.value.visible).toBe(true);
+
+        (service as any).hide();
+        expect((service as any)._viewState.value.visible).toBe(false);
+
+        bus.publish(ActionFired.create("trigger_autocomplete", { all: false, unconsumed: false, performable: true }));
+        await vi.advanceTimersByTimeAsync(50);
+
+        expect((service as any)._viewState.value.visible).toBe(true);
+        expect((service as any)._viewState.value.suggestions[0].label).toBe("git status");
+    });
+
     it("marks matching query parts for highlighting", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "Projects",

@@ -183,6 +183,35 @@ describe("Autocomplete History Suggestors", () => {
         expect(result.map((item) => item.label)).not.toContain("npm outdated");
     });
 
+    it("HistoryCommandSuggestor returns recent commands for empty query", async () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                { command: "git status", execCount: 8, selectCount: 3, lastExecAt: now - 30_000, ...baseHistoryRow },
+                { command: "npm test", execCount: 4, selectCount: 1, lastExecAt: now - 10_000, ...baseHistoryRow },
+                { command: "pnpm lint", execCount: 2, selectCount: 0, lastExecAt: now - 5_000, ...baseHistoryRow },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "",
+            inputText: "",
+            cursorIndex: 0,
+            replaceStart: 0,
+            replaceEnd: 0,
+            cwd: "/Users/larswolfram/projects",
+            shellContext,
+            query: "",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        expect(persistence.searchCommands).toHaveBeenCalledWith("", "/Users/larswolfram/projects", 250);
+        expect(result.map((item) => item.label)).toEqual(["git status", "npm test", "pnpm lint"]);
+    });
+
     it("HistoryCommandSuggestor marks commands from current cwd differently than commands from elsewhere", async () => {
         const now = Date.now();
         vi.setSystemTime(now);
