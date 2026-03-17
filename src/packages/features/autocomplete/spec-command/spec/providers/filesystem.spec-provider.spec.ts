@@ -236,4 +236,59 @@ describe("FilesystemSpecProvider", () => {
         expect(result[0].label).toBe("\\Users\\");
         expect(result[0].insertText).toBe("\\Users\\");
     });
+
+    it("keeps directory labels readable and escapes bash insert text for spaces", async () => {
+        vi.mocked(filesystem.list).mockResolvedValue([
+            { name: "My Folder", path: "/Users/larswolfram/projects/My Folder", kind: "directory" },
+        ]);
+        vi.mocked(filesystem.toDisplayPath).mockImplementation((path, cwd) => path.replace(`${cwd}/`, ""));
+        vi.mocked(filesystem.appendPathSeparator).mockImplementation((path) => `${path}/`);
+
+        const provider = new FilesystemSpecProvider(filesystem);
+        const result = await provider.suggest({
+            queryContext: cdContext("My\\ Fo"),
+            command: "cd",
+            args: ["My\\ Fo"],
+            binding: {
+                providerId: "filesystem",
+                params: {
+                    kinds: ["directory"],
+                    appendSlashToDirectories: true,
+                },
+            },
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].label).toBe("My Folder/");
+        expect(result[0].insertText).toBe("My\\ Folder/");
+    });
+
+    it("keeps directory labels readable and escapes powershell insert text for spaces", async () => {
+        vi.mocked(filesystem.list).mockResolvedValue([
+            { name: "My Folder", path: "/Users/My Folder", kind: "directory" },
+        ]);
+        vi.mocked(filesystem.toDisplayPath).mockImplementation((path) => path.replace(/\//g, "\\"));
+        vi.mocked(filesystem.appendPathSeparator).mockImplementation((path) => `${path}\\`);
+
+        const provider = new FilesystemSpecProvider(filesystem);
+        const result = await provider.suggest({
+            queryContext: {
+                ...cdContext("My` Fo"),
+                shellContext: { shellType: "PowerShell", backendOs: "windows" },
+            },
+            command: "cd",
+            args: ["My` Fo"],
+            binding: {
+                providerId: "filesystem",
+                params: {
+                    kinds: ["directory"],
+                    appendSlashToDirectories: true,
+                },
+            },
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].label).toBe("\\Users\\My Folder\\");
+        expect(result[0].insertText).toBe("\\Users\\My` Folder\\");
+    });
 });

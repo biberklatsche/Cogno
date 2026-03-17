@@ -83,6 +83,28 @@ describe("Autocomplete History Suggestors", () => {
         expect(result[0].insertText).toBe("\\Users\\");
     });
 
+    it("HistoryDirectorySuggestor escapes bash insert text for directories with spaces", async () => {
+        const persistence = {
+            searchDirectories: vi.fn().mockResolvedValue([
+                {
+                    path: "/Users/larswolfram/projects/My Folder",
+                    basename: "My Folder",
+                    visitCount: 5,
+                    selectCount: 1,
+                    lastVisitAt: 1,
+                    ...baseDirHistoryRow,
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryDirectorySuggestor(persistence);
+        const result = await suggestor.suggest(cdContext("My\\ Fo"));
+
+        expect(result).toHaveLength(1);
+        expect(result[0].label).toBe("My Folder/");
+        expect(result[0].insertText).toBe("My\\ Folder/");
+    });
+
     it("HistoryDirectorySuggestor matches multi-token fragments against visited paths", async () => {
         const persistence = {
             searchDirectories: vi.fn().mockResolvedValue([

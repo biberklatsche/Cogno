@@ -167,6 +167,44 @@ describe("SpecCommandSuggestor", () => {
         expect(result.some(v => v.label === "notes.txt")).toBe(false);
     });
 
+    it("replaces the full cd path fragment after escaped spaces when continuing directory suggestions", async () => {
+        const fs = filesystem();
+        vi.mocked(fs.list).mockResolvedValue([
+            {
+                name: "test",
+                path: "/Users/larswolfram/projects/projects/Neuer Ordner/test",
+                kind: "directory",
+            },
+        ]);
+        vi.mocked(fs.toDisplayPath).mockImplementation((path, cwd) => path.replace(`${cwd}/`, ""));
+        vi.mocked(fs.appendPathSeparator).mockImplementation((path) => `${path}/`);
+
+        const cdSpec: CommandSpec = {
+            name: "cd",
+            providers: [{
+                providerId: "filesystem",
+                source: "fs-dir",
+                params: {
+                    kinds: ["directory"],
+                    appendSlashToDirectories: true,
+                    continueSuggestions: true,
+                },
+            }],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, cdSpec]),
+            [new FilesystemSpecProvider(fs)]
+        );
+
+        const result = await suggestor.suggest(cdContext("projects/Neuer\\ Ordner/te"));
+
+        expect(result).toHaveLength(1);
+        expect(result[0].insertText).toBe("projects/Neuer\\ Ordner/test/");
+        expect(result[0].replaceStart).toBe(3);
+        expect(result[0].replaceEnd).toBe("cd projects/Neuer\\ Ordner/te".length);
+    });
+
     it("suggests file entries for cat via filesystem provider", async () => {
         const fs = filesystem();
         vi.mocked(fs.list).mockResolvedValue([

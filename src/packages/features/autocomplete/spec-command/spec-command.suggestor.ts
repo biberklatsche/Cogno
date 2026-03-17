@@ -250,7 +250,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         }
 
         if (context.mode !== "command") return [];
-        const parsed = this.parseTokens(context.beforeCursor);
+        const parsed = this.parseTokens(context.beforeCursor, context.shellContext.shellType);
         if (parsed.tokens.length === 0) return [];
 
         if (parsed.activeTokenIndex === 0) {
@@ -303,7 +303,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         if (!spec || !this.isSpecAllowedInShell(spec, context)) return [];
         const prepared = this.prepareSpec(spec);
 
-        const parsed = this.parseTokens(argsInput);
+        const parsed = this.parseTokens(argsInput, context.shellContext.shellType);
         const activeToken = parsed.activeValue.toLowerCase();
         const replaceStart = replaceBase + parsed.activeStart;
         const replaceEnd = replaceBase + parsed.activeEnd;
@@ -634,17 +634,81 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         return prepared;
     }
 
-    private parseTokens(input: string): ParsedInput {
+    private parseTokens(input: string, shellType: ShellTypeContract): ParsedInput {
         const tokens: Array<{ value: string; start: number; end: number }> = [];
-        const re = /\S+/g;
-        let match: RegExpExecArray | null;
-        while ((match = re.exec(input)) !== null) {
+        const escapeCharacter = shellType === "PowerShell" ? "`" : "\\";
+        let currentTokenValue = "";
+        let currentTokenStart = -1;
+        let isEscaped = false;
+        let activeQuoteCharacter: "'" | '"' | null = null;
+
+        const pushCurrentToken = (tokenEnd: number) => {
+            if (currentTokenStart === -1) return;
             tokens.push({
-                value: match[0],
-                start: match.index,
-                end: match.index + match[0].length,
+                value: currentTokenValue,
+                start: currentTokenStart,
+                end: tokenEnd,
             });
+            currentTokenValue = "";
+            currentTokenStart = -1;
+        };
+
+        for (let currentIndex = 0; currentIndex < input.length; currentIndex += 1) {
+            const currentCharacter = input[currentIndex];
+
+            if (isEscaped) {
+                if (currentTokenStart === -1) {
+                    currentTokenStart = currentIndex - 1;
+                }
+                currentTokenValue += currentCharacter;
+                isEscaped = false;
+                continue;
+            }
+
+            if (currentCharacter === escapeCharacter) {
+                if (currentTokenStart === -1) {
+                    currentTokenStart = currentIndex;
+                }
+                isEscaped = true;
+                continue;
+            }
+
+            if (activeQuoteCharacter !== null) {
+                if (currentCharacter === activeQuoteCharacter) {
+                    activeQuoteCharacter = null;
+                } else {
+                    currentTokenValue += currentCharacter;
+                }
+                continue;
+            }
+
+            if (currentCharacter === "'" || currentCharacter === '"') {
+                if (currentTokenStart === -1) {
+                    currentTokenStart = currentIndex;
+                }
+                activeQuoteCharacter = currentCharacter;
+                continue;
+            }
+
+            if (/\s/.test(currentCharacter)) {
+                pushCurrentToken(currentIndex);
+                continue;
+            }
+
+            if (currentTokenStart === -1) {
+                currentTokenStart = currentIndex;
+            }
+            currentTokenValue += currentCharacter;
         }
+
+        if (isEscaped) {
+            if (currentTokenStart === -1) {
+                currentTokenStart = input.length - 1;
+            }
+            currentTokenValue += escapeCharacter;
+        }
+
+        pushCurrentToken(input.length);
 
         const trailingSpace = /\s$/.test(input);
         if (tokens.length === 0) {

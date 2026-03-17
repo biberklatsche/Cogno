@@ -3,6 +3,8 @@ import { PathFactory } from "./path.factory";
 
 export class AutocompletePathUtil {
     private static readonly PARENT_TRAVERSAL_PREFIX_RE = /^(?:\.\.\/){2,}/;
+    private static readonly POSIX_AUTOCOMPLETE_ESCAPE_RE = /([\\\s"'$`!*?|&;<>(){}\[\]])/g;
+    private static readonly POWERSHELL_AUTOCOMPLETE_ESCAPE_RE = /([`\s"'$])/g;
 
     static normalizeCwd(cwd: string, shellContext: ShellContextContract): string {
         const adapter = PathFactory.createAdapter(shellContext);
@@ -72,6 +74,64 @@ export class AutocompletePathUtil {
         if (!path) return path;
         const separator = shellContext.shellType === "PowerShell" ? "\\" : "/";
         return path.replace(this.PARENT_TRAVERSAL_PREFIX_RE, `...${separator}`);
+    }
+
+    static escapePathForAutocompleteInsert(path: string, shellContext: ShellContextContract): string {
+        if (!path) return path;
+        if (shellContext.shellType === "PowerShell") {
+            return path.replace(this.POWERSHELL_AUTOCOMPLETE_ESCAPE_RE, "`$1");
+        }
+        return path.replace(this.POSIX_AUTOCOMPLETE_ESCAPE_RE, "\\$1");
+    }
+
+    static unescapeAutocompletePathFragment(pathFragment: string, shellContext: ShellContextContract): string {
+        if (!pathFragment) return pathFragment;
+        if (shellContext.shellType === "PowerShell") {
+            return pathFragment.replace(/`(.)/g, "$1");
+        }
+        return pathFragment.replace(/\\(.)/g, "$1");
+    }
+
+    static splitAutocompleteFragmentTokens(fragment: string, shellContext: ShellContextContract): string[] {
+        if (!fragment) return [];
+
+        const escapeCharacter = shellContext.shellType === "PowerShell" ? "`" : "\\";
+        const tokens: string[] = [];
+        let currentToken = "";
+        let isEscaped = false;
+
+        for (const currentCharacter of fragment.trim()) {
+            if (isEscaped) {
+                currentToken += currentCharacter;
+                isEscaped = false;
+                continue;
+            }
+
+            if (currentCharacter === escapeCharacter) {
+                isEscaped = true;
+                continue;
+            }
+
+            if (/\s/.test(currentCharacter)) {
+                if (currentToken.length > 0) {
+                    tokens.push(currentToken);
+                    currentToken = "";
+                }
+                continue;
+            }
+
+            currentToken += currentCharacter;
+        }
+
+        if (isEscaped) {
+            currentToken += escapeCharacter;
+        }
+
+        if (currentToken.length > 0) {
+            tokens.push(currentToken);
+        }
+
+        return tokens;
     }
 
     private static isDrivePath(path: string): boolean {
