@@ -160,7 +160,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             candidates.push({
                 entryNameLower: entry.name.toLowerCase(),
                 suggestion: {
-                    label: AutocompletePathUtil.shortenParentTraversalDisplay(insertText),
+                    label: AutocompletePathUtil.shortenParentTraversalDisplay(insertText, shellContext),
                     insertText,
                     detail: entry.path,
                     selectedPath: entry.path,

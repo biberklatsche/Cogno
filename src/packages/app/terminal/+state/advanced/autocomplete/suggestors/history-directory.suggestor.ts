@@ -40,7 +40,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
             const directoryPath = AutocompletePathUtil.appendDirectorySeparator(displayPath, context.shellContext);
 
             result.push({
-                label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath),
+                label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath, context.shellContext),
                 detail: row.path,
                 insertText: directoryPath,
                 score,

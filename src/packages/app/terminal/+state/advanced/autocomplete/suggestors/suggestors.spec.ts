@@ -64,6 +64,25 @@ describe("Autocomplete History Suggestors", () => {
         expect(result.every(r => r.insertText.endsWith("/"))).toBe(true);
     });
 
+    it("HistoryDirectorySuggestor uses backslashes for PowerShell directory labels", async () => {
+        const persistence = {
+            searchDirectories: vi.fn().mockResolvedValue([
+                { path: "/Users", basename: "Users", visitCount: 5, selectCount: 1, lastVisitAt: 1, ...baseDirHistoryRow },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryDirectorySuggestor(persistence);
+        const result = await suggestor.suggest({
+            ...cdContext("u"),
+            shellContext: { shellType: "PowerShell", backendOs: "windows" },
+            cwd: "/Users/larswolfram/projects",
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].label).toBe("\\Users\\");
+        expect(result[0].insertText).toBe("\\Users\\");
+    });
+
     it("HistoryDirectorySuggestor matches multi-token fragments against visited paths", async () => {
         const persistence = {
             searchDirectories: vi.fn().mockResolvedValue([

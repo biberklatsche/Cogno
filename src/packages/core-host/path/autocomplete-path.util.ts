@@ -63,13 +63,15 @@ export class AutocompletePathUtil {
 
     static appendDirectorySeparator(path: string, shellContext: ShellContextContract): string {
         if (!path) return path;
-        if (path.endsWith("/") || path.endsWith("\\")) return path;
-        return `${path}${shellContext.shellType === "PowerShell" ? "\\" : "/"}`;
+        const shellPath = this.toShellDisplayPath(path, shellContext);
+        if (shellPath.endsWith("/") || shellPath.endsWith("\\")) return shellPath;
+        return `${shellPath}${shellContext.shellType === "PowerShell" ? "\\" : "/"}`;
     }
 
-    static shortenParentTraversalDisplay(path: string): string {
+    static shortenParentTraversalDisplay(path: string, shellContext: ShellContextContract): string {
         if (!path) return path;
-        return path.replace(this.PARENT_TRAVERSAL_PREFIX_RE, ".../");
+        const separator = shellContext.shellType === "PowerShell" ? "\\" : "/";
+        return path.replace(this.PARENT_TRAVERSAL_PREFIX_RE, `...${separator}`);
     }
 
     private static isDrivePath(path: string): boolean {
@@ -79,5 +81,10 @@ export class AutocompletePathUtil {
 
     private static cleanPath(path: string): string {
         return path.replace(/\/+$/, "") || "/";
+    }
+
+    private static toShellDisplayPath(path: string, shellContext: ShellContextContract): string {
+        if (shellContext.shellType !== "PowerShell") return path;
+        return path.replace(/\//g, "\\");
     }
 }

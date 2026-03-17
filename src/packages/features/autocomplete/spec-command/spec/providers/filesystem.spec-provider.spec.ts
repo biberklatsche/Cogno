@@ -207,4 +207,33 @@ describe("FilesystemSpecProvider", () => {
             "zeta.txt",
         ]);
     });
+
+    it("uses backslashes for PowerShell directory labels", async () => {
+        vi.mocked(filesystem.list).mockResolvedValue([
+            { name: "Users", path: "/Users", kind: "directory" },
+        ]);
+        vi.mocked(filesystem.toDisplayPath).mockImplementation((path) => path);
+        vi.mocked(filesystem.appendPathSeparator).mockImplementation((path) => `${path.replace(/\//g, "\\")}\\`);
+
+        const provider = new FilesystemSpecProvider(filesystem);
+        const result = await provider.suggest({
+            queryContext: {
+                ...cdContext("u"),
+                shellContext: { shellType: "PowerShell", backendOs: "windows" },
+            },
+            command: "cd",
+            args: ["u"],
+            binding: {
+                providerId: "filesystem",
+                params: {
+                    kinds: ["directory"],
+                    appendSlashToDirectories: true,
+                },
+            },
+        });
+
+        expect(result).toHaveLength(1);
+        expect(result[0].label).toBe("\\Users\\");
+        expect(result[0].insertText).toBe("\\Users\\");
+    });
 });
