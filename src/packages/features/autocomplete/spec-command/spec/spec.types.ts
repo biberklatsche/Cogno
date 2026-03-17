@@ -75,15 +75,11 @@ export type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branch
 
 export type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
 
-type KnownSpecProviderBinding =
+export type SpecProviderBinding =
     | CommandListSpecProviderBinding
     | FilesystemSpecProviderBinding
     | GitBranchesSpecProviderBinding
     | NpmScriptsSpecProviderBinding;
-
-type UnknownSpecProviderBinding = SpecProviderBindingBase<string, unknown>;
-
-export type SpecProviderBinding = KnownSpecProviderBinding | UnknownSpecProviderBinding;
 
 export type SpecProviderContext = {
     queryContext: AutocompleteQueryContextContract;

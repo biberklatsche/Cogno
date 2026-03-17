@@ -23,7 +23,9 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
 
     async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
         const params = this.readParams(context);
-        const program = params.program?.trim();
+        if (!params) return [];
+
+        const program = params.program.trim();
         if (!program) return [];
 
         const args = params.args ?? [];
@@ -147,7 +149,19 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
     }
 
     private readParams(context: SpecProviderContext): CommandListSpecProviderParams | undefined {
-        return context.binding.providerId === "command-list" ? context.binding.params : undefined;
+        if (context.binding.providerId !== "command-list") return undefined;
+        return this.isCommandListSpecProviderParams(context.binding.params)
+            ? context.binding.params
+            : undefined;
+    }
+
+    private isCommandListSpecProviderParams(value: unknown): value is CommandListSpecProviderParams {
+        if (!value || typeof value !== "object") return false;
+
+        const params = value as Record<string, unknown>;
+        if (typeof params["program"] !== "string") return false;
+        if (params["args"] !== undefined && !Array.isArray(params["args"])) return false;
+        return true;
     }
 
     private setCache(key: string, value: CacheEntry): void {

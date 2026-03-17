@@ -446,10 +446,14 @@ describe("SpecCommandSuggestor", () => {
     });
 
     it("supports provider bindings on subcommands and blocks free-form arg suggestions", async () => {
-        const scriptsProvider = {
-            id: "scripts-provider",
-            suggest: vi.fn().mockResolvedValue([{ label: "test" }, { label: "build" }]),
-        };
+        const fs = filesystem();
+        vi.mocked(fs.exists).mockResolvedValue(true);
+        vi.mocked(fs.readTextFile).mockResolvedValue(JSON.stringify({
+            scripts: {
+                test: "vitest",
+                build: "vite build",
+            },
+        }));
 
         const npmLike: CommandSpec = {
             name: "xpm",
@@ -457,7 +461,7 @@ describe("SpecCommandSuggestor", () => {
                 {
                     name: "run",
                     args: { name: "script" },
-                    providers: [{ providerId: "scripts-provider", source: "xpm-script", baseScore: 60 }],
+                    providers: [{ providerId: "npm-scripts", source: "xpm-script", baseScore: 60 }],
                 },
             ],
             options: [
@@ -467,7 +471,7 @@ describe("SpecCommandSuggestor", () => {
 
         const suggestor = new SpecCommandSuggestor(
             new CommandSpecRegistry([...defaults, npmLike]),
-            [scriptsProvider as any]
+            [new NpmScriptsSpecProvider(fs)]
         );
 
         const scripts = await suggestor.suggest(commandContext("xpm run "));
