@@ -59,7 +59,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     private _hostElement?: HTMLElement;
     private _lastInputSignature: string;
     private readonly _filterMode = new BehaviorSubject<SuggestionFilterMode>("all");
-    private _latestHighlightedSuggestions: AutocompleteSuggestion[] = [];
+    private _latestSuggestions: AutocompleteSuggestion[] = [];
+    private _latestContext: QueryContext | null = null;
 
     get viewState$() {
         return this._viewState.asObservable();
@@ -235,11 +236,14 @@ export class TerminalAutocompleteService implements OnDestroy {
             return;
         }
 
-        const suggestions = this.rankAndTrimSuggestions(settled, state);
-        const highlightedSuggestions = this.suggestionHighlighter.apply(suggestions, context);
-        this._latestHighlightedSuggestions = highlightedSuggestions;
+        const suggestions = this.rankSuggestions(settled, state);
+        this._latestSuggestions = suggestions;
+        this._latestContext = context;
 
-        const visibleSuggestions = this.applyFilterMode(highlightedSuggestions, this._filterMode.value);
+        const visibleSuggestions = this.suggestionHighlighter.apply(
+            this.applyFilterMode(suggestions, this._filterMode.value),
+            context,
+        );
         if (visibleSuggestions.length === 0) {
             this.hide();
             return;
@@ -288,23 +292,15 @@ export class TerminalAutocompleteService implements OnDestroy {
         );
     }
 
-    private rankAndTrimSuggestions(
+    private rankSuggestions(
         settled: PromiseSettledResult<AutocompleteSuggestion[]>[],
         state: TerminalState
     ): AutocompleteSuggestion[] {
-        const merged = settled
+        return settled
             .filter((r): r is PromiseFulfilledResult<AutocompleteSuggestion[]> => r.status === "fulfilled")
-            .flatMap(r => r.value);
-
-        const deduped = this.dedupeSuggestions(merged)
+            .flatMap(r => r.value)
             .filter(s => !this.suggestionEqualsCurrentInput(s, state.input.text))
             .sort((a, b) => b.score - a.score);
-
-        if (this._filterMode.value !== "all") {
-            return deduped.slice(0, MAX_SUGGESTIONS);
-        }
-
-        return this.prioritizeHistorySuggestions(deduped).slice(0, MAX_SUGGESTIONS);
     }
 
     private prioritizeHistorySuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
@@ -319,12 +315,16 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     private applyFilterMode(items: AutocompleteSuggestion[], mode: SuggestionFilterMode): AutocompleteSuggestion[] {
         if (mode === "history-only") {
-            return items.filter(item => this.isHistorySuggestion(item));
+            return items
+                .filter(item => this.isHistorySuggestion(item))
+                .slice(0, MAX_SUGGESTIONS);
         }
         if (mode === "context-only") {
-            return items.filter(item => !this.isHistorySuggestion(item));
+            return items
+                .filter(item => !this.isHistorySuggestion(item))
+                .slice(0, MAX_SUGGESTIONS);
         }
-        return this.prioritizeHistorySuggestions(items);
+        return this.prioritizeHistorySuggestions(this.dedupeSuggestions(items)).slice(0, MAX_SUGGESTIONS);
     }
 
     private applySelectedSuggestion(index: number): void {
@@ -509,9 +509,6 @@ export class TerminalAutocompleteService implements OnDestroy {
                     selectedPatternSignature: item.selectedPatternSignature ?? existing.suggestion.selectedPatternSignature,
                 };
             } else {
-                if (!existing.suggestion.detail && item.detail) {
-                    existing.suggestion.detail = item.detail;
-                }
                 if (!existing.suggestion.description && item.description) {
                     existing.suggestion.description = item.description;
                 }
@@ -553,7 +550,8 @@ export class TerminalAutocompleteService implements OnDestroy {
         if (TerminalAutocompleteService.visibleOwner === this) {
             TerminalAutocompleteService.visibleOwner = null;
         }
-        this._latestHighlightedSuggestions = [];
+        this._latestSuggestions = [];
+        this._latestContext = null;
         this._viewState.next(INITIAL_VIEW_STATE);
     }
 
@@ -565,7 +563,16 @@ export class TerminalAutocompleteService implements OnDestroy {
         const view = this._viewState.value;
         if (!view.visible) return;
 
-        const filtered = this.applyFilterMode(this._latestHighlightedSuggestions, nextMode);
+        const context = this._latestContext;
+        if (!context) {
+            this.hide();
+            return;
+        }
+
+        const filtered = this.suggestionHighlighter.apply(
+            this.applyFilterMode(this._latestSuggestions, nextMode),
+            context,
+        );
         if (filtered.length === 0) {
             this._viewState.next({
                 ...view,

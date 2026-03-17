@@ -12,6 +12,8 @@ import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplet
 
 class FakeStateManager {
     private readonly subject = new BehaviorSubject<TerminalState>({
+        hasUnreadNotification: false,
+        progress: {state: "hidden", value: 0},
         terminalId: "t1",
         shellContext: { shellType: "Bash", backendOs: "macos" } as any,
         cursorPosition: { viewport: { col: 1, row: 1 }, col: 1, row: 1, char: "" },
@@ -24,7 +26,7 @@ class FakeStateManager {
         isPaneMaximized: false,
         commandStartTime: undefined,
         input: { text: "git s", cursorIndex: 5, maxCursorIndex: 5 },
-        cwd: "/Users/larswolfram/projects",
+        cwd: "/Users/larswolfram/projects"
     });
 
     get state$() { return this.subject.asObservable(); }
@@ -40,7 +42,6 @@ function makeSuggestion(label: string): AutocompleteSuggestion {
     return {
         label,
         insertText: label,
-        detail: "",
         score: 10,
         source: "test",
         replaceStart: 0,
@@ -56,7 +57,6 @@ function makeSuggestionWithSource(
     return {
         label,
         insertText: label,
-        detail: "",
         score,
         source,
         replaceStart: 0,
@@ -157,7 +157,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git commit -am {arg1}",
             insertText: "git commit -am {arg1}",
-            detail: "pattern",
             score: 120,
             source: "history-pattern",
             replaceStart: 0,
@@ -377,7 +376,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "Projects",
             insertText: "Projects",
-            detail: "",
             score: 10,
             source: "test",
             replaceStart: 3,
@@ -399,7 +397,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects",
             insertText: "projects",
-            detail: "",
             score: 10,
             source: "test",
             replaceStart: 3,
@@ -425,7 +422,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects/",
             insertText: "projects/",
-            detail: "",
             score: 10,
             source: "fs-dir",
             replaceStart: 3,
@@ -470,7 +466,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git status",
             insertText: "git status",
-            detail: "from history",
             score: 40,
             source: "history-cmd",
             replaceStart: 0,
@@ -480,7 +475,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git status",
             insertText: "git status",
-            detail: "from spec",
             score: 50,
             source: "spec-cmd",
             replaceStart: 0,
@@ -497,11 +491,44 @@ describe("TerminalAutocompleteService", () => {
         expect(view.suggestions[0].score).toBe(58);
     });
 
+    it("keeps context suggestions visible in context-only mode even when identical history suggestions exist", async () => {
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "git status",
+            insertText: "git status",
+            score: 40,
+            source: "history-cmd",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedCommand: "git status",
+        }], "dummy-history"));
+        service.registerSuggestor(new DummySuggestor(async () => [{
+            label: "git status",
+            insertText: "git status",
+            score: 50,
+            source: "spec-cmd",
+            replaceStart: 0,
+            replaceEnd: 6,
+        }], "dummy-spec"));
+
+        fakeState.emit({ ...fakeState.state, input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect((service as any)._viewState.value.suggestions).toHaveLength(1);
+        expect((service as any)._viewState.value.suggestions[0].source).toBe("history-cmd + spec-cmd");
+
+        bus.publish(ActionFired.create("cycle_completion_mode", { all: false, unconsumed: false, performable: true }));
+
+        const view = (service as any)._viewState.value;
+        expect(currentFilterMode(service)).toBe("context-only");
+        expect(view.suggestions).toHaveLength(1);
+        expect(view.suggestions[0].source).toBe("spec-cmd");
+        expect(view.suggestions[0].label).toBe("git status");
+    });
+
     it("keeps description when higher-scored duplicate has none", async () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "rails",
             insertText: "rails",
-            detail: "from history",
             score: 80,
             source: "history-cmd",
             replaceStart: 0,
@@ -511,7 +538,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "rails",
             insertText: "rails",
-            detail: "from spec",
             description: "Ruby on Rails CLI",
             score: 40,
             source: "spec-cmd",
@@ -532,7 +558,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects/",
             insertText: "projects/",
-            detail: "/Users/larswolfram/projects",
             score: 70,
             source: "history-dir",
             replaceStart: 3,
@@ -543,7 +568,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects/",
             insertText: "projects/",
-            detail: "/Users/larswolfram/projects",
             score: 90,
             source: "fs-dir",
             replaceStart: 3,

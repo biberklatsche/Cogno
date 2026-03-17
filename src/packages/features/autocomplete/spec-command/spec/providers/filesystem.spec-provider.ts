@@ -1,6 +1,11 @@
+import { AutocompletePathUtil } from "@cogno/core-host";
 import { FilesystemContract, ShellContextContract } from "@cogno/core-sdk";
-import { AutocompletePathUtil } from "../../autocomplete-path.util";
-import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
+import {
+    FilesystemSpecProviderParams,
+    SpecProvidedSuggestion,
+    SpecProviderContext,
+    SpecSuggestionProvider,
+} from "../spec.types";
 
 type FilesystemProviderKind = "file" | "directory";
 
@@ -35,9 +40,10 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         const lookup = this.resolveLookup(cwdNorm, fragment, context.queryContext.shellContext);
         if (!lookup) return [];
 
-        const kinds = this.resolveKinds(context);
-        const appendSlashToDirectories = context.binding.params?.["appendSlashToDirectories"] === true;
-        const continueSuggestions = context.binding.params?.["continueSuggestions"] === true;
+        const params = this.readParams(context);
+        const kinds = this.resolveKinds(params);
+        const appendSlashToDirectories = params.appendSlashToDirectories === true;
+        const continueSuggestions = params.continueSuggestions === true;
         const query = lookup.namePrefix.toLowerCase();
         const cacheKey = [
             lookup.parentNorm,
@@ -73,11 +79,16 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         return tokens.at(-1) ?? "";
     }
 
-    private resolveKinds(context: SpecProviderContext): FilesystemProviderKind[] {
-        const value = context.binding.params?.["kinds"];
-        const kinds = Array.isArray(value) ? value : [];
+    private resolveKinds(params: FilesystemSpecProviderParams): FilesystemProviderKind[] {
+        const kinds = params.kinds ?? [];
         const filtered = kinds.filter((kind): kind is FilesystemProviderKind => kind === "file" || kind === "directory");
         return filtered.length ? filtered : ["file", "directory"];
+    }
+
+    private readParams(context: SpecProviderContext): FilesystemSpecProviderParams {
+        return context.binding.providerId === "filesystem" && context.binding.params
+            ? context.binding.params
+            : {};
     }
 
     private resolveLookup(
@@ -149,9 +160,8 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             candidates.push({
                 entryNameLower: entry.name.toLowerCase(),
                 suggestion: {
-                    label: AutocompletePathUtil.shortenParentTraversalDisplay(insertText),
+                    label: AutocompletePathUtil.shortenParentTraversalDisplay(insertText, shellContext),
                     insertText,
-                    detail: entry.path,
                     selectedPath: entry.path,
                     completionBehavior: continueSuggestions && entry.kind === "directory" ? "continue" : "final",
                 },

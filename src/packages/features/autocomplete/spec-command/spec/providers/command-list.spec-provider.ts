@@ -1,5 +1,10 @@
 import { CommandRunnerContract } from "@cogno/core-sdk";
-import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
+import {
+    CommandListSpecProviderParams,
+    SpecProvidedSuggestion,
+    SpecProviderContext,
+    SpecSuggestionProvider,
+} from "../spec.types";
 
 type CacheEntry = {
     readonly expiresAt: number;
@@ -17,17 +22,19 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
     constructor(private readonly commandRunner: CommandRunnerContract) {}
 
     async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
-        const program = this.readStringParam(context, "program");
+        const params = this.readParams(context);
+        if (!params) return [];
+
+        const program = params.program.trim();
         if (!program) return [];
 
-        const args = this.readStringArrayParam(context, "args");
+        const args = params.args ?? [];
         const query = this.resolveQuery(context).trim().toLowerCase();
-        const limit = this.readNumberParam(context, "limit") ?? CommandListSpecProvider.DEFAULT_LIMIT;
-        const labelField = this.readNumberParam(context, "labelField") ?? 0;
-        const descriptionField = this.readNumberParam(context, "descriptionField");
-        const detailField = this.readNumberParam(context, "detailField");
-        const stripLabelPrefix = this.readStringParam(context, "stripLabelPrefix");
-        const itemLabel = this.readStringParam(context, "itemLabel") ?? "item";
+        const limit = params.limit ?? CommandListSpecProvider.DEFAULT_LIMIT;
+        const labelField = params.labelField ?? 0;
+        const descriptionField = params.descriptionField;
+        const stripLabelPrefix = params.stripLabelPrefix?.trim() || undefined;
+        const itemLabel = params.itemLabel?.trim() || "item";
         const cacheKey = JSON.stringify([
             context.queryContext.cwd,
             context.queryContext.shellContext.shellType,
@@ -35,7 +42,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
             args,
             labelField,
             descriptionField,
-            detailField,
             stripLabelPrefix,
             itemLabel,
         ]);
@@ -63,7 +69,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
             .map(line => this.parseLine(line, {
                 labelField,
                 descriptionField,
-                detailField,
                 stripLabelPrefix,
                 itemLabel,
             }))
@@ -105,7 +110,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
         config: {
             labelField: number;
             descriptionField?: number;
-            detailField?: number;
             stripLabelPrefix?: string;
             itemLabel: string;
         },
@@ -124,9 +128,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
             description: config.descriptionField !== undefined
                 ? fields[config.descriptionField]?.trim() || undefined
                 : config.itemLabel,
-            detail: config.detailField !== undefined
-                ? fields[config.detailField]?.trim() || undefined
-                : undefined,
         };
     }
 
@@ -140,19 +141,20 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
         return context.args.at(-1) ?? "";
     }
 
-    private readStringParam(context: SpecProviderContext, key: string): string | undefined {
-        const value = context.binding.params?.[key];
-        return typeof value === "string" && value.trim() ? value.trim() : undefined;
+    private readParams(context: SpecProviderContext): CommandListSpecProviderParams | undefined {
+        if (context.binding.providerId !== "command-list") return undefined;
+        return this.isCommandListSpecProviderParams(context.binding.params)
+            ? context.binding.params
+            : undefined;
     }
 
-    private readStringArrayParam(context: SpecProviderContext, key: string): string[] {
-        const value = context.binding.params?.[key];
-        return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
-    }
+    private isCommandListSpecProviderParams(value: unknown): value is CommandListSpecProviderParams {
+        if (!value || typeof value !== "object") return false;
 
-    private readNumberParam(context: SpecProviderContext, key: string): number | undefined {
-        const value = context.binding.params?.[key];
-        return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+        const params = value as Record<string, unknown>;
+        if (typeof params["program"] !== "string") return false;
+        if (params["args"] !== undefined && !Array.isArray(params["args"])) return false;
+        return true;
     }
 
     private setCache(key: string, value: CacheEntry): void {

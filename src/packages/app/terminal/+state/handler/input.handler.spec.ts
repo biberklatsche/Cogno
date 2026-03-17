@@ -74,25 +74,25 @@ describe('InputHandler', () => {
       expect(clearSpy).not.toHaveBeenCalled();
     });
 
-    it('should input clipboard text when Paste event for this id is received', async () => {
-      const inputSpy = vi.spyOn(mockTerminal, 'input');
+    it('should paste clipboard text when Paste event for this id is received', async () => {
+      const pasteSpy = vi.spyOn(mockTerminal, 'paste');
       vi.mocked(Clipboard.readText).mockResolvedValue('pasted content');
 
       mockBus.publish({ type: 'Paste', payload: terminalId, path: ['app', 'terminal'] });
 
       // Wait for async clipboard read
-      await vi.waitFor(() => expect(inputSpy).toHaveBeenCalledWith('pasted content'));
+      await vi.waitFor(() => expect(pasteSpy).toHaveBeenCalledWith('pasted content'));
     });
 
-    it('should not input clipboard text when Paste event for other id is received', async () => {
-      const inputSpy = vi.spyOn(mockTerminal, 'input');
+    it('should not paste clipboard text when Paste event for other id is received', async () => {
+      const pasteSpy = vi.spyOn(mockTerminal, 'paste');
       vi.mocked(Clipboard.readText).mockResolvedValue('pasted content');
 
       mockBus.publish({ type: 'Paste', payload: 'other-id', path: ['app', 'terminal'] });
 
       // Small delay to ensure it didn't happen
       await new Promise(resolve => setTimeout(resolve, 10));
-      expect(inputSpy).not.toHaveBeenCalled();
+      expect(pasteSpy).not.toHaveBeenCalled();
     });
 
     it('should inject terminal input when InjectTerminalInput event for this id is received', () => {

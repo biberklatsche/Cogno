@@ -42,15 +42,43 @@ export type SpecProviderWhen = {
     maxArgs?: number;
 };
 
-export type SpecProviderParams = Record<string, string | number | boolean | string[] | number[] | boolean[]>;
+export type FilesystemSpecProviderParams = {
+    kinds?: Array<"file" | "directory">;
+    appendSlashToDirectories?: boolean;
+    continueSuggestions?: boolean;
+};
 
-export type SpecProviderBinding = {
-    providerId: string;
+export type CommandListSpecProviderParams = {
+    program: string;
+    args?: string[];
+    limit?: number;
+    labelField?: number;
+    descriptionField?: number;
+    stripLabelPrefix?: string;
+    itemLabel?: string;
+};
+
+type SpecProviderBindingBase<TProviderId extends string, TParams> = {
+    providerId: TProviderId;
     when?: SpecProviderWhen;
     source?: string;
     baseScore?: number;
-    params?: SpecProviderParams;
+    params?: TParams;
 };
+
+export type CommandListSpecProviderBinding = SpecProviderBindingBase<"command-list", CommandListSpecProviderParams>;
+
+export type FilesystemSpecProviderBinding = SpecProviderBindingBase<"filesystem", FilesystemSpecProviderParams>;
+
+export type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branches", undefined>;
+
+export type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
+
+export type SpecProviderBinding =
+    | CommandListSpecProviderBinding
+    | FilesystemSpecProviderBinding
+    | GitBranchesSpecProviderBinding
+    | NpmScriptsSpecProviderBinding;
 
 export type SpecProviderContext = {
     queryContext: AutocompleteQueryContextContract;
@@ -63,7 +91,6 @@ export type SpecProvidedSuggestion = {
     label: string;
     insertText?: string;
     description?: string;
-    detail?: string;
     selectedPath?: string;
     completionBehavior?: "final" | "continue";
 };

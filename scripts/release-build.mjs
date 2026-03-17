@@ -687,6 +687,7 @@ function runCommand(commandName, commandArguments, options = {}) {
   console.log(`> ${[resolvedCommandName, ...resolvedArguments].join(" ")}`);
   execFileSync(resolvedCommandName, resolvedArguments, {
     env: environmentVariables,
+    shell: shouldUseShellExecution(resolvedCommandName),
     stdio: "inherit",
   });
 }
@@ -696,6 +697,7 @@ function runCommandAndCollectOutput(commandName, commandArguments) {
 
   return execFileSync(resolvedCommandName, commandArguments, {
     encoding: "utf-8",
+    shell: shouldUseShellExecution(resolvedCommandName),
   }).trim();
 }
 
@@ -705,4 +707,8 @@ function resolveCommandName(commandName) {
   }
 
   return commandName;
+}
+
+function shouldUseShellExecution(commandName) {
+  return process.platform === "win32" && commandName.endsWith(".cmd");
 }

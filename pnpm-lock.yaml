@@ -135,7 +135,7 @@ importers:
 
   src/app: {}
 
-  src/packages/app: {}
+  src/packages/assets: {}
 
   src/packages/core-host: {}
 
@@ -144,7 +144,6 @@ importers:
   src/packages/core-ui: {}
 
   src/packages/features: {}
-
 
 packages:
 

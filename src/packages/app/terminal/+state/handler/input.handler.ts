@@ -40,7 +40,7 @@ export class InputHandler implements ITerminalHandler {
         }));
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Paste'}).subscribe(async event => {
             if(event.payload !== this._terminalId) return;
-            this._terminal?.input(await Clipboard.readText());
+            this._terminal?.paste(await Clipboard.readText());
         }));
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'InjectTerminalInput'}).subscribe(event => {
             if(event.payload?.terminalId !== this._terminalId) return;

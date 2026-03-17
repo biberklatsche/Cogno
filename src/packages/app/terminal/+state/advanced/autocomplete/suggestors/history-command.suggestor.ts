@@ -2,8 +2,6 @@ import { TerminalHistoryPersistenceService } from "../../history/terminal-histor
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { HistoryCommandScorer } from "./scoring/history-command.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
-import { formatTimeAgo } from "../../../../../common/timespan/timespan";
-
 const MAX_HISTORY_COMMAND_SUGGESTIONS = 3;
 
 function consistsOnlyOfPromptWords(command: string, promptWords: Set<string>): boolean {
@@ -31,7 +29,6 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
         const repoSeed = queryTokens[0];
         const rows = await this.persistence.searchCommands(repoSeed, context.cwd, 250);
         const now = Date.now();
-
         const inputCommandToken = HistoryCommandScorer.firstToken(context.inputText);
         const promptWords = new Set(HistoryCommandScorer.tokenizeWords(context.inputText));
         const corpusSize = Math.max(rows.length, 1);
@@ -50,10 +47,14 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
                 );
                 if (score === null) return null;
 
+                const executedInCurrentCwd = row.cwdExecCount > 0;
+                const description = executedInCurrentCwd
+                    ? "executed in current directory"
+                    : "executed elsewhere on this computer";
+
                 return {
                     label: row.command,
-                    detail: `exec: ${row.execCount}, selected: ${row.selectCount}`,
-                    description: `last executed: ${formatTimeAgo(row.lastExecAt, now) || "unknown"}`,
+                    description,
                     insertText: row.command,
                     score,
                     source: "history-cmd",

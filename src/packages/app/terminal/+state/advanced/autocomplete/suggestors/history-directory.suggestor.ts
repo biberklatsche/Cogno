@@ -1,8 +1,8 @@
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
-import { AutocompletePathUtil } from "../autocomplete-path.util";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
 import { HistoryDirectoryScorer } from "./scoring/history-directory.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
+import {AutocompletePathUtil} from "@cogno/core-host";
 
 export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "history-directory";
@@ -40,8 +40,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
             const directoryPath = AutocompletePathUtil.appendDirectorySeparator(displayPath, context.shellContext);
 
             result.push({
-                label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath),
-                detail: row.path,
+                label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath, context.shellContext),
                 insertText: directoryPath,
                 score,
                 source: "history-dir",
