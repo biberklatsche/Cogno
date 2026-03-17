@@ -1,5 +1,5 @@
+import { AutocompletePathUtil } from "@cogno/core-host";
 import { FilesystemContract, ShellContextContract } from "@cogno/core-sdk";
-import { AutocompletePathUtil } from "../../autocomplete-path.util";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 type FilesystemProviderKind = "file" | "directory";

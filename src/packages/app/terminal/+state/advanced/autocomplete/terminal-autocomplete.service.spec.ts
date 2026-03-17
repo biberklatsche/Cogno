@@ -12,6 +12,8 @@ import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplet
 
 class FakeStateManager {
     private readonly subject = new BehaviorSubject<TerminalState>({
+        hasUnreadNotification: false,
+        progress: {state: "hidden", value: 0},
         terminalId: "t1",
         shellContext: { shellType: "Bash", backendOs: "macos" } as any,
         cursorPosition: { viewport: { col: 1, row: 1 }, col: 1, row: 1, char: "" },
@@ -24,7 +26,7 @@ class FakeStateManager {
         isPaneMaximized: false,
         commandStartTime: undefined,
         input: { text: "git s", cursorIndex: 5, maxCursorIndex: 5 },
-        cwd: "/Users/larswolfram/projects",
+        cwd: "/Users/larswolfram/projects"
     });
 
     get state$() { return this.subject.asObservable(); }

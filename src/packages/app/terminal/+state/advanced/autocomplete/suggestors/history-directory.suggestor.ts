@@ -1,8 +1,8 @@
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
-import { AutocompletePathUtil } from "../autocomplete-path.util";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
 import { HistoryDirectoryScorer } from "./scoring/history-directory.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
+import {AutocompletePathUtil} from "@cogno/core-host";
 
 export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "history-directory";
