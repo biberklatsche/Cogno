@@ -82,6 +82,7 @@ export class TerminalMockFactory {
       writeln: vi.fn(),
       clear: vi.fn(),
       input: vi.fn(),
+      paste: vi.fn(),
       dispose: vi.fn(),
       getSelection: vi.fn(),
       getSelectionPosition: vi.fn(),
