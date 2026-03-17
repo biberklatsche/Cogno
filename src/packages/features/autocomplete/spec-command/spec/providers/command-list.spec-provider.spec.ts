@@ -76,7 +76,6 @@ describe("CommandListSpecProvider", () => {
                     args: ["ps", "-a", "--format", "{{.Names}}\t{{.Image}}\t{{.Status}}"],
                     labelField: 0,
                     descriptionField: 1,
-                    detailField: 2,
                     itemLabel: "container",
                 },
             },
@@ -86,7 +85,6 @@ describe("CommandListSpecProvider", () => {
             {
                 label: "web",
                 description: "nginx:latest",
-                detail: "Up 2 hours",
             },
         ]);
     });

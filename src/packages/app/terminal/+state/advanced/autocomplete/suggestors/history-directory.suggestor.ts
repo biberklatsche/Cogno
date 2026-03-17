@@ -41,7 +41,6 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
 
             result.push({
                 label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath, context.shellContext),
-                detail: row.path,
                 insertText: directoryPath,
                 score,
                 source: "history-dir",

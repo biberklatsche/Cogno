@@ -33,7 +33,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
         const limit = params.limit ?? CommandListSpecProvider.DEFAULT_LIMIT;
         const labelField = params.labelField ?? 0;
         const descriptionField = params.descriptionField;
-        const detailField = params.detailField;
         const stripLabelPrefix = params.stripLabelPrefix?.trim() || undefined;
         const itemLabel = params.itemLabel?.trim() || "item";
         const cacheKey = JSON.stringify([
@@ -43,7 +42,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
             args,
             labelField,
             descriptionField,
-            detailField,
             stripLabelPrefix,
             itemLabel,
         ]);
@@ -71,7 +69,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
             .map(line => this.parseLine(line, {
                 labelField,
                 descriptionField,
-                detailField,
                 stripLabelPrefix,
                 itemLabel,
             }))
@@ -113,7 +110,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
         config: {
             labelField: number;
             descriptionField?: number;
-            detailField?: number;
             stripLabelPrefix?: string;
             itemLabel: string;
         },
@@ -132,9 +128,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
             description: config.descriptionField !== undefined
                 ? fields[config.descriptionField]?.trim() || undefined
                 : config.itemLabel,
-            detail: config.detailField !== undefined
-                ? fields[config.detailField]?.trim() || undefined
-                : undefined,
         };
     }
 

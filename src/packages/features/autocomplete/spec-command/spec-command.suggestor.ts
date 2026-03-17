@@ -280,7 +280,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
             const starts = c.lower.startsWith(queryLower);
             suggestions.push({
                 label: c.name,
-                detail: "spec command",
                 description: c.description,
                 insertText: c.name,
                 score: starts ? 135 : 70,
@@ -344,7 +343,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
             const contains = labelLower.includes(activeToken);
             suggestions.push({
                 label,
-                detail: source,
                 description,
                 insertText: `${insertPrefix}${label}`,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
@@ -452,7 +450,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
             const contains = labelLower.includes(activeToken);
             suggestions.push({
                 label,
-                detail: source,
                 insertText: `${insertPrefix}${label}`,
                 score: baseScore + (starts ? 90 : contains ? 35 : 0),
                 source,
@@ -482,7 +479,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
                 const contains = labelLower.includes(activeToken);
                 suggestions.push({
                     label,
-                    detail: value.detail ?? source,
                     description: value.description,
                     insertText: `${insertPrefix}${value.insertText ?? label}`,
                     score: baseScore + (starts ? 90 : contains ? 35 : 0),

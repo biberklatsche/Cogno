@@ -95,8 +95,8 @@ describe("Autocomplete History Suggestors", () => {
         const result = await suggestor.suggest(cdContext("gr tr"));
 
         expect(persistence.searchDirectories).toHaveBeenCalledWith("gr", 100);
-        expect(result.map(r => r.detail)).toContain("/c/projects/grimace-tracker/src");
-        expect(result.map(r => r.detail)).not.toContain("/c/projects/grimace-tools");
+        expect(result).toHaveLength(1);
+        expect(result[0].label).toBe("/c/projects/grimace-tracker/src/");
     });
 
     it("HistoryDirectorySuggestor ranks multi-token ba src and prefers recently selected backend/src", async () => {
@@ -126,7 +126,7 @@ describe("Autocomplete History Suggestors", () => {
         const result = await suggestor.suggest(cdContext("ba src"));
 
         expect(result.length).toBeGreaterThan(0);
-        expect(result[0].detail).toBe("/work/backend/src");
+        expect(result[0].label).toBe("/work/backend/src/");
     });
 
     it("HistoryCommandSuggestor returns ranked command suggestions", async () => {
@@ -156,9 +156,50 @@ describe("Autocomplete History Suggestors", () => {
 
         const result = await suggestor.suggest(ctx);
         expect(result.length).toBe(3);
-        expect(result[0].description).toBe("last executed: 1 minute ago");
-        expect(result[1].description).toBe("last executed: 1 hour ago");
+        expect(result[0].description).toBe("executed elsewhere on this computer");
+        expect(result[1].description).toBe("executed elsewhere on this computer");
         expect(result.map((item) => item.label)).not.toContain("npm outdated");
+    });
+
+    it("HistoryCommandSuggestor marks commands from current cwd differently than commands from elsewhere", async () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                {
+                    ...baseHistoryRow,
+                    command: "npm test",
+                    execCount: 10,
+                    selectCount: 5,
+                    lastExecAt: now - 60_000,
+                    cwdExecCount: 3,
+                },
+                {
+                    ...baseHistoryRow,
+                    command: "npm run build",
+                    execCount: 2,
+                    selectCount: 1,
+                    lastExecAt: now - 3_600_000,
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "npm",
+            inputText: "npm",
+            cursorIndex: 3,
+            replaceStart: 0,
+            replaceEnd: 3,
+            cwd: "/Users/larswolfram/projects",
+            shellContext,
+            query: "npm",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        expect(result[0].description).toBe("executed in current directory");
+        expect(result[1].description).toBe("executed elsewhere on this computer");
     });
 
     it("HistoryCommandPatternSuggestor returns learned pattern suggestions", async () => {

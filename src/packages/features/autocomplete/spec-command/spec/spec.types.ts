@@ -54,7 +54,6 @@ export type CommandListSpecProviderParams = {
     limit?: number;
     labelField?: number;
     descriptionField?: number;
-    detailField?: number;
     stripLabelPrefix?: string;
     itemLabel?: string;
 };
@@ -92,7 +91,6 @@ export type SpecProvidedSuggestion = {
     label: string;
     insertText?: string;
     description?: string;
-    detail?: string;
     selectedPath?: string;
     completionBehavior?: "final" | "continue";
 };

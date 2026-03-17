@@ -114,13 +114,8 @@ export class SuggestionPatternReducer {
         }
 
         const dominantSlotStatistics = learnedCommandPattern.slotStatistics[0];
-        const detail = dominantSlotStatistics?.topValue
-            ? `pattern x${learnedCommandPattern.totalCount}, top: ${dominantSlotStatistics.topValue}`
-            : `pattern x${learnedCommandPattern.totalCount}`;
-
         return {
             label: patternLabel,
-            detail,
             description: "Learned command pattern",
             insertText: patternLabel,
             score,

@@ -509,9 +509,6 @@ export class TerminalAutocompleteService implements OnDestroy {
                     selectedPatternSignature: item.selectedPatternSignature ?? existing.suggestion.selectedPatternSignature,
                 };
             } else {
-                if (!existing.suggestion.detail && item.detail) {
-                    existing.suggestion.detail = item.detail;
-                }
                 if (!existing.suggestion.description && item.description) {
                     existing.suggestion.description = item.description;
                 }

@@ -162,7 +162,6 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
                 suggestion: {
                     label: AutocompletePathUtil.shortenParentTraversalDisplay(insertText, shellContext),
                     insertText,
-                    detail: entry.path,
                     selectedPath: entry.path,
                     completionBehavior: continueSuggestions && entry.kind === "directory" ? "continue" : "final",
                 },

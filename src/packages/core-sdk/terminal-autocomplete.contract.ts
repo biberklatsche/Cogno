@@ -9,7 +9,6 @@ export type AutocompleteMatchRangeContract = {
 export type AutocompleteSuggestionContract = {
   label: string;
   description?: string;
-  detail?: string;
   insertText: string;
   score: number;
   source: string;

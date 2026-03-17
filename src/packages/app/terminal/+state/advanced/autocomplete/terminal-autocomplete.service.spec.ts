@@ -42,7 +42,6 @@ function makeSuggestion(label: string): AutocompleteSuggestion {
     return {
         label,
         insertText: label,
-        detail: "",
         score: 10,
         source: "test",
         replaceStart: 0,
@@ -58,7 +57,6 @@ function makeSuggestionWithSource(
     return {
         label,
         insertText: label,
-        detail: "",
         score,
         source,
         replaceStart: 0,
@@ -159,7 +157,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git commit -am {arg1}",
             insertText: "git commit -am {arg1}",
-            detail: "pattern",
             score: 120,
             source: "history-pattern",
             replaceStart: 0,
@@ -379,7 +376,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "Projects",
             insertText: "Projects",
-            detail: "",
             score: 10,
             source: "test",
             replaceStart: 3,
@@ -401,7 +397,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects",
             insertText: "projects",
-            detail: "",
             score: 10,
             source: "test",
             replaceStart: 3,
@@ -427,7 +422,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects/",
             insertText: "projects/",
-            detail: "",
             score: 10,
             source: "fs-dir",
             replaceStart: 3,
@@ -472,7 +466,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git status",
             insertText: "git status",
-            detail: "from history",
             score: 40,
             source: "history-cmd",
             replaceStart: 0,
@@ -482,7 +475,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git status",
             insertText: "git status",
-            detail: "from spec",
             score: 50,
             source: "spec-cmd",
             replaceStart: 0,
@@ -503,7 +495,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git status",
             insertText: "git status",
-            detail: "from history",
             score: 40,
             source: "history-cmd",
             replaceStart: 0,
@@ -513,7 +504,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "git status",
             insertText: "git status",
-            detail: "from spec",
             score: 50,
             source: "spec-cmd",
             replaceStart: 0,
@@ -539,7 +529,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "rails",
             insertText: "rails",
-            detail: "from history",
             score: 80,
             source: "history-cmd",
             replaceStart: 0,
@@ -549,7 +538,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "rails",
             insertText: "rails",
-            detail: "from spec",
             description: "Ruby on Rails CLI",
             score: 40,
             source: "spec-cmd",
@@ -570,7 +558,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects/",
             insertText: "projects/",
-            detail: "/Users/larswolfram/projects",
             score: 70,
             source: "history-dir",
             replaceStart: 3,
@@ -581,7 +568,6 @@ describe("TerminalAutocompleteService", () => {
         service.registerSuggestor(new DummySuggestor(async () => [{
             label: "projects/",
             insertText: "projects/",
-            detail: "/Users/larswolfram/projects",
             score: 90,
             source: "fs-dir",
             replaceStart: 3,
