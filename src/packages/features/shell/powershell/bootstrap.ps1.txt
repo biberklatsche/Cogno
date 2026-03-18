@@ -109,6 +109,7 @@ if ($null -ne (Get-Module -ListAvailable PSReadLine)) {
 function prompt {
     $lastEc = $LASTEXITCODE
     if ($null -eq $lastEc) { $lastEc = 0 }
+    if ($lastEc -eq -1073741510 -or $lastEc -eq 3221225786) { $lastEc = 0 }
 
     $global:COGNO_COUNT++
 
