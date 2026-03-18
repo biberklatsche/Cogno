@@ -7,7 +7,7 @@ import {
     ElementRef,
     OnDestroy,
     Signal,
-    ViewChild
+    ViewChild,
 } from '@angular/core';
 import { IconComponent } from "@cogno/core-ui";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
@@ -32,9 +32,11 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
                [class.shift-left]="visibleItems().length > 0"
+               [style.width.px]="panelWidthInPixels()"
                tabindex="-1"
                (pointerdown)="focus()"
         >
+            <div class="resize-handle" (pointerdown)="startResize($event)"></div>
             <header>
                 <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
@@ -115,7 +117,7 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             display: flex;
             flex-direction: column;
             max-height: 100%;
-            width: min(500px, max(33vw, 300px));
+            min-width: 0;
 
             &.hidden {
                 display: none;
@@ -133,6 +135,16 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
             
             &.shift-left {
                 right: 32px;
+            }
+
+            .resize-handle {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: -4px;
+                width: 8px;
+                cursor: ew-resize;
+                z-index: 2;
             }
 
             header {
@@ -188,12 +200,15 @@ export class SideMenuComponent implements OnDestroy {
     selectedItem = this.menuItemService.selectedItem;
     overlay = this.menuItemService.displacement;
     focused = this.menuItemService.isFocused;
+    panelWidthInPixels = this.menuItemService.panelWidthInPixels;
 
     @ViewChild('overlayAside', {static: false}) overlayAsideRef?: ElementRef<HTMLElement>;
     @ViewChild('menuCol', {static: false}) menuColRef?: ElementRef<HTMLElement>;
 
     private clickOutsideEffect: EffectRef;
     private lastOpenTimestamp = 0;
+    private resizeStartPointerClientX = 0;
+    private resizeStartPanelWidthInPixels = 0;
 
     constructor(private menuItemService: SideMenuService) {
         this.clickOutsideEffect = effect(() => {
@@ -218,6 +233,8 @@ export class SideMenuComponent implements OnDestroy {
 
     ngOnDestroy() {
         document.removeEventListener('pointerdown', this.onPointerDown, true);
+        window.removeEventListener('pointermove', this.onWindowPointerMove, true);
+        window.removeEventListener('pointerup', this.onWindowPointerUp, true);
         this.clickOutsideEffect.destroy();
     }
 
@@ -261,4 +278,23 @@ export class SideMenuComponent implements OnDestroy {
     togglePin() {
         this.menuItemService.togglePin();
     }
+
+    startResize(pointerEvent: PointerEvent): void {
+        pointerEvent.preventDefault();
+        pointerEvent.stopPropagation();
+        this.resizeStartPointerClientX = pointerEvent.clientX;
+        this.resizeStartPanelWidthInPixels = this.panelWidthInPixels();
+        window.addEventListener('pointermove', this.onWindowPointerMove, true);
+        window.addEventListener('pointerup', this.onWindowPointerUp, true);
+    }
+
+    private onWindowPointerMove = (pointerEvent: PointerEvent): void => {
+        const horizontalDeltaInPixels = this.resizeStartPointerClientX - pointerEvent.clientX;
+        this.menuItemService.setPanelWidthInPixels(this.resizeStartPanelWidthInPixels + horizontalDeltaInPixels);
+    };
+
+    private onWindowPointerUp = (): void => {
+        window.removeEventListener('pointermove', this.onWindowPointerMove, true);
+        window.removeEventListener('pointerup', this.onWindowPointerUp, true);
+    };
 }

@@ -109,4 +109,12 @@ describe('SideMenuService', () => {
         expect(publishedTypes).toContain('SideMenuViewFocused');
         expect(publishedTypes).not.toContain('SideMenuViewOpened');
     });
+
+    it('should clamp side menu panel width', () => {
+        service.setPanelWidthInPixels(100);
+        expect(service.panelWidthInPixels()).toBe(280);
+
+        service.setPanelWidthInPixels(999);
+        expect(service.panelWidthInPixels()).toBe(640);
+    });
 });
