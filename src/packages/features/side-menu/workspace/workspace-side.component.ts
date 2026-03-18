@@ -36,22 +36,25 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
               </div>
 
               @if (workspaceEntry.id !== defaultWorkspaceId) {
-                <div class="space"></div>
                 @if (workspaceEntry.isOpen) {
                   <button
                     class="button icon-button workspace-close-button"
+                    [class.visible]="workspaceEntry.isOpen || workspaceEntry.isActive"
                     type="button"
                     (click)="closeWorkspace(workspaceEntry.id, $event)"
                   >
                     <app-icon name="mdiClose"></app-icon>
                   </button>
                 }
-                <app-copy-edit-delete
-                  [enableEdit]="true"
-                  [enableDelete]="true"
-                  [enableCopy]="false"
-                  (onEvent)="onWorkspaceAction(workspaceEntry.id, $event)"
-                ></app-copy-edit-delete>
+                <div class="space"></div>
+                <div class="workspace-actions">
+                  <app-copy-edit-delete
+                    [enableEdit]="true"
+                    [enableDelete]="true"
+                    [enableCopy]="false"
+                    (onEvent)="onWorkspaceAction(workspaceEntry.id, $event)"
+                  ></app-copy-edit-delete>
+                </div>
               }
             </div>
           </li>
@@ -92,12 +95,21 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       }
 
       .workspace-tile {
+        position: relative;
         border-radius: var(--button-border-radius);
         border: 1px solid var(--background-color-20l-ct);
         background-color: var(--background-color-20l-ct);
         opacity: 0.7;
         cursor: default;
         height: 3.5rem;
+      }
+
+      .workspace-tile:hover .workspace-actions {
+        opacity: 1;
+      }
+
+      .workspace-tile:hover .workspace-close-button {
+        opacity: 1;
       }
 
       .workspace-tile.selected {
@@ -175,8 +187,34 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         justify-content: center;
       }
 
-      .workspace-close-button {
+      .workspace-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: flex-start;
+        gap: 2px;
+        min-width: 26px;
+        margin-left: auto;
+      }
+
+      .workspace-actions {
+        display: flex;
         flex: 0 0 auto;
+        opacity: 0;
+        transition: opacity 120ms ease-out;
+        transform: translateX(-18px);
+      }
+
+      .workspace-close-button {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        opacity: 0;
+        transition: opacity 120ms ease-out;
+      }
+
+      .workspace-close-button.visible {
+        opacity: 1;
       }
     `,
   ],
