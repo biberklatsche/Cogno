@@ -9,6 +9,7 @@ export interface WorkspaceEntryContract {
   readonly color?: string;
   readonly autosave?: boolean;
   readonly isActive?: boolean;
+  readonly isOpen?: boolean;
 }
 
 export interface WorkspaceHostPortContract {

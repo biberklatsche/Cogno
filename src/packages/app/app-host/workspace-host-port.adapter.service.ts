@@ -28,6 +28,7 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
           color: workspaceConfigUi.color,
           autosave: workspaceConfigUi.autosave,
           isActive: workspaceConfigUi.isActive,
+          isOpen: workspaceConfigUi.isOpen,
         })),
       ),
     );

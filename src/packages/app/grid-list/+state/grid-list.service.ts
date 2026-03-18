@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from "@angular/core";
 import {BehaviorSubject, map, Observable} from "rxjs";
 import {Grid, GridList, Pane, SplitDirection, TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
-import {PaneConfig, GridConfig, TabId} from "@cogno/core-sdk";
+import {defaultWorkspaceIdContract, PaneConfig, GridConfig, TabId} from "@cogno/core-sdk";
 import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -26,6 +26,10 @@ export class GridListService {
     private _maximizedTerminalId: BehaviorSubject<TerminalId | undefined> = new BehaviorSubject<TerminalId | undefined>(undefined);
     private paneSwapDragSourceTerminalId: TerminalId | undefined;
     private paneSwapDragTargetTerminalId: TerminalId | undefined;
+    private readonly gridListByWorkspaceIdentifier = new Map<string, GridList>();
+    private readonly activeTabIdByWorkspaceIdentifier = new Map<string, TabId | undefined>();
+    private readonly maximizedTerminalIdByWorkspaceIdentifier = new Map<string, TerminalId | undefined>();
+    private activeWorkspaceIdentifier: string | undefined = defaultWorkspaceIdContract;
     get grids$(): Observable<Grid[]> {
         return this._gridList.pipe(map(g => Object.values(g)));
     }
@@ -35,6 +39,50 @@ export class GridListService {
     }
     get maximizedTerminalId$(): Observable<TerminalId | undefined> {
         return this._maximizedTerminalId.asObservable();
+    }
+
+    activateWorkspace(workspaceIdentifier: string): void {
+        this.activeWorkspaceIdentifier = workspaceIdentifier;
+        if (!this.gridListByWorkspaceIdentifier.has(workspaceIdentifier)) {
+            this.gridListByWorkspaceIdentifier.set(workspaceIdentifier, {});
+        }
+        this.syncActiveWorkspaceState();
+    }
+
+    moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
+        const sourceWorkspaceIdentifier = this.activeWorkspaceIdentifier;
+        if (!sourceWorkspaceIdentifier || sourceWorkspaceIdentifier === targetWorkspaceIdentifier) {
+            this.activateWorkspace(targetWorkspaceIdentifier);
+            return;
+        }
+
+        const gridList = this.gridListByWorkspaceIdentifier.get(sourceWorkspaceIdentifier) ?? {};
+        const activeTabIdentifier = this.activeTabIdByWorkspaceIdentifier.get(sourceWorkspaceIdentifier);
+        const maximizedTerminalIdentifier = this.maximizedTerminalIdByWorkspaceIdentifier.get(sourceWorkspaceIdentifier);
+
+        this.gridListByWorkspaceIdentifier.set(targetWorkspaceIdentifier, gridList);
+        this.activeTabIdByWorkspaceIdentifier.set(targetWorkspaceIdentifier, activeTabIdentifier);
+        this.maximizedTerminalIdByWorkspaceIdentifier.set(targetWorkspaceIdentifier, maximizedTerminalIdentifier);
+
+        this.gridListByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
+        this.activeTabIdByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
+        this.maximizedTerminalIdByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
+
+        this.activeWorkspaceIdentifier = targetWorkspaceIdentifier;
+        this.syncActiveWorkspaceState();
+    }
+
+    removeWorkspaceRuntime(workspaceIdentifier: string): void {
+        this.destroyWorkspaceGridList(this.gridListByWorkspaceIdentifier.get(workspaceIdentifier));
+        this.gridListByWorkspaceIdentifier.delete(workspaceIdentifier);
+        this.activeTabIdByWorkspaceIdentifier.delete(workspaceIdentifier);
+        this.maximizedTerminalIdByWorkspaceIdentifier.delete(workspaceIdentifier);
+        if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
+            this.activeWorkspaceIdentifier = undefined;
+            this._gridList.next({});
+            this._activeTabId.next(undefined);
+            this._maximizedTerminalId.next(undefined);
+        }
     }
 
     get activeGridIsSplit$(): Observable<boolean> {
@@ -76,14 +124,14 @@ export class GridListService {
 
         this.bus.onType$('TerminalCwdChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalCwdChangedEvent) => {
 
-            const gridList = this._gridList.value;
+            const gridList = this.getActiveWorkspaceGridList();
             let tabId = this.determineTabId(gridList, event.payload?.terminalId);
             if(!tabId || !event.payload?.cwd) return;
             const node = gridList[tabId].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload?.terminalId);
             if(!node?.data) return;
             // Immutable update der Pane
             node.data = {...node.data, workingDir: event.payload.cwd};
-            this._gridList.next({...gridList});
+            this.setActiveWorkspaceGridList(gridList);
             this.bus.publish({path: ['app', 'terminal'], type: "TabTitleChanged", payload: {tabId, title: event.payload.cwd}});
         });
 
@@ -96,7 +144,7 @@ export class GridListService {
         this.bus.onType$('TerminalFocused').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TerminalFocusedEvent) => {
             if (!event.payload) return;
             if(!this._activeTabId.value) throw new Error("No active tab id found.");
-            const gridList = this._gridList.value;
+            const gridList = this.getActiveWorkspaceGridList();
             const focusedTabId = this.determineTabId(gridList, event.payload);
             if (!focusedTabId || focusedTabId !== this._activeTabId.value) return;
             Object.values(gridList).forEach((grid: Grid) => {
@@ -106,7 +154,7 @@ export class GridListService {
             const paneConfig = gridList[this._activeTabId.value].tree.first(s => s.isLeaf && s.data?.terminalId === event.payload)?.data;
             if(!paneConfig) return;
             paneConfig.isFocused = true;
-            this._gridList.next(gridList);
+            this.setActiveWorkspaceGridList(gridList);
         });
 
         this.bus.onType$('RemovePane').pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
@@ -161,7 +209,7 @@ export class GridListService {
     }
 
     removePane(terminalId: TerminalId) {
-        const gridList = this._gridList.value;
+        const gridList = this.getActiveWorkspaceGridList();
         let gridAndNode = this.determineGrid(gridList, terminalId);
         if (!gridAndNode) return;
         if (this._maximizedTerminalId.value === terminalId) {
@@ -177,7 +225,7 @@ export class GridListService {
             }
         }
         this.componentFactory.destroy(terminalId);
-        this._gridList.next(gridList);
+        this.setActiveWorkspaceGridList(gridList);
     }
 
     startPaneSwapDrag(sourceTerminalId: TerminalId): void {
@@ -215,7 +263,7 @@ export class GridListService {
         }
 
         const sourceTerminalId = this.paneSwapDragSourceTerminalId;
-        const gridList = this._gridList.value;
+        const gridList = this.getActiveWorkspaceGridList();
         if (this._maximizedTerminalId.value === sourceTerminalId) {
             this.minimizePane();
         }
@@ -234,7 +282,7 @@ export class GridListService {
         const newTabId = IdCreator.newTabId();
         const movedPaneRootNode = new BinaryNode<Pane>({...sourcePaneData});
         gridList[newTabId] = {tabId: newTabId, tree: new BinaryTree<Pane>(movedPaneRootNode)};
-        this._gridList.next({...gridList});
+        this.setActiveWorkspaceGridList(gridList);
 
         this.bus.publish({
             type: 'CreateTab',
@@ -246,7 +294,7 @@ export class GridListService {
 
     swapPanes(sourceTerminalId: TerminalId, targetTerminalId: TerminalId): void {
         if (sourceTerminalId === targetTerminalId) return;
-        const gridList = this._gridList.value;
+        const gridList = this.getActiveWorkspaceGridList();
         const sourceGridAndNode = this.determineGrid(gridList, sourceTerminalId);
         const targetGridAndNode = this.determineGrid(gridList, targetTerminalId);
         if (!sourceGridAndNode || !targetGridAndNode) return;
@@ -258,12 +306,12 @@ export class GridListService {
 
         sourceGridAndNode.node.data = targetPane;
         targetGridAndNode.node.data = sourcePane;
-        this._gridList.next({...gridList});
+        this.setActiveWorkspaceGridList(gridList);
     }
 
     private split(terminalId: TerminalId, splitDirection: SplitDirection, side: 'l' | 'r') {
         if (!this._activeTabId.value) throw new Error("No active tab id found.");
-        const gridList = this._gridList.value;
+        const gridList = this.getActiveWorkspaceGridList();
         const tree = gridList[this._activeTabId.value].tree;
         const node = tree.first(s => (s.isLeaf && s.data?.terminalId === terminalId));
         if (!node) throw new Error("No focused pane found.");
@@ -275,21 +323,29 @@ export class GridListService {
 
         const paneChild: Pane = {terminalId: IdCreator.newTerminalId()};
         tree.add(node.key, side, paneParent, paneChild);
-        this._gridList.next(gridList);
+        this.setActiveWorkspaceGridList(gridList);
     }
 
     restoreGrids(gridConfigList: GridConfig[]) {
-        for(const tabId in this._gridList.value) {
-            this.removeGrid(tabId);
+        this.restoreGridsForWorkspace(gridConfigList, this.getRequiredActiveWorkspaceIdentifier());
+    }
+
+    restoreGridsForWorkspace(gridConfigList: GridConfig[], workspaceIdentifier: string): void {
+        this.destroyWorkspaceGridList(this.gridListByWorkspaceIdentifier.get(workspaceIdentifier));
+        const restoredGridList: GridList = {};
+        for (const grid of gridConfigList) {
+            restoredGridList[grid.tabId] = {tabId: grid.tabId, tree: this.createTree(grid)};
         }
-        for (let grid of gridConfigList) {
-            this.restoreGrid(grid);
+        this.gridListByWorkspaceIdentifier.set(workspaceIdentifier, restoredGridList);
+        if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
+            this._gridList.next({...restoredGridList});
         }
     }
 
-    getGridConfigs(): GridConfig[] {
+    getGridConfigs(workspaceIdentifier?: string): GridConfig[] {
         const result: GridConfig[] = [];
-        const gridList = this._gridList.value;
+        const targetWorkspaceIdentifier = workspaceIdentifier ?? this.getRequiredActiveWorkspaceIdentifier();
+        const gridList = this.gridListByWorkspaceIdentifier.get(targetWorkspaceIdentifier) ?? {};
         for (const grid of Object.values(gridList)) {
             result.push({
                 tabId: grid.tabId,
@@ -300,10 +356,10 @@ export class GridListService {
     }
 
     restoreGrid(gridConfig: GridConfig) {
-        const gridList = this._gridList.value;
+        const gridList = this.getActiveWorkspaceGridList();
         if(gridList[gridConfig.tabId]) return;
         gridList[gridConfig.tabId] = {tabId: gridConfig.tabId, tree: this.createTree(gridConfig)};
-        this._gridList.next(gridList);
+        this.setActiveWorkspaceGridList(gridList);
     }
 
     private createTree(paneConfig: GridConfig): BinaryTree<Pane> {
@@ -348,7 +404,7 @@ export class GridListService {
 
     removeGrid(tab?: TabId) {
         if(tab === undefined) return;
-        const gridList = this._gridList.value;
+        const gridList = this.getActiveWorkspaceGridList();
         const grid = gridList[tab];
         if (!grid) return;
         const terminalIds = grid.tree.find(s => s.isLeaf).map(s => s.data?.terminalId);
@@ -357,14 +413,15 @@ export class GridListService {
             if (!terminalId) continue;
             this.componentFactory.destroy(terminalId);
         }
-        this._gridList.next(gridList);
+        this.setActiveWorkspaceGridList(gridList);
     }
 
     selectGrid(tab?: TabId) {
         if(tab === undefined) return;
+        const grid = this.getActiveWorkspaceGridList()[tab];
+        if (!grid) return;
         this.minimizePane();
-        this._activeTabId.next(tab);
-        const grid = this._gridList.value[tab];
+        this.setActiveWorkspaceTabIdentifier(tab);
         const terminalId = this.getFirstTerminalId(grid.tree.root);
         // Defer focus to the next task to avoid ExpressionChangedAfterItHasBeenCheckedError
         setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: 'FocusTerminal', payload: terminalId}));
@@ -403,7 +460,7 @@ export class GridListService {
     }
 
     private maximizePane(terminalId: TerminalId): void {
-        this._maximizedTerminalId.next(terminalId);
+        this.setActiveWorkspaceMaximizedTerminalIdentifier(terminalId);
         this.bus.publish({type: 'PaneMaximizedChanged', payload: {terminalId}});
     }
 
@@ -417,7 +474,7 @@ export class GridListService {
 
     private minimizePane(): void {
         if (!this._maximizedTerminalId.value) return;
-        this._maximizedTerminalId.next(undefined);
+        this.setActiveWorkspaceMaximizedTerminalIdentifier(undefined);
         this.bus.publish({type: 'PaneMaximizedChanged', payload: {terminalId: undefined}});
     }
 
@@ -448,4 +505,66 @@ export class GridListService {
         return;
     }
 
+    private getRequiredActiveWorkspaceIdentifier(): string {
+        if (!this.activeWorkspaceIdentifier) {
+            throw new Error("No active workspace found for grid list.");
+        }
+        return this.activeWorkspaceIdentifier;
+    }
+
+    private getActiveWorkspaceGridList(): GridList {
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        const gridList = this.gridListByWorkspaceIdentifier.get(workspaceIdentifier);
+        if (gridList) {
+            return gridList;
+        }
+        const emptyGridList: GridList = {};
+        this.gridListByWorkspaceIdentifier.set(workspaceIdentifier, emptyGridList);
+        return emptyGridList;
+    }
+
+    private setActiveWorkspaceGridList(gridList: GridList): void {
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        this.gridListByWorkspaceIdentifier.set(workspaceIdentifier, gridList);
+        this._gridList.next({...gridList});
+    }
+
+    private setActiveWorkspaceTabIdentifier(tabIdentifier: TabId | undefined): void {
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        this.activeTabIdByWorkspaceIdentifier.set(workspaceIdentifier, tabIdentifier);
+        this._activeTabId.next(tabIdentifier);
+    }
+
+    private setActiveWorkspaceMaximizedTerminalIdentifier(terminalId: TerminalId | undefined): void {
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        this.maximizedTerminalIdByWorkspaceIdentifier.set(workspaceIdentifier, terminalId);
+        this._maximizedTerminalId.next(terminalId);
+    }
+
+    private syncActiveWorkspaceState(): void {
+        if (!this.activeWorkspaceIdentifier) {
+            this._gridList.next({});
+            this._activeTabId.next(undefined);
+            this._maximizedTerminalId.next(undefined);
+            return;
+        }
+
+        const activeGridList = this.gridListByWorkspaceIdentifier.get(this.activeWorkspaceIdentifier) ?? {};
+        this._gridList.next({...activeGridList});
+        this._activeTabId.next(this.activeTabIdByWorkspaceIdentifier.get(this.activeWorkspaceIdentifier));
+        this._maximizedTerminalId.next(
+            this.maximizedTerminalIdByWorkspaceIdentifier.get(this.activeWorkspaceIdentifier),
+        );
+    }
+
+    private destroyWorkspaceGridList(gridList: GridList | undefined): void {
+        if (!gridList) return;
+        for (const grid of Object.values(gridList)) {
+            const terminalIds = grid.tree.find((node) => node.isLeaf).map((node) => node.data?.terminalId);
+            for (const terminalId of terminalIds) {
+                if (!terminalId) continue;
+                this.componentFactory.destroy(terminalId);
+            }
+        }
+    }
 }
