@@ -1,132 +1,177 @@
 #!/usr/bin/env node
-// Build, sign, notarize and staple Cogno2 DMG
+// Build the macOS DMG with Tauri and optionally notarize/staple it.
 
-import { execSync } from "child_process";
+import { execFileSync } from "node:child_process";
 import {
-    cpSync,
-    existsSync,
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    rmSync,
-    symlinkSync
-} from "fs";
-import { join } from "path";
-import { homedir, tmpdir } from "os";
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const CREDENTIALS_FILE = join(homedir(), ".apple", "credentials");
-const SIGNING_IDENTITY = "Developer ID Application: Lars Wolfram (28K66AW32D)";
-const releaseVariantArgument = process.argv[2] ?? "pro";
-const releaseVariantConfigurationByName = {
-    community: {
-        tauriConfigPath: "src-tauri/tauri.community.conf.json"
-    },
-    pro: {
-        tauriConfigPath: "src-tauri/tauri.pro.conf.json"
-    }
-};
-const releaseVariantConfiguration = releaseVariantConfigurationByName[releaseVariantArgument];
+const credentialsFilePath = join(homedir(), ".apple", "credentials");
+const tauriConfigPath = "src-tauri/tauri.conf.json";
+const dmgDirectoryPath = "src-tauri/target/release/bundle/dmg";
+const entitlementsPath = "src-tauri/entitlements.plist";
+const commandLineArguments = process.argv.slice(2);
 
-if (releaseVariantConfiguration === undefined) {
-    throw new Error(
-        `Unknown release variant "${releaseVariantArgument}". Supported variants: ${Object.keys(releaseVariantConfigurationByName).join(", ")}`
-    );
+if (commandLineArguments.includes("--help") || commandLineArguments.includes("-h")) {
+  console.log("Builds the macOS DMG with Tauri and optionally notarizes it.");
+  console.log("");
+  console.log("Usage:");
+  console.log("  node ./scripts/build-tauri-macos-signed-notarized.mjs");
+  process.exit(0);
 }
 
-const APP_PATH = "src-tauri/target/release/bundle/macos/Cogno2.app";
-const DMG_DIR = "src-tauri/target/release/bundle/dmg";
-const DMG_PATH = join(DMG_DIR, "cogno.dmg");
-const DMG_VOLUME_NAME = "Cogno2";
+if (commandLineArguments.length > 0) {
+  throw new Error("This script does not accept additional arguments.");
+}
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function run(cmd, label) {
-    console.log(`\n▶ ${label}...`);
-    execSync(cmd, { stdio: "inherit" });
+function run(commandName, commandArguments, label, environmentVariables = process.env) {
+  console.log(`\n▶ ${label}...`);
+  execFileSync(commandName, commandArguments, {
+    env: environmentVariables,
+    stdio: "inherit",
+  });
 }
 
 function step(label) {
-    console.log(`\n${"─".repeat(60)}\n▶ ${label}`);
+  console.log(`\n${"─".repeat(60)}\n▶ ${label}`);
 }
 
-function createDiskImageFromApp() {
-    mkdirSync(DMG_DIR, { recursive: true });
+function resolveAppleCredentials() {
+  const appleId = process.env.COGNO_APPLE_ID;
+  const teamId = process.env.COGNO_APPLE_TEAM_ID;
+  const appleIdPassword = process.env.COGNO_APPLE_APP_PASSWORD;
 
-    const temporaryDirectory = mkdtempSync(join(tmpdir(), "cogno2-dmg-"));
-    const temporaryAppPath = join(temporaryDirectory, "Cogno2.app");
-    const applicationsSymlinkPath = join(temporaryDirectory, "Applications");
+  if (appleId !== undefined && teamId !== undefined && appleIdPassword !== undefined) {
+    return {
+      appleId,
+      appleIdPassword,
+      teamId,
+    };
+  }
 
-    cpSync(APP_PATH, temporaryAppPath, { recursive: true });
-    symlinkSync("/Applications", applicationsSymlinkPath);
+  if (!existsSync(credentialsFilePath)) {
+    return undefined;
+  }
 
-    try {
-        run(
-            `hdiutil create -volname "${DMG_VOLUME_NAME}" -srcfolder "${temporaryDirectory}" -ov -format UDZO "${DMG_PATH}"`,
-            "hdiutil create"
-        );
-    } finally {
-        rmSync(temporaryDirectory, { force: true, recursive: true });
-    }
+  const credentials = JSON.parse(readFileSync(credentialsFilePath, "utf-8"));
+
+  return {
+    appleId: credentials.appleId,
+    appleIdPassword: credentials.appleIdPassword,
+    teamId: credentials.teamId,
+  };
 }
 
-// ─── Read credentials ─────────────────────────────────────────────────────────
-const credentials = JSON.parse(readFileSync(CREDENTIALS_FILE, "utf-8"));
-const { appleId, teamId, appleIdPassword } = credentials;
-
-// ─── 1. Build ─────────────────────────────────────────────────────────────────
-step(`Building app (${releaseVariantArgument})`);
-run(
-    `npm run tauri build -- --bundles app --config ${releaseVariantConfiguration.tauriConfigPath}`,
-    "tauri build"
-);
-
-// ─── 2. Sign ──────────────────────────────────────────────────────────────────
-step("Signing app");
-run(
-    `codesign --force --deep \
-    --sign "${SIGNING_IDENTITY}" \
-    --options runtime \
-    --timestamp \
-    "${APP_PATH}"`,
-    "codesign"
-);
-run(
-    `codesign --verify --deep --verbose=2 "${APP_PATH}"`,
-    "verify signature"
-);
-console.log("✔ Signing done");
-
-// ─── 3. Create DMG ────────────────────────────────────────────────────────────
-step("Creating DMG");
-
-if (existsSync(DMG_PATH)) {
-    rmSync(DMG_PATH);
-    console.log(`  Removed old DMG: ${DMG_PATH}`);
+function resolveSigningIdentity() {
+  return process.env.COGNO_APPLE_SIGNING_IDENTITY;
 }
 
-createDiskImageFromApp();
+function createTauriMacosBuildConfig() {
+  const baseConfig = JSON.parse(readFileSync(tauriConfigPath, "utf-8"));
+  const signingIdentity = resolveSigningIdentity();
+  const macosBundleConfig = {
+    ...(baseConfig.bundle?.macOS ?? {}),
+  };
 
-if (!existsSync(DMG_PATH)) {
-    throw new Error(`DMG was not created at expected path: ${DMG_PATH}`);
+  if (signingIdentity !== undefined && signingIdentity.length > 0) {
+    macosBundleConfig.signingIdentity = signingIdentity;
+    macosBundleConfig.entitlements ??= entitlementsPath;
+  }
+
+  return {
+    ...baseConfig,
+    bundle: {
+      ...baseConfig.bundle,
+      macOS: macosBundleConfig,
+    },
+  };
 }
 
-console.log(`✔ DMG created: ${DMG_PATH}`);
+function buildMacosDmg() {
+  const temporaryConfigDirectoryPath = mkdtempSync(join(tmpdir(), "cogno2-tauri-config-"));
+  const temporaryConfigPath = join(temporaryConfigDirectoryPath, "tauri.macos.build.json");
 
-// ─── 4. Notarize ──────────────────────────────────────────────────────────────
-step("Notarizing DMG (this may take a few minutes)");
-run(
-    `xcrun notarytool submit "${DMG_PATH}" \
-    --apple-id "${appleId}" \
-    --team-id "${teamId}" \
-    --password "${appleIdPassword}" \
-    --wait`,
-    "notarytool"
-);
-console.log("✔ Notarization accepted");
+  try {
+    const tauriMacosBuildConfig = createTauriMacosBuildConfig();
+    writeFileSync(temporaryConfigPath, JSON.stringify(tauriMacosBuildConfig, null, 2));
 
-// ─── 5. Staple ────────────────────────────────────────────────────────────────
-step("Stapling ticket");
-run(`xcrun stapler staple "${DMG_PATH}"`, "stapler");
+    run(
+      "pnpm",
+      ["exec", "tauri", "build", "--bundles", "dmg", "--config", temporaryConfigPath],
+      "tauri build dmg",
+    );
+  } finally {
+    rmSync(temporaryConfigDirectoryPath, { force: true, recursive: true });
+  }
+}
+
+function resolveBuiltDmgPath() {
+  if (!existsSync(dmgDirectoryPath)) {
+    throw new Error(`DMG directory was not created: ${dmgDirectoryPath}`);
+  }
+
+  const discoveredDmgPaths = readdirSync(dmgDirectoryPath)
+    .filter((currentFileName) => currentFileName.endsWith(".dmg"))
+    .map((currentFileName) => join(dmgDirectoryPath, currentFileName));
+
+  if (discoveredDmgPaths.length === 0) {
+    throw new Error(`No DMG artifact found in directory: ${dmgDirectoryPath}`);
+  }
+
+  return discoveredDmgPaths.sort((leftDmgPath, rightDmgPath) => {
+    const leftModificationTime = statSync(leftDmgPath).mtimeMs;
+    const rightModificationTime = statSync(rightDmgPath).mtimeMs;
+
+    return rightModificationTime - leftModificationTime;
+  })[0];
+}
+
+step("Building DMG");
+buildMacosDmg();
+const dmgPath = resolveBuiltDmgPath();
+
+if (!existsSync(dmgPath)) {
+  throw new Error(`DMG was not created at expected path: ${dmgPath}`);
+}
+
+console.log(`✔ DMG created: ${dmgPath}`);
+
+const appleCredentials = resolveAppleCredentials();
+const signingIdentity = resolveSigningIdentity();
+
+if (appleCredentials !== undefined && signingIdentity !== undefined && signingIdentity.length > 0) {
+  step("Notarizing DMG (this may take a few minutes)");
+  run(
+    "xcrun",
+    [
+      "notarytool",
+      "submit",
+      dmgPath,
+      "--apple-id",
+      appleCredentials.appleId,
+      "--team-id",
+      appleCredentials.teamId,
+      "--password",
+      appleCredentials.appleIdPassword,
+      "--wait",
+    ],
+    "notarytool",
+  );
+  console.log("✔ Notarization accepted");
+
+  step("Stapling ticket");
+  run("xcrun", ["stapler", "staple", dmgPath], "stapler");
+} else {
+  console.log("\nSkipping notarization because Apple credentials or signing identity are missing.");
+}
 
 console.log(`\n${"═".repeat(60)}`);
-console.log(`✅ Done! DMG is ready: ${DMG_PATH}`);
+console.log(`✅ Done! DMG is ready: ${dmgPath}`);

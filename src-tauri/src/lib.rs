@@ -1,26 +1,13 @@
-pub mod cli; // macht cogno_lib::cli::* sichtbar
-pub mod commands;
-
-use crate::cli::Cli;
 use clap::Parser;
-use commands::command_runner::command_runner_execute;
-use commands::config::get_default_config;
-use commands::crypto::decrypt;
-use commands::crypto::encrypt;
-use commands::environment::{
-    get_cli_config_set_overrides, get_cogno_config_file_path, get_cogno_db_file_path,
-    get_cogno_home_dir, get_exe_dir, get_exe_path, get_macos_app_bundle, get_system_path,
-};
-use commands::fonts::list_fonts;
-use commands::keyboard::get_keyboard_layout;
-use commands::processes::{pty_get_process_tree_by_pid, pty_get_process_tree_by_terminal_id};
-use commands::pty::{pty_execute_shell_action, pty_kill, pty_resize, pty_spawn, pty_write, PtyState};
-use commands::shells::list_shells;
-use commands::window::new_window;
+use cogno_tauri_core::cli::Cli;
+use cogno_tauri_core::commands::pty::PtyState;
+use cogno_tauri_core::{initialize_app_identity, AppIdentity};
 use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
+    initialize_app_identity(AppIdentity::new("cogno2", ".cogno2", ".cogno2-dev"));
+
     Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -48,29 +35,29 @@ pub fn run(cli: Cli) {
         }))
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
-            command_runner_execute,
-            get_default_config,
-            list_fonts,
-            list_shells,
-            get_keyboard_layout,
-            decrypt,
-            encrypt,
-            pty_spawn,
-            pty_write,
-            pty_execute_shell_action,
-            pty_resize,
-            pty_kill,
-            pty_get_process_tree_by_pid,
-            pty_get_process_tree_by_terminal_id,
-            get_exe_path,
-            get_exe_dir,
-            get_macos_app_bundle,
-            get_cogno_home_dir,
-            get_cogno_config_file_path,
-            get_cogno_db_file_path,
-            get_system_path,
-            get_cli_config_set_overrides,
-            new_window
+            cogno_tauri_core::commands::command_runner::command_runner_execute,
+            cogno_tauri_core::commands::config::get_default_config,
+            cogno_tauri_core::commands::fonts::list_fonts,
+            cogno_tauri_core::commands::shells::list_shells,
+            cogno_tauri_core::commands::keyboard::get_keyboard_layout,
+            cogno_tauri_core::commands::crypto::decrypt,
+            cogno_tauri_core::commands::crypto::encrypt,
+            cogno_tauri_core::commands::pty::pty_spawn,
+            cogno_tauri_core::commands::pty::pty_write,
+            cogno_tauri_core::commands::pty::pty_execute_shell_action,
+            cogno_tauri_core::commands::pty::pty_resize,
+            cogno_tauri_core::commands::pty::pty_kill,
+            cogno_tauri_core::commands::processes::pty_get_process_tree_by_pid,
+            cogno_tauri_core::commands::processes::pty_get_process_tree_by_terminal_id,
+            cogno_tauri_core::commands::environment::get_exe_path,
+            cogno_tauri_core::commands::environment::get_exe_dir,
+            cogno_tauri_core::commands::environment::get_macos_app_bundle,
+            cogno_tauri_core::commands::environment::get_cogno_home_dir,
+            cogno_tauri_core::commands::environment::get_cogno_config_file_path,
+            cogno_tauri_core::commands::environment::get_cogno_db_file_path,
+            cogno_tauri_core::commands::environment::get_system_path,
+            cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
+            cogno_tauri_core::commands::window::new_window
         ])
         .setup(move |app| {
             let webview_window_builder =

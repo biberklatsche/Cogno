@@ -1,3 +1,4 @@
+use crate::app_identity::get_app_identity;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -24,7 +25,12 @@ pub struct ShellSpawner {
 impl ShellSpawner {
     pub fn new(dev_mode: bool) -> Result<Self, String> {
         let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-        let dir_name = if dev_mode { ".cogno2-dev" } else { ".cogno2" };
+        let app_identity = get_app_identity();
+        let dir_name = if dev_mode {
+            app_identity.development_home_directory_name
+        } else {
+            app_identity.home_directory_name
+        };
         let integration_root = home.join(dir_name).join("shell-integration");
 
         Ok(Self { integration_root })

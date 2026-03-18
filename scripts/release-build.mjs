@@ -1,0 +1,714 @@
+#!/usr/bin/env node
+
+import { execFileSync } from "node:child_process";
+import {
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { homedir } from "node:os";
+import { extname, join, relative, resolve } from "node:path";
+
+const artifactRootDirectoryPath = "release-artifacts";
+const packageJsonPath = "package.json";
+const tauriCargoTomlPath = "src-tauri/Cargo.toml";
+const tauriConfigPath = "src-tauri/tauri.conf.json";
+const supportedChannels = ["dev", "release"];
+const supportedPlatforms = {
+  darwin: "macos",
+  linux: "linux",
+  win32: "windows",
+};
+
+main();
+
+function main() {
+  const parsedArguments = parseCommandLineArguments(process.argv.slice(2));
+
+  if (parsedArguments.help) {
+    printHelp();
+    return;
+  }
+
+  const currentPlatformName = resolveCurrentPlatformName();
+  const releaseChannel = parsedArguments.channel ?? "release";
+
+  validateChannel(releaseChannel);
+
+  if (parsedArguments.testBuild && parsedArguments.tag !== undefined) {
+    throw new Error('The arguments "--test" and "--tag" cannot be combined.');
+  }
+
+  if (!parsedArguments.allowDirtyWorkingTree) {
+    assertWorkingTreeIsClean();
+  }
+
+  const projectVersion = resolveValidatedProjectVersion();
+  const releaseTag =
+    parsedArguments.tag ??
+    (parsedArguments.testBuild ? createTestBuildTag(projectVersion) : resolveHeadTag());
+  const releaseVersion = parsedArguments.testBuild
+    ? projectVersion
+    : normalizeTagToVersion(releaseTag);
+  const loadedEnvironment = loadReleaseEnvironment({
+    releaseChannel,
+    currentPlatformName,
+  });
+
+  if (!parsedArguments.testBuild) {
+    validateVersionConsistency(releaseVersion, projectVersion);
+  }
+
+  const releaseOutputDirectoryPath = join(
+    artifactRootDirectoryPath,
+    releaseTag,
+    currentPlatformName,
+  );
+
+  recreateDirectory(releaseOutputDirectoryPath);
+
+  if (!parsedArguments.skipBuild) {
+    runBuild({
+      loadedEnvironment,
+      releaseTag,
+      releaseVersion,
+      currentPlatformName,
+    });
+  }
+
+  const collectedArtifacts = collectArtifacts({
+    currentPlatformName,
+    releaseOutputDirectoryPath,
+    releaseVersion,
+  });
+
+  if (collectedArtifacts.length === 0) {
+    throw new Error(`No artifacts found for platform "${currentPlatformName}".`);
+  }
+
+  const manifest = createManifest({
+    collectedArtifacts,
+    currentPlatformName,
+    releaseChannel,
+    releaseTag,
+    releaseVersion,
+  });
+  const manifestPath = join(releaseOutputDirectoryPath, "manifest.json");
+
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+  const shouldSkipUpload = parsedArguments.skipUpload || parsedArguments.testBuild;
+
+  if (!shouldSkipUpload) {
+    uploadArtifacts({
+      collectedArtifacts,
+      loadedEnvironment,
+      manifest,
+      releaseChannel,
+      releaseOutputDirectoryPath,
+      releaseTag,
+      currentPlatformName,
+    });
+  }
+
+  console.log("");
+  console.log("Release build completed.");
+  console.log(`Tag: ${releaseTag}`);
+  console.log(`Channel: ${releaseChannel}`);
+  console.log(`Platform: ${currentPlatformName}`);
+  console.log(`Artifacts: ${collectedArtifacts.length}`);
+  console.log(`Upload skipped: ${shouldSkipUpload ? "yes" : "no"}`);
+  console.log(`Output directory: ${resolve(releaseOutputDirectoryPath)}`);
+  console.log(`Manifest: ${resolve(manifestPath)}`);
+}
+
+function parseCommandLineArguments(commandLineArguments) {
+  const parsedArguments = {
+    allowDirtyWorkingTree: false,
+    help: false,
+    skipBuild: false,
+    skipUpload: false,
+    testBuild: false,
+  };
+
+  for (
+    let currentArgumentIndex = 0;
+    currentArgumentIndex < commandLineArguments.length;
+    currentArgumentIndex += 1
+  ) {
+    const currentArgument = commandLineArguments[currentArgumentIndex];
+    const nextArgument = commandLineArguments[currentArgumentIndex + 1];
+
+    switch (currentArgument) {
+      case "--":
+        break;
+      case "--help":
+      case "-h":
+        parsedArguments.help = true;
+        break;
+      case "--tag":
+        parsedArguments.tag = requireArgumentValue(currentArgument, nextArgument);
+        currentArgumentIndex += 1;
+        break;
+      case "--channel":
+        parsedArguments.channel = requireArgumentValue(currentArgument, nextArgument);
+        currentArgumentIndex += 1;
+        break;
+      case "--skip-build":
+        parsedArguments.skipBuild = true;
+        break;
+      case "--skip-upload":
+        parsedArguments.skipUpload = true;
+        break;
+      case "--test":
+        parsedArguments.testBuild = true;
+        break;
+      case "--allow-dirty":
+        parsedArguments.allowDirtyWorkingTree = true;
+        break;
+      default:
+        throw new Error(`Unknown argument "${currentArgument}". Use --help for usage information.`);
+    }
+  }
+
+  return parsedArguments;
+}
+
+function printHelp() {
+  console.log("Local release builder for Cogno2");
+  console.log("");
+  console.log("Usage:");
+  console.log("  pnpm run release:build -- [options]");
+  console.log("");
+  console.log("Options:");
+  console.log("  --tag <tag>         Build metadata for a specific Git tag.");
+  console.log("  --test              Test a release build without a Git tag and skip upload.");
+  console.log("  --channel <value>   dev | release (default: release)");
+  console.log(
+    "  --skip-build        Reuse existing bundle output and only collect/upload artifacts.",
+  );
+  console.log("  --skip-upload       Build and collect artifacts without upload.");
+  console.log("  --allow-dirty       Allow a dirty working tree.");
+  console.log("  --help              Show this help.");
+  console.log("");
+  console.log("Loaded secret files from ~/.cogno-secrets when present:");
+  console.log("  release.common.env");
+  console.log("  release.<platform>.env");
+  console.log("  release.<channel>.env");
+  console.log("");
+  console.log("Upload configuration via environment variables:");
+  console.log("  COGNO_RELEASE_RCLONE_REMOTE");
+  console.log("  COGNO_RELEASE_RCLONE_BASE_PATH (optional, default: cogno2)");
+  console.log("  COGNO_RELEASE_PUBLIC_BASE_URL (optional, for latest manifest download URLs)");
+}
+
+function requireArgumentValue(argumentName, argumentValue) {
+  if (argumentValue === undefined || argumentValue.startsWith("--")) {
+    throw new Error(`Missing value for argument "${argumentName}".`);
+  }
+
+  return argumentValue;
+}
+
+function validateChannel(releaseChannel) {
+  if (!supportedChannels.includes(releaseChannel)) {
+    throw new Error(
+      `Unsupported channel "${releaseChannel}". Supported channels: ${supportedChannels.join(", ")}.`,
+    );
+  }
+}
+
+function resolveCurrentPlatformName() {
+  const currentPlatformName = supportedPlatforms[process.platform];
+
+  if (currentPlatformName === undefined) {
+    throw new Error(`Unsupported platform "${process.platform}".`);
+  }
+
+  return currentPlatformName;
+}
+
+function assertWorkingTreeIsClean() {
+  const gitStatusOutput = runCommandAndCollectOutput("git", ["status", "--porcelain"]);
+
+  if (gitStatusOutput.trim().length > 0) {
+    throw new Error("Working tree is dirty. Commit or stash changes, or use --allow-dirty.");
+  }
+}
+
+function resolveHeadTag() {
+  const tagsAtHeadOutput = runCommandAndCollectOutput("git", ["tag", "--points-at", "HEAD"]);
+  const tagsAtHead = tagsAtHeadOutput
+    .split("\n")
+    .map((currentTag) => currentTag.trim())
+    .filter(Boolean);
+
+  if (tagsAtHead.length === 0) {
+    throw new Error("HEAD is not tagged. Use --tag <tag> or check out a tagged commit.");
+  }
+
+  return tagsAtHead.sort()[0];
+}
+
+function normalizeTagToVersion(releaseTag) {
+  return releaseTag.startsWith("v") ? releaseTag.slice(1) : releaseTag;
+}
+
+function createTestBuildTag(projectVersion) {
+  return `test-v${projectVersion}`;
+}
+
+function loadReleaseEnvironment({ releaseChannel, currentPlatformName }) {
+  const secretDirectoryPath = join(homedir(), ".cogno-secrets");
+  const environmentFileNames = [
+    "release.common.env",
+    `release.${currentPlatformName}.env`,
+    `release.${releaseChannel}.env`,
+  ];
+  const mergedEnvironment = { ...process.env };
+
+  for (const currentEnvironmentFileName of environmentFileNames) {
+    const currentEnvironmentFilePath = join(secretDirectoryPath, currentEnvironmentFileName);
+
+    if (!existsSync(currentEnvironmentFilePath)) {
+      continue;
+    }
+
+    const currentEnvironmentValues = parseEnvironmentFile(
+      readFileSync(currentEnvironmentFilePath, "utf-8"),
+    );
+
+    Object.assign(mergedEnvironment, currentEnvironmentValues);
+  }
+
+  return mergedEnvironment;
+}
+
+function parseEnvironmentFile(environmentFileContent) {
+  const parsedEnvironment = {};
+  const environmentFileLines = environmentFileContent.split(/\r?\n/u);
+
+  for (const currentLine of environmentFileLines) {
+    const trimmedLine = currentLine.trim();
+
+    if (trimmedLine.length === 0 || trimmedLine.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = trimmedLine.indexOf("=");
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const variableName = trimmedLine.slice(0, separatorIndex).trim();
+    const variableValue = trimmedLine.slice(separatorIndex + 1).trim();
+
+    parsedEnvironment[variableName] = stripWrappingQuotes(variableValue);
+  }
+
+  return parsedEnvironment;
+}
+
+function stripWrappingQuotes(variableValue) {
+  if (
+    (variableValue.startsWith('"') && variableValue.endsWith('"')) ||
+    (variableValue.startsWith("'") && variableValue.endsWith("'"))
+  ) {
+    return variableValue.slice(1, -1);
+  }
+
+  return variableValue;
+}
+
+function resolveValidatedProjectVersion() {
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+  const packageVersion = packageJson.version;
+  const cargoTomlContent = readFileSync(tauriCargoTomlPath, "utf-8");
+  const cargoVersionMatch = cargoTomlContent.match(/^version = "([^"]+)"$/mu);
+
+  if (cargoVersionMatch === null) {
+    throw new Error(`Could not read version from ${tauriCargoTomlPath}.`);
+  }
+
+  const discoveredVersions = [
+    { path: packageJsonPath, version: packageVersion },
+    { path: tauriCargoTomlPath, version: cargoVersionMatch[1] },
+    { path: tauriConfigPath, version: JSON.parse(readFileSync(tauriConfigPath, "utf-8")).version },
+  ];
+
+  const [firstVersionRecord] = discoveredVersions;
+
+  for (const currentVersionRecord of discoveredVersions) {
+    if (currentVersionRecord.version !== firstVersionRecord.version) {
+      throw new Error(
+        `Version mismatch between project files: expected "${firstVersionRecord.version}" but ${currentVersionRecord.path} contains "${currentVersionRecord.version}".`,
+      );
+    }
+  }
+
+  return firstVersionRecord.version;
+}
+
+function validateVersionConsistency(releaseVersion, projectVersion) {
+  if (projectVersion !== releaseVersion) {
+    throw new Error(
+      `Version mismatch: tag resolves to "${releaseVersion}" but project files contain "${projectVersion}".`,
+    );
+  }
+}
+
+function recreateDirectory(directoryPath) {
+  rmSync(directoryPath, { force: true, recursive: true });
+  mkdirSync(directoryPath, { recursive: true });
+}
+
+function runBuild({ loadedEnvironment, releaseTag, releaseVersion, currentPlatformName }) {
+  console.log("");
+  console.log(`Building ${releaseVersion} for ${currentPlatformName} from tag ${releaseTag}`);
+
+  if (currentPlatformName === "macos") {
+    runCommand("node", ["./scripts/build-tauri-macos-signed-notarized.mjs"], {
+      environmentVariables: loadedEnvironment,
+    });
+    return;
+  }
+
+  runCommand("pnpm", ["build:desktop"], {
+    environmentVariables: loadedEnvironment,
+    runnerType: "pnpm-run",
+  });
+}
+
+function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, releaseVersion }) {
+  const sourceBundleDirectoryPath = join("src-tauri", "target", "release", "bundle");
+  const discoveredArtifactPaths = findBundleArtifacts({
+    currentPlatformName,
+    sourceBundleDirectoryPath,
+  });
+  const collectedArtifacts = [];
+
+  for (const currentArtifactPath of discoveredArtifactPaths) {
+    const currentArtifactKind = determineArtifactKind(currentArtifactPath);
+    const currentArtifactExtension = determineTargetArtifactExtension(currentArtifactPath);
+    const targetArtifactFileName = createTargetArtifactFileName({
+      currentArtifactExtension,
+      currentArtifactKind,
+      currentPlatformName,
+      releaseVersion,
+    });
+    const targetArtifactPath = join(releaseOutputDirectoryPath, targetArtifactFileName);
+
+    if (currentArtifactKind === "app") {
+      createMacosApplicationArchive(currentArtifactPath, targetArtifactPath);
+    } else {
+      copyArtifact(currentArtifactPath, targetArtifactPath);
+    }
+
+    collectedArtifacts.push({
+      fileName: targetArtifactFileName,
+      kind: currentArtifactKind,
+      path: targetArtifactPath,
+      sourcePath: currentArtifactPath,
+    });
+  }
+
+  return collectedArtifacts.sort((leftArtifact, rightArtifact) =>
+    leftArtifact.fileName.localeCompare(rightArtifact.fileName),
+  );
+}
+
+function findBundleArtifacts({ currentPlatformName, sourceBundleDirectoryPath }) {
+  if (!existsSync(sourceBundleDirectoryPath)) {
+    throw new Error(`Bundle directory not found: ${sourceBundleDirectoryPath}`);
+  }
+
+  const supportedArtifactExtensionsByPlatform = {
+    linux: [".AppImage", ".deb", ".rpm", ".tar.gz"],
+    macos: [".app", ".dmg"],
+    windows: [".exe", ".msi"],
+  };
+  const supportedArtifactExtensions = supportedArtifactExtensionsByPlatform[currentPlatformName];
+  const discoveredPaths = [];
+
+  collectFileSystemEntriesRecursively(sourceBundleDirectoryPath, discoveredPaths);
+
+  return discoveredPaths.filter((currentEntryPath) => {
+    const currentEntryStats = statSync(currentEntryPath);
+
+    if (currentEntryStats.isDirectory()) {
+      return currentPlatformName === "macos" && currentEntryPath.endsWith(".app");
+    }
+
+    return supportedArtifactExtensions.some((currentExtension) =>
+      currentEntryPath.endsWith(currentExtension),
+    );
+  });
+}
+
+function collectFileSystemEntriesRecursively(currentDirectoryPath, discoveredPaths) {
+  const childEntryNames = readdirSync(currentDirectoryPath);
+
+  for (const currentChildEntryName of childEntryNames) {
+    const currentChildEntryPath = join(currentDirectoryPath, currentChildEntryName);
+    const currentChildEntryStats = statSync(currentChildEntryPath);
+
+    discoveredPaths.push(currentChildEntryPath);
+
+    if (currentChildEntryStats.isDirectory() && !currentChildEntryPath.endsWith(".app")) {
+      collectFileSystemEntriesRecursively(currentChildEntryPath, discoveredPaths);
+    }
+  }
+}
+
+function determineArtifactKind(artifactPath) {
+  if (artifactPath.endsWith(".app")) {
+    return "app";
+  }
+
+  if (artifactPath.endsWith(".AppImage")) {
+    return "appimage";
+  }
+
+  if (artifactPath.endsWith(".tar.gz")) {
+    return "tarball";
+  }
+
+  return extname(artifactPath).slice(1).toLowerCase();
+}
+
+function determineTargetArtifactExtension(artifactPath) {
+  if (artifactPath.endsWith(".app")) {
+    return ".zip";
+  }
+
+  if (artifactPath.endsWith(".AppImage")) {
+    return ".AppImage";
+  }
+
+  if (artifactPath.endsWith(".tar.gz")) {
+    return ".tar.gz";
+  }
+
+  return extname(artifactPath);
+}
+
+function createTargetArtifactFileName({
+  currentArtifactExtension,
+  currentArtifactKind,
+  currentPlatformName,
+  releaseVersion,
+}) {
+  return (
+    ["cogno2", releaseVersion, currentPlatformName, process.arch, currentArtifactKind].join("-") +
+    currentArtifactExtension
+  );
+}
+
+function createMacosApplicationArchive(sourceApplicationPath, targetArchivePath) {
+  runCommand("ditto", [
+    "-c",
+    "-k",
+    "--keepParent",
+    "--sequesterRsrc",
+    sourceApplicationPath,
+    targetArchivePath,
+  ]);
+}
+
+function copyArtifact(sourceArtifactPath, targetArtifactPath) {
+  const sourceArtifactStats = statSync(sourceArtifactPath);
+
+  if (sourceArtifactStats.isDirectory()) {
+    cpSync(sourceArtifactPath, targetArtifactPath, { recursive: true });
+    return;
+  }
+
+  copyFileSync(sourceArtifactPath, targetArtifactPath);
+}
+
+function createManifest({
+  collectedArtifacts,
+  currentPlatformName,
+  releaseChannel,
+  releaseTag,
+  releaseVersion,
+}) {
+  return {
+    architecture: process.arch,
+    artifacts: collectedArtifacts.map((currentArtifact) => ({
+      fileName: currentArtifact.fileName,
+      kind: currentArtifact.kind,
+      relativePath: currentArtifact.fileName,
+      sourcePath: relative(process.cwd(), currentArtifact.sourcePath),
+    })),
+    channel: releaseChannel,
+    createdAt: new Date().toISOString(),
+    platform: currentPlatformName,
+    tag: releaseTag,
+    version: releaseVersion,
+  };
+}
+
+function uploadArtifacts({
+  collectedArtifacts,
+  loadedEnvironment,
+  manifest,
+  releaseChannel,
+  releaseOutputDirectoryPath,
+  releaseTag,
+  currentPlatformName,
+}) {
+  const rcloneRemoteName = loadedEnvironment.COGNO_RELEASE_RCLONE_REMOTE;
+
+  if (rcloneRemoteName === undefined || rcloneRemoteName.length === 0) {
+    throw new Error(
+      "Upload requested but COGNO_RELEASE_RCLONE_REMOTE is not configured in ~/.cogno-secrets.",
+    );
+  }
+
+  const rcloneBasePath = loadedEnvironment.COGNO_RELEASE_RCLONE_BASE_PATH ?? "cogno2";
+  const versionedRelativeDirectoryPath = `${rcloneBasePath}/${releaseChannel}/${releaseTag}/${currentPlatformName}`;
+  const latestRelativeDirectoryPath = `${rcloneBasePath}/${releaseChannel}/latest/${currentPlatformName}`;
+  const remoteDestination = `${rcloneRemoteName}:${versionedRelativeDirectoryPath}`;
+  const remoteLatestDestination = `${rcloneRemoteName}:${latestRelativeDirectoryPath}`;
+
+  console.log("");
+  console.log(`Uploading artifacts to ${remoteDestination}`);
+
+  runCommand("rclone", ["copy", releaseOutputDirectoryPath, remoteDestination], {
+    environmentVariables: loadedEnvironment,
+  });
+
+  const latestOutputDirectoryPath = createLatestDirectory({
+    collectedArtifacts,
+    loadedEnvironment,
+    manifest,
+    releaseChannel,
+    releaseTag,
+    currentPlatformName,
+    versionedRelativeDirectoryPath,
+  });
+
+  console.log(`Uploading latest manifest to ${remoteLatestDestination}`);
+
+  runCommand("rclone", ["copy", latestOutputDirectoryPath, remoteLatestDestination], {
+    environmentVariables: loadedEnvironment,
+  });
+}
+
+function createLatestDirectory({
+  collectedArtifacts,
+  loadedEnvironment,
+  manifest,
+  releaseChannel,
+  releaseTag,
+  currentPlatformName,
+  versionedRelativeDirectoryPath,
+}) {
+  const latestOutputDirectoryPath = join(
+    artifactRootDirectoryPath,
+    "latest",
+    releaseChannel,
+    currentPlatformName,
+  );
+
+  recreateDirectory(latestOutputDirectoryPath);
+
+  const latestManifest = {
+    ...manifest,
+    artifacts: manifest.artifacts.map((currentArtifact) => ({
+      ...currentArtifact,
+      downloadUrl: createPublicArtifactUrl({
+        artifactFileName: currentArtifact.fileName,
+        loadedEnvironment,
+        versionedRelativeDirectoryPath,
+      }),
+    })),
+    latestPath: `${releaseChannel}/latest/${currentPlatformName}/manifest.json`,
+    tag: releaseTag,
+  };
+
+  writeFileSync(
+    join(latestOutputDirectoryPath, "manifest.json"),
+    JSON.stringify(latestManifest, null, 2),
+  );
+
+  for (const currentArtifact of collectedArtifacts) {
+    const latestArtifactFileName = createLatestArtifactFileName({
+      artifactKind: currentArtifact.kind,
+      artifactFileName: currentArtifact.fileName,
+      currentPlatformName,
+    });
+
+    copyFileSync(currentArtifact.path, join(latestOutputDirectoryPath, latestArtifactFileName));
+  }
+
+  return latestOutputDirectoryPath;
+}
+
+function createPublicArtifactUrl({
+  artifactFileName,
+  loadedEnvironment,
+  versionedRelativeDirectoryPath,
+}) {
+  const publicBaseUrl = loadedEnvironment.COGNO_RELEASE_PUBLIC_BASE_URL;
+
+  if (publicBaseUrl === undefined || publicBaseUrl.length === 0) {
+    return undefined;
+  }
+
+  const normalizedPublicBaseUrl = publicBaseUrl.replace(/\/+$/u, "");
+
+  return `${normalizedPublicBaseUrl}/${versionedRelativeDirectoryPath}/${artifactFileName}`;
+}
+
+function createLatestArtifactFileName({ artifactKind, artifactFileName, currentPlatformName }) {
+  const artifactExtension = determineTargetArtifactExtension(artifactFileName);
+
+  return (
+    ["cogno2", currentPlatformName, process.arch, "latest", artifactKind].join("-") +
+    artifactExtension
+  );
+}
+
+function runCommand(commandName, commandArguments, options = {}) {
+  const { environmentVariables, runnerType } = options;
+  const resolvedCommandName = resolveCommandName(commandName);
+  const resolvedArguments =
+    runnerType === "pnpm-run" ? ["run", ...commandArguments] : commandArguments;
+
+  console.log(`> ${[resolvedCommandName, ...resolvedArguments].join(" ")}`);
+  execFileSync(resolvedCommandName, resolvedArguments, {
+    env: environmentVariables,
+    shell: shouldUseShellExecution(resolvedCommandName),
+    stdio: "inherit",
+  });
+}
+
+function runCommandAndCollectOutput(commandName, commandArguments) {
+  const resolvedCommandName = resolveCommandName(commandName);
+
+  return execFileSync(resolvedCommandName, commandArguments, {
+    encoding: "utf-8",
+    shell: shouldUseShellExecution(resolvedCommandName),
+  }).trim();
+}
+
+function resolveCommandName(commandName) {
+  if (process.platform === "win32" && commandName === "pnpm") {
+    return "pnpm.cmd";
+  }
+
+  return commandName;
+}
+
+function shouldUseShellExecution(commandName) {
+  return process.platform === "win32" && commandName.endsWith(".cmd");
+}

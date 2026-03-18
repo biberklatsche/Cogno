@@ -1,56 +1,58 @@
+const packageRootPattern = "^src/packages/";
+const coreSdkPattern = "^src/packages/core-sdk/";
+const coreHostPattern = "^src/packages/core-host/";
+const coreUiPattern = "^src/packages/core-ui/";
+const featuresPattern = "^src/packages/features/";
+const appPackagePattern = "^src/packages/app/";
+const knownCognoAliasPattern =
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|features(?:$|/)|core-sdk(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|pro-features(?:$|/)).+";
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
     {
       name: "core-sdk-is-isolated",
       severity: "error",
-      comment: "core-sdk darf keine anderen Module importieren.",
-      from: { path: "^src/core-sdk/" },
-      to: { path: "^src/(app|core-host|features-community|features-pro)/" },
+      comment: "core-sdk must not import other internal modules.",
+      from: { path: coreSdkPattern },
+      to: { path: "^(src/packages/app|src/packages/core-host|src/packages/features)/" },
     },
     {
       name: "core-host-must-not-import-app",
       severity: "error",
-      comment: "core-host darf app nicht importieren.",
-      from: { path: "^src/core-host/" },
-      to: { path: "^src/app/" },
+      comment: "core-host must not depend on the reusable app implementation.",
+      from: { path: coreHostPattern },
+      to: { path: appPackagePattern },
     },
     {
       name: "core-host-must-not-import-features",
       severity: "error",
-      comment: "core-host darf nicht von konkreten Features abhängen.",
-      from: { path: "^src/core-host/" },
-      to: { path: "^src/(features-community|features-pro)/" },
+      comment: "core-host must not depend on concrete features.",
+      from: { path: coreHostPattern },
+      to: { path: featuresPattern },
     },
     {
       name: "core-ui-is-isolated",
       severity: "error",
-      comment: "core-ui darf keine anderen internen Module importieren.",
-      from: { path: "^src/core-ui/" },
-      to: { path: "^src/(app|core-sdk|core-host|features-community|features-pro)/" },
+      comment: "core-ui must not import other internal modules.",
+      from: { path: coreUiPattern },
+      to: { path: "^(src/packages/app|src/packages/core-sdk|src/packages/core-host|src/packages/features)/" },
     },
     {
-      name: "community-features-only-core-sdk",
+      name: "features-must-not-import-app-or-core-host",
       severity: "error",
-      comment: "features-community darf nur gegen core-sdk und core-ui entwickeln.",
-      from: { path: "^src/features-community/" },
-      to: { path: "^src/(app|core-host|features-pro)/" },
-    },
-    {
-      name: "pro-features-only-core-sdk",
-      severity: "error",
-      comment: "features-pro darf nur gegen core-sdk und core-ui entwickeln.",
-      from: { path: "^src/features-pro/" },
-      to: { path: "^src/(app|core-host|features-community)/" },
+      comment: "features must not depend on app or core-host.",
+      from: { path: featuresPattern },
+      to: { path: "^(src/packages/app|src/packages/core-host)/" },
     },
     {
       name: "known-cogno-aliases-only",
       severity: "error",
-      comment: "Nur definierte @cogno/* Aliase sind erlaubt.",
-      from: { path: "^src/" },
+      comment: "Only defined @cogno/* aliases are allowed.",
+      from: { path: packageRootPattern },
       to: {
         dependencyTypes: ["unknown"],
-        path: "^@cogno/(?!app$|core-sdk$|core-host$|core-ui$|community-features$|pro-features$).+",
+        path: knownCognoAliasPattern,
       },
     },
   ],
@@ -68,7 +70,8 @@ module.exports = {
       path: [
         "^dist/",
         "^coverage/",
-        "^src/app/assets/",
+        "^\\.angular/",
+        "^src/packages/assets/src/assets/",
         "\\.spec\\.ts$",
         "\\.test\\.ts$",
       ],

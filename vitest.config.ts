@@ -1,40 +1,41 @@
-import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import tsconfigPaths from "vite-tsconfig-paths";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    environment: 'happy-dom',
-    setupFiles: ['setup-vitest.ts'],
+    environment: "happy-dom",
+    setupFiles: ["setup-vitest.ts"],
     alias: [
-      { find: '@xterm/addon-ligatures', replacement: '/src/app/__test__/mocks/xterm-addon-ligatures-mock.ts' },
+      {
+        find: "@xterm/addon-ligatures",
+        replacement: "/src/packages/__test__/mocks/xterm-addon-ligatures-mock.ts",
+      },
     ],
     include: [
-      'src/app/src/**/*.spec.ts',
-      'src/core-host/**/*.spec.ts',
-      'src/features-community/**/*.spec.ts',
-      'src/features-pro/**/*.spec.ts',
+      "src/packages/app/**/*.spec.ts",
+      "src/packages/core-host/**/*.spec.ts",
+      "src/packages/features/**/*.spec.ts",
     ],
     exclude: [
-      'src/app/src/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts',
+      "src/packages/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
     ],
     coverage: {
-      reporter: ['text', 'lcov'],
-      reportsDirectory: 'coverage',
+      reporter: ["text", "lcov"],
+      reportsDirectory: "coverage",
       include: [
-        'src/app/src/**/*.ts',
-        'src/core-host/**/*.ts',
-        'src/features-community/**/*.ts',
-        'src/features-pro/**/*.ts',
+        "src/packages/app/**/*.ts",
+        "src/packages/core-host/**/*.ts",
+        "src/packages/features/**/*.ts",
       ],
       exclude: [
-        'src/app/src/_tauri/**',
-        '**/*.spec.ts',
-        '**/*.test.ts',
-        '**/__test__/tauri_mocks/**',
-        '**/*.d.ts'
-      ]
-    }
-  }
+        "src/packages/app/_tauri/**",
+        "**/*.spec.ts",
+        "**/*.test.ts",
+        "**/__test__/tauri_mocks/**",
+        "**/*.d.ts",
+      ],
+    },
+  },
 });

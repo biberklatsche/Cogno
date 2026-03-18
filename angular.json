@@ -8,8 +8,8 @@
   "projects": {
     "cogno": {
       "projectType": "application",
-      "root": "",
-      "sourceRoot": "src/app/src",
+      "root": "src/app",
+      "sourceRoot": "src",
       "prefix": "app",
       "architect": {
         "build": {
@@ -24,20 +24,20 @@
               ".sql": "text"
             },
             "assets": [
-              "src/app/assets",
+              "src/packages/assets/src/assets",
               {
                 "glob": "**/*",
-                "input": "src/features-community/autocomplete/spec-command/data/autocomplete",
-                "output": "/feature-data/community/spec-command"
+                "input": "src/packages/features/autocomplete/spec-command/data",
+                "output": "/feature-data/base/spec-command"
               }
             ],
             "styles": [
-              "src/app/assets/styles/styles.css",
+              "src/packages/assets/src/assets/styles/styles.css",
               "node_modules/@xterm/xterm/css/xterm.css"
             ]
           },
           "configurations": {
-            "pro": {
+            "production": {
               "budgets": [
                 {
                   "type": "initial",
@@ -60,42 +60,13 @@
               },
               "outputHashing": "all"
             },
-            "community": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "5mb",
-                  "maximumError": "5mb"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "3kb",
-                  "maximumError": "4kb"
-                }
-              ],
-              "optimization": {
-                "scripts": true,
-                "styles": {
-                  "minify": true,
-                  "inlineCritical": false
-                },
-                "fonts": false
-              },
-              "outputHashing": "all",
-              "fileReplacements": [
-                {
-                  "replace": "src/app/src/app-host/core-host-wiring.service.ts",
-                  "with": "src/app/src/app-host/core-host-wiring-community.service.ts"
-                }
-              ]
-            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
             }
           },
-          "defaultConfiguration": "pro"
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
@@ -103,14 +74,11 @@
             "port": 1420
           },
           "configurations": {
-            "pro": {
-              "buildTarget": "cogno:build:pro"
+            "production": {
+              "buildTarget": "cogno:build:production"
             },
             "development": {
               "buildTarget": "cogno:build:development"
-            },
-            "community": {
-              "buildTarget": "cogno:build:community"
             }
           },
           "defaultConfiguration": "development"

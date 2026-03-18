@@ -1,0 +1,69 @@
+@import '../fonts/roboto/roboto.css';
+@import '../fonts/comfortaa/comfortaa.css';
+@import './xterm.css';
+@import './scrollbar.css';
+@import './theme.css';
+
+html, body {
+    margin: 0;
+    height: 100%;
+    color: var(--foreground-color);
+    background: var(--background, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overscroll-behavior: none;
+    font-size: var(--app-font-size);
+}
+
+ul {
+    padding: 0;
+    margin: 0;
+}
+
+
+/* Standard-Background ohne Bild */
+body {
+    background: var(--background-color);
+}
+
+/* Bild + Overlay-Gradient als fixierte Ebene */
+body.has-background::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;              /* hinter dem Inhalt */
+    background-image: var(--background-gradient), var(--background-image);
+    background-position: center center, center center;
+    background-size: cover, cover;
+    background-repeat: no-repeat, no-repeat;
+    /* Blur optional */
+    filter: blur(var(--background-blur, 0px));
+    /* WebKit-Repaint-Stabilizer */
+    transform: translateZ(0);
+}
+
+*:focus {
+    outline: none;
+}
+
+/* Apply app font to UI elements, but not to terminal */
+body {
+    font-family: var(--app-font-family), Roboto, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-size: var(--app-font-size);
+}
+
+.drag-preview-rectangle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10000;
+    pointer-events: none;
+    border-radius: 6px;
+    border: 1px solid color-mix(in srgb, var(--background-color) 65%, transparent);
+    background: color-mix(in srgb, var(--background-color) 20%, transparent);
+    box-shadow: 0 6px 18px color-mix(in srgb, black 35%, transparent);
+    backdrop-filter: blur(1px);
+}
