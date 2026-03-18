@@ -16,6 +16,11 @@ html, body {
     font-size: var(--app-font-size);
 }
 
+ul {
+    padding: 0;
+    margin: 0;
+}
+
 
 /* Standard-Background ohne Bild */
 body {
