@@ -215,6 +215,43 @@ export class WorkspaceHostApplicationService {
         this._workspaceList.set(list);
     }
 
+    async closeWorkspace(id: string): Promise<void> {
+        const list = [...this._workspaceList()];
+        const workspaceToClose = list.find((workspace) => workspace.id === id);
+        if (!workspaceToClose || workspaceToClose.id === DEFAULT_WORKSPACE_ID || !workspaceToClose.isOpen) {
+            return;
+        }
+
+        if (workspaceToClose.autosave) {
+            await this.saveWorkspace(workspaceToClose);
+        }
+
+        const wasActive = workspaceToClose.isActive;
+        workspaceToClose.isOpen = false;
+        workspaceToClose.isActive = false;
+        workspaceToClose.isSelected = false;
+
+        this.tabListService.removeWorkspaceRuntime(id);
+        this.gridListService.removeWorkspaceRuntime(id);
+
+        if (wasActive) {
+            const fallbackWorkspace = list.find((workspace) => workspace.isOpen) ?? list.find((workspace) => workspace.id === DEFAULT_WORKSPACE_ID);
+            if (fallbackWorkspace) {
+                await this.activateWorkspace(fallbackWorkspace);
+                return;
+            }
+        }
+
+        const selectedWorkspace = list.find((workspace) => workspace.isSelected);
+        if (!selectedWorkspace) {
+            const firstWorkspace = list[0];
+            if (firstWorkspace) {
+                firstWorkspace.isSelected = true;
+            }
+        }
+        this._workspaceList.set(list);
+    }
+
     getWorkspaceById(id: string): WorkspaceConfigUi | undefined {
         return this._workspaceList().find(workspaceConfig => workspaceConfig.id === id);
     }

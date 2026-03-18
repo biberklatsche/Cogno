@@ -1,5 +1,5 @@
 import { IPathAdapter } from "@cogno/core-sdk";
-import {DB} from "../../../../_tauri/db";
+import {DB, IDatabase} from "../../../../_tauri/db";
 import {isWslContext, ShellContext} from "../model/models";
 import {Hash} from "../../../../common/hash/hash";
 import { CommandPatternLearner } from "./command-pattern-learner";
@@ -131,6 +131,7 @@ function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
  */
 export class HistoryRepository {
     private _inTransaction = false;
+    private activeDatabase: Pick<IDatabase, "execute" | "select"> | undefined;
     private readonly _pathCache = new Map<string, { id: number; parentId: number | null }>();
     private readonly _commandCache = new Map<string, number>();
     private readonly commandPatternLearner = new CommandPatternLearner(
@@ -1064,11 +1065,11 @@ export class HistoryRepository {
     // ---- DB wrappers with retry + tx ----
 
     private async exec(query: string, params?: unknown[]): Promise<void> {
-        await DB.execute(query, params);
+        await (this.activeDatabase ?? DB).execute(query, params);
     }
 
     private async sel<T>(query: string, params?: unknown[]): Promise<T> {
-        return DB.select<T>(query, params);
+        return (this.activeDatabase ?? DB).select<T>(query, params);
     }
 
     private async tx(fn: () => Promise<void>): Promise<void> {
@@ -1084,10 +1085,18 @@ export class HistoryRepository {
         await withRetry(async () => {
             this._inTransaction = true;
             try {
-                await DB.transaction(fn);
+                await DB.transaction(async (database) => {
+                    this.activeDatabase = database;
+                    try {
+                        await fn();
+                    } finally {
+                        this.activeDatabase = undefined;
+                    }
+                });
                 this._inTransaction = false;
             } catch (e) {
                 console.error("#####B transaction failed", e);
+                this.activeDatabase = undefined;
                 this._inTransaction = false;
                 throw e;
             }

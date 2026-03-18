@@ -14,7 +14,9 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
           <li
             class="workspace-tile center"
             [class.selected]="workspaceEntry.isSelected"
+            [class.active]="workspaceEntry.isActive"
             [class.open]="workspaceEntry.isOpen"
+            [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + '-ct2)' : undefined"
             [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
             (click)="restoreWorkspace(workspaceEntry.id)"
           >
@@ -35,6 +37,15 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
               @if (workspaceEntry.id !== defaultWorkspaceId) {
                 <div class="space"></div>
+                @if (workspaceEntry.isOpen) {
+                  <button
+                    class="button icon-button workspace-close-button"
+                    type="button"
+                    (click)="closeWorkspace(workspaceEntry.id, $event)"
+                  >
+                    <app-icon name="mdiClose"></app-icon>
+                  </button>
+                }
                 <app-copy-edit-delete
                   [enableEdit]="true"
                   [enableDelete]="true"
@@ -60,6 +71,10 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         display: block;
       }
 
+      :host {
+        container-type: inline-size;
+      }
+
       .workspace-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -68,6 +83,12 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         margin: 0;
         padding: 0;
         width: 100%;
+      }
+
+      @container (max-width: 360px) {
+        .workspace-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
       }
 
       .workspace-tile {
@@ -79,16 +100,14 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         height: 3.5rem;
       }
 
-      .workspace-tile:hover {
-        background: var(--background-color-20l) !important;
-        opacity: 1;
-        outline: none;
-      }
-
       .workspace-tile.selected {
         background: var(--background-color-20l);
         border: 1px solid var(--background-color-30l);
         outline: none;
+        opacity: 1;
+      }
+
+      .workspace-tile.active {
         opacity: 1;
       }
 
@@ -155,6 +174,10 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         align-items: center;
         justify-content: center;
       }
+
+      .workspace-close-button {
+        flex: 0 0 auto;
+      }
     `,
   ],
 })
@@ -168,6 +191,11 @@ export class WorkspaceSideComponent {
 
   async restoreWorkspace(workspaceId: string): Promise<void> {
     await this.workspaceService.restoreWorkspace(workspaceId);
+  }
+
+  async closeWorkspace(workspaceId: string, event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    await this.workspaceService.closeWorkspace(workspaceId);
   }
 
   openCreateWorkspaceDialog(): void {

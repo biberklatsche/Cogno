@@ -68,6 +68,10 @@ export class WorkspaceService {
     await this.workspaceHostPort.restoreWorkspace(workspaceId);
   }
 
+  async closeWorkspace(workspaceId: string): Promise<void> {
+    await this.workspaceHostPort.closeWorkspace(workspaceId);
+  }
+
   openCreateWorkspaceDialog(): void {
     this.workspaceHostPort.openCreateWorkspaceDialog();
   }

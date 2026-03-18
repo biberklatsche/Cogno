@@ -42,6 +42,10 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
     await this.workspaceHostApplicationService.restoreWorkspace(workspaceConfigUi);
   }
 
+  async closeWorkspace(workspaceId: string): Promise<void> {
+    await this.workspaceHostApplicationService.closeWorkspace(workspaceId);
+  }
+
   openCreateWorkspaceDialog(): void {
     const workspaceDraft = this.workspaceHostApplicationService.createWorkspaceDraft();
     this.dialogService.open(WorkspaceEditDialogComponent, {
