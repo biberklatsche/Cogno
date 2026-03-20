@@ -42,6 +42,7 @@ import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
 import {PaneMaximizedChangedEvent, TabTitleChangedEvent} from "../grid-list/+bus/events";
+import { SelectedWorkspaceChangedEvent } from "@cogno/features/side-menu/workspace/+bus/events";
 
 export type TerminalCommandType = AppMessage['type']
 
@@ -108,4 +109,5 @@ export type AppMessage =
     | SideMenuEvent
     | TabTitleChangedEvent
     | PaneMaximizedChangedEvent
+    | SelectedWorkspaceChangedEvent
     ;

@@ -125,7 +125,6 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
       .workspace-tile.open:not(.selected) {
         opacity: 1;
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 28%, transparent);
       }
 
       .center {
@@ -148,11 +147,11 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         min-width: 24px;
         height: 24px;
         font-size: 16px;
-        border-radius: 50%;
+        border-radius: 0.3rem;
         margin-right: 0.5rem;
         display: grid;
         place-items: center;
-        line-height: 0;
+        line-height: 26px;
         text-transform: capitalize;
       }
 
@@ -187,22 +186,12 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         justify-content: center;
       }
 
-      .workspace-controls {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        justify-content: flex-start;
-        gap: 2px;
-        min-width: 26px;
-        margin-left: auto;
-      }
-
       .workspace-actions {
         display: flex;
         flex: 0 0 auto;
         opacity: 0;
         transition: opacity 120ms ease-out;
-        transform: translateX(-18px);
+        transform: translateX(-25px);
       }
 
       .workspace-close-button {
