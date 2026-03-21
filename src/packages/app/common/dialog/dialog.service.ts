@@ -29,6 +29,8 @@ export class DialogService {
       hasBackdrop: true,
       movable: false,
       resizable: false,
+      closeOnBackdropClick: true,
+      closeOnEscape: true,
       ...config,
     };
 

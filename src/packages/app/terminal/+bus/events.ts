@@ -38,6 +38,10 @@ export type TerminalSearchRequestedEvent = MessageBase<"TerminalSearchRequested"
     caseSensitive: boolean;
     regularExpression: boolean;
 }>;
+export type TerminalBusyChangedEvent = MessageBase<"TerminalBusyChanged", {
+    terminalId: TerminalId;
+    isBusy: boolean;
+}>;
 export type TerminalSearchResultEvent = MessageBase<"TerminalSearchResult", {
     terminalId: TerminalId;
     query: string;

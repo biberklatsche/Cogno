@@ -69,6 +69,7 @@ export class TerminalStateManager {
         }
 
         this.isDisposed = true;
+        this.publishTerminalBusyChanged(false);
         this.disposeSignal.next();
         this.disposeSignal.complete();
     }
@@ -228,10 +229,12 @@ export class TerminalStateManager {
             commandStartTime: Date.now(),
             input: {text: "", maxCursorIndex: 0, cursorIndex: 0}
         });
+        this.publishTerminalBusyChanged(true);
     }
 
     endCommand(): void {
         this.updateState({isCommandRunning: false});
+        this.publishTerminalBusyChanged(false);
     }
 
     getCommandDuration(): number | undefined {
@@ -311,6 +314,22 @@ export class TerminalStateManager {
             path: ["app", "terminal", this._stateSubject.value.terminalId],
             payload: {cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId},
             type: "TerminalCwdChanged"
+        });
+    }
+
+    private publishTerminalBusyChanged(isBusy: boolean): void {
+        const terminalId = this._stateSubject.value.terminalId;
+        if (!terminalId) {
+            return;
+        }
+
+        this._bus.publish({
+            path: ["app", "terminal"],
+            type: "TerminalBusyChanged",
+            payload: {
+                terminalId,
+                isBusy,
+            },
         });
     }
 

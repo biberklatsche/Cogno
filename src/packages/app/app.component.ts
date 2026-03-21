@@ -10,13 +10,16 @@ import {Environment} from "./common/environment/environment";
 import {appDatabaseMigrations} from "./migrations/migrate";
 import {AppNotificationToastStackComponent} from "./notification/app-notification-toast-stack.component";
 import {DatabaseMigrationService} from "./app-host/database-migration.service";
+import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
+import { WorkspaceBusBridgeService } from "@cogno/features/side-menu/workspace/workspace-bus-bridge.service";
 
 @Component({
     selector: 'app-root',
-    imports: [GridListComponent, AppButtonsComponent, TabListComponent, AppNotificationToastStackComponent],
+    imports: [GridListComponent, AppButtonsComponent, TabListComponent, AppNotificationToastStackComponent, SelectedWorkspaceHeaderComponent],
     template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>
+        <app-selected-workspace-header></app-selected-workspace-header>
         <app-window-buttons></app-window-buttons>
     </header>
     <main>
@@ -63,6 +66,7 @@ export class AppComponent {
     constructor(
       bus: AppBus,
       private readonly databaseMigrationService: DatabaseMigrationService,
+      private readonly workspaceBusBridgeService: WorkspaceBusBridgeService,
     ) {
         window.addEventListener('contextmenu', (event) => {
             event.preventDefault();

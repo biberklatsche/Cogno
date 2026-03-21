@@ -85,8 +85,8 @@ export class WorkspaceRepository {
   }
 
   async createWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
-    await this.databaseAccess.transaction(async () => {
-      await this.databaseAccess.execute(
+    await this.databaseAccess.transaction(async (databaseAccess) => {
+      await databaseAccess.execute(
         "INSERT INTO workspaces (id, name, color, autosave) VALUES (?, ?, ?, ?)",
         [
           workspaceConfiguration.id,
@@ -98,19 +98,19 @@ export class WorkspaceRepository {
 
       let position = 0;
       for (const tabConfiguration of workspaceConfiguration.tabs) {
-        await this.insertTab(workspaceConfiguration.id, tabConfiguration, position);
+        await this.insertTab(databaseAccess, workspaceConfiguration.id, tabConfiguration, position);
         position += 1;
       }
 
       for (const gridConfiguration of workspaceConfiguration.grids) {
-        await this.insertGrid(workspaceConfiguration.id, gridConfiguration);
+        await this.insertGrid(databaseAccess, workspaceConfiguration.id, gridConfiguration);
       }
     });
   }
 
   async updateWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
-    await this.databaseAccess.transaction(async () => {
-      await this.databaseAccess.execute(
+    await this.databaseAccess.transaction(async (databaseAccess) => {
+      await databaseAccess.execute(
         "UPDATE workspaces SET name = ?, color = ?, autosave = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         [
           workspaceConfiguration.name,
@@ -120,21 +120,21 @@ export class WorkspaceRepository {
         ],
       );
 
-      await this.databaseAccess.execute("DELETE FROM workspace_tabs WHERE workspace_id = ?", [
+      await databaseAccess.execute("DELETE FROM workspace_tabs WHERE workspace_id = ?", [
         workspaceConfiguration.id,
       ]);
-      await this.databaseAccess.execute("DELETE FROM workspace_grids WHERE workspace_id = ?", [
+      await databaseAccess.execute("DELETE FROM workspace_grids WHERE workspace_id = ?", [
         workspaceConfiguration.id,
       ]);
 
       let position = 0;
       for (const tabConfiguration of workspaceConfiguration.tabs) {
-        await this.insertTab(workspaceConfiguration.id, tabConfiguration, position);
+        await this.insertTab(databaseAccess, workspaceConfiguration.id, tabConfiguration, position);
         position += 1;
       }
 
       for (const gridConfiguration of workspaceConfiguration.grids) {
-        await this.insertGrid(workspaceConfiguration.id, gridConfiguration);
+        await this.insertGrid(databaseAccess, workspaceConfiguration.id, gridConfiguration);
       }
     });
   }
@@ -195,11 +195,12 @@ export class WorkspaceRepository {
   }
 
   private async insertTab(
+    databaseAccess: DatabaseAccessContract,
     workspaceId: WorkspaceIdentifierContract,
     tabConfiguration: PersistedTabConfigurationContract,
     position: number,
   ): Promise<void> {
-    await this.databaseAccess.execute(
+    await databaseAccess.execute(
       "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, is_title_locked, color, title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
         workspaceId,
@@ -214,10 +215,11 @@ export class WorkspaceRepository {
   }
 
   private async insertGrid(
+    databaseAccess: DatabaseAccessContract,
     workspaceId: WorkspaceIdentifierContract,
     gridConfiguration: PersistedGridConfigurationContract,
   ): Promise<void> {
-    await this.databaseAccess.execute(
+    await databaseAccess.execute(
       "INSERT INTO workspace_grids (workspace_id, tab_id, pane_json) VALUES (?, ?, ?)",
       [workspaceId, gridConfiguration.tabId, JSON.stringify(gridConfiguration.pane)],
     );

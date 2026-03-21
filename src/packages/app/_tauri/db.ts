@@ -7,18 +7,13 @@ export interface IDatabase {
 
     select<T = unknown>(query: string, params?: unknown[]): Promise<T>;
 
-    transaction<T>(fn: () => Promise<T>): Promise<T>;
+    transaction<T>(fn: (database: IDatabase) => Promise<T>): Promise<T>;
 }
 
 let _db: TauriDatabase;
 let operationQueue: Promise<void> = Promise.resolve();
-let activeTransactionCount = 0;
 
 async function runSerialized<T>(operation: () => Promise<T>): Promise<T> {
-    if (activeTransactionCount > 0) {
-        return operation();
-    }
-
     const previousOperation = operationQueue;
     let releaseOperationQueue: () => void = () => undefined;
     operationQueue = new Promise<void>((resolve) => {
@@ -44,24 +39,33 @@ export const DB: IDatabase = {
     async select<T = unknown>(query: string, params?: unknown[]): Promise<T> {
         return runSerialized(() => _db.select<T>(query, params));
     },
-    async transaction<T>(fn: () => Promise<T>): Promise<T> {
+    async transaction<T>(fn: (database: IDatabase) => Promise<T>): Promise<T> {
         return runSerialized(async () => {
-            activeTransactionCount += 1;
+            const transactionDatabase: IDatabase = {
+                load: async (): Promise<void> => {
+                    throw new Error("Database load is not available inside a transaction.");
+                },
+                execute: async (query: string, params?: unknown[]): Promise<void> => {
+                    await _db.execute(query, params);
+                },
+                select: async <Result = unknown>(query: string, params?: unknown[]): Promise<Result> => {
+                    return _db.select<Result>(query, params);
+                },
+                transaction: async <NestedResult>(nestedHandler: (database: IDatabase) => Promise<NestedResult>): Promise<NestedResult> => {
+                    return nestedHandler(transactionDatabase);
+                },
+            };
+            await _db.execute("BEGIN IMMEDIATE;");
             try {
-                await _db.execute("BEGIN IMMEDIATE;");
+                const result = await fn(transactionDatabase);
+                await _db.execute("COMMIT;");
+                return result;
+            } catch (error) {
                 try {
-                    const result = await fn();
-                    await _db.execute("COMMIT;");
-                    return result;
-                } catch (error) {
-                    try {
-                        await _db.execute("ROLLBACK;");
-                    } catch {
-                    }
-                    throw error;
+                    await _db.execute("ROLLBACK;");
+                } catch {
                 }
-            } finally {
-                activeTransactionCount -= 1;
+                throw error;
             }
         });
     }

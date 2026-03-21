@@ -11,7 +11,7 @@ import {TabListService} from "../tab-list/+state/tab-list.service";
 import {Color} from "../common/color/color";
 import {ActionFired} from "../action/action.models";
 
-export type WorkspaceConfigUi = WorkspaceConfiguration & { isSelected: boolean };
+export type WorkspaceConfigUi = WorkspaceConfiguration & { isSelected: boolean; isOpen?: boolean };
 
 export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT"
 
@@ -34,7 +34,11 @@ export class WorkspaceHostApplicationService {
         this.bus.onceType$('DBInitialized').subscribe(async () => {
             //load workspaces here
             const workspaces = await workspaceRepository.getAllWorkspaces();
-            const workspacesUi: WorkspaceConfigUi[] = [this.DEFAULT_WORKSPACE, ...workspaces].map(w => ({...w, isSelected: w.isActive ?? false}));
+            const workspacesUi: WorkspaceConfigUi[] = [this.DEFAULT_WORKSPACE, ...workspaces].map((workspaceConfiguration) => ({
+                ...workspaceConfiguration,
+                isSelected: workspaceConfiguration.isActive ?? false,
+                isOpen: false,
+            }));
             if(!workspacesUi.find(s => s.isSelected)) {
                 workspacesUi[0].isSelected = true;
                 workspacesUi[0].isActive = true;
@@ -43,7 +47,7 @@ export class WorkspaceHostApplicationService {
 
             let defaultWorkspace = workspacesUi.find(w => w.isActive)!;
 
-            await this.restoreWorkspace(defaultWorkspace);
+            await this.activateWorkspace(defaultWorkspace);
 
         });
         this.bus.onType$('TabRenamed')
@@ -73,6 +77,10 @@ export class WorkspaceHostApplicationService {
     }
 
     public async restoreWorkspace(workspace: WorkspaceConfigUi) {
+        await this.activateWorkspace(workspace);
+    }
+
+    public async activateWorkspace(workspace: WorkspaceConfigUi): Promise<void> {
         const workspaceList = [...this._workspaceList()];
 
         // Detect previous active workspace and autosave if needed
@@ -87,13 +95,18 @@ export class WorkspaceHostApplicationService {
         }
         workspace.isActive = true;
         workspace.isSelected = true;
-        this.tabListService.restoreTabs(workspace.tabs);
-        this.gridListService.restoreGrids(workspace.grids);
-        const activeTab = workspace!.tabs.find(s => s.isActive);
-        if (activeTab) {
-            this.tabListService.selectTab(activeTab.tabId);
-        } else {
-            this.tabListService.selectTab(workspace!.tabs[0].tabId);
+        if (!workspace.isOpen) {
+            this.tabListService.restoreTabs(workspace.tabs, workspace.id);
+            this.gridListService.restoreGridsForWorkspace(workspace.grids, workspace.id);
+            workspace.isOpen = true;
+        }
+        this.tabListService.activateWorkspace(workspace.id);
+        this.gridListService.activateWorkspace(workspace.id);
+
+        const activeTab = this.tabListService.getTabConfigs(workspace.id).find((tabConfiguration) => tabConfiguration.isActive);
+        const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspace.id)[0];
+        if (fallbackTab) {
+            this.tabListService.selectTab(fallbackTab.tabId);
         }
         this._workspaceList.set(workspaceList);
 
@@ -109,17 +122,24 @@ export class WorkspaceHostApplicationService {
         const tabId = IdCreator.newTabId();
         const pane: GridConfig = {tabId: tabId, pane: {}};
         const tab: TabConfig = {tabId: tabId}
-        return {id: '', name: '', color: undefined, grids: [pane], tabs: [tab], isSelected: true, isActive: true};
+        return {id: '', name: '', color: undefined, grids: [pane], tabs: [tab], isSelected: true, isActive: true, isOpen: false};
     }
 
     private async saveWorkspace(workspace: WorkspaceConfiguration): Promise<string> {
         const isNew = workspace.id === '';
+        const sourceWorkspaceIdentifier = isNew
+            ? this.getActiveWorkspace()?.id
+            : this.getWorkspaceById(workspace.id)?.isOpen
+                ? workspace.id
+                : undefined;
         if (isNew) {
             workspace.id = IdCreator.newWorkspaceId();
         }
         // Load current configurations from services
-        workspace.grids = this.gridListService.getGridConfigs();
-        workspace.tabs = this.tabListService.getTabConfigs();
+        if (sourceWorkspaceIdentifier) {
+            workspace.grids = this.gridListService.getGridConfigs(sourceWorkspaceIdentifier);
+            workspace.tabs = this.tabListService.getTabConfigs(sourceWorkspaceIdentifier);
+        }
 
         if (isNew) {
             await this.workspaceRepository.createWorkspace(workspace);
@@ -138,18 +158,31 @@ export class WorkspaceHostApplicationService {
     public async save(workspace: WorkspaceConfiguration): Promise<string> {
         // derive color from name if applicable
         if(!workspace.color) workspace.color = Color.fromText(workspace.name);
+        const isNewWorkspace = workspace.id === '';
+        const previousActiveWorkspace = this.getActiveWorkspace();
         const id = await this.saveWorkspace(workspace);
+        if (isNewWorkspace && previousActiveWorkspace) {
+            this.tabListService.moveActiveWorkspaceRuntime(id);
+            this.gridListService.moveActiveWorkspaceRuntime(id);
+        }
         // update list in memory
         const list = [...this._workspaceList()];
         const idx = list.findIndex(w => w.id === workspace.id || (workspace.id === '' && w.name === workspace.name));
         if (idx >= 0) {
-            list[idx] = { ...workspace, isSelected: list[idx].isSelected, isActive: list[idx].isActive } as WorkspaceConfigUi;
+            list[idx] = { ...workspace, isSelected: list[idx].isSelected, isActive: list[idx].isActive, isOpen: list[idx].isOpen } as WorkspaceConfigUi;
         } else {
-            // For new workspace, deactivate others and select this one
-            for (const ws of list) { ws.isActive = false; ws.isSelected = false; }
-            const ui: WorkspaceConfigUi = { ...workspace, id, isSelected: true, isActive: true };
+            for (const existingWorkspace of list) {
+                existingWorkspace.isActive = false;
+                existingWorkspace.isSelected = false;
+                if (existingWorkspace.id === previousActiveWorkspace?.id) {
+                    existingWorkspace.isOpen = false;
+                }
+            }
+            const ui: WorkspaceConfigUi = { ...workspace, id, isSelected: true, isActive: true, isOpen: true };
             list.push(ui);
-            this.sideMenuService.updateBadgeColor('Workspace', workspace.color);
+            this._workspaceList.set(list);
+            await this.activateWorkspace(ui);
+            return id;
         }
         this._workspaceList.set(list);
         return id;
@@ -160,7 +193,12 @@ export class WorkspaceHostApplicationService {
         const idx = list.findIndex(w => w.id === id);
         if (idx === -1) throw new Error('Workspace id not found');
         const wasActive = list[idx].isActive;
+        const wasOpen = list[idx].isOpen;
         await this.workspaceRepository.deleteWorkspace(id);
+        if (wasOpen) {
+            this.tabListService.removeWorkspaceRuntime(id);
+            this.gridListService.removeWorkspaceRuntime(id);
+        }
         list.splice(idx, 1);
         // adjust selection/active
         if (list.length > 0) {
@@ -169,8 +207,46 @@ export class WorkspaceHostApplicationService {
             }
             if (wasActive && !list.find(w => w.isActive)) {
                 list[0].isActive = true;
+                list[0].isOpen = true;
                 // restore the newly active workspace
-                await this.restoreWorkspace(list[0]);
+                await this.activateWorkspace(list[0]);
+            }
+        }
+        this._workspaceList.set(list);
+    }
+
+    async closeWorkspace(id: string): Promise<void> {
+        const list = [...this._workspaceList()];
+        const workspaceToClose = list.find((workspace) => workspace.id === id);
+        if (!workspaceToClose || workspaceToClose.id === DEFAULT_WORKSPACE_ID || !workspaceToClose.isOpen) {
+            return;
+        }
+
+        if (workspaceToClose.autosave) {
+            await this.saveWorkspace(workspaceToClose);
+        }
+
+        const wasActive = workspaceToClose.isActive;
+        workspaceToClose.isOpen = false;
+        workspaceToClose.isActive = false;
+        workspaceToClose.isSelected = false;
+
+        this.tabListService.removeWorkspaceRuntime(id);
+        this.gridListService.removeWorkspaceRuntime(id);
+
+        if (wasActive) {
+            const fallbackWorkspace = list.find((workspace) => workspace.isOpen) ?? list.find((workspace) => workspace.id === DEFAULT_WORKSPACE_ID);
+            if (fallbackWorkspace) {
+                await this.activateWorkspace(fallbackWorkspace);
+                return;
+            }
+        }
+
+        const selectedWorkspace = list.find((workspace) => workspace.isSelected);
+        if (!selectedWorkspace) {
+            const firstWorkspace = list[0];
+            if (firstWorkspace) {
+                firstWorkspace.isSelected = true;
             }
         }
         this._workspaceList.set(list);

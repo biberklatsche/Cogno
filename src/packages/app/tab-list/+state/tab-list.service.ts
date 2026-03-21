@@ -2,7 +2,7 @@ import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/c
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {TabConfig, TabId} from "@cogno/core-sdk";
+import {defaultWorkspaceIdContract, TabConfig, TabId} from "@cogno/core-sdk";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
@@ -19,6 +19,8 @@ export class TabListService {
 
     private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
     private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
+    private readonly tabListByWorkspaceIdentifier = new Map<string, TabList>();
+    private activeWorkspaceIdentifier: string | undefined = defaultWorkspaceIdContract;
 
     get tabs$(): Observable<Tab[]> {
         return this._tabList.asObservable();
@@ -26,6 +28,38 @@ export class TabListService {
 
     get showRename$(): Signal<TabId | undefined> {
         return this._showRename.asReadonly();
+    }
+
+    activateWorkspace(workspaceIdentifier: string): void {
+        this.activeWorkspaceIdentifier = workspaceIdentifier;
+        if (!this.tabListByWorkspaceIdentifier.has(workspaceIdentifier)) {
+            this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, []);
+        }
+        this._showRename.set(undefined);
+        this._tabList.next(this.cloneTabList(this.getTabListForWorkspace(workspaceIdentifier)));
+    }
+
+    moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
+        const sourceWorkspaceIdentifier = this.activeWorkspaceIdentifier;
+        if (!sourceWorkspaceIdentifier || sourceWorkspaceIdentifier === targetWorkspaceIdentifier) {
+            this.activateWorkspace(targetWorkspaceIdentifier);
+            return;
+        }
+
+        const currentTabList = this.cloneTabList(this.getTabListForWorkspace(sourceWorkspaceIdentifier));
+        this.tabListByWorkspaceIdentifier.set(targetWorkspaceIdentifier, currentTabList);
+        this.tabListByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
+        this.activeWorkspaceIdentifier = targetWorkspaceIdentifier;
+        this._tabList.next(this.cloneTabList(currentTabList));
+    }
+
+    removeWorkspaceRuntime(workspaceIdentifier: string): void {
+        this.tabListByWorkspaceIdentifier.delete(workspaceIdentifier);
+        if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
+            this.activeWorkspaceIdentifier = undefined;
+            this._showRename.set(undefined);
+            this._tabList.next([]);
+        }
     }
 
     constructor(
@@ -53,11 +87,11 @@ export class TabListService {
             event.propagationStopped = true;
         });
         this.bus.onType$('TabTitleChanged').pipe(takeUntilDestroyed(destroyRef)).subscribe((event: TabTitleChangedEvent) => {
-            const tabList = [...this._tabList.value];
+            const tabList = this.cloneTabList(this._tabList.value);
             const tab = tabList.find(s => s.id === event.payload?.tabId);
             if(!tab || tab.isTitleLocked || !event.payload?.title) return;
             tab.title = event.payload.title;
-            this._tabList.next(tabList);
+            this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
             event.propagationStopped = true;
         });
         this.bus.on$(ActionFired.listener())
@@ -132,13 +166,14 @@ export class TabListService {
     }
 
     removeAllTabs(except?: TabId) {
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
         const tabsToClose = [...this._tabList.value];
         if(!except) {
-            this._tabList.next([]);
+            this.setTabListForWorkspace(workspaceIdentifier, []);
         } else {
             const index = tabsToClose.findIndex(s => s.id === except);
             const remainingTab = tabsToClose.splice(index, 1);
-            this._tabList.next(remainingTab);
+            this.setTabListForWorkspace(workspaceIdentifier, remainingTab);
         }
         for (const tab of tabsToClose) {
             this.bus.publish({type: 'TabRemoved', payload: tab.id});
@@ -146,7 +181,8 @@ export class TabListService {
     }
 
     addTab(tab: Tab, silent: boolean = false, paneConfig?: { shellName?: string; workingDir?: string }) {
-        const tabList = [...this._tabList.value];
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        const tabList = this.cloneTabList(this._tabList.value);
         if(tabList.some(s => s.id === tab?.id)) return;
         if(tab.isActive){
             for(const other of tabList){
@@ -154,7 +190,7 @@ export class TabListService {
             }
         }
         tabList.push(tab);
-        this._tabList.next(tabList);
+        this.setTabListForWorkspace(workspaceIdentifier, tabList);
         if(silent) return;
         this.bus.publish({
             type: 'TabAdded',
@@ -169,7 +205,8 @@ export class TabListService {
 
     removeTab(tabId?: TabId) {
         if(!tabId) return;
-        const tabList = [...this._tabList.value];
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        const tabList = this.cloneTabList(this._tabList.value);
         const tabIndex = tabList.findIndex(tab => tab.id === tabId);
         if(tabIndex === -1) return;
         const isActiveTab = tabList[tabIndex].isActive;
@@ -178,7 +215,7 @@ export class TabListService {
         if(isActiveTab && tabList.length > 0) {
            nextActiveTab = tabList[Math.max(tabIndex - 1, 0)];
         }
-        this._tabList.next(tabList);
+        this.setTabListForWorkspace(workspaceIdentifier, tabList);
         this.bus.publish({type: 'TabRemoved', payload: tabId});
         if(nextActiveTab) {
             this.selectTab(nextActiveTab.id);
@@ -187,26 +224,28 @@ export class TabListService {
 
     reorderTabs(sourceTabId: TabId, destinationTabId: TabId) {
         if (sourceTabId === destinationTabId) return;
-        const reorderedTabList = [...this._tabList.value];
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        const reorderedTabList = this.cloneTabList(this._tabList.value);
         const sourceTabIndex = reorderedTabList.findIndex(tab => tab.id === sourceTabId);
         const destinationTabIndex = reorderedTabList.findIndex(tab => tab.id === destinationTabId);
         if (sourceTabIndex === -1 || destinationTabIndex === -1) return;
 
         const [sourceTab] = reorderedTabList.splice(sourceTabIndex, 1);
         reorderedTabList.splice(destinationTabIndex, 0, sourceTab);
-        this._tabList.next(reorderedTabList);
+        this.setTabListForWorkspace(workspaceIdentifier, reorderedTabList);
     }
 
     selectTab(tabId: TabId) {
         if(this._showRename()) return;
-        const tabList = [...this._tabList.value];
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        const tabList = this.cloneTabList(this._tabList.value);
         const tabIndex = tabList.findIndex(tab => tab.id === tabId);
         if(tabIndex === -1) return;
         for(const tab of tabList){
             tab.isActive = false;
         }
         tabList[tabIndex].isActive = true;
-        this._tabList.next(tabList);
+        this.setTabListForWorkspace(workspaceIdentifier, tabList);
         this.bus.publish({type: 'TabSelected', payload: tabId});
     }
 
@@ -219,12 +258,13 @@ export class TabListService {
         if(!value?.trim()) return;
         const tabId = this._showRename();
         if(!tabId) return;
-        const tabList = [...this._tabList.value];
+        const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+        const tabList = this.cloneTabList(this._tabList.value);
         const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
         tab.title = value;
         tab.isTitleLocked = true;
-        this._tabList.next(tabList);
+        this.setTabListForWorkspace(workspaceIdentifier, tabList);
         this.bus.publish({type: 'TabRenamed', payload: {tabId: tab.id, title: tab.title}});
         this.closeRename();
     }
@@ -238,11 +278,11 @@ export class TabListService {
         const tab = tabList.find(tab => tab.id === tabId);
         if(!tab) return;
         tab.color = name;
-        this._tabList.next(tabList);
+        this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
     }
 
-    restoreTabs(tabConfigList: TabConfig[]) {
-        if(tabConfigList.length === 0) this._tabList.next([]);
+    restoreTabs(tabConfigList: TabConfig[], workspaceIdentifier?: string) {
+        const targetWorkspaceIdentifier = workspaceIdentifier ?? this.getRequiredActiveWorkspaceIdentifier();
         const tabs: TabList = tabConfigList.map(config => {
             const tab: Tab = {
                 id: config.tabId,
@@ -254,11 +294,12 @@ export class TabListService {
             }
             return tab
         });
-        this._tabList.next(tabs);
+        this.setTabListForWorkspace(targetWorkspaceIdentifier, tabs);
     }
 
-    getTabConfigs(): TabConfig[] {
-        return this._tabList.value.map<TabConfig>(tab => ({
+    getTabConfigs(workspaceIdentifier?: string): TabConfig[] {
+        const targetWorkspaceIdentifier = workspaceIdentifier ?? this.getRequiredActiveWorkspaceIdentifier();
+        return this.getTabListForWorkspace(targetWorkspaceIdentifier).map<TabConfig>(tab => ({
             tabId: tab.id,
             isActive: tab.isActive,
             color: tab.color,
@@ -300,5 +341,28 @@ export class TabListService {
         const shellIndex = Number.parseInt(actionName.replace('open_shell_', ''), 10);
         const shellProfile = this.configService.getShellProfileByShortcutIndex(shellIndex);
         return shellProfile?.name;
+    }
+
+    private getRequiredActiveWorkspaceIdentifier(): string {
+        if (!this.activeWorkspaceIdentifier) {
+            throw new Error("No active workspace found for tab list.");
+        }
+        return this.activeWorkspaceIdentifier;
+    }
+
+    private getTabListForWorkspace(workspaceIdentifier: string): TabList {
+        return this.tabListByWorkspaceIdentifier.get(workspaceIdentifier) ?? [];
+    }
+
+    private setTabListForWorkspace(workspaceIdentifier: string, tabList: TabList): void {
+        const clonedTabList = this.cloneTabList(tabList);
+        this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, clonedTabList);
+        if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
+            this._tabList.next(this.cloneTabList(clonedTabList));
+        }
+    }
+
+    private cloneTabList(tabList: TabList): TabList {
+        return tabList.map((tab) => ({...tab}));
     }
 }

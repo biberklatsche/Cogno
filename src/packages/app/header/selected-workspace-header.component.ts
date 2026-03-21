@@ -1,0 +1,59 @@
+import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "../app-bus/app-bus";
+import { SelectedWorkspacePayload } from "@cogno/features/side-menu/workspace/+bus/events";
+
+@Component({
+  selector: "app-selected-workspace-header",
+  standalone: true,
+  template: `
+    @if (selectedWorkspace(); as selectedWorkspaceEntry) {
+      <div
+        class="selected-workspace-header"
+        [style.color]="selectedWorkspaceEntry.color ? 'var(--color-' + selectedWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
+        [attr.title]="selectedWorkspaceEntry.name"
+      >
+        {{ selectedWorkspaceEntry.name }}
+      </div>
+    }
+  `,
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex: 0 1 20rem;
+        justify-content: flex-end;
+        min-width: 0;
+        margin-left: auto;
+      }
+
+      .selected-workspace-header {
+        display: block;
+        max-width: 100%;
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 0.75rem;
+      }
+    `,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SelectedWorkspaceHeaderComponent {
+  protected readonly selectedWorkspace = signal<SelectedWorkspacePayload | undefined>(undefined);
+
+  constructor(
+    private readonly appBus: AppBus,
+    destroyRef: DestroyRef,
+  ) {
+    this.appBus
+      .onType$("SelectedWorkspaceChanged")
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((selectedWorkspaceChangedEvent) => {
+        this.selectedWorkspace.set(selectedWorkspaceChangedEvent.payload);
+      });
+  }
+}

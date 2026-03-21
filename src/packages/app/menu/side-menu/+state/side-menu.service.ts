@@ -21,10 +21,15 @@ export type SideMenuItem = {
 
 @Injectable({providedIn: 'root'})
 export class SideMenuService {
+    private static readonly defaultPanelWidthInPixels = 360;
+    private static readonly minimumPanelWidthInPixels = 280;
+    private static readonly maximumPanelWidthInPixels = 640;
+
     private _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
     private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<SideMenuItem | undefined>(undefined);
     private _displacement: WritableSignal<boolean> = signal<boolean>(false);
     private _isFocused: WritableSignal<boolean> = signal<boolean>(false);
+    private _panelWidthInPixels: WritableSignal<number> = signal<number>(SideMenuService.defaultPanelWidthInPixels);
     private _pinnedStack: string[] = [];
 
     get menu(): Signal<SideMenuItem[]> {
@@ -41,6 +46,10 @@ export class SideMenuService {
 
     get isFocused(): Signal<boolean> {
         return this._isFocused.asReadonly();
+    }
+
+    get panelWidthInPixels(): Signal<number> {
+        return this._panelWidthInPixels.asReadonly();
     }
 
     constructor(private bus: AppBus) {
@@ -171,5 +180,16 @@ export class SideMenuService {
     updateBadgeColor(label: string, color?: string) {
         this._menuItems.update(s => s.map(i => i.label === label ? {...i, badgeColor: color} : i));
         this._selectedItem.update(s => s?.label === label ? {...s, badgeColor: color} : s);
+    }
+
+    setPanelWidthInPixels(panelWidthInPixels: number): void {
+        this._panelWidthInPixels.set(this.clampPanelWidthInPixels(panelWidthInPixels));
+    }
+
+    private clampPanelWidthInPixels(panelWidthInPixels: number): number {
+        return Math.max(
+            SideMenuService.minimumPanelWidthInPixels,
+            Math.min(SideMenuService.maximumPanelWidthInPixels, Math.round(panelWidthInPixels)),
+        );
     }
 }

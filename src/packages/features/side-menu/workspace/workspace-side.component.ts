@@ -1,17 +1,25 @@
 import { Component, Signal } from "@angular/core";
 import { defaultWorkspaceIdContract } from "@cogno/core-sdk";
-import { CopyEditDeleteComponent } from "@cogno/core-ui";
+import { CopyEditDeleteComponent, IconComponent } from "@cogno/core-ui";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
   selector: "app-workspace-side",
   standalone: true,
-  imports: [CopyEditDeleteComponent],
+  imports: [CopyEditDeleteComponent, IconComponent],
   template: `
     <section class="workspace-side">
       <ul class="workspace-grid">
         @for (workspaceEntry of workspaceEntries(); track workspaceEntry.id) {
-          <li class="workspace-tile center" [class.selected]="workspaceEntry.isSelected" (click)="restoreWorkspace(workspaceEntry.id)">
+          <li
+            class="workspace-tile center"
+            [class.selected]="workspaceEntry.isSelected"
+            [class.active]="workspaceEntry.isActive"
+            [class.open]="workspaceEntry.isOpen"
+            [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + '-ct2)' : undefined"
+            [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
+            (click)="restoreWorkspace(workspaceEntry.id)"
+          >
             <div class="workspace-tile__content">
               <div
                 class="workspace-badge"
@@ -28,19 +36,33 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
               </div>
 
               @if (workspaceEntry.id !== defaultWorkspaceId) {
+                @if (workspaceEntry.isOpen) {
+                  <button
+                    class="button icon-button workspace-close-button"
+                    [class.visible]="workspaceEntry.isOpen || workspaceEntry.isActive"
+                    type="button"
+                    (click)="closeWorkspace(workspaceEntry.id, $event)"
+                  >
+                    <app-icon name="mdiClose"></app-icon>
+                  </button>
+                }
                 <div class="space"></div>
-                <app-copy-edit-delete
-                  [enableEdit]="true"
-                  [enableDelete]="true"
-                  [enableCopy]="false"
-                  (onEvent)="onWorkspaceAction(workspaceEntry.id, $event)"
-                ></app-copy-edit-delete>
+                <div class="workspace-actions">
+                  <app-copy-edit-delete
+                    [enableEdit]="true"
+                    [enableDelete]="true"
+                    [enableCopy]="false"
+                    (onEvent)="onWorkspaceAction(workspaceEntry.id, $event)"
+                  ></app-copy-edit-delete>
+                </div>
               }
             </div>
           </li>
         }
         <li class="center">
-          <button class="button icon-button workspace-add-button" type="button" (click)="openCreateWorkspaceDialog()">+</button>
+          <button class="button icon-button workspace-add-button" type="button" (click)="openCreateWorkspaceDialog()">
+            <app-icon name="mdiPlus"></app-icon>
+          </button>
         </li>
       </ul>
     </section>
@@ -50,6 +72,10 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       :host,
       .workspace-side {
         display: block;
+      }
+
+      :host {
+        container-type: inline-size;
       }
 
       .workspace-grid {
@@ -62,7 +88,14 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         width: 100%;
       }
 
+      @container (max-width: 360px) {
+        .workspace-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
       .workspace-tile {
+        position: relative;
         border-radius: var(--button-border-radius);
         border: 1px solid var(--background-color-20l-ct);
         background-color: var(--background-color-20l-ct);
@@ -71,16 +104,26 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         height: 3.5rem;
       }
 
-      .workspace-tile:hover {
-        background: var(--background-color-20l) !important;
+      .workspace-tile:hover .workspace-actions {
         opacity: 1;
-        outline: none;
+      }
+
+      .workspace-tile:hover .workspace-close-button {
+        opacity: 1;
       }
 
       .workspace-tile.selected {
         background: var(--background-color-20l);
         border: 1px solid var(--background-color-30l);
         outline: none;
+        opacity: 1;
+      }
+
+      .workspace-tile.active {
+        opacity: 1;
+      }
+
+      .workspace-tile.open:not(.selected) {
         opacity: 1;
       }
 
@@ -104,11 +147,11 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         min-width: 24px;
         height: 24px;
         font-size: 16px;
-        border-radius: 50%;
+        border-radius: 0.3rem;
         margin-right: 0.5rem;
         display: grid;
         place-items: center;
-        line-height: 0;
+        line-height: 26px;
         text-transform: capitalize;
       }
 
@@ -141,9 +184,26 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
-        line-height: 0;
-        padding: 0;
+      }
+
+      .workspace-actions {
+        display: flex;
+        flex: 0 0 auto;
+        opacity: 0;
+        transition: opacity 120ms ease-out;
+        transform: translateX(-25px);
+      }
+
+      .workspace-close-button {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        opacity: 0;
+        transition: opacity 120ms ease-out;
+      }
+
+      .workspace-close-button.visible {
+        opacity: 1;
       }
     `,
   ],
@@ -158,6 +218,11 @@ export class WorkspaceSideComponent {
 
   async restoreWorkspace(workspaceId: string): Promise<void> {
     await this.workspaceService.restoreWorkspace(workspaceId);
+  }
+
+  async closeWorkspace(workspaceId: string, event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    await this.workspaceService.closeWorkspace(workspaceId);
   }
 
   openCreateWorkspaceDialog(): void {

@@ -229,11 +229,17 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   }
 
   onBackdropClick() {
+    if (this.config().closeOnBackdropClick === false) {
+      return;
+    }
     this.close();
   }
 
   @HostListener('document:keydown.escape', ['$event'])
   onEsc(e: Event) {
+    if (this.config().closeOnEscape === false) {
+      return;
+    }
     e.stopPropagation();
     this.close();
   }

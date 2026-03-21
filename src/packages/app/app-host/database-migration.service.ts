@@ -74,9 +74,9 @@ export class DatabaseMigrationService {
         continue;
       }
 
-      await this.databaseAccess.transaction(async () => {
-        await this.databaseAccess.execute(databaseMigration.sql);
-        await this.databaseAccess.execute("INSERT INTO schema_migrations (id, checksum) VALUES (?, ?);", [
+      await this.databaseAccess.transaction(async (databaseAccess) => {
+        await databaseAccess.execute(databaseMigration.sql);
+        await databaseAccess.execute("INSERT INTO schema_migrations (id, checksum) VALUES (?, ?);", [
           migrationIdentifier,
           checksum,
         ]);

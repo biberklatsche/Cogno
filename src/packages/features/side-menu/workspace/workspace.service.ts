@@ -5,6 +5,7 @@ import {
   WorkspaceHostPortContract,
   workspaceHostPortToken,
 } from "@cogno/core-sdk";
+import { TerminalBusyStateService } from "@cogno/app/terminal/terminal-busy-state.service";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & { readonly isSelected: boolean };
 
@@ -17,6 +18,7 @@ export class WorkspaceService {
   constructor(
     @Inject(workspaceHostPortToken)
     private readonly workspaceHostPort: WorkspaceHostPortContract,
+    private readonly terminalBusyStateService: TerminalBusyStateService,
     destroyRef: DestroyRef,
   ) {
     this.workspaceHostPort.workspaceEntries$
@@ -66,6 +68,18 @@ export class WorkspaceService {
 
   async restoreWorkspace(workspaceId: string): Promise<void> {
     await this.workspaceHostPort.restoreWorkspace(workspaceId);
+  }
+
+  async closeWorkspace(workspaceId: string): Promise<void> {
+    const shouldProceed = await this.terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(
+      "close this workspace",
+      workspaceId,
+    );
+    if (!shouldProceed) {
+      return;
+    }
+
+    await this.workspaceHostPort.closeWorkspace(workspaceId);
   }
 
   openCreateWorkspaceDialog(): void {

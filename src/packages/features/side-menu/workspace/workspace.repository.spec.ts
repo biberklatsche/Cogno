@@ -12,7 +12,7 @@ describe("WorkspaceRepository", () => {
   beforeEach(() => {
     executeMock = vi.fn().mockResolvedValue(undefined);
     selectMock = vi.fn();
-    transactionMock = vi.fn(async (handler: () => Promise<unknown>) => handler());
+    transactionMock = vi.fn(async (handler: (databaseAccess: DatabaseAccessContract) => Promise<unknown>) => handler(databaseAccess));
 
     const databaseAccess: DatabaseAccessContract = {
       execute: executeMock,
