@@ -1,4 +1,4 @@
-import {DestroyRef, Inject, Injectable, Signal, signal} from "@angular/core";
+import {computed, DestroyRef, Inject, Injectable, Signal, signal} from "@angular/core";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {
     TerminalSearchHostPortContract,
@@ -9,34 +9,38 @@ import {
 } from "@cogno/core-sdk";
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 
+type TerminalSearchState = {
+    query: string;
+    results: ReadonlyArray<TerminalSearchLineResultContract>;
+    caseSensitive: boolean;
+    regularExpression: boolean;
+    activeTerminalId?: TerminalSearchTerminalIdContract;
+    beginBufferLine?: number;
+    endBufferLine?: number;
+    hasMoreResults: boolean;
+    nextCursorBufferLine?: number;
+};
+
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
     private readonly searchInputDebounceMilliseconds = 120;
     private readonly resultPageLineLimit = 200;
     private readonly defaultMatchBackgroundColor = "var(--highlight-color-ct2)";
     private readonly defaultMatchBorderColor = "var(--highlight-color)";
-    private readonly searchQuerySignal = signal<string>("");
-    private readonly searchResultsSignal = signal<ReadonlyArray<TerminalSearchLineResultContract>>([]);
-    private readonly caseSensitiveSignal = signal<boolean>(false);
-    private readonly regularExpressionSignal = signal<boolean>(false);
+    private readonly searchStateSignal = signal<TerminalSearchState>(this.createInitialSearchState());
     private readonly matchBackgroundColorSignal = signal<string>(this.defaultMatchBackgroundColor);
     private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
-    private readonly activeTerminalIdSignal = signal<TerminalSearchTerminalIdContract | undefined>(undefined);
-    private readonly beginBufferLineSignal = signal<number | undefined>(undefined);
-    private readonly endBufferLineSignal = signal<number | undefined>(undefined);
-    private readonly hasMoreResultsSignal = signal<boolean>(false);
-    private readonly nextCursorBufferLineSignal = signal<number | undefined>(undefined);
     private pendingSearchTimeoutHandle?: ReturnType<typeof setTimeout>;
 
-    readonly searchQuery: Signal<string> = this.searchQuerySignal.asReadonly();
-    readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = this.searchResultsSignal.asReadonly();
-    readonly caseSensitive: Signal<boolean> = this.caseSensitiveSignal.asReadonly();
-    readonly regularExpression: Signal<boolean> = this.regularExpressionSignal.asReadonly();
+    readonly searchQuery: Signal<string> = computed(() => this.searchStateSignal().query);
+    readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = computed(() => this.searchStateSignal().results);
+    readonly caseSensitive: Signal<boolean> = computed(() => this.searchStateSignal().caseSensitive);
+    readonly regularExpression: Signal<boolean> = computed(() => this.searchStateSignal().regularExpression);
     readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
     readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
-    readonly beginBufferLine: Signal<number | undefined> = this.beginBufferLineSignal.asReadonly();
-    readonly endBufferLine: Signal<number | undefined> = this.endBufferLineSignal.asReadonly();
-    readonly hasMoreResults: Signal<boolean> = this.hasMoreResultsSignal.asReadonly();
+    readonly beginBufferLine: Signal<number | undefined> = computed(() => this.searchStateSignal().beginBufferLine);
+    readonly endBufferLine: Signal<number | undefined> = computed(() => this.searchStateSignal().endBufferLine);
+    readonly hasMoreResults: Signal<boolean> = computed(() => this.searchStateSignal().hasMoreResults);
 
     constructor(
         @Inject(terminalSearchHostPortToken)
@@ -67,56 +71,68 @@ export class TerminalSearchService {
                     return;
                 }
 
-                this.activeTerminalIdSignal.set(terminalSearchPanelPayload.terminalId);
-                this.beginBufferLineSignal.set(terminalSearchPanelPayload.beginBufferLine);
-                this.endBufferLineSignal.set(terminalSearchPanelPayload.endBufferLine);
+                this.applyPanelRequest(
+                    terminalSearchPanelPayload.terminalId,
+                    terminalSearchPanelPayload.beginBufferLine,
+                    terminalSearchPanelPayload.endBufferLine,
+                );
             });
     }
 
     submitSearchQuery(query: string): void {
-        this.searchQuerySignal.set(query);
+        this.updateSearchState({
+            query,
+        });
         this.scheduleSearch(query);
     }
 
     repeatSearch(): void {
         this.cancelPendingSearch();
-        this.searchInActiveTerminal(this.searchQuerySignal(), undefined);
+        this.searchInActiveTerminal(this.searchStateSignal().query, undefined);
     }
 
     loadMoreSearchResults(): void {
-        const nextCursorBufferLine = this.nextCursorBufferLineSignal();
+        const nextCursorBufferLine = this.searchStateSignal().nextCursorBufferLine;
         if (nextCursorBufferLine === undefined) {
             return;
         }
 
         this.cancelPendingSearch();
-        this.searchInActiveTerminal(this.searchQuerySignal(), nextCursorBufferLine);
+        this.searchInActiveTerminal(this.searchStateSignal().query, nextCursorBufferLine);
     }
 
     toggleCaseSensitive(): void {
-        this.caseSensitiveSignal.update((isCaseSensitive: boolean) => !isCaseSensitive);
+        this.updateSearchState({
+            caseSensitive: !this.searchStateSignal().caseSensitive,
+        });
         this.repeatSearch();
     }
 
     toggleRegularExpression(): void {
-        this.regularExpressionSignal.update((isRegularExpressionEnabled: boolean) => !isRegularExpressionEnabled);
+        this.updateSearchState({
+            regularExpression: !this.searchStateSignal().regularExpression,
+        });
         this.repeatSearch();
     }
 
     updateBeginBufferLine(event: Event): void {
         const inputElement = event.target as HTMLInputElement;
-        this.beginBufferLineSignal.set(this.parseBufferLine(inputElement.value));
-        this.scheduleSearch(this.searchQuerySignal());
+        this.updateSearchState({
+            beginBufferLine: this.parseBufferLine(inputElement.value),
+        });
+        this.scheduleSearch(this.searchStateSignal().query);
     }
 
     updateEndBufferLine(event: Event): void {
         const inputElement = event.target as HTMLInputElement;
-        this.endBufferLineSignal.set(this.parseBufferLine(inputElement.value));
-        this.scheduleSearch(this.searchQuerySignal());
+        this.updateSearchState({
+            endBufferLine: this.parseBufferLine(inputElement.value),
+        });
+        this.scheduleSearch(this.searchStateSignal().query);
     }
 
     revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
-        const activeTerminalId = this.activeTerminalIdSignal();
+        const activeTerminalId = this.searchStateSignal().activeTerminalId;
         if (!activeTerminalId) {
             return;
         }
@@ -128,9 +144,9 @@ export class TerminalSearchService {
 
         const revealPayload: TerminalSearchRevealRequestContract = {
             terminalId: activeTerminalId,
-            query: this.searchQuerySignal().trim(),
-            caseSensitive: this.caseSensitiveSignal(),
-            regularExpression: this.regularExpressionSignal(),
+            query: this.searchStateSignal().query.trim(),
+            caseSensitive: this.searchStateSignal().caseSensitive,
+            regularExpression: this.searchStateSignal().regularExpression,
             lineNumber: searchLine.lineNumber,
             matchStartIndex: firstLineMatch.startIndex,
             matchLength: firstLineMatch.endIndex - firstLineMatch.startIndex,
@@ -141,7 +157,7 @@ export class TerminalSearchService {
 
     handleSideMenuOpen(): void {
         this.registerKeybindListener();
-        const currentQuery = this.searchQuerySignal();
+        const currentQuery = this.searchStateSignal().query;
         if (currentQuery.length > 0) {
             this.searchInActiveTerminal(currentQuery, undefined);
         }
@@ -151,15 +167,7 @@ export class TerminalSearchService {
         this.cancelPendingSearch();
         this.unregisterKeybindListener();
         this.clearDecorationsInAllTerminals();
-        this.searchQuerySignal.set("");
-        this.searchResultsSignal.set([]);
-        this.caseSensitiveSignal.set(false);
-        this.regularExpressionSignal.set(false);
-        this.activeTerminalIdSignal.set(undefined);
-        this.beginBufferLineSignal.set(undefined);
-        this.endBufferLineSignal.set(undefined);
-        this.hasMoreResultsSignal.set(false);
-        this.nextCursorBufferLineSignal.set(undefined);
+        this.searchStateSignal.set(this.createInitialSearchState());
     }
 
     private registerKeybindListener(): void {
@@ -188,23 +196,28 @@ export class TerminalSearchService {
     }
 
     private searchInActiveTerminal(query: string, cursorBufferLine: number | undefined): void {
-        const activeTerminalId = this.activeTerminalIdSignal() ?? this.terminalSearchHostPort.getFocusedTerminalId();
-        this.activeTerminalIdSignal.set(activeTerminalId);
+        const activeTerminalId = this.searchStateSignal().activeTerminalId ?? this.terminalSearchHostPort.getFocusedTerminalId();
+        this.updateSearchState({
+            activeTerminalId,
+        });
 
         if (!activeTerminalId) {
-            this.searchResultsSignal.set([]);
-            this.hasMoreResultsSignal.set(false);
-            this.nextCursorBufferLineSignal.set(undefined);
+            this.updateSearchState({
+                results: [],
+                hasMoreResults: false,
+                nextCursorBufferLine: undefined,
+            });
             return;
         }
 
+        const searchState = this.searchStateSignal();
         this.terminalSearchHostPort.requestSearch({
             terminalId: activeTerminalId,
             query,
-            caseSensitive: this.caseSensitiveSignal(),
-            regularExpression: this.regularExpressionSignal(),
-            beginBufferLine: this.beginBufferLineSignal(),
-            endBufferLine: this.endBufferLineSignal(),
+            caseSensitive: searchState.caseSensitive,
+            regularExpression: searchState.regularExpression,
+            beginBufferLine: searchState.beginBufferLine,
+            endBufferLine: searchState.endBufferLine,
             cursorBufferLine,
             resultLineLimit: this.resultPageLineLimit,
         });
@@ -226,41 +239,37 @@ export class TerminalSearchService {
         nextCursorBufferLine?: number;
         lines: ReadonlyArray<TerminalSearchLineResultContract>;
     }): void {
-        if (terminalSearchResult.terminalId !== this.activeTerminalIdSignal()) {
+        const searchState = this.searchStateSignal();
+        if (terminalSearchResult.terminalId !== searchState.activeTerminalId) {
             return;
         }
 
-        if (terminalSearchResult.query !== this.searchQuerySignal().trim()) {
+        if (terminalSearchResult.query !== searchState.query.trim()) {
             return;
         }
 
-        if (terminalSearchResult.caseSensitive !== this.caseSensitiveSignal()) {
+        if (terminalSearchResult.caseSensitive !== searchState.caseSensitive) {
             return;
         }
 
-        if (terminalSearchResult.regularExpression !== this.regularExpressionSignal()) {
+        if (terminalSearchResult.regularExpression !== searchState.regularExpression) {
             return;
         }
 
-        if (terminalSearchResult.beginBufferLine !== this.beginBufferLineSignal()) {
+        if (terminalSearchResult.beginBufferLine !== searchState.beginBufferLine) {
             return;
         }
 
-        if (terminalSearchResult.endBufferLine !== this.endBufferLineSignal()) {
+        if (terminalSearchResult.endBufferLine !== searchState.endBufferLine) {
             return;
         }
-
-        this.hasMoreResultsSignal.set(terminalSearchResult.hasMore);
-        this.nextCursorBufferLineSignal.set(terminalSearchResult.nextCursorBufferLine);
 
         if (terminalSearchResult.cursorBufferLine === undefined) {
-            this.searchResultsSignal.set(terminalSearchResult.lines);
+            this.applySearchResultPage(terminalSearchResult.lines, terminalSearchResult.hasMore, terminalSearchResult.nextCursorBufferLine, false);
             return;
         }
 
-        this.searchResultsSignal.update((currentSearchResults) => {
-            return [...currentSearchResults, ...terminalSearchResult.lines];
-        });
+        this.applySearchResultPage(terminalSearchResult.lines, terminalSearchResult.hasMore, terminalSearchResult.nextCursorBufferLine, true);
     }
 
     private updateSearchColors(matchBackgroundColor?: string, matchBorderColor?: string): void {
@@ -295,5 +304,58 @@ export class TerminalSearchService {
         }
 
         return parsedValue;
+    }
+
+    private applyPanelRequest(
+        activeTerminalId: TerminalSearchTerminalIdContract | undefined,
+        beginBufferLine: number | undefined,
+        endBufferLine: number | undefined,
+    ): void {
+        this.updateSearchState({
+            activeTerminalId,
+            beginBufferLine,
+            endBufferLine,
+            results: [],
+            hasMoreResults: false,
+            nextCursorBufferLine: undefined,
+        });
+    }
+
+    private applySearchResultPage(
+        lines: ReadonlyArray<TerminalSearchLineResultContract>,
+        hasMoreResults: boolean,
+        nextCursorBufferLine: number | undefined,
+        appendResults: boolean,
+    ): void {
+        const nextResults = appendResults
+            ? [...this.searchStateSignal().results, ...lines]
+            : [...lines];
+
+        this.updateSearchState({
+            results: nextResults,
+            hasMoreResults,
+            nextCursorBufferLine,
+        });
+    }
+
+    private updateSearchState(searchStateUpdates: Partial<TerminalSearchState>): void {
+        this.searchStateSignal.update((searchState) => ({
+            ...searchState,
+            ...searchStateUpdates,
+        }));
+    }
+
+    private createInitialSearchState(): TerminalSearchState {
+        return {
+            query: "",
+            results: [],
+            caseSensitive: false,
+            regularExpression: false,
+            activeTerminalId: undefined,
+            beginBufferLine: undefined,
+            endBufferLine: undefined,
+            hasMoreResults: false,
+            nextCursorBufferLine: undefined,
+        };
     }
 }
