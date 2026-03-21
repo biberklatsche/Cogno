@@ -17,6 +17,7 @@ import {ShellType} from "../app/config/+models/config";
 import {TerminalSession} from "../app/terminal/+state/terminal.session";
 import { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -33,6 +34,7 @@ let stateManager: TerminalStateManager | undefined;
 let terminalSession: TerminalSession | undefined;
 let terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService | undefined;
 let appWiringService: AppWiringService | undefined;
+let terminalBusyStateService: TerminalBusyStateService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -151,10 +153,25 @@ export function getWindowService(): WindowService {
     if(!windowService) {
         windowService = new WindowService(
             getAppBus(),
+            getTerminalBusyStateService(),
             getDestroyRef()
         );
     }
     return windowService;
+}
+
+export function getTerminalBusyStateService(): TerminalBusyStateService {
+    if (!terminalBusyStateService) {
+        terminalBusyStateService = {
+            confirmProceedIfNoBusyTerminals: vi.fn().mockResolvedValue(true),
+            confirmProceedIfNoBusyTerminalsInWorkspace: vi.fn().mockResolvedValue(true),
+            hasBusyTerminals: vi.fn().mockReturnValue(false),
+            hasBusyTerminalsInWorkspace: vi.fn().mockReturnValue(false),
+            getBusyTerminalCount: vi.fn().mockReturnValue(0),
+        } as unknown as TerminalBusyStateService;
+    }
+
+    return terminalBusyStateService;
 }
 
 export function getFocusHandler(terminalId: TerminalId): FocusHandler {
@@ -188,4 +205,5 @@ export function clear() {
     terminalSession = undefined;
     terminalAutocompleteFeatureSuggestorService = undefined;
     appWiringService = undefined;
+    terminalBusyStateService = undefined;
 }

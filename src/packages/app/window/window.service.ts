@@ -6,6 +6,7 @@ import {invoke} from "@tauri-apps/api/core";
 import {Logger} from "../_tauri/logger";
 import {Process} from "../_tauri/process";
 import {ActionFired} from "../action/action.models";
+import { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
 
 @Injectable({
   providedIn: 'root'
@@ -13,13 +14,20 @@ import {ActionFired} from "../action/action.models";
 export class WindowService {
   private isClosing = false;
 
-  constructor(bus: AppBus, ref: DestroyRef) {
-      bus.publish({type: "InitConfigCommand"});
-      bus.on$({path: ['app', 'action'], type: 'ActionFired'})
+  constructor(
+      private readonly bus: AppBus,
+      private readonly terminalBusyStateService: TerminalBusyStateService,
+      ref: DestroyRef,
+  ) {
+      this.bus.publish({type: "InitConfigCommand"});
+      this.bus.on$({path: ['app', 'action'], type: 'ActionFired'})
           .pipe(takeUntilDestroyed(ref))
           .subscribe(async(event)=> {
               switch (event.payload) {
                   case 'quit':
+                      if (!(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals('quit the application'))) {
+                          return;
+                      }
                       // Closes all windows
                       await Process.exit();
                       event.performed = true;
@@ -33,6 +41,9 @@ export class WindowService {
                   case 'close_window':
                       // Only close if all pre-close handlers are done (marked by 'ready_to_close')
                       if (event.args?.includes('workspace_saved')) {
+                          if (!(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals('close the application window'))) {
+                              return;
+                          }
                           this.isClosing = true;
                           AppWindow.close().then(() => Logger.debug('close window'));
                           event.performed = true;
@@ -52,7 +63,7 @@ export class WindowService {
 
               // Fire close_window event - other services can intercept to do cleanup
               // They should re-fire with 'ready_to_close' when done
-              bus.publish(ActionFired.create('close_window', undefined, []));
+              this.bus.publish(ActionFired.create('close_window', undefined, []));
           });
   }
 }

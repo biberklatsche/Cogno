@@ -13,6 +13,7 @@ import {
 } from '../terminal/+bus/actions';
 import {
     PtyInitializedEvent,
+    TerminalBusyChangedEvent,
     TerminalCwdChangedEvent,
     TerminalSearchRevealRequestedEvent,
     TerminalSearchRequestedEvent,
@@ -59,6 +60,7 @@ export type AppMessage =
     | ThemeChangedEvent
     | InitConfigAction
     | PtyInitializedEvent
+    | TerminalBusyChangedEvent
     | TerminalCwdChangedEvent
     | TerminalTitleChangedEvent
     | TerminalSearchRequestedEvent

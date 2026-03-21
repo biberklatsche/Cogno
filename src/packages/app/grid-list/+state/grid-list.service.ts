@@ -49,6 +49,19 @@ export class GridListService {
         this.syncActiveWorkspaceState();
     }
 
+    findWorkspaceIdentifierByTerminalId(terminalId: TerminalId): string | undefined {
+        for (const [workspaceIdentifier, gridList] of this.gridListByWorkspaceIdentifier.entries()) {
+            const terminalExistsInWorkspace = Object.values(gridList).some((grid) =>
+                grid.tree.first((node) => node.isLeaf && node.data?.terminalId === terminalId),
+            );
+            if (terminalExistsInWorkspace) {
+                return workspaceIdentifier;
+            }
+        }
+
+        return undefined;
+    }
+
     moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
         const sourceWorkspaceIdentifier = this.activeWorkspaceIdentifier;
         if (!sourceWorkspaceIdentifier || sourceWorkspaceIdentifier === targetWorkspaceIdentifier) {
