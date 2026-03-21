@@ -38,6 +38,7 @@ import {TerminalNotificationHandler} from "./handler/terminal-notification.handl
 import {NotificationChannels} from "../../notification/+bus/events";
 import { NotificationChannelContract } from "@cogno/core-sdk";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
+import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 
 type NotificationChannelId = string;
 
@@ -67,6 +68,7 @@ export class TerminalSession {
         private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
         private dialog: DialogService,
         private wiringService: AppWiringService,
+        private contextMenuOverlayService: ContextMenuOverlayService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -124,6 +126,7 @@ export class TerminalSession {
             this.disposables.push(this.renderer.register(new CommandLineObserver(
                 this.stateManager,
                 this.configService.getPromptSegments(),
+                this.contextMenuOverlayService,
                 this.completedCommandNotificationHandler.handleCompletedCommand,
             )));
             const shellDefinition = this.wiringService

@@ -3,6 +3,7 @@ import { IDisposable } from '../../../../common/models/models';
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
 import {TerminalStateManager} from "../../state";
+import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 
 
 export class MarkerManager implements IDisposable {
@@ -10,8 +11,12 @@ export class MarkerManager implements IDisposable {
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
 
-    constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
-        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments);
+    constructor(
+        private stateManager: TerminalStateManager,
+        promptSegments: PromptSegment[],
+        contextMenuOverlayService: ContextMenuOverlayService,
+    ) {
+        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments, contextMenuOverlayService);
     }
 
     setTerminal(terminal: Terminal) {
@@ -151,13 +156,16 @@ export class MarkerManager implements IDisposable {
         const decoration = this._terminal.registerDecoration({
             marker,
             x: 0,
-            width: 1,
+            width: this._terminal.cols,
             anchor: 'left'
         });
 
         if (decoration) {
             decoration.onRender((element) => {
-                this._renderer!.render(element, commandIndex);
+                this._renderer!.render(element, {
+                    commandIndex,
+                    getCommandOutput: () => this.extractCommandOutput(lineIndex),
+                });
             });
             decoration.onDispose(() => {
                 marker.dispose();
@@ -168,6 +176,44 @@ export class MarkerManager implements IDisposable {
 
     private findCommandIndex(commandId: string | undefined): number {
         return this.stateManager.commands.findIndex(c => c.id === commandId);
+    }
+
+    private extractCommandOutput(lineIndex: number): string {
+        if (!this._terminal) {
+            return "";
+        }
+
+        const nextMarkerLineIndex = this.findNextMarkerLineIndex(lineIndex);
+        const outputLineTexts: string[] = [];
+        for (let currentLineIndex = lineIndex + 1; currentLineIndex < nextMarkerLineIndex; currentLineIndex++) {
+            const line = this._terminal.buffer.active.getLine(currentLineIndex);
+            if (!line) {
+                continue;
+            }
+
+            outputLineTexts.push(line.translateToString(false));
+        }
+
+        return outputLineTexts.join("\n").trimEnd();
+    }
+
+    private findNextMarkerLineIndex(lineIndex: number): number {
+        if (!this._terminal) {
+            return lineIndex + 1;
+        }
+
+        for (let currentLineIndex = lineIndex + 1; currentLineIndex < this._terminal.buffer.active.length; currentLineIndex++) {
+            const line = this._terminal.buffer.active.getLine(currentLineIndex);
+            if (!line) {
+                continue;
+            }
+
+            if (line.translateToString().startsWith("^^#")) {
+                return currentLineIndex;
+            }
+        }
+
+        return this._terminal.buffer.active.length;
     }
 
     dispose() {

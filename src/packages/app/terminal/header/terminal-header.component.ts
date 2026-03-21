@@ -56,7 +56,7 @@ import { timespan } from "../../common/timespan/timespan";
           class="button icon-button terminal-menu-button"
           type="button"
           (click)="openMenu($event)">
-          <app-icon name="mdiDotsVertical"></app-icon>
+            <app-icon name="mdiDotsVertical"></app-icon>
         </button>
       </span>
     </div>

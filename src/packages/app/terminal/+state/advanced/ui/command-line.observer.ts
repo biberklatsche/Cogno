@@ -7,6 +7,7 @@ import {MarkerManager} from "./marker-manager";
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {debounceTime, Subject} from "rxjs";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
+import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 
 export class CommandLineObserver implements ITerminalHandler {
 
@@ -18,9 +19,10 @@ export class CommandLineObserver implements ITerminalHandler {
     constructor(
         private stateManager: TerminalStateManager,
         promptSegments: PromptSegment[],
+        contextMenuOverlayService: ContextMenuOverlayService,
         private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
     ) {
-        this._markerManager = new MarkerManager(stateManager, promptSegments);
+        this._markerManager = new MarkerManager(stateManager, promptSegments, contextMenuOverlayService);
 
         // Debounce marker refresh to improve performance with long outputs
         // 16ms = ~60fps, which batches rapid render events without noticeable lag

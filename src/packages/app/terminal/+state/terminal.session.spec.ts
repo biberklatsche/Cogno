@@ -12,6 +12,7 @@ import {DialogRef} from "../../common/dialog/dialog-ref";
 import { PathFactory } from "@cogno/core-host";
 import { NotificationChannelContract } from "@cogno/core-sdk";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -47,6 +48,7 @@ describe('TerminalSession', () => {
     let mockDialogService: DialogService;
     let mockProcessInfoDialogReference: DialogRef<void>;
     let mockWiringService: AppWiringService;
+    let mockContextMenuOverlayService: ContextMenuOverlayService;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -86,6 +88,10 @@ describe('TerminalSession', () => {
             ] satisfies ReadonlyArray<NotificationChannelContract>),
         } as unknown as AppWiringService;
 
+        mockContextMenuOverlayService = {
+            openContextForElement: vi.fn(),
+        } as unknown as ContextMenuOverlayService;
+
         session = new TerminalSession(
             mockConfigService,
             mockBus,
@@ -93,6 +99,7 @@ describe('TerminalSession', () => {
             mockFeatureSuggestorService,
             mockDialogService,
             mockWiringService,
+            mockContextMenuOverlayService,
         );
     });
 
@@ -106,6 +113,7 @@ describe('TerminalSession', () => {
             mockFeatureSuggestorService,
             mockDialogService,
             mockWiringService,
+            mockContextMenuOverlayService,
         );
         
         expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));

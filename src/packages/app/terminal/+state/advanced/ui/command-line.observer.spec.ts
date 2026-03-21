@@ -3,12 +3,14 @@ import { TerminalMockFactory } from '../../../../../__test__/mocks/terminal-mock
 import { CommandLineObserver } from './command-line.observer';
 import { TerminalStateManager } from '../../state';
 import { AppBus } from '../../../../app-bus/app-bus';
+import { ContextMenuOverlayService } from '../../../../menu/context-menu-overlay/context-menu-overlay.service';
 
 describe('CommandLineObserver', () => {
   let observer: CommandLineObserver;
   let mockTerminal: any;
   let stateManager: TerminalStateManager;
   let mockBus: AppBus;
+  let contextMenuOverlayService: ContextMenuOverlayService;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -17,7 +19,10 @@ describe('CommandLineObserver', () => {
     vi.spyOn(mockBus, 'publish');
     stateManager = new TerminalStateManager(mockBus);
     stateManager.initialize(terminalId, 'Bash' as any);
-    observer = new CommandLineObserver(stateManager, []);
+    contextMenuOverlayService = {
+      openContextForElement: vi.fn(),
+    } as unknown as ContextMenuOverlayService;
+    observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 

@@ -5,11 +5,21 @@ import { PromptSegment } from '../../../../config/+models/prompt-config';
 import { AppBus } from '../../../../app-bus/app-bus';
 import { PathFactory } from '@cogno/core-host';
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { ContextMenuOverlayService } from '../../../../menu/context-menu-overlay/context-menu-overlay.service';
+import { Clipboard } from '../../../../_tauri/clipboard';
+
+vi.mock('../../../../_tauri/clipboard', () => ({
+    Clipboard: {
+        writeText: vi.fn(),
+        readText: vi.fn(),
+    },
+}));
 
 describe('PromptMarkerRenderer', () => {
     let stateManager: TerminalStateManager;
     let busMock: AppBus;
     let hostElement: HTMLElement;
+    let contextMenuOverlayService: ContextMenuOverlayService;
 
     beforeEach(() => {
         PathFactory.setDefinitions([
@@ -20,6 +30,9 @@ describe('PromptMarkerRenderer', () => {
         stateManager = new TerminalStateManager(busMock);
         stateManager.initialize('test-term', 'Bash' as any);
         hostElement = document.createElement('div');
+        contextMenuOverlayService = {
+            openContextForElement: vi.fn(),
+        } as unknown as ContextMenuOverlayService;
     });
 
     it('should render default label when no segments are provided', () => {
@@ -209,5 +222,61 @@ describe('PromptMarkerRenderer', () => {
         renderer.render(hostElement, undefined);
 
         expect(hostElement.textContent).toBe('');
+    });
+
+    it('should render a menu button and open a command menu', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getCommandOutput = vi.fn().mockReturnValue('test output');
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService);
+        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        expect(menuButton).toBeTruthy();
+        expect(getCommandOutput).not.toHaveBeenCalled();
+
+        menuButton.click();
+
+        expect(getCommandOutput).toHaveBeenCalledTimes(1);
+        expect(contextMenuOverlayService.openContextForElement).toHaveBeenCalledWith(
+            menuButton,
+            expect.objectContaining({
+                items: expect.arrayContaining([
+                    expect.objectContaining({ label: 'Copy Command', disabled: false }),
+                    expect.objectContaining({ label: 'Copy Output', disabled: false }),
+                ]),
+            }),
+            { horizontalAlign: 'right' },
+        );
+    });
+
+    it('should copy the command text from the marker menu action', async () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getCommandOutput = vi.fn().mockReturnValue('test output');
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService);
+        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        menuButton.click();
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+        const copyCommandItem = menuItems.find((item) => item.label === 'Copy Command');
+
+        await copyCommandItem?.action?.();
+
+        expect(Clipboard.writeText).toHaveBeenCalledWith('pnpm test');
+    });
+
+    it('should not resolve command output before the menu is opened', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getCommandOutput = vi.fn().mockReturnValue('test output');
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService);
+        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+        expect(getCommandOutput).not.toHaveBeenCalled();
     });
 });
