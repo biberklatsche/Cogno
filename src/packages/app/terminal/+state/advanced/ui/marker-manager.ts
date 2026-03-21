@@ -4,6 +4,7 @@ import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
 import {TerminalStateManager} from "../../state";
 import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
+import { AppBus } from "../../../../app-bus/app-bus";
 
 
 export class MarkerManager implements IDisposable {
@@ -15,8 +16,9 @@ export class MarkerManager implements IDisposable {
         private stateManager: TerminalStateManager,
         promptSegments: PromptSegment[],
         contextMenuOverlayService: ContextMenuOverlayService,
+        appBus: AppBus,
     ) {
-        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments, contextMenuOverlayService);
+        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments, contextMenuOverlayService, appBus);
     }
 
     setTerminal(terminal: Terminal) {
@@ -165,6 +167,7 @@ export class MarkerManager implements IDisposable {
                 this._renderer!.render(element, {
                     commandIndex,
                     getCommandOutput: () => this.extractCommandOutput(lineIndex),
+                    getBlockRange: () => this.buildBlockRange(lineIndex),
                 });
             });
             decoration.onDispose(() => {
@@ -214,6 +217,17 @@ export class MarkerManager implements IDisposable {
         }
 
         return this._terminal.buffer.active.length;
+    }
+
+    private buildBlockRange(lineIndex: number): { beginBufferLine: number; endBufferLine: number } {
+        const nextMarkerLineIndex = this.findNextMarkerLineIndex(lineIndex);
+        const beginBufferLine = lineIndex + 2;
+        const endBufferLine = nextMarkerLineIndex;
+
+        return {
+            beginBufferLine,
+            endBufferLine,
+        };
     }
 
     dispose() {

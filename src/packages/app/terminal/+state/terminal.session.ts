@@ -127,6 +127,7 @@ export class TerminalSession {
                 this.stateManager,
                 this.configService.getPromptSegments(),
                 this.contextMenuOverlayService,
+                this.bus,
                 this.completedCommandNotificationHandler.handleCompletedCommand,
             )));
             const shellDefinition = this.wiringService

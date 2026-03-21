@@ -22,7 +22,7 @@ describe('CommandLineObserver', () => {
     contextMenuOverlayService = {
       openContextForElement: vi.fn(),
     } as unknown as ContextMenuOverlayService;
-    observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService);
+    observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService, mockBus);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 

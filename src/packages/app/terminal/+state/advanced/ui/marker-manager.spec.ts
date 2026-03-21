@@ -10,16 +10,17 @@ describe('MarkerManager', () => {
     let stateManager: TerminalStateManager;
     let mockTerminal: any;
     let contextMenuOverlayService: ContextMenuOverlayService;
+    let mockBus: AppBus;
 
     beforeEach(() => {
-        const mockBus = new AppBus();
+        mockBus = new AppBus();
         vi.spyOn(mockBus, 'publish');
         stateManager = new TerminalStateManager(mockBus);
         stateManager.initialize('test-id', 'Bash' as any);
         contextMenuOverlayService = {
             openContextForElement: vi.fn(),
         } as unknown as ContextMenuOverlayService;
-        markerManager = new MarkerManager(stateManager, [], contextMenuOverlayService);
+        markerManager = new MarkerManager(stateManager, [], contextMenuOverlayService, mockBus);
         mockTerminal = TerminalMockFactory.createTerminal();
         mockTerminal.registerMarker = vi.fn().mockReturnValue({ dispose: vi.fn(), line: 0 });
         mockTerminal.registerDecoration = vi.fn().mockReturnValue({ 

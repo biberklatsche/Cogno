@@ -78,6 +78,8 @@ export class TerminalSearchHandler implements ITerminalHandler {
         const query = payload.query.trim();
         const caseSensitive = payload.caseSensitive;
         const regularExpression = payload.regularExpression;
+        const beginBufferLine = payload.beginBufferLine;
+        const endBufferLine = payload.endBufferLine;
         if (query.length === 0) {
             this.searchAddon?.clearDecorations();
             if (payload.terminalId === this.terminalId) {
@@ -96,7 +98,7 @@ export class TerminalSearchHandler implements ITerminalHandler {
 
         this.searchAddon?.findNext(query, searchOptions);
 
-        const matchingLines = this.collectMatchingLines(searchExpression);
+        const matchingLines = this.collectMatchingLines(searchExpression, beginBufferLine, endBufferLine);
         this.publishSearchResult(query, matchingLines, caseSensitive, regularExpression);
     }
 
@@ -153,15 +155,24 @@ export class TerminalSearchHandler implements ITerminalHandler {
         });
     }
 
-    private collectMatchingLines(searchExpression: RegExp): TerminalSearchLineResult[] {
+    private collectMatchingLines(
+        searchExpression: RegExp,
+        beginBufferLine?: number,
+        endBufferLine?: number,
+    ): TerminalSearchLineResult[] {
         const activeBuffer = this.terminal?.buffer.active;
         if (!activeBuffer) {
             return [];
         }
 
         const matchingLines: TerminalSearchLineResult[] = [];
+        const normalizedBeginBufferLine = Math.max(1, beginBufferLine ?? 1);
+        const normalizedEndBufferLine = Math.min(activeBuffer.length, endBufferLine ?? activeBuffer.length);
+        if (normalizedBeginBufferLine > normalizedEndBufferLine) {
+            return [];
+        }
 
-        for (let lineNumber = 0; lineNumber < activeBuffer.length; lineNumber++) {
+        for (let lineNumber = normalizedBeginBufferLine - 1; lineNumber < normalizedEndBufferLine; lineNumber++) {
             const lineText = activeBuffer.getLine(lineNumber)?.translateToString(true) ?? "";
             if (lineText.length === 0) {
                 continue;

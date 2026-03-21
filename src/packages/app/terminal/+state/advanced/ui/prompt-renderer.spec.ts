@@ -229,7 +229,7 @@ describe('PromptMarkerRenderer', () => {
         stateManager.commands[0].set('command', 'pnpm test');
         const getCommandOutput = vi.fn().mockReturnValue('test output');
 
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService);
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
         renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
 
         const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
@@ -245,6 +245,7 @@ describe('PromptMarkerRenderer', () => {
                 items: expect.arrayContaining([
                     expect.objectContaining({ label: 'Copy Command', disabled: false }),
                     expect.objectContaining({ label: 'Copy Output', disabled: false }),
+                    expect.objectContaining({ label: 'Filter Block', disabled: true }),
                 ]),
             }),
             { horizontalAlign: 'right' },
@@ -256,7 +257,7 @@ describe('PromptMarkerRenderer', () => {
         stateManager.commands[0].set('command', 'pnpm test');
         const getCommandOutput = vi.fn().mockReturnValue('test output');
 
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService);
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
         renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
 
         const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
@@ -274,9 +275,44 @@ describe('PromptMarkerRenderer', () => {
         stateManager.commands[0].set('command', 'pnpm test');
         const getCommandOutput = vi.fn().mockReturnValue('test output');
 
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService);
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
         renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
 
         expect(getCommandOutput).not.toHaveBeenCalled();
+    });
+
+    it('should publish search open and block filter events for filter block', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getBlockRange = vi.fn().mockReturnValue({
+            beginBufferLine: 12,
+            endBufferLine: 20,
+        });
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, { commandIndex: 0, getBlockRange });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        menuButton.click();
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+        const filterBlockItem = menuItems.find((item) => item.label === 'Filter Block');
+
+        filterBlockItem?.action?.();
+
+        expect(getBlockRange).toHaveBeenCalledTimes(1);
+        expect(busMock.publish).toHaveBeenCalledWith(expect.objectContaining({
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'open_terminal_search',
+        }));
+        expect(busMock.publish).toHaveBeenCalledWith(expect.objectContaining({
+            path: ['app', 'terminal'],
+            type: 'TerminalSearchPanelRequested',
+            payload: expect.objectContaining({
+                terminalId: 'test-term',
+                beginBufferLine: 12,
+                endBufferLine: 20,
+            }),
+        }));
     });
 });

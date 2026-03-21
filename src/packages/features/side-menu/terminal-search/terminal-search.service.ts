@@ -7,6 +7,7 @@ import {
     TerminalSearchTerminalIdContract,
     terminalSearchHostPortToken
 } from "@cogno/core-sdk";
+import { AppBus } from "@cogno/app/app-bus/app-bus";
 
 @Injectable({providedIn: "root"})
 export class TerminalSearchService {
@@ -19,6 +20,8 @@ export class TerminalSearchService {
     private readonly matchBackgroundColorSignal = signal<string>(this.defaultMatchBackgroundColor);
     private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
     private readonly activeTerminalIdSignal = signal<TerminalSearchTerminalIdContract | undefined>(undefined);
+    private readonly beginBufferLineSignal = signal<number | undefined>(undefined);
+    private readonly endBufferLineSignal = signal<number | undefined>(undefined);
 
     readonly searchQuery: Signal<string> = this.searchQuerySignal.asReadonly();
     readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = this.searchResultsSignal.asReadonly();
@@ -26,10 +29,13 @@ export class TerminalSearchService {
     readonly regularExpression: Signal<boolean> = this.regularExpressionSignal.asReadonly();
     readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
     readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
+    readonly beginBufferLine: Signal<number | undefined> = this.beginBufferLineSignal.asReadonly();
+    readonly endBufferLine: Signal<number | undefined> = this.endBufferLineSignal.asReadonly();
 
     constructor(
         @Inject(terminalSearchHostPortToken)
         private readonly terminalSearchHostPort: TerminalSearchHostPortContract,
+        private readonly appBus: AppBus,
         private readonly destroyRef: DestroyRef,
     ) {
         this.terminalSearchHostPort.terminalSearchResult$
@@ -45,6 +51,19 @@ export class TerminalSearchService {
                     terminalSearchColorConfig.matchBackgroundColor,
                     terminalSearchColorConfig.matchBorderColor,
                 );
+            });
+
+        this.appBus.onType$("TerminalSearchPanelRequested", { path: ["app", "terminal"] })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((terminalSearchPanelRequestedEvent) => {
+                const terminalSearchPanelPayload = terminalSearchPanelRequestedEvent.payload;
+                if (!terminalSearchPanelPayload) {
+                    return;
+                }
+
+                this.activeTerminalIdSignal.set(terminalSearchPanelPayload.terminalId);
+                this.beginBufferLineSignal.set(terminalSearchPanelPayload.beginBufferLine);
+                this.endBufferLineSignal.set(terminalSearchPanelPayload.endBufferLine);
             });
     }
 
@@ -64,6 +83,18 @@ export class TerminalSearchService {
 
     toggleRegularExpression(): void {
         this.regularExpressionSignal.update((isRegularExpressionEnabled: boolean) => !isRegularExpressionEnabled);
+        this.repeatSearch();
+    }
+
+    updateBeginBufferLine(event: Event): void {
+        const inputElement = event.target as HTMLInputElement;
+        this.beginBufferLineSignal.set(this.parseBufferLine(inputElement.value));
+        this.repeatSearch();
+    }
+
+    updateEndBufferLine(event: Event): void {
+        const inputElement = event.target as HTMLInputElement;
+        this.endBufferLineSignal.set(this.parseBufferLine(inputElement.value));
         this.repeatSearch();
     }
 
@@ -107,6 +138,8 @@ export class TerminalSearchService {
         this.caseSensitiveSignal.set(false);
         this.regularExpressionSignal.set(false);
         this.activeTerminalIdSignal.set(undefined);
+        this.beginBufferLineSignal.set(undefined);
+        this.endBufferLineSignal.set(undefined);
     }
 
     private registerKeybindListener(): void {
@@ -118,7 +151,7 @@ export class TerminalSearchService {
     }
 
     private searchInActiveTerminal(query: string): void {
-        const activeTerminalId = this.terminalSearchHostPort.getFocusedTerminalId();
+        const activeTerminalId = this.activeTerminalIdSignal() ?? this.terminalSearchHostPort.getFocusedTerminalId();
         this.activeTerminalIdSignal.set(activeTerminalId);
 
         if (!activeTerminalId) {
@@ -131,6 +164,8 @@ export class TerminalSearchService {
             query,
             caseSensitive: this.caseSensitiveSignal(),
             regularExpression: this.regularExpressionSignal(),
+            beginBufferLine: this.beginBufferLineSignal(),
+            endBufferLine: this.endBufferLineSignal(),
         });
     }
 
@@ -182,5 +217,19 @@ export class TerminalSearchService {
         }
 
         return `#${colorValue}`;
+    }
+
+    private parseBufferLine(value: string): number | undefined {
+        const trimmedValue = value.trim();
+        if (trimmedValue.length === 0) {
+            return undefined;
+        }
+
+        const parsedValue = Number.parseInt(trimmedValue, 10);
+        if (Number.isNaN(parsedValue) || parsedValue <= 0) {
+            return undefined;
+        }
+
+        return parsedValue;
     }
 }

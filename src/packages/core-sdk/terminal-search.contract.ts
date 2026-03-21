@@ -32,6 +32,8 @@ export interface TerminalSearchRequestContract {
   readonly query: string;
   readonly caseSensitive: boolean;
   readonly regularExpression: boolean;
+  readonly beginBufferLine?: number;
+  readonly endBufferLine?: number;
 }
 
 export interface TerminalSearchRevealRequestContract {

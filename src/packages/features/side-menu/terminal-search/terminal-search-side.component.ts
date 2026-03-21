@@ -49,6 +49,34 @@ type SearchTextSegment = {
                 .*
             </button>
         </div>
+        <div class="search-range-controls">
+            <input
+                autocomplete="off"
+                spellcheck="false"
+                data-private="off"
+                autocorrect="off"
+                type="number"
+                min="1"
+                placeholder="Begin buffer line"
+                class="search-range-input"
+                [value]="beginBufferLine() ?? ''"
+                (input)="updateBeginBufferLine($event)"
+                (click)="$event.stopPropagation()"
+            />
+            <input
+                autocomplete="off"
+                spellcheck="false"
+                data-private="off"
+                autocorrect="off"
+                type="number"
+                min="1"
+                placeholder="End buffer line"
+                class="search-range-input"
+                [value]="endBufferLine() ?? ''"
+                (input)="updateEndBufferLine($event)"
+                (click)="$event.stopPropagation()"
+            />
+        </div>
 
         @if (searchQuery().trim().length === 0) {
             <div class="helper-text">Type to search in the active terminal pane.</div>
@@ -88,6 +116,12 @@ type SearchTextSegment = {
                 gap: 0.35rem;
             }
 
+            .search-range-controls {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.35rem;
+            }
+
             .search-input {
                 padding: 6px 8px;
                 border-radius: 6px;
@@ -97,6 +131,18 @@ type SearchTextSegment = {
                 outline: none;
                 box-sizing: border-box;
                 flex: 1;
+                min-width: 0;
+            }
+
+            .search-range-input {
+                padding: 6px 8px;
+                border-radius: 6px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.04);
+                color: inherit;
+                outline: none;
+                box-sizing: border-box;
+                width: 100%;
                 min-width: 0;
             }
 
@@ -172,6 +218,8 @@ export class TerminalSearchSideComponent {
     readonly regularExpression: Signal<boolean>;
     readonly matchBackgroundColor: Signal<string>;
     readonly matchBorderColor: Signal<string>;
+    readonly beginBufferLine: Signal<number | undefined>;
+    readonly endBufferLine: Signal<number | undefined>;
     readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
 
     constructor(private readonly terminalSearchService: TerminalSearchService) {
@@ -181,6 +229,8 @@ export class TerminalSearchSideComponent {
         this.regularExpression = this.terminalSearchService.regularExpression;
         this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
         this.matchBorderColor = this.terminalSearchService.matchBorderColor;
+        this.beginBufferLine = this.terminalSearchService.beginBufferLine;
+        this.endBufferLine = this.terminalSearchService.endBufferLine;
         this.reversedSearchResults = computed(() => {
             return [...this.searchResults()].reverse();
         });
@@ -189,6 +239,14 @@ export class TerminalSearchSideComponent {
     updateSearchQuery(event: Event): void {
         const inputElement = event.target as HTMLInputElement;
         this.terminalSearchService.submitSearchQuery(inputElement.value);
+    }
+
+    updateBeginBufferLine(event: Event): void {
+        this.terminalSearchService.updateBeginBufferLine(event);
+    }
+
+    updateEndBufferLine(event: Event): void {
+        this.terminalSearchService.updateEndBufferLine(event);
     }
 
     revealSearchResult(searchLine: TerminalSearchLineResultContract): void {

@@ -15,6 +15,7 @@ import {
     PtyInitializedEvent,
     TerminalBusyChangedEvent,
     TerminalCwdChangedEvent,
+    TerminalSearchPanelRequestedEvent,
     TerminalSearchRevealRequestedEvent,
     TerminalSearchRequestedEvent,
     TerminalSearchResultEvent,
@@ -62,6 +63,7 @@ export type AppMessage =
     | PtyInitializedEvent
     | TerminalBusyChangedEvent
     | TerminalCwdChangedEvent
+    | TerminalSearchPanelRequestedEvent
     | TerminalTitleChangedEvent
     | TerminalSearchRequestedEvent
     | TerminalSearchResultEvent
