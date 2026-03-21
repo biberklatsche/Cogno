@@ -40,6 +40,7 @@ import { NotificationChannelContract } from "@cogno/core-sdk";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 
 type NotificationChannelId = string;
 
@@ -57,6 +58,7 @@ export class TerminalSession {
     private processInfoDialogReference?: DialogRef<void>;
     private sessionNotificationChannels?: NotificationChannels;
     private readonly completedCommandNotificationHandler: CompletedCommandNotificationHandler;
+    private readonly commandBlockResolver: CommandBlockResolver;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -82,6 +84,7 @@ export class TerminalSession {
             () => this.terminalId,
             () => this.getSessionNotificationChannels(),
         );
+        this.commandBlockResolver = new CommandBlockResolver(() => this.renderer.terminal);
     }
 
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
@@ -374,80 +377,18 @@ export class TerminalSession {
 
         return buildCommandMenuItems({
             commandText: commandOutOfView.command,
-            getCommandOutput: () => this.extractCommandOutputForCommand(commandOutOfView.id),
-            getBlockRange: () => this.buildBlockRangeForCommand(commandOutOfView.id),
+            getCommandOutput: () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.outputText ?? "",
+            getBlockRange: () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.blockRange ?? this.createEmptyBlockRange(),
             appBus: this.bus,
             terminalId: this.terminalId,
         });
     }
 
-    private extractCommandOutputForCommand(commandId: string): string {
-        const commandMarkerLineIndex = this.findMarkerLineIndex(commandId);
-        if (commandMarkerLineIndex === undefined) {
-            return "";
-        }
-
-        const terminal = this.renderer.terminal;
-        const nextMarkerLineIndex = this.findNextMarkerLineIndex(commandMarkerLineIndex);
-        const outputLineTexts: string[] = [];
-        for (let currentLineIndex = commandMarkerLineIndex + 1; currentLineIndex < nextMarkerLineIndex; currentLineIndex++) {
-            const line = terminal.buffer.active.getLine(currentLineIndex);
-            if (!line) {
-                continue;
-            }
-
-            outputLineTexts.push(line.translateToString(false));
-        }
-
-        return outputLineTexts.join("\n").trimEnd();
-    }
-
-    private buildBlockRangeForCommand(commandId: string): CommandMenuBlockRange {
-        const commandMarkerLineIndex = this.findMarkerLineIndex(commandId);
-        if (commandMarkerLineIndex === undefined) {
-            return {
-                beginBufferLine: 1,
-                endBufferLine: 0,
-            };
-        }
-
-        const nextMarkerLineIndex = this.findNextMarkerLineIndex(commandMarkerLineIndex);
+    private createEmptyBlockRange(): CommandMenuBlockRange {
         return {
-            beginBufferLine: commandMarkerLineIndex + 2,
-            endBufferLine: nextMarkerLineIndex,
+            beginBufferLine: 1,
+            endBufferLine: 0,
         };
-    }
-
-    private findMarkerLineIndex(commandId: string): number | undefined {
-        const terminal = this.renderer.terminal;
-        for (let currentLineIndex = 0; currentLineIndex < terminal.buffer.active.length; currentLineIndex++) {
-            const line = terminal.buffer.active.getLine(currentLineIndex);
-            if (!line) {
-                continue;
-            }
-
-            if (line.translateToString().startsWith(`^^#${commandId}`)) {
-                return currentLineIndex;
-            }
-        }
-
-        return undefined;
-    }
-
-    private findNextMarkerLineIndex(lineIndex: number): number {
-        const terminal = this.renderer.terminal;
-        for (let currentLineIndex = lineIndex + 1; currentLineIndex < terminal.buffer.active.length; currentLineIndex++) {
-            const line = terminal.buffer.active.getLine(currentLineIndex);
-            if (!line) {
-                continue;
-            }
-
-            if (line.translateToString().startsWith("^^#")) {
-                return currentLineIndex;
-            }
-        }
-
-        return terminal.buffer.active.length;
     }
 
     private getNotificationDefaults(): NotificationChannels {

@@ -5,12 +5,14 @@ import {PromptMarkerRenderer} from "./prompt-renderer";
 import {TerminalStateManager} from "../../state";
 import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { AppBus } from "../../../../app-bus/app-bus";
+import { CommandBlockResolver } from "./command-block-resolver";
 
 
 export class MarkerManager implements IDisposable {
     private _decorations: Map<IMarker, IDecoration> = new Map();
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
+    private readonly commandBlockResolver: CommandBlockResolver;
 
     constructor(
         private stateManager: TerminalStateManager,
@@ -19,6 +21,7 @@ export class MarkerManager implements IDisposable {
         appBus: AppBus,
     ) {
         this._renderer = new PromptMarkerRenderer(stateManager, promptSegments, contextMenuOverlayService, appBus);
+        this.commandBlockResolver = new CommandBlockResolver(() => this._terminal);
     }
 
     setTerminal(terminal: Terminal) {
@@ -166,8 +169,8 @@ export class MarkerManager implements IDisposable {
             decoration.onRender((element) => {
                 this._renderer!.render(element, {
                     commandIndex,
-                    getCommandOutput: () => this.extractCommandOutput(lineIndex),
-                    getBlockRange: () => this.buildBlockRange(lineIndex),
+                    getCommandOutput: () => this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.outputText ?? "",
+                    getBlockRange: () => this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.blockRange ?? { beginBufferLine: 1, endBufferLine: 0 },
                 });
             });
             decoration.onDispose(() => {
@@ -179,55 +182,6 @@ export class MarkerManager implements IDisposable {
 
     private findCommandIndex(commandId: string | undefined): number {
         return this.stateManager.commands.findIndex(c => c.id === commandId);
-    }
-
-    private extractCommandOutput(lineIndex: number): string {
-        if (!this._terminal) {
-            return "";
-        }
-
-        const nextMarkerLineIndex = this.findNextMarkerLineIndex(lineIndex);
-        const outputLineTexts: string[] = [];
-        for (let currentLineIndex = lineIndex + 1; currentLineIndex < nextMarkerLineIndex; currentLineIndex++) {
-            const line = this._terminal.buffer.active.getLine(currentLineIndex);
-            if (!line) {
-                continue;
-            }
-
-            outputLineTexts.push(line.translateToString(false));
-        }
-
-        return outputLineTexts.join("\n").trimEnd();
-    }
-
-    private findNextMarkerLineIndex(lineIndex: number): number {
-        if (!this._terminal) {
-            return lineIndex + 1;
-        }
-
-        for (let currentLineIndex = lineIndex + 1; currentLineIndex < this._terminal.buffer.active.length; currentLineIndex++) {
-            const line = this._terminal.buffer.active.getLine(currentLineIndex);
-            if (!line) {
-                continue;
-            }
-
-            if (line.translateToString().startsWith("^^#")) {
-                return currentLineIndex;
-            }
-        }
-
-        return this._terminal.buffer.active.length;
-    }
-
-    private buildBlockRange(lineIndex: number): { beginBufferLine: number; endBufferLine: number } {
-        const nextMarkerLineIndex = this.findNextMarkerLineIndex(lineIndex);
-        const beginBufferLine = lineIndex + 2;
-        const endBufferLine = nextMarkerLineIndex;
-
-        return {
-            beginBufferLine,
-            endBufferLine,
-        };
     }
 
     dispose() {
