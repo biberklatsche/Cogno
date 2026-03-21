@@ -226,7 +226,15 @@ describe('TerminalSession', () => {
 
         expect(items.find(item => item.label === 'Copy Command')).toBeDefined();
         expect(items.find(item => item.label === 'Copy Output')).toBeDefined();
+        expect(items.find(item => item.label === 'Scroll to Top')).toBeDefined();
+        expect(items.find(item => item.label === 'Scroll to Bottom')).toBeDefined();
         expect(items.find(item => item.label === 'Filter Block')).toBeDefined();
+
+        items.find(item => item.label === 'Scroll to Top')?.action?.();
+        items.find(item => item.label === 'Scroll to Bottom')?.action?.();
+
+        expect(rendererInstance.terminal.scrollToLine).toHaveBeenNthCalledWith(1, 0);
+        expect(rendererInstance.terminal.scrollToLine).toHaveBeenNthCalledWith(2, 2);
     });
 
     it('should allow toggling long-running command notifications from the header menu', () => {

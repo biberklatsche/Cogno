@@ -385,6 +385,24 @@ export class TerminalSession {
             commandText: commandOutOfView.command,
             getCommandOutput: () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.outputText ?? "",
             getBlockRange: () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.blockRange ?? this.createEmptyBlockRange(),
+            scrollToCommandTop: () => {
+                const commandBlockDetails = this.commandBlockResolver.resolveByCommandId(commandOutOfView.id);
+                if (!commandBlockDetails) {
+                    return;
+                }
+
+                this.renderer.terminal.scrollToLine(commandBlockDetails.markerLineIndex);
+            },
+            scrollToCommandBottom: () => {
+                const commandBlockDetails = this.commandBlockResolver.resolveByCommandId(commandOutOfView.id);
+                if (!commandBlockDetails) {
+                    return;
+                }
+
+                this.renderer.terminal.scrollToLine(
+                    Math.max(commandBlockDetails.markerLineIndex, commandBlockDetails.nextMarkerLineIndex - 1),
+                );
+            },
             appBus: this.bus,
             terminalId: this.terminalId,
         });

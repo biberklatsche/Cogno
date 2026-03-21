@@ -12,6 +12,8 @@ type CommandMenuItemsOptions = {
     commandText?: string;
     getCommandOutput?: () => string;
     getBlockRange?: () => CommandMenuBlockRange;
+    scrollToCommandTop?: () => void;
+    scrollToCommandBottom?: () => void;
     appBus?: AppBus;
     terminalId?: string;
 };
@@ -41,6 +43,20 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
                 }
 
                 void Clipboard.writeText(outputText);
+            },
+        },
+        {
+            label: "Scroll to Top",
+            disabled: !options.scrollToCommandTop,
+            action: () => {
+                options.scrollToCommandTop?.();
+            },
+        },
+        {
+            label: "Scroll to Bottom",
+            disabled: !options.scrollToCommandBottom,
+            action: () => {
+                options.scrollToCommandBottom?.();
             },
         },
         {

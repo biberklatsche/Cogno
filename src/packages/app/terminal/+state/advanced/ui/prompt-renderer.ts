@@ -23,6 +23,8 @@ type PromptMarkerRenderContext = {
     commandIndex?: number;
     getCommandOutput?: () => string;
     getBlockRange?: () => CommandMenuBlockRange;
+    scrollToCommandTop?: () => void;
+    scrollToCommandBottom?: () => void;
 };
 
 export class PromptMarkerRenderer {
@@ -65,7 +67,13 @@ export class PromptMarkerRenderer {
         }
 
         markerElement.appendChild(markerContentElement);
-        const markerMenuButton = this.createMenuButton(command, renderContext.getCommandOutput, renderContext.getBlockRange);
+        const markerMenuButton = this.createMenuButton(
+            command,
+            renderContext.getCommandOutput,
+            renderContext.getBlockRange,
+            renderContext.scrollToCommandTop,
+            renderContext.scrollToCommandBottom,
+        );
         if (markerMenuButton) {
             markerElement.appendChild(markerMenuButton);
         }
@@ -143,6 +151,8 @@ export class PromptMarkerRenderer {
         command: Command,
         getCommandOutput?: () => string,
         getBlockRange?: () => CommandMenuBlockRange,
+        scrollToCommandTop?: () => void,
+        scrollToCommandBottom?: () => void,
     ): HTMLButtonElement | undefined {
         if (!this.contextMenuOverlayService || !command.command?.trim()) {
             return undefined;
@@ -167,11 +177,10 @@ export class PromptMarkerRenderer {
         buttonElement.addEventListener('click', (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            const items = this.buildMenuItems(command, getCommandOutput, getBlockRange);
+            const items = this.buildMenuItems(command, getCommandOutput, getBlockRange, scrollToCommandTop, scrollToCommandBottom);
             this.contextMenuOverlayService?.openContextForElement(
                 buttonElement,
                 { items },
-                { horizontalAlign: 'right' },
             );
         });
 
@@ -207,11 +216,15 @@ export class PromptMarkerRenderer {
         command: Command,
         getCommandOutput?: () => string,
         getBlockRange?: () => CommandMenuBlockRange,
+        scrollToCommandTop?: () => void,
+        scrollToCommandBottom?: () => void,
     ): ContextMenuItem[] {
         return buildCommandMenuItems({
             commandText: command.command,
             getCommandOutput,
             getBlockRange,
+            scrollToCommandTop,
+            scrollToCommandBottom,
             appBus: this.appBus,
             terminalId: this.stateManager.terminalId,
         });
@@ -223,6 +236,8 @@ export class PromptMarkerRenderer {
                 commandIndex: commandIndexOrContext,
                 getCommandOutput: undefined,
                 getBlockRange: undefined,
+                scrollToCommandTop: undefined,
+                scrollToCommandBottom: undefined,
             };
         }
 

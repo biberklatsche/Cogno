@@ -171,6 +171,16 @@ export class MarkerManager implements IDisposable {
                     commandIndex,
                     getCommandOutput: () => this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.outputText ?? "",
                     getBlockRange: () => this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.blockRange ?? { beginBufferLine: 1, endBufferLine: 0 },
+                    scrollToCommandTop: () => {
+                        this._terminal?.scrollToLine(lineIndex);
+                    },
+                    scrollToCommandBottom: () => {
+                        const commandBlockDetails = this.commandBlockResolver.resolveByMarkerLine(lineIndex);
+                        const targetLineIndex = commandBlockDetails
+                            ? Math.max(lineIndex, commandBlockDetails.nextMarkerLineIndex - 1)
+                            : lineIndex;
+                        this._terminal?.scrollToLine(targetLineIndex);
+                    },
                 });
             });
             decoration.onDispose(() => {

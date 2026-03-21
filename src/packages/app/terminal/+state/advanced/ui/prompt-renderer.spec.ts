@@ -245,10 +245,11 @@ describe('PromptMarkerRenderer', () => {
                 items: expect.arrayContaining([
                     expect.objectContaining({ label: 'Copy Command', disabled: false }),
                     expect.objectContaining({ label: 'Copy Output', disabled: false }),
+                    expect.objectContaining({ label: 'Scroll to Top', disabled: true }),
+                    expect.objectContaining({ label: 'Scroll to Bottom', disabled: true }),
                     expect.objectContaining({ label: 'Filter Block', disabled: true }),
                 ]),
             }),
-            { horizontalAlign: 'right' },
         );
     });
 
@@ -314,5 +315,29 @@ describe('PromptMarkerRenderer', () => {
                 endBufferLine: 20,
             }),
         }));
+    });
+
+    it('should execute scroll actions from the marker menu', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const scrollToCommandTop = vi.fn();
+        const scrollToCommandBottom = vi.fn();
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, {
+            commandIndex: 0,
+            scrollToCommandTop,
+            scrollToCommandBottom,
+        });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        menuButton.click();
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+
+        menuItems.find((item) => item.label === 'Scroll to Top')?.action?.();
+        menuItems.find((item) => item.label === 'Scroll to Bottom')?.action?.();
+
+        expect(scrollToCommandTop).toHaveBeenCalledTimes(1);
+        expect(scrollToCommandBottom).toHaveBeenCalledTimes(1);
     });
 });
