@@ -1,5 +1,5 @@
 import { BehaviorSubject } from "rxjs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   TerminalSearchColorConfigContract,
   TerminalSearchHostPortContract,
@@ -17,11 +17,13 @@ describe("TerminalSearchService", () => {
   let appBus: AppBus;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     terminalSearchResultSubject = new BehaviorSubject<TerminalSearchResultContract>({
       terminalId: "terminal-1",
       query: "",
       caseSensitive: false,
       regularExpression: false,
+      hasMore: false,
       lines: [],
     });
     terminalSearchColorConfigSubject = new BehaviorSubject<TerminalSearchColorConfigContract>({});
@@ -40,6 +42,10 @@ describe("TerminalSearchService", () => {
     terminalSearchService = new TerminalSearchService(terminalSearchHostPort, appBus, getDestroyRef());
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("applies block filter parameters from the bus and uses them for the next search", () => {
     appBus.publish({
       path: ["app", "terminal"],
@@ -52,6 +58,7 @@ describe("TerminalSearchService", () => {
     });
 
     terminalSearchService.submitSearchQuery("needle");
+    vi.runAllTimers();
 
     expect(requestSearchMock).toHaveBeenCalledWith({
       terminalId: "terminal-77",
@@ -60,6 +67,8 @@ describe("TerminalSearchService", () => {
       regularExpression: false,
       beginBufferLine: 12,
       endBufferLine: 24,
+      cursorBufferLine: undefined,
+      resultLineLimit: 200,
     });
   });
 
@@ -71,8 +80,86 @@ describe("TerminalSearchService", () => {
 
     terminalSearchService.updateBeginBufferLine({ target: beginInputElement } as unknown as Event);
     terminalSearchService.updateEndBufferLine({ target: endInputElement } as unknown as Event);
+    vi.runAllTimers();
 
     expect(terminalSearchService.beginBufferLine()).toBe(5);
     expect(terminalSearchService.endBufferLine()).toBe(18);
+  });
+
+  it("debounces repeated search input before requesting a new search", () => {
+    terminalSearchService.submitSearchQuery("n");
+    terminalSearchService.submitSearchQuery("ne");
+    terminalSearchService.submitSearchQuery("needle");
+
+    expect(requestSearchMock).not.toHaveBeenCalled();
+
+    vi.runAllTimers();
+
+    expect(requestSearchMock).toHaveBeenCalledTimes(1);
+    expect(requestSearchMock).toHaveBeenCalledWith(expect.objectContaining({
+      query: "needle",
+      resultLineLimit: 200,
+    }));
+  });
+
+  it("appends the next page when more results are loaded", () => {
+    appBus.publish({
+      path: ["app", "terminal"],
+      type: "TerminalSearchPanelRequested",
+      payload: {
+        terminalId: "terminal-77",
+        beginBufferLine: 12,
+        endBufferLine: 24,
+      },
+    });
+
+    terminalSearchService.submitSearchQuery("needle");
+    vi.runAllTimers();
+
+    terminalSearchResultSubject.next({
+      terminalId: "terminal-77",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 12,
+      endBufferLine: 24,
+      hasMore: true,
+      nextCursorBufferLine: 20,
+      lines: [
+        {
+          lineNumber: 14,
+          lineText: "needle one",
+          matches: [{ startIndex: 0, endIndex: 6 }],
+        },
+      ],
+    });
+
+    terminalSearchService.loadMoreSearchResults();
+
+    expect(requestSearchMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      cursorBufferLine: 20,
+      resultLineLimit: 200,
+    }));
+
+    terminalSearchResultSubject.next({
+      terminalId: "terminal-77",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 12,
+      endBufferLine: 24,
+      cursorBufferLine: 20,
+      hasMore: false,
+      lines: [
+        {
+          lineNumber: 21,
+          lineText: "needle two",
+          matches: [{ startIndex: 0, endIndex: 6 }],
+        },
+      ],
+    });
+
+    expect(terminalSearchService.searchResults()).toHaveLength(2);
+    expect(terminalSearchService.hasMoreResults()).toBe(false);
   });
 });

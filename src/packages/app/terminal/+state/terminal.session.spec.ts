@@ -13,6 +13,8 @@ import { PathFactory } from "@cogno/core-host";
 import { NotificationChannelContract } from "@cogno/core-sdk";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { TerminalStateManager } from "./state";
 
 // Mocking dependencies that are not passed in constructor but used internally
 vi.mock('./renderer/renderer', () => {
@@ -21,7 +23,8 @@ vi.mock('./renderer/renderer', () => {
             return {
                 open: vi.fn(),
                 register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-                dispose: vi.fn()
+                dispose: vi.fn(),
+                terminal: TerminalMockFactory.createTerminal(),
             };
         })
     };
@@ -49,6 +52,7 @@ describe('TerminalSession', () => {
     let mockProcessInfoDialogReference: DialogRef<void>;
     let mockWiringService: AppWiringService;
     let mockContextMenuOverlayService: ContextMenuOverlayService;
+    let stateManager: TerminalStateManager;
     const terminalId = 'test-terminal-id';
 
     beforeEach(() => {
@@ -92,10 +96,12 @@ describe('TerminalSession', () => {
             openContextForElement: vi.fn(),
         } as unknown as ContextMenuOverlayService;
 
+        stateManager = getStateManager();
+
         session = new TerminalSession(
             mockConfigService,
             mockBus,
-            getStateManager(),
+            stateManager,
             mockFeatureSuggestorService,
             mockDialogService,
             mockWiringService,
@@ -109,7 +115,7 @@ describe('TerminalSession', () => {
         session = new TerminalSession(
             mockConfigService,
             mockBus,
-            getStateManager(),
+            stateManager,
             mockFeatureSuggestorService,
             mockDialogService,
             mockWiringService,
@@ -194,6 +200,33 @@ describe('TerminalSession', () => {
         expect(appToggle?.toggle).toBe(true);
         expect(appToggle?.toggled).toBe(false);
         expect(items.find(i => i.label === 'OS')).toBeUndefined();
+    });
+
+    it('should include command menu items in the header menu for the first command out of view', () => {
+        session.initialize(terminalId, mockShellProfile);
+        stateManager.updateCommand({ id: '1' });
+        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+        vi.mocked(rendererInstance.terminal.buffer.active.getLine).mockImplementation((lineIndex: number) => {
+            if (lineIndex === 0) return TerminalMockFactory.createLine('^^#1');
+            if (lineIndex === 1) return TerminalMockFactory.createLine('first output line');
+            if (lineIndex === 2) return TerminalMockFactory.createLine('second output line');
+            if (lineIndex === 3) return TerminalMockFactory.createLine('^^#2');
+            return null;
+        });
+        rendererInstance.terminal.buffer.active.length = 4;
+
+        stateManager.updateCommands([
+            Object.assign(stateManager.commands[0], {
+                isFirstCommandOutOfViewport: true,
+            }),
+        ]);
+        stateManager.commands[0].set('command', 'cat bible.txt');
+
+        const items = session.buildHeaderCommandMenu();
+
+        expect(items.find(item => item.label === 'Copy Command')).toBeDefined();
+        expect(items.find(item => item.label === 'Copy Output')).toBeDefined();
+        expect(items.find(item => item.label === 'Filter Block')).toBeDefined();
     });
 
     it('should allow toggling long-running command notifications from the header menu', () => {

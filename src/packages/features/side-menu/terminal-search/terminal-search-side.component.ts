@@ -81,7 +81,12 @@ type SearchTextSegment = {
         @if (searchQuery().trim().length === 0) {
             <div class="helper-text">Type to search in the active terminal pane.</div>
         } @else {
-            <div class="result-header">{{ searchResults().length }} matching lines</div>
+            <div class="result-header">
+                <span>{{ searchResults().length }} matching lines</span>
+                @if (hasMoreResults()) {
+                    <span>more available</span>
+                }
+            </div>
             @if (searchResults().length > 0) {
                 <ul class="result-list">
                     @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
@@ -95,6 +100,9 @@ type SearchTextSegment = {
                         </li>
                     }
                 </ul>
+                @if (hasMoreResults()) {
+                    <button type="button" class="load-more-button" (click)="loadMoreSearchResults()">Load more</button>
+                }
             } @else {
                 <div class="helper-text">No matches</div>
             }
@@ -168,6 +176,12 @@ type SearchTextSegment = {
                 opacity: 0.7;
             }
 
+            .result-header {
+                display: flex;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+
             .result-list {
                 list-style: none;
                 margin: 0;
@@ -208,6 +222,16 @@ type SearchTextSegment = {
             .match {
                 border-radius: 2px;
             }
+
+            .load-more-button {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.05);
+                color: inherit;
+                border-radius: 6px;
+                min-height: 2rem;
+                padding: 0.35rem 0.75rem;
+                cursor: pointer;
+            }
         `,
     ],
 })
@@ -220,6 +244,7 @@ export class TerminalSearchSideComponent {
     readonly matchBorderColor: Signal<string>;
     readonly beginBufferLine: Signal<number | undefined>;
     readonly endBufferLine: Signal<number | undefined>;
+    readonly hasMoreResults: Signal<boolean>;
     readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
 
     constructor(private readonly terminalSearchService: TerminalSearchService) {
@@ -231,6 +256,7 @@ export class TerminalSearchSideComponent {
         this.matchBorderColor = this.terminalSearchService.matchBorderColor;
         this.beginBufferLine = this.terminalSearchService.beginBufferLine;
         this.endBufferLine = this.terminalSearchService.endBufferLine;
+        this.hasMoreResults = this.terminalSearchService.hasMoreResults;
         this.reversedSearchResults = computed(() => {
             return [...this.searchResults()].reverse();
         });
@@ -247,6 +273,10 @@ export class TerminalSearchSideComponent {
 
     updateEndBufferLine(event: Event): void {
         this.terminalSearchService.updateEndBufferLine(event);
+    }
+
+    loadMoreSearchResults(): void {
+        this.terminalSearchService.loadMoreSearchResults();
     }
 
     revealSearchResult(searchLine: TerminalSearchLineResultContract): void {

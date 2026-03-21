@@ -42,6 +42,12 @@ import { timespan } from "../../common/timespan/timespan";
               </span>
             }
           </span>
+          <button
+            class="button icon-button command-menu-button"
+            type="button"
+            (click)="openCommandMenu($event)">
+              <app-icon name="mdiDotsVertical"></app-icon>
+          </button>
         } @else {
           <span class="command">&nbsp;</span>
         }
@@ -130,6 +136,10 @@ import { timespan } from "../../common/timespan/timespan";
       flex: 0 0 auto;
     }
 
+    .command-menu-button {
+      flex: 0 0 auto;
+    }
+
     .notification-indicator {
       display: inline-flex;
       align-items: center;
@@ -212,6 +222,20 @@ export class TerminalHeaderComponent {
       event.currentTarget as HTMLElement,
       {items},
       {horizontalAlign: 'right'}
+    );
+  }
+
+  openCommandMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.terminalSession.focus();
+    const items: ContextMenuItem[] = this.terminalSession.buildHeaderCommandMenu();
+    if (items.length === 0) {
+      return;
+    }
+    this.menu.openContextForElement(
+      event.currentTarget as HTMLElement,
+      {items},
     );
   }
 

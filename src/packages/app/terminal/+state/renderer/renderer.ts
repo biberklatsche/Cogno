@@ -18,6 +18,7 @@ import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
     open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
+    readonly terminal: Terminal;
 
     dispose(): void;
 
@@ -112,5 +113,9 @@ export class Renderer implements IRenderer, IDisposable {
     public dispose() {
 
         this._terminal?.dispose();
+    }
+
+    public get terminal(): Terminal {
+        return this._terminal;
     }
 }

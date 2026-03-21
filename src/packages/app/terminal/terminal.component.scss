@@ -15,7 +15,7 @@ app-terminal {
     .cogno-marker {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start;
         color: var(--foreground-color);
         border-radius: 4px;
         font-size: var(--font-size);
@@ -34,15 +34,14 @@ app-terminal {
         }
 
         .prompt-marker-menu-button {
-            opacity: 0;
-            pointer-events: none;
+            opacity: 0.35;
+            pointer-events: auto;
             transition: opacity 120ms ease-out;
         }
 
         &:hover .prompt-marker-menu-button,
         &:focus-within .prompt-marker-menu-button {
-            opacity: 0.6;
-            pointer-events: auto;
+            opacity: 1;
         }
     }
 }

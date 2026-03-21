@@ -39,6 +39,7 @@ import {NotificationChannels} from "../../notification/+bus/events";
 import { NotificationChannelContract } from "@cogno/core-sdk";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
 
 type NotificationChannelId = string;
 
@@ -197,6 +198,10 @@ export class TerminalSession {
             action: () => this.openProcessInfoDialog(),
         });
         return items;
+    }
+
+    buildHeaderCommandMenu(): ContextMenuItem[] {
+        return this.buildHeaderCommandMenuItems();
     }
 
     dispose() {
@@ -359,6 +364,90 @@ export class TerminalSession {
         }
 
         return notificationAvailability;
+    }
+
+    private buildHeaderCommandMenuItems(): ContextMenuItem[] {
+        const commandOutOfView = this.stateManager.commands.find((command) => command.isFirstCommandOutOfViewport);
+        if (!commandOutOfView?.command) {
+            return [];
+        }
+
+        return buildCommandMenuItems({
+            commandText: commandOutOfView.command,
+            getCommandOutput: () => this.extractCommandOutputForCommand(commandOutOfView.id),
+            getBlockRange: () => this.buildBlockRangeForCommand(commandOutOfView.id),
+            appBus: this.bus,
+            terminalId: this.terminalId,
+        });
+    }
+
+    private extractCommandOutputForCommand(commandId: string): string {
+        const commandMarkerLineIndex = this.findMarkerLineIndex(commandId);
+        if (commandMarkerLineIndex === undefined) {
+            return "";
+        }
+
+        const terminal = this.renderer.terminal;
+        const nextMarkerLineIndex = this.findNextMarkerLineIndex(commandMarkerLineIndex);
+        const outputLineTexts: string[] = [];
+        for (let currentLineIndex = commandMarkerLineIndex + 1; currentLineIndex < nextMarkerLineIndex; currentLineIndex++) {
+            const line = terminal.buffer.active.getLine(currentLineIndex);
+            if (!line) {
+                continue;
+            }
+
+            outputLineTexts.push(line.translateToString(false));
+        }
+
+        return outputLineTexts.join("\n").trimEnd();
+    }
+
+    private buildBlockRangeForCommand(commandId: string): CommandMenuBlockRange {
+        const commandMarkerLineIndex = this.findMarkerLineIndex(commandId);
+        if (commandMarkerLineIndex === undefined) {
+            return {
+                beginBufferLine: 1,
+                endBufferLine: 0,
+            };
+        }
+
+        const nextMarkerLineIndex = this.findNextMarkerLineIndex(commandMarkerLineIndex);
+        return {
+            beginBufferLine: commandMarkerLineIndex + 2,
+            endBufferLine: nextMarkerLineIndex,
+        };
+    }
+
+    private findMarkerLineIndex(commandId: string): number | undefined {
+        const terminal = this.renderer.terminal;
+        for (let currentLineIndex = 0; currentLineIndex < terminal.buffer.active.length; currentLineIndex++) {
+            const line = terminal.buffer.active.getLine(currentLineIndex);
+            if (!line) {
+                continue;
+            }
+
+            if (line.translateToString().startsWith(`^^#${commandId}`)) {
+                return currentLineIndex;
+            }
+        }
+
+        return undefined;
+    }
+
+    private findNextMarkerLineIndex(lineIndex: number): number {
+        const terminal = this.renderer.terminal;
+        for (let currentLineIndex = lineIndex + 1; currentLineIndex < terminal.buffer.active.length; currentLineIndex++) {
+            const line = terminal.buffer.active.getLine(currentLineIndex);
+            if (!line) {
+                continue;
+            }
+
+            if (line.translateToString().startsWith("^^#")) {
+                return currentLineIndex;
+            }
+        }
+
+        return terminal.buffer.active.length;
     }
 
     private getNotificationDefaults(): NotificationChannels {

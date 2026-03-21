@@ -19,6 +19,11 @@ export interface TerminalSearchResultContract {
   readonly query: string;
   readonly caseSensitive: boolean;
   readonly regularExpression: boolean;
+  readonly beginBufferLine?: number;
+  readonly endBufferLine?: number;
+  readonly cursorBufferLine?: number;
+  readonly hasMore: boolean;
+  readonly nextCursorBufferLine?: number;
   readonly lines: ReadonlyArray<TerminalSearchLineResultContract>;
 }
 
@@ -34,6 +39,8 @@ export interface TerminalSearchRequestContract {
   readonly regularExpression: boolean;
   readonly beginBufferLine?: number;
   readonly endBufferLine?: number;
+  readonly cursorBufferLine?: number;
+  readonly resultLineLimit?: number;
 }
 
 export interface TerminalSearchRevealRequestContract {

@@ -3,10 +3,9 @@ import {timespan} from "../../../../common/timespan/timespan";
 import {Command, TerminalStateManager} from "../../state";
 import { ContextMenuItem } from "../../../../menu/context-menu-overlay/context-menu-overlay.types";
 import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
-import { Clipboard } from "../../../../_tauri/clipboard";
 import { mdiDotsVertical } from "@mdi/js";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { ActionFired } from "../../../../action/action.models";
+import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
 
 type PromptRecord = {
     label?: string;
@@ -20,14 +19,10 @@ type PromptRecord = {
 
 type ComparisonOperator = '==' | '!=';
 type PrimitiveValue = string | number | boolean;
-type PromptMarkerBlockRange = {
-    beginBufferLine: number;
-    endBufferLine: number;
-};
 type PromptMarkerRenderContext = {
     commandIndex?: number;
     getCommandOutput?: () => string;
-    getBlockRange?: () => PromptMarkerBlockRange;
+    getBlockRange?: () => CommandMenuBlockRange;
 };
 
 export class PromptMarkerRenderer {
@@ -84,7 +79,7 @@ export class PromptMarkerRenderer {
         element.style.minWidth = `${3 + (command.id?.length ?? 2)}rem`;
         element.style.display = 'flex';
         element.style.alignItems = 'center';
-        element.style.justifyContent = 'space-between';
+        element.style.justifyContent = 'flex-start';
         element.style.gap = '0.5rem';
         element.style.width = '100%';
         element.style.minWidth = '0';
@@ -99,7 +94,7 @@ export class PromptMarkerRenderer {
         element.style.alignItems = 'center';
         element.style.flexWrap = 'wrap';
         element.style.minWidth = '0';
-        element.style.flex = '1 1 auto';
+        element.style.flex = '0 1 auto';
         return element;
     }
 
@@ -147,7 +142,7 @@ export class PromptMarkerRenderer {
     private createMenuButton(
         command: Command,
         getCommandOutput?: () => string,
-        getBlockRange?: () => PromptMarkerBlockRange,
+        getBlockRange?: () => CommandMenuBlockRange,
     ): HTMLButtonElement | undefined {
         if (!this.contextMenuOverlayService) {
             return undefined;
@@ -159,7 +154,6 @@ export class PromptMarkerRenderer {
         buttonElement.style.display = 'inline-flex';
         buttonElement.style.alignItems = 'center';
         buttonElement.style.justifyContent = 'center';
-        buttonElement.style.marginLeft = 'auto';
         buttonElement.style.flex = '0 0 auto';
         buttonElement.style.width = '1.4rem';
         buttonElement.style.height = '1.4rem';
@@ -212,54 +206,15 @@ export class PromptMarkerRenderer {
     private buildMenuItems(
         command: Command,
         getCommandOutput?: () => string,
-        getBlockRange?: () => PromptMarkerBlockRange,
+        getBlockRange?: () => CommandMenuBlockRange,
     ): ContextMenuItem[] {
-        const commandText = command.command?.trim() ?? '';
-        const outputText = commandText.length > 0 ? (getCommandOutput?.().trimEnd() ?? '') : '';
-
-        return [
-            {
-                label: 'Copy Command',
-                disabled: commandText.length === 0,
-                action: () => {
-                    if (commandText.length === 0) {
-                        return;
-                    }
-                    void Clipboard.writeText(commandText);
-                },
-            },
-            {
-                label: 'Copy Output',
-                disabled: outputText.length === 0,
-                action: () => {
-                    if (outputText.length === 0) {
-                        return;
-                    }
-                    void Clipboard.writeText(outputText);
-                },
-            },
-            {
-                label: 'Filter Block',
-                disabled: !getBlockRange || !this.appBus,
-                action: () => {
-                    if (!getBlockRange || !this.appBus) {
-                        return;
-                    }
-
-                    const promptMarkerBlockRange = getBlockRange();
-                    this.appBus.publish(ActionFired.create("open_terminal_search"));
-                    this.appBus.publish({
-                        path: ["app", "terminal"],
-                        type: "TerminalSearchPanelRequested",
-                        payload: {
-                            terminalId: this.stateManager.terminalId,
-                            beginBufferLine: promptMarkerBlockRange.beginBufferLine,
-                            endBufferLine: promptMarkerBlockRange.endBufferLine,
-                        },
-                    });
-                },
-            },
-        ];
+        return buildCommandMenuItems({
+            commandText: command.command,
+            getCommandOutput,
+            getBlockRange,
+            appBus: this.appBus,
+            terminalId: this.stateManager.terminalId,
+        });
     }
 
     private resolveRenderContext(commandIndexOrContext?: number | PromptMarkerRenderContext): PromptMarkerRenderContext {

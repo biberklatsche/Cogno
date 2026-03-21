@@ -91,6 +91,25 @@ export class TerminalMockFactory {
       select: vi.fn(),
       attachCustomKeyEventHandler: vi.fn(),
       registerLinkProvider: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+      registerMarker: vi.fn().mockImplementation((cursorYOffset?: number) => ({
+        id: cursorYOffset ?? 0,
+        line: (buffer.baseY ?? 0) + (buffer.cursorY ?? 0) + (cursorYOffset ?? 0),
+        isDisposed: false,
+        onDispose: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+        dispose: vi.fn(),
+      })),
+      registerDecoration: vi.fn().mockImplementation((decorationOptions: { marker: { line: number } }) => ({
+        marker: decorationOptions.marker,
+        element: undefined,
+        options: {},
+        isDisposed: false,
+        onRender: vi.fn().mockImplementation((listener: (element: HTMLElement) => void) => {
+          listener(document.createElement('div'));
+          return { dispose: vi.fn() };
+        }),
+        onDispose: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+        dispose: vi.fn(),
+      })),
       options: {},
       element: document.createElement('div'),
       textarea: {
