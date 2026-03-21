@@ -170,6 +170,18 @@ export class TerminalStateManager {
         this.updateState({isPaneMaximized});
     }
 
+    get scrolledLinesFromBottom(): number {
+        return this._stateSubject.value.scrolledLinesFromBottom;
+    }
+
+    get scrolledLinesFromBottom$(): Observable<number> {
+        return this._stateSubject.pipe(map(s => s.scrolledLinesFromBottom));
+    }
+
+    setScrolledLinesFromBottom(scrolledLinesFromBottom: number): void {
+        this.updateState({scrolledLinesFromBottom});
+    }
+
     get hasUnreadNotification(): boolean {
         return this._stateSubject.value.hasUnreadNotification;
     }

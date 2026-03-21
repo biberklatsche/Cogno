@@ -12,6 +12,24 @@ app-terminal {
         overflow: auto; /* Scrollbar am Container statt im xterm-Viewport */
     }
 
+    .scroll-to-bottom-button {
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 30;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 5px;
+        background: color-mix(in srgb, var(--background-color-20l) 88%, transparent);
+        color: color-mix(in srgb, var(--foreground-color-40d) 88%, transparent);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        cursor: pointer;
+    }
+
     .cogno-marker {
         display: flex;
         align-items: center;

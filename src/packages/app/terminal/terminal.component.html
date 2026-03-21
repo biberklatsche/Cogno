@@ -1,4 +1,9 @@
 <app-terminal-header></app-terminal-header>
 <div class="terminal-container" #terminalContainer (click)="focus($event)" (contextmenu)="onContextMenu($event)">
     <app-terminal-autocomplete></app-terminal-autocomplete>
+    @if (showScrollToBottomButton()) {
+        <button type="button" class="scroll-to-bottom-button" (click)="scrollToBottom($event)">
+            <app-icon name="mdiArrowDown"></app-icon>
+        </button>
+    }
 </div>

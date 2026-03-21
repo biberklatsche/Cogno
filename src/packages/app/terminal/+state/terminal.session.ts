@@ -41,6 +41,7 @@ import { CompletedCommandNotificationHandler } from "./handler/completed-command
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
 import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
+import { ScrollStateHandler } from "./handler/scroll-state.handler";
 
 type NotificationChannelId = string;
 
@@ -122,6 +123,7 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
+        this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
         this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))
 
@@ -221,6 +223,10 @@ export class TerminalSession {
 
     focus(): void{
         this.focusHandler?.focus();
+    }
+
+    scrollToBottom(): void {
+        this.renderer.terminal.scrollToBottom();
     }
 
     insertPaths(paths: readonly string[]): void {

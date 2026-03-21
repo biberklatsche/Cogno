@@ -144,7 +144,7 @@ export class PromptMarkerRenderer {
         getCommandOutput?: () => string,
         getBlockRange?: () => CommandMenuBlockRange,
     ): HTMLButtonElement | undefined {
-        if (!this.contextMenuOverlayService) {
+        if (!this.contextMenuOverlayService || !command.command?.trim()) {
             return undefined;
         }
 

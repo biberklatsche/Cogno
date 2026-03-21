@@ -50,6 +50,7 @@ export type TerminalState = {
     commandStartTime: number | undefined;
     input: TerminalInput;
     cwd: string;
+    scrolledLinesFromBottom: number;
 }
 
 export const INITIAL_STATE: TerminalState = {
@@ -78,5 +79,6 @@ export const INITIAL_STATE: TerminalState = {
         value: 0,
     },
     commandStartTime: undefined,
-    input: {cursorIndex: 0, maxCursorIndex: 0, text: ''}
+    input: {cursorIndex: 0, maxCursorIndex: 0, text: ''},
+    scrolledLinesFromBottom: 0,
 }
