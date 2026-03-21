@@ -10,6 +10,12 @@ import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 import {ConfigService} from "../../config/+state/config.service";
 import { timespan } from "../../common/timespan/timespan";
 
+type HeaderCommandViewModel = {
+  command?: string;
+  duration?: number;
+  returnCode?: number;
+};
+
 @Component({
   selector: 'app-terminal-header',
   standalone: true,
@@ -181,9 +187,23 @@ export class TerminalHeaderComponent {
   ) {
   }
 
-  commandOutOfView = toSignal(this.stateManager.commands$.pipe(
-      map(commands => commands.find(s => s.isFirstCommandOutOfViewport))
-  ));
+  commandOutOfView = toSignal(
+      this.stateManager.commands$.pipe(
+          map((commands): HeaderCommandViewModel | undefined => {
+              const commandOutOfView = commands.find((command) => command.isFirstCommandOutOfViewport);
+              if (!commandOutOfView) {
+                  return undefined;
+              }
+
+              return {
+                  command: commandOutOfView.command,
+                  duration: commandOutOfView.duration,
+                  returnCode: commandOutOfView.returnCode,
+              };
+          }),
+      ),
+      { initialValue: undefined },
+  );
 
   cwd = toSignal(this.stateManager.state$.pipe(
       map(state => state.cwd)
