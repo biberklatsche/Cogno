@@ -46,6 +46,9 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
             },
         },
         {
+            separator: true,
+        },
+        {
             label: "Scroll to Top",
             disabled: !options.scrollToCommandTop,
             action: () => {
@@ -58,6 +61,9 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
             action: () => {
                 options.scrollToCommandBottom?.();
             },
+        },
+        {
+            separator: true,
         },
         {
             label: "Filter Block",

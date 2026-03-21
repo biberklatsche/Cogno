@@ -251,6 +251,10 @@ describe('PromptMarkerRenderer', () => {
                 ]),
             }),
         );
+
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+        expect(menuItems[2]).toEqual(expect.objectContaining({ separator: true }));
+        expect(menuItems[5]).toEqual(expect.objectContaining({ separator: true }));
     });
 
     it('should copy the command text from the marker menu action', async () => {

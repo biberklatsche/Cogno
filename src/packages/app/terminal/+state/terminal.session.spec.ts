@@ -229,6 +229,8 @@ describe('TerminalSession', () => {
         expect(items.find(item => item.label === 'Scroll to Top')).toBeDefined();
         expect(items.find(item => item.label === 'Scroll to Bottom')).toBeDefined();
         expect(items.find(item => item.label === 'Filter Block')).toBeDefined();
+        expect(items[2]).toEqual(expect.objectContaining({ separator: true }));
+        expect(items[5]).toEqual(expect.objectContaining({ separator: true }));
 
         items.find(item => item.label === 'Scroll to Top')?.action?.();
         items.find(item => item.label === 'Scroll to Bottom')?.action?.();
