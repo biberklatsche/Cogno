@@ -202,6 +202,37 @@ describe('TerminalSession', () => {
         expect(items.find(i => i.label === 'OS')).toBeUndefined();
     });
 
+    it('should build the standalone command menu for the first command out of view', () => {
+        session.initialize(terminalId, mockShellProfile);
+        stateManager.updateCommand({ id: '1' });
+        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+        vi.mocked(rendererInstance.terminal.buffer.active.getLine).mockImplementation((lineIndex: number) => {
+            if (lineIndex === 0) return TerminalMockFactory.createLine('^^#1');
+            if (lineIndex === 1) return TerminalMockFactory.createLine('first output line');
+            if (lineIndex === 2) return TerminalMockFactory.createLine('second output line');
+            if (lineIndex === 3) return TerminalMockFactory.createLine('^^#2');
+            return null;
+        });
+        rendererInstance.terminal.buffer.active.length = 4;
+
+        stateManager.updateCommands([
+            Object.assign(stateManager.commands[0], {
+                isFirstCommandOutOfViewport: true,
+            }),
+        ]);
+        stateManager.commands[0].set('command', 'cat bible.txt');
+
+        const items = session.buildHeaderMenu();
+        const processInfoIndex = items.findIndex(item => item.label === 'Process Info');
+
+        expect(items.find(item => item.label === 'Copy Command')).toBeDefined();
+        expect(items.find(item => item.label === 'Copy Output')).toBeDefined();
+        expect(items.find(item => item.label === 'Scroll to Top')).toBeDefined();
+        expect(items.find(item => item.label === 'Scroll to Bottom')).toBeDefined();
+        expect(items.find(item => item.label === 'Filter Block')).toBeDefined();
+        expect(items[processInfoIndex - 1]).toEqual(expect.objectContaining({ separator: true }));
+    });
+
     it('should include command menu items in the header menu for the first command out of view', () => {
         session.initialize(terminalId, mockShellProfile);
         stateManager.updateCommand({ id: '1' });
