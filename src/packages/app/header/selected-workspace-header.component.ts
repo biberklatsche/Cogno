@@ -28,15 +28,18 @@ import { SelectedWorkspacePayload } from "@cogno/features/side-menu/workspace/+b
       }
 
       .selected-workspace-header {
-        display: block;
+        display: flex;
+        align-items: center;
         max-width: 100%;
         font-size: 0.9rem;
         font-weight: 600;
-        line-height: 1;
+        line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding: 0 0.75rem;
+        min-height: 100%;
+        padding: 0.15rem 0.75rem 0;
+        box-sizing: border-box;
       }
     `,
   ],
