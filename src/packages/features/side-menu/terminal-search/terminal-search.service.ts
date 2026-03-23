@@ -40,6 +40,10 @@ export class TerminalSearchService {
     readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
     readonly beginBufferLine: Signal<number | undefined> = computed(() => this.searchStateSignal().beginBufferLine);
     readonly endBufferLine: Signal<number | undefined> = computed(() => this.searchStateSignal().endBufferLine);
+    readonly isBlockSearchActive: Signal<boolean> = computed(() => {
+        const searchState = this.searchStateSignal();
+        return searchState.beginBufferLine !== undefined || searchState.endBufferLine !== undefined;
+    });
     readonly hasMoreResults: Signal<boolean> = computed(() => this.searchStateSignal().hasMoreResults);
 
     constructor(
@@ -115,20 +119,16 @@ export class TerminalSearchService {
         this.repeatSearch();
     }
 
-    updateBeginBufferLine(event: Event): void {
-        const inputElement = event.target as HTMLInputElement;
-        this.updateSearchState({
-            beginBufferLine: this.parseBufferLine(inputElement.value),
-        });
-        this.scheduleSearch(this.searchStateSignal().query);
-    }
+    clearBlockSearch(): void {
+        if (!this.isBlockSearchActive()) {
+            return;
+        }
 
-    updateEndBufferLine(event: Event): void {
-        const inputElement = event.target as HTMLInputElement;
         this.updateSearchState({
-            endBufferLine: this.parseBufferLine(inputElement.value),
+            beginBufferLine: undefined,
+            endBufferLine: undefined,
         });
-        this.scheduleSearch(this.searchStateSignal().query);
+        this.repeatSearch();
     }
 
     revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
@@ -290,20 +290,6 @@ export class TerminalSearchService {
         }
 
         return `#${colorValue}`;
-    }
-
-    private parseBufferLine(value: string): number | undefined {
-        const trimmedValue = value.trim();
-        if (trimmedValue.length === 0) {
-            return undefined;
-        }
-
-        const parsedValue = Number.parseInt(trimmedValue, 10);
-        if (Number.isNaN(parsedValue) || parsedValue <= 0) {
-            return undefined;
-        }
-
-        return parsedValue;
     }
 
     private applyPanelRequest(

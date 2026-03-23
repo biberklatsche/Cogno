@@ -46,7 +46,7 @@ describe("TerminalSearchService", () => {
     vi.useRealTimers();
   });
 
-  it("applies block filter parameters from the bus and uses them for the next search", () => {
+  it("applies block search parameters from the bus and uses them for the next search", () => {
     appBus.publish({
       path: ["app", "terminal"],
       type: "TerminalSearchPanelRequested",
@@ -72,18 +72,34 @@ describe("TerminalSearchService", () => {
     });
   });
 
-  it("updates buffer line filters from the sidebar inputs", () => {
-    const beginInputElement = document.createElement("input");
-    beginInputElement.value = "5";
-    const endInputElement = document.createElement("input");
-    endInputElement.value = "18";
+  it("clears an active block search and repeats the search without block bounds", () => {
+    appBus.publish({
+      path: ["app", "terminal"],
+      type: "TerminalSearchPanelRequested",
+      payload: {
+        terminalId: "terminal-77",
+        beginBufferLine: 5,
+        endBufferLine: 18,
+      },
+    });
 
-    terminalSearchService.updateBeginBufferLine({ target: beginInputElement } as unknown as Event);
-    terminalSearchService.updateEndBufferLine({ target: endInputElement } as unknown as Event);
+    terminalSearchService.submitSearchQuery("needle");
     vi.runAllTimers();
+    requestSearchMock.mockClear();
 
-    expect(terminalSearchService.beginBufferLine()).toBe(5);
-    expect(terminalSearchService.endBufferLine()).toBe(18);
+    terminalSearchService.clearBlockSearch();
+
+    expect(terminalSearchService.isBlockSearchActive()).toBe(false);
+    expect(requestSearchMock).toHaveBeenCalledWith({
+      terminalId: "terminal-77",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: undefined,
+      endBufferLine: undefined,
+      cursorBufferLine: undefined,
+      resultLineLimit: 200,
+    });
   });
 
   it("debounces repeated search input before requesting a new search", () => {

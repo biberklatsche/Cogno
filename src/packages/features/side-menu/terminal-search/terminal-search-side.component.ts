@@ -49,34 +49,18 @@ type SearchTextSegment = {
                 .*
             </button>
         </div>
-        <div class="search-range-controls">
-            <input
-                autocomplete="off"
-                spellcheck="false"
-                data-private="off"
-                autocorrect="off"
-                type="number"
-                min="1"
-                placeholder="Begin buffer line"
-                class="search-range-input"
-                [value]="beginBufferLine() ?? ''"
-                (input)="updateBeginBufferLine($event)"
-                (click)="$event.stopPropagation()"
-            />
-            <input
-                autocomplete="off"
-                spellcheck="false"
-                data-private="off"
-                autocorrect="off"
-                type="number"
-                min="1"
-                placeholder="End buffer line"
-                class="search-range-input"
-                [value]="endBufferLine() ?? ''"
-                (input)="updateEndBufferLine($event)"
-                (click)="$event.stopPropagation()"
-            />
-        </div>
+        @if (isBlockSearchActive()) {
+            <div
+                class="block-search-banner"
+                [style.background-color]="matchBackgroundColor()"
+                [style.border-color]="matchBorderColor()"
+            >
+                <span>Block search active</span>
+                <button type="button" class="block-search-clear-button" (click)="$event.stopPropagation(); clearBlockSearch()">
+                    Clear
+                </button>
+            </div>
+        }
 
         @if (searchQuery().trim().length === 0) {
             <div class="helper-text">Type to search in the active terminal pane.</div>
@@ -91,7 +75,6 @@ type SearchTextSegment = {
                 <ul class="result-list">
                     @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
                         <li class="result-line" (click)="revealSearchResult(searchLine)">
-                            <span class="line-number">{{ searchLine.lineNumber }}</span>
                             <span class="line-content">
                                 @for (segment of buildSegments(searchLine); track trackSegment(segment, $index)) {
                                     <span [class.match]="segment.isMatch" [style.background-color]="segment.isMatch ? matchBackgroundColor() : null" [style.border]="segment.isMatch ? '1px solid ' + matchBorderColor() : null">{{ segment.text }}</span>
@@ -124,12 +107,6 @@ type SearchTextSegment = {
                 gap: 0.35rem;
             }
 
-            .search-range-controls {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.35rem;
-            }
-
             .search-input {
                 padding: 6px 8px;
                 border-radius: 6px;
@@ -139,18 +116,6 @@ type SearchTextSegment = {
                 outline: none;
                 box-sizing: border-box;
                 flex: 1;
-                min-width: 0;
-            }
-
-            .search-range-input {
-                padding: 6px 8px;
-                border-radius: 6px;
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                background: rgba(255, 255, 255, 0.04);
-                color: inherit;
-                outline: none;
-                box-sizing: border-box;
-                width: 100%;
                 min-width: 0;
             }
 
@@ -182,6 +147,32 @@ type SearchTextSegment = {
                 gap: 0.5rem;
             }
 
+            .block-search-banner {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                padding: 0.5rem 0.6rem;
+                border: 1px solid;
+                border-radius: 6px;
+                color: var(--foreground-color);
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+
+            .block-search-clear-button {
+                border: 1px solid currentColor;
+                background: rgba(0, 0, 0, 0.1);
+                color: inherit;
+                border-radius: 999px;
+                min-height: 1.7rem;
+                padding: 0.2rem 0.65rem;
+                font-size: 0.75rem;
+                font-weight: 700;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+
             .result-list {
                 list-style: none;
                 margin: 0;
@@ -193,10 +184,7 @@ type SearchTextSegment = {
             }
 
             .result-line {
-                display: grid;
-                grid-template-columns: 3.25rem 1fr;
-                gap: 0.75rem;
-                align-items: flex-start;
+                display: block;
                 padding: 0.35rem 0.25rem;
                 border-radius: 4px;
                 cursor: pointer;
@@ -206,13 +194,8 @@ type SearchTextSegment = {
                 }
             }
 
-            .line-number {
-                font-family: monospace;
-                opacity: 0.6;
-                user-select: none;
-            }
-
             .line-content {
+                display: block;
                 white-space: pre-wrap;
                 word-break: break-word;
                 line-height: 1.3;
@@ -242,8 +225,7 @@ export class TerminalSearchSideComponent {
     readonly regularExpression: Signal<boolean>;
     readonly matchBackgroundColor: Signal<string>;
     readonly matchBorderColor: Signal<string>;
-    readonly beginBufferLine: Signal<number | undefined>;
-    readonly endBufferLine: Signal<number | undefined>;
+    readonly isBlockSearchActive: Signal<boolean>;
     readonly hasMoreResults: Signal<boolean>;
     readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
 
@@ -254,8 +236,7 @@ export class TerminalSearchSideComponent {
         this.regularExpression = this.terminalSearchService.regularExpression;
         this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
         this.matchBorderColor = this.terminalSearchService.matchBorderColor;
-        this.beginBufferLine = this.terminalSearchService.beginBufferLine;
-        this.endBufferLine = this.terminalSearchService.endBufferLine;
+        this.isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
         this.hasMoreResults = this.terminalSearchService.hasMoreResults;
         this.reversedSearchResults = computed(() => {
             return [...this.searchResults()].reverse();
@@ -267,12 +248,8 @@ export class TerminalSearchSideComponent {
         this.terminalSearchService.submitSearchQuery(inputElement.value);
     }
 
-    updateBeginBufferLine(event: Event): void {
-        this.terminalSearchService.updateBeginBufferLine(event);
-    }
-
-    updateEndBufferLine(event: Event): void {
-        this.terminalSearchService.updateEndBufferLine(event);
+    clearBlockSearch(): void {
+        this.terminalSearchService.clearBlockSearch();
     }
 
     loadMoreSearchResults(): void {
