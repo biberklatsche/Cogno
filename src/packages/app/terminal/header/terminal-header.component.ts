@@ -48,6 +48,13 @@ type HeaderCommandViewModel = {
               </span>
             }
           </span>
+          <button
+            class="button icon-button command-menu-button"
+            type="button"
+            aria-label="Open command menu"
+            (click)="openCommandMenu($event)">
+              <app-icon name="mdiDotsVertical"></app-icon>
+          </button>
         } @else {
           <span class="command">&nbsp;</span>
         }
@@ -130,6 +137,19 @@ type HeaderCommandViewModel = {
       align-items: center;
       gap: 4px;
       margin-left: auto;
+    }
+
+    .command-menu-button {
+      flex: 0 0 auto;
+      width: 1.4rem;
+      height: 1.4rem;
+      padding: 0;
+
+      app-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
     }
 
     .terminal-menu-button {
@@ -232,6 +252,20 @@ export class TerminalHeaderComponent {
       event.currentTarget as HTMLElement,
       {items},
       {horizontalAlign: 'right'}
+    );
+  }
+
+  openCommandMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.terminalSession.focus();
+    const items: ContextMenuItem[] = this.terminalSession.buildHeaderCommandMenu();
+    if (items.length === 0) {
+      return;
+    }
+    this.menu.openContextForElement(
+      event.currentTarget as HTMLElement,
+      {items},
     );
   }
 

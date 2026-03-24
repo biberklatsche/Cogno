@@ -161,13 +161,7 @@ export class PromptMarkerRenderer {
         const buttonElement = document.createElement('button');
         buttonElement.type = 'button';
         buttonElement.classList.add('button', 'icon-button', 'prompt-marker-menu-button');
-        buttonElement.style.display = 'inline-flex';
-        buttonElement.style.alignItems = 'center';
-        buttonElement.style.justifyContent = 'center';
-        buttonElement.style.flex = '0 0 auto';
-        buttonElement.style.width = '1.4rem';
-        buttonElement.style.height = '1.4rem';
-        buttonElement.style.padding = '0';
+
         buttonElement.setAttribute('aria-label', 'Open command menu');
         buttonElement.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width: 1rem; height: 1rem; display: block;">

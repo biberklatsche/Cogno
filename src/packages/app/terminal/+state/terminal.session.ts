@@ -198,12 +198,6 @@ export class TerminalSession {
 
     buildHeaderMenu(): ContextMenuItem[] {
         const items: ContextMenuItem[] = this.buildNotificationContextMenuItems();
-        const commandItems = this.buildHeaderCommandMenuItems();
-
-        if (commandItems.length > 0) {
-            items.push(...commandItems, { separator: true });
-        }
-
         items.push({
             label: 'Process Info',
             action: () => this.openProcessInfoDialog(),
