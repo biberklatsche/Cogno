@@ -38,7 +38,7 @@ export class KeybindService {
         window.addEventListener("keydown", (e) => {
             // 1) Check registered listeners first (e.g., side menu overlays)
             const stack = this.listeners.get(e.key);
-            if(stack && stack?.length) {
+            if (stack && stack.length && !this.isEventInsideDialog(e)) {
                 stack.at(-1)?.handler(e);
                 e.preventDefault();
                 e.stopPropagation();
@@ -108,5 +108,14 @@ export class KeybindService {
         for (const key of deleteKeys) {
             this.listeners.delete(key);
         }
+    }
+
+    private isEventInsideDialog(event: KeyboardEvent): boolean {
+        const eventTarget = event.target;
+        if (!(eventTarget instanceof Element)) {
+            return false;
+        }
+
+        return eventTarget.closest('app-dialog') !== null;
     }
 }
