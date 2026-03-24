@@ -13,6 +13,8 @@ app-terminal {
     }
 
     .scroll-to-bottom-button {
+        opacity: 0.4;
+        transition: opacity 120ms ease-out;
         position: absolute;
         right: 1rem;
         bottom: 1rem;
@@ -27,7 +29,10 @@ app-terminal {
         background: color-mix(in srgb, var(--background-color-20l) 88%, transparent);
         color: color-mix(in srgb, var(--foreground-color-40d) 88%, transparent);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
-        cursor: pointer;
+
+        &:hover {
+            opacity: 1;
+        }
     }
 
     .cogno-marker {

@@ -50,11 +50,7 @@ type SearchTextSegment = {
             </button>
         </div>
         @if (isBlockSearchActive()) {
-            <div
-                class="block-search-banner"
-                [style.background-color]="matchBackgroundColor()"
-                [style.border-color]="matchBorderColor()"
-            >
+            <div class="block-search-banner">
                 <span>Block search active</span>
                 <button type="button" class="block-search-clear-button" (click)="$event.stopPropagation(); clearBlockSearch()">
                     Clear
@@ -152,25 +148,22 @@ type SearchTextSegment = {
                 align-items: center;
                 justify-content: space-between;
                 gap: 0.75rem;
-                padding: 0.5rem 0.6rem;
-                border: 1px solid;
-                border-radius: 6px;
-                color: var(--foreground-color);
+                color: var(--highlight-color);
                 font-size: 0.85rem;
                 font-weight: 600;
             }
 
             .block-search-clear-button {
-                border: 1px solid currentColor;
-                background: rgba(0, 0, 0, 0.1);
+                border: 0;
+                background: transparent;
                 color: inherit;
-                border-radius: 999px;
                 min-height: 1.7rem;
-                padding: 0.2rem 0.65rem;
+                padding: 0;
                 font-size: 0.75rem;
                 font-weight: 700;
                 cursor: pointer;
                 flex-shrink: 0;
+                text-decoration: underline;
             }
 
             .result-list {
