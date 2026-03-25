@@ -1,0 +1,47 @@
+{
+  "storage": {
+    "bucketName": "downloads",
+    "region": "eu-central-1",
+    "endpoint": "https://s3.eu-central-1.amazonaws.com",
+    "accessKeyId": "YOUR_ACCESS_KEY_ID",
+    "secretAccessKey": "YOUR_SECRET_ACCESS_KEY",
+    "forcePathStyle": true,
+    "basePath": "cogno2",
+    "publicBaseUrl": "https://downloads.example.com"
+  },
+  "apple": {
+    "signingIdentity": "Developer ID Application: Example Name (TEAMID1234)",
+    "appleId": "your-apple-id@example.com",
+    "teamId": "TEAMID1234",
+    "appleIdPassword": "app-specific-password"
+  },
+  "requiredPlatforms": [
+    "linux",
+    "macos",
+    "windows"
+  ],
+  "channels": {
+    "dev": {
+      "requiredPlatforms": [
+        "linux",
+        "macos",
+        "windows"
+      ],
+      "notesFilePath": "./release-notes/dev.md"
+    },
+    "release": {
+      "requiredPlatforms": [
+        "linux",
+        "macos",
+        "windows"
+      ],
+      "notesFilePath": "./release-notes/release.md"
+    }
+  },
+  "updater": {
+    "enabled": true,
+    "privateKeyPath": "~/.tauri/cogno.key",
+    "privateKeyPassword": "",
+    "publicKeyPath": "~/.tauri/cogno.pub"
+  }
+}
