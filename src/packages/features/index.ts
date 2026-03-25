@@ -1,5 +1,6 @@
 export * from "./side-menu/command-palette/command-palette.feature-definition";
 export * from "./side-menu/command-palette/command-palette.service";
+export * from "./side-menu/navigation/directional-navigation.engine";
 export * from "./side-menu/notification/notification.feature-definition";
 export * from "./side-menu/notification/notification.service";
 export * from "./side-menu/terminal-search/terminal-search.feature-definition";

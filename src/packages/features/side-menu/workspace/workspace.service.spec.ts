@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
 import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-sdk";
+import { TerminalBusyStateService } from "@cogno/app/terminal/terminal-busy-state.service";
+import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
-import { TerminalBusyStateService } from "@cogno/app/terminal/terminal-busy-state.service";
 
 describe("WorkspaceService", () => {
   let workspaceService: WorkspaceService;
@@ -53,8 +54,35 @@ describe("WorkspaceService", () => {
   });
 
   it("selects next workspace by navigation", () => {
+    workspaceService.registerNavigationItemsProvider(() => [
+      createNavigationItem("WS-DEFAULT", 0, 0, 120, 60),
+      createNavigationItem("WS-1", 140, 0, 120, 60),
+      createNavigationItem("WS-2", 0, 90, 120, 60),
+    ]);
+
     workspaceService.selectNext("right");
     expect(workspaceService.workspaceEntries()[1].isSelected).toBe(true);
+  });
+
+  it("moves through a variable grid using registered geometry", () => {
+    workspaceEntriesSubject.next([
+      { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
+      { id: "WS-1", name: "Project One", color: "blue", autosave: true, isActive: false },
+      { id: "WS-2", name: "Project Two", color: "red", autosave: false, isActive: false },
+      { id: "WS-3", name: "Project Three", color: "yellow", autosave: false, isActive: false },
+    ]);
+
+    workspaceService.registerNavigationItemsProvider(() => [
+      createNavigationItem("WS-DEFAULT", 0, 0, 120, 60),
+      createNavigationItem("WS-1", 140, 0, 120, 60),
+      createNavigationItem("WS-2", 0, 90, 180, 60),
+      createNavigationItem("WS-3", 200, 90, 120, 60),
+    ]);
+    workspaceService.initializeSelection();
+    workspaceService.selectNext("right");
+    workspaceService.selectNext("down");
+
+    expect(workspaceService.workspaceEntries()[3].isSelected).toBe(true);
   });
 
   it("restores selected workspace", async () => {
@@ -83,3 +111,23 @@ describe("WorkspaceService", () => {
     expect(closeWorkspaceMock).not.toHaveBeenCalled();
   });
 });
+
+function createNavigationItem(
+  id: string,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): DirectionalNavigationItem<string> {
+  return {
+    id,
+    rect: {
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+    },
+  };
+}

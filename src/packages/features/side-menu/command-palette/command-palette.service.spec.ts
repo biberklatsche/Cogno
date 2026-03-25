@@ -4,6 +4,7 @@ import {
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
 } from "@cogno/core-sdk";
+import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 
@@ -58,6 +59,12 @@ describe("CommandPaletteService", () => {
   });
 
   it("navigates through filtered entries", () => {
+    service.registerNavigationItemsProvider(() => [
+      createNavigationItem("copy", 0, 40, 280, 32),
+      createNavigationItem("open command palette", 0, 74, 280, 32),
+      createNavigationItem("split right", 0, 108, 280, 32),
+    ]);
+
     const initialCommandList = service.filteredCommandList();
     expect(initialCommandList[0].isSelected).toBe(true);
 
@@ -110,3 +117,22 @@ describe("CommandPaletteService", () => {
   });
 });
 
+function createNavigationItem(
+  id: string,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): DirectionalNavigationItem<string> {
+  return {
+    id,
+    rect: {
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+    },
+  };
+}

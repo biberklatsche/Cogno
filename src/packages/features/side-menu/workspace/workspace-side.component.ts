@@ -1,6 +1,7 @@
-import { Component, Signal } from "@angular/core";
+import { DestroyRef, ElementRef, Component, Signal, viewChildren } from "@angular/core";
 import { defaultWorkspaceIdContract } from "@cogno/core-sdk";
 import { CopyEditDeleteComponent, IconComponent } from "@cogno/core-ui";
+import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
@@ -12,7 +13,9 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       <ul class="workspace-grid">
         @for (workspaceEntry of workspaceEntries(); track workspaceEntry.id) {
           <li
+            #workspaceTileElement
             class="workspace-tile center"
+            [attr.data-navigation-id]="workspaceEntry.id"
             [class.selected]="workspaceEntry.isSelected"
             [class.active]="workspaceEntry.isActive"
             [class.open]="workspaceEntry.isOpen"
@@ -211,9 +214,18 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 export class WorkspaceSideComponent {
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]>;
   readonly defaultWorkspaceId = defaultWorkspaceIdContract;
+  private readonly workspaceTileElements = viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
+  private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
-  constructor(private readonly workspaceService: WorkspaceService) {
+  constructor(
+    private readonly workspaceService: WorkspaceService,
+    destroyRef: DestroyRef,
+  ) {
     this.workspaceEntries = this.workspaceService.workspaceEntries;
+    this.workspaceService.registerNavigationItemsProvider(this.navigationItemsProvider);
+    destroyRef.onDestroy(() => {
+      this.workspaceService.unregisterNavigationItemsProvider(this.navigationItemsProvider);
+    });
   }
 
   async restoreWorkspace(workspaceId: string): Promise<void> {
@@ -237,5 +249,30 @@ export class WorkspaceSideComponent {
     if (action === "delete") {
       await this.workspaceService.deleteWorkspace(workspaceId);
     }
+  }
+
+  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
+    return this.workspaceTileElements()
+      .map((elementRef) => elementRef.nativeElement)
+      .map((element) => {
+        const navigationId = element.dataset["navigationId"];
+        if (!navigationId) {
+          return null;
+        }
+
+        const rect = element.getBoundingClientRect();
+        return {
+          id: navigationId,
+          rect: {
+            top: rect.top,
+            right: rect.right,
+            bottom: rect.bottom,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          },
+        } satisfies DirectionalNavigationItem<string>;
+      })
+      .filter((item): item is DirectionalNavigationItem<string> => item !== null);
   }
 }

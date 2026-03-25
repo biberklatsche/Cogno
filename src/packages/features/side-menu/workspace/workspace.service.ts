@@ -6,12 +6,18 @@ import {
   workspaceHostPortToken,
 } from "@cogno/core-sdk";
 import { TerminalBusyStateService } from "@cogno/app/terminal/terminal-busy-state.service";
+import {
+  DirectionalNavigationItem,
+  NavigationDirection,
+  resolveNextNavigationTarget,
+} from "../navigation/directional-navigation.engine";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & { readonly isSelected: boolean };
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceService {
   private readonly workspaceEntriesSignal = signal<WorkspaceEntryViewModel[]>([]);
+  private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
 
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]> = this.workspaceEntriesSignal.asReadonly();
 
@@ -43,19 +49,29 @@ export class WorkspaceService {
     });
   }
 
-  selectNext(direction: "left" | "right" | "up" | "down"): void {
+  selectNext(direction: NavigationDirection): void {
     this.workspaceEntriesSignal.update((workspaceEntries) => {
       if (workspaceEntries.length === 0) {
         return workspaceEntries;
       }
 
       const currentIndex = workspaceEntries.findIndex((workspaceEntry) => workspaceEntry.isSelected);
-      const nextIndex = this.resolveNextIndex(currentIndex, workspaceEntries.length, direction);
+      const nextIndex = this.resolveNextIndex(workspaceEntries, currentIndex, direction);
       return workspaceEntries.map((workspaceEntry, index) => ({
         ...workspaceEntry,
         isSelected: index === nextIndex,
       }));
     });
+  }
+
+  registerNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+    this.navigationItemsProvider = provider;
+  }
+
+  unregisterNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+    if (this.navigationItemsProvider === provider) {
+      this.navigationItemsProvider = undefined;
+    }
   }
 
   async restoreSelectedWorkspace(): Promise<void> {
@@ -110,24 +126,33 @@ export class WorkspaceService {
   }
 
   private resolveNextIndex(
+    workspaceEntries: ReadonlyArray<WorkspaceEntryViewModel>,
     currentIndex: number,
-    length: number,
-    direction: "left" | "right" | "up" | "down",
+    direction: NavigationDirection,
   ): number {
-    if (length <= 0) {
+    if (workspaceEntries.length === 0) {
       return -1;
     }
 
     const safeCurrentIndex = currentIndex < 0 ? 0 : currentIndex;
-    if (direction === "left") {
-      return (safeCurrentIndex - 1 + length) % length;
+    const activeWorkspaceId = workspaceEntries[safeCurrentIndex]?.id;
+    const nextId = resolveNextNavigationTarget({
+      items: this.navigationItemsProvider?.() ?? [],
+      activeId: activeWorkspaceId,
+      direction,
+      wrap: true,
+    });
+
+    if (nextId) {
+      const nextIndex = workspaceEntries.findIndex((workspaceEntry) => workspaceEntry.id === nextId);
+      if (nextIndex >= 0) {
+        return nextIndex;
+      }
     }
-    if (direction === "right") {
-      return (safeCurrentIndex + 1) % length;
+
+    if (direction === "left" || direction === "up") {
+      return (safeCurrentIndex - 1 + workspaceEntries.length) % workspaceEntries.length;
     }
-    if (direction === "up") {
-      return (safeCurrentIndex - 2 + length) % length;
-    }
-    return (safeCurrentIndex + 2) % length;
+    return (safeCurrentIndex + 1) % workspaceEntries.length;
   }
 }

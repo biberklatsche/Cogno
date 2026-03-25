@@ -1,4 +1,5 @@
-import { Component, effect, ElementRef, Signal, viewChild } from "@angular/core";
+import { Component, DestroyRef, effect, ElementRef, Signal, viewChild, viewChildren } from "@angular/core";
+import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 
 @Component({
@@ -19,9 +20,15 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
       class="search-input"
     />
     @if (commandList().length > 0) {
-      <ul #commandListElement class="commandList">
+      <ul #commandListElement class="command-list">
         @for (command of commandList(); track command.label) {
-          <li (click)="fireAction(command)" class="command" [class.selected]="command.isSelected">
+          <li
+            #commandElement
+            [attr.data-navigation-id]="command.label"
+            (click)="fireAction(command)"
+            class="command"
+            [class.selected]="command.isSelected"
+          >
             <span class="label">{{ command.label }}</span>
             <span class="keybinding">{{ command.keybinding }}</span>
           </li>
@@ -99,9 +106,18 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 export class CommandPaletteComponent {
   readonly commandList: Signal<CommandEntry[]>;
   private readonly commandListElement = viewChild<ElementRef<HTMLUListElement>>("commandListElement");
+  private readonly commandElements = viewChildren<ElementRef<HTMLElement>>("commandElement");
+  private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
-  constructor(private readonly commandPaletteService: CommandPaletteService) {
+  constructor(
+    private readonly commandPaletteService: CommandPaletteService,
+    destroyRef: DestroyRef,
+  ) {
     this.commandList = this.commandPaletteService.filteredCommandList;
+    this.commandPaletteService.registerNavigationItemsProvider(this.navigationItemsProvider);
+    destroyRef.onDestroy(() => {
+      this.commandPaletteService.unregisterNavigationItemsProvider(this.navigationItemsProvider);
+    });
 
     effect(() => {
       const commandList = this.commandList();
@@ -131,5 +147,30 @@ export class CommandPaletteComponent {
 
   fireAction(commandEntry?: CommandEntry): void {
     this.commandPaletteService.fireSelectedAction(commandEntry);
+  }
+
+  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
+    return this.commandElements()
+      .map((elementRef) => elementRef.nativeElement)
+      .map((element) => {
+        const navigationId = element.dataset["navigationId"];
+        if (!navigationId) {
+          return null;
+        }
+
+        const rect = element.getBoundingClientRect();
+        return {
+          id: navigationId,
+          rect: {
+            top: rect.top,
+            right: rect.right,
+            bottom: rect.bottom,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          },
+        } satisfies DirectionalNavigationItem<string>;
+      })
+      .filter((item): item is DirectionalNavigationItem<string> => item !== null);
   }
 }
