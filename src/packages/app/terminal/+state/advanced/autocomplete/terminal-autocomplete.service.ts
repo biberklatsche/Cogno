@@ -18,7 +18,7 @@ import { SuggestionHighlighter } from "./suggestion-highlighter";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
-const MAX_SUGGESTIONS = 20;
+const MAX_SUGGESTIONS = 100;
 const PANEL_MAX_VISIBLE_ITEMS = 6;
 const MAX_TOP_HISTORY_SUGGESTIONS = 3;
 
