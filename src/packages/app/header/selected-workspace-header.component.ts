@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "../app-bus/app-bus";
 import { SelectedWorkspacePayload } from "@cogno/features/side-menu/workspace/+bus/events";
+import {TooltipDirective} from "@cogno/core-ui";
 
 @Component({
   selector: "app-selected-workspace-header",
@@ -9,9 +10,9 @@ import { SelectedWorkspacePayload } from "@cogno/features/side-menu/workspace/+b
   template: `
     @if (selectedWorkspace(); as selectedWorkspaceEntry) {
       <div
-        class="selected-workspace-header"
-        [style.color]="selectedWorkspaceEntry.color ? 'var(--color-' + selectedWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
-        [attr.title]="selectedWorkspaceEntry.name"
+          class="selected-workspace-header"
+          [style.color]="selectedWorkspaceEntry.color ? 'var(--color-' + selectedWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
+          [appTooltip]="selectedWorkspaceEntry.name"
       >
         {{ selectedWorkspaceEntry.name }}
       </div>
@@ -44,6 +45,9 @@ import { SelectedWorkspacePayload } from "@cogno/features/side-menu/workspace/+b
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    TooltipDirective
+  ]
 })
 export class SelectedWorkspaceHeaderComponent {
   protected readonly selectedWorkspace = signal<SelectedWorkspacePayload | undefined>(undefined);
