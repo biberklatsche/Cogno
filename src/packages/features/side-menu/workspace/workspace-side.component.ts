@@ -1,8 +1,5 @@
-import { Component, DestroyRef, ElementRef, OnDestroy, Signal, ViewChild, viewChildren } from "@angular/core";
-import { defaultWorkspaceIdContract } from "@cogno/core-sdk";
-import { CopyEditDeleteComponent, IconComponent } from "@cogno/core-ui";
+import { Component, DestroyRef, ElementRef, Inject, OnDestroy, Signal, viewChildren } from "@angular/core";
 import { DragPreviewService } from "@cogno/app/common/drag-preview/drag-preview.service";
-import { DestroyRef, ElementRef, Component, Inject, Signal, viewChildren } from "@angular/core";
 import { actionKeybindingToken, ActionKeybindingContract, defaultWorkspaceIdContract } from "@cogno/core-sdk";
 import { CopyEditDeleteComponent, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
@@ -29,7 +26,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
             [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
             [appTooltip]="workspaceEntry.name"
             [appTooltipSecondary]="getWorkspaceShortcutLabel($index)"
-            (click)="restoreWorkspace(workspaceEntry.id)"
+            (click)="onWorkspaceClick(workspaceEntry.id, $event)"
             (mousedown)="startWorkspaceReorderInteraction($event, workspaceEntry.id)"
             (mouseenter)="reorderWhileDragging(workspaceEntry.id, $event)"
           >
@@ -255,6 +252,8 @@ export class WorkspaceSideComponent implements OnDestroy {
   private mouseDownClientX = 0;
   private mouseDownClientY = 0;
   private mouseDownWorkspaceRectangle: DOMRect | undefined;
+  private suppressNextWorkspaceClick = false;
+  private suppressNextWorkspaceClickTimeoutId: number | undefined;
   private readonly handleWindowMouseMove = (event: MouseEvent): void => this.onWindowMouseMove(event);
   private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
   private readonly workspaceTileElements = viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
@@ -276,11 +275,27 @@ export class WorkspaceSideComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.removeWindowPointerListeners();
+    this.clearSuppressedWorkspaceClick();
     this.dragPreviewService.stopDragPreview();
   }
 
   async restoreWorkspace(workspaceId: string): Promise<void> {
     await this.workspaceService.restoreWorkspace(workspaceId);
+  }
+
+  onWorkspaceClick(workspaceId: string, event: MouseEvent): void {
+    if (this.suppressNextWorkspaceClick) {
+      this.suppressNextWorkspaceClick = false;
+      if (this.suppressNextWorkspaceClickTimeoutId !== undefined) {
+        window.clearTimeout(this.suppressNextWorkspaceClickTimeoutId);
+        this.suppressNextWorkspaceClickTimeoutId = undefined;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    void this.restoreWorkspace(workspaceId);
   }
 
   async closeWorkspace(workspaceId: string, event: MouseEvent): Promise<void> {
@@ -297,6 +312,7 @@ export class WorkspaceSideComponent implements OnDestroy {
     }
 
     event.preventDefault();
+    this.clearSuppressedWorkspaceClick();
     this.isDraggingWorkspace = false;
     this.draggedWorkspaceIdentifier = undefined;
     this.mouseDownWorkspaceIdentifier = workspaceId;
@@ -408,13 +424,11 @@ export class WorkspaceSideComponent implements OnDestroy {
       return;
     }
 
-    const mouseDownWorkspaceIdentifier = this.mouseDownWorkspaceIdentifier;
     if (this.isDraggingWorkspace) {
       this.isDraggingWorkspace = false;
       this.draggedWorkspaceIdentifier = undefined;
+      this.suppressWorkspaceClickOnce();
       void this.workspaceService.persistWorkspaceOrder();
-    } else if (mouseDownWorkspaceIdentifier) {
-      void this.restoreWorkspace(mouseDownWorkspaceIdentifier);
     }
 
     this.mouseDownWorkspaceIdentifier = undefined;
@@ -431,6 +445,24 @@ export class WorkspaceSideComponent implements OnDestroy {
   private removeWindowPointerListeners(): void {
     window.removeEventListener("mousemove", this.handleWindowMouseMove, true);
     window.removeEventListener("mouseup", this.handleWindowMouseUp, true);
+  }
+
+  private suppressWorkspaceClickOnce(): void {
+    this.suppressNextWorkspaceClick = true;
+    if (this.suppressNextWorkspaceClickTimeoutId !== undefined) {
+      window.clearTimeout(this.suppressNextWorkspaceClickTimeoutId);
+    }
+    this.suppressNextWorkspaceClickTimeoutId = window.setTimeout(() => {
+      this.clearSuppressedWorkspaceClick();
+    }, 0);
+  }
+
+  private clearSuppressedWorkspaceClick(): void {
+    this.suppressNextWorkspaceClick = false;
+    if (this.suppressNextWorkspaceClickTimeoutId !== undefined) {
+      window.clearTimeout(this.suppressNextWorkspaceClickTimeoutId);
+      this.suppressNextWorkspaceClickTimeoutId = undefined;
+    }
   }
 
   private isInsideNonDraggableWorkspaceControl(eventTarget: EventTarget | null): boolean {
