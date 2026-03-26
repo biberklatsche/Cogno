@@ -10,6 +10,7 @@ export interface WorkspaceConfiguration {
   color?: string;
   grids: PersistedGridConfigurationContract[];
   tabs: PersistedTabConfigurationContract[];
+  position?: number;
   isActive?: boolean;
   autosave?: boolean;
 }

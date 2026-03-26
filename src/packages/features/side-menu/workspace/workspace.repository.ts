@@ -14,6 +14,7 @@ export interface WorkspaceEntity {
   name: string;
   color: string;
   autosave: number;
+  position?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -49,7 +50,9 @@ export class WorkspaceRepository {
   ) {}
 
   async getAllWorkspaces(): Promise<WorkspaceConfiguration[]> {
-    const workspaces = await this.databaseAccess.select<WorkspaceEntity[]>("SELECT * FROM workspaces");
+    const workspaces = await this.databaseAccess.select<WorkspaceEntity[]>(
+      "SELECT * FROM workspaces ORDER BY COALESCE(position, 2147483647), created_at, id",
+    );
     const result: WorkspaceConfiguration[] = [];
 
     for (const workspaceEntity of workspaces) {
@@ -66,6 +69,7 @@ export class WorkspaceRepository {
         id: workspaceEntity.id,
         name: workspaceEntity.name,
         color: workspaceEntity.color,
+        position: workspaceEntity.position,
         autosave: workspaceEntity.autosave === 1,
         tabs: tabEntities.map((tabEntity) => ({
           tabId: tabEntity.tab_id,
@@ -86,13 +90,16 @@ export class WorkspaceRepository {
 
   async createWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
     await this.databaseAccess.transaction(async (databaseAccess) => {
+      const workspacePosition =
+        workspaceConfiguration.position ?? (await this.getNextWorkspacePosition(databaseAccess));
       await databaseAccess.execute(
-        "INSERT INTO workspaces (id, name, color, autosave) VALUES (?, ?, ?, ?)",
+        "INSERT INTO workspaces (id, name, color, autosave, position) VALUES (?, ?, ?, ?, ?)",
         [
           workspaceConfiguration.id,
           workspaceConfiguration.name,
           workspaceConfiguration.color,
           workspaceConfiguration.autosave ? 1 : 0,
+          workspacePosition,
         ],
       );
 
@@ -111,11 +118,12 @@ export class WorkspaceRepository {
   async updateWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
     await this.databaseAccess.transaction(async (databaseAccess) => {
       await databaseAccess.execute(
-        "UPDATE workspaces SET name = ?, color = ?, autosave = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        "UPDATE workspaces SET name = ?, color = ?, autosave = ?, position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         [
           workspaceConfiguration.name,
           workspaceConfiguration.color,
           workspaceConfiguration.autosave ? 1 : 0,
+          workspaceConfiguration.position ?? (await this.getNextWorkspacePosition(databaseAccess)),
           workspaceConfiguration.id,
         ],
       );
@@ -141,6 +149,19 @@ export class WorkspaceRepository {
 
   async deleteWorkspace(workspaceId: WorkspaceIdentifierContract): Promise<void> {
     await this.databaseAccess.execute("DELETE FROM workspaces WHERE id = ?", [workspaceId]);
+  }
+
+  async reorderWorkspaces(workspaceIdsInOrder: ReadonlyArray<WorkspaceIdentifierContract>): Promise<void> {
+    await this.databaseAccess.transaction(async (databaseAccess) => {
+      let position = 0;
+      for (const workspaceId of workspaceIdsInOrder) {
+        await databaseAccess.execute(
+          "UPDATE workspaces SET position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          [position, workspaceId],
+        );
+        position += 1;
+      }
+    });
   }
 
   async createTerminalSession(
@@ -192,6 +213,13 @@ export class WorkspaceRepository {
     } catch {
       return {} as PersistedPaneConfigurationContract;
     }
+  }
+
+  private async getNextWorkspacePosition(databaseAccess: DatabaseAccessContract): Promise<number> {
+    const [result] = await databaseAccess.select<Array<{ next_position: number | null }>>(
+      "SELECT COALESCE(MAX(position) + 1, 0) AS next_position FROM workspaces",
+    );
+    return result?.next_position ?? 0;
   }
 
   private async insertTab(

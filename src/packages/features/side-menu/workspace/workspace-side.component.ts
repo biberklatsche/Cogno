@@ -1,6 +1,7 @@
-import { DestroyRef, ElementRef, Component, Signal, viewChildren } from "@angular/core";
+import { Component, DestroyRef, ElementRef, OnDestroy, Signal, ViewChild, viewChildren } from "@angular/core";
 import { defaultWorkspaceIdContract } from "@cogno/core-sdk";
 import { CopyEditDeleteComponent, IconComponent } from "@cogno/core-ui";
+import { DragPreviewService } from "@cogno/app/common/drag-preview/drag-preview.service";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
@@ -19,9 +20,12 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
             [class.selected]="workspaceEntry.isSelected"
             [class.active]="workspaceEntry.isActive"
             [class.open]="workspaceEntry.isOpen"
+            [class.is-fixed]="workspaceEntry.id === defaultWorkspaceId"
+            [class.is-dragging]="isDraggingWorkspace && draggedWorkspaceIdentifier === workspaceEntry.id"
             [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + '-ct2)' : undefined"
             [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
-            (click)="restoreWorkspace(workspaceEntry.id)"
+            (mousedown)="startWorkspaceReorderInteraction($event, workspaceEntry.id)"
+            (mouseenter)="reorderWhileDragging(workspaceEntry.id, $event)"
           >
             <div class="workspace-tile__content">
               <div
@@ -105,6 +109,11 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         opacity: 0.7;
         cursor: default;
         height: 3.5rem;
+        transition:
+          opacity 120ms ease-out,
+          transform 120ms ease-out,
+          border-color 120ms ease-out,
+          background-color 120ms ease-out;
       }
 
       .workspace-tile:hover .workspace-actions {
@@ -128,6 +137,22 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
       .workspace-tile.open:not(.selected) {
         opacity: 1;
+      }
+
+      .workspace-tile:active {
+        cursor: pointer;
+      }
+
+      .workspace-tile.is-fixed {
+        cursor: default;
+      }
+
+      .workspace-tile.is-fixed:active {
+        cursor: default;
+      }
+
+      .workspace-tile.is-dragging {
+        border-style: dashed;
       }
 
       .center {
@@ -211,14 +236,26 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
     `,
   ],
 })
-export class WorkspaceSideComponent {
+export class WorkspaceSideComponent implements OnDestroy {
+  private static readonly minimumDragStartDistanceInPixels = 4;
+
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]>;
   readonly defaultWorkspaceId = defaultWorkspaceIdContract;
+  isDraggingWorkspace = false;
+  draggedWorkspaceIdentifier: string | undefined;
+
+  private mouseDownWorkspaceIdentifier: string | undefined;
+  private mouseDownClientX = 0;
+  private mouseDownClientY = 0;
+  private mouseDownWorkspaceRectangle: DOMRect | undefined;
+  private readonly handleWindowMouseMove = (event: MouseEvent): void => this.onWindowMouseMove(event);
+  private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
   private readonly workspaceTileElements = viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
   private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
   constructor(
     private readonly workspaceService: WorkspaceService,
+    private readonly dragPreviewService: DragPreviewService,
     destroyRef: DestroyRef,
   ) {
     this.workspaceEntries = this.workspaceService.workspaceEntries;
@@ -228,6 +265,11 @@ export class WorkspaceSideComponent {
     });
   }
 
+  ngOnDestroy(): void {
+    this.removeWindowPointerListeners();
+    this.dragPreviewService.stopDragPreview();
+  }
+
   async restoreWorkspace(workspaceId: string): Promise<void> {
     await this.workspaceService.restoreWorkspace(workspaceId);
   }
@@ -235,6 +277,26 @@ export class WorkspaceSideComponent {
   async closeWorkspace(workspaceId: string, event: MouseEvent): Promise<void> {
     event.stopPropagation();
     await this.workspaceService.closeWorkspace(workspaceId);
+  }
+
+  startWorkspaceReorderInteraction(event: MouseEvent, workspaceId: string): void {
+    if (event.button !== 0 || workspaceId === this.defaultWorkspaceId) {
+      return;
+    }
+    if (this.isInsideNonDraggableWorkspaceControl(event.target)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.isDraggingWorkspace = false;
+    this.draggedWorkspaceIdentifier = undefined;
+    this.mouseDownWorkspaceIdentifier = workspaceId;
+    this.mouseDownClientX = event.clientX;
+    this.mouseDownClientY = event.clientY;
+    const currentTargetElement = event.currentTarget;
+    this.mouseDownWorkspaceRectangle =
+      currentTargetElement instanceof HTMLElement ? currentTargetElement.getBoundingClientRect() : undefined;
+    this.addWindowPointerListeners();
   }
 
   openCreateWorkspaceDialog(): void {
@@ -274,5 +336,86 @@ export class WorkspaceSideComponent {
         } satisfies DirectionalNavigationItem<string>;
       })
       .filter((item): item is DirectionalNavigationItem<string> => item !== null);
+  }
+
+  reorderWhileDragging(targetWorkspaceIdentifier: string, event: MouseEvent): void {
+    if (!this.isDraggingWorkspace || event.buttons === 0 || !this.draggedWorkspaceIdentifier) {
+      return;
+    }
+    if (
+      this.draggedWorkspaceIdentifier === targetWorkspaceIdentifier ||
+      targetWorkspaceIdentifier === this.defaultWorkspaceId
+    ) {
+      return;
+    }
+
+    void this.workspaceService.reorderWorkspaces(this.draggedWorkspaceIdentifier, targetWorkspaceIdentifier);
+  }
+
+  private onWindowMouseMove(event: MouseEvent): void {
+    if (this.isDraggingWorkspace) {
+      this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
+      return;
+    }
+    if (!this.mouseDownWorkspaceIdentifier) {
+      return;
+    }
+
+    const horizontalDistanceInPixels = Math.abs(event.clientX - this.mouseDownClientX);
+    const verticalDistanceInPixels = Math.abs(event.clientY - this.mouseDownClientY);
+    if (
+      horizontalDistanceInPixels < WorkspaceSideComponent.minimumDragStartDistanceInPixels &&
+      verticalDistanceInPixels < WorkspaceSideComponent.minimumDragStartDistanceInPixels
+    ) {
+      return;
+    }
+
+    this.isDraggingWorkspace = true;
+    this.draggedWorkspaceIdentifier = this.mouseDownWorkspaceIdentifier;
+    if (this.mouseDownWorkspaceRectangle) {
+      this.dragPreviewService.startDragPreview(this.mouseDownWorkspaceRectangle, event.clientX, event.clientY);
+    }
+    this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
+  }
+
+  private onWindowMouseUp(event: MouseEvent): void {
+    if (event.button !== 0) {
+      this.mouseDownWorkspaceIdentifier = undefined;
+      this.mouseDownWorkspaceRectangle = undefined;
+      this.removeWindowPointerListeners();
+      this.dragPreviewService.stopDragPreview();
+      return;
+    }
+
+    const mouseDownWorkspaceIdentifier = this.mouseDownWorkspaceIdentifier;
+    if (this.isDraggingWorkspace) {
+      this.isDraggingWorkspace = false;
+      this.draggedWorkspaceIdentifier = undefined;
+      void this.workspaceService.persistWorkspaceOrder();
+    } else if (mouseDownWorkspaceIdentifier) {
+      void this.restoreWorkspace(mouseDownWorkspaceIdentifier);
+    }
+
+    this.mouseDownWorkspaceIdentifier = undefined;
+    this.mouseDownWorkspaceRectangle = undefined;
+    this.removeWindowPointerListeners();
+    this.dragPreviewService.stopDragPreview();
+  }
+
+  private addWindowPointerListeners(): void {
+    window.addEventListener("mousemove", this.handleWindowMouseMove, true);
+    window.addEventListener("mouseup", this.handleWindowMouseUp, true);
+  }
+
+  private removeWindowPointerListeners(): void {
+    window.removeEventListener("mousemove", this.handleWindowMouseMove, true);
+    window.removeEventListener("mouseup", this.handleWindowMouseUp, true);
+  }
+
+  private isInsideNonDraggableWorkspaceControl(eventTarget: EventTarget | null): boolean {
+    if (!(eventTarget instanceof HTMLElement)) {
+      return false;
+    }
+    return !!eventTarget.closest(".workspace-close-button, app-copy-edit-delete, .workspace-actions, button");
   }
 }

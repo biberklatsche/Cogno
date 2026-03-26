@@ -98,6 +98,14 @@ export class WorkspaceService {
     await this.workspaceHostPort.closeWorkspace(workspaceId);
   }
 
+  async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
+    await this.workspaceHostPort.reorderWorkspaces(sourceWorkspaceId, targetWorkspaceId);
+  }
+
+  async persistWorkspaceOrder(): Promise<void> {
+    await this.workspaceHostPort.persistWorkspaceOrder();
+  }
+
   openCreateWorkspaceDialog(): void {
     this.workspaceHostPort.openCreateWorkspaceDialog();
   }

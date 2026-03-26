@@ -16,6 +16,8 @@ export interface WorkspaceHostPortContract {
   readonly workspaceEntries$: Observable<ReadonlyArray<WorkspaceEntryContract>>;
   restoreWorkspace(workspaceId: string): Promise<void>;
   closeWorkspace(workspaceId: string): Promise<void>;
+  reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void>;
+  persistWorkspaceOrder(): Promise<void>;
   openCreateWorkspaceDialog(): void;
   openEditWorkspaceDialog(workspaceId: string): void;
   deleteWorkspace(workspaceId: string): Promise<void>;

@@ -11,6 +11,8 @@ describe("WorkspaceService", () => {
   let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
   let closeWorkspaceMock: ReturnType<typeof vi.fn>;
+  let reorderWorkspacesMock: ReturnType<typeof vi.fn>;
+  let persistWorkspaceOrderMock: ReturnType<typeof vi.fn>;
   let openCreateWorkspaceDialogMock: ReturnType<typeof vi.fn>;
   let openEditWorkspaceDialogMock: ReturnType<typeof vi.fn>;
   let deleteWorkspaceMock: ReturnType<typeof vi.fn>;
@@ -25,6 +27,8 @@ describe("WorkspaceService", () => {
 
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
     closeWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    reorderWorkspacesMock = vi.fn().mockResolvedValue(undefined);
+    persistWorkspaceOrderMock = vi.fn().mockResolvedValue(undefined);
     openCreateWorkspaceDialogMock = vi.fn();
     openEditWorkspaceDialogMock = vi.fn();
     deleteWorkspaceMock = vi.fn().mockResolvedValue(undefined);
@@ -34,6 +38,8 @@ describe("WorkspaceService", () => {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       closeWorkspace: closeWorkspaceMock,
+      reorderWorkspaces: reorderWorkspacesMock,
+      persistWorkspaceOrder: persistWorkspaceOrderMock,
       openCreateWorkspaceDialog: openCreateWorkspaceDialogMock,
       openEditWorkspaceDialog: openEditWorkspaceDialogMock,
       deleteWorkspace: deleteWorkspaceMock,
@@ -93,11 +99,15 @@ describe("WorkspaceService", () => {
 
   it("delegates create, edit and delete operations to host", async () => {
     await workspaceService.closeWorkspace("WS-1");
+    await workspaceService.reorderWorkspaces("WS-2", "WS-1");
+    await workspaceService.persistWorkspaceOrder();
     workspaceService.openCreateWorkspaceDialog();
     workspaceService.openEditWorkspaceDialog("WS-1");
     await workspaceService.deleteWorkspace("WS-2");
 
     expect(closeWorkspaceMock).toHaveBeenCalledWith("WS-1");
+    expect(reorderWorkspacesMock).toHaveBeenCalledWith("WS-2", "WS-1");
+    expect(persistWorkspaceOrderMock).toHaveBeenCalledTimes(1);
     expect(openCreateWorkspaceDialogMock).toHaveBeenCalledTimes(1);
     expect(openEditWorkspaceDialogMock).toHaveBeenCalledWith("WS-1");
     expect(deleteWorkspaceMock).toHaveBeenCalledWith("WS-2");

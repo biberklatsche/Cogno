@@ -19,6 +19,8 @@ describe("WorkspaceBusBridgeService", () => {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: vi.fn().mockResolvedValue(undefined),
       closeWorkspace: vi.fn().mockResolvedValue(undefined),
+      reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
+      persistWorkspaceOrder: vi.fn().mockResolvedValue(undefined),
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
