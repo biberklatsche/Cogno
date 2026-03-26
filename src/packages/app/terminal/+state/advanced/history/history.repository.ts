@@ -255,8 +255,8 @@ export class HistoryRepository {
                 ) VALUES(?, ?, ?, 1, ?, 0, NULL, NULL, 0, NULL, ?, NULL)
                      ON CONFLICT(context_id, cwd_path_id, command_id) DO UPDATE SET
                     exec_count = command_stat.exec_count + 1,
-                                                                             last_exec_at = excluded.last_exec_at,
-                                                                             deleted_at = NULL`,
+                    last_exec_at = excluded.last_exec_at,
+                    deleted_at = NULL`,
                 [this.contextId, cwdId, cmdId, ts, ts]
             );
         });
