@@ -2,13 +2,16 @@ import { Component, DestroyRef, ElementRef, OnDestroy, Signal, ViewChild, viewCh
 import { defaultWorkspaceIdContract } from "@cogno/core-sdk";
 import { CopyEditDeleteComponent, IconComponent } from "@cogno/core-ui";
 import { DragPreviewService } from "@cogno/app/common/drag-preview/drag-preview.service";
+import { DestroyRef, ElementRef, Component, Inject, Signal, viewChildren } from "@angular/core";
+import { actionKeybindingToken, ActionKeybindingContract, defaultWorkspaceIdContract } from "@cogno/core-sdk";
+import { CopyEditDeleteComponent, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
   selector: "app-workspace-side",
   standalone: true,
-  imports: [CopyEditDeleteComponent, IconComponent],
+  imports: [CopyEditDeleteComponent, IconComponent, TooltipDirective],
   template: `
     <section class="workspace-side">
       <ul class="workspace-grid">
@@ -24,6 +27,9 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
             [class.is-dragging]="isDraggingWorkspace && draggedWorkspaceIdentifier === workspaceEntry.id"
             [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + '-ct2)' : undefined"
             [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
+            [appTooltip]="workspaceEntry.name"
+            [appTooltipSecondary]="getWorkspaceShortcutLabel($index)"
+            (click)="restoreWorkspace(workspaceEntry.id)"
             (mousedown)="startWorkspaceReorderInteraction($event, workspaceEntry.id)"
             (mouseenter)="reorderWhileDragging(workspaceEntry.id, $event)"
           >
@@ -189,6 +195,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         align-items: flex-start;
         justify-content: center;
         overflow: hidden;
+        min-width: 0;
       }
 
       .workspace-name {
@@ -256,6 +263,8 @@ export class WorkspaceSideComponent implements OnDestroy {
   constructor(
     private readonly workspaceService: WorkspaceService,
     private readonly dragPreviewService: DragPreviewService,
+    @Inject(actionKeybindingToken)
+    private readonly actionKeybinding: ActionKeybindingContract,
     destroyRef: DestroyRef,
   ) {
     this.workspaceEntries = this.workspaceService.workspaceEntries;
@@ -311,6 +320,18 @@ export class WorkspaceSideComponent implements OnDestroy {
     if (action === "delete") {
       await this.workspaceService.deleteWorkspace(workspaceId);
     }
+  }
+
+  getWorkspaceShortcutLabel(index: number): string {
+    return this.actionKeybinding.getKeybindingLabel(this.getWorkspaceShortcutActionName(index));
+  }
+
+  private getWorkspaceShortcutActionName(index: number): string {
+    if (index === 0) {
+      return "select_workspace_default";
+    }
+
+    return `select_workspace_${index}`;
   }
 
   private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {

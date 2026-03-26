@@ -16,6 +16,7 @@ import { WindowService } from "@cogno/app/window/window.service";
 import { NotificationService } from "@cogno/features/side-menu/notification/notification.service";
 import { TerminalSearchService } from "@cogno/features/side-menu/terminal-search/terminal-search.service";
 import {
+  actionKeybindingToken,
   commandPaletteHostPortToken,
   commandRunnerToken,
   databaseAccessToken,
@@ -32,6 +33,8 @@ import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/termin
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
 import { AppWiringService } from "./app-host/app-wiring.service";
+import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
+import { WorkspaceShortcutActionService } from "@cogno/app/app-host/workspace-shortcut-action.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,6 +42,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ConfigService, useClass: RealConfigService },
     { provide: commandRunnerToken, useExisting: CommandRunnerHostService },
     { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
+    { provide: actionKeybindingToken, useExisting: ActionKeybindingPortAdapterService },
     { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
     { provide: filesystemToken, useExisting: FilesystemHostService },
     { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
@@ -55,9 +59,11 @@ export const appConfig: ApplicationConfig = {
       inject(WindowService);
       inject(AppWiringService);
       inject(SideMenuLifecycleRuntimeService);
+      inject(ActionKeybindingPortAdapterService);
       inject(CommandPaletteHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);
+      inject(WorkspaceShortcutActionService);
       inject(TerminalSearchService);
     }),
   ],

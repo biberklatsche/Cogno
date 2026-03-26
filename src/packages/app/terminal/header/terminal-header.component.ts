@@ -2,11 +2,10 @@ import {Component, computed} from '@angular/core';
 import {TerminalStateManager} from '../+state/state';
 import {toSignal} from "@angular/core/rxjs-interop";
 import {map} from "rxjs";
-import { IconComponent } from "@cogno/core-ui";
+import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import {TerminalSession} from "../+state/terminal.session";
 import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
-import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 import {ConfigService} from "../../config/+state/config.service";
 import { timespan } from "../../common/timespan/timespan";
 

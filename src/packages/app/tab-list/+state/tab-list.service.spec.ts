@@ -238,6 +238,47 @@ describe('TabListService', () => {
             expect(event.defaultPrevented).toBe(true);
         });
 
+        it('should handle select_tab_2 action by selecting the second tab', () => {
+            service.addTab({ id: 't1', title: 'T1', isActive: true, activeShellType: 'unknown' });
+            service.addTab({ id: 't2', title: 'T2', isActive: false, activeShellType: 'unknown' });
+            service.addTab({ id: 't3', title: 'T3', isActive: false, activeShellType: 'unknown' });
+
+            const event = {
+                type: 'ActionFired',
+                payload: 'select_tab_2',
+                path: ['app', 'action'],
+                trigger: { all: false }
+            } as any;
+            bus.publish(event);
+
+            let currentTabs: Tab[] = [];
+            service.tabs$.subscribe(tabs => currentTabs = tabs);
+            expect(currentTabs.find(t => t.id === 't2')?.isActive).toBe(true);
+            expect(currentTabs.find(t => t.id === 't1')?.isActive).toBe(false);
+            expect(event.performed).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should keep the current tab when select_tab_9 exceeds the tab count', () => {
+            service.addTab({ id: 't1', title: 'T1', isActive: true, activeShellType: 'unknown' });
+            service.addTab({ id: 't2', title: 'T2', isActive: false, activeShellType: 'unknown' });
+
+            const event = {
+                type: 'ActionFired',
+                payload: 'select_tab_9',
+                path: ['app', 'action'],
+                trigger: { all: false }
+            } as any;
+            bus.publish(event);
+
+            let currentTabs: Tab[] = [];
+            service.tabs$.subscribe(tabs => currentTabs = tabs);
+            expect(currentTabs.find(t => t.id === 't1')?.isActive).toBe(true);
+            expect(currentTabs.find(t => t.id === 't2')?.isActive).toBe(false);
+            expect(event.performed).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
         it('should handle close_other_tabs action', () => {
             service.addTab({ id: 't1', title: 'T1', isActive: false, activeShellType: 'unknown' });
             service.addTab({ id: 't2', title: 'T2', isActive: true, activeShellType: 'unknown' });

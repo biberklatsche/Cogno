@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, ViewChild } from "@angular/core";
 import { NgStyle } from "@angular/common";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { TooltipDirective } from "@cogno/core-ui";
 
 import { SuggestionFilterMode, TerminalAutocompleteService } from "./terminal-autocomplete.service";
 import { AutocompleteSuggestion } from "./autocomplete.types";
-import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
 

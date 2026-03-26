@@ -6,6 +6,8 @@
                 [class.is-active] = tab.isActive
                 [class.is-dragging]="isDraggingTab && draggedTabIdentifier === tab.id"
                 [style.background-color]="tab.color ? `var(--color-${tab.color}-ct2)` : undefined"
+                [appTooltip]="tab.title"
+                [appTooltipSecondary]="getTabShortcutActionName($index) | actionkeybinding"
                 [animate.enter]="'animate-tab-enter'"
                 [animate.leave]="'animate-tab-leave'"
                 [attr.data-tab-id]="tab.id"
@@ -26,9 +28,8 @@
                     (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
                     (blur)="commitRename(renameInput.value);">
             } @else {
-                <span class="title" appTooltip="{{tab.title}}" [appStartEllipsis]="tab.title"></span>
+                <span class="title" [appStartEllipsis]="tab.title"></span>
             }
-
             <span class="close" (click)="$event.stopPropagation(); closeTab(tab.id)">
                 <app-icon name="mdiClose"></app-icon>
             </span>

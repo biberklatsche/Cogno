@@ -2,6 +2,7 @@ export * from "./feature-mode.contract";
 export * from "./application-feature-collection.contract";
 export * from "./application-settings-extension.contract";
 export * from "./application-settings-section-definition.contract";
+export * from "./action-keybinding.contract";
 export * from "./database-access.contract";
 export * from "./database-migration.contract";
 export * from "./grid-layout.contract";
