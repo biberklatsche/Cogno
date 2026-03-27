@@ -7,6 +7,7 @@ import { Clipboard } from '../../../_tauri/clipboard';
 import {TerminalStateManager} from "../state";
 import {Char} from "../../../common/chars/chars";
 import {IPty} from "../pty/pty";
+import { ShellLineEditorDefinitionContract } from "@cogno/core-sdk";
 
 vi.mock('../../../_tauri/clipboard', () => ({
   Clipboard: {
@@ -19,7 +20,8 @@ describe('InputHandler', () => {
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   let mockStateManager: Pick<TerminalStateManager, 'clearUnreadNotification' | 'input' | 'isCommandRunning'>;
-  let mockPty: Pick<IPty, 'write'>;
+  let mockPty: Pick<IPty, 'write' | 'executeShellAction'>;
+  let lineEditor: ShellLineEditorDefinitionContract | undefined;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -34,9 +36,11 @@ describe('InputHandler', () => {
       }
     };
     mockPty = {
-      write: vi.fn()
+      write: vi.fn(),
+      executeShellAction: vi.fn(),
     };
-    handler = new InputHandler(mockBus, terminalId, mockStateManager as TerminalStateManager, mockPty as IPty);
+    lineEditor = undefined;
+    handler = new InputHandler(mockBus, terminalId, mockStateManager as TerminalStateManager, mockPty as IPty, lineEditor);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -111,6 +115,49 @@ describe('InputHandler', () => {
       await vi.waitFor(() => {
         expect(mockPty.write).toHaveBeenNthCalledWith(1, '\x08'.repeat(5));
         expect(mockPty.write).toHaveBeenNthCalledWith(2, 'bye');
+      });
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+      expect(pasteSpy).not.toHaveBeenCalled();
+    });
+
+    it('should replace only the selected input range with native input replacement when available', async () => {
+      lineEditor = { nativeActionsViaShellIntegration: ['replaceCurrentInput'] };
+      handler = new InputHandler(
+        mockBus,
+        terminalId,
+        mockStateManager as TerminalStateManager,
+        mockPty as IPty,
+        lineEditor,
+      );
+      handler.registerTerminal(mockTerminal);
+
+      const pasteSpy = vi.spyOn(mockTerminal, 'paste');
+      mockStateManager.input = {
+        text: 'aaa bbb ccc',
+        cursorIndex: 11,
+        maxCursorIndex: 11,
+      };
+      mockTerminal.cols = 80;
+      mockTerminal.buffer.active.length = 2;
+      const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: / $ ');
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
+        if (index === 0) return promptLine;
+        return null;
+      });
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 4, y: 1 },
+        end: { x: 7, y: 1 }
+      });
+      vi.mocked(Clipboard.readText).mockResolvedValue('ccc');
+
+      mockBus.publish({ type: 'Paste', payload: terminalId, path: ['app', 'terminal'] });
+
+      await vi.waitFor(() => {
+        expect(mockPty.executeShellAction).toHaveBeenCalledWith('replaceCurrentInput', {
+          text: 'aaa ccc ccc',
+          cursorIndex: 7,
+        });
       });
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
       expect(pasteSpy).not.toHaveBeenCalled();

@@ -340,7 +340,7 @@ describe('CommandLineEditor', () => {
         mockBus,
         mockPty,
         state as any,
-        { nativeActionsViaShellIntegration: ['deleteSelection'] }
+        { nativeActionsViaShellIntegration: ['deleteSelection', 'replaceCurrentInput'] }
       );
       editor.registerTerminal(mockTerminal);
 
@@ -356,9 +356,9 @@ describe('CommandLineEditor', () => {
       const result = customKeyHandler(event);
 
       expect(result).toBe(false);
-      expect(mockPty.executeShellAction).toHaveBeenCalledWith('deleteSelection', {
-        start: 0,
-        length: 5,
+      expect(mockPty.executeShellAction).toHaveBeenCalledWith('replaceCurrentInput', {
+        text: ' world',
+        cursorIndex: 0,
       });
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
     });
@@ -403,6 +403,72 @@ describe('CommandLineEditor', () => {
       // Expected: write 5 backspaces.
       expect(mockPty.write).toHaveBeenLastCalledWith('\x08'.repeat(5));
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it('should replace selected text when typing a printable character', () => {
+      state.input = { text: 'hello world', cursorIndex: 5, maxCursorIndex: 11 };
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 }
+      });
+
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      const preventDefault = vi.fn();
+      const stopPropagation = vi.fn();
+      const event = {
+        type: 'keydown',
+        key: 'x',
+        preventDefault,
+        stopPropagation
+      } as unknown as KeyboardEvent;
+
+      const result = customKeyHandler(event);
+
+      expect(result).toBe(false);
+      expect(mockPty.write).toHaveBeenNthCalledWith(1, '\x08'.repeat(5));
+      expect(mockPty.write).toHaveBeenNthCalledWith(2, 'x');
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+      expect(preventDefault).toHaveBeenCalled();
+      expect(stopPropagation).toHaveBeenCalled();
+    });
+
+    it('should replace only the selected range via native input replacement when available', () => {
+      editor = new CommandLineEditor(
+        mockBus,
+        mockPty,
+        state as any,
+        { nativeActionsViaShellIntegration: ['replaceCurrentInput'] }
+      );
+      editor.registerTerminal(mockTerminal);
+
+      state.input = { text: 'hello world', cursorIndex: 11, maxCursorIndex: 11 };
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 6, y: 1 },
+        end: { x: 11, y: 1 }
+      });
+
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls.at(-1)![0];
+      const preventDefault = vi.fn();
+      const stopPropagation = vi.fn();
+      const event = {
+        type: 'keydown',
+        key: 'x',
+        preventDefault,
+        stopPropagation
+      } as unknown as KeyboardEvent;
+
+      const result = customKeyHandler(event);
+
+      expect(result).toBe(false);
+      expect(mockPty.executeShellAction).toHaveBeenCalledWith('replaceCurrentInput', {
+        text: 'hello x',
+        cursorIndex: 7,
+      });
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+      expect(preventDefault).toHaveBeenCalled();
+      expect(stopPropagation).toHaveBeenCalled();
     });
 
     it('should not delete selection if it is outside of input area', () => {

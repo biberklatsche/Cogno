@@ -119,7 +119,6 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
-        this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty)));
         this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
@@ -129,6 +128,16 @@ export class TerminalSession {
 
         if(this.shellProfile.enable_shell_integration) {
             this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
+            const shellDefinition = this.wiringService
+                .getShellDefinitions()
+                .find(definition => definition.support.shellType === this.shellProfile?.shell_type);
+            this.disposables.push(this.renderer.register(new InputHandler(
+                this.bus,
+                this.terminalId,
+                this.stateManager,
+                this.pty,
+                shellDefinition?.lineEditor,
+            )));
             this.disposables.push(this.renderer.register(new CommandLineObserver(
                 this.stateManager,
                 this.configService.getPromptSegments(),
@@ -136,15 +145,14 @@ export class TerminalSession {
                 this.bus,
                 this.completedCommandNotificationHandler.handleCompletedCommand,
             )));
-            const shellDefinition = this.wiringService
-                .getShellDefinitions()
-                .find(definition => definition.support.shellType === this.shellProfile?.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineEditor(
                 this.bus,
                 this.pty,
                 this.stateManager,
                 shellDefinition?.lineEditor,
             )));
+        } else {
+            this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty)));
         }
 
     }

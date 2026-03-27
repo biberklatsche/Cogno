@@ -9,6 +9,7 @@ import {IDisposable as IXtermDisposable} from "@xterm/xterm";
 import {TerminalStateManager} from "../state";
 import { Char } from "../../../common/chars/chars";
 import {IPty} from "../pty/pty";
+import { ShellLineEditorDefinitionContract } from "@cogno/core-sdk";
 
 export class InputHandler implements ITerminalHandler {
 
@@ -20,7 +21,8 @@ export class InputHandler implements ITerminalHandler {
         private _bus: AppBus,
         private _terminalId: TerminalId,
         private stateManager: TerminalStateManager,
-        private pty: IPty
+        private pty: IPty,
+        private readonly lineEditor?: ShellLineEditorDefinitionContract,
     ) {
 
     }
@@ -66,23 +68,31 @@ export class InputHandler implements ITerminalHandler {
     private replaceSelectedInput(replacementText: string): boolean {
         if (!this._terminal?.hasSelection()) return false;
 
-        const selection = this._terminal.getSelectionPosition();
-        if (!selection) return false;
-
-        const input = this.stateManager.input;
-        const startInputY = this.findLastCognoMarkerY() + 1;
-        const startIndex = (selection.start.y - startInputY) * this._terminal.cols + selection.start.x;
-        const endIndex = (selection.end.y - startInputY) * this._terminal.cols + selection.end.x;
-
-        if (startIndex < 0 || endIndex > input.maxCursorIndex) {
+        const selectionRange = this.getSelectedInputRange();
+        if (!selectionRange) {
             return false;
         }
 
-        const deleteLength = endIndex - startIndex;
+        const deleteLength = selectionRange.endIndex - selectionRange.startIndex;
         if (deleteLength <= 0) {
             return false;
         }
 
+        const input = this.stateManager.input;
+        if (this.lineEditor?.nativeActionsViaShellIntegration?.includes('replaceCurrentInput')) {
+            const nextText =
+                input.text.slice(0, selectionRange.startIndex)
+                + replacementText
+                + input.text.slice(selectionRange.endIndex);
+            this.pty.executeShellAction('replaceCurrentInput', {
+                text: nextText,
+                cursorIndex: selectionRange.startIndex + replacementText.length,
+            });
+            this._terminal.clearSelection();
+            return true;
+        }
+
+        const endIndex = selectionRange.endIndex;
         const cursorOffsetToSelectionEnd = endIndex - input.cursorIndex;
         this.pty.write(this.buildCursorMoveCommand(cursorOffsetToSelectionEnd) + Char.Backspace.repeat(deleteLength));
         this._terminal.clearSelection();
@@ -105,5 +115,23 @@ export class InputHandler implements ITerminalHandler {
             }
         }
         return -1;
+    }
+
+    private getSelectedInputRange(): {startIndex: number; endIndex: number} | undefined {
+        if (!this._terminal) return undefined;
+
+        const selection = this._terminal.getSelectionPosition();
+        if (!selection) return undefined;
+
+        const input = this.stateManager.input;
+        const startInputY = this.findLastCognoMarkerY() + 1;
+        const startIndex = (selection.start.y - startInputY) * this._terminal.cols + selection.start.x;
+        const endIndex = (selection.end.y - startInputY) * this._terminal.cols + selection.end.x;
+
+        if (startIndex < 0 || endIndex > input.maxCursorIndex) {
+            return undefined;
+        }
+
+        return {startIndex, endIndex};
     }
 }
