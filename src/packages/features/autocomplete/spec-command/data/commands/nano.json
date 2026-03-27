@@ -1,4 +1,16 @@
 {
   "name": "nano",
-  "description": "Nano's ANOther editor, an enhanced free Pico clone"
+  "description": "Nano's ANOther editor, an enhanced free Pico clone",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-file",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file"
+        ]
+      }
+    }
+  ]
 }

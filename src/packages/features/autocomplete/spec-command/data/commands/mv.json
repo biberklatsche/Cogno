@@ -1,6 +1,21 @@
 {
   "name": "mv",
   "description": "Move & rename files and folders",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-path",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file",
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": "-f",

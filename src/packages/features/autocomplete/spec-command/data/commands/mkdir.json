@@ -1,6 +1,20 @@
 {
   "name": "mkdir",
   "description": "Make directories",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-directory",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": [

@@ -1,6 +1,21 @@
 {
   "name": "code",
   "description": "Visual Studio Code",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-path",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file",
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": "-",
@@ -12,6 +27,18 @@
         "--diff"
       ],
       "description": "Compare two files with each other",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "file"
@@ -27,6 +54,18 @@
         "--merge"
       ],
       "description": "Perform a three-way merge by providing paths for two modified versions of a file, the common origin of both modified versions and the output file to save merge results",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "path1"
@@ -48,6 +87,20 @@
         "--add"
       ],
       "description": "Add folder(s) to the last active window",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-directory",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "directory"
+            ],
+            "appendSlashToDirectories": true,
+            "continueSuggestions": true
+          }
+        }
+      ],
       "args": [
         {
           "name": "folder"
@@ -99,6 +152,20 @@
     {
       "name": "--user-data-dir",
       "description": "Specifies the directory that user data is kept in. Can be used to open multiple distinct instances of Code",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-directory",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "directory"
+            ],
+            "appendSlashToDirectories": true,
+            "continueSuggestions": true
+          }
+        }
+      ],
       "args": [
         {
           "name": "dir"
@@ -124,6 +191,20 @@
     {
       "name": "--extensions-dir",
       "description": "Set the root path for extensions",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-directory",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "directory"
+            ],
+            "appendSlashToDirectories": true,
+            "continueSuggestions": true
+          }
+        }
+      ],
       "args": [
         {
           "name": "dir"
