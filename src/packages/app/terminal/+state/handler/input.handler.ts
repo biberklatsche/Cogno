@@ -40,7 +40,7 @@ export class InputHandler implements ITerminalHandler {
         }));
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'Paste'}).subscribe(async event => {
             if(event.payload !== this._terminalId) return;
-            this._terminal?.paste(await Clipboard.readText());
+            await this.pasteClipboardText();
         }));
         this.subscription.add(this._bus.on$({path: ['app', 'terminal'], type: 'InjectTerminalInput'}).subscribe(event => {
             if(event.payload?.terminalId !== this._terminalId) return;
@@ -53,5 +53,57 @@ export class InputHandler implements ITerminalHandler {
             this.stateManager.clearUnreadNotification();
         });
         return this;
+    }
+
+    private async pasteClipboardText(): Promise<void> {
+        if (!this._terminal) return;
+        const clipboardText = await Clipboard.readText();
+        if (this.stateManager.isCommandRunning || !this.replaceSelectedInput(clipboardText)) {
+            this._terminal.paste(clipboardText);
+        }
+    }
+
+    private replaceSelectedInput(replacementText: string): boolean {
+        if (!this._terminal?.hasSelection()) return false;
+
+        const selection = this._terminal.getSelectionPosition();
+        if (!selection) return false;
+
+        const input = this.stateManager.input;
+        const startInputY = this.findLastCognoMarkerY() + 1;
+        const startIndex = (selection.start.y - startInputY) * this._terminal.cols + selection.start.x;
+        const endIndex = (selection.end.y - startInputY) * this._terminal.cols + selection.end.x;
+
+        if (startIndex < 0 || endIndex > input.maxCursorIndex) {
+            return false;
+        }
+
+        const deleteLength = endIndex - startIndex;
+        if (deleteLength <= 0) {
+            return false;
+        }
+
+        const cursorOffsetToSelectionEnd = endIndex - input.cursorIndex;
+        this.pty.write(this.buildCursorMoveCommand(cursorOffsetToSelectionEnd) + Char.Backspace.repeat(deleteLength));
+        this._terminal.clearSelection();
+        this.pty.write(replacementText);
+        return true;
+    }
+
+    private buildCursorMoveCommand(offset: number): string {
+        if (offset === 0) return "";
+        const direction = offset > 0 ? "\x1b[C" : "\x1b[D";
+        return direction.repeat(Math.abs(offset));
+    }
+
+    private findLastCognoMarkerY(): number {
+        if (!this._terminal?.buffer.active) return -1;
+        for (let lineIndex = this._terminal.buffer.active.length - 1; lineIndex >= 0; lineIndex--) {
+            const line = this._terminal.buffer.active.getLine(lineIndex);
+            if (line?.translateToString().includes('^^#')) {
+                return lineIndex;
+            }
+        }
+        return -1;
     }
 }

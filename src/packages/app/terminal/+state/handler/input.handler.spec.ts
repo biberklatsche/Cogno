@@ -18,14 +18,20 @@ describe('InputHandler', () => {
   let handler: InputHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
-  let mockStateManager: Pick<TerminalStateManager, 'clearUnreadNotification'>;
+  let mockStateManager: Pick<TerminalStateManager, 'clearUnreadNotification' | 'input' | 'isCommandRunning'>;
   let mockPty: Pick<IPty, 'write'>;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
     mockBus = new AppBus();
     mockStateManager = {
-      clearUnreadNotification: vi.fn()
+      clearUnreadNotification: vi.fn(),
+      isCommandRunning: false,
+      input: {
+        text: 'hello world',
+        cursorIndex: 5,
+        maxCursorIndex: 11
+      }
     };
     mockPty = {
       write: vi.fn()
@@ -82,6 +88,32 @@ describe('InputHandler', () => {
 
       // Wait for async clipboard read
       await vi.waitFor(() => expect(pasteSpy).toHaveBeenCalledWith('pasted content'));
+    });
+
+    it('should replace selected input with clipboard text when pasting', async () => {
+      const pasteSpy = vi.spyOn(mockTerminal, 'paste');
+      mockTerminal.cols = 80;
+      mockTerminal.buffer.active.length = 2;
+      const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: / $ ');
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
+        if (index === 0) return promptLine;
+        return null;
+      });
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 }
+      });
+      vi.mocked(Clipboard.readText).mockResolvedValue('bye');
+
+      mockBus.publish({ type: 'Paste', payload: terminalId, path: ['app', 'terminal'] });
+
+      await vi.waitFor(() => {
+        expect(mockPty.write).toHaveBeenNthCalledWith(1, '\x08'.repeat(5));
+        expect(mockPty.write).toHaveBeenNthCalledWith(2, 'bye');
+      });
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+      expect(pasteSpy).not.toHaveBeenCalled();
     });
 
     it('should not paste clipboard text when Paste event for other id is received', async () => {
