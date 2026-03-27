@@ -5,7 +5,7 @@ import { CommandListSpecProvider } from "./spec/providers/command-list.spec-prov
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
-import { CommandSpec } from "./spec/spec.types";
+import { CommandSpec, SpecSuggestionProvider } from "./spec/spec.types";
 import { createCommandSpecsFixture } from "./spec/testing/command-specs.fixture";
 
 function commandContext(beforeCursor: string): QueryContext {
@@ -543,6 +543,59 @@ describe("SpecCommandSuggestor", () => {
         const labels = result.map(v => v.label);
         expect(labels).toContain("--env");
         expect(labels).toContain("--force");
+    });
+
+    it("prefers a backend-specific provider over the default provider with the same id", async () => {
+        const defaultProvider: SpecSuggestionProvider = {
+            id: "command-list",
+            suggest: vi.fn().mockResolvedValue([{ label: "default-item" }]),
+        };
+        const windowsProvider: SpecSuggestionProvider = {
+            id: "command-list",
+            suggest: vi.fn().mockResolvedValue([{ label: "windows-item" }]),
+        };
+
+        const spec: CommandSpec = {
+            name: "git",
+            subcommands: [
+                {
+                    name: "remote",
+                    subcommands: [
+                        {
+                            name: "show",
+                            args: [{ name: "remote" }],
+                            providers: [{
+                                providerId: "command-list",
+                                source: "git-remote",
+                                params: {
+                                    program: "git",
+                                    args: ["remote"],
+                                    itemLabel: "git remote",
+                                },
+                            }],
+                        },
+                    ],
+                },
+            ],
+        };
+
+        const suggestor = new SpecCommandSuggestor(
+            new CommandSpecRegistry([...defaults, spec]),
+            [
+                { provider: defaultProvider },
+                { provider: windowsProvider, backendOs: ["windows"] },
+            ]
+        );
+
+        const result = await suggestor.suggest({
+            ...commandContext("git remote show "),
+            shellContext: { shellType: "PowerShell", backendOs: "windows" } as any,
+        });
+
+        expect(result.some(v => v.label === "windows-item")).toBe(true);
+        expect(result.some(v => v.label === "default-item")).toBe(false);
+        expect(defaultProvider.suggest).not.toHaveBeenCalled();
+        expect(windowsProvider.suggest).toHaveBeenCalledTimes(1);
     });
 
     it("suggests subcommand options after subcommand with positional args", async () => {

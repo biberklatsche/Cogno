@@ -1,4 +1,4 @@
-import { AutocompleteQueryContextContract, ShellTypeContract } from "@cogno/core-sdk";
+import { AutocompleteQueryContextContract, BackendOsContract, ShellTypeContract } from "@cogno/core-sdk";
 
 export type ShellConstraint = ShellTypeContract;
 
@@ -99,3 +99,10 @@ export interface SpecSuggestionProvider {
     readonly id: string;
     suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>>;
 }
+
+export type SpecSuggestionProviderRegistration = {
+    provider: SpecSuggestionProvider;
+    shells?: ShellConstraint[];
+    backendOs?: BackendOsContract[];
+    priority?: number;
+};

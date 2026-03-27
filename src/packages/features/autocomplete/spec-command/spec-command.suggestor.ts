@@ -8,11 +8,13 @@ import { CommandSpecSource } from "./spec/command-spec.source";
 import {
     CommandSpec,
     OptionSpec,
+    SpecSuggestionProviderRegistration,
     SubcommandSpec,
     ShellConstraint,
     SpecProviderBinding,
     SpecSuggestionProvider
 } from "./spec/spec.types";
+import { SpecProviderRegistry } from "./spec/provider-registry";
 
 type ParsedInput = {
     tokens: Array<{ value: string; start: number; end: number }>;
@@ -220,17 +222,15 @@ function prepareNode(node: SubcommandSpec): PreparedNode | undefined {
 export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContract {
     readonly id = "spec-command";
     readonly inputPattern = /.+/;
-    private readonly _providers = new Map<string, SpecSuggestionProvider>();
+    private readonly _providerRegistry: SpecProviderRegistry;
     private readonly _commandNamesByShell = new Map<string, Promise<ShellScopedCommand[]>>();
     private readonly _preparedSpecByCommand = new Map<string, PreparedSpec>();
 
     constructor(
         private readonly registry: CommandSpecSource,
-        providers: SpecSuggestionProvider[] = [],
+        providers: ReadonlyArray<SpecSuggestionProvider | SpecSuggestionProviderRegistration> = [],
     ) {
-        for (const provider of providers) {
-            this._providers.set(provider.id, provider);
-        }
+        this._providerRegistry = new SpecProviderRegistry(providers);
     }
 
     matches(context: AutocompleteQueryContextContract): boolean {
@@ -459,7 +459,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         };
 
         for (const binding of bindings) {
-            const provider = this._providers.get(binding.providerId);
+            const provider = this._providerRegistry.resolve(binding.providerId, context.shellContext);
             if (!provider || !this.matchesProviderBinding(binding, parsed, argsInput)) continue;
             const provided = await provider.suggest({
                 queryContext: context,
