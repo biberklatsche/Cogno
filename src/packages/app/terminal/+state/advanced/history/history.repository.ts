@@ -879,24 +879,6 @@ export class HistoryRepository {
         const nextSlotValueCount = existingSlotValueCount + 1;
         const isNewDistinctValue = existingSlotValueCount === 0;
 
-        await this.exec(
-            `INSERT INTO command_pattern_slot_value_stat(
-                context_id,
-                signature_key,
-                slot_index,
-                slot_value,
-                value_count,
-                last_seen_at,
-                created_at,
-                deleted_at
-            ) VALUES(?, ?, ?, ?, 1, ?, ?, NULL)
-            ON CONFLICT(context_id, signature_key, slot_index, slot_value) DO UPDATE SET
-                value_count = command_pattern_slot_value_stat.value_count + 1,
-                last_seen_at = excluded.last_seen_at,
-                deleted_at = NULL`,
-            [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
-        );
-
         const existingSlotStatRows = await this.sel<CommandPatternSlotStatExistingRow[]>(
             `SELECT
                 total_count AS totalCount,
@@ -928,35 +910,52 @@ export class HistoryRepository {
                 ) VALUES(?, ?, ?, 1, 1, ?, 1, ?, ?, NULL)`,
                 [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
             );
-            return;
+        } else {
+            const nextDistinctValueCount = existingSlotStat.distinctValueCount + (isNewDistinctValue ? 1 : 0);
+            const shouldReplaceTopValue = nextSlotValueCount > existingSlotStat.topValueCount;
+            const nextTopValue = shouldReplaceTopValue ? slotValue : existingSlotStat.topValue;
+            const nextTopValueCount = shouldReplaceTopValue ? nextSlotValueCount : existingSlotStat.topValueCount;
+
+            await this.exec(
+                `UPDATE command_pattern_slot_stat
+                 SET total_count = ?,
+                     distinct_value_count = ?,
+                     top_value = ?,
+                     top_value_count = ?,
+                     last_seen_at = ?,
+                     deleted_at = NULL
+                 WHERE context_id = ?
+                   AND signature_key = ?
+                   AND slot_index = ?`,
+                [
+                    existingSlotStat.totalCount + 1,
+                    nextDistinctValueCount,
+                    nextTopValue,
+                    nextTopValueCount,
+                    timestamp,
+                    this.contextId,
+                    signatureKey,
+                    slotIndex,
+                ],
+            );
         }
 
-        const nextDistinctValueCount = existingSlotStat.distinctValueCount + (isNewDistinctValue ? 1 : 0);
-        const shouldReplaceTopValue = nextSlotValueCount > existingSlotStat.topValueCount;
-        const nextTopValue = shouldReplaceTopValue ? slotValue : existingSlotStat.topValue;
-        const nextTopValueCount = shouldReplaceTopValue ? nextSlotValueCount : existingSlotStat.topValueCount;
-
         await this.exec(
-            `UPDATE command_pattern_slot_stat
-             SET total_count = ?,
-                 distinct_value_count = ?,
-                 top_value = ?,
-                 top_value_count = ?,
-                 last_seen_at = ?,
-                 deleted_at = NULL
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?`,
-            [
-                existingSlotStat.totalCount + 1,
-                nextDistinctValueCount,
-                nextTopValue,
-                nextTopValueCount,
-                timestamp,
-                this.contextId,
-                signatureKey,
-                slotIndex,
-            ],
+            `INSERT INTO command_pattern_slot_value_stat(
+                context_id,
+                signature_key,
+                slot_index,
+                slot_value,
+                value_count,
+                last_seen_at,
+                created_at,
+                deleted_at
+            ) VALUES(?, ?, ?, ?, 1, ?, ?, NULL)
+            ON CONFLICT(context_id, signature_key, slot_index, slot_value) DO UPDATE SET
+                value_count = command_pattern_slot_value_stat.value_count + 1,
+                last_seen_at = excluded.last_seen_at,
+                deleted_at = NULL`,
+            [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
         );
     }
 
