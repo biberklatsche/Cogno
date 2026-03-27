@@ -74,11 +74,17 @@ export type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branch
 
 export type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
 
+export type ProcessListSpecProviderBinding = SpecProviderBindingBase<"process-list", undefined>;
+
+export type SshHostsSpecProviderBinding = SpecProviderBindingBase<"ssh-hosts", undefined>;
+
 export type SpecProviderBinding =
     | CommandListSpecProviderBinding
     | FilesystemSpecProviderBinding
     | GitBranchesSpecProviderBinding
-    | NpmScriptsSpecProviderBinding;
+    | NpmScriptsSpecProviderBinding
+    | ProcessListSpecProviderBinding
+    | SshHostsSpecProviderBinding;
 
 export type SpecProviderContext = {
     queryContext: AutocompleteQueryContextContract;

@@ -4958,11 +4958,7 @@
   },
   {
     "name": "ssh",
-    "file": "ssh.json"
-  },
-  {
-    "name": "ssh",
-    "file": "ssh.json"
+    "file": "ssh-openssh.json"
   },
   {
     "name": "ssh-keygen",
