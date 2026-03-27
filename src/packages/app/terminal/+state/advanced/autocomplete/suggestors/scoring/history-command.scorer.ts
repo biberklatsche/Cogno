@@ -22,8 +22,12 @@ const SCORING = {
         select: 3 * 24 * 60 * 60 * 1000,
         exec: 7 * 24 * 60 * 60 * 1000,
         transition: 7 * 24 * 60 * 60 * 1000,
+        cwd: 3 * 24 * 60 * 60 * 1000,
     },
     sameCommandBonus: 8,
+    currentCwdBonus: 18,
+    currentCwdSelectionBonus: 6,
+    currentCwdRecencyBonus: 6,
     transitionPrior: 1,
 } as const;
 
@@ -91,13 +95,13 @@ export class HistoryCommandScorer {
         const cwdScore = this.sat(row.cwdExecCount + (1.5 * row.cwdSelectCount), SCORING.saturation.cwd);
         const selectScore = this.sat(row.selectCount, SCORING.saturation.select);
         const execScore = this.sat(row.execCount, SCORING.saturation.exec);
-        const recencySelectScore = this.recencyDecay(
-            this.safeAge(now, row.lastSelectAt || row.cwdLastSelectAt),
-            SCORING.halfLifeMs.select
+        const recencySelectScore = Math.max(
+            this.recencyDecay(this.safeAge(now, row.lastSelectAt), SCORING.halfLifeMs.select),
+            this.recencyDecay(this.safeAge(now, row.cwdLastSelectAt), SCORING.halfLifeMs.select),
         );
-        const recencyExecScore = this.recencyDecay(
-            this.safeAge(now, row.lastExecAt || row.cwdLastExecAt),
-            SCORING.halfLifeMs.exec
+        const recencyExecScore = Math.max(
+            this.recencyDecay(this.safeAge(now, row.lastExecAt), SCORING.halfLifeMs.exec),
+            this.recencyDecay(this.safeAge(now, row.cwdLastExecAt), SCORING.halfLifeMs.exec),
         );
         const transitionProbabilityScore = this.transitionProbability(
             row.transitionCount,
@@ -124,7 +128,23 @@ export class HistoryCommandScorer {
         const sameCommandBonus = (!!inputCommandToken && rowCommandToken === inputCommandToken)
             ? SCORING.sameCommandBonus
             : 0;
-        return (100 * blended) + sameCommandBonus;
+        const currentCwdRecency = Math.max(row.cwdLastSelectAt || 0, row.cwdLastExecAt || 0);
+        const currentCwdRecencyBonus = row.cwdExecCount > 0
+            ? SCORING.currentCwdRecencyBonus * this.recencyDecay(
+                this.safeAge(now, currentCwdRecency),
+                SCORING.halfLifeMs.cwd,
+            )
+            : 0;
+        const currentCwdBonus = row.cwdExecCount > 0 ? SCORING.currentCwdBonus : 0;
+        const currentCwdSelectionBonus = row.cwdSelectCount > 0 ? SCORING.currentCwdSelectionBonus : 0;
+
+        return (
+            (100 * blended)
+            + sameCommandBonus
+            + currentCwdBonus
+            + currentCwdSelectionBonus
+            + currentCwdRecencyBonus
+        );
     }
 
     private static tokenMatchQuality(queryToken: string, commandToken: string): number {

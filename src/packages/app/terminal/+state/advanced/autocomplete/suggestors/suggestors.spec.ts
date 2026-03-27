@@ -177,10 +177,15 @@ describe("Autocomplete History Suggestors", () => {
         };
 
         const result = await suggestor.suggest(ctx);
-        expect(result.length).toBe(3);
+        expect(result.length).toBe(4);
+        expect(result.map((item) => item.label)).toEqual([
+            "npm test",
+            "npm run build",
+            "npm run lint",
+            "npm outdated",
+        ]);
         expect(result[0].description).toBe("executed elsewhere on this computer");
         expect(result[1].description).toBe("executed elsewhere on this computer");
-        expect(result.map((item) => item.label)).not.toContain("npm outdated");
     });
 
     it("HistoryCommandSuggestor returns recent commands for empty query", async () => {
@@ -251,6 +256,131 @@ describe("Autocomplete History Suggestors", () => {
         const result = await suggestor.suggest(ctx);
         expect(result[0].description).toBe("executed in current directory");
         expect(result[1].description).toBe("executed elsewhere on this computer");
+    });
+
+    it("HistoryCommandSuggestor returns more than three suggestions when only history commands are available", async () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                { command: "npm test", execCount: 10, selectCount: 5, lastExecAt: now - 60_000, ...baseHistoryRow },
+                { command: "npm run build", execCount: 9, selectCount: 4, lastExecAt: now - 120_000, ...baseHistoryRow },
+                { command: "npm run lint", execCount: 8, selectCount: 3, lastExecAt: now - 180_000, ...baseHistoryRow },
+                { command: "npm run check", execCount: 7, selectCount: 2, lastExecAt: now - 240_000, ...baseHistoryRow },
+                { command: "npm run dev", execCount: 6, selectCount: 1, lastExecAt: now - 300_000, ...baseHistoryRow },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "npm",
+            inputText: "npm",
+            cursorIndex: 3,
+            replaceStart: 0,
+            replaceEnd: 3,
+            cwd: "/Users/larswolfram/projects",
+            shellContext,
+            query: "npm",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        expect(result).toHaveLength(5);
+        expect(result.map((item) => item.label)).toEqual([
+            "npm test",
+            "npm run build",
+            "npm run lint",
+            "npm run check",
+            "npm run dev",
+        ]);
+    });
+
+    it("HistoryCommandSuggestor prefers current cwd commands over stronger global history matches", async () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                {
+                    ...baseHistoryRow,
+                    command: "npm test",
+                    execCount: 40,
+                    selectCount: 20,
+                    lastExecAt: now - 10_000,
+                },
+                {
+                    ...baseHistoryRow,
+                    command: "npm run test",
+                    execCount: 4,
+                    selectCount: 1,
+                    lastExecAt: now - 120_000,
+                    cwdExecCount: 2,
+                    cwdSelectCount: 1,
+                    cwdLastExecAt: now - 30_000,
+                    cwdLastSelectAt: now - 20_000,
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "npm t",
+            inputText: "npm t",
+            cursorIndex: 5,
+            replaceStart: 0,
+            replaceEnd: 5,
+            cwd: "/Users/larswolfram/projects",
+            shellContext,
+            query: "npm t",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        expect(result[0].label).toBe("npm run test");
+        expect(result[0].description).toBe("executed in current directory");
+    });
+
+    it("HistoryCommandSuggestor prefers current cwd commands for empty query suggestions", async () => {
+        const now = Date.now();
+        vi.setSystemTime(now);
+        const persistence = {
+            searchCommands: vi.fn().mockResolvedValue([
+                {
+                    ...baseHistoryRow,
+                    command: "git status",
+                    execCount: 20,
+                    selectCount: 8,
+                    lastExecAt: now - 5_000,
+                },
+                {
+                    ...baseHistoryRow,
+                    command: "pnpm test",
+                    execCount: 2,
+                    selectCount: 0,
+                    lastExecAt: now - 60_000,
+                    cwdExecCount: 2,
+                    cwdSelectCount: 1,
+                    cwdLastExecAt: now - 10_000,
+                    cwdLastSelectAt: now - 8_000,
+                },
+            ]),
+        } as unknown as TerminalHistoryPersistenceService;
+
+        const suggestor = new HistoryCommandSuggestor(persistence);
+        const ctx: QueryContext = {
+            mode: "command",
+            beforeCursor: "",
+            inputText: "",
+            cursorIndex: 0,
+            replaceStart: 0,
+            replaceEnd: 0,
+            cwd: "/Users/larswolfram/projects",
+            shellContext,
+            query: "",
+        };
+
+        const result = await suggestor.suggest(ctx);
+        expect(result[0].label).toBe("pnpm test");
+        expect(result[0].description).toBe("executed in current directory");
     });
 
     it("HistoryCommandPatternSuggestor returns learned pattern suggestions", async () => {

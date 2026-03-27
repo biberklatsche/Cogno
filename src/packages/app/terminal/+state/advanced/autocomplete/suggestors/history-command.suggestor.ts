@@ -2,10 +2,13 @@ import { TerminalHistoryPersistenceService } from "../../history/terminal-histor
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { HistoryCommandScorer } from "./scoring/history-command.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
-const MAX_HISTORY_COMMAND_SUGGESTIONS = 3;
+const MAX_HISTORY_COMMAND_SUGGESTIONS = 100;
 const EMPTY_QUERY_SELECT_WEIGHT = 1000;
 const EMPTY_QUERY_EXEC_WEIGHT = 100;
+const EMPTY_QUERY_CWD_SELECT_WEIGHT = 2500;
+const EMPTY_QUERY_CWD_EXEC_WEIGHT = 350;
 const EMPTY_QUERY_RECENCY_DIVISOR_MS = 1000;
+const EMPTY_QUERY_CWD_RECENCY_DIVISOR_MS = 250;
 
 function consistsOnlyOfPromptWords(command: string, promptWords: Set<string>): boolean {
     const words = HistoryCommandScorer.tokenizeWords(command);
@@ -82,12 +85,20 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
         readonly execCount: number;
         readonly lastSelectAt: number;
         readonly lastExecAt: number;
+        readonly cwdSelectCount: number;
+        readonly cwdExecCount: number;
+        readonly cwdLastSelectAt: number;
+        readonly cwdLastExecAt: number;
     }): number {
         const latestInteractionTimestamp = Math.max(row.lastSelectAt || 0, row.lastExecAt || 0);
+        const latestCurrentCwdInteractionTimestamp = Math.max(row.cwdLastSelectAt || 0, row.cwdLastExecAt || 0);
         return (
             (row.selectCount * EMPTY_QUERY_SELECT_WEIGHT)
             + (row.execCount * EMPTY_QUERY_EXEC_WEIGHT)
+            + (row.cwdSelectCount * EMPTY_QUERY_CWD_SELECT_WEIGHT)
+            + (row.cwdExecCount * EMPTY_QUERY_CWD_EXEC_WEIGHT)
             + Math.floor(latestInteractionTimestamp / EMPTY_QUERY_RECENCY_DIVISOR_MS)
+            + Math.floor(latestCurrentCwdInteractionTimestamp / EMPTY_QUERY_CWD_RECENCY_DIVISOR_MS)
         );
     }
 }
