@@ -3,7 +3,7 @@ import {
     requestPermission,
     sendNotification,
 } from "@tauri-apps/plugin-notification";
-import {Logger} from "./logger";
+import { ErrorReporter } from "../common/error/error-reporter";
 
 type PermissionState = "granted" | "denied" | "prompt" | "default";
 
@@ -31,7 +31,16 @@ export class NotificationOs {
             });
             return { status: "sent" };
         } catch (error) {
-            Logger.error(`[NotificationOs] OS notification failed: ${String(error)}`);
+            ErrorReporter.reportException({
+                error,
+                handled: true,
+                notify: false,
+                source: "NotificationOs",
+                context: {
+                    operation: "send",
+                    title: title.trim(),
+                },
+            });
             return { status: "failed", error };
         }
     }
@@ -48,7 +57,15 @@ export class NotificationOs {
             }
             return granted;
         } catch (error) {
-            Logger.error(`[NotificationOs] permission check failed: ${String(error)}`);
+            ErrorReporter.reportException({
+                error,
+                handled: true,
+                notify: false,
+                source: "NotificationOs",
+                context: {
+                    operation: "ensurePermission",
+                },
+            });
             return false;
         }
     }

@@ -7,6 +7,7 @@ import {
 } from "@angular/core";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
+import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
@@ -52,6 +53,7 @@ export const appConfig: ApplicationConfig = {
       inject(StyleService);
       inject(NotificationDispatchService);
       inject(NotificationService);
+      inject(ErrorReportingRuntimeService).initialize();
       inject(WorkspaceHostApplicationService);
       inject(KeybindService);
       inject(CliActionService);

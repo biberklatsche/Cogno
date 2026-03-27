@@ -7,6 +7,7 @@ import {Logger} from "../_tauri/logger";
 import {Process} from "../_tauri/process";
 import {ActionFired} from "../action/action.models";
 import { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
+import { ErrorReporter } from "../common/error/error-reporter";
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +35,14 @@ export class WindowService {
                       break;
                   case 'new_window':
                       invoke('new_window').catch((err) => {
-                          Logger.error('Failed to open new window', err);
+                          ErrorReporter.reportException({
+                              error: err,
+                              handled: true,
+                              source: "WindowService",
+                              context: {
+                                  action: "new_window",
+                              },
+                          });
                       });
                       event.performed = true;
                       break;

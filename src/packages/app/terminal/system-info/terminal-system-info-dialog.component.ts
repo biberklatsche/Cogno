@@ -3,9 +3,9 @@ import {ChangeDetectionStrategy, Component, Inject, OnDestroy, OnInit, Signal, s
 import {toSignal} from '@angular/core/rxjs-interop';
 import {Observable} from 'rxjs';
 import {DIALOG_DATA} from '../../common/dialog';
+import { ErrorReporter } from '../../common/error/error-reporter';
 import {TerminalId} from '../../grid-list/+model/model';
 import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '../../_tauri/pty';
-import {Logger} from '../../_tauri/logger';
 import {Command, TerminalState} from '../+state/state';
 import {KeybindService} from '../../keybinding/keybind.service';
 
@@ -425,7 +425,16 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
       const snapshot = await TauriPty.getProcessTreeByTerminalId(this.data.terminalId);
       this.snapshot.set(snapshot);
     } catch (err) {
-      Logger.error(`Failed to load terminal system info: ${String(err)}`);
+      ErrorReporter.reportException({
+        error: err,
+        handled: true,
+        source: "TerminalSystemInfoDialogComponent",
+        context: {
+          operation: "load",
+          showLoading,
+          terminalId: this.data.terminalId,
+        },
+      });
       this.error.set('Failed to load system information.');
     } finally {
       if (showLoading) {

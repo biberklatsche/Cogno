@@ -1,5 +1,6 @@
 import { IPathAdapter } from "@cogno/core-sdk";
 import {DB, IDatabase} from "../../../../_tauri/db";
+import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 import {isWslContext, ShellContext} from "../model/models";
 import {Hash} from "../../../../common/hash/hash";
 import { CommandPatternLearner } from "./command-pattern-learner";
@@ -1094,7 +1095,14 @@ export class HistoryRepository {
                 });
                 this._inTransaction = false;
             } catch (e) {
-                console.error("#####B transaction failed", e);
+                ErrorReporter.reportException({
+                    error: e,
+                    handled: true,
+                    source: "HistoryRepository",
+                    context: {
+                        operation: "transaction",
+                    },
+                });
                 this.activeDatabase = undefined;
                 this._inTransaction = false;
                 throw e;

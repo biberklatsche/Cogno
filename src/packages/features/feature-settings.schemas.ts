@@ -17,6 +17,26 @@ export const FeatureWorkspaceSchema = z.object({
 export const FeatureNotificationSchema = z.object({
   mode: FeatureModeEnum.optional(),
   highlight_terminal_on_activity: z.boolean().optional(),
+  exceptions: z
+    .object({
+      handled: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe("Show a notification for handled exceptions reported through the central error reporter."),
+        })
+        .optional(),
+      unhandled: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe("Show a notification for unhandled renderer exceptions caught by the global error reporter."),
+        })
+        .optional(),
+    })
+    .optional(),
   long_running_commands: z
     .object({
       enabled: z

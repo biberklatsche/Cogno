@@ -2,12 +2,12 @@ import { Injectable } from "@angular/core";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 
-import { Logger } from "@cogno/app/_tauri/logger";
 import { IPathAdapter } from "@cogno/core-sdk";
 import { ShellContext } from "../model/models";
 import { LearnedCommandPattern } from "./command-pattern.models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
 import {ExecutedCommand} from "./terminal-command-history.store";
+import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
 type ReturnCodePolicy = {
@@ -48,8 +48,14 @@ export class TerminalHistoryPersistenceService {
                         take(1),
                         concatMap(repo => from(action(repo))),
                         catchError(err => {
-                            const detail = err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : String(err);
-                            Logger.error(`[TerminalHistoryPersistenceService] action failed: ${detail}`);
+                            ErrorReporter.reportException({
+                                error: err,
+                                handled: true,
+                                source: "TerminalHistoryPersistenceService",
+                                context: {
+                                    operation: "persistenceAction",
+                                },
+                            });
                             return EMPTY;
                         })
                     )
@@ -61,7 +67,14 @@ export class TerminalHistoryPersistenceService {
     initialize(shellContext: ShellContext, adapter: IPathAdapter): void {
         HistoryRepository.createForContext(shellContext, adapter)
             .then(repo => this._repo$.next(repo))
-            .catch(err => Logger.error("[TerminalHistoryPersistenceService] init failed", err));
+            .catch(error => ErrorReporter.reportException({
+                error,
+                handled: true,
+                source: "TerminalHistoryPersistenceService",
+                context: {
+                    operation: "initialize",
+                },
+            }));
     }
 
     onCwdChanged(cwdRaw: string): void {

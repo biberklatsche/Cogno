@@ -1,10 +1,9 @@
 import {UnlistenFn} from "@tauri-apps/api/event";
-import {ShellConfig} from "../../../config/+models/config";
 import {IDisposable} from "../../../common/models/models";
-import {Logger} from "../../../_tauri/logger";
 import {TauriPty} from "../../../_tauri/pty";
 import {TerminalDimensions} from '../handler/resize.handler';
 import {ShellProfile} from "../../../config/+models/shell-config";
+import { ErrorReporter } from "../../../common/error/error-reporter";
 
 export interface IPty extends IDisposable{
     spawn(terminalId: string, shellProfile: ShellProfile, dimensions: TerminalDimensions): Promise<void>;
@@ -39,7 +38,16 @@ export class Pty implements IPty {
     kill(signal?: string): void {
         if(!this._terminalId) return;
         TauriPty.kill(this._terminalId)
-            .catch(err => Logger.error('Failed to kill PTY:', err));
+            .catch(error => ErrorReporter.reportException({
+                error,
+                handled: true,
+                source: "Pty",
+                context: {
+                    operation: "kill",
+                    signal,
+                    terminalId: this._terminalId,
+                },
+            }));
     }
 
     resize(dimensions: TerminalDimensions) {
@@ -48,7 +56,17 @@ export class Pty implements IPty {
             this._pendingResize = dimensions;
             return;
         }
-        TauriPty.resize(this._terminalId, dimensions.cols, dimensions.rows).catch(err => Logger.error('Failed to resize PTY:', err));
+        TauriPty.resize(this._terminalId, dimensions.cols, dimensions.rows).catch(error => ErrorReporter.reportException({
+            error,
+            handled: true,
+            source: "Pty",
+            context: {
+                columns: dimensions.cols,
+                operation: "resize",
+                rows: dimensions.rows,
+                terminalId: this._terminalId,
+            },
+        }));
     }
 
     onData(listener: (e: string) => any): IDisposable {
@@ -68,13 +86,30 @@ export class Pty implements IPty {
     write(data: string) {
         if(!this._terminalId) throw Error('Please spawn Pty before write to it.');
         TauriPty.write(this._terminalId, data)
-            .catch(err => console.error('Failed to write to PTY:', err));
+            .catch(error => ErrorReporter.reportException({
+                error,
+                handled: true,
+                source: "Pty",
+                context: {
+                    operation: "write",
+                    terminalId: this._terminalId,
+                },
+            }));
     }
 
     executeShellAction(action: string, payload?: object) {
         if(!this._terminalId) throw Error('Please spawn Pty before executing shell actions.');
         TauriPty.executeShellAction(this._terminalId, action, payload)
-            .catch(err => Logger.error('Failed to execute shell action:', err));
+            .catch(error => ErrorReporter.reportException({
+                error,
+                handled: true,
+                source: "Pty",
+                context: {
+                    action,
+                    operation: "executeShellAction",
+                    terminalId: this._terminalId,
+                },
+            }));
     }
 
     onExit(listener: (e: {exitCode: number, signal?: number}) => any): IDisposable {
@@ -107,6 +142,16 @@ export class Pty implements IPty {
         const pendingResize = this._pendingResize;
         this._pendingResize = undefined;
         TauriPty.resize(this._terminalId, pendingResize.cols, pendingResize.rows)
-            .catch(err => Logger.error('Failed to resize PTY:', err));
+            .catch(error => ErrorReporter.reportException({
+                error,
+                handled: true,
+                source: "Pty",
+                context: {
+                    columns: pendingResize.cols,
+                    operation: "flushPendingResize",
+                    rows: pendingResize.rows,
+                    terminalId: this._terminalId,
+                },
+            }));
     }
 }

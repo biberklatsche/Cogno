@@ -18,7 +18,18 @@ const featureSettingsSchemaShape = {
 } as const;
 
 export const featureSettingsExtension = {
-  defaults: {},
+  defaults: {
+    notification: {
+      exceptions: {
+        handled: {
+          enabled: false,
+        },
+        unhandled: {
+          enabled: false,
+        },
+      },
+    },
+  },
   schemaShape: featureSettingsSchemaShape,
   settingsSections: [
     { id: "workspace", title: "Workspace", order: 100 },
