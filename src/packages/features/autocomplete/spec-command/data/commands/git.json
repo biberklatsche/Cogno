@@ -1612,7 +1612,26 @@
     },
     {
       "name": "ls-remote",
-      "description": "List references in a remote repository"
+      "description": "List references in a remote repository",
+      "args": [
+        {
+          "name": "remote"
+        }
+      ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "git-remote",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": [
+              "remote"
+            ],
+            "itemLabel": "git remote"
+          }
+        }
+      ]
     },
     {
       "name": "push",
@@ -1626,6 +1645,21 @@
         }
       ],
       "providers": [
+        {
+          "providerId": "command-list",
+          "source": "git-remote",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": [
+              "remote"
+            ],
+            "itemLabel": "git remote"
+          },
+          "when": {
+            "argsRegex": "^\\s*push\\s+(?!-)(?:\\S*)$"
+          }
+        },
         {
           "providerId": "git-branches",
           "source": "git-branch",
@@ -1820,6 +1854,21 @@
         }
       ],
       "providers": [
+        {
+          "providerId": "command-list",
+          "source": "git-remote",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": [
+              "remote"
+            ],
+            "itemLabel": "git remote"
+          },
+          "when": {
+            "argsRegex": "^\\s*pull\\s+(?!-)(?:\\S*)$"
+          }
+        },
         {
           "providerId": "git-branches",
           "source": "git-branch",
@@ -2486,6 +2535,21 @@
           ],
           "providers": [
             {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              },
+              "when": {
+                "argsRegex": "^\\s*remote\\s+set-head\\s+(?!-)(?:\\S*)$"
+              }
+            },
+            {
               "providerId": "git-branches",
               "source": "git-branch",
               "baseScore": 62,
@@ -2524,6 +2588,21 @@
           ],
           "providers": [
             {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              },
+              "when": {
+                "argsRegex": "^\\s*remote\\s+set-branches\\s+(?!-)(?:\\S*)$"
+              }
+            },
+            {
               "providerId": "git-branches",
               "source": "git-branch",
               "baseScore": 62,
@@ -2549,6 +2628,20 @@
             {
               "name": "remote"
             }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              }
+            }
           ]
         },
         {
@@ -2561,6 +2654,23 @@
             {
               "name": "new remote name"
             }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              },
+              "when": {
+                "argsRegex": "^\\s*remote\\s+rename\\s+(?!-)(?:\\S*)$"
+              }
+            }
           ]
         },
         {
@@ -2569,6 +2679,20 @@
           "args": [
             {
               "name": "name"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              }
             }
           ],
           "options": [
@@ -2596,6 +2720,23 @@
               "name": "oldurl"
             }
           ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              },
+              "when": {
+                "argsRegex": "^\\s*remote\\s+set-url\\s+(?!-)(?:\\S*)$"
+              }
+            }
+          ],
           "options": [
             {
               "name": "--push",
@@ -2619,6 +2760,20 @@
               "name": "name"
             }
           ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              }
+            }
+          ],
           "options": [
             {
               "name": "-n",
@@ -2632,6 +2787,20 @@
           "args": [
             {
               "name": "name"
+            }
+          ],
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-remote",
+              "baseScore": 61,
+              "params": {
+                "program": "git",
+                "args": [
+                  "remote"
+                ],
+                "itemLabel": "git remote"
+              }
             }
           ],
           "options": [
@@ -2682,6 +2851,21 @@
         }
       ],
       "providers": [
+        {
+          "providerId": "command-list",
+          "source": "git-remote",
+          "baseScore": 61,
+          "params": {
+            "program": "git",
+            "args": [
+              "remote"
+            ],
+            "itemLabel": "git remote"
+          },
+          "when": {
+            "argsRegex": "^\\s*fetch\\s+(?!-)(?:\\S*)$"
+          }
+        },
         {
           "providerId": "git-branches",
           "source": "git-branch",
@@ -5188,6 +5372,21 @@
           "description": "Select a tag"
         }
       ],
+      "providers": [
+        {
+          "providerId": "command-list",
+          "source": "git-tag",
+          "baseScore": 60,
+          "params": {
+            "program": "git",
+            "args": [
+              "tag",
+              "--list"
+            ],
+            "itemLabel": "git tag"
+          }
+        }
+      ],
       "options": [
         {
           "name": [
@@ -5210,14 +5409,44 @@
             "-d",
             "--delete"
           ],
-          "description": "Delete tags"
+          "description": "Delete tags",
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 60,
+              "params": {
+                "program": "git",
+                "args": [
+                  "tag",
+                  "--list"
+                ],
+                "itemLabel": "git tag"
+              }
+            }
+          ]
         },
         {
           "name": [
             "-v",
             "--verify"
           ],
-          "description": "Verify tags"
+          "description": "Verify tags",
+          "providers": [
+            {
+              "providerId": "command-list",
+              "source": "git-tag",
+              "baseScore": 60,
+              "params": {
+                "program": "git",
+                "args": [
+                  "tag",
+                  "--list"
+                ],
+                "itemLabel": "git tag"
+              }
+            }
+          ]
         },
         {
           "name": [
