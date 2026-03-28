@@ -76,7 +76,7 @@ export class SpecProviderRegistry {
         const shellSpecificity = registration.shells ? 100 : 0;
         const backendOsSpecificity = registration.backendOs ? 10 : 0;
         const prioritySpecificity = registration.priority;
-        const tiebreaker = -registration.registrationIndex / 1_000;
+        const tiebreaker = 1 / ((registration.registrationIndex + 1) * 1_000);
 
         return shellSpecificity + backendOsSpecificity + prioritySpecificity + tiebreaker;
     }
