@@ -22,7 +22,7 @@ import {TooltipDirective} from "@cogno/core-ui";
     `
       :host {
         display: flex;
-        flex: 0 1 20rem;
+        flex: 0 1;
         justify-content: flex-end;
         min-width: 0;
         margin-left: auto;
