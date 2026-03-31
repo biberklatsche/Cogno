@@ -14,7 +14,9 @@ import {TooltipDirective} from "@cogno/core-ui";
           [style.color]="selectedWorkspaceEntry.color ? 'var(--color-' + selectedWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
           [appTooltip]="selectedWorkspaceEntry.name"
       >
-        {{ selectedWorkspaceEntry.name }}
+        <span class="selected-workspace-header__label">
+          {{ selectedWorkspaceEntry.name }}
+        </span>
       </div>
     }
   `,
@@ -22,25 +24,34 @@ import {TooltipDirective} from "@cogno/core-ui";
     `
       :host {
         display: flex;
-        flex: 0 1;
+        flex: 0 1 auto;
         justify-content: flex-end;
         min-width: 0;
+        width: fit-content;
+        max-width: 100%;
         margin-left: auto;
       }
 
       .selected-workspace-header {
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        width: fit-content;
         max-width: 100%;
         font-size: 0.9rem;
         font-weight: 600;
         line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
         min-height: 100%;
         padding: 0.15rem 0.75rem 0;
         box-sizing: border-box;
+      }
+
+      .selected-workspace-header__label {
+        display: block;
+        max-width: 15ch;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
       }
     `,
   ],
