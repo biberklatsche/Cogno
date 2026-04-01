@@ -105,3 +105,5 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
         return a?.rows === b?.rows && a?.cols === b?.cols;
     }
 }
+
+

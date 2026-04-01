@@ -4,7 +4,7 @@ import { debounceTime } from "rxjs/operators";
 
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalAutocompleteSuggestorContract } from "@cogno/core-sdk";
+import { TerminalAutocompleteSuggestorContract } from "@cogno/core-api";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
@@ -760,3 +760,6 @@ export class TerminalAutocompleteService implements OnDestroy {
         return event.key === "Backspace" || event.key === "Delete";
     }
 }
+
+
+

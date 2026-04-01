@@ -25,7 +25,7 @@ import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
 import {DialogRef, DialogService} from "../../common/dialog";
@@ -36,7 +36,7 @@ import {
 } from "../system-info/terminal-system-info-dialog.component";
 import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
 import {NotificationChannels} from "../../notification/+bus/events";
-import { NotificationChannelContract } from "@cogno/core-sdk";
+import { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
@@ -44,6 +44,13 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { ScrollStateHandler } from "./handler/scroll-state.handler";
 
 type NotificationChannelId = string;
+type TerminalAutocompleteSuggestorPort = Pick<
+    TerminalAutocompleteFeatureSuggestorService,
+    'preloadForShellIntegration'
+>;
+type TerminalSessionDialogPort = Pick<DialogService, 'open'>;
+type TerminalSessionWiringPort = Pick<AppWiringService, 'getNotificationChannels' | 'getShellDefinitions'>;
+type TerminalSessionContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
 @Injectable()
 export class TerminalSession {
@@ -69,10 +76,10 @@ export class TerminalSession {
         private configService: ConfigService,
         private bus: AppBus,
         private stateManager: TerminalStateManager,
-        private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
-        private dialog: DialogService,
-        private wiringService: AppWiringService,
-        private contextMenuOverlayService: ContextMenuOverlayService,
+        private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteSuggestorPort,
+        private dialog: TerminalSessionDialogPort,
+        private wiringService: TerminalSessionWiringPort,
+        private contextMenuOverlayService: TerminalSessionContextMenuOverlayPort,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -130,7 +137,7 @@ export class TerminalSession {
             this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
             const shellDefinition = this.wiringService
                 .getShellDefinitions()
-                .find(definition => definition.support.shellType === this.shellProfile?.shell_type);
+                .find((definition: ShellDefinitionContract) => definition.support.shellType === this.shellProfile?.shell_type);
             this.disposables.push(this.renderer.register(new InputHandler(
                 this.bus,
                 this.terminalId,

@@ -9,7 +9,7 @@ import {
   buildLogMessage,
   formatUnknownError,
 } from "./error-reporter";
-import { Logger } from "@cogno/app/_tauri/logger";
+import { Logger } from "@cogno/app-tauri/logger";
 
 const DEDUPLICATION_WINDOW_MS = 1000;
 const MAX_NOTIFICATION_BODY_LENGTH = 2000;
@@ -216,3 +216,5 @@ function safeSerialize(value: unknown): string {
     return String(value);
   }
 }
+
+

@@ -627,3 +627,5 @@ type PagedTerminalSearchResult = {
     hasMore: boolean;
     nextCursorBufferLine?: number;
 };
+
+

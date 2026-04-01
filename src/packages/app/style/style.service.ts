@@ -2,10 +2,10 @@ import {DestroyRef, Injectable} from '@angular/core';
 import {ConfigService} from "../config/+state/config.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Color} from "../common/color/color";
-import {Fs} from "../_tauri/fs";
-import {Logger} from "../_tauri/logger";
+import {Fs} from "@cogno/app-tauri/fs";
+import {Logger} from "@cogno/app-tauri/logger";
 import {Config} from "../config/+models/config";
-import {Path} from "../_tauri/path";
+import {Path} from "@cogno/app-tauri/path";
 
 @Injectable({
   providedIn: 'root'
@@ -161,3 +161,5 @@ export class StyleService {
         return isLightTheme ? -factor : factor;
     }
 }
+
+

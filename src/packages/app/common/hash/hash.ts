@@ -8,3 +8,5 @@ export const Hash = {
             return hash;
     }
 }
+
+

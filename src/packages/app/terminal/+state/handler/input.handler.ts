@@ -4,12 +4,12 @@ import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
-import {Clipboard} from "../../../_tauri/clipboard";
+import {Clipboard} from "@cogno/app-tauri/clipboard";
 import {IDisposable as IXtermDisposable} from "@xterm/xterm";
 import {TerminalStateManager} from "../state";
 import { Char } from "../../../common/chars/chars";
 import {IPty} from "../pty/pty";
-import { ShellLineEditorDefinitionContract } from "@cogno/core-sdk";
+import { ShellLineEditorDefinitionContract } from "@cogno/core-api";
 
 export class InputHandler implements ITerminalHandler {
 
@@ -135,3 +135,6 @@ export class InputHandler implements ITerminalHandler {
         return {startIndex, endIndex};
     }
 }
+
+
+

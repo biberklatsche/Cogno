@@ -1,4 +1,4 @@
-import { ShellContextContract } from "@cogno/core-sdk";
+import { ShellContextContract } from "@cogno/core-api";
 import { PathFactory } from "./path.factory";
 
 export class AutocompletePathUtil {
@@ -148,3 +148,6 @@ export class AutocompletePathUtil {
         return path.replace(/\//g, "\\");
     }
 }
+
+
+

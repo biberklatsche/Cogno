@@ -15,3 +15,6 @@ export const featureShellSupportDefinitions = featureShellDefinitions.map(
 export const featureShellPathAdapterDefinitions = featureShellDefinitions.map(
   definition => definition.pathAdapter,
 );
+
+
+

@@ -5,7 +5,7 @@ import {Observable} from 'rxjs';
 import {DIALOG_DATA} from '../../common/dialog';
 import { ErrorReporter } from '../../common/error/error-reporter';
 import {TerminalId} from '../../grid-list/+model/model';
-import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '../../_tauri/pty';
+import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '@cogno/app-tauri/pty';
 import {Command, TerminalState} from '../+state/state';
 import {KeybindService} from '../../keybinding/keybind.service';
 
@@ -509,3 +509,5 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     return commands.slice(-5).reverse();
   }
 }
+
+

@@ -3,7 +3,7 @@ import { BehaviorSubject } from "rxjs";
 import {
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
@@ -136,3 +136,6 @@ function createNavigationItem(
     },
   };
 }
+
+
+

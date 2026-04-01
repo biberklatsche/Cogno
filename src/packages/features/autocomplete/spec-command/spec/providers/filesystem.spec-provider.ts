@@ -1,4 +1,4 @@
-import { FilesystemContract, ShellContextContract } from "@cogno/core-sdk";
+import { FilesystemContract, ShellContextContract } from "@cogno/core-api";
 import {
     FilesystemSpecProviderParams,
     SpecProvidedSuggestion,
@@ -204,3 +204,6 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         this.cache.set(key, value);
     }
 }
+
+
+

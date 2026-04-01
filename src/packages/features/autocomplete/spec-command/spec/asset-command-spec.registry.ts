@@ -80,3 +80,6 @@ export class AssetCommandSpecRegistry implements CommandSpecSource {
         return this._manifestPromise;
     }
 }
+
+
+

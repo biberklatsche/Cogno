@@ -30,3 +30,6 @@ describe("PathFactory", () => {
     expect(() => PathFactory.createAdapter("Unsupported" as never)).toThrow("Unsupported shell type: Unsupported");
   });
 });
+
+
+

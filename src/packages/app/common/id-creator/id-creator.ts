@@ -1,4 +1,4 @@
-import {TabId, WorkspaceId} from "@cogno/core-sdk";
+import {TabId, WorkspaceId} from "@cogno/core-api";
 import {TerminalId} from "../../grid-list/+model/model";
 
 export const IdCreator = {
@@ -15,3 +15,6 @@ export const IdCreator = {
     }
 
 }
+
+
+

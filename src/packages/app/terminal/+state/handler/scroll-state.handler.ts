@@ -37,3 +37,5 @@ export class ScrollStateHandler implements ITerminalHandler {
         this.terminalStateManager.setScrolledLinesFromBottom(scrolledLinesFromBottom);
     }
 }
+
+

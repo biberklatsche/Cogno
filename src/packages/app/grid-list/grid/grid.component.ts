@@ -56,3 +56,5 @@ export class GridComponent {
 
     stopDragDivider() { this.drag = undefined; }
 }
+
+

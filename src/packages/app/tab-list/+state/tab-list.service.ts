@@ -2,7 +2,7 @@ import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/c
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {defaultWorkspaceIdContract, TabConfig, TabId} from "@cogno/core-sdk";
+import {defaultWorkspaceIdContract, TabConfig, TabId} from "@cogno/core-api";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
@@ -387,3 +387,6 @@ export class TabListService {
         return tabList.map((tab) => ({...tab}));
     }
 }
+
+
+

@@ -2,7 +2,7 @@ import { Terminal } from "@xterm/xterm";
 import { ITerminalHandler } from "./handler";
 import { IDisposable } from "../../../common/models/models";
 import { TerminalStateManager } from "../state";
-import { Opener } from "../../../_tauri/opener";
+import { Opener } from "@cogno/app-tauri/opener";
 import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";
 
 type LinkMatch = {
@@ -133,3 +133,5 @@ export class LinkHandler implements ITerminalHandler {
         return a.startIndex < b.endIndexExclusive && b.startIndex < a.endIndexExclusive;
     }
 }
+
+

@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Config, ShellType } from './+models/config';
-import { Shell, Shells } from '../_tauri/shells';
+import { Shell, Shells } from '@cogno/app-tauri/shells';
 import {ShellProfile} from "./+models/shell-config";
-import {OS, OsType} from "../_tauri/os";
-import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
+import {OS, OsType} from "@cogno/app-tauri/os";
+import { ShellSupportDefinitionContract } from "@cogno/core-api";
 
 @Injectable({ providedIn: 'root' })
 export class ShellConfigurator {
@@ -115,3 +115,6 @@ export class ShellConfigurator {
         return definitionsByShellType;
     }
 }
+
+
+

@@ -1,6 +1,6 @@
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { Clipboard } from "../../../../_tauri/clipboard";
+import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { ContextMenuItem } from "../../../../menu/context-menu-overlay/context-menu-overlay.types";
 
 export type CommandMenuBlockRange = {
@@ -88,3 +88,5 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
         },
     ];
 }
+
+

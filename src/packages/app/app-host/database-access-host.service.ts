@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
-import { DatabaseAccessContract } from "@cogno/core-sdk";
-import { DB } from "../_tauri/db";
+import { DatabaseAccessContract } from "@cogno/core-api";
+import { DB } from "@cogno/app-tauri/db";
 
 @Injectable({ providedIn: "root" })
 export class DatabaseAccessHostService implements DatabaseAccessContract {
@@ -26,3 +26,6 @@ export class DatabaseAccessHostService implements DatabaseAccessContract {
     });
   }
 }
+
+
+

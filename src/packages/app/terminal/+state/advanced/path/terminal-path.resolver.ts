@@ -1,4 +1,4 @@
-import { IPathAdapter } from "@cogno/core-sdk";
+import { IPathAdapter } from "@cogno/core-api";
 
 export class TerminalPathResolver {
     resolvePathForOpen(candidate: string, cwd: string | undefined, pathAdapter: IPathAdapter | undefined): string | undefined {
@@ -80,3 +80,6 @@ export class TerminalPathResolver {
         return `${keepDouble ? "//" : "/"}${out.join("/")}`;
     }
 }
+
+
+

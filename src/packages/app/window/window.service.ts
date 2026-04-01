@@ -1,11 +1,11 @@
-import {DestroyRef, Injectable} from '@angular/core';
-import {AppWindow} from "../_tauri/window";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {AppBus} from "../app-bus/app-bus";
-import {invoke} from "@tauri-apps/api/core";
-import {Logger} from "../_tauri/logger";
-import {Process} from "../_tauri/process";
-import {ActionFired} from "../action/action.models";
+import { DestroyRef, Injectable } from '@angular/core';
+import { AppWindow } from "@cogno/app-tauri/window";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "../app-bus/app-bus";
+import { WindowCore } from "@cogno/app-tauri/window-core";
+import { Logger } from "@cogno/app-tauri/logger";
+import { Process } from "@cogno/app-tauri/process";
+import { ActionFired } from "../action/action.models";
 import { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
 import { ErrorReporter } from "../common/error/error-reporter";
 
@@ -16,62 +16,55 @@ export class WindowService {
   private isClosing = false;
 
   constructor(
-      private readonly bus: AppBus,
-      private readonly terminalBusyStateService: TerminalBusyStateService,
-      ref: DestroyRef,
+    private readonly bus: AppBus,
+    private readonly terminalBusyStateService: TerminalBusyStateService,
+    ref: DestroyRef,
   ) {
-      this.bus.publish({type: "InitConfigCommand"});
-      this.bus.on$({path: ['app', 'action'], type: 'ActionFired'})
-          .pipe(takeUntilDestroyed(ref))
-          .subscribe(async(event)=> {
-              switch (event.payload) {
-                  case 'quit':
-                      if (!(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals('quit the application'))) {
-                          return;
-                      }
-                      // Closes all windows
-                      await Process.exit();
-                      event.performed = true;
-                      break;
-                  case 'new_window':
-                      invoke('new_window').catch((err) => {
-                          ErrorReporter.reportException({
-                              error: err,
-                              handled: true,
-                              source: "WindowService",
-                              context: {
-                                  action: "new_window",
-                              },
-                          });
-                      });
-                      event.performed = true;
-                      break;
-                  case 'close_window':
-                      // Only close if all pre-close handlers are done (marked by 'ready_to_close')
-                      if (event.args?.includes('workspace_saved')) {
-                          if (!(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals('close the application window'))) {
-                              return;
-                          }
-                          this.isClosing = true;
-                          AppWindow.close().then(() => Logger.debug('close window'));
-                          event.performed = true;
-                      }
-                      break;
+    this.bus.publish({ type: 'InitConfigCommand' });
+    this.bus.on$({ path: ['app', 'action'], type: 'ActionFired' })
+      .pipe(takeUntilDestroyed(ref))
+      .subscribe(async (event) => {
+        switch (event.payload) {
+          case 'quit':
+            if (!(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals('quit the application'))) {
+              return;
+            }
+            await Process.exit();
+            event.performed = true;
+            break;
+          case 'new_window':
+            WindowCore.newWindow().catch((err) => {
+              ErrorReporter.reportException({
+                error: err,
+                handled: true,
+                source: 'WindowService',
+                context: {
+                  action: 'new_window',
+                },
+              });
+            });
+            event.performed = true;
+            break;
+          case 'close_window':
+            if (event.args?.includes('workspace_saved')) {
+              if (!(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals('close the application window'))) {
+                return;
               }
-          });
+              this.isClosing = true;
+              AppWindow.close().then(() => Logger.debug('close window'));
+              event.performed = true;
+            }
+            break;
+        }
+      });
 
-      AppWindow.onCloseRequested$
-          .pipe(takeUntilDestroyed(ref))
-          .subscribe(async (evt) => {
-              // Prevent infinite loop
-              if (this.isClosing) return;
-
-              // Prevent the window from closing immediately
-              evt.preventDefault();
-
-              // Fire close_window event - other services can intercept to do cleanup
-              // They should re-fire with 'ready_to_close' when done
-              this.bus.publish(ActionFired.create('close_window', undefined, []));
-          });
+    AppWindow.onCloseRequested$
+      .pipe(takeUntilDestroyed(ref))
+      .subscribe(async (evt) => {
+        if (this.isClosing) return;
+        evt.preventDefault();
+        this.bus.publish(ActionFired.create('close_window', undefined, []));
+      });
   }
 }
+

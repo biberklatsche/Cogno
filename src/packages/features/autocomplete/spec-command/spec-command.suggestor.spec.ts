@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CommandRunnerContract, FilesystemContract, QueryContext } from "@cogno/core-sdk";
+import { CommandRunnerContract, FilesystemContract, QueryContext } from "@cogno/core-api";
 import { CommandSpecRegistry } from "./spec/command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
@@ -610,3 +610,6 @@ describe("SpecCommandSuggestor", () => {
         expect(labels).toContain("-m");
     });
 });
+
+
+

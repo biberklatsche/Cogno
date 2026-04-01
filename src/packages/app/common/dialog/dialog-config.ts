@@ -28,3 +28,5 @@ export interface DialogConfig<TData = unknown, TContext = unknown> {
   backdropClass?: string | string[];
   showCloseButton?: boolean; // default false
 }
+
+

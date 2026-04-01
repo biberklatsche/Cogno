@@ -16,7 +16,7 @@ import {TerminalStateManager} from "../app/terminal/+state/state";
 import {ShellType} from "../app/config/+models/config";
 import {TerminalSession} from "../app/terminal/+state/terminal.session";
 import { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
 import { ContextMenuOverlayService } from "../app/menu/context-menu-overlay/context-menu-overlay.service";
 
@@ -224,3 +224,6 @@ export function clear() {
     terminalBusyStateService = undefined;
     contextMenuOverlayService = undefined;
 }
+
+
+

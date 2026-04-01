@@ -7,3 +7,5 @@ export const Char = {
     NegAcknowledge: String.fromCharCode(21),
     Escape: String.fromCharCode(27),
 }
+
+

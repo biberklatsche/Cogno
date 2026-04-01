@@ -204,3 +204,5 @@ export class TerminalMockFactory {
     return this.createLine(content);
   }
 }
+
+

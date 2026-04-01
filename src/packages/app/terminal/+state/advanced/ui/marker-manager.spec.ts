@@ -168,3 +168,5 @@ describe('MarkerManager', () => {
         expect(decorationMock2.dispose).not.toHaveBeenCalled();
     });
 });
+
+

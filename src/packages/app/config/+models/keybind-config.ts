@@ -8,3 +8,5 @@ export const KeybindSchema = z.string().regex(
 export const KeybindsSchema = z.array(KeybindSchema);
 
 export type Keybinding = z.infer<typeof KeybindsSchema>;
+
+

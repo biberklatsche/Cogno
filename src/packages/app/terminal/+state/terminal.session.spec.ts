@@ -1,392 +1,404 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TerminalSession } from './terminal.session';
 import { AppBus } from '../../app-bus/app-bus';
 import { Renderer } from './renderer/renderer';
-import {getStateManager, getConfigService, getAppBus} from "../../../__test__/test-factory";
-import {ShellProfile} from "../../config/+models/shell-config";
-import {ConfigService} from "../../config/+state/config.service";
-import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
-import {DialogService} from "../../common/dialog";
-import {DialogRef} from "../../common/dialog/dialog-ref";
-import { PathFactory } from "@cogno/core-host";
-import { NotificationChannelContract } from "@cogno/core-sdk";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
-import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
-import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
-import { TerminalStateManager } from "./state";
+import { getStateManager, getAppBus } from '../../../__test__/test-factory';
+import { ShellProfile } from '../../config/+models/shell-config';
+import { ConfigServiceMock } from '../../../__test__/mocks/config-service.mock';
+import { TerminalAutocompleteFeatureSuggestorService } from '../../app-host/terminal-autocomplete-feature-suggestor.service';
+import { AppWiringService } from '@cogno/app/app-host/app-wiring.service';
+import { DialogService } from '../../common/dialog';
+import { DialogRef } from '../../common/dialog/dialog-ref';
+import { PathFactory } from '@cogno/core-host';
+import { NotificationChannelContract, ShellDefinitionContract } from '@cogno/core-api';
+import { featureShellPathAdapterDefinitions } from '@cogno/features';
+import { ContextMenuOverlayService } from '../../menu/context-menu-overlay/context-menu-overlay.service';
+import { TerminalMockFactory } from '../../../__test__/mocks/terminal-mock.factory';
+import { TerminalStateManager } from './state';
 
-// Mocking dependencies that are not passed in constructor but used internally
+type TerminalAutocompleteSuggestorPort = Pick<
+  TerminalAutocompleteFeatureSuggestorService,
+  'getSharedSuggestors' | 'preloadForShellIntegration'
+>;
+type WiringPort = Pick<AppWiringService, 'getShellDefinitions' | 'getNotificationChannels'>;
+type DialogPort = Pick<DialogService, 'open'>;
+type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
+
 vi.mock('./renderer/renderer', () => {
-    return {
-        Renderer: vi.fn().mockImplementation(function() {
-            return {
-                open: vi.fn(),
-                register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-                dispose: vi.fn(),
-                terminal: TerminalMockFactory.createTerminal(),
-            };
-        })
-    };
+  return {
+    Renderer: vi.fn().mockImplementation(function () {
+      return {
+        open: vi.fn(),
+        register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+        dispose: vi.fn(),
+        terminal: TerminalMockFactory.createTerminal(),
+      };
+    }),
+  };
 });
 
 vi.mock('./pty/pty', () => {
-    return {
-        Pty: vi.fn().mockImplementation(function() {
-            return {
-                dispose: vi.fn(),
-                write: vi.fn(),
-                spawn: vi.fn().mockResolvedValue(undefined)
-            };
-        })
-    };
+  return {
+    Pty: vi.fn().mockImplementation(function () {
+      return {
+        dispose: vi.fn(),
+        write: vi.fn(),
+        spawn: vi.fn().mockResolvedValue(undefined),
+      };
+    }),
+  };
 });
 
 describe('TerminalSession', () => {
-    let session: TerminalSession;
-    let mockConfigService: ConfigService;
-    let mockBus: AppBus;
-    let mockShellProfile: ShellProfile;
-    let mockFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService;
-    let mockDialogService: DialogService;
-    let mockProcessInfoDialogReference: DialogRef<void>;
-    let mockWiringService: AppWiringService;
-    let mockContextMenuOverlayService: ContextMenuOverlayService;
-    let stateManager: TerminalStateManager;
-    const terminalId = 'test-terminal-id';
+  let session: TerminalSession;
+  let configService: ConfigServiceMock;
+  let appBus: AppBus;
+  let shellProfile: ShellProfile;
+  let featureSuggestorService: TerminalAutocompleteSuggestorPort;
+  let preloadForShellIntegrationMock: ReturnType<typeof vi.fn>;
+  let processInfoDialogRef: DialogRef<void>;
+  let closeProcessInfoDialogSpy: ReturnType<typeof vi.spyOn>;
+  let openDialogMock: ReturnType<typeof vi.fn>;
+  let dialogService: DialogPort;
+  let wiringService: WiringPort;
+  let stateManager: TerminalStateManager;
+  const terminalId = 'test-terminal-id';
 
-    beforeEach(() => {
-        PathFactory.setDefinitions([
-            ...featureShellPathAdapterDefinitions,
-        ]);
-        mockConfigService = getConfigService() as unknown as ConfigService;
-        mockBus = getAppBus();
-        vi.spyOn(mockBus, 'publish');
-        
-        mockShellProfile = {
-            shell_type: 'Bash',
-            inject_cogno_cli: false,
-            enable_shell_integration: false
-        };
+  beforeEach(() => {
+    PathFactory.setDefinitions(featureShellPathAdapterDefinitions);
+    configService = new ConfigServiceMock();
+    configService.setConfig({
+      font: { enable_ligatures: false },
+      notification: {
+        long_running_commands: {
+          enabled: true,
+          minimum_duration_seconds: 10,
+        },
+      },
+      notifications: {
+        app: { available: true, enabled: false },
+        os: { available: true, enabled: false },
+      },
+    } as any);
+    appBus = getAppBus();
+    vi.spyOn(appBus, 'publish');
 
-        mockFeatureSuggestorService = {
-            getSharedSuggestors: vi.fn().mockReturnValue([]),
-            preloadForShellIntegration: vi.fn(),
-        } as unknown as TerminalAutocompleteFeatureSuggestorService;
+    shellProfile = {
+      shell_type: 'Bash',
+      inject_cogno_cli: false,
+      enable_shell_integration: false,
+    };
 
-        mockProcessInfoDialogReference = {
-            id: 1,
-            closed: vi.fn() as unknown as DialogRef<void>['closed'],
-            close: vi.fn()
-        } as unknown as DialogRef<void>;
+    preloadForShellIntegrationMock = vi.fn();
+    featureSuggestorService = {
+      getSharedSuggestors: vi.fn().mockReturnValue([]),
+      preloadForShellIntegration: preloadForShellIntegrationMock,
+    };
 
-        mockDialogService = {
-            open: vi.fn().mockReturnValue(mockProcessInfoDialogReference)
-        } as unknown as DialogService;
+    processInfoDialogRef = new DialogRef<void>(1, vi.fn());
+    closeProcessInfoDialogSpy = vi.spyOn(processInfoDialogRef, 'close');
+    openDialogMock = vi.fn().mockReturnValue(processInfoDialogRef);
+    dialogService = {
+      open: openDialogMock,
+    };
 
-        mockWiringService = {
-            getShellDefinitions: vi.fn().mockReturnValue([]),
-            getNotificationChannels: vi.fn().mockReturnValue([
-                { displayName: "App", id: "app", dispatch: vi.fn() },
-                { displayName: "OS", id: "os", dispatch: vi.fn() },
-            ] satisfies ReadonlyArray<NotificationChannelContract>),
-        } as unknown as AppWiringService;
+    wiringService = {
+      getShellDefinitions: vi.fn<() => ReadonlyArray<ShellDefinitionContract>>().mockReturnValue([]),
+      getNotificationChannels: vi.fn<() => ReadonlyArray<NotificationChannelContract>>().mockReturnValue([
+        { displayName: 'App', id: 'app', sortOrder: 100, dispatch: vi.fn() },
+        { displayName: 'OS', id: 'os', sortOrder: 90, dispatch: vi.fn() },
+      ]),
+    };
 
-        mockContextMenuOverlayService = {
-            openContextForElement: vi.fn(),
-        } as unknown as ContextMenuOverlayService;
+    const contextMenuOverlayService: ContextMenuOverlayPort = {
+      openContextForElement: vi.fn(),
+    };
 
-        stateManager = getStateManager();
+    stateManager = getStateManager();
 
-        session = new TerminalSession(
-            mockConfigService,
-            mockBus,
-            stateManager,
-            mockFeatureSuggestorService,
-            mockDialogService,
-            mockWiringService,
-            mockContextMenuOverlayService,
-        );
+    session = new TerminalSession(
+      configService,
+      appBus,
+      stateManager,
+      featureSuggestorService as TerminalAutocompleteFeatureSuggestorService,
+      dialogService as DialogService,
+      wiringService as AppWiringService,
+      contextMenuOverlayService as ContextMenuOverlayService,
+    );
+  });
+
+  it('should initialize with correct renderer settings based on config', () => {
+    configService.setConfig({ terminal: { webgl: true }, font: { family: 'Fira Code' } } as any);
+    session = new TerminalSession(
+      configService,
+      appBus,
+      stateManager,
+      featureSuggestorService as TerminalAutocompleteFeatureSuggestorService,
+      dialogService as DialogService,
+      wiringService as AppWiringService,
+      { openContextForElement: vi.fn() } as ContextMenuOverlayService,
+    );
+
+    expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
+  });
+
+  it('should initialize terminal and register handlers', () => {
+    configService.setConfig({ font: { enable_ligatures: false } } as any);
+    const mockElement = document.createElement('div');
+    session.initialize(terminalId, shellProfile);
+    session.initializeTerminal(mockElement);
+
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+    expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(14);
+  });
+
+  it('should enable shell integration features if configured', () => {
+    configService.setConfig({ font: { enable_ligatures: false } } as any);
+    shellProfile.enable_shell_integration = true;
+    const mockElement = document.createElement('div');
+    session.initialize(terminalId, shellProfile);
+    session.initializeTerminal(mockElement);
+
+    const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
+    expect(rendererInstance.register).toHaveBeenCalledTimes(16);
+    expect(preloadForShellIntegrationMock).toHaveBeenCalledWith('Bash');
+  });
+
+  it('should build context menu', () => {
+    session.initialize(terminalId, shellProfile);
+    const items = session.buildContextMenu();
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.find(i => i.label === 'Paste')).toBeDefined();
+    expect(items.find(i => i.label === 'Maximize')).toBeDefined();
+    expect(items.find(i => i.label === 'Process Info')).toBeUndefined();
+    expect(items.find(i => i.label?.includes('Notifications'))).toBeUndefined();
+  });
+
+  it('should show Minimize when pane is maximized', () => {
+    session.initialize(terminalId, shellProfile);
+    appBus.publish({
+      type: 'PaneMaximizedChanged',
+      payload: { terminalId },
+    } as any);
+
+    const items = session.buildContextMenu();
+    expect(items.find(i => i.label === 'Minimize')).toBeDefined();
+    expect(items.find(i => i.label === 'Maximize')).toBeUndefined();
+  });
+
+  it('should only show available notification channels in header menu', () => {
+    configService.setConfig({
+      notification: {
+        long_running_commands: {
+          enabled: true,
+          minimum_duration_seconds: 10,
+        },
+      },
+      notifications: {
+        app: { available: true, enabled: false },
+        os: { available: false, enabled: false },
+      },
+    } as any);
+    session.initialize(terminalId, shellProfile);
+
+    const items = session.buildHeaderMenu();
+    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: 'Command Alerts' }));
+    const longRunningCommandToggle = items.find(i => i.label === 'Long Commands');
+    expect(items).toContainEqual(expect.objectContaining({ header: true, label: 'Channels' }));
+    expect(items[items.findIndex(i => i.label === 'Process Info') - 1]).toEqual(expect.objectContaining({ separator: true }));
+    const appToggle = items.find(i => i.label === 'App');
+    expect(longRunningCommandToggle).toBeDefined();
+    expect(longRunningCommandToggle?.toggle).toBe(true);
+    expect(longRunningCommandToggle?.toggled).toBe(true);
+    expect(appToggle).toBeDefined();
+    expect(appToggle?.toggle).toBe(true);
+    expect(appToggle?.toggled).toBe(false);
+    expect(items.find(i => i.label === 'OS')).toBeUndefined();
+  });
+
+  it('should keep command menu items out of the terminal header menu', () => {
+    session.initialize(terminalId, shellProfile);
+    stateManager.updateCommand({ id: '1' });
+    stateManager.updateCommands([
+      Object.assign(stateManager.commands[0], {
+        isFirstCommandOutOfViewport: true,
+      }),
+    ]);
+    stateManager.commands[0].set('command', 'cat bible.txt');
+
+    const items = session.buildHeaderMenu();
+
+    expect(items.find(item => item.label === 'Copy Command')).toBeUndefined();
+    expect(items.find(item => item.label === 'Copy Output')).toBeUndefined();
+    expect(items.find(item => item.label === 'Scroll to Top')).toBeUndefined();
+    expect(items.find(item => item.label === 'Scroll to Bottom')).toBeUndefined();
+    expect(items.find(item => item.label === 'Filter Block')).toBeUndefined();
+    expect(items[items.length - 1]).toEqual(expect.objectContaining({ label: 'Process Info' }));
+  });
+
+  it('should include command menu items in the header menu for the first command out of view', () => {
+    session.initialize(terminalId, shellProfile);
+    stateManager.updateCommand({ id: '1' });
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+    vi.mocked(rendererInstance.terminal.buffer.active.getLine).mockImplementation((lineIndex: number) => {
+      if (lineIndex === 0) return TerminalMockFactory.createLine('^^#1');
+      if (lineIndex === 1) return TerminalMockFactory.createLine('first output line');
+      if (lineIndex === 2) return TerminalMockFactory.createLine('second output line');
+      if (lineIndex === 3) return TerminalMockFactory.createLine('^^#2');
+      return null;
+    });
+    rendererInstance.terminal.buffer.active.length = 4;
+
+    stateManager.updateCommands([
+      Object.assign(stateManager.commands[0], {
+        isFirstCommandOutOfViewport: true,
+      }),
+    ]);
+    stateManager.commands[0].set('command', 'cat bible.txt');
+
+    const items = session.buildHeaderCommandMenu();
+
+    expect(items.find(item => item.label === 'Copy Command')).toBeDefined();
+    expect(items.find(item => item.label === 'Copy Output')).toBeDefined();
+    expect(items.find(item => item.label === 'Scroll to Top')).toBeDefined();
+    expect(items.find(item => item.label === 'Scroll to Bottom')).toBeDefined();
+    expect(items.find(item => item.label === 'Filter Block')).toBeDefined();
+    expect(items[2]).toEqual(expect.objectContaining({ separator: true }));
+    expect(items[5]).toEqual(expect.objectContaining({ separator: true }));
+
+    items.find(item => item.label === 'Scroll to Top')?.action?.();
+    items.find(item => item.label === 'Scroll to Bottom')?.action?.();
+
+    expect(rendererInstance.terminal.scrollToLine).toHaveBeenNthCalledWith(1, 0);
+    expect(rendererInstance.terminal.scrollToLine).toHaveBeenNthCalledWith(2, 2);
+  });
+
+  it('should allow toggling long-running command notifications from the header menu', () => {
+    configService.setConfig({
+      notification: {
+        long_running_commands: {
+          enabled: true,
+          minimum_duration_seconds: 10,
+        },
+      },
+      notifications: {
+        app: { available: true, enabled: true },
+      },
+    } as any);
+    session.initialize(terminalId, shellProfile);
+
+    const toggleItem = session.buildHeaderMenu().find(item => item.label === 'Long Commands');
+    expect(toggleItem?.toggled).toBe(true);
+
+    toggleItem?.action?.(toggleItem);
+
+    expect(toggleItem?.toggled).toBe(false);
+  });
+
+  it('should publish a notification when a long-running command has finished', () => {
+    configService.setConfig({
+      notification: {
+        long_running_commands: {
+          enabled: true,
+          minimum_duration_seconds: 10,
+        },
+      },
+      notifications: {
+        app: { available: true, enabled: true },
+      },
+    } as any);
+    session.initialize(terminalId, shellProfile);
+
+    (session as any).completedCommandNotificationHandler.handleCompletedCommand({
+      command: 'pnpm test',
+      duration: 12_000,
+      directory: '/workspace',
+      returnCode: 0,
     });
 
-    it('should initialize with correct renderer settings based on config', () => {
-        const config = { terminal: { webgl: true }, font: { family: 'Fira Code' } } as any;
-        (mockConfigService as any).setConfig(config);
-        session = new TerminalSession(
-            mockConfigService,
-            mockBus,
-            stateManager,
-            mockFeatureSuggestorService,
-            mockDialogService,
-            mockWiringService,
-            mockContextMenuOverlayService,
-        );
-        
-        expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
+    expect(appBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      path: ['notification'],
+      type: 'Notification',
+      payload: expect.objectContaining({
+        header: 'Long-running command finished',
+        terminalId,
+        channels: { app: true, os: false },
+      }),
+    }));
+  });
+
+  it('should not publish a notification when a command is shorter than the configured threshold', () => {
+    configService.setConfig({
+      notification: {
+        long_running_commands: {
+          enabled: true,
+          minimum_duration_seconds: 10,
+        },
+      },
+      notifications: {
+        app: { available: true, enabled: true },
+      },
+    } as any);
+    session.initialize(terminalId, shellProfile);
+    vi.clearAllMocks();
+
+    (session as any).completedCommandNotificationHandler.handleCompletedCommand({
+      command: 'pnpm test',
+      duration: 9_000,
+      directory: '/workspace',
+      returnCode: 0,
     });
 
-    it('should initialize terminal and register handlers', () => {
-        const config = { font: { enable_ligatures: false } } as any;
-        (mockConfigService as any).setConfig(config);
-        const mockElement = document.createElement('div');
-        session.initialize(terminalId, mockShellProfile);
-        session.initializeTerminal(mockElement);
+    expect(appBus.publish).not.toHaveBeenCalled();
+  });
 
-        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
-        expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-        expect(rendererInstance.register).toHaveBeenCalledTimes(14);
-    });
+  it('should publish TerminalRemoved event and dispose resources on dispose', () => {
+    session.initialize(terminalId, shellProfile);
+    session.dispose();
+    expect(appBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'TerminalRemoved',
+      payload: terminalId,
+    }));
 
-    it('should enable shell integration features if configured', () => {
-        const config = { font: { enable_ligatures: false } } as any;
-        (mockConfigService as any).setConfig(config);
-        mockShellProfile.enable_shell_integration = true;
-        const mockElement = document.createElement('div');
-        session.initialize(terminalId, mockShellProfile);
-        session.initializeTerminal(mockElement);
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+    expect(rendererInstance.dispose).toHaveBeenCalled();
+  });
 
-        const rendererInstance = vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-        expect(rendererInstance.register).toHaveBeenCalledTimes(16);
-        expect(mockFeatureSuggestorService.preloadForShellIntegration).toHaveBeenCalledWith('Bash');
-    });
+  it('should not dispose twice', () => {
+    session.initialize(terminalId, shellProfile);
+    session.dispose();
+    vi.clearAllMocks();
+    session.dispose();
+    expect(appBus.publish).not.toHaveBeenCalled();
+  });
 
-    it('should build context menu', () => {
-        session.initialize(terminalId, mockShellProfile);
-        const items = session.buildContextMenu();
-        expect(items.length).toBeGreaterThan(0);
-        expect(items.find(i => i.label === 'Paste')).toBeDefined();
-        expect(items.find(i => i.label === 'Maximize')).toBeDefined();
-        expect(items.find(i => i.label === 'Process Info')).toBeUndefined();
-        expect(items.find(i => i.label?.includes('Notifications'))).toBeUndefined();
-    });
+  it('should close process info dialog when terminal session is disposed', () => {
+    session.initialize(terminalId, shellProfile);
+    const processInfoItem = session.buildHeaderMenu().find(item => item.label === 'Process Info');
 
-    it('should show Minimize when pane is maximized', () => {
-        session.initialize(terminalId, mockShellProfile);
-        mockBus.publish({
-            type: 'PaneMaximizedChanged',
-            payload: { terminalId }
-        } as any);
+    processInfoItem?.action?.();
+    expect(openDialogMock).toHaveBeenCalledTimes(1);
 
-        const items = session.buildContextMenu();
-        expect(items.find(i => i.label === 'Minimize')).toBeDefined();
-        expect(items.find(i => i.label === 'Maximize')).toBeUndefined();
-    });
+    session.dispose();
+    expect(closeProcessInfoDialogSpy).toHaveBeenCalledTimes(1);
+  });
 
-    it('should only show available notification channels in header menu', () => {
-        (mockConfigService as any).setConfig({
-            notification: {
-                long_running_commands: {
-                    enabled: true,
-                    minimum_duration_seconds: 10,
-                },
-            },
-            notifications: {
-                app: { available: true, enabled: false },
-                os: { available: false, enabled: false },
-            }
-        });
-        session.initialize(terminalId, mockShellProfile);
+  it('should inject dropped file paths as shell-safe terminal input', () => {
+    session.initialize(terminalId, shellProfile);
 
-        const items = session.buildHeaderMenu();
-        expect(items[0]).toEqual(expect.objectContaining({ header: true, label: 'Command Alerts' }));
-        const longRunningCommandToggle = items.find(i => i.label === 'Long Commands');
-        expect(items).toContainEqual(expect.objectContaining({ header: true, label: 'Channels' }));
-        expect(items[items.findIndex(i => i.label === 'Process Info') - 1]).toEqual(expect.objectContaining({ separator: true }));
-        const appToggle = items.find(i => i.label === 'App');
-        expect(longRunningCommandToggle).toBeDefined();
-        expect(longRunningCommandToggle?.toggle).toBe(true);
-        expect(longRunningCommandToggle?.toggled).toBe(true);
-        expect(appToggle).toBeDefined();
-        expect(appToggle?.toggle).toBe(true);
-        expect(appToggle?.toggled).toBe(false);
-        expect(items.find(i => i.label === 'OS')).toBeUndefined();
-    });
+    session.insertPaths([
+      'C:\\temp\\plain.txt',
+      'C:\\temp\\with space.txt',
+    ]);
 
-    it('should keep command menu items out of the terminal header menu', () => {
-        session.initialize(terminalId, mockShellProfile);
-        stateManager.updateCommand({ id: '1' });
-        stateManager.updateCommands([
-            Object.assign(stateManager.commands[0], {
-                isFirstCommandOutOfViewport: true,
-            }),
-        ]);
-        stateManager.commands[0].set('command', 'cat bible.txt');
-
-        const items = session.buildHeaderMenu();
-
-        expect(items.find(item => item.label === 'Copy Command')).toBeUndefined();
-        expect(items.find(item => item.label === 'Copy Output')).toBeUndefined();
-        expect(items.find(item => item.label === 'Scroll to Top')).toBeUndefined();
-        expect(items.find(item => item.label === 'Scroll to Bottom')).toBeUndefined();
-        expect(items.find(item => item.label === 'Filter Block')).toBeUndefined();
-        expect(items[items.length - 1]).toEqual(expect.objectContaining({ label: 'Process Info' }));
-    });
-
-    it('should include command menu items in the header menu for the first command out of view', () => {
-        session.initialize(terminalId, mockShellProfile);
-        stateManager.updateCommand({ id: '1' });
-        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
-        vi.mocked(rendererInstance.terminal.buffer.active.getLine).mockImplementation((lineIndex: number) => {
-            if (lineIndex === 0) return TerminalMockFactory.createLine('^^#1');
-            if (lineIndex === 1) return TerminalMockFactory.createLine('first output line');
-            if (lineIndex === 2) return TerminalMockFactory.createLine('second output line');
-            if (lineIndex === 3) return TerminalMockFactory.createLine('^^#2');
-            return null;
-        });
-        rendererInstance.terminal.buffer.active.length = 4;
-
-        stateManager.updateCommands([
-            Object.assign(stateManager.commands[0], {
-                isFirstCommandOutOfViewport: true,
-            }),
-        ]);
-        stateManager.commands[0].set('command', 'cat bible.txt');
-
-        const items = session.buildHeaderCommandMenu();
-
-        expect(items.find(item => item.label === 'Copy Command')).toBeDefined();
-        expect(items.find(item => item.label === 'Copy Output')).toBeDefined();
-        expect(items.find(item => item.label === 'Scroll to Top')).toBeDefined();
-        expect(items.find(item => item.label === 'Scroll to Bottom')).toBeDefined();
-        expect(items.find(item => item.label === 'Filter Block')).toBeDefined();
-        expect(items[2]).toEqual(expect.objectContaining({ separator: true }));
-        expect(items[5]).toEqual(expect.objectContaining({ separator: true }));
-
-        items.find(item => item.label === 'Scroll to Top')?.action?.();
-        items.find(item => item.label === 'Scroll to Bottom')?.action?.();
-
-        expect(rendererInstance.terminal.scrollToLine).toHaveBeenNthCalledWith(1, 0);
-        expect(rendererInstance.terminal.scrollToLine).toHaveBeenNthCalledWith(2, 2);
-    });
-
-    it('should allow toggling long-running command notifications from the header menu', () => {
-        (mockConfigService as any).setConfig({
-            notification: {
-                long_running_commands: {
-                    enabled: true,
-                    minimum_duration_seconds: 10,
-                },
-            },
-            notifications: {
-                app: { available: true, enabled: true },
-            },
-        });
-        session.initialize(terminalId, mockShellProfile);
-
-        const toggleItem = session.buildHeaderMenu().find(item => item.label === 'Long Commands');
-        expect(toggleItem?.toggled).toBe(true);
-
-        toggleItem?.action?.(toggleItem);
-
-        expect(toggleItem?.toggled).toBe(false);
-    });
-
-    it('should publish a notification when a long-running command has finished', () => {
-        (mockConfigService as any).setConfig({
-            notification: {
-                long_running_commands: {
-                    enabled: true,
-                    minimum_duration_seconds: 10,
-                },
-            },
-            notifications: {
-                app: { available: true, enabled: true },
-            },
-        });
-        session.initialize(terminalId, mockShellProfile);
-
-        (session as any).completedCommandNotificationHandler.handleCompletedCommand({
-            command: 'pnpm test',
-            duration: 12_000,
-            directory: '/workspace',
-            returnCode: 0,
-        });
-
-        expect(mockBus.publish).toHaveBeenCalledWith(expect.objectContaining({
-            path: ['notification'],
-            type: 'Notification',
-            payload: expect.objectContaining({
-                header: 'Long-running command finished',
-                terminalId,
-                channels: { app: true, os: false },
-            }),
-        }));
-    });
-
-    it('should not publish a notification when a command is shorter than the configured threshold', () => {
-        (mockConfigService as any).setConfig({
-            notification: {
-                long_running_commands: {
-                    enabled: true,
-                    minimum_duration_seconds: 10,
-                },
-            },
-            notifications: {
-                app: { available: true, enabled: true },
-            },
-        });
-        session.initialize(terminalId, mockShellProfile);
-        vi.clearAllMocks();
-
-        (session as any).completedCommandNotificationHandler.handleCompletedCommand({
-            command: 'pnpm test',
-            duration: 9_000,
-            directory: '/workspace',
-            returnCode: 0,
-        });
-
-        expect(mockBus.publish).not.toHaveBeenCalled();
-    });
-
-    it('should publish TerminalRemoved event and dispose resources on dispose', () => {
-        session.initialize(terminalId, mockShellProfile);
-        session.dispose();
-        expect(mockBus.publish).toHaveBeenCalledWith(expect.objectContaining({
-            type: 'TerminalRemoved',
-            payload: terminalId
-        }));
-        
-        const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
-        expect(rendererInstance.dispose).toHaveBeenCalled();
-        // session.pty is private, but it's part of the disposables. 
-        // We can't easily check pty.dispose without reaching into private, 
-        // but the code calls it.
-    });
-
-    it('should not dispose twice', () => {
-        session.initialize(terminalId, mockShellProfile);
-        session.dispose();
-        vi.clearAllMocks();
-        session.dispose();
-        expect(mockBus.publish).not.toHaveBeenCalled();
-    });
-
-    it('should close process info dialog when terminal session is disposed', () => {
-        session.initialize(terminalId, mockShellProfile);
-        const processInfoItem = session.buildHeaderMenu().find(item => item.label === 'Process Info');
-
-        processInfoItem?.action?.();
-        expect(mockDialogService.open).toHaveBeenCalledTimes(1);
-
-        session.dispose();
-        expect(mockProcessInfoDialogReference.close).toHaveBeenCalledTimes(1);
-    });
-
-    it("should inject dropped file paths as shell-safe terminal input", () => {
-        session.initialize(terminalId, mockShellProfile);
-
-        session.insertPaths([
-            "C:\\temp\\plain.txt",
-            "C:\\temp\\with space.txt",
-        ]);
-
-        expect(mockBus.publish).toHaveBeenCalledWith(expect.objectContaining({
-            path: ["app", "terminal"],
-            type: "InjectTerminalInput",
-            payload: {
-                terminalId,
-                text: "/c/temp/plain.txt '/c/temp/with space.txt'",
-            },
-        }));
-    });
+    expect(appBus.publish).toHaveBeenCalledWith(expect.objectContaining({
+      path: ['app', 'terminal'],
+      type: 'InjectTerminalInput',
+      payload: {
+        terminalId,
+        text: "/c/temp/plain.txt '/c/temp/with space.txt'",
+      },
+    }));
+  });
 });

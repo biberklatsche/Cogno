@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
-import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-sdk";
-import { TerminalBusyStateService } from "@cogno/app/terminal/terminal-busy-state.service";
+import { WorkspaceCloseGuard, WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
 import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
@@ -16,7 +15,7 @@ describe("WorkspaceService", () => {
   let openCreateWorkspaceDialogMock: ReturnType<typeof vi.fn>;
   let openEditWorkspaceDialogMock: ReturnType<typeof vi.fn>;
   let deleteWorkspaceMock: ReturnType<typeof vi.fn>;
-  let confirmProceedIfNoBusyTerminalsInWorkspaceMock: ReturnType<typeof vi.fn>;
+  let confirmCloseWorkspaceMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
@@ -32,9 +31,9 @@ describe("WorkspaceService", () => {
     openCreateWorkspaceDialogMock = vi.fn();
     openEditWorkspaceDialogMock = vi.fn();
     deleteWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    confirmProceedIfNoBusyTerminalsInWorkspaceMock = vi.fn().mockResolvedValue(true);
+    confirmCloseWorkspaceMock = vi.fn().mockResolvedValue(true);
 
-    const workspaceHostPort: WorkspaceHostPortContract = {
+    const workspaceHostPort: WorkspaceHostPort = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       closeWorkspace: closeWorkspaceMock,
@@ -45,11 +44,11 @@ describe("WorkspaceService", () => {
       deleteWorkspace: deleteWorkspaceMock,
     };
 
-    const terminalBusyStateService = {
-      confirmProceedIfNoBusyTerminalsInWorkspace: confirmProceedIfNoBusyTerminalsInWorkspaceMock,
-    } as unknown as TerminalBusyStateService;
+    const workspaceCloseGuard = {
+      confirmCloseWorkspace: confirmCloseWorkspaceMock,
+    } as unknown as WorkspaceCloseGuard;
 
-    workspaceService = new WorkspaceService(workspaceHostPort, terminalBusyStateService, getDestroyRef());
+    workspaceService = new WorkspaceService(workspaceHostPort, workspaceCloseGuard, getDestroyRef());
     workspaceService.initializeSelection();
   });
 
@@ -114,7 +113,7 @@ describe("WorkspaceService", () => {
   });
 
   it("does not close a workspace when busy terminals block the action", async () => {
-    confirmProceedIfNoBusyTerminalsInWorkspaceMock.mockResolvedValue(false);
+    confirmCloseWorkspaceMock.mockResolvedValue(false);
 
     await workspaceService.closeWorkspace("WS-1");
 

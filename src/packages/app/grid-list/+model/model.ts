@@ -1,4 +1,4 @@
-import {TabId} from "@cogno/core-sdk";
+import {TabId} from "@cogno/core-api";
 import {BinaryTree} from "../../common/tree/binary-tree";
 
 export type GridList = Record<TabId, Grid>;
@@ -20,3 +20,6 @@ export type Pane = {
 }
 
 export type SplitDirection = 'horizontal' | 'vertical';
+
+
+

@@ -103,3 +103,5 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         this.terminalSession.scrollToBottom();
     }
 }
+
+

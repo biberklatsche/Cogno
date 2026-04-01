@@ -1,4 +1,4 @@
-import { CommandRunnerContract } from "@cogno/core-sdk";
+import { CommandRunnerContract } from "@cogno/core-api";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 type ProcessEntry = {
@@ -121,3 +121,6 @@ export class ProcessListSpecProvider implements SpecSuggestionProvider {
         return fields;
     }
 }
+
+
+

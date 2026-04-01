@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CommandRunnerContract, QueryContext } from "@cogno/core-sdk";
+import { CommandRunnerContract, QueryContext } from "@cogno/core-api";
 import { CommandListSpecProvider } from "./command-list.spec-provider";
 
 function commandContext(beforeCursor: string): QueryContext {
@@ -89,3 +89,6 @@ describe("CommandListSpecProvider", () => {
         ]);
     });
 });
+
+
+

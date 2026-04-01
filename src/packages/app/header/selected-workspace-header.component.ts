@@ -1,23 +1,42 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, DestroyRef, Inject, Signal, computed, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AppBus } from "../app-bus/app-bus";
-import { SelectedWorkspacePayload } from "@cogno/features/side-menu/workspace/+bus/events";
-import {TooltipDirective} from "@cogno/core-ui";
+import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
+import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
+import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
+import { TooltipDirective } from "@cogno/core-ui";
 
 @Component({
   selector: "app-selected-workspace-header",
   standalone: true,
   template: `
-    @if (selectedWorkspace(); as selectedWorkspaceEntry) {
-      <div
+    @if (activeWorkspace(); as activeWorkspaceEntry) {
+      @if (hasWorkspaceMenu()) {
+        <button
+          class="selected-workspace-header selected-workspace-header--interactive"
+          type="button"
+          [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
+          [appTooltip]="activeWorkspaceEntry.name"
+          aria-haspopup="menu"
+          aria-label="Select open workspace"
+          (click)="openWorkspaceMenu($event)"
+        >
+          <span class="selected-workspace-header__label">
+            {{ activeWorkspaceEntry.name }}
+          </span>
+          <span class="selected-workspace-header__chevron" aria-hidden="true"></span>
+        </button>
+      } @else {
+        <div
           class="selected-workspace-header"
-          [style.color]="selectedWorkspaceEntry.color ? 'var(--color-' + selectedWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
-          [appTooltip]="selectedWorkspaceEntry.name"
-      >
-        <span class="selected-workspace-header__label">
-          {{ selectedWorkspaceEntry.name }}
-        </span>
-      </div>
+          [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
+          [appTooltip]="activeWorkspaceEntry.name"
+        >
+          <span class="selected-workspace-header__label">
+            {{ activeWorkspaceEntry.name }}
+          </span>
+        </div>
+      }
     }
   `,
   styles: [
@@ -35,6 +54,7 @@ import {TooltipDirective} from "@cogno/core-ui";
       .selected-workspace-header {
         display: inline-flex;
         align-items: center;
+        gap: 0.45rem;
         width: fit-content;
         max-width: 100%;
         font-size: 0.9rem;
@@ -45,6 +65,20 @@ import {TooltipDirective} from "@cogno/core-ui";
         box-sizing: border-box;
       }
 
+      .selected-workspace-header--interactive {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        border-radius: 0.35rem;
+        transition: background-color 120ms ease;
+      }
+
+      .selected-workspace-header--interactive:hover,
+      .selected-workspace-header--interactive:focus-visible {
+        background: var(--background-color-20l);
+        outline: none;
+      }
+
       .selected-workspace-header__label {
         display: block;
         max-width: 15ch;
@@ -53,25 +87,69 @@ import {TooltipDirective} from "@cogno/core-ui";
         text-overflow: ellipsis;
         min-width: 0;
       }
+
+      .selected-workspace-header__chevron {
+        flex: 0 0 auto;
+        width: 0.45rem;
+        height: 0.45rem;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: translateY(-0.1rem) rotate(45deg);
+        opacity: 0.8;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    TooltipDirective
-  ]
+  imports: [TooltipDirective],
 })
 export class SelectedWorkspaceHeaderComponent {
-  protected readonly selectedWorkspace = signal<SelectedWorkspacePayload | undefined>(undefined);
+  private readonly workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([]);
+  protected readonly activeWorkspace: Signal<WorkspaceEntryContract | undefined>;
+  protected readonly openWorkspaceEntries: Signal<WorkspaceEntryContract[]>;
+  protected readonly hasWorkspaceMenu: Signal<boolean>;
 
   constructor(
-    private readonly appBus: AppBus,
+    @Inject(workspaceHostPortToken)
+    private readonly workspaceHostPort: WorkspaceHostPortContract,
+    private readonly contextMenuOverlayService: ContextMenuOverlayService,
     destroyRef: DestroyRef,
   ) {
-    this.appBus
-      .onType$("SelectedWorkspaceChanged")
+    this.workspaceHostPort.workspaceEntries$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((selectedWorkspaceChangedEvent) => {
-        this.selectedWorkspace.set(selectedWorkspaceChangedEvent.payload);
+      .subscribe((workspaceEntries) => {
+        this.workspaceEntries.set(workspaceEntries);
       });
+
+    this.activeWorkspace = computed(
+      () => this.workspaceEntries().find((workspaceEntry) => workspaceEntry.isActive) ?? undefined,
+    );
+    this.openWorkspaceEntries = computed(() =>
+      this.workspaceEntries().filter((workspaceEntry) => workspaceEntry.isOpen || workspaceEntry.isActive),
+    );
+    this.hasWorkspaceMenu = computed(() => this.openWorkspaceEntries().length > 1);
+  }
+
+  protected openWorkspaceMenu(event: Event): void {
+    if (!this.hasWorkspaceMenu()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.contextMenuOverlayService.openContextForElement(event.currentTarget as HTMLElement, {
+      items: this.buildWorkspaceMenuItems(),
+    });
+  }
+
+  private buildWorkspaceMenuItems(): ContextMenuItem[] {
+    return this.openWorkspaceEntries().map((workspaceEntry) => ({
+      label: workspaceEntry.isActive ? `${workspaceEntry.name} (active)` : workspaceEntry.name,
+      disabled: workspaceEntry.isActive,
+      action: () => {
+        void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
+      },
+    }));
   }
 }
+

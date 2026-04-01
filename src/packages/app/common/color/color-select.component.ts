@@ -106,3 +106,5 @@ export class ColorSelectComponent {
     this.colorSelected.emit(name === 'default' ? undefined : name);
   }
 }
+
+

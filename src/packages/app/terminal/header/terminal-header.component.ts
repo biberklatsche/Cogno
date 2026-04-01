@@ -276,3 +276,5 @@ export class TerminalHeaderComponent {
       }
   }
 }
+
+

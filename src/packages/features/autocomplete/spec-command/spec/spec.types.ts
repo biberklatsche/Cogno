@@ -1,4 +1,4 @@
-import { AutocompleteQueryContextContract, BackendOsContract, ShellTypeContract } from "@cogno/core-sdk";
+import { AutocompleteQueryContextContract, BackendOsContract, ShellTypeContract } from "@cogno/core-api";
 
 export type ShellConstraint = ShellTypeContract;
 
@@ -112,3 +112,6 @@ export type SpecSuggestionProviderRegistration = {
     backendOs?: BackendOsContract[];
     priority?: number;
 };
+
+
+

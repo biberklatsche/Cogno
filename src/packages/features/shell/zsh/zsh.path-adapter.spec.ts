@@ -16,3 +16,6 @@ describe("ZshPathAdapter", () => {
     expect(adapter.render("/path/with space", { purpose: "insert_arg" })).toBe("'/path/with space'");
   });
 });
+
+
+

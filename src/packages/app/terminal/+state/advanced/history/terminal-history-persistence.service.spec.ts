@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { IPathAdapter } from "@cogno/core-sdk";
+import { IPathAdapter } from "@cogno/core-api";
 import { ShellContext } from "../model/models";
 import { HistoryRepository } from "./history.repository";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
@@ -215,3 +215,6 @@ describe("TerminalHistoryPersistenceService", () => {
         expect(repositoryDouble.deleteCommandExecution).toHaveBeenCalledWith('git commit -am "fix bug"', "/tmp");
     });
 });
+
+
+

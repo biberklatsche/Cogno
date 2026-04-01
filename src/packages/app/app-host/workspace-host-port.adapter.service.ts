@@ -4,7 +4,7 @@ import { map, Observable } from "rxjs";
 import {
   WorkspaceEntryContract,
   WorkspaceHostPortContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { DialogService } from "../common/dialog";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
 import {
@@ -81,3 +81,6 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
     await this.workspaceHostApplicationService.deleteWorkspace(workspaceId);
   }
 }
+
+
+

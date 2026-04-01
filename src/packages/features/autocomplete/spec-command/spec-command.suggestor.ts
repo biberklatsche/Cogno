@@ -3,7 +3,7 @@ import {
     AutocompleteSuggestionContract,
     ShellTypeContract,
     TerminalAutocompleteSuggestorContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { CommandSpecSource } from "./spec/command-spec.source";
 import {
     CommandSpec,
@@ -741,3 +741,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         };
     }
 }
+
+
+

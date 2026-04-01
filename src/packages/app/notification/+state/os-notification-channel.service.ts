@@ -2,9 +2,9 @@ import { Injectable } from "@angular/core";
 import type {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
-import { NotificationOs } from "../../_tauri/notification";
+import { NotificationOs } from "@cogno/app-tauri/notification";
 
 @Injectable({ providedIn: "root" })
 export class OsNotificationChannelService implements NotificationChannelContract {
@@ -40,3 +40,6 @@ export class OsNotificationChannelService implements NotificationChannelContract
     });
   }
 }
+
+
+

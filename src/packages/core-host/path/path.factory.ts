@@ -3,7 +3,7 @@ import {
   ShellContextContract,
   ShellPathAdapterDefinitionContract,
   ShellTypeContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 
 export class PathFactory {
   private static definitionsByShellType = new Map<ShellTypeContract, ShellPathAdapterDefinitionContract>();
@@ -35,3 +35,6 @@ export class PathFactory {
     return definition.createPathAdapter(context);
   }
 }
+
+
+

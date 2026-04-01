@@ -1,29 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BehaviorSubject } from "rxjs";
+import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 import { getAppBus, getDestroyRef } from "../../__test__/test-factory";
 import { AppBus } from "../app-bus/app-bus";
-import { WorkspaceService, WorkspaceEntryViewModel } from "@cogno/features/side-menu/workspace/workspace.service";
 
 describe("WorkspaceShortcutActionService", () => {
   let appBus: AppBus;
-  let workspaceEntries: WorkspaceEntryViewModel[];
+  let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     appBus = getAppBus();
-    workspaceEntries = [
-      { id: "WS-DEFAULT", name: "Default Workspace", isActive: true, isSelected: true },
-      { id: "WS-1", name: "Project One", isActive: false, isSelected: false },
-      { id: "WS-2", name: "Project Two", isActive: false, isSelected: false },
-    ];
+    workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
+      { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
+      { id: "WS-1", name: "Project One", isActive: false },
+      { id: "WS-2", name: "Project Two", isActive: false },
+    ]);
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
 
-    const workspaceService = {
-      workspaceEntries: () => workspaceEntries,
+    const workspaceHostPort: WorkspaceHostPortContract = {
+      workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
-    } as unknown as WorkspaceService;
+      closeWorkspace: vi.fn().mockResolvedValue(undefined),
+      reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
+      persistWorkspaceOrder: vi.fn().mockResolvedValue(undefined),
+      openCreateWorkspaceDialog: vi.fn(),
+      openEditWorkspaceDialog: vi.fn(),
+      deleteWorkspace: vi.fn().mockResolvedValue(undefined),
+    };
 
-    new WorkspaceShortcutActionService(appBus, workspaceService, getDestroyRef());
+    new WorkspaceShortcutActionService(appBus, workspaceHostPort, getDestroyRef());
   });
 
   it("restores the default workspace for select_workspace_default", () => {

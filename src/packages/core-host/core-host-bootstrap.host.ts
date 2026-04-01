@@ -1,22 +1,17 @@
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
+import { SideMenuFeatureDefinitionContract } from "@cogno/core-api";
 import { SideMenuFeatureRegistryHost } from "./side-menu-feature-registry.host";
 
 export class CoreHostBootstrapHost<
-  TComponent = unknown,
   TIcon = string,
   TActionName = string,
 > {
   constructor(
-    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<
-      TComponent,
-      TIcon,
-      TActionName
-    >,
+    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<TIcon, TActionName>,
   ) {}
 
   registerSideMenuFeatures(
     sideMenuFeatureDefinitions: ReadonlyArray<
-      SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
+      SideMenuFeatureDefinitionContract<TIcon, TActionName>
     >,
   ): void {
     for (const sideMenuFeatureDefinition of sideMenuFeatureDefinitions) {

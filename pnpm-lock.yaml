@@ -139,7 +139,6 @@ importers:
 
   src/packages/core-host: {}
 
-  src/packages/core-sdk: {}
 
   src/packages/core-ui: {}
 
@@ -6228,3 +6227,5 @@ snapshots:
   zod@4.3.5: {}
 
   zod@4.3.6: {}
+
+

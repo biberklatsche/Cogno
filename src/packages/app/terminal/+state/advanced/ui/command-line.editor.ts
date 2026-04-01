@@ -6,8 +6,8 @@ import {AppBus} from '../../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
 import {IPty} from '../../pty/pty';
 import {TerminalStateManager} from "../../state";
-import {Clipboard} from "../../../../_tauri/clipboard";
-import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-sdk";
+import {Clipboard} from "@cogno/app-tauri/clipboard";
+import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-api";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;
@@ -519,3 +519,6 @@ export class CommandLineEditor implements ITerminalHandler  {
         return pos;
     }
 }
+
+
+

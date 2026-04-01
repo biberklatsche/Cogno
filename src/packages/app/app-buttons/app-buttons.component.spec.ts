@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppButtonsComponent } from './app-buttons.component';
 import { AppButtonsService } from './+state/app-buttons.service';
-import { AppWindow } from '../_tauri/window';
+import { AppWindow } from '@cogno/app-tauri/window';
 import { Subject } from 'rxjs';
 
 describe('AppButtonsComponent', () => {
@@ -87,3 +87,5 @@ describe('AppButtonsComponent', () => {
     });
   });
 });
+
+

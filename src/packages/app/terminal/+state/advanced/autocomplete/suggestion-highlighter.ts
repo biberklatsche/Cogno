@@ -58,3 +58,5 @@ export class SuggestionHighlighter {
         return merged;
     }
 }
+
+

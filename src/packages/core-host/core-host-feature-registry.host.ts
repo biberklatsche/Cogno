@@ -7,12 +7,11 @@ import {
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { PathFactory } from "./path/path.factory";
 import { SideMenuFeatureRegistryHost } from "./side-menu-feature-registry.host";
 
 export class CoreHostFeatureRegistryHost<
-  TComponent = unknown,
   TIcon = string,
   TActionName = string,
 > {
@@ -24,15 +23,11 @@ export class CoreHostFeatureRegistryHost<
   private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] = [];
 
   constructor(
-    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<
-      TComponent,
-      TIcon,
-      TActionName
-    >,
+    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<TIcon, TActionName>,
   ) {}
 
   registerFeatureCollection(
-    applicationFeatureCollection: ApplicationFeatureCollectionContract<TComponent, TIcon, TActionName>,
+    applicationFeatureCollection: ApplicationFeatureCollectionContract<TIcon, TActionName>,
   ): void {
     this.databaseMigrations.push(...applicationFeatureCollection.databaseMigrations);
     this.notificationChannels.push(...applicationFeatureCollection.notificationChannels);
@@ -66,8 +61,14 @@ export class CoreHostFeatureRegistryHost<
     return this.shellSupportDefinitions;
   }
 
+  getSideMenuFeatureDefinitionById(
+    sideMenuFeatureDefinitionId: string,
+  ): SideMenuFeatureDefinitionContract<TIcon, TActionName> | undefined {
+    return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitionById(sideMenuFeatureDefinitionId);
+  }
+
   getSideMenuFeatureDefinitions(): ReadonlyArray<
-    SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
+    SideMenuFeatureDefinitionContract<TIcon, TActionName>
   > {
     return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitions();
   }

@@ -1,7 +1,6 @@
-import { Component, DestroyRef, ElementRef, Inject, OnDestroy, Signal, viewChildren } from "@angular/core";
-import { DragPreviewService } from "@cogno/app/common/drag-preview/drag-preview.service";
-import { actionKeybindingToken, ActionKeybindingContract, defaultWorkspaceIdContract } from "@cogno/core-sdk";
-import { CopyEditDeleteComponent, IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { Component, DestroyRef, ElementRef, OnDestroy, Signal, viewChildren } from "@angular/core";
+import { ActionKeybindingPort, defaultWorkspaceIdContract } from "@cogno/core-api";
+import { CopyEditDeleteComponent, DragPreviewService, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
@@ -262,8 +261,7 @@ export class WorkspaceSideComponent implements OnDestroy {
   constructor(
     private readonly workspaceService: WorkspaceService,
     private readonly dragPreviewService: DragPreviewService,
-    @Inject(actionKeybindingToken)
-    private readonly actionKeybinding: ActionKeybindingContract,
+    private readonly actionKeybinding: ActionKeybindingPort,
     destroyRef: DestroyRef,
   ) {
     this.workspaceEntries = this.workspaceService.workspaceEntries;
@@ -472,3 +470,5 @@ export class WorkspaceSideComponent implements OnDestroy {
     return !!eventTarget.closest(".workspace-close-button, app-copy-edit-delete, .workspace-actions, button");
   }
 }
+
+

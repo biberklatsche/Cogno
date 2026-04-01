@@ -74,3 +74,5 @@ export class CommandBlockResolver {
         return terminal.buffer.active.length;
     }
 }
+
+

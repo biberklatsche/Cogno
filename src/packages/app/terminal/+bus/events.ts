@@ -64,3 +64,5 @@ export type TerminalSearchResultEvent = MessageBase<"TerminalSearchResult", {
     lines: TerminalSearchLineResult[];
 }>;
 export type TerminalSearchRevealRequestedEvent = MessageBase<"TerminalSearchRevealRequested", TerminalSearchRevealPayload>;
+
+

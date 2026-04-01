@@ -247,3 +247,5 @@ describe('CommandLineObserver', () => {
     expect(disposeSpy).toHaveBeenCalled();
   });
 });
+
+

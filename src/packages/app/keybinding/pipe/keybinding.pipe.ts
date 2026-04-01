@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import {OS} from "../../_tauri/os";
+import {OS} from "@cogno/app-tauri/os";
 import {KeybindService} from "../keybind.service";
 import {Modifier} from "../modifier";
 import {ActionName} from "../../action/action.models";
@@ -47,3 +47,5 @@ export class ActionKeybindingPipe extends KeybindingPipe {
         return super.transform(keybinding);
     }
 }
+
+

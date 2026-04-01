@@ -1,4 +1,4 @@
-import { FilesystemContract } from "@cogno/core-sdk";
+import { FilesystemContract } from "@cogno/core-api";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 type CacheEntry = {
@@ -39,4 +39,7 @@ export class NpmScriptsSpecProvider implements SpecSuggestionProvider {
         }
     }
 }
+
+
+
 

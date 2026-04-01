@@ -4,7 +4,7 @@ import { AppBus } from '../../app-bus/app-bus';
 import { clear, getAppBus, getTerminalComponentFactory, getDestroyRef } from "../../../__test__/test-factory";
 import { TerminalComponentFactory } from "./terminal-component.factory";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import {TerminalConfig} from "@cogno/core-sdk";
+import {TerminalConfig} from "@cogno/core-api";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {Grid} from "../+model/model";
 import {
@@ -484,3 +484,6 @@ describe('GridListService', () => {
     });
 
 });
+
+
+

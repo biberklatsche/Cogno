@@ -105,3 +105,5 @@ export const Color = {
     return `#${configColor}`;
   }
 }
+
+

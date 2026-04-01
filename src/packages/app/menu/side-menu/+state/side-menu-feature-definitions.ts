@@ -1,12 +1,7 @@
-import { Type } from "@angular/core";
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
-import { ActionName } from "../../../action/action.models";
-import { Icon } from "@cogno/core-ui";
-
-export type SideMenuFeatureDefinition = SideMenuFeatureDefinitionContract<
-  Type<unknown>,
-  Icon,
-  ActionName
->;
+export {
+  sideMenuFeatureDefinitionsToken,
+  type SideMenuFeatureDefinition,
+} from "./side-menu-feature-ui.contract";
+import type { SideMenuFeatureDefinition } from "./side-menu-feature-ui.contract";
 
 export const sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition> = [];

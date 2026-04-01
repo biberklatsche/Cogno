@@ -58,3 +58,5 @@ export type CommandPatternOccurrence = {
         readonly value: string;
     }>;
 };
+
+

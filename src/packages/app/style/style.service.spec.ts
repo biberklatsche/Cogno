@@ -3,20 +3,35 @@ import { StyleService } from './style.service';
 import { ConfigServiceMock } from '../../__test__/mocks/config-service.mock';
 import { getDestroyRef } from '../../__test__/test-factory';
 import { Config } from '../config/+models/config';
-import { Fs } from '../_tauri/fs';
-import { Logger } from '../_tauri/logger';
-import { Path } from '../_tauri/path';
+import { Fs } from '@cogno/app-tauri/fs';
+import { Logger } from '@cogno/app-tauri/logger';
+import { Path } from '@cogno/app-tauri/path';
 
-// Mocking dependencies
-vi.mock('../_tauri/fs', () => ({
+vi.mock('@cogno/app-tauri/fs', () => ({
   Fs: {
     convertFileSrc: vi.fn((path: string) => `mock-url://${path}`)
   }
 }));
 
-vi.mock('../_tauri/path', () => ({
+vi.mock('@cogno/app-tauri/path', () => ({
   Path: {
     homeDir: vi.fn(async () => '/Users/tester')
+  }
+}));
+
+vi.mock('@cogno/app-tauri/logger', () => ({
+  Logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }
+}));
+
+
+vi.mock('@cogno/app-tauri/os', () => ({
+  OS: {
+    platform: vi.fn(() => 'macos')
   }
 }));
 
@@ -69,7 +84,6 @@ describe('StyleService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     configService = new ConfigServiceMock();
-    // document.documentElement.style.setProperty is used, let's clear it or spy on it
     vi.spyOn(document.documentElement.style, 'setProperty');
     vi.spyOn(document.body.style, 'setProperty');
     vi.spyOn(document.body.style, 'removeProperty');
@@ -103,13 +117,11 @@ describe('StyleService', () => {
     it('should handle light theme background factor', () => {
       const lightConfig = {
         ...baseConfig,
-        color: { ...baseConfig.color, background: 'ffffff' } // Pure white
+        color: { ...baseConfig.color, background: 'ffffff' }
       };
       styleService = new StyleService(configService, destroyRef);
       configService.setConfig(lightConfig);
 
-      // In a light theme, we expect different darken/lighten behavior
-      // We check if it was called (logic verification via behavior)
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--background-color', '#ffffff');
     });
 
@@ -138,9 +150,7 @@ describe('StyleService', () => {
       styleService = new StyleService(configService, destroyRef);
       configService.setConfig(configWithOpacity);
 
-      // 50% of 255 is 128 (80 in hex)
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--background-color-ct', '#1e1e1e80');
-      // opacityDouble for 50% is 25% -> 64 (40 in hex)
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--background-color-ct2', '#1e1e1e40');
     });
 
@@ -152,7 +162,6 @@ describe('StyleService', () => {
         styleService = new StyleService(configService, destroyRef);
         configService.setConfig(configWithFullOpacity);
   
-        // FF is 255 (100%)
         expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--background-color-ct', '#1e1e1eFF');
         expect(document.documentElement.style.setProperty).toHaveBeenCalledWith('--background-color-ct2', '#1e1e1eFF');
       });
@@ -204,14 +213,12 @@ describe('StyleService', () => {
     it('should remove background image properties when path is missing', async () => {
       styleService = new StyleService(configService, destroyRef);
       
-      // Start with image
       configService.setConfig({
         ...baseConfig,
         background_image: { path: '/some/path.png', opacity: 100, blur: 0 }
       });
       await waitForAsyncEffects();
 
-      // Then remove it
       configService.setConfig({
         ...baseConfig,
         background_image: undefined

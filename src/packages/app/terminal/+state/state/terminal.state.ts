@@ -1,4 +1,4 @@
-import {OS} from "../../../_tauri/os";
+import {OS} from "@cogno/app-tauri/os";
 import {ShellContext} from "../advanced/model/models";
 
 export type Position = { col: number, row: number };
@@ -82,3 +82,5 @@ export const INITIAL_STATE: TerminalState = {
     input: {cursorIndex: 0, maxCursorIndex: 0, text: ''},
     scrolledLinesFromBottom: 0,
 }
+
+

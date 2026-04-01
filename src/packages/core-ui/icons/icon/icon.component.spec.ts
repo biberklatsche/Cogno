@@ -30,3 +30,5 @@ describe("IconComponent", () => {
     expect(cmp.icon).toBe(mdiAbTesting);
   });
 });
+
+

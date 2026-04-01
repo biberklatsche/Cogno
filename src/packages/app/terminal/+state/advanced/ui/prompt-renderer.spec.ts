@@ -6,9 +6,9 @@ import { AppBus } from '../../../../app-bus/app-bus';
 import { PathFactory } from '@cogno/core-host';
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { ContextMenuOverlayService } from '../../../../menu/context-menu-overlay/context-menu-overlay.service';
-import { Clipboard } from '../../../../_tauri/clipboard';
+import { Clipboard } from '@cogno/app-tauri/clipboard';
 
-vi.mock('../../../../_tauri/clipboard', () => ({
+vi.mock('@cogno/app-tauri/clipboard', () => ({
     Clipboard: {
         writeText: vi.fn(),
         readText: vi.fn(),
@@ -345,3 +345,5 @@ describe('PromptMarkerRenderer', () => {
         expect(scrollToCommandBottom).toHaveBeenCalledTimes(1);
     });
 });
+
+

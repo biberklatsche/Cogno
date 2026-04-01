@@ -84,3 +84,5 @@ describe('Color', () => {
     expect( Color.isValid('#000000')).toBeTruthy();
   });
 });
+
+

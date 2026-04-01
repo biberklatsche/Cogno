@@ -6,7 +6,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ActionDefinition} from "./keybind-action.interpreter";
 import {AppBus} from "../app-bus/app-bus";
 import {ActionName} from "../action/action.models";
-import {Logger} from "../_tauri/logger";
+import {Logger} from "@cogno/app-tauri/logger";
 
 type Key = string;
 
@@ -119,3 +119,5 @@ export class KeybindService {
         return eventTarget.closest('app-dialog') !== null;
     }
 }
+
+

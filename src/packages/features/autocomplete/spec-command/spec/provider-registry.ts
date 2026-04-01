@@ -1,4 +1,4 @@
-import { BackendOsContract, ShellContextContract } from "@cogno/core-sdk";
+import { BackendOsContract, ShellContextContract } from "@cogno/core-api";
 import { ShellConstraint, SpecSuggestionProvider, SpecSuggestionProviderRegistration } from "./spec.types";
 
 type RegisteredProvider = {
@@ -81,3 +81,6 @@ export class SpecProviderRegistry {
         return shellSpecificity + backendOsSpecificity + prioritySpecificity + tiebreaker;
     }
 }
+
+
+

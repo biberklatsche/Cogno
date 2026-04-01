@@ -5,16 +5,18 @@ import type {
   NotificationReplyChannelContract,
   NotificationChannelSettingsContract,
   NotificationChannelsContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "../../config/+state/config.service";
+
+type NotificationChannelsWiringPort = Pick<AppWiringService, "getNotificationChannels">;
 
 @Injectable({ providedIn: "root" })
 export class NotificationDispatchService {
   constructor(
     private readonly appBus: AppBus,
-    private readonly appWiringService: AppWiringService,
+    private readonly appWiringService: NotificationChannelsWiringPort,
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {

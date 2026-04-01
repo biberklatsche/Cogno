@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ActionKeybindingContract } from "@cogno/core-sdk";
+import { ActionKeybindingContract } from "@cogno/core-api";
 import { KeybindService } from "../keybinding/keybind.service";
 import { KeybindingPipe } from "../keybinding/pipe/keybinding.pipe";
 
@@ -14,3 +14,6 @@ export class ActionKeybindingPortAdapterService implements ActionKeybindingContr
     return this.keybindingPipe.transform(keybinding);
   }
 }
+
+
+

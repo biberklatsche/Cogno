@@ -1,7 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Subject } from "rxjs";
-import { AppWindow } from "../_tauri/window";
+import { AppWindow } from "@cogno/app-tauri/window";
 import { TerminalSession } from "./+state/terminal.session";
 import { TerminalFileDropService } from "./terminal-file-drop.service";
 
@@ -72,3 +72,5 @@ describe("TerminalFileDropService", () => {
         expect(terminalSession.insertPaths).not.toHaveBeenCalled();
     });
 });
+
+

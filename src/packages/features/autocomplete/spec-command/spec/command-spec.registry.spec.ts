@@ -49,3 +49,6 @@ describe("CommandSpecRegistry", () => {
         expect(registry.get("unknown")).toBeUndefined();
     });
 });
+
+
+

@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, computed, Signal} from "@angular/core";
-import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-sdk";
+import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-api";
 import {TerminalSearchService} from "./terminal-search.service";
 
 type SearchTextSegment = {
@@ -320,3 +320,6 @@ export class TerminalSearchSideComponent {
         });
     }
 }
+
+
+

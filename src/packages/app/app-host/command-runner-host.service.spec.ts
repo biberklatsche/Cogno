@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { CommandRunnerHostService } from "./command-runner-host.service";
-import { CommandRunner } from "../_tauri/command-runner";
+import { CommandRunner } from "@cogno/app-tauri/command-runner";
 
-vi.mock("../_tauri/command-runner", () => ({
+vi.mock("@cogno/app-tauri/command-runner", () => ({
     CommandRunner: {
         execute: vi.fn(),
     },
@@ -35,3 +35,5 @@ describe("CommandRunnerHostService", () => {
         expect(result.exitCode).toBe(0);
     });
 });
+
+

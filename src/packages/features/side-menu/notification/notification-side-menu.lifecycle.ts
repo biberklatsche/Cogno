@@ -1,25 +1,25 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
-import { NotificationService } from "./notification.service";
+import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
+import { NotificationCenterStateService } from "./notification-center-state.service";
 
 @Injectable({ providedIn: "root" })
 export class NotificationSideMenuLifecycle {
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationCenterStateService: NotificationCenterStateService) {}
 
   create(sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>): SideMenuFeatureLifecycleContract {
-    this.notificationService.setSideMenuIconUpdater((iconName) => {
+    this.notificationCenterStateService.setSideMenuIconUpdater((iconName) => {
       sideMenuFeatureHandle.updateIcon(iconName);
     });
 
     return {
       onModeChange: (mode) => {
-        this.notificationService.handleSideMenuModeChange(mode);
+        this.notificationCenterStateService.handleSideMenuModeChange(mode);
       },
       onOpen: () => {
-        this.notificationService.handleSideMenuOpen();
+        this.notificationCenterStateService.handleSideMenuOpen();
       },
       onClose: () => {
-        this.notificationService.handleSideMenuClose();
+        this.notificationCenterStateService.handleSideMenuClose();
       },
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => sideMenuFeatureHandle.close());
@@ -30,3 +30,6 @@ export class NotificationSideMenuLifecycle {
     };
   }
 }
+
+
+

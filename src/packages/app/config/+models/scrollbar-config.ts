@@ -19,3 +19,5 @@ export const ScrollbarSchema = z.object({
 })
 
 export type Scrollbar = z.infer<typeof ScrollbarSchema>;
+
+

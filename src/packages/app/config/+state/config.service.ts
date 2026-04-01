@@ -1,24 +1,24 @@
 import{DestroyRef, Injectable} from '@angular/core';
-import {Fs} from "../../_tauri/fs";
+import {Fs} from "@cogno/app-tauri/fs";
 import {Environment} from '../../common/environment/environment';
 import {BehaviorSubject, filter, Observable, Subscription} from 'rxjs';
 import {Config} from "../+models/config";
 import {ConfigReader} from "./config.reader";
-import {Logger} from "../../_tauri/logger";
+import {Logger} from "@cogno/app-tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ShellConfigurator} from "../shell-configurator";
-import {DefaultConfig} from "../../_tauri/default-config";
+import {DefaultConfig} from "@cogno/app-tauri/default-config";
 import {InitialConfigOverridesWriter} from "./initial-config-overrides.writer";
 import {ActionFired} from "../../action/action.models";
-import {Opener} from "../../_tauri/opener";
+import {Opener} from "@cogno/app-tauri/opener";
 import {ShellProfile} from "../+models/shell-config";
 import {PromptSegment} from "../+models/prompt-config";
 import {ShellIntegrationWriter} from "../shell-integration.writer";
 import {Hash} from "../../common/hash/hash";
-import {Path} from "../../_tauri/path";
-import {CliConfigOverrides} from "../../_tauri/cli-config-overrides";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import {Path} from "@cogno/app-tauri/path";
+import {CliConfigOverrides} from "@cogno/app-tauri/cli-config-overrides";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 export interface ShellProfileEntry {
     readonly name: string;
@@ -293,3 +293,6 @@ export class RealConfigService extends ConfigService {
         return `${normalizedUserConfig}\n${normalizedOverrides}`;
     }
 }
+
+
+

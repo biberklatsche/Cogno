@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
+import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
 import { WorkspaceService } from "./workspace.service";
 
 @Injectable({ providedIn: "root" })
@@ -57,3 +57,6 @@ export class WorkspaceSideMenuLifecycle {
     };
   }
 }
+
+
+

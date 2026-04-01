@@ -297,3 +297,5 @@ export class SideMenuComponent implements OnDestroy {
         window.removeEventListener('pointerup', this.onWindowPointerUp, true);
     };
 }
+
+

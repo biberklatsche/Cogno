@@ -1,7 +1,6 @@
-import type { ApplicationSettingsExtensionContract } from "@cogno/core-sdk";
-import { featureSettingsExtension } from "@cogno/features";
+import { ApplicationSettingsExtensionContract, defaultFeatureSettingsExtension } from "@cogno/core-api";
 import { z } from "zod";
-import { OS, OsType } from "../../_tauri/os";
+import { OS, OsType } from "@cogno/app-tauri/os";
 import { Config } from "../+models/config";
 import { createApplicationSettingsDefinition } from "../application-settings-definition";
 
@@ -496,8 +495,11 @@ function resolveSettingsExtensions(
   settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract> | undefined,
 ): ReadonlyArray<ApplicationSettingsExtensionContract> {
   if (settingsExtensions === undefined || settingsExtensions.length === 0) {
-    return [featureSettingsExtension];
+    return [defaultFeatureSettingsExtension];
   }
 
   return settingsExtensions;
 }
+
+
+

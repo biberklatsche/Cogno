@@ -36,3 +36,5 @@ describe('TimespanPipe', () => {
     expect(pipe.transform(60 * 60 * 1000 + 59 * 60 * 1000 + 1)).toEqual('~ 1h 59m');
   });
 });
+
+

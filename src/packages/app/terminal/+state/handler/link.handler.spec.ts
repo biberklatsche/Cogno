@@ -3,7 +3,7 @@ import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { TerminalStateManager } from "../state";
 import { LinkHandler } from "./link.handler";
-import { Opener } from "../../../_tauri/opener";
+import { Opener } from "@cogno/app-tauri/opener";
 import { PathFactory } from "@cogno/core-host";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 
@@ -107,3 +107,5 @@ describe("LinkHandler", () => {
         expect(terminal.element?.hasAttribute("title")).toBe(false);
     });
 });
+
+

@@ -209,3 +209,5 @@ describe('InitialConfigOverridesWriter', () => {
       expect(text).toContain('terminal.progress_bar.enabled = false');
   });
 });
+
+

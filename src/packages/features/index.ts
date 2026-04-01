@@ -2,14 +2,12 @@ export * from "./side-menu/command-palette/command-palette.feature-definition";
 export * from "./side-menu/command-palette/command-palette.service";
 export * from "./side-menu/navigation/directional-navigation.engine";
 export * from "./side-menu/notification/notification.feature-definition";
-export * from "./side-menu/notification/notification.service";
+export * from "./side-menu/notification/notification-center-state.service";
 export * from "./side-menu/terminal-search/terminal-search.feature-definition";
 export * from "./side-menu/terminal-search/terminal-search.service";
 export * from "./side-menu/workspace/workspace.feature-definition";
 export * from "./database-migrations";
 export * from "./side-menu/workspace/workspace.migrations";
-export * from "./side-menu/workspace/workspace.model";
-export * from "./side-menu/workspace/workspace.repository";
 export * from "./side-menu/workspace/workspace.service";
 export * from "./side-menu/side-menu-feature-definitions";
 export * from "./feature-application-feature.collection";
@@ -28,3 +26,6 @@ export * from "./shell/zsh/zsh.shell-definition";
 export * from "./shell/powershell/powershell.path-adapter";
 export * from "./shell/powershell/powershell.shell-support-definition";
 export * from "./shell/powershell/powershell.shell-definition";
+
+
+

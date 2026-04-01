@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import {KeybindingPipe} from "./keybinding.pipe";
-import {OS} from "../../_tauri/os";
+import {OS} from "@cogno/app-tauri/os";
 
 describe('KeybindingPipe', () => {
     let pipe: KeybindingPipe;
@@ -43,3 +43,5 @@ describe('KeybindingPipe', () => {
         expect(pipe.transform('Control + A')).toBe('Ctrl+A');
     });
 });
+
+

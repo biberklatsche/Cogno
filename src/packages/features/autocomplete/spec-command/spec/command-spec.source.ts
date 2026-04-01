@@ -13,3 +13,6 @@ export interface CommandSpecSource {
     get(command: string): MaybePromise<CommandSpec | undefined>;
     getConstraints(command: string): MaybePromise<CommandShellConstraints | undefined>;
 }
+
+
+

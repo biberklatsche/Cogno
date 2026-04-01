@@ -1,4 +1,4 @@
-import { TerminalAutocompleteSuggestorDefinitionContract } from "@cogno/core-sdk";
+import { TerminalAutocompleteSuggestorDefinitionContract } from "@cogno/core-api";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
 import { AssetCommandSpecRegistry } from "./spec/asset-command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
@@ -27,3 +27,6 @@ export const specCommandSuggestorDefinition: TerminalAutocompleteSuggestorDefini
       createDefaultProviderRegistrations(filesystem, commandRunner),
     ),
 };
+
+
+

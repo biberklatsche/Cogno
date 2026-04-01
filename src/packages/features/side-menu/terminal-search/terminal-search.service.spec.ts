@@ -3,18 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   TerminalSearchColorConfigContract,
   TerminalSearchHostPortContract,
+  TerminalSearchPanelRequestContract,
   TerminalSearchResultContract,
-} from "@cogno/core-sdk";
-import { AppBus } from "@cogno/app/app-bus/app-bus";
+} from "@cogno/core-api";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 import { TerminalSearchService } from "./terminal-search.service";
 
 describe("TerminalSearchService", () => {
   let terminalSearchResultSubject: BehaviorSubject<TerminalSearchResultContract>;
   let terminalSearchColorConfigSubject: BehaviorSubject<TerminalSearchColorConfigContract>;
+  let terminalSearchPanelRequestSubject: BehaviorSubject<TerminalSearchPanelRequestContract>;
   let requestSearchMock: ReturnType<typeof vi.fn>;
   let terminalSearchService: TerminalSearchService;
-  let appBus: AppBus;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -27,19 +27,20 @@ describe("TerminalSearchService", () => {
       lines: [],
     });
     terminalSearchColorConfigSubject = new BehaviorSubject<TerminalSearchColorConfigContract>({});
+    terminalSearchPanelRequestSubject = new BehaviorSubject<TerminalSearchPanelRequestContract>({});
     requestSearchMock = vi.fn();
-    appBus = new AppBus();
 
     const terminalSearchHostPort = {
       terminalSearchResult$: terminalSearchResultSubject.asObservable(),
       terminalSearchColorConfig$: terminalSearchColorConfigSubject.asObservable(),
+      terminalSearchPanelRequest$: terminalSearchPanelRequestSubject.asObservable(),
       getFocusedTerminalId: vi.fn().mockReturnValue("focused-terminal"),
       requestSearch: requestSearchMock,
       requestSearchDecorationClear: vi.fn(),
       requestReveal: vi.fn(),
     } as TerminalSearchHostPortContract;
 
-    terminalSearchService = new TerminalSearchService(terminalSearchHostPort, appBus, getDestroyRef());
+    terminalSearchService = new TerminalSearchService(terminalSearchHostPort, getDestroyRef());
   });
 
   afterEach(() => {
@@ -47,14 +48,10 @@ describe("TerminalSearchService", () => {
   });
 
   it("applies block search parameters from the bus and uses them for the next search", () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchPanelRequested",
-      payload: {
-        terminalId: "terminal-77",
-        beginBufferLine: 12,
-        endBufferLine: 24,
-      },
+    terminalSearchPanelRequestSubject.next({
+      terminalId: "terminal-77",
+      beginBufferLine: 12,
+      endBufferLine: 24,
     });
 
     terminalSearchService.submitSearchQuery("needle");
@@ -73,14 +70,10 @@ describe("TerminalSearchService", () => {
   });
 
   it("clears an active block search and repeats the search without block bounds", () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchPanelRequested",
-      payload: {
-        terminalId: "terminal-77",
-        beginBufferLine: 5,
-        endBufferLine: 18,
-      },
+    terminalSearchPanelRequestSubject.next({
+      terminalId: "terminal-77",
+      beginBufferLine: 5,
+      endBufferLine: 18,
     });
 
     terminalSearchService.submitSearchQuery("needle");
@@ -119,14 +112,10 @@ describe("TerminalSearchService", () => {
   });
 
   it("appends the next page when more results are loaded", () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchPanelRequested",
-      payload: {
-        terminalId: "terminal-77",
-        beginBufferLine: 12,
-        endBufferLine: 24,
-      },
+    terminalSearchPanelRequestSubject.next({
+      terminalId: "terminal-77",
+      beginBufferLine: 12,
+      endBufferLine: 24,
     });
 
     terminalSearchService.submitSearchQuery("needle");
@@ -179,3 +168,6 @@ describe("TerminalSearchService", () => {
     expect(terminalSearchService.hasMoreResults()).toBe(false);
   });
 });
+
+
+

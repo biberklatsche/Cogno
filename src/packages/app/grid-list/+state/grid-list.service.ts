@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from "@angular/core";
 import {BehaviorSubject, map, Observable} from "rxjs";
 import {Grid, GridList, Pane, SplitDirection, TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
-import {defaultWorkspaceIdContract, PaneConfig, GridConfig, TabId} from "@cogno/core-sdk";
+import {defaultWorkspaceIdContract, PaneConfig, GridConfig, TabId} from "@cogno/core-api";
 import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -581,3 +581,6 @@ export class GridListService {
         }
     }
 }
+
+
+

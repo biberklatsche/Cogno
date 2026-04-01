@@ -1,22 +1,20 @@
 import {
   SideMenuFeatureDefinitionContract,
   SideMenuFeatureRegistryContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 
 export class SideMenuFeatureRegistryHost<
-    TComponent = unknown,
-    TIcon = string,
-    TActionName = string,
-  >
-  implements SideMenuFeatureRegistryContract<TComponent, TIcon, TActionName>
+  TIcon = string,
+  TActionName = string,
+> implements SideMenuFeatureRegistryContract<TIcon, TActionName>
 {
   private readonly sideMenuFeatureDefinitionsById = new Map<
     string,
-    SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
+    SideMenuFeatureDefinitionContract<TIcon, TActionName>
   >();
 
   registerSideMenuFeature(
-    sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>,
+    sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
   ): void {
     const existingDefinition = this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinition.id);
     if (existingDefinition !== undefined) {
@@ -32,12 +30,12 @@ export class SideMenuFeatureRegistryHost<
 
   getSideMenuFeatureDefinitionById(
     sideMenuFeatureDefinitionId: string,
-  ): SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName> | undefined {
+  ): SideMenuFeatureDefinitionContract<TIcon, TActionName> | undefined {
     return this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinitionId);
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<
-    SideMenuFeatureDefinitionContract<TComponent, TIcon, TActionName>
+    SideMenuFeatureDefinitionContract<TIcon, TActionName>
   > {
     return [...this.sideMenuFeatureDefinitionsById.values()].sort((leftDefinition, rightDefinition) => {
       return leftDefinition.order - rightDefinition.order;

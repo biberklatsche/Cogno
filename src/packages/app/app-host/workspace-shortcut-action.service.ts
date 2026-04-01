@@ -1,18 +1,27 @@
-import { DestroyRef, Injectable } from "@angular/core";
+import { DestroyRef, Inject, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
+import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { ActionFired, ActionFiredEvent } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
-import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceShortcutActionService {
   private static readonly indexedShortcutLimit = 9;
+  private workspaceEntries: ReadonlyArray<WorkspaceEntryContract> = [];
 
   constructor(
     private readonly appBus: AppBus,
-    private readonly workspaceService: WorkspaceService,
+    @Inject(workspaceHostPortToken)
+    private readonly workspaceHostPort: WorkspaceHostPortContract,
     destroyRef: DestroyRef,
   ) {
+    this.workspaceHostPort.workspaceEntries$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((workspaceEntries) => {
+        this.workspaceEntries = workspaceEntries;
+      });
+
     this.appBus.on$(ActionFired.listener())
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: ActionFiredEvent) => {
@@ -21,9 +30,9 @@ export class WorkspaceShortcutActionService {
         }
 
         if (event.payload === "select_workspace_default") {
-          const defaultWorkspaceEntry = this.workspaceService.workspaceEntries()[0];
+          const defaultWorkspaceEntry = this.workspaceEntries[0];
           if (defaultWorkspaceEntry) {
-            void this.workspaceService.restoreWorkspace(defaultWorkspaceEntry.id);
+            void this.workspaceHostPort.restoreWorkspace(defaultWorkspaceEntry.id);
           }
 
           event.performed = !event.trigger?.all;
@@ -36,9 +45,9 @@ export class WorkspaceShortcutActionService {
           return;
         }
 
-        const workspaceEntry = this.workspaceService.workspaceEntries()[workspaceIndex];
+        const workspaceEntry = this.workspaceEntries[workspaceIndex];
         if (workspaceEntry) {
-          void this.workspaceService.restoreWorkspace(workspaceEntry.id);
+          void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
         }
 
         event.performed = !event.trigger?.all;
@@ -59,3 +68,4 @@ export class WorkspaceShortcutActionService {
     return index;
   }
 }
+

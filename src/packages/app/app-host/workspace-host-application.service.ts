@@ -1,8 +1,11 @@
 import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { GridConfig, TabConfig } from "@cogno/core-sdk";
-import { WorkspaceConfiguration } from "@cogno/features/side-menu/workspace/workspace.model";
-import { WorkspaceRepository } from "@cogno/features/side-menu/workspace/workspace.repository";
+import { defaultWorkspaceIdContract } from "@cogno/core-api";
+import {
+  WorkspaceConfiguration,
+  WorkspaceState,
+  WorkspaceStateUseCase,
+} from "@cogno/core-domain/workspace";
 import { AppBus } from "../app-bus/app-bus";
 import { IdCreator } from "../common/id-creator/id-creator";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
@@ -10,20 +13,15 @@ import { GridListService } from "../grid-list/+state/grid-list.service";
 import { TabListService } from "../tab-list/+state/tab-list.service";
 import { Color } from "../common/color/color";
 import { ActionFired } from "../action/action.models";
+import { WorkspaceRepository } from "./workspace.repository";
 
-export type WorkspaceConfigUi = WorkspaceConfiguration & { isSelected: boolean; isOpen?: boolean };
+export type WorkspaceConfigUi = WorkspaceState;
 
-export const DEFAULT_WORKSPACE_ID = "WS-DEFAULT";
+export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostApplicationService {
-  private readonly defaultWorkspace: WorkspaceConfiguration = {
-    id: DEFAULT_WORKSPACE_ID,
-    name: "Default Workspace",
-    color: "grey",
-    grids: [{ tabId: "TB_DEFAULT", pane: {} }],
-    tabs: [{ tabId: "TB_DEFAULT" }],
-  };
+  private readonly defaultWorkspace = WorkspaceStateUseCase.createDefaultWorkspace(DEFAULT_WORKSPACE_ID);
 
   readonly _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
@@ -38,20 +36,14 @@ export class WorkspaceHostApplicationService {
   ) {
     this.bus.onceType$("DBInitialized").subscribe(async () => {
       const workspaces = await this.workspaceRepository.getAllWorkspaces();
-      const workspaceList = [this.defaultWorkspace, ...workspaces].map((workspaceConfiguration) => ({
-        ...workspaceConfiguration,
-        isSelected: workspaceConfiguration.isActive ?? false,
-        isOpen: false,
-      }));
-
-      if (!workspaceList.find((workspace) => workspace.isSelected)) {
-        workspaceList[0].isSelected = true;
-        workspaceList[0].isActive = true;
-      }
+      const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+        workspaces,
+        this.defaultWorkspace,
+      );
 
       this._workspaceList.set(workspaceList);
 
-      const activeWorkspace = workspaceList.find((workspace) => workspace.isActive);
+      const activeWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
       if (activeWorkspace) {
         await this.activateWorkspace(activeWorkspace);
       }
@@ -98,61 +90,48 @@ export class WorkspaceHostApplicationService {
   }
 
   public async activateWorkspace(workspace: WorkspaceConfigUi): Promise<void> {
-    const workspaceList = [...this._workspaceList()];
-    const previousActiveWorkspace = workspaceList.find((workspaceEntry) => workspaceEntry.isActive);
+    const activationPlan = WorkspaceStateUseCase.activateWorkspace(this._workspaceList(), workspace.id);
+    const previousActiveWorkspace = activationPlan.previousActiveWorkspace;
+    const workspaceToActivate = activationPlan.workspaceToActivate;
 
-    if (previousActiveWorkspace && previousActiveWorkspace.id !== workspace.id && previousActiveWorkspace.autosave) {
+    if (!workspaceToActivate) {
+      return;
+    }
+
+    if (
+      previousActiveWorkspace
+      && previousActiveWorkspace.id !== workspaceToActivate.id
+      && previousActiveWorkspace.autosave
+    ) {
       await this.saveWorkspace(previousActiveWorkspace);
     }
 
-    for (const workspaceEntry of workspaceList) {
-      workspaceEntry.isActive = false;
-      workspaceEntry.isSelected = false;
+    if (activationPlan.shouldRestoreRuntime) {
+      this.tabListService.restoreTabs(workspaceToActivate.tabs, workspaceToActivate.id);
+      this.gridListService.restoreGridsForWorkspace(workspaceToActivate.grids, workspaceToActivate.id);
     }
 
-    workspace.isActive = true;
-    workspace.isSelected = true;
+    this.tabListService.activateWorkspace(workspaceToActivate.id);
+    this.gridListService.activateWorkspace(workspaceToActivate.id);
 
-    if (!workspace.isOpen) {
-      this.tabListService.restoreTabs(workspace.tabs, workspace.id);
-      this.gridListService.restoreGridsForWorkspace(workspace.grids, workspace.id);
-      workspace.isOpen = true;
-    }
-
-    this.tabListService.activateWorkspace(workspace.id);
-    this.gridListService.activateWorkspace(workspace.id);
-
-    const activeTab = this.tabListService.getTabConfigs(workspace.id).find((tabConfiguration) => tabConfiguration.isActive);
-    const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspace.id)[0];
+    const activeTab = this.tabListService.getTabConfigs(workspaceToActivate.id).find((tabConfiguration) => tabConfiguration.isActive);
+    const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspaceToActivate.id)[0];
     if (fallbackTab) {
       this.tabListService.selectTab(fallbackTab.tabId);
     }
 
-    this._workspaceList.set(workspaceList);
+    this._workspaceList.set(activationPlan.workspaceList);
 
-    if (workspace.id === DEFAULT_WORKSPACE_ID) {
+    if (workspaceToActivate.id === DEFAULT_WORKSPACE_ID) {
       this.sideMenuService.updateBadgeColor("Workspace", undefined);
       return;
     }
 
-    this.sideMenuService.updateBadgeColor("Workspace", workspace.color);
+    this.sideMenuService.updateBadgeColor("Workspace", workspaceToActivate.color);
   }
 
   createWorkspaceDraft(): WorkspaceConfigUi {
-    const tabId = IdCreator.newTabId();
-    const paneConfiguration: GridConfig = { tabId, pane: {} };
-    const tabConfiguration: TabConfig = { tabId };
-
-    return {
-      id: "",
-      name: "",
-      color: undefined,
-      grids: [paneConfiguration],
-      tabs: [tabConfiguration],
-      isSelected: true,
-      isActive: true,
-      isOpen: false,
-    };
+    return WorkspaceStateUseCase.createWorkspaceDraft(IdCreator.newTabId());
   }
 
   public async save(workspace: WorkspaceConfiguration): Promise<string> {
@@ -169,74 +148,27 @@ export class WorkspaceHostApplicationService {
       this.gridListService.moveActiveWorkspaceRuntime(workspaceId);
     }
 
-    const workspaceList = [...this._workspaceList()];
-    const existingWorkspaceIndex = workspaceList.findIndex(
-      (workspaceEntry) => workspaceEntry.id === workspace.id || (workspace.id === "" && workspaceEntry.name === workspace.name),
+    const upsertPlan = WorkspaceStateUseCase.upsertWorkspace(
+      this._workspaceList(),
+      workspace,
+      previousActiveWorkspace?.id,
     );
 
-    if (existingWorkspaceIndex >= 0) {
-      workspaceList[existingWorkspaceIndex] = {
-        ...workspace,
-        isSelected: workspaceList[existingWorkspaceIndex].isSelected,
-        isActive: workspaceList[existingWorkspaceIndex].isActive,
-        isOpen: workspaceList[existingWorkspaceIndex].isOpen,
-      };
-      this._workspaceList.set(workspaceList);
+    this._workspaceList.set(upsertPlan.workspaceList);
+    if (upsertPlan.wasExisting) {
       return workspaceId;
     }
 
-    for (const existingWorkspace of workspaceList) {
-      existingWorkspace.isActive = false;
-      existingWorkspace.isSelected = false;
-      if (existingWorkspace.id === previousActiveWorkspace?.id) {
-        existingWorkspace.isOpen = false;
-      }
+    if (upsertPlan.workspaceEntry) {
+      await this.activateWorkspace(upsertPlan.workspaceEntry);
     }
-
-    const workspacePosition = workspaceList.filter(
-      (workspaceEntry) => workspaceEntry.id !== DEFAULT_WORKSPACE_ID,
-    ).length;
-    const workspaceEntry: WorkspaceConfigUi = {
-      ...workspace,
-      id: workspaceId,
-      position: workspacePosition,
-      isSelected: true,
-      isActive: true,
-      isOpen: true,
-    };
-
-    workspaceList.push(workspaceEntry);
-    this._workspaceList.set(workspaceList);
-    await this.activateWorkspace(workspaceEntry);
     return workspaceId;
   }
 
   async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
-    if (
-      sourceWorkspaceId === DEFAULT_WORKSPACE_ID ||
-      targetWorkspaceId === DEFAULT_WORKSPACE_ID ||
-      sourceWorkspaceId === targetWorkspaceId
-    ) {
-      return;
-    }
-
-    const workspaceList = [...this._workspaceList()];
-    const sourceWorkspaceIndex = workspaceList.findIndex((workspace) => workspace.id === sourceWorkspaceId);
-    const targetWorkspaceIndex = workspaceList.findIndex((workspace) => workspace.id === targetWorkspaceId);
-
-    if (sourceWorkspaceIndex < 0 || targetWorkspaceIndex < 0) {
-      return;
-    }
-
-    const [sourceWorkspace] = workspaceList.splice(sourceWorkspaceIndex, 1);
-    workspaceList.splice(targetWorkspaceIndex, 0, sourceWorkspace);
-
-    const persistedWorkspaceList = workspaceList.filter((workspace) => workspace.id !== DEFAULT_WORKSPACE_ID);
-    persistedWorkspaceList.forEach((workspace, position) => {
-      workspace.position = position;
-    });
-
-    this._workspaceList.set(workspaceList);
+    this._workspaceList.set(
+      WorkspaceStateUseCase.reorderWorkspaces(this._workspaceList(), sourceWorkspaceId, targetWorkspaceId),
+    );
   }
 
   async persistWorkspaceOrder(): Promise<void> {
@@ -245,42 +177,29 @@ export class WorkspaceHostApplicationService {
   }
 
   async deleteWorkspace(id: string): Promise<void> {
-    const workspaceList = [...this._workspaceList()];
-    const workspaceIndex = workspaceList.findIndex((workspace) => workspace.id === id);
-    if (workspaceIndex === -1) {
-      throw new Error("Workspace id not found");
-    }
-
-    const wasActive = workspaceList[workspaceIndex].isActive;
-    const wasOpen = workspaceList[workspaceIndex].isOpen;
+    const deletePlan = WorkspaceStateUseCase.deleteWorkspace(this._workspaceList(), id);
     await this.workspaceRepository.deleteWorkspace(id);
 
-    if (wasOpen) {
+    if (deletePlan.deletedWorkspace?.isOpen) {
       this.tabListService.removeWorkspaceRuntime(id);
       this.gridListService.removeWorkspaceRuntime(id);
     }
 
-    workspaceList.splice(workspaceIndex, 1);
+    this._workspaceList.set(deletePlan.workspaceList);
 
-    if (workspaceList.length > 0) {
-      if (!workspaceList.find((workspace) => workspace.isSelected)) {
-        workspaceList[0].isSelected = true;
-      }
-
-      if (wasActive && !workspaceList.find((workspace) => workspace.isActive)) {
-        workspaceList[0].isActive = true;
-        workspaceList[0].isOpen = true;
-        await this.activateWorkspace(workspaceList[0]);
-        return;
-      }
+    if (!deletePlan.workspaceToActivateId) {
+      return;
     }
 
-    this._workspaceList.set(workspaceList);
+    const fallbackWorkspace = this.getWorkspaceById(deletePlan.workspaceToActivateId);
+    if (fallbackWorkspace) {
+      await this.activateWorkspace(fallbackWorkspace);
+    }
   }
 
   async closeWorkspace(id: string): Promise<void> {
-    const workspaceList = [...this._workspaceList()];
-    const workspaceToClose = workspaceList.find((workspace) => workspace.id === id);
+    const closePlan = WorkspaceStateUseCase.closeWorkspace(this._workspaceList(), id);
+    const workspaceToClose = closePlan.closedWorkspace;
     if (!workspaceToClose || workspaceToClose.id === DEFAULT_WORKSPACE_ID || !workspaceToClose.isOpen) {
       return;
     }
@@ -289,41 +208,26 @@ export class WorkspaceHostApplicationService {
       await this.saveWorkspace(workspaceToClose);
     }
 
-    const wasActive = workspaceToClose.isActive;
-    workspaceToClose.isOpen = false;
-    workspaceToClose.isActive = false;
-    workspaceToClose.isSelected = false;
-
     this.tabListService.removeWorkspaceRuntime(id);
     this.gridListService.removeWorkspaceRuntime(id);
+    this._workspaceList.set(closePlan.workspaceList);
 
-    if (wasActive) {
-      const fallbackWorkspace =
-        workspaceList.find((workspace) => workspace.isOpen) ??
-        workspaceList.find((workspace) => workspace.id === DEFAULT_WORKSPACE_ID);
-      if (fallbackWorkspace) {
-        await this.activateWorkspace(fallbackWorkspace);
-        return;
-      }
+    if (!closePlan.workspaceToActivateId) {
+      return;
     }
 
-    const selectedWorkspace = workspaceList.find((workspace) => workspace.isSelected);
-    if (!selectedWorkspace) {
-      const firstWorkspace = workspaceList[0];
-      if (firstWorkspace) {
-        firstWorkspace.isSelected = true;
-      }
+    const fallbackWorkspace = this.getWorkspaceById(closePlan.workspaceToActivateId);
+    if (fallbackWorkspace) {
+      await this.activateWorkspace(fallbackWorkspace);
     }
-
-    this._workspaceList.set(workspaceList);
   }
 
   getWorkspaceById(id: string): WorkspaceConfigUi | undefined {
-    return this._workspaceList().find((workspace) => workspace.id === id);
+    return WorkspaceStateUseCase.getWorkspaceById(this._workspaceList(), id);
   }
 
   private getActiveWorkspace(): WorkspaceConfigUi | undefined {
-    return this._workspaceList().find((workspace) => workspace.isActive);
+    return WorkspaceStateUseCase.getActiveWorkspace(this._workspaceList());
   }
 
   private async saveWorkspace(workspace: WorkspaceConfiguration): Promise<string> {

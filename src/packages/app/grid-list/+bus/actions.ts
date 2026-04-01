@@ -11,3 +11,5 @@ export type SelectNextPaneAction = ActionBase<"SelectNextPane", TerminalId>
 export type SelectPreviousPaneAction = ActionBase<"SelectPreviousPane", TerminalId>
 export type MaximizePaneAction = ActionBase<"MaximizePane", TerminalId>
 export type MinimizePaneAction = ActionBase<"MinimizePane", TerminalId>
+
+

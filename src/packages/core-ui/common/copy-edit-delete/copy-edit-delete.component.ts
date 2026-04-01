@@ -86,3 +86,5 @@ export class CopyEditDeleteComponent {
 
   onEvent = output<"copy" | "edit" | "delete">();
 }
+
+

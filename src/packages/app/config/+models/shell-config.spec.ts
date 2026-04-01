@@ -24,3 +24,5 @@ describe("ShellConfigSchema", () => {
     expect(result.error.issues.some(issue => issue.message === "At most 9 shell profiles may be defined.")).toBe(true);
   });
 });
+
+

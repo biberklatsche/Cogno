@@ -1,27 +1,16 @@
-import { DestroyRef, Type} from '@angular/core';
+import { DestroyRef } from '@angular/core';
 import {
     FeatureModeContract,
-    SideMenuFeatureDefinitionContract,
     SideMenuFeatureHandleContract,
     SideMenuFeatureLifecycleContract
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { Subscription } from 'rxjs';
 import {SideMenuItem, SideMenuService} from "./side-menu.service";
 import {AppBus} from "../../../app-bus/app-bus";
 import {ConfigService} from "../../../config/+state/config.service";
 import {KeybindService} from "../../../keybinding/keybind.service";
 import { Icon } from "@cogno/core-ui";
-import {ActionName} from "../../../action/action.models";
-
-/**
- * Configuration for a side menu feature
- */
-export interface SideMenuFeatureConfig extends SideMenuFeatureDefinitionContract<Type<unknown>, Icon, ActionName> {}
-
-/**
- * Lifecycle hooks for side menu features
- */
-export interface SideMenuFeatureLifecycle extends SideMenuFeatureLifecycleContract {}
+import { SideMenuFeatureDefinition } from "./side-menu-feature-definitions";
 
 /**
  * Manages the integration of a feature with the side menu system.
@@ -33,8 +22,8 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     private readonly subscriptions = new Subscription();
 
     constructor(
-        private readonly config: SideMenuFeatureConfig,
-        private readonly lifecycle: SideMenuFeatureLifecycle,
+        private readonly config: SideMenuFeatureDefinition,
+        private readonly lifecycle: SideMenuFeatureLifecycleContract,
         private readonly sideMenuService: SideMenuService,
         private readonly bus: AppBus,
         private readonly configService: ConfigService,
@@ -154,41 +143,26 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
         this.removeKeybindHandler();
     }
 
-    /**
-     * Helper to register keyboard listener for the feature
-     */
     registerKeybindListener(keys: string[], handler: (evt: KeyboardEvent) => void): void {
         this.keybinds.registerListener(this.config.configPath, keys, handler);
     }
 
-    /**
-     * Helper to unregister keyboard listener for the feature
-     */
     unregisterKeybindListener(): void {
         this.keybinds.unregisterListener(this.config.configPath);
     }
 
-    /**
-     * Helper to close the side menu
-     */
     close(): void {
         this.sideMenuService.close();
     }
 
-    /**
-     * Helper to update the menu icon
-     */
     updateIcon(icon: Icon): void {
         this.sideMenuService.updateIcon(this.config.title, icon);
     }
 }
 
-/**
- * Factory function to create a SideMenuFeature instance
- */
 export function createSideMenuFeature(
-    config: SideMenuFeatureConfig,
-    lifecycle: SideMenuFeatureLifecycle,
+    config: SideMenuFeatureDefinition,
+    lifecycle: SideMenuFeatureLifecycleContract,
     deps: {
         sideMenuService: SideMenuService;
         bus: AppBus;

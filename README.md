@@ -111,7 +111,6 @@ Main areas:
   shared styles, icons, fonts, and static assets
 - `src/packages/features`
   feature packages such as workspaces, notifications, autocomplete, and search
-- `src/packages/core-sdk`
   public contracts, shared models, and extension interfaces
 - `src/packages/core-host`
   host infrastructure and feature registry
@@ -119,3 +118,4 @@ Main areas:
   shared UI building blocks
 - `src-tauri`
   native desktop wrapper and Rust-side commands
+

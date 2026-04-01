@@ -1,4 +1,4 @@
-import { ShellContextContract } from "@cogno/core-sdk";
+import { ShellContextContract } from "@cogno/core-api";
 
 export class FilesystemAutocompletePathUtil {
     private static readonly PARENT_TRAVERSAL_PREFIX_RE = /^(?:\.\.\/){2,}/;
@@ -34,3 +34,6 @@ export class FilesystemAutocompletePathUtil {
         return pathFragment.replace(/\\(.)/g, "$1");
     }
 }
+
+
+

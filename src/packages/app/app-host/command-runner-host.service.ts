@@ -3,9 +3,9 @@ import {
   CommandRunnerContract,
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { PathFactory } from "@cogno/core-host";
-import { CommandRunner } from "../_tauri/command-runner";
+import { CommandRunner } from "@cogno/app-tauri/command-runner";
 
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService implements CommandRunnerContract {
@@ -28,3 +28,6 @@ export class CommandRunnerHostService implements CommandRunnerContract {
     }
   }
 }
+
+
+

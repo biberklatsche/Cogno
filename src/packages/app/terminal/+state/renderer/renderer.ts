@@ -1,5 +1,5 @@
 import {Terminal} from "@xterm/xterm";
-import {OS} from "../../../_tauri/os";
+import {OS} from "@cogno/app-tauri/os";
 import {FitAddon} from "@xterm/addon-fit";
 import {SearchAddon} from "@xterm/addon-search";
 import {Unicode11Addon} from "@xterm/addon-unicode11";
@@ -119,3 +119,5 @@ export class Renderer implements IRenderer, IDisposable {
         return this._terminal;
     }
 }
+
+

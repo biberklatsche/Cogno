@@ -230,3 +230,5 @@ describe("TerminalSearchHandler", () => {
     expect(terminalMock.registerDecoration).toHaveBeenCalledTimes(3);
   });
 });
+
+

@@ -1,4 +1,4 @@
-import { Logger } from "@cogno/app/_tauri/logger";
+import { Logger } from "@cogno/app-tauri/logger";
 
 export type ErrorReportContext = Readonly<Record<string, unknown>>;
 
@@ -89,3 +89,5 @@ function formatContext(context: ErrorReportContext | undefined): string {
     return `\nContext: ${String(context)}`;
   }
 }
+
+

@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 
-import { IPathAdapter } from "@cogno/core-sdk";
+import { IPathAdapter } from "@cogno/core-api";
 import { ShellContext } from "../model/models";
 import { LearnedCommandPattern } from "./command-pattern.models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
@@ -211,3 +211,6 @@ export class TerminalHistoryPersistenceService {
         return recentCommandExecution.command;
     }
 }
+
+
+

@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Pty } from './pty';
-import { TauriPty } from '../../../_tauri/pty';
-import { Logger } from '../../../_tauri/logger';
+import { TauriPty } from '@cogno/app-tauri/pty';
+import { Logger } from '@cogno/app-tauri/logger';
 import { ShellConfig } from '../../../config/+models/config';
 import { TauriMockFactory } from '../../../../__test__/mocks/tauri-mock.factory';
 
-vi.mock('../../../_tauri/pty', async (importOriginal) => {
+vi.mock('@cogno/app-tauri/pty', async (importOriginal) => {
     const { TauriMockFactory } = await import('../../../../__test__/mocks/tauri-mock.factory');
     return {
         TauriPty: TauriMockFactory.createTauriPty()
     };
 });
 
-vi.mock('../../../_tauri/logger', () => ({
+vi.mock('@cogno/app-tauri/logger', () => ({
     Logger: {
         error: vi.fn()
     }
@@ -100,3 +100,5 @@ describe('Pty', () => {
         expect(TauriPty.kill).toHaveBeenCalledWith(terminalId);
     });
 });
+
+

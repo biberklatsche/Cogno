@@ -15,8 +15,8 @@ import {
 import {Command} from "./command.model";
 import {TerminalId} from "../../../grid-list/+model/model";
 
-import {OS} from "../../../_tauri/os";
-import { IPathAdapter } from "@cogno/core-sdk";
+import {OS} from "@cogno/app-tauri/os";
+import { IPathAdapter } from "@cogno/core-api";
 import { PathFactory } from "@cogno/core-host";
 import {ShellContext} from "../advanced/model/models";
 import {TerminalCommandHistoryStore} from "../advanced/history/terminal-command-history.store";
@@ -346,3 +346,6 @@ export class TerminalStateManager {
     }
 
 }
+
+
+

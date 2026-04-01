@@ -59,3 +59,5 @@ export const ShellConfigSchema = z.object({
 
 export type ShellConfig = z.infer<typeof ShellConfigSchema>;
 export type ShellProfile = z.infer<typeof ShellProfileSchema>;
+
+

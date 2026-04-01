@@ -3,7 +3,7 @@ import type {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
   NotificationTypeContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import type { AppNotificationToast, AppNotificationToastId } from "./app-notification-toast.models";
 
 @Injectable({ providedIn: "root" })
@@ -102,3 +102,6 @@ function readNumberSetting(
   }
   return value;
 }
+
+
+

@@ -1,8 +1,8 @@
-import { Fs } from "../_tauri/fs";
+import { Fs } from "@cogno/app-tauri/fs";
 import { Environment } from "../common/environment/environment";
-import { Logger } from "../_tauri/logger";
-import { Shells } from "../_tauri/shells";
-import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-sdk";
+import { Logger } from "@cogno/app-tauri/logger";
+import { Shells } from "@cogno/app-tauri/shells";
+import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-api";
 import { ErrorReporter } from "../common/error/error-reporter";
 
 const INTEGRATION_VERSION = "1.1.3";
@@ -182,3 +182,6 @@ export class ShellIntegrationWriter {
     await Fs.writeTextFile(logFile, existing + entry);
   }
 }
+
+
+

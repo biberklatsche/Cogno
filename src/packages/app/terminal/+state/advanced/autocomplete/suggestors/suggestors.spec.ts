@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PathFactory } from "@cogno/core-host";
-import { ShellContextContract } from "@cogno/core-sdk";
+import { ShellContextContract } from "@cogno/core-api";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { QueryContext } from "../autocomplete.types";
@@ -800,3 +800,6 @@ describe("Autocomplete History Suggestors", () => {
         expect(result[0].score).toBeGreaterThan(result[1].score);
     });
 });
+
+
+

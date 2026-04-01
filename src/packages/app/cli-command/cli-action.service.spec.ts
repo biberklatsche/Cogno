@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CliActionService } from './cli-action.service';
-import { CliActionListener } from '../_tauri/cli-action';
+import { CliActionListener } from '@cogno/app-tauri/cli-action';
 import { KeybindActionInterpreter } from '../keybinding/keybind-action.interpreter';
 import { ActionFired } from '../action/action.models';
 
@@ -63,3 +63,5 @@ describe('CliActionService', () => {
     expect(unlistenMock).toHaveBeenCalled();
   });
 });
+
+

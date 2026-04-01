@@ -247,3 +247,6 @@ function compareBoolean(firstValue: boolean, secondValue: boolean): number {
 function compareNumber(firstValue: number, secondValue: number): number {
   return firstValue - secondValue;
 }
+
+
+

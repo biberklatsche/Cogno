@@ -1,5 +1,5 @@
-import { IPathAdapter } from "@cogno/core-sdk";
-import {DB, IDatabase} from "../../../../_tauri/db";
+import { IPathAdapter } from "@cogno/core-api";
+import {DB, IDatabase} from "@cogno/app-tauri/db";
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 import {isWslContext, ShellContext} from "../model/models";
 import {Hash} from "../../../../common/hash/hash";
@@ -1111,3 +1111,6 @@ export class HistoryRepository {
     }
 
 }
+
+
+

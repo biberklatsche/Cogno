@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
+import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
 import { CommandPaletteService } from "./command-palette.service";
 
 @Injectable({ providedIn: "root" })
@@ -53,3 +53,6 @@ export class CommandPaletteSideMenuLifecycle {
     });
   }
 }
+
+
+

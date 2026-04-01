@@ -1,4 +1,4 @@
-import { CommandRunnerContract, FilesystemContract } from "@cogno/core-sdk";
+import { CommandRunnerContract, FilesystemContract } from "@cogno/core-api";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 export class SshHostsSpecProvider implements SpecSuggestionProvider {
@@ -139,3 +139,6 @@ export class SshHostsSpecProvider implements SpecSuggestionProvider {
         return trimmedToken;
     }
 }
+
+
+

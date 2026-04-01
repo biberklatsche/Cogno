@@ -221,3 +221,5 @@ export class SuggestionPatternReducer {
         return Math.max(0, now - timestamp);
     }
 }
+
+

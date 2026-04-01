@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, Signal} from '@angular/core';
+import { NotificationTypeContract } from "@cogno/core-api";
 import { Icon, IconComponent } from "@cogno/core-ui";
-import type { Notification } from "@cogno/features/side-menu/notification/notification.service";
 import { AppNotificationChannelService } from "./+state/app-notification-channel.service";
 import type { AppNotificationToast, AppNotificationToastId } from "./+state/app-notification-toast.models";
 
@@ -123,7 +123,7 @@ export class AppNotificationToastStackComponent {
         this.appNotificationChannelService.dismissAppNotificationToast(toastId);
     }
 
-    getIcon(type?: Notification['type']): Icon {
+    getIcon(type?: NotificationTypeContract): Icon {
         switch (type) {
             case 'success':
                 return 'mdiCheckCircle';
@@ -137,3 +137,6 @@ export class AppNotificationToastStackComponent {
         }
     }
 }
+
+
+

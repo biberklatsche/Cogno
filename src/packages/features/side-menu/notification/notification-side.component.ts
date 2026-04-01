@@ -1,6 +1,7 @@
 import { Component, Signal } from "@angular/core";
+import { NotificationCenterItemContract, NotificationCenterItemIdContract } from "@cogno/core-api";
 import { IconComponent } from "@cogno/core-ui";
-import { Notification, NotificationId, NotificationService } from "./notification.service";
+import { NotificationCenterStateService } from "./notification-center-state.service";
 
 @Component({
   selector: "app-notification-side",
@@ -145,18 +146,18 @@ import { Notification, NotificationId, NotificationService } from "./notificatio
   ],
 })
 export class NotificationSideComponent {
-  readonly notifications: Signal<Notification[]>;
+  readonly notifications: Signal<NotificationCenterItemContract[]>;
 
-  constructor(private readonly notificationService: NotificationService) {
-    this.notifications = this.notificationService.notifications;
+  constructor(private readonly notificationCenterStateService: NotificationCenterStateService) {
+    this.notifications = this.notificationCenterStateService.notifications;
   }
 
-  remove(notificationId: NotificationId): void {
-    this.notificationService.remove(notificationId);
+  remove(notificationId: NotificationCenterItemIdContract): void {
+    this.notificationCenterStateService.remove(notificationId);
   }
 
   clearAll(): void {
-    this.notificationService.clear();
+    this.notificationCenterStateService.clear();
   }
 
   toRelativeTime(timestamp: Date): string {
@@ -176,3 +177,6 @@ export class NotificationSideComponent {
     return `${daysAgo}d ago`;
   }
 }
+
+
+

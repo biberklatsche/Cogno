@@ -405,3 +405,5 @@ export class PromptMarkerRenderer {
         return `var(--color-${color})`;
     }
 }
+
+

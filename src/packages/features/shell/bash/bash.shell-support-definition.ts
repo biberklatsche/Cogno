@@ -1,4 +1,4 @@
-import { ShellSupportDefinitionContract } from "@cogno/core-sdk";
+import { ShellSupportDefinitionContract } from "@cogno/core-api";
 import bashBootstrapScript from "./bootstrap.bash.txt?raw";
 import bashIntegrationScript from "./integration.bash.txt?raw";
 
@@ -26,3 +26,6 @@ export const bashShellSupportDefinition: ShellSupportDefinitionContract = {
     },
   ],
 };
+
+
+

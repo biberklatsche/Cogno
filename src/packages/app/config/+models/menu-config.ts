@@ -5,3 +5,5 @@ export const MenuSchema = z.object({
 });
 
 export type Menu = z.infer<typeof MenuSchema>;
+
+

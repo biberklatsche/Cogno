@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
+import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
 import { TerminalSearchService } from "./terminal-search.service";
 
 @Injectable({ providedIn: "root" })
@@ -51,3 +51,6 @@ export class TerminalSearchSideMenuLifecycle {
     return documentReference.querySelector<HTMLInputElement>("[data-side-menu-autofocus='true']");
   }
 }
+
+
+

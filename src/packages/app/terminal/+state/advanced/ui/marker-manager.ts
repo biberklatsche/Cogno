@@ -200,3 +200,5 @@ export class MarkerManager implements IDisposable {
         this._terminal = undefined;
     }
 }
+
+

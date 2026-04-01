@@ -1,13 +1,14 @@
-import { DestroyRef, Injectable } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { map, Observable } from "rxjs";
 import {
   TerminalSearchColorConfigContract,
   TerminalSearchHostPortContract,
+  TerminalSearchPanelRequestContract,
   TerminalSearchRequestContract,
   TerminalSearchResultContract,
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { ConfigService } from "../config/+state/config.service";
@@ -16,15 +17,13 @@ import { ConfigService } from "../config/+state/config.service";
 export class TerminalSearchHostPortAdapterService implements TerminalSearchHostPortContract {
   readonly terminalSearchResult$: Observable<TerminalSearchResultContract>;
   readonly terminalSearchColorConfig$: Observable<TerminalSearchColorConfigContract>;
+  readonly terminalSearchPanelRequest$: Observable<TerminalSearchPanelRequestContract>;
 
   constructor(
     private readonly appBus: AppBus,
     private readonly gridListService: GridListService,
     private readonly configService: ConfigService,
-    private readonly destroyRef: DestroyRef,
   ) {
-    void this.destroyRef;
-
     this.terminalSearchResult$ = this.appBus
       .on$({ path: ["app", "terminal"], type: "TerminalSearchResult" })
       .pipe(
@@ -43,6 +42,17 @@ export class TerminalSearchHostPortAdapterService implements TerminalSearchHostP
         matchBorderColor: configuration.search?.match?.border_color,
       })),
     );
+
+    this.terminalSearchPanelRequest$ = this.appBus
+      .on$({ path: ["app", "terminal"], type: "TerminalSearchPanelRequested" })
+      .pipe(
+        map((terminalSearchPanelRequestedEvent) => {
+          if (!terminalSearchPanelRequestedEvent.payload) {
+            throw new Error("TerminalSearchPanelRequested payload must be defined.");
+          }
+          return terminalSearchPanelRequestedEvent.payload;
+        }),
+      );
   }
 
   getFocusedTerminalId(): TerminalSearchTerminalIdContract | undefined {
@@ -77,3 +87,6 @@ export class TerminalSearchHostPortAdapterService implements TerminalSearchHostP
     });
   }
 }
+
+
+
