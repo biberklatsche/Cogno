@@ -4,7 +4,7 @@ import {
   TerminalSearchHostPort,
   TerminalSearchLineResultContract,
 } from "@cogno/core-api";
-import { TerminalSearchState, TerminalSearchUseCase } from "@cogno/core-domain";
+import { TextSearchState, TextSearchUseCase } from "@cogno/core-domain";
 
 @Injectable({ providedIn: "root" })
 export class TerminalSearchService {
@@ -12,7 +12,7 @@ export class TerminalSearchService {
   private readonly resultPageLineLimit = 200;
   private readonly defaultMatchBackgroundColor = "var(--highlight-color-ct2)";
   private readonly defaultMatchBorderColor = "var(--highlight-color)";
-  private readonly searchStateSignal = signal<TerminalSearchState>(TerminalSearchUseCase.createInitialState());
+  private readonly searchStateSignal = signal<TextSearchState>(TextSearchUseCase.createInitialState());
   private readonly matchBackgroundColorSignal = signal<string>(this.defaultMatchBackgroundColor);
   private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
   private pendingSearchTimeoutHandle?: ReturnType<typeof setTimeout>;
@@ -39,7 +39,7 @@ export class TerminalSearchService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((terminalSearchResult) => {
         this.searchStateSignal.set(
-          TerminalSearchUseCase.applySearchResult(this.searchStateSignal(), terminalSearchResult),
+          TextSearchUseCase.applySearchResult(this.searchStateSignal(), terminalSearchResult),
         );
       });
 
@@ -56,13 +56,13 @@ export class TerminalSearchService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((terminalSearchPanelPayload) => {
         this.searchStateSignal.set(
-          TerminalSearchUseCase.applyPanelRequest(this.searchStateSignal(), terminalSearchPanelPayload),
+          TextSearchUseCase.applyScopeRequest(this.searchStateSignal(), terminalSearchPanelPayload),
         );
       });
   }
 
   submitSearchQuery(query: string): void {
-    this.searchStateSignal.set(TerminalSearchUseCase.setQuery(this.searchStateSignal(), query));
+    this.searchStateSignal.set(TextSearchUseCase.setQuery(this.searchStateSignal(), query));
     this.scheduleSearch(query);
   }
 
@@ -82,12 +82,12 @@ export class TerminalSearchService {
   }
 
   toggleCaseSensitive(): void {
-    this.searchStateSignal.set(TerminalSearchUseCase.toggleCaseSensitive(this.searchStateSignal()));
+    this.searchStateSignal.set(TextSearchUseCase.toggleCaseSensitive(this.searchStateSignal()));
     this.repeatSearch();
   }
 
   toggleRegularExpression(): void {
-    this.searchStateSignal.set(TerminalSearchUseCase.toggleRegularExpression(this.searchStateSignal()));
+    this.searchStateSignal.set(TextSearchUseCase.toggleRegularExpression(this.searchStateSignal()));
     this.repeatSearch();
   }
 
@@ -96,12 +96,12 @@ export class TerminalSearchService {
       return;
     }
 
-    this.searchStateSignal.set(TerminalSearchUseCase.clearBlockSearch(this.searchStateSignal()));
+    this.searchStateSignal.set(TextSearchUseCase.clearSearchScope(this.searchStateSignal()));
     this.repeatSearch();
   }
 
   revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
-    const revealPayload = TerminalSearchUseCase.buildRevealRequest(this.searchStateSignal(), searchLine);
+    const revealPayload = TextSearchUseCase.buildRevealRequest(this.searchStateSignal(), searchLine);
     if (!revealPayload) {
       return;
     }
@@ -121,15 +121,13 @@ export class TerminalSearchService {
     this.cancelPendingSearch();
     this.unregisterKeybindListener();
     this.clearDecorationsInAllTerminals();
-    this.searchStateSignal.set(TerminalSearchUseCase.clearForSideMenuClose());
+    this.searchStateSignal.set(TextSearchUseCase.clearForCollectionClose());
   }
 
   private registerKeybindListener(): void {
-    // handled by host integration layer
   }
 
   private unregisterKeybindListener(): void {
-    // handled by host integration layer
   }
 
   private scheduleSearch(query: string): void {
@@ -151,16 +149,16 @@ export class TerminalSearchService {
 
   private searchInActiveTerminal(cursorBufferLine: number | undefined): void {
     const activeTerminalId = this.searchStateSignal().activeTerminalId ?? this.terminalSearchHostPort.getFocusedTerminalId();
-    this.searchStateSignal.set(TerminalSearchUseCase.setActiveTerminalId(this.searchStateSignal(), activeTerminalId));
+    this.searchStateSignal.set(TextSearchUseCase.setActiveCollectionId(this.searchStateSignal(), activeTerminalId));
 
-    const terminalSearchRequest = TerminalSearchUseCase.createSearchRequest(
+    const terminalSearchRequest = TextSearchUseCase.createSearchRequest(
       this.searchStateSignal(),
       activeTerminalId,
       cursorBufferLine,
       this.resultPageLineLimit,
     );
     if (!terminalSearchRequest) {
-      this.searchStateSignal.set(TerminalSearchUseCase.applyMissingTerminalResult(this.searchStateSignal()));
+      this.searchStateSignal.set(TextSearchUseCase.applyMissingCollectionResult(this.searchStateSignal()));
       return;
     }
 

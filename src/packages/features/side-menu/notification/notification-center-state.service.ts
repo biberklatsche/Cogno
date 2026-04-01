@@ -7,20 +7,20 @@ import {
   NotificationCenterPort,
 } from "@cogno/core-api";
 import {
-  NotificationCenterState,
-  NotificationCenterUseCase,
+  NotificationInboxState,
+  NotificationInboxUseCase,
 } from "@cogno/core-domain";
 
 @Injectable({ providedIn: "root" })
 export class NotificationCenterStateService {
   private sideMenuIconUpdater?: (iconName: string) => void;
 
-  private readonly notificationCenterStateSignal = signal<NotificationCenterState>(
-    NotificationCenterUseCase.createInitialState(),
+  private readonly notificationCenterStateSignal = signal<NotificationInboxState>(
+    NotificationInboxUseCase.createInitialState(),
   );
 
   readonly notifications: Signal<NotificationCenterItemContract[]> = computed(() =>
-    NotificationCenterUseCase.getNotifications(this.notificationCenterStateSignal()),
+    NotificationInboxUseCase.getNotifications(this.notificationCenterStateSignal()),
   );
 
   constructor(
@@ -30,7 +30,7 @@ export class NotificationCenterStateService {
     this.notificationCenterPort.notificationEvents$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((notificationEvent) => {
-        const result = NotificationCenterUseCase.handleNotificationEvent(
+        const result = NotificationInboxUseCase.handleNotificationEvent(
           this.notificationCenterStateSignal(),
           notificationEvent,
           this.notificationCenterPort.getOverviewMaxItems(),
@@ -48,7 +48,7 @@ export class NotificationCenterStateService {
 
   handleSideMenuModeChange(mode: FeatureModeContract): void {
     this.notificationCenterStateSignal.set(
-      NotificationCenterUseCase.setFeatureMode(this.notificationCenterStateSignal(), mode),
+      NotificationInboxUseCase.setCollectionMode(this.notificationCenterStateSignal(), mode),
     );
     if (mode === "off") {
       this.sideMenuIconUpdater?.("mdiBell");
@@ -60,23 +60,22 @@ export class NotificationCenterStateService {
   }
 
   handleSideMenuClose(): void {
-    // no-op for now
   }
 
   remove(notificationId: NotificationCenterItemIdContract): void {
     this.notificationCenterStateSignal.set(
-      NotificationCenterUseCase.remove(this.notificationCenterStateSignal(), notificationId),
+      NotificationInboxUseCase.remove(this.notificationCenterStateSignal(), notificationId),
     );
   }
 
   clear(): void {
     this.notificationCenterStateSignal.set(
-      NotificationCenterUseCase.clear(this.notificationCenterStateSignal()),
+      NotificationInboxUseCase.clear(this.notificationCenterStateSignal()),
     );
     this.sideMenuIconUpdater?.("mdiBell");
   }
 
   getNotificationCount(): number {
-    return NotificationCenterUseCase.getNotificationCount(this.notificationCenterStateSignal());
+    return NotificationInboxUseCase.getNotificationCount(this.notificationCenterStateSignal());
   }
 }

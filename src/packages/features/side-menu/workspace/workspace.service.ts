@@ -2,19 +2,20 @@ import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   WorkspaceCloseGuard,
+  WorkspaceEntryContract,
   WorkspaceHostPort,
 } from "@cogno/core-api";
 import {
-  WorkspaceSelectionState,
-  WorkspaceSelectionUseCase,
-} from "@cogno/core-domain/workspace";
+  SelectableItemState,
+  SelectableListUseCase,
+} from "@cogno/core-domain";
 import {
   DirectionalNavigationItem,
   NavigationDirection,
   resolveNextNavigationTarget,
 } from "../navigation/directional-navigation.engine";
 
-export type WorkspaceEntryViewModel = WorkspaceSelectionState;
+export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceService {
@@ -32,20 +33,27 @@ export class WorkspaceService {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((workspaceEntries) => {
         this.workspaceEntriesSignal.set(
-          WorkspaceSelectionUseCase.updateWorkspaceEntries(this.workspaceEntriesSignal(), workspaceEntries),
+          SelectableListUseCase.syncSelection(
+            this.workspaceEntriesSignal(),
+            workspaceEntries.map((workspaceEntry) => ({
+              ...workspaceEntry,
+              isSelected: false,
+            })),
+            workspaceEntries.find((workspaceEntry) => workspaceEntry.isActive)?.id,
+          ),
         );
       });
   }
 
   initializeSelection(): void {
     this.workspaceEntriesSignal.set(
-      WorkspaceSelectionUseCase.initializeSelection(this.workspaceEntriesSignal()),
+      SelectableListUseCase.initializeSelection(this.workspaceEntriesSignal()),
     );
   }
 
   selectNext(direction: NavigationDirection): void {
     this.workspaceEntriesSignal.set(
-      WorkspaceSelectionUseCase.selectNext(
+      SelectableListUseCase.selectNext(
         this.workspaceEntriesSignal(),
         direction,
         (activeWorkspaceId, nextDirection) =>
@@ -70,7 +78,7 @@ export class WorkspaceService {
   }
 
   async restoreSelectedWorkspace(): Promise<void> {
-    const selectedWorkspaceId = WorkspaceSelectionUseCase.getSelectedWorkspaceId(this.workspaceEntriesSignal());
+    const selectedWorkspaceId = SelectableListUseCase.getSelectedId(this.workspaceEntriesSignal());
     if (!selectedWorkspaceId) {
       return;
     }

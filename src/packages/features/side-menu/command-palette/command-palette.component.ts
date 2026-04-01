@@ -21,10 +21,10 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
     />
     @if (commandList().length > 0) {
       <ul #commandListElement class="command-list">
-        @for (command of commandList(); track command.label) {
+        @for (command of commandList(); track command.id) {
           <li
             #commandElement
-            [attr.data-navigation-id]="command.label"
+            [attr.data-navigation-id]="command.id"
             (click)="fireAction(command)"
             class="command"
             [class.selected]="command.isSelected"
@@ -174,6 +174,3 @@ export class CommandPaletteComponent {
       .filter((item): item is DirectionalNavigationItem<string> => item !== null);
   }
 }
-
-
-

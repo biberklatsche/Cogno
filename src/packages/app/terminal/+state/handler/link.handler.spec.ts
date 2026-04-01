@@ -12,11 +12,15 @@ describe("LinkHandler", () => {
     let stateManager: TerminalStateManager;
     let terminal: ReturnType<typeof TerminalMockFactory.createTerminal>;
     let provider: any;
+    let openUrlSpy: ReturnType<typeof vi.spyOn>;
+    let openPathSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         PathFactory.setDefinitions([
             ...featureShellPathAdapterDefinitions,
         ]);
+        openUrlSpy = vi.spyOn(Opener, "openUrl").mockResolvedValue();
+        openPathSpy = vi.spyOn(Opener, "openPath").mockResolvedValue();
         const bus = new AppBus();
         stateManager = new TerminalStateManager(bus);
         stateManager.initialize("term-1", "PowerShell" as any);
@@ -39,10 +43,10 @@ describe("LinkHandler", () => {
         expect(links).toHaveLength(1);
 
         links![0].activate(new MouseEvent("click"), links![0].text);
-        expect(Opener.openUrl).not.toHaveBeenCalled();
+        expect(openUrlSpy).not.toHaveBeenCalled();
 
         links![0].activate(new MouseEvent("click", { ctrlKey: true }), links![0].text);
-        expect(Opener.openUrl).toHaveBeenCalledWith("https://example.com/docs");
+        expect(openUrlSpy).toHaveBeenCalledWith("https://example.com/docs");
     });
 
     it("opens absolute paths via opener on ctrl+click", () => {
@@ -57,7 +61,7 @@ describe("LinkHandler", () => {
         expect(links).toHaveLength(1);
         links![0].activate(new MouseEvent("click", { ctrlKey: true }), links![0].text);
 
-        expect(Opener.openPath).toHaveBeenCalledWith("/c/temp/file.txt");
+        expect(openPathSpy).toHaveBeenCalledWith("C:\\temp\\file.txt");
     });
 
     it("resolves relative paths against cwd", () => {
@@ -72,7 +76,7 @@ describe("LinkHandler", () => {
         expect(links).toHaveLength(1);
         links![0].activate(new MouseEvent("click", { ctrlKey: true }), links![0].text);
 
-        expect(Opener.openPath).toHaveBeenCalledWith("/c/work/sub/file.txt");
+        expect(openPathSpy).toHaveBeenCalledWith("C:\\work\\sub\\file.txt");
     });
 
     it("resolves bare relative paths against cwd", () => {
@@ -87,7 +91,7 @@ describe("LinkHandler", () => {
         expect(links).toHaveLength(1);
         links![0].activate(new MouseEvent("click", { ctrlKey: true }), links![0].text);
 
-        expect(Opener.openPath).toHaveBeenCalledWith("/c/work/src/packages/core-host/path/path.factory.spec.ts");
+        expect(openPathSpy).toHaveBeenCalledWith("C:\\work\\src\\packages\\core-host\\path\\path.factory.spec.ts");
     });
 
     it("shows hover hint for ctrl+click on links", () => {

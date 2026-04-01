@@ -4,22 +4,22 @@ import {
   NotificationCenterItemIdContract,
   NotificationEventPayloadContract,
 } from "@cogno/core-api";
-import { NotificationCenterState } from "./notification-center-state";
+import { NotificationInboxState } from "./notification-inbox-state";
 
-export interface NotificationCenterEventResult {
+export interface NotificationInboxEventResult {
   readonly shouldShowBadge: boolean;
-  readonly state: NotificationCenterState;
+  readonly state: NotificationInboxState;
 }
 
-export class NotificationCenterUseCase {
-  static createInitialState(): NotificationCenterState {
+export class NotificationInboxUseCase {
+  static createInitialState(): NotificationInboxState {
     return {
       enabled: true,
       notificationMap: {},
     };
   }
 
-  static setFeatureMode(state: NotificationCenterState, mode: FeatureModeContract): NotificationCenterState {
+  static setCollectionMode(state: NotificationInboxState, mode: FeatureModeContract): NotificationInboxState {
     const enabled = mode !== "off";
     if (enabled) {
       return {
@@ -34,9 +34,9 @@ export class NotificationCenterUseCase {
   }
 
   static remove(
-    state: NotificationCenterState,
+    state: NotificationInboxState,
     notificationId: NotificationCenterItemIdContract,
-  ): NotificationCenterState {
+  ): NotificationInboxState {
     const nextNotificationMap = { ...state.notificationMap };
     delete nextNotificationMap[notificationId];
     return {
@@ -45,28 +45,28 @@ export class NotificationCenterUseCase {
     };
   }
 
-  static clear(state: NotificationCenterState): NotificationCenterState {
+  static clear(state: NotificationInboxState): NotificationInboxState {
     return {
       ...state,
       notificationMap: {},
     };
   }
 
-  static getNotifications(state: NotificationCenterState): NotificationCenterItemContract[] {
+  static getNotifications(state: NotificationInboxState): NotificationCenterItemContract[] {
     return Object.values(state.notificationMap).sort(
       (leftNotification, rightNotification) => rightNotification.timestamp.getTime() - leftNotification.timestamp.getTime(),
     );
   }
 
-  static getNotificationCount(state: NotificationCenterState): number {
+  static getNotificationCount(state: NotificationInboxState): number {
     return Object.keys(state.notificationMap).length;
   }
 
   static handleNotificationEvent(
-    state: NotificationCenterState,
+    state: NotificationInboxState,
     notificationEventPayload: unknown,
     maxNotifications: number,
-  ): NotificationCenterEventResult {
+  ): NotificationInboxEventResult {
     if (!state.enabled || !this.isNotificationPayload(notificationEventPayload)) {
       return {
         shouldShowBadge: false,

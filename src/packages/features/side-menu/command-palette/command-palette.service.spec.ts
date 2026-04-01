@@ -61,8 +61,8 @@ describe("CommandPaletteService", () => {
   it("navigates through filtered entries", () => {
     service.registerNavigationItemsProvider(() => [
       createNavigationItem("copy", 0, 40, 280, 32),
-      createNavigationItem("open command palette", 0, 74, 280, 32),
-      createNavigationItem("split right", 0, 108, 280, 32),
+      createNavigationItem("open_command_palette", 0, 74, 280, 32),
+      createNavigationItem("split_right", 0, 108, 280, 32),
     ]);
 
     const initialCommandList = service.filteredCommandList();
@@ -136,6 +136,7 @@ function createNavigationItem(
     },
   };
 }
+
 
 
 

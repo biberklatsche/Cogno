@@ -6,10 +6,10 @@ import {
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
 } from "@cogno/core-api";
-import { TerminalSearchState } from "./terminal-search-state";
+import { TextSearchState } from "./text-search-state";
 
-export class TerminalSearchUseCase {
-  static createInitialState(): TerminalSearchState {
+export class TextSearchUseCase {
+  static createInitialState(): TextSearchState {
     return {
       query: "",
       results: [],
@@ -23,31 +23,31 @@ export class TerminalSearchUseCase {
     };
   }
 
-  static setQuery(state: TerminalSearchState, query: string): TerminalSearchState {
+  static setQuery(state: TextSearchState, query: string): TextSearchState {
     return {
       ...state,
       query,
     };
   }
 
-  static toggleCaseSensitive(state: TerminalSearchState): TerminalSearchState {
+  static toggleCaseSensitive(state: TextSearchState): TextSearchState {
     return {
       ...state,
       caseSensitive: !state.caseSensitive,
     };
   }
 
-  static toggleRegularExpression(state: TerminalSearchState): TerminalSearchState {
+  static toggleRegularExpression(state: TextSearchState): TextSearchState {
     return {
       ...state,
       regularExpression: !state.regularExpression,
     };
   }
 
-  static applyPanelRequest(
-    state: TerminalSearchState,
+  static applyScopeRequest(
+    state: TextSearchState,
     panelRequest: TerminalSearchPanelRequestContract,
-  ): TerminalSearchState {
+  ): TextSearchState {
     return {
       ...state,
       activeTerminalId: panelRequest.terminalId,
@@ -59,7 +59,7 @@ export class TerminalSearchUseCase {
     };
   }
 
-  static clearBlockSearch(state: TerminalSearchState): TerminalSearchState {
+  static clearSearchScope(state: TextSearchState): TextSearchState {
     return {
       ...state,
       beginBufferLine: undefined,
@@ -67,22 +67,22 @@ export class TerminalSearchUseCase {
     };
   }
 
-  static setActiveTerminalId(
-    state: TerminalSearchState,
+  static setActiveCollectionId(
+    state: TextSearchState,
     activeTerminalId: TerminalSearchTerminalIdContract | undefined,
-  ): TerminalSearchState {
+  ): TextSearchState {
     return {
       ...state,
       activeTerminalId,
     };
   }
 
-  static clearForSideMenuClose(): TerminalSearchState {
+  static clearForCollectionClose(): TextSearchState {
     return this.createInitialState();
   }
 
   static createSearchRequest(
-    state: TerminalSearchState,
+    state: TextSearchState,
     activeTerminalId: TerminalSearchTerminalIdContract | undefined,
     cursorBufferLine: number | undefined,
     resultLineLimit: number,
@@ -103,7 +103,7 @@ export class TerminalSearchUseCase {
     };
   }
 
-  static applyMissingTerminalResult(state: TerminalSearchState): TerminalSearchState {
+  static applyMissingCollectionResult(state: TextSearchState): TextSearchState {
     return {
       ...state,
       results: [],
@@ -113,9 +113,9 @@ export class TerminalSearchUseCase {
   }
 
   static applySearchResult(
-    state: TerminalSearchState,
+    state: TextSearchState,
     terminalSearchResult: TerminalSearchResultContract,
-  ): TerminalSearchState {
+  ): TextSearchState {
     if (terminalSearchResult.terminalId !== state.activeTerminalId) {
       return state;
     }
@@ -150,7 +150,7 @@ export class TerminalSearchUseCase {
   }
 
   static buildRevealRequest(
-    state: TerminalSearchState,
+    state: TextSearchState,
     searchLine: TerminalSearchLineResultContract,
   ): TerminalSearchRevealRequestContract | undefined {
     if (!state.activeTerminalId) {
@@ -174,12 +174,12 @@ export class TerminalSearchUseCase {
   }
 
   private static applySearchResultPage(
-    state: TerminalSearchState,
+    state: TextSearchState,
     lines: ReadonlyArray<TerminalSearchLineResultContract>,
     hasMoreResults: boolean,
     nextCursorBufferLine: number | undefined,
     appendResults: boolean,
-  ): TerminalSearchState {
+  ): TextSearchState {
     const nextResults = appendResults
       ? [...state.results, ...lines]
       : [...lines];

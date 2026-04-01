@@ -10,17 +10,21 @@ describe('AppButtonsComponent', () => {
   let windowSize$: Subject<{ width: number, height: number }>;
   let busMock: any;
   let destroyRefMock: any;
+  let isMaximizedSpy: ReturnType<typeof vi.spyOn>;
+  let minimizeSpy: ReturnType<typeof vi.spyOn>;
+  let maximizeSpy: ReturnType<typeof vi.spyOn>;
+  let unmaximizeSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     windowSize$ = new Subject();
     // @ts-ignore
     AppWindow.windowSize$ = windowSize$;
     
-    // Default mock implementations for AppWindow methods used in service
-    vi.mocked(AppWindow.isMaximized).mockResolvedValue(false);
-    vi.mocked(AppWindow.minimize).mockResolvedValue();
-    vi.mocked(AppWindow.maximize).mockResolvedValue();
-    vi.mocked(AppWindow.unmaximize).mockResolvedValue();
+    // Default spy implementations for AppWindow methods used in service
+    isMaximizedSpy = vi.spyOn(AppWindow, 'isMaximized').mockResolvedValue(false);
+    minimizeSpy = vi.spyOn(AppWindow, 'minimize').mockResolvedValue();
+    maximizeSpy = vi.spyOn(AppWindow, 'maximize').mockResolvedValue();
+    unmaximizeSpy = vi.spyOn(AppWindow, 'unmaximize').mockResolvedValue();
 
     busMock = {
       publish: vi.fn(),
@@ -53,7 +57,7 @@ describe('AppButtonsComponent', () => {
   describe('toggleMaximize', () => {
     it('should call service.maximizeWindow when not maximized', async () => {
       // Ensure initial state is not maximized
-      vi.mocked(AppWindow.isMaximized).mockResolvedValue(false);
+      isMaximizedSpy.mockResolvedValue(false);
       
       // We need to trigger a windowSize$ emission to update service state
       windowSize$.next({ width: 100, height: 100 });
@@ -71,7 +75,7 @@ describe('AppButtonsComponent', () => {
 
     it('should call service.unmaximizeWindow when maximized', async () => {
       // Set maximized state
-      vi.mocked(AppWindow.isMaximized).mockResolvedValue(true);
+      isMaximizedSpy.mockResolvedValue(true);
       
       // Trigger update
       windowSize$.next({ width: 100, height: 100 });

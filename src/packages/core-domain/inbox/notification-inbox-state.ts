@@ -1,6 +1,6 @@
 import { NotificationCenterItemContract, NotificationCenterItemIdContract } from "@cogno/core-api";
 
-export interface NotificationCenterState {
+export interface NotificationInboxState {
   readonly enabled: boolean;
   readonly notificationMap: Readonly<Record<NotificationCenterItemIdContract, NotificationCenterItemContract>>;
 }

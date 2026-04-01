@@ -1,4 +1,4 @@
 export * from "./workspace";
-export * from "./notification-center";
-export * from "./terminal-search";
-export * from "./command-palette";
+export * from "./selection";
+export * from "./discovery";
+export * from "./inbox";

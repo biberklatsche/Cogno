@@ -3,7 +3,7 @@ import {
   TerminalSearchTerminalIdContract,
 } from "@cogno/core-api";
 
-export interface TerminalSearchState {
+export interface TextSearchState {
   readonly query: string;
   readonly results: ReadonlyArray<TerminalSearchLineResultContract>;
   readonly caseSensitive: boolean;

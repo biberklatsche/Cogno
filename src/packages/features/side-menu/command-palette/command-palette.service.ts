@@ -1,10 +1,12 @@
-import { DestroyRef, Injectable, signal } from "@angular/core";
+import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { CommandPaletteHostPort } from "@cogno/core-api";
 import {
-  CommandPaletteEntryState as CommandEntry,
-  CommandPaletteState,
-  CommandPaletteUseCase,
+  CommandPaletteHostPort,
+} from "@cogno/core-api";
+import {
+  CommandDiscoveryEntryState as CommandEntry,
+  CommandDiscoveryState,
+  CommandDiscoveryUseCase,
 } from "@cogno/core-domain";
 import {
   DirectionalNavigationItem,
@@ -16,8 +18,8 @@ export type { CommandEntry };
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteService {
-  private readonly commandPaletteStateSignal = signal<CommandPaletteState>(
-    CommandPaletteUseCase.createInitialState(),
+  private readonly commandPaletteStateSignal = signal<CommandDiscoveryState>(
+    CommandDiscoveryUseCase.createInitialState(),
   );
   private readonly filteredCommandListSignal = signal<CommandEntry[]>([]);
   private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
@@ -32,7 +34,7 @@ export class CommandPaletteService {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((commandEntries) => {
         this.applyState(
-          CommandPaletteUseCase.updateCommandEntries(
+          CommandDiscoveryUseCase.updateCommandEntries(
             this.commandPaletteStateSignal(),
             commandEntries,
           ),
@@ -41,15 +43,15 @@ export class CommandPaletteService {
   }
 
   handleSideMenuOpen(): void {
-    this.applyState(CommandPaletteUseCase.handleSideMenuOpen(this.commandPaletteStateSignal()));
+    this.applyState(CommandDiscoveryUseCase.handleCollectionOpen(this.commandPaletteStateSignal()));
   }
 
   handleSideMenuClose(): void {
-    this.applyState(CommandPaletteUseCase.handleSideMenuClose(this.commandPaletteStateSignal()));
+    this.applyState(CommandDiscoveryUseCase.handleCollectionClose(this.commandPaletteStateSignal()));
   }
 
   fireSelectedAction(commandEntry?: CommandEntry): void {
-    const selectedCommandEntry = CommandPaletteUseCase.getSelectedEntry(this.commandPaletteStateSignal(), commandEntry);
+    const selectedCommandEntry = CommandDiscoveryUseCase.getSelectedEntry(this.commandPaletteStateSignal(), commandEntry);
     if (!selectedCommandEntry) {
       return;
     }
@@ -60,7 +62,7 @@ export class CommandPaletteService {
   }
 
   filterCommands(query: string): void {
-    this.applyState(CommandPaletteUseCase.filterCommands(this.commandPaletteStateSignal(), query));
+    this.applyState(CommandDiscoveryUseCase.filterCommands(this.commandPaletteStateSignal(), query));
   }
 
   handleNavigationKey(key: string): void {
@@ -85,13 +87,13 @@ export class CommandPaletteService {
 
   private selectNextCommand(direction: NavigationDirection): void {
     this.applyState(
-      CommandPaletteUseCase.selectNextCommand(
+      CommandDiscoveryUseCase.selectNextCommand(
         this.commandPaletteStateSignal(),
         direction,
-        (activeCommandLabel, nextDirection) =>
+        (activeCommandId, nextDirection) =>
           resolveNextNavigationTarget({
             items: this.navigationItemsProvider?.() ?? [],
-            activeId: activeCommandLabel,
+            activeId: activeCommandId,
             direction: nextDirection,
             wrap: true,
           }) ?? undefined,
@@ -99,7 +101,7 @@ export class CommandPaletteService {
     );
   }
 
-  private applyState(state: CommandPaletteState): void {
+  private applyState(state: CommandDiscoveryState): void {
     this.commandPaletteStateSignal.set(state);
     this.filteredCommandListSignal.set([...state.filteredCommandList]);
   }
