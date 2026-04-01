@@ -7,10 +7,7 @@ import {
 } from "@cogno/core-api";
 import { DialogService } from "../common/dialog";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
-import {
-  WorkspaceConfigUi,
-  WorkspaceHostApplicationService,
-} from "./workspace-host-application.service";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContract {
@@ -73,7 +70,7 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
       title: `Edit ${workspaceConfigUi.name}`,
       width: "420px",
       showCloseButton: true,
-      data: { ...workspaceConfigUi } as WorkspaceConfigUi,
+      data: { ...workspaceConfigUi },
     });
   }
 

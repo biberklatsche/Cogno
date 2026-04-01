@@ -8,10 +8,10 @@ import {
 import {
   SelectableItemState,
   SelectableListUseCase,
+  SelectionDirection,
 } from "@cogno/core-domain";
 import {
   DirectionalNavigationItem,
-  NavigationDirection,
   resolveNextNavigationTarget,
 } from "../navigation/directional-navigation.engine";
 
@@ -51,7 +51,7 @@ export class WorkspaceService {
     );
   }
 
-  selectNext(direction: NavigationDirection): void {
+  selectNext(direction: SelectionDirection): void {
     this.workspaceEntriesSignal.set(
       SelectableListUseCase.selectNext(
         this.workspaceEntriesSignal(),

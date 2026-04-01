@@ -1,8 +1,6 @@
 import { CommandPaletteCommandEntryContract } from "@cogno/core-api";
-import { SelectableListUseCase } from "../selection";
+import { SelectableListUseCase, SelectionDirection } from "../selection";
 import { CommandDiscoveryEntryState, CommandDiscoveryState } from "./command-discovery-state";
-
-export type CommandDiscoveryNavigationDirection = "up" | "down" | "left" | "right";
 
 export class CommandDiscoveryUseCase {
   static createInitialState(): CommandDiscoveryState {
@@ -72,10 +70,10 @@ export class CommandDiscoveryUseCase {
 
   static selectNextCommand(
     state: CommandDiscoveryState,
-    direction: CommandDiscoveryNavigationDirection,
+    direction: SelectionDirection,
     resolveNavigationTarget?: (
       activeCommandId: string,
-      direction: CommandDiscoveryNavigationDirection,
+      direction: SelectionDirection,
     ) => string | undefined,
   ): CommandDiscoveryState {
     const currentFilteredCommandList = state.filteredCommandList;

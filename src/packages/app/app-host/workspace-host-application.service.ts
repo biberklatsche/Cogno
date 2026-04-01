@@ -15,15 +15,13 @@ import { Color } from "../common/color/color";
 import { ActionFired } from "../action/action.models";
 import { WorkspaceRepository } from "./workspace.repository";
 
-export type WorkspaceConfigUi = WorkspaceState;
-
 export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostApplicationService {
   private readonly defaultWorkspace = WorkspaceStateUseCase.createDefaultWorkspace(DEFAULT_WORKSPACE_ID);
 
-  readonly _workspaceList: WritableSignal<WorkspaceConfigUi[]> = signal([]);
+  readonly _workspaceList: WritableSignal<WorkspaceState[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
 
   constructor(
@@ -85,11 +83,11 @@ export class WorkspaceHostApplicationService {
       });
   }
 
-  public async restoreWorkspace(workspace: WorkspaceConfigUi): Promise<void> {
+  public async restoreWorkspace(workspace: WorkspaceState): Promise<void> {
     await this.activateWorkspace(workspace);
   }
 
-  public async activateWorkspace(workspace: WorkspaceConfigUi): Promise<void> {
+  public async activateWorkspace(workspace: WorkspaceState): Promise<void> {
     const activationPlan = WorkspaceStateUseCase.activateWorkspace(this._workspaceList(), workspace.id);
     const previousActiveWorkspace = activationPlan.previousActiveWorkspace;
     const workspaceToActivate = activationPlan.workspaceToActivate;
@@ -130,7 +128,7 @@ export class WorkspaceHostApplicationService {
     this.sideMenuService.updateBadgeColor("Workspace", workspaceToActivate.color);
   }
 
-  createWorkspaceDraft(): WorkspaceConfigUi {
+  createWorkspaceDraft(): WorkspaceState {
     return WorkspaceStateUseCase.createWorkspaceDraft(IdCreator.newTabId());
   }
 
@@ -222,11 +220,11 @@ export class WorkspaceHostApplicationService {
     }
   }
 
-  getWorkspaceById(id: string): WorkspaceConfigUi | undefined {
+  getWorkspaceById(id: string): WorkspaceState | undefined {
     return WorkspaceStateUseCase.getWorkspaceById(this._workspaceList(), id);
   }
 
-  private getActiveWorkspace(): WorkspaceConfigUi | undefined {
+  private getActiveWorkspace(): WorkspaceState | undefined {
     return WorkspaceStateUseCase.getActiveWorkspace(this._workspaceList());
   }
 

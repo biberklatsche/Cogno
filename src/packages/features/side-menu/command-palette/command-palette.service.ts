@@ -7,10 +7,10 @@ import {
   CommandDiscoveryEntryState as CommandEntry,
   CommandDiscoveryState,
   CommandDiscoveryUseCase,
+  SelectionDirection,
 } from "@cogno/core-domain";
 import {
   DirectionalNavigationItem,
-  NavigationDirection,
   resolveNextNavigationTarget,
 } from "../navigation/directional-navigation.engine";
 
@@ -83,7 +83,7 @@ export class CommandPaletteService {
     }
   }
 
-  private selectNextCommand(direction: NavigationDirection): void {
+  private selectNextCommand(direction: SelectionDirection): void {
     this.applyState(
       CommandDiscoveryUseCase.selectNextCommand(
         this.commandPaletteStateSignal(),

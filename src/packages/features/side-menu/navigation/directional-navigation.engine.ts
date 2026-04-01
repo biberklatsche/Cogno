@@ -1,4 +1,4 @@
-export type NavigationDirection = "up" | "down" | "left" | "right";
+import { SelectionDirection } from "@cogno/core-domain";
 
 export interface NavigationRect {
   readonly top: number;
@@ -17,7 +17,7 @@ export interface DirectionalNavigationItem<TId extends string = string> {
 
 export interface ResolveNextNavigationTargetOptions<TId extends string = string> {
   readonly activeId?: TId | null;
-  readonly direction: NavigationDirection;
+  readonly direction: SelectionDirection;
   readonly items: ReadonlyArray<DirectionalNavigationItem<TId>>;
   readonly wrap?: boolean;
 }
@@ -66,7 +66,7 @@ function toResolvedNavigationItem<TId extends string>(
 function isCandidateInDirection<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   candidate: ResolvedNavigationItem<TId>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ): boolean {
   if (direction === "right") {
     return candidate.centerX > activeItem.centerX + AXIS_EPSILON;
@@ -83,7 +83,7 @@ function isCandidateInDirection<TId extends string>(
 function selectBestDirectionalCandidate<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   candidates: ReadonlyArray<ResolvedNavigationItem<TId>>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ): ResolvedNavigationItem<TId> | null {
   if (candidates.length === 0) {
     return null;
@@ -98,7 +98,7 @@ function compareDirectionalCandidates<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   firstCandidate: ResolvedNavigationItem<TId>,
   secondCandidate: ResolvedNavigationItem<TId>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ): number {
   const firstMetrics = getDirectionalMetrics(activeItem, firstCandidate, direction);
   const secondMetrics = getDirectionalMetrics(activeItem, secondCandidate, direction);
@@ -115,7 +115,7 @@ function compareDirectionalCandidates<TId extends string>(
 function getDirectionalMetrics<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   candidate: ResolvedNavigationItem<TId>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ) {
   const primaryDistance =
     direction === "right"
@@ -158,7 +158,7 @@ function getDirectionalMetrics<TId extends string>(
 function selectWrapCandidate<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   items: ReadonlyArray<ResolvedNavigationItem<TId>>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ): ResolvedNavigationItem<TId> | null {
   const wrapCandidates = items.filter((item) => item.id !== activeItem.id);
   if (wrapCandidates.length === 0) {
@@ -174,7 +174,7 @@ function compareWrapCandidates<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   firstCandidate: ResolvedNavigationItem<TId>,
   secondCandidate: ResolvedNavigationItem<TId>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ): number {
   const firstMetrics = getWrapMetrics(activeItem, firstCandidate, direction);
   const secondMetrics = getWrapMetrics(activeItem, secondCandidate, direction);
@@ -191,7 +191,7 @@ function compareWrapCandidates<TId extends string>(
 function getWrapMetrics<TId extends string>(
   activeItem: ResolvedNavigationItem<TId>,
   candidate: ResolvedNavigationItem<TId>,
-  direction: NavigationDirection,
+  direction: SelectionDirection,
 ) {
   const crossAxisDistance =
     direction === "right" || direction === "left"
@@ -247,6 +247,3 @@ function compareBoolean(firstValue: boolean, secondValue: boolean): number {
 function compareNumber(firstValue: number, secondValue: number): number {
   return firstValue - secondValue;
 }
-
-
-

@@ -1,10 +1,11 @@
 import {Component, Inject, model, signal} from "@angular/core";
-import {WorkspaceConfigUi, WorkspaceHostApplicationService} from "./workspace-host-application.service";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
 import {DialogRef, DIALOG_DATA} from "../common/dialog";
 import {ColorSelectComponent} from "../common/color/color-select.component";
 import {ColorName} from "../common/color/color";
 import {CheckboxComponent} from "../common/checkbox/checkbox.component";
+import { WorkspaceState } from "@cogno/core-domain/workspace";
 
 @Component({
   selector: "app-workspace-edit-dialog",
@@ -50,7 +51,7 @@ export class WorkspaceEditDialogComponent {
   constructor(
     private readonly workspaceHostApplicationService: WorkspaceHostApplicationService,
     private readonly dialogRef: DialogRef<void>,
-    @Inject(DIALOG_DATA) readonly workspace: WorkspaceConfigUi,
+    @Inject(DIALOG_DATA) readonly workspace: WorkspaceState,
   ) {}
 
   readonly name = signal<string>(this.workspace?.name ?? "");
