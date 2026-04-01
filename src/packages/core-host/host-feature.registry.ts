@@ -9,9 +9,9 @@ import {
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
 import { PathFactory } from "./path/path.factory";
-import { SideMenuFeatureRegistryHost } from "./side-menu-feature-registry.host";
+import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 
-export class CoreHostFeatureRegistryHost<
+export class HostFeatureRegistry<
   TIcon = string,
   TActionName = string,
   TSideMenuFeatureExtension extends { id: string } = never,
@@ -24,7 +24,7 @@ export class CoreHostFeatureRegistryHost<
   private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] = [];
 
   constructor(
-    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<
+    private readonly sideMenuDefinitionRegistry: SideMenuDefinitionRegistry<
       TIcon,
       TActionName,
       TSideMenuFeatureExtension
@@ -46,7 +46,7 @@ export class CoreHostFeatureRegistryHost<
     PathFactory.registerDefinitions(applicationFeatureCollection.shellPathAdapterDefinitions);
 
     for (const sideMenuFeatureDefinition of applicationFeatureCollection.sideMenuFeatureDefinitions) {
-      this.sideMenuFeatureRegistryHost.registerSideMenuFeature(sideMenuFeatureDefinition);
+      this.sideMenuDefinitionRegistry.registerSideMenuFeature(sideMenuFeatureDefinition);
     }
   }
 
@@ -69,19 +69,19 @@ export class CoreHostFeatureRegistryHost<
   getSideMenuFeatureDefinitionById(
     sideMenuFeatureDefinitionId: string,
   ): SideMenuFeatureDefinitionContract<TIcon, TActionName> | undefined {
-    return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitionById(sideMenuFeatureDefinitionId);
+    return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitionById(sideMenuFeatureDefinitionId);
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<
     SideMenuFeatureDefinitionContract<TIcon, TActionName>
   > {
-    return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitions();
+    return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitions();
   }
 
   registerSideMenuFeatureExtension(
     sideMenuFeatureExtension: TSideMenuFeatureExtension,
   ): void {
-    this.sideMenuFeatureRegistryHost.registerSideMenuFeatureExtension(sideMenuFeatureExtension);
+    this.sideMenuDefinitionRegistry.registerSideMenuFeatureExtension(sideMenuFeatureExtension);
   }
 
   resolveSideMenuFeatureDefinitionById<TResolved>(
@@ -91,7 +91,7 @@ export class CoreHostFeatureRegistryHost<
       sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
     ) => TResolved,
   ): TResolved | undefined {
-    return this.sideMenuFeatureRegistryHost.resolveSideMenuFeatureDefinitionById(
+    return this.sideMenuDefinitionRegistry.resolveSideMenuFeatureDefinitionById(
       sideMenuFeatureDefinitionId,
       resolveDefinition,
     );
@@ -103,7 +103,7 @@ export class CoreHostFeatureRegistryHost<
       sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
     ) => TResolved,
   ): ReadonlyArray<TResolved> {
-    return this.sideMenuFeatureRegistryHost.resolveSideMenuFeatureDefinitions(resolveDefinition);
+    return this.sideMenuDefinitionRegistry.resolveSideMenuFeatureDefinitions(resolveDefinition);
   }
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {

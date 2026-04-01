@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@angular/core";
-import { CoreHostFeatureRegistryHost, SideMenuFeatureRegistryHost } from "@cogno/core-host";
+import { HostFeatureRegistry, SideMenuDefinitionRegistry } from "@cogno/core-host";
 import {
   ApplicationProduct,
   ApplicationSettingsExtensionContract,
@@ -22,8 +22,8 @@ import { coreDatabaseMigrations } from "./database-migrations";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
-  private readonly featureRegistryHost = new CoreHostFeatureRegistryHost<Icon, ActionName, SideMenuFeatureDefinition>(
-    new SideMenuFeatureRegistryHost<Icon, ActionName, SideMenuFeatureDefinition>(),
+  private readonly featureRegistryHost = new HostFeatureRegistry<Icon, ActionName, SideMenuFeatureDefinition>(
+    new SideMenuDefinitionRegistry<Icon, ActionName, SideMenuFeatureDefinition>(),
   );
 
   constructor(

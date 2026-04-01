@@ -3,7 +3,7 @@ import {
   SideMenuFeatureRegistryContract,
 } from "@cogno/core-api";
 
-export class SideMenuFeatureRegistryHost<
+export class SideMenuDefinitionRegistry<
   TIcon = string,
   TActionName = string,
   TSideMenuFeatureExtension extends { id: string } = never,
