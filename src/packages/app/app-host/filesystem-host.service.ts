@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
 import {
-  AutocompletePathSupport,
   FilesystemContract,
   FilesystemEntryContract,
   FilesystemListOptionsContract,
   ShellContextContract,
 } from "@cogno/core-api";
 import { PathFactory } from "@cogno/core-host";
+import { AutocompletePathSupport } from "@cogno/core-support";
 import { Fs } from "@cogno/app-tauri/fs";
 
 @Injectable({ providedIn: "root" })

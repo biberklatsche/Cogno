@@ -5,12 +5,13 @@ const coreDomainPattern = "^src/packages/core-domain/";
 const coreApiPattern = "^src/packages/core-api/";
 const coreHostPattern = "^src/packages/core-host/";
 const coreUiPattern = "^src/packages/core-ui/";
+const coreSupportPattern = "^src/packages/core-support/";
 const featuresPattern = "^src/packages/features/";
 const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
 const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
 const appPackagePattern = "^src/packages/app/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|pro-features(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)|pro-features(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -135,6 +136,13 @@ module.exports = {
       to: { path: productsPattern },
     },
     {
+      name: "core-support-must-be-frameworkfree",
+      severity: "error",
+      comment: "core-support must remain framework-free and reusable.",
+      from: { path: coreSupportPattern },
+      to: { path: "^(src/packages/app|src/packages/core-host|src/packages/features|src/products/|src/packages/products/|@angular/|@tauri-apps/)" },
+    },
+    {
       name: "features-must-not-import-app-or-core-host",
       severity: "error",
       comment: "features must not depend on app or core-host.",
@@ -231,4 +239,3 @@ module.exports = {
     },
   },
 };
-

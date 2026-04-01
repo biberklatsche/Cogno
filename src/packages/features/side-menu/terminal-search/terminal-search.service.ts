@@ -110,7 +110,6 @@ export class TerminalSearchService {
   }
 
   handleSideMenuOpen(): void {
-    this.registerKeybindListener();
     const currentQuery = this.searchStateSignal().query;
     if (currentQuery.length > 0) {
       this.searchInActiveTerminal(undefined);
@@ -119,15 +118,8 @@ export class TerminalSearchService {
 
   handleSideMenuClose(): void {
     this.cancelPendingSearch();
-    this.unregisterKeybindListener();
     this.clearDecorationsInAllTerminals();
     this.searchStateSignal.set(TextSearchUseCase.clearForCollectionClose());
-  }
-
-  private registerKeybindListener(): void {
-  }
-
-  private unregisterKeybindListener(): void {
   }
 
   private scheduleSearch(query: string): void {

@@ -1,4 +1,4 @@
-import { AutocompletePathSupport } from "@cogno/core-api";
+import { AutocompletePathSupport } from "@cogno/core-support";
 import { PathFactory } from "@cogno/core-host";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
@@ -68,3 +68,4 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
             .filter(Boolean);
     }
 }
+

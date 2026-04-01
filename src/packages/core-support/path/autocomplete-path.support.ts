@@ -1,5 +1,4 @@
-import { IPathAdapter } from "./path-adapter.contract";
-import { ShellContextContract } from "./filesystem.contract";
+import { IPathAdapter, ShellContextContract } from "@cogno/core-api";
 
 export class AutocompletePathSupport {
   private static readonly PARENT_TRAVERSAL_PREFIX_RE = /^(?:\.\.\/){2,}/;
@@ -18,29 +17,20 @@ export class AutocompletePathSupport {
   static toRelativePath(targetNorm: string, cwdNorm: string): string {
     const target = this.cleanPath(targetNorm);
     const cwd = this.cleanPath(cwdNorm);
-
     const targetSeg = target.split("/").filter(Boolean);
     const cwdSeg = cwd.split("/").filter(Boolean);
-
     const targetRoot = target.startsWith("//") ? `${targetSeg[0] ?? ""}/${targetSeg[1] ?? ""}` : targetSeg[0] ?? "";
     const cwdRoot = cwd.startsWith("//") ? `${cwdSeg[0] ?? ""}/${cwdSeg[1] ?? ""}` : cwdSeg[0] ?? "";
 
-    if (
-      targetRoot !== cwdRoot &&
-      (target.startsWith("//") || cwd.startsWith("//") || this.isDrivePath(target) || this.isDrivePath(cwd))
-    ) {
+    if (targetRoot !== cwdRoot && (target.startsWith("//") || cwd.startsWith("//") || this.isDrivePath(target) || this.isDrivePath(cwd))) {
       return target;
     }
 
     let i = 0;
-    while (i < targetSeg.length && i < cwdSeg.length && targetSeg[i] === cwdSeg[i]) {
-      i++;
-    }
-
+    while (i < targetSeg.length && i < cwdSeg.length && targetSeg[i] === cwdSeg[i]) i++;
     const up = new Array(Math.max(0, cwdSeg.length - i)).fill("..");
     const down = targetSeg.slice(i);
     const rel = [...up, ...down].join("/");
-
     return rel || ".";
   }
 
@@ -54,13 +44,9 @@ export class AutocompletePathSupport {
   static toDisplayPath(targetNorm: string, cwdNorm: string, pathAdapter: IPathAdapter): string {
     const relative = this.toRelativePath(targetNorm, cwdNorm);
     const absolute = pathAdapter.render(targetNorm, { purpose: "display" }) ?? targetNorm;
-
     const candidates: string[] = [];
-    if (!this.isParentTraversalOnly(relative)) {
-      candidates.push(relative);
-    }
+    if (!this.isParentTraversalOnly(relative)) candidates.push(relative);
     candidates.push(absolute);
-
     return candidates.reduce((best, cur) => (cur.length < best.length ? cur : best), candidates[0]);
   }
 
@@ -79,23 +65,18 @@ export class AutocompletePathSupport {
 
   static escapePathForAutocompleteInsert(path: string, shellContext: ShellContextContract): string {
     if (!path) return path;
-    if (shellContext.shellType === "PowerShell") {
-      return path.replace(this.POWERSHELL_AUTOCOMPLETE_ESCAPE_RE, "`$1");
-    }
+    if (shellContext.shellType === "PowerShell") return path.replace(this.POWERSHELL_AUTOCOMPLETE_ESCAPE_RE, "`$1");
     return path.replace(this.POSIX_AUTOCOMPLETE_ESCAPE_RE, "\\$1");
   }
 
   static unescapeAutocompletePathFragment(pathFragment: string, shellContext: ShellContextContract): string {
     if (!pathFragment) return pathFragment;
-    if (shellContext.shellType === "PowerShell") {
-      return pathFragment.replace(/`(.)/g, "$1");
-    }
+    if (shellContext.shellType === "PowerShell") return pathFragment.replace(/`(.)/g, "$1");
     return pathFragment.replace(/\\(.)/g, "$1");
   }
 
   static splitAutocompleteFragmentTokens(fragment: string, shellContext: ShellContextContract): string[] {
     if (!fragment) return [];
-
     const escapeCharacter = shellContext.shellType === "PowerShell" ? "`" : "\\";
     const tokens: string[] = [];
     let currentToken = "";
@@ -107,12 +88,10 @@ export class AutocompletePathSupport {
         isEscaped = false;
         continue;
       }
-
       if (currentCharacter === escapeCharacter) {
         isEscaped = true;
         continue;
       }
-
       if (/\s/.test(currentCharacter)) {
         if (currentToken.length > 0) {
           tokens.push(currentToken);
@@ -120,18 +99,11 @@ export class AutocompletePathSupport {
         }
         continue;
       }
-
       currentToken += currentCharacter;
     }
 
-    if (isEscaped) {
-      currentToken += escapeCharacter;
-    }
-
-    if (currentToken.length > 0) {
-      tokens.push(currentToken);
-    }
-
+    if (isEscaped) currentToken += escapeCharacter;
+    if (currentToken.length > 0) tokens.push(currentToken);
     return tokens;
   }
 
@@ -149,4 +121,3 @@ export class AutocompletePathSupport {
     return path.replace(/\//g, "\\");
   }
 }
-

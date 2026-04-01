@@ -37,18 +37,10 @@ export class NativeMenuService {
   }
 
   private async buildMenu() {
-    const aboutSubmenu = await TauriMenu.newSubmenu({
+    const appSubmenu = await TauriMenu.newSubmenu({
       id: 'cogno',
       text: 'Cogno',
       items: [
-        await TauriMenu.newItem({
-          id: 'about',
-          text: 'About',
-          action: () => {
-            console.log('TODO: About pressed');
-          },
-        }),
-        await TauriMenu.newPredefinedItem({ item: 'Separator' }),
         await this.buildMenuItem('open_config', 'Settings...'),
         await this.buildMenuItem('load_config', 'Reload Config'),
         await TauriMenu.newPredefinedItem({ item: 'Separator' }),
@@ -94,7 +86,7 @@ export class NativeMenuService {
       items: viewMenuItems,
     });
 
-    const menu = await TauriMenu.new({ items: [aboutSubmenu, fileSubmenu, viewSubmenu] });
+    const menu = await TauriMenu.new({ items: [appSubmenu, fileSubmenu, viewSubmenu] });
     await menu.setAsAppMenu();
   }
 
@@ -128,4 +120,3 @@ export class NativeMenuService {
     return undefined;
   }
 }
-

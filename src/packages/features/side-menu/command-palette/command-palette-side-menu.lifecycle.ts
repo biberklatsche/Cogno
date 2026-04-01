@@ -27,8 +27,10 @@ export class CommandPaletteSideMenuLifecycle {
               return;
             }
             if (keyboardEvent.key === "Enter") {
-              this.commandPaletteService.fireSelectedAction();
               sideMenuFeatureHandle.close();
+              queueMicrotask(() => {
+                this.commandPaletteService.fireSelectedAction();
+              });
               return;
             }
             this.commandPaletteService.handleNavigationKey(keyboardEvent.key);
@@ -53,6 +55,3 @@ export class CommandPaletteSideMenuLifecycle {
     });
   }
 }
-
-
-

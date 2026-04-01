@@ -56,9 +56,7 @@ export class CommandPaletteService {
       return;
     }
 
-    setTimeout(() => {
-      this.commandPaletteHostPort.publishAction(selectedCommandEntry.actionDefinition);
-    }, 50);
+    this.commandPaletteHostPort.publishAction(selectedCommandEntry.actionDefinition);
   }
 
   filterCommands(query: string): void {

@@ -1,5 +1,5 @@
-import { AutocompletePathSupport, FilesystemContract, ShellContextContract } from "@cogno/core-api";
-
+import { FilesystemContract, ShellContextContract } from "@cogno/core-api";
+import { AutocompletePathSupport } from "@cogno/core-support";
 import {
     FilesystemSpecProviderParams,
     SpecProvidedSuggestion,
@@ -204,7 +204,3 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
         this.cache.set(key, value);
     }
 }
-
-
-
-

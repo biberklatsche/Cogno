@@ -13,6 +13,8 @@
       "@cogno/core-host/*": ["src/packages/core-host/*"],
       "@cogno/core-ui": ["src/packages/core-ui/index.ts"],
       "@cogno/core-ui/*": ["src/packages/core-ui/*"],
+      "@cogno/core-support": ["src/packages/core-support/index.ts"],
+      "@cogno/core-support/*": ["src/packages/core-support/*"],
       "@cogno/app-tauri": ["src/packages/app-tauri/index.ts"],
       "@cogno/app-tauri/*": ["src/packages/app-tauri/*"],
       "@cogno/app": ["src/packages/app/app.component.ts"],
@@ -46,5 +48,3 @@
     "strictTemplates": true
   }
 }
-
-

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
 import {
   CommandPaletteCommandEntryContract,
@@ -39,10 +39,6 @@ describe("CommandPaletteService", () => {
     service.handleSideMenuOpen();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("initializes command list from host port entries", () => {
     const commandList = service.filteredCommandList();
     expect(commandList.length).toBe(3);
@@ -76,9 +72,7 @@ describe("CommandPaletteService", () => {
   });
 
   it("publishes selected action", () => {
-    vi.useFakeTimers();
     service.fireSelectedAction();
-    vi.runAllTimers();
 
     expect(publishActionMock).toHaveBeenCalledWith(
       expect.objectContaining({ actionName: "copy" }),
@@ -136,7 +130,3 @@ function createNavigationItem(
     },
   };
 }
-
-
-
-
