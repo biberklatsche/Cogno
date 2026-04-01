@@ -238,9 +238,7 @@ export class RealConfigService extends ConfigService {
         await ShellIntegrationWriter.ensure(this.wiringService.getShellSupportDefinitions());
 
         if (config.enable_watch_config) {
-            setTimeout(async () => {
-                await this.watch();
-            }, 1000);
+            await this.watch();
         }
 
         this._config.next(config);

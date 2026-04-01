@@ -4,6 +4,7 @@ import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-a
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 import { getAppBus, getDestroyRef } from "../../__test__/test-factory";
 import { AppBus } from "../app-bus/app-bus";
+import { ActionFired, ActionFiredEvent } from "../action/action.models";
 
 describe("WorkspaceShortcutActionService", () => {
   let appBus: AppBus;
@@ -33,13 +34,12 @@ describe("WorkspaceShortcutActionService", () => {
     new WorkspaceShortcutActionService(appBus, workspaceHostPort, getDestroyRef());
   });
 
+  function createActionEvent(actionName: string): ActionFiredEvent {
+    return ActionFired.create(actionName, { all: false, unconsumed: false, performable: false });
+  }
+
   it("restores the default workspace for select_workspace_default", () => {
-    const event = {
-      type: "ActionFired",
-      payload: "select_workspace_default",
-      path: ["app", "action"],
-      trigger: { all: false },
-    } as any;
+    const event = createActionEvent("select_workspace_default");
 
     appBus.publish(event);
 
@@ -49,12 +49,7 @@ describe("WorkspaceShortcutActionService", () => {
   });
 
   it("restores the second list entry for select_workspace_1", () => {
-    const event = {
-      type: "ActionFired",
-      payload: "select_workspace_1",
-      path: ["app", "action"],
-      trigger: { all: false },
-    } as any;
+    const event = createActionEvent("select_workspace_1");
 
     appBus.publish(event);
 
@@ -64,12 +59,7 @@ describe("WorkspaceShortcutActionService", () => {
   });
 
   it("ignores numbered workspace shortcuts that exceed the visible list", () => {
-    const event = {
-      type: "ActionFired",
-      payload: "select_workspace_9",
-      path: ["app", "action"],
-      trigger: { all: false },
-    } as any;
+    const event = createActionEvent("select_workspace_9");
 
     appBus.publish(event);
 

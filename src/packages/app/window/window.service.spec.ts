@@ -60,6 +60,7 @@ import { WindowCore } from '@cogno/app-tauri/window-core';
 import { AppWindow } from '@cogno/app-tauri/window';
 import { Logger } from '@cogno/app-tauri/logger';
 import { TerminalBusyStateService } from '../terminal/terminal-busy-state.service';
+import { ActionFired, ActionFiredEvent } from '../action/action.models';
 
 describe('WindowService', () => {
     let service: WindowService;
@@ -82,6 +83,13 @@ describe('WindowService', () => {
         vi.clearAllMocks();
     });
 
+    function createActionEvent(
+      actionName: "quit" | "new_window" | "close_window",
+      args?: string[],
+    ): ActionFiredEvent {
+      return ActionFired.create(actionName, undefined, args);
+    }
+
     it('should be created and publish InitConfigCommand', () => {
         expect(service).toBeTruthy();
         expect(bus.publish).toHaveBeenCalledWith(expect.objectContaining({ type: 'InitConfigCommand' }));
@@ -89,7 +97,7 @@ describe('WindowService', () => {
 
     describe('ActionFired events', () => {
         it('should handle quit action', async () => {
-            const event = { type: 'ActionFired', payload: 'quit', path: ['app', 'action'] } as any;
+            const event = createActionEvent('quit');
             bus.publish(event);
 
             await vi.waitFor(() => {
@@ -100,7 +108,7 @@ describe('WindowService', () => {
         });
 
         it('should handle new_window action', async () => {
-            const event = { type: 'ActionFired', payload: 'new_window', path: ['app', 'action'] } as any;
+            const event = createActionEvent('new_window');
             bus.publish(event);
 
             await vi.waitFor(() => {
@@ -110,7 +118,7 @@ describe('WindowService', () => {
         });
 
         it('should handle close_window action', async () => {
-            const event = { type: 'ActionFired', payload: 'close_window', path: ['app', 'action'], args: ['workspace_saved'] } as any;
+            const event = createActionEvent('close_window', ['workspace_saved']);
             bus.publish(event);
 
             await vi.waitFor(() => {
@@ -122,7 +130,7 @@ describe('WindowService', () => {
 
         it('should not quit when busy terminals block the action', async () => {
             vi.mocked(terminalBusyStateService.confirmProceedIfNoBusyTerminals).mockResolvedValue(false);
-            const event = { type: 'ActionFired', payload: 'quit', path: ['app', 'action'] } as any;
+            const event = createActionEvent('quit');
             bus.publish(event);
 
             await vi.waitFor(() => {
@@ -135,7 +143,7 @@ describe('WindowService', () => {
 
         it('should not close the window when busy terminals block the action', async () => {
             vi.mocked(terminalBusyStateService.confirmProceedIfNoBusyTerminals).mockResolvedValue(false);
-            const event = { type: 'ActionFired', payload: 'close_window', path: ['app', 'action'], args: ['workspace_saved'] } as any;
+            const event = createActionEvent('close_window', ['workspace_saved']);
             bus.publish(event);
 
             await vi.waitFor(() => {
@@ -148,7 +156,7 @@ describe('WindowService', () => {
 
         it('should report an error if new_window fails', async () => {
             vi.mocked(WindowCore.newWindow).mockRejectedValueOnce(new Error('Failed'));
-            const event = { type: 'ActionFired', payload: 'new_window', path: ['app', 'action'] } as any;
+            const event = createActionEvent('new_window');
             bus.publish(event);
 
             await vi.waitFor(() => {

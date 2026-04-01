@@ -331,7 +331,7 @@ describe('GridListService', () => {
             }));
         });
 
-        it('should publish FocusTerminal after delayed pane removal if focused', async () => {
+        it('should publish FocusTerminal after pane removal if focused', async () => {
             vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
             bus.publish({ type: 'SplitPaneRight', payload: initialTerminalId } as SplitPaneRightAction);
             
@@ -339,21 +339,18 @@ describe('GridListService', () => {
             bus.publish({ type: 'TerminalFocused', payload: 'term-2' } as TerminalFocusedEvent);
             
             const publishSpy = vi.spyOn(bus, 'publish');
-            vi.useFakeTimers();
             
             bus.publish({
                 type: 'RemovePane',
                 payload: 'term-2'
             } as RemovePaneAction);
 
-            vi.runAllTimers();
-            
-            expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-                type: 'FocusTerminal',
-                payload: initialTerminalId
-            }));
-            
-            vi.useRealTimers();
+            await vi.waitFor(() => {
+                expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+                    type: 'FocusTerminal',
+                    payload: initialTerminalId
+                }));
+            });
         });
     });
 

@@ -234,7 +234,7 @@ export class GridListService {
             const wasFocusedNode = gridAndNode.node.data?.isFocused;
             const newChild = gridAndNode.grid.tree.remove(gridAndNode.node.key);
             if(wasFocusedNode) {
-                setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: "FocusTerminal", payload: newChild?.data?.terminalId}), 250);
+                this.scheduleTerminalFocus(newChild?.data?.terminalId);
             }
         }
         this.componentFactory.destroy(terminalId);
@@ -436,8 +436,7 @@ export class GridListService {
         this.minimizePane();
         this.setActiveWorkspaceTabIdentifier(tab);
         const terminalId = this.getFirstTerminalId(grid.tree.root);
-        // Defer focus to the next task to avoid ExpressionChangedAfterItHasBeenCheckedError
-        setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: 'FocusTerminal', payload: terminalId}));
+        this.scheduleTerminalFocus(terminalId);
     }
 
     getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
@@ -579,6 +578,20 @@ export class GridListService {
                 this.componentFactory.destroy(terminalId);
             }
         }
+    }
+
+    private scheduleTerminalFocus(terminalId: TerminalId | undefined): void {
+        if (!terminalId) {
+            return;
+        }
+
+        const scheduleFocus = globalThis.requestAnimationFrame
+            ?? ((callback: FrameRequestCallback) => queueMicrotask(callback));
+
+        // Focus after the current UI update has committed instead of relying on a fixed delay.
+        scheduleFocus(() => {
+            this.bus.publish({path: ['app', 'terminal'], type: 'FocusTerminal', payload: terminalId});
+        });
     }
 }
 

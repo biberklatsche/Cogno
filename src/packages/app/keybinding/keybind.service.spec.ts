@@ -3,17 +3,19 @@ import { BehaviorSubject } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
 import { KeybindService } from "./keybind.service";
+import { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
+import { ConfigService } from "../config/+state/config.service";
 
 describe("KeybindService", () => {
   const config$ = new BehaviorSubject<{ keybind: never[] }>({ keybind: [] });
-  const keyboardMappingService = {
+  const keyboardMappingService: Pick<KeyboardMappingService, "loadLayout"> = {
     loadLayout: vi.fn().mockResolvedValue({
       keymapInfo: {
         mapping: {},
       },
     }),
   };
-  const configService = {
+  const configService: Pick<ConfigService, "config$"> = {
     config$,
   };
   const bus = new AppBus();
@@ -22,8 +24,8 @@ describe("KeybindService", () => {
 
   beforeAll(() => {
     service = new KeybindService(
-      keyboardMappingService as any,
-      configService as any,
+      keyboardMappingService as KeyboardMappingService,
+      configService as ConfigService,
       bus,
       getDestroyRef(),
     );
