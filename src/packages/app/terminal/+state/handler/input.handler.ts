@@ -48,7 +48,7 @@ export class InputHandler implements ITerminalHandler {
             if(event.payload?.terminalId !== this._terminalId) return;
             this.pty.write(event.payload.text);
             if(event.payload.appendNewline) {
-                setTimeout(() => this.pty.write(Char.Enter), 500);
+                this.scheduleCommandExecution();
             }
         }));
         this.terminalInputDisposable = terminal.onData(() => {
@@ -104,6 +104,12 @@ export class InputHandler implements ITerminalHandler {
         if (offset === 0) return "";
         const direction = offset > 0 ? "\x1b[C" : "\x1b[D";
         return direction.repeat(Math.abs(offset));
+    }
+
+    private scheduleCommandExecution(): void {
+        queueMicrotask(() => {
+            this.pty.write(Char.Enter);
+        });
     }
 
     private findLastCognoMarkerY(): number {

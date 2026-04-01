@@ -9,6 +9,8 @@ export class SideMenuDefinitionRegistry<
   TSideMenuFeatureExtension extends { id: string } = never,
 > implements SideMenuFeatureRegistryContract<TIcon, TActionName>
 {
+  // Later registrations intentionally override earlier ones by id so product
+  // composition can extend or replace base definitions in a single registry.
   private readonly sideMenuFeatureDefinitionsById = new Map<
     string,
     SideMenuFeatureDefinitionContract<TIcon, TActionName>
@@ -20,10 +22,10 @@ export class SideMenuDefinitionRegistry<
   ): void {
     const existingDefinition = this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinition.id);
     if (existingDefinition !== undefined) {
-      this.sideMenuFeatureDefinitionsById.set(sideMenuFeatureDefinition.id, {
-        ...existingDefinition,
-        ...sideMenuFeatureDefinition,
-      });
+      this.sideMenuFeatureDefinitionsById.set(
+        sideMenuFeatureDefinition.id,
+        this.mergeDefinitionOverride(existingDefinition, sideMenuFeatureDefinition),
+      );
       return;
     }
 
@@ -35,10 +37,10 @@ export class SideMenuDefinitionRegistry<
   ): void {
     const existingExtension = this.sideMenuFeatureExtensionsById.get(sideMenuFeatureExtension.id);
     if (existingExtension !== undefined) {
-      this.sideMenuFeatureExtensionsById.set(sideMenuFeatureExtension.id, {
-        ...existingExtension,
-        ...sideMenuFeatureExtension,
-      });
+      this.sideMenuFeatureExtensionsById.set(
+        sideMenuFeatureExtension.id,
+        this.mergeExtensionOverride(existingExtension, sideMenuFeatureExtension),
+      );
       return;
     }
 
@@ -89,5 +91,25 @@ export class SideMenuDefinitionRegistry<
         this.sideMenuFeatureExtensionsById.get(sideMenuFeatureDefinition.id),
       ),
     );
+  }
+
+  private mergeDefinitionOverride(
+    existingDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
+    overridingDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
+  ): SideMenuFeatureDefinitionContract<TIcon, TActionName> {
+    return {
+      ...existingDefinition,
+      ...overridingDefinition,
+    };
+  }
+
+  private mergeExtensionOverride(
+    existingExtension: TSideMenuFeatureExtension,
+    overridingExtension: TSideMenuFeatureExtension,
+  ): TSideMenuFeatureExtension {
+    return {
+      ...existingExtension,
+      ...overridingExtension,
+    };
   }
 }

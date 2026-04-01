@@ -28,11 +28,13 @@ export class NativeMenuService {
         this.latestConfig = config;
         await this.buildMenu();
       });
-      AppWindow.onFocusChanged$.subscribe(async (focus) => {
-        if (focus) {
-          await this.buildMenu();
-        }
-      });
+      AppWindow.onFocusChanged$
+        .pipe(takeUntilDestroyed(ref))
+        .subscribe(async (focus) => {
+          if (focus) {
+            await this.buildMenu();
+          }
+        });
     }
   }
 

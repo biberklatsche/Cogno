@@ -9,6 +9,7 @@ import {debounceTime, Subject} from "rxjs";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
 import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { AppBus } from "../../../../app-bus/app-bus";
+import { ErrorReporter } from "../../../../common/error/error-reporter";
 
 type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
@@ -57,8 +58,15 @@ export class CommandLineObserver implements ITerminalHandler {
                 const input = this.stateManager.input;
                 const maxCursorIndex =  cursorIndex > input.maxCursorIndex ? cursorIndex : input.maxCursorIndex;
                 this.stateManager.updateInput({...input, cursorIndex: cursorIndex, maxCursorIndex: maxCursorIndex});
-            } catch {
-                console.log('error');
+            } catch (error) {
+                ErrorReporter.reportException({
+                    error,
+                    handled: true,
+                    source: 'CommandLineObserver',
+                    context: {
+                        operation: 'onCursorMove',
+                    },
+                });
             }
         }));
         this._disposables.push(this._terminal.onRender(() => {

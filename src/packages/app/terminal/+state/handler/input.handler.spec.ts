@@ -188,26 +188,22 @@ describe('InputHandler', () => {
       expect(writeSpy).toHaveBeenCalledWith('hello from telegram');
     });
 
-    it('should append Enter when InjectTerminalInput event requests execution', () => {
-      vi.useFakeTimers();
+    it('should append Enter when InjectTerminalInput event requests execution', async () => {
       const writeSpy = vi.spyOn(mockPty, 'write');
-      try {
-        mockBus.publish({
-          type: 'InjectTerminalInput',
-          path: ['app', 'terminal'],
-          payload: {
-            terminalId,
-            text: 'run this',
-            appendNewline: true
-          }
-        });
+      mockBus.publish({
+        type: 'InjectTerminalInput',
+        path: ['app', 'terminal'],
+        payload: {
+          terminalId,
+          text: 'run this',
+          appendNewline: true
+        }
+      });
 
-        expect(writeSpy).toHaveBeenNthCalledWith(1, 'run this');
-        vi.advanceTimersByTime(500);
+      expect(writeSpy).toHaveBeenNthCalledWith(1, 'run this');
+      await vi.waitFor(() => {
         expect(writeSpy).toHaveBeenNthCalledWith(2, Char.Enter);
-      } finally {
-        vi.useRealTimers();
-      }
+      });
     });
   });
 
