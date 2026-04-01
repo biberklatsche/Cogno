@@ -54,7 +54,7 @@ type WindowControlIconName =
                 width: calc(var(--header-height) * 1.3);
                 border: none;
                 background-color: #00000000;
-                color: var(--foreground-color);
+                color: var(--foreground-color-10t);
                 outline: none;
                 display: inline-flex;
                 justify-content: center;
@@ -77,6 +77,7 @@ type WindowControlIconName =
                 }
 
                 &:hover {
+                    color: var(--foreground-color);
                     background-color: var(--background-color-40l) !important;
                 }
 
