@@ -9,7 +9,7 @@ describe('MarkerManager', () => {
     let markerManager: MarkerManager;
     let stateManager: TerminalStateManager;
     let mockTerminal: any;
-    let contextMenuOverlayService: ContextMenuOverlayService;
+    let contextMenuOverlayService: Pick<ContextMenuOverlayService, 'openContextForElement'>;
     let mockBus: AppBus;
 
     beforeEach(() => {
@@ -19,7 +19,7 @@ describe('MarkerManager', () => {
         stateManager.initialize('test-id', 'Bash' as any);
         contextMenuOverlayService = {
             openContextForElement: vi.fn(),
-        } as unknown as ContextMenuOverlayService;
+    };
         markerManager = new MarkerManager(stateManager, [], contextMenuOverlayService, mockBus);
         mockTerminal = TerminalMockFactory.createTerminal();
         mockTerminal.registerMarker = vi.fn().mockReturnValue({ dispose: vi.fn(), line: 0 });
@@ -168,5 +168,8 @@ describe('MarkerManager', () => {
         expect(decorationMock2.dispose).not.toHaveBeenCalled();
     });
 });
+
+
+
 
 

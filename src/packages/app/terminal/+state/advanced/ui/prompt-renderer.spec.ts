@@ -19,7 +19,7 @@ describe('PromptMarkerRenderer', () => {
     let stateManager: TerminalStateManager;
     let busMock: AppBus;
     let hostElement: HTMLElement;
-    let contextMenuOverlayService: ContextMenuOverlayService;
+    let contextMenuOverlayService: Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
     beforeEach(() => {
         PathFactory.setDefinitions([
@@ -32,7 +32,7 @@ describe('PromptMarkerRenderer', () => {
         hostElement = document.createElement('div');
         contextMenuOverlayService = {
             openContextForElement: vi.fn(),
-        } as unknown as ContextMenuOverlayService;
+    };
     });
 
     it('should render default label when no segments are provided', () => {
@@ -345,5 +345,8 @@ describe('PromptMarkerRenderer', () => {
         expect(scrollToCommandBottom).toHaveBeenCalledTimes(1);
     });
 });
+
+
+
 
 

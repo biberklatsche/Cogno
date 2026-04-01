@@ -108,7 +108,7 @@ describe("NotificationDispatchService", () => {
 
     return new NotificationDispatchService(
       appBus,
-      appWiringService as AppWiringService,
+      appWiringService,
       configService,
       destroyRef,
     );

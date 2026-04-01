@@ -26,6 +26,7 @@ type PromptMarkerRenderContext = {
     scrollToCommandTop?: () => void;
     scrollToCommandBottom?: () => void;
 };
+type PromptMarkerContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
 export class PromptMarkerRenderer {
     private static readonly DEFAULT_LABEL = 'COGNO';
@@ -34,7 +35,7 @@ export class PromptMarkerRenderer {
     public constructor(
         private readonly stateManager: TerminalStateManager,
         private readonly segments: PromptSegment[],
-        private readonly contextMenuOverlayService?: ContextMenuOverlayService,
+        private readonly contextMenuOverlayService?: PromptMarkerContextMenuOverlayPort,
         private readonly appBus?: AppBus,
     ) {}
 
@@ -405,5 +406,3 @@ export class PromptMarkerRenderer {
         return `var(--color-${color})`;
     }
 }
-
-

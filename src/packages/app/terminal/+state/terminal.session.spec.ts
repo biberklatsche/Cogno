@@ -18,7 +18,7 @@ import { TerminalStateManager } from './state';
 
 type TerminalAutocompleteSuggestorPort = Pick<
   TerminalAutocompleteFeatureSuggestorService,
-  'getSharedSuggestors' | 'preloadForShellIntegration'
+  'preloadForShellIntegration'
 >;
 type WiringPort = Pick<AppWiringService, 'getShellDefinitions' | 'getNotificationChannels'>;
 type DialogPort = Pick<DialogService, 'open'>;
@@ -61,7 +61,6 @@ describe('TerminalSession', () => {
   let openDialogMock: ReturnType<typeof vi.fn>;
   let dialogService: DialogPort;
   let wiringService: WiringPort;
-  let stateManager: TerminalStateManager;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -91,7 +90,6 @@ describe('TerminalSession', () => {
 
     preloadForShellIntegrationMock = vi.fn();
     featureSuggestorService = {
-      getSharedSuggestors: vi.fn().mockReturnValue([]),
       preloadForShellIntegration: preloadForShellIntegrationMock,
     };
 
@@ -114,16 +112,14 @@ describe('TerminalSession', () => {
       openContextForElement: vi.fn(),
     };
 
-    stateManager = getStateManager();
-
     session = new TerminalSession(
       configService,
       appBus,
-      stateManager,
-      featureSuggestorService as TerminalAutocompleteFeatureSuggestorService,
-      dialogService as DialogService,
-      wiringService as AppWiringService,
-      contextMenuOverlayService as ContextMenuOverlayService,
+      getStateManager(),
+      featureSuggestorService,
+      dialogService,
+      wiringService,
+      contextMenuOverlayService,
     );
   });
 
@@ -132,11 +128,11 @@ describe('TerminalSession', () => {
     session = new TerminalSession(
       configService,
       appBus,
-      stateManager,
-      featureSuggestorService as TerminalAutocompleteFeatureSuggestorService,
-      dialogService as DialogService,
-      wiringService as AppWiringService,
-      { openContextForElement: vi.fn() } as ContextMenuOverlayService,
+      getStateManager(),
+      featureSuggestorService,
+      dialogService,
+      wiringService,
+      { openContextForElement: vi.fn() },
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
@@ -219,6 +215,7 @@ describe('TerminalSession', () => {
 
   it('should keep command menu items out of the terminal header menu', () => {
     session.initialize(terminalId, shellProfile);
+    const stateManager = getStateManager();
     stateManager.updateCommand({ id: '1' });
     stateManager.updateCommands([
       Object.assign(stateManager.commands[0], {
@@ -239,6 +236,7 @@ describe('TerminalSession', () => {
 
   it('should include command menu items in the header menu for the first command out of view', () => {
     session.initialize(terminalId, shellProfile);
+    const stateManager = getStateManager();
     stateManager.updateCommand({ id: '1' });
     const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
     vi.mocked(rendererInstance.terminal.buffer.active.getLine).mockImplementation((lineIndex: number) => {

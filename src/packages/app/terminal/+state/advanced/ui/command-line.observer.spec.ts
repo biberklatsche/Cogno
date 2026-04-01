@@ -10,7 +10,7 @@ describe('CommandLineObserver', () => {
   let mockTerminal: any;
   let stateManager: TerminalStateManager;
   let mockBus: AppBus;
-  let contextMenuOverlayService: ContextMenuOverlayService;
+  let contextMenuOverlayService: Pick<ContextMenuOverlayService, 'openContextForElement'>;
   const terminalId = 'test-terminal-id';
 
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('CommandLineObserver', () => {
     stateManager.initialize(terminalId, 'Bash' as any);
     contextMenuOverlayService = {
       openContextForElement: vi.fn(),
-    } as unknown as ContextMenuOverlayService;
+    };
     observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService, mockBus);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
@@ -247,5 +247,8 @@ describe('CommandLineObserver', () => {
     expect(disposeSpy).toHaveBeenCalled();
   });
 });
+
+
+
 
 
