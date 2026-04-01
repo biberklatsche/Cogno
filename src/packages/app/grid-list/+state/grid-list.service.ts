@@ -586,7 +586,7 @@ export class GridListService {
         }
 
         const scheduleFocus = globalThis.requestAnimationFrame
-            ?? ((callback: FrameRequestCallback) => queueMicrotask(callback));
+            ?? ((callback: FrameRequestCallback) => queueMicrotask(() => callback(0)));
 
         // Focus after the current UI update has committed instead of relying on a fixed delay.
         scheduleFocus(() => {
