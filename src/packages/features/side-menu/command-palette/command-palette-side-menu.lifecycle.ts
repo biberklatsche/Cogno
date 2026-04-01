@@ -28,9 +28,10 @@ export class CommandPaletteSideMenuLifecycle {
               return;
             }
             if (keyboardEvent.key === "Enter") {
+              const selectedCommandEntry = this.commandPaletteService.getSelectedEntry();
               sideMenuFeatureHandle.close();
               queueMicrotask(() => {
-                this.commandPaletteService.fireSelectedAction();
+                this.commandPaletteService.fireSelectedAction(selectedCommandEntry);
               });
               return;
             }

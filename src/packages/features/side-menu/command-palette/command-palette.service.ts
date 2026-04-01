@@ -50,8 +50,12 @@ export class CommandPaletteService {
     this.applyState(CommandDiscoveryUseCase.handleCollectionClose(this.commandPaletteStateSignal()));
   }
 
+  getSelectedEntry(commandEntry?: CommandEntry): CommandEntry | undefined {
+    return CommandDiscoveryUseCase.getSelectedEntry(this.commandPaletteStateSignal(), commandEntry);
+  }
+
   fireSelectedAction(commandEntry?: CommandEntry): void {
-    const selectedCommandEntry = CommandDiscoveryUseCase.getSelectedEntry(this.commandPaletteStateSignal(), commandEntry);
+    const selectedCommandEntry = this.getSelectedEntry(commandEntry);
     if (!selectedCommandEntry) {
       return;
     }
