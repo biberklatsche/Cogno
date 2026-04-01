@@ -73,4 +73,36 @@ describe("SelectedWorkspaceHeaderComponent", () => {
 
     expect(restoreWorkspaceMock).toHaveBeenCalledWith("WS-2");
   });
+
+  it("hides the header when the default workspace is active", () => {
+    workspaceEntriesSubject.next([
+      { id: "WS-DEFAULT", name: "Default Workspace", isActive: true, isOpen: true },
+      { id: "WS-1", name: "Workspace One", isActive: false, isOpen: true },
+    ]);
+
+    expect(component["activeWorkspace"]()).toBeUndefined();
+  });
+
+  it("does not include the default workspace in the header menu", () => {
+    workspaceEntriesSubject.next([
+      { id: "WS-DEFAULT", name: "Default Workspace", isActive: false, isOpen: true },
+      { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true },
+      { id: "WS-2", name: "Workspace Two", isActive: false, isOpen: true },
+    ]);
+
+    const button = document.createElement("button");
+    component["openWorkspaceMenu"]({
+      currentTarget: button,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as Event);
+
+    const menuConfig = openContextForElementMock.mock.calls.at(-1)?.[1] as {
+      items: Array<{ label: string }>;
+    };
+    expect(menuConfig.items.map((item) => item.label)).toEqual([
+      "Workspace One (active)",
+      "Workspace Two",
+    ]);
+  });
 });

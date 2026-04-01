@@ -44,13 +44,6 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { ScrollStateHandler } from "./handler/scroll-state.handler";
 
 type NotificationChannelId = string;
-type TerminalAutocompleteSuggestorPort = Pick<
-    TerminalAutocompleteFeatureSuggestorService,
-    'preloadForShellIntegration'
->;
-type TerminalSessionDialogPort = Pick<DialogService, 'open'>;
-type TerminalSessionWiringPort = Pick<AppWiringService, 'getNotificationChannels' | 'getShellDefinitions'>;
-type TerminalSessionContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
 @Injectable()
 export class TerminalSession {
@@ -76,10 +69,10 @@ export class TerminalSession {
         private configService: ConfigService,
         private bus: AppBus,
         private stateManager: TerminalStateManager,
-        private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteSuggestorPort,
-        private dialog: TerminalSessionDialogPort,
-        private wiringService: TerminalSessionWiringPort,
-        private contextMenuOverlayService: TerminalSessionContextMenuOverlayPort,
+        private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
+        private dialog: DialogService,
+        private wiringService: AppWiringService,
+        private contextMenuOverlayService: ContextMenuOverlayService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [

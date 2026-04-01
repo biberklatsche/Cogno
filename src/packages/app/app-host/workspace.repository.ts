@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Inject, Injectable } from "@angular/core";
 import {
   DatabaseAccessContract,
   PersistedGridConfigurationContract,
@@ -7,6 +7,7 @@ import {
   WorkspaceIdentifierContract,
 } from "@cogno/core-api";
 import { WorkspaceConfiguration, WorkspaceTerminalSession } from "@cogno/core-domain/workspace";
+import { databaseAccessToken } from "./app-host.tokens";
 
 export interface WorkspaceEntity {
   id: string;
@@ -43,7 +44,10 @@ export interface WorkspaceTerminalSessionEntity {
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceRepository {
-  constructor(private readonly databaseAccess: DatabaseAccessContract) {}
+  constructor(
+    @Inject(databaseAccessToken)
+    private readonly databaseAccess: DatabaseAccessContract,
+  ) {}
 
   async getAllWorkspaces(): Promise<WorkspaceConfiguration[]> {
     const workspaces = await this.databaseAccess.select<WorkspaceEntity[]>(

@@ -10,13 +10,11 @@ import { AppBus } from "../../app-bus/app-bus";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "../../config/+state/config.service";
 
-type NotificationChannelsWiringPort = Pick<AppWiringService, "getNotificationChannels">;
-
 @Injectable({ providedIn: "root" })
 export class NotificationDispatchService {
   constructor(
     private readonly appBus: AppBus,
-    private readonly appWiringService: NotificationChannelsWiringPort,
+    private readonly appWiringService: AppWiringService,
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {

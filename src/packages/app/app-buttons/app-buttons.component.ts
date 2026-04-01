@@ -61,10 +61,10 @@ type WindowControlIconName =
                 align-items: center;
                 padding: 0;
                 position: relative;
-                opacity: 0.5;
+                opacity: 1;
 
                 .window-control-icon {
-                    background-color: var(--foreground-color-20d);
+                    background-color: currentColor;
                     height: calc(var(--header-height) / 2);
                     width: calc(var(--header-height) / 2);
                     display: block;
@@ -77,15 +77,12 @@ type WindowControlIconName =
                 }
 
                 &:hover {
-                    opacity: 1;
                     background-color: var(--background-color-40l) !important;
                 }
 
                 &.close:hover {
                     background-color: var(--highlight-color) !important;
-                    .window-control-icon {
-                        background-color: var(--background-color);
-                    }
+                    color: var(--background-color);
                 }
             }
 
@@ -126,7 +123,7 @@ export class AppButtonsComponent {
   constructor(protected readonly appButtonsService: AppButtonsService) {}
 
   protected iconMask(iconName: WindowControlIconName): string {
-    return `url('/assets/icons/window-controls/${iconName}.svg')`;
+    return `url('assets/icons/window-controls/${iconName}.svg')`;
   }
 
   protected closeWindow(): void {

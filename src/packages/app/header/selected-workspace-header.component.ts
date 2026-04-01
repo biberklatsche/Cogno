@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
 import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
-import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { TooltipDirective } from "@cogno/core-ui";
 
 @Component({
@@ -121,10 +121,17 @@ export class SelectedWorkspaceHeaderComponent {
       });
 
     this.activeWorkspace = computed(
-      () => this.workspaceEntries().find((workspaceEntry) => workspaceEntry.isActive) ?? undefined,
+      () => this.workspaceEntries().find(
+        (workspaceEntry) =>
+          workspaceEntry.isActive && workspaceEntry.id !== defaultWorkspaceIdContract,
+      ) ?? undefined,
     );
     this.openWorkspaceEntries = computed(() =>
-      this.workspaceEntries().filter((workspaceEntry) => workspaceEntry.isOpen || workspaceEntry.isActive),
+      this.workspaceEntries().filter(
+        (workspaceEntry) =>
+          workspaceEntry.id !== defaultWorkspaceIdContract
+          && (workspaceEntry.isOpen || workspaceEntry.isActive),
+      ),
     );
     this.hasWorkspaceMenu = computed(() => this.openWorkspaceEntries().length > 1);
   }
