@@ -14,6 +14,7 @@ import { SideMenuFeatureRegistryHost } from "./side-menu-feature-registry.host";
 export class CoreHostFeatureRegistryHost<
   TIcon = string,
   TActionName = string,
+  TSideMenuFeatureExtension extends { id: string } = never,
 > {
   private readonly databaseMigrations: DatabaseMigrationContract[] = [];
   private readonly notificationChannels: NotificationChannelContract[] = [];
@@ -23,7 +24,11 @@ export class CoreHostFeatureRegistryHost<
   private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] = [];
 
   constructor(
-    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<TIcon, TActionName>,
+    private readonly sideMenuFeatureRegistryHost: SideMenuFeatureRegistryHost<
+      TIcon,
+      TActionName,
+      TSideMenuFeatureExtension
+    >,
   ) {}
 
   registerFeatureCollection(
@@ -71,6 +76,34 @@ export class CoreHostFeatureRegistryHost<
     SideMenuFeatureDefinitionContract<TIcon, TActionName>
   > {
     return this.sideMenuFeatureRegistryHost.getSideMenuFeatureDefinitions();
+  }
+
+  registerSideMenuFeatureExtension(
+    sideMenuFeatureExtension: TSideMenuFeatureExtension,
+  ): void {
+    this.sideMenuFeatureRegistryHost.registerSideMenuFeatureExtension(sideMenuFeatureExtension);
+  }
+
+  resolveSideMenuFeatureDefinitionById<TResolved>(
+    sideMenuFeatureDefinitionId: string,
+    resolveDefinition: (
+      sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
+      sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
+    ) => TResolved,
+  ): TResolved | undefined {
+    return this.sideMenuFeatureRegistryHost.resolveSideMenuFeatureDefinitionById(
+      sideMenuFeatureDefinitionId,
+      resolveDefinition,
+    );
+  }
+
+  resolveSideMenuFeatureDefinitions<TResolved>(
+    resolveDefinition: (
+      sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
+      sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
+    ) => TResolved,
+  ): ReadonlyArray<TResolved> {
+    return this.sideMenuFeatureRegistryHost.resolveSideMenuFeatureDefinitions(resolveDefinition);
   }
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {

@@ -22,11 +22,9 @@ import { coreDatabaseMigrations } from "./database-migrations";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
-  private readonly sideMenuFeatureRegistryHost = new SideMenuFeatureRegistryHost<Icon, ActionName>();
-  private readonly featureRegistryHost = new CoreHostFeatureRegistryHost<Icon, ActionName>(
-    this.sideMenuFeatureRegistryHost,
+  private readonly featureRegistryHost = new CoreHostFeatureRegistryHost<Icon, ActionName, SideMenuFeatureDefinition>(
+    new SideMenuFeatureRegistryHost<Icon, ActionName, SideMenuFeatureDefinition>(),
   );
-  private readonly sideMenuFeatureDefinitionsById = new Map<string, SideMenuFeatureDefinition>();
 
   constructor(
     private readonly applicationProduct: ApplicationProduct<Icon, ActionName>,
@@ -37,16 +35,10 @@ export class AppWiringService {
     private readonly osNotificationChannelService: OsNotificationChannelService,
   ) {
     for (const sideMenuFeatureDefinition of sideMenuFeatureDefinitions) {
-      this.sideMenuFeatureDefinitionsById.set(sideMenuFeatureDefinition.id, sideMenuFeatureDefinition);
+      this.featureRegistryHost.registerSideMenuFeatureExtension(sideMenuFeatureDefinition);
     }
 
-    this.featureRegistryHost.registerFeatureCollection({
-      ...this.applicationProduct.featureCollection,
-      sideMenuFeatureDefinitions: [
-        ...sideMenuFeatureDefinitions.map(({ createLifecycle, targetComponent, ...definition }) => definition),
-        ...this.applicationProduct.featureCollection.sideMenuFeatureDefinitions,
-      ],
-    });
+    this.featureRegistryHost.registerFeatureCollection(this.applicationProduct.featureCollection);
     this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
     this.databaseMigrationService.registerFeatureMigrations(
       this.featureRegistryHost.getDatabaseMigrations(),
@@ -56,19 +48,21 @@ export class AppWiringService {
   getRequiredSideMenuFeatureDefinitionById(
     sideMenuFeatureDefinitionId: string,
   ): SideMenuFeatureDefinition {
-    const sideMenuFeatureDefinition = this.featureRegistryHost.getSideMenuFeatureDefinitionById(
+    const sideMenuFeatureDefinition = this.featureRegistryHost.resolveSideMenuFeatureDefinitionById(
       sideMenuFeatureDefinitionId,
+      (definition, extension) => this.mergeSideMenuFeatureDefinition(definition, extension),
     );
     if (sideMenuFeatureDefinition === undefined) {
       throw new Error(`Unknown side menu feature definition id: ${sideMenuFeatureDefinitionId}`);
     }
-    return this.resolveSideMenuFeatureDefinition(sideMenuFeatureDefinition);
+    return sideMenuFeatureDefinition;
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
     return this.featureRegistryHost
-      .getSideMenuFeatureDefinitions()
-      .map((sideMenuFeatureDefinition) => this.resolveSideMenuFeatureDefinition(sideMenuFeatureDefinition));
+      .resolveSideMenuFeatureDefinitions((definition, extension) =>
+        this.mergeSideMenuFeatureDefinition(definition, extension),
+      );
   }
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
@@ -97,10 +91,10 @@ export class AppWiringService {
     return this.featureRegistryHost.getShellDefinitions();
   }
 
-  private resolveSideMenuFeatureDefinition(
+  private mergeSideMenuFeatureDefinition(
     sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<Icon, ActionName>,
+    uiDefinition: SideMenuFeatureDefinition | undefined,
   ): SideMenuFeatureDefinition {
-    const uiDefinition = this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinition.id);
     if (uiDefinition === undefined) {
       throw new Error(`Missing side menu UI definition for feature id: ${sideMenuFeatureDefinition.id}`);
     }
