@@ -19,6 +19,7 @@ import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-
 import type { Icon } from "@cogno/core-ui";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
+import { additionalNotificationChannelsToken } from "./app-host.tokens";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
@@ -30,6 +31,8 @@ export class AppWiringService {
     private readonly applicationProduct: ApplicationProduct<Icon, ActionName>,
     @Inject(sideMenuFeatureDefinitionsToken)
     sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>,
+    @Inject(additionalNotificationChannelsToken)
+    private readonly additionalNotificationChannels: ReadonlyArray<NotificationChannelContract>,
     private readonly appNotificationChannelService: AppNotificationChannelService,
     private readonly databaseMigrationService: DatabaseMigrationService,
     private readonly osNotificationChannelService: OsNotificationChannelService,
@@ -73,6 +76,7 @@ export class AppWiringService {
     return [
       this.appNotificationChannelService,
       this.osNotificationChannelService,
+      ...this.additionalNotificationChannels,
       ...this.featureRegistryHost.getNotificationChannels(),
     ];
   }

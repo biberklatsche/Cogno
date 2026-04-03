@@ -12,7 +12,7 @@ import { workspaceSideMenuFeatureDefinition } from "@cogno/features/side-menu/wo
 import { WorkspaceSideComponent } from "@cogno/features/side-menu/workspace/workspace-side.component";
 import { WorkspaceSideMenuLifecycle } from "@cogno/features/side-menu/workspace/workspace-side-menu.lifecycle";
 
-export const communitySideMenuFeatureDefinitions = [
+export const productSideMenuFeatureDefinitions = [
   {
     ...workspaceSideMenuFeatureDefinition,
     targetComponent: WorkspaceSideComponent,

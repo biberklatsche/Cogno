@@ -5,6 +5,7 @@ import type {
   CommandRunnerContract,
   DatabaseAccessContract,
   FilesystemContract,
+  NotificationChannelContract,
   NotificationCenterPortContract,
   TerminalSearchHostPortContract,
   WorkspaceCloseGuardContract,
@@ -18,6 +19,9 @@ export const commandPaletteHostPortToken = new InjectionToken<CommandPaletteHost
 export const commandRunnerToken = new InjectionToken<CommandRunnerContract>("command-runner-token");
 export const databaseAccessToken = new InjectionToken<DatabaseAccessContract>("database-access-token");
 export const filesystemToken = new InjectionToken<FilesystemContract>("filesystem-token");
+export const additionalNotificationChannelsToken = new InjectionToken<
+  ReadonlyArray<NotificationChannelContract>
+>("additional-notification-channels-token");
 export const notificationCenterPortToken = new InjectionToken<NotificationCenterPortContract>(
   "notification-center-port-token",
 );

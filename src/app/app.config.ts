@@ -6,6 +6,7 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
+import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   actionKeybindingToken,
@@ -52,7 +53,7 @@ import {
   WorkspaceCloseGuard,
   WorkspaceHostPort,
 } from "@cogno/core-api";
-import { activeProductDefinition } from "../products/active-product";
+import { productDefinition } from "../products/product-definition.instance";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -63,17 +64,18 @@ export const appConfig: ApplicationConfig = {
     { provide: actionKeybindingToken, useExisting: ActionKeybindingPortAdapterService },
     { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
     { provide: filesystemToken, useExisting: FilesystemHostService },
+    { provide: additionalNotificationChannelsToken, useValue: [] },
     { provide: notificationCenterPortToken, useExisting: NotificationCenterPortAdapterService },
     { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
     { provide: workspaceCloseGuardToken, useExisting: WorkspaceCloseGuardAdapterService },
     { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
-    { provide: ApplicationProduct, useValue: activeProductDefinition.applicationProduct },
+    { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
     { provide: CommandPaletteHostPort, useExisting: CommandPaletteHostPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     {
       provide: sideMenuFeatureDefinitionsToken,
-      useValue: [...sideMenuFeatureDefinitions, ...activeProductDefinition.sideMenuFeatureDefinitions],
+      useValue: [...sideMenuFeatureDefinitions, ...productDefinition.sideMenuFeatureDefinitions],
     },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },
