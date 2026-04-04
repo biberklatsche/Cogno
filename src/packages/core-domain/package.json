@@ -1,0 +1,5 @@
+{
+  "name": "@cogno/core-domain",
+  "private": true,
+  "type": "module"
+}

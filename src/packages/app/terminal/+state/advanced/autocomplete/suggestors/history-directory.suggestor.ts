@@ -1,8 +1,9 @@
+import { AutocompletePathSupport } from "@cogno/core-support";
+import { PathFactory } from "@cogno/core-host";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
 import { HistoryDirectoryScorer } from "./scoring/history-directory.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
-import { AutocompletePathUtil } from "@cogno/core-host";
 
 export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor {
     readonly id = "history-directory";
@@ -23,7 +24,8 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
         const tokens = this.extractTokens(context.fragment, context.shellContext);
         const lookupFragment = tokens[0] ?? context.fragment;
         const rows = await this.persistence.searchDirectories(lookupFragment, 100);
-        const cwdNorm = AutocompletePathUtil.normalizeCwd(context.cwd, context.shellContext);
+        const pathAdapter = PathFactory.createAdapter(context.shellContext);
+        const cwdNorm = AutocompletePathSupport.normalizeCwd(context.cwd, pathAdapter);
         const now = Date.now();
 
         const result: AutocompleteSuggestion[] = [];
@@ -34,19 +36,19 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
             const score = HistoryDirectoryScorer.scoreRow(row, effectiveTokens, now);
             if (score === null) continue;
 
-            const relative = AutocompletePathUtil.toRelativePath(row.path, cwdNorm);
+            const relative = AutocompletePathSupport.toRelativePath(row.path, cwdNorm);
             if (relative === ".") continue;
 
-            const displayPath = AutocompletePathUtil.toDisplayPath(row.path, cwdNorm, context.shellContext);
-            if (displayPath === "." || displayPath === ".." || AutocompletePathUtil.isParentTraversalOnly(displayPath)) continue;
-            const directoryPath = AutocompletePathUtil.appendDirectorySeparator(displayPath, context.shellContext);
-            const escapedDirectoryPath = AutocompletePathUtil.escapePathForAutocompleteInsert(
+            const displayPath = AutocompletePathSupport.toDisplayPath(row.path, cwdNorm, pathAdapter);
+            if (displayPath === "." || displayPath === ".." || AutocompletePathSupport.isParentTraversalOnly(displayPath)) continue;
+            const directoryPath = AutocompletePathSupport.appendDirectorySeparator(displayPath, context.shellContext);
+            const escapedDirectoryPath = AutocompletePathSupport.escapePathForAutocompleteInsert(
                 directoryPath,
                 context.shellContext,
             );
 
             result.push({
-                label: AutocompletePathUtil.shortenParentTraversalDisplay(directoryPath, context.shellContext),
+                label: AutocompletePathSupport.shortenParentTraversalDisplay(directoryPath, context.shellContext),
                 insertText: escapedDirectoryPath,
                 score,
                 source: "history-dir",
@@ -60,9 +62,10 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
     }
 
     private extractTokens(fragment: string, shellContext: CdQueryContext["shellContext"]): string[] {
-        return AutocompletePathUtil
+        return AutocompletePathSupport
             .splitAutocompleteFragmentTokens(fragment, shellContext)
             .map(token => token.toLowerCase())
             .filter(Boolean);
     }
 }
+

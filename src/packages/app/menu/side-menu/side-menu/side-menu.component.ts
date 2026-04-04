@@ -9,10 +9,9 @@ import {
     Signal,
     ViewChild,
 } from '@angular/core';
-import { IconComponent } from "@cogno/core-ui";
+import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
 import {NgComponentOutlet} from "@angular/common";
-import {TooltipDirective} from "../../../common/tooltip/tooltip.directive";
 import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
 
 @Component({
@@ -298,3 +297,5 @@ export class SideMenuComponent implements OnDestroy {
         window.removeEventListener('pointerup', this.onWindowPointerUp, true);
     };
 }
+
+

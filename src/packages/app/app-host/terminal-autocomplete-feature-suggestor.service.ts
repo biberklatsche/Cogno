@@ -1,13 +1,12 @@
 import { Inject, Injectable } from "@angular/core";
+import { commandRunnerToken, filesystemToken } from "@cogno/app/app-host/app-host.tokens";
 import {
-  commandRunnerToken,
   CommandRunnerContract,
-  filesystemToken,
   FilesystemContract,
   ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
-} from "@cogno/core-sdk";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+} from "@cogno/core-api";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAutocompleteFeatureSuggestorService {
@@ -38,3 +37,4 @@ export class TerminalAutocompleteFeatureSuggestorService {
     }
   }
 }
+

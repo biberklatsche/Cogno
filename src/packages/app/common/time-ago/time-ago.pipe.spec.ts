@@ -26,3 +26,5 @@ describe("TimeAgoPipe", () => {
         expect(pipe.transform(new Date(now - (2 * 365 * 24 * 3_600_000) - 1_000))).toBe("2 years ago");
     });
 });
+
+

@@ -6,7 +6,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {ActionDefinition} from "./keybind-action.interpreter";
 import {AppBus} from "../app-bus/app-bus";
 import {ActionName} from "../action/action.models";
-import {Logger} from "../_tauri/logger";
+import {Logger} from "@cogno/app-tauri/logger";
 
 type Key = string;
 
@@ -38,7 +38,7 @@ export class KeybindService {
         window.addEventListener("keydown", (e) => {
             // 1) Check registered listeners first (e.g., side menu overlays)
             const stack = this.listeners.get(e.key);
-            if(stack && stack?.length) {
+            if (stack && stack.length && !this.isEventInsideDialog(e)) {
                 stack.at(-1)?.handler(e);
                 e.preventDefault();
                 e.stopPropagation();
@@ -109,4 +109,15 @@ export class KeybindService {
             this.listeners.delete(key);
         }
     }
+
+    private isEventInsideDialog(event: KeyboardEvent): boolean {
+        const eventTarget = event.target;
+        if (!(eventTarget instanceof Element)) {
+            return false;
+        }
+
+        return eventTarget.closest('app-dialog') !== null;
+    }
 }
+
+

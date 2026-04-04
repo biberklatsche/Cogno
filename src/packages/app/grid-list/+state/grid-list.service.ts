@@ -2,7 +2,7 @@ import {DestroyRef, Injectable} from "@angular/core";
 import {BehaviorSubject, map, Observable} from "rxjs";
 import {Grid, GridList, Pane, SplitDirection, TerminalId} from "../+model/model";
 import {AppBus} from "../../app-bus/app-bus";
-import {defaultWorkspaceIdContract, PaneConfig, GridConfig, TabId} from "@cogno/core-sdk";
+import {defaultWorkspaceIdContract, PaneConfig, GridConfig, TabId} from "@cogno/core-api";
 import {BinaryNode, BinaryTree} from "../../common/tree/binary-tree";
 import {IdCreator} from "../../common/id-creator/id-creator";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
@@ -234,7 +234,7 @@ export class GridListService {
             const wasFocusedNode = gridAndNode.node.data?.isFocused;
             const newChild = gridAndNode.grid.tree.remove(gridAndNode.node.key);
             if(wasFocusedNode) {
-                setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: "FocusTerminal", payload: newChild?.data?.terminalId}), 250);
+                this.scheduleTerminalFocus(newChild?.data?.terminalId);
             }
         }
         this.componentFactory.destroy(terminalId);
@@ -436,8 +436,7 @@ export class GridListService {
         this.minimizePane();
         this.setActiveWorkspaceTabIdentifier(tab);
         const terminalId = this.getFirstTerminalId(grid.tree.root);
-        // Defer focus to the next task to avoid ExpressionChangedAfterItHasBeenCheckedError
-        setTimeout(() => this.bus.publish({path: ['app', 'terminal'], type: 'FocusTerminal', payload: terminalId}));
+        this.scheduleTerminalFocus(terminalId);
     }
 
     getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
@@ -580,4 +579,21 @@ export class GridListService {
             }
         }
     }
+
+    private scheduleTerminalFocus(terminalId: TerminalId | undefined): void {
+        if (!terminalId) {
+            return;
+        }
+
+        const scheduleFocus = globalThis.requestAnimationFrame
+            ?? ((callback: FrameRequestCallback) => queueMicrotask(() => callback(0)));
+
+        // Focus after the current UI update has committed instead of relying on a fixed delay.
+        scheduleFocus(() => {
+            this.bus.publish({path: ['app', 'terminal'], type: 'FocusTerminal', payload: terminalId});
+        });
+    }
 }
+
+
+

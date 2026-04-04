@@ -16,8 +16,9 @@ import {TerminalStateManager} from "../app/terminal/+state/state";
 import {ShellType} from "../app/config/+models/config";
 import {TerminalSession} from "../app/terminal/+state/terminal.session";
 import { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
+import { ContextMenuOverlayService } from "../app/menu/context-menu-overlay/context-menu-overlay.service";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -35,6 +36,7 @@ let terminalSession: TerminalSession | undefined;
 let terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService | undefined;
 let appWiringService: AppWiringService | undefined;
 let terminalBusyStateService: TerminalBusyStateService | undefined;
+let contextMenuOverlayService: ContextMenuOverlayService | undefined;
 
 export function getAppBus(): AppBus {
     if(!appBus) appBus = new AppBus();
@@ -63,6 +65,7 @@ export function getTerminalSession(): TerminalSession {
             getTerminalAutocompleteFeatureSuggestorService(),
             { open: () => ({ close: () => undefined }) } as any,
             getAppWiringService(),
+            getContextMenuOverlayService(),
         );
     }
     return terminalSession;
@@ -174,6 +177,19 @@ export function getTerminalBusyStateService(): TerminalBusyStateService {
     return terminalBusyStateService;
 }
 
+export function getContextMenuOverlayService(): ContextMenuOverlayService {
+    if (!contextMenuOverlayService) {
+        contextMenuOverlayService = {
+            openContextForElement: vi.fn(),
+            openContextAt: vi.fn(),
+            openAt: vi.fn(),
+            close: vi.fn(),
+        } as unknown as ContextMenuOverlayService;
+    }
+
+    return contextMenuOverlayService;
+}
+
 export function getFocusHandler(terminalId: TerminalId): FocusHandler {
     if(!focusHandler) {
         focusHandler = new FocusHandler(terminalId, getAppBus(), getStateManager());
@@ -206,4 +222,8 @@ export function clear() {
     terminalAutocompleteFeatureSuggestorService = undefined;
     appWiringService = undefined;
     terminalBusyStateService = undefined;
+    contextMenuOverlayService = undefined;
 }
+
+
+

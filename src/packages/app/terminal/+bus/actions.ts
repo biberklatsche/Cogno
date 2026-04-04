@@ -32,3 +32,5 @@ export type InjectTerminalInputAction = ActionBase<"InjectTerminalInput", {
     text: string;
     appendNewline?: boolean;
 }>
+
+

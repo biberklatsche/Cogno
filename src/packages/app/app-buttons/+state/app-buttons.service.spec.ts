@@ -1,7 +1,40 @@
-import { AppButtonsService } from './app-buttons.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AppWindow } from '../../_tauri/window';
 import { Subject } from 'rxjs';
+
+const { appWindowMock } = vi.hoisted(() => ({
+  appWindowMock: {
+    isFocused: vi.fn().mockResolvedValue(true),
+    isVisible: vi.fn().mockResolvedValue(true),
+    isMaximized: vi.fn().mockResolvedValue(false),
+    isMinimized: vi.fn().mockResolvedValue(false),
+    setFocus: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    minimize: vi.fn().mockResolvedValue(undefined),
+    unminimize: vi.fn().mockResolvedValue(undefined),
+    maximize: vi.fn().mockResolvedValue(undefined),
+    unmaximize: vi.fn().mockResolvedValue(undefined),
+    windowSize$: undefined as unknown,
+    onCloseRequested$: undefined as unknown,
+    onFocusChanged$: undefined as unknown,
+    onDragDrop$: undefined as unknown,
+  }
+}));
+
+vi.mock('@cogno/app-tauri/window', () => ({
+  AppWindow: appWindowMock,
+}));
+
+vi.mock('@cogno/app-tauri/logger', () => ({
+  Logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+import { AppButtonsService } from './app-buttons.service';
+import { AppWindow } from '@cogno/app-tauri/window';
 
 describe('AppButtonsService', () => {
   let service: AppButtonsService;
@@ -10,10 +43,13 @@ describe('AppButtonsService', () => {
   let destroyRefMock: any;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     windowSize$ = new Subject();
-    // @ts-ignore
-    AppWindow.windowSize$ = windowSize$;
-    
+    appWindowMock.windowSize$ = windowSize$;
+    appWindowMock.onCloseRequested$ = new Subject();
+    appWindowMock.onFocusChanged$ = new Subject<boolean>();
+    appWindowMock.onDragDrop$ = new Subject();
+
     busMock = {
       publish: vi.fn(),
       on$: vi.fn()
@@ -27,12 +63,10 @@ describe('AppButtonsService', () => {
   });
 
   it('should initialize isMaximized based on AppWindow.isMaximized when windowSize$ emits', async () => {
-    vi.mocked(AppWindow.isMaximized).mockResolvedValue(true);
+    vi.spyOn(AppWindow, 'isMaximized').mockResolvedValue(true);
     
-    // Trigger window size change
     windowSize$.next({ width: 1024, height: 768 });
     
-    // Wait for async call in subscription
     await new Promise(resolve => setTimeout(resolve, 0));
     
     expect(service.isMaximized()).toBe(true);

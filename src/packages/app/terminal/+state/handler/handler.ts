@@ -28,3 +28,5 @@ export function isSearchHandler(handler: unknown): handler is ISearchHandler {
         && "registerSearchAddon" in handler
         && typeof (handler as ISearchHandler).registerSearchAddon === "function";
 }
+
+

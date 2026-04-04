@@ -51,7 +51,7 @@ CREATE INDEX idx_command_first_token
     ON command(first_token)
     WHERE deleted_at IS NULL;
 
--- FTS5 (nur aktive commands)
+-- FTS5 for active commands only
 CREATE VIRTUAL TABLE command_fts
 USING fts5(
   command_text,
@@ -60,7 +60,7 @@ USING fts5(
   tokenize='unicode61'
 );
 
--- INSERT → immer rein
+-- INSERT -> always index the row
 CREATE TRIGGER command_ai AFTER INSERT ON command
     WHEN new.deleted_at IS NULL
 BEGIN

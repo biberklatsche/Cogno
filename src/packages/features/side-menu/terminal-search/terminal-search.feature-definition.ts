@@ -1,7 +1,4 @@
-import { Type } from "@angular/core";
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
-import { TerminalSearchSideComponent } from "./terminal-search-side.component";
-import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
+import { SideMenuFeatureDefinitionContract } from "@cogno/core-api";
 
 export const terminalSearchFeatureId = "terminal-search";
 
@@ -11,8 +8,5 @@ export const terminalSearchSideMenuFeatureDefinition = {
   icon: "mdiFilter",
   order: 40,
   actionName: "open_terminal_search",
-  targetComponent: TerminalSearchSideComponent,
   configPath: "search",
-  createLifecycle: (injector, sideMenuFeatureHandle) =>
-    injector.get(TerminalSearchSideMenuLifecycle).create(sideMenuFeatureHandle),
-} as const satisfies SideMenuFeatureDefinitionContract<Type<unknown>, string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract<string, string>;

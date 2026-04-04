@@ -1,15 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CliActionService } from './cli-action.service';
-import { CliActionListener } from '../_tauri/cli-action';
+import { CliActionListener } from '@cogno/app-tauri/cli-action';
 import { KeybindActionInterpreter } from '../keybinding/keybind-action.interpreter';
-import { ActionFired } from '../action/action.models';
+import { ActionDefinition } from '../keybinding/keybind-action.interpreter';
+import { AppBus } from '../app-bus/app-bus';
+import { DestroyRef } from '@angular/core';
+
+type BusPort = Pick<AppBus, 'publish'>;
+type DestroyRefPort = Pick<DestroyRef, 'onDestroy'>;
 
 describe('CliActionService', () => {
   let service: CliActionService;
-  let busMock: any;
-  let destroyRefMock: any;
-  let registerSpy: any;
-  let unlistenMock: any;
+  let busMock: BusPort;
+  let destroyRefMock: DestroyRefPort;
+  let registerSpy: ReturnType<typeof vi.spyOn>;
+  let unlistenMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     unlistenMock = vi.fn();
@@ -36,7 +41,7 @@ describe('CliActionService', () => {
     const callback = registerSpy.mock.calls[0][0];
     
     const testAction = 'test-action';
-    const mockActionDef = { actionName: 'test-action' as any, trigger: undefined, args: [] };
+    const mockActionDef: ActionDefinition = { actionName: 'test-action', trigger: undefined, args: [] };
     const parseSpy = vi.spyOn(KeybindActionInterpreter, 'parse').mockReturnValue(mockActionDef);
     
     callback(testAction);
@@ -63,3 +68,5 @@ describe('CliActionService', () => {
     expect(unlistenMock).toHaveBeenCalled();
   });
 });
+
+

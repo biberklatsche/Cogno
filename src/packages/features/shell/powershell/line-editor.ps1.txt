@@ -1,4 +1,4 @@
-# Cogno2 PowerShell line editor integration
+# Cogno PowerShell line editor integration
 # Provides out-of-band line editing actions
 
 if ($global:COGNO_PWSH_LINE_EDITOR_INITIALIZED -eq $true) {

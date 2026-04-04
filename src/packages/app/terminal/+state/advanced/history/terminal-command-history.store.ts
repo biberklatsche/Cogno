@@ -71,3 +71,5 @@ export class TerminalCommandHistoryStore {
         this._historySubject.next(commands);
     }
 }
+
+

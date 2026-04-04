@@ -24,7 +24,11 @@
               ".sql": "text"
             },
             "assets": [
-              "src/packages/assets/src/assets",
+              {
+                "glob": "**/*",
+                "input": "src/packages/assets/src/assets",
+                "output": "/assets"
+              },
               {
                 "glob": "**/*",
                 "input": "src/packages/features/autocomplete/spec-command/data",

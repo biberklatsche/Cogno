@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cogno2 Bootstrap Script for Bash
+# Cogno Bootstrap Script for Bash
 # This script is loaded as the rcfile when shell integration is enabled
 
 # Guard against double loading

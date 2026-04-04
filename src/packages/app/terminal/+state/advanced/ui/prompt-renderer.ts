@@ -1,6 +1,11 @@
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import {timespan} from "../../../../common/timespan/timespan";
 import {Command, TerminalStateManager} from "../../state";
+import { ContextMenuItem } from "../../../../menu/context-menu-overlay/context-menu-overlay.types";
+import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
+import { mdiDotsVertical } from "@mdi/js";
+import { AppBus } from "../../../../app-bus/app-bus";
+import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
 
 type PromptRecord = {
     label?: string;
@@ -14,36 +19,64 @@ type PromptRecord = {
 
 type ComparisonOperator = '==' | '!=';
 type PrimitiveValue = string | number | boolean;
+type PromptMarkerRenderContext = {
+    commandIndex?: number;
+    getCommandOutput?: () => string;
+    getBlockRange?: () => CommandMenuBlockRange;
+    scrollToCommandTop?: () => void;
+    scrollToCommandBottom?: () => void;
+};
+type PromptMarkerContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
 export class PromptMarkerRenderer {
     private static readonly DEFAULT_LABEL = 'COGNO';
     private static readonly BOLD_WEIGHT = '600';
 
-    public constructor(private readonly stateManager: TerminalStateManager, private readonly segments: PromptSegment[]) {}
+    public constructor(
+        private readonly stateManager: TerminalStateManager,
+        private readonly segments: PromptSegment[],
+        private readonly contextMenuOverlayService?: PromptMarkerContextMenuOverlayPort,
+        private readonly appBus?: AppBus,
+    ) {}
 
     public render(
         hostElement: HTMLElement,
-        commandIndex?: number
+        commandIndexOrContext?: number | PromptMarkerRenderContext
     ): void {
         hostElement.replaceChildren();
+        hostElement.style.width = '100%';
+        const renderContext = this.resolveRenderContext(commandIndexOrContext);
         const commands = this.stateManager.commands;
-        const command = commands[commandIndex ?? 0];
+        const command = commands[renderContext.commandIndex ?? 0];
 
         if (!command) {
             return;
         }
 
         const markerElement = this.createMarkerElement(command);
+        const markerContentElement = this.createMarkerContentElement();
         const record = this.buildRecord(command);
 
         if (this.segments.length === 0) {
-            this.renderFallback(markerElement);
+            this.renderFallback(markerContentElement);
         } else {
-            this.renderSegments(markerElement, record);
+            this.renderSegments(markerContentElement, record);
         }
 
         if (record.isInput) {
             markerElement.classList.add('input');
+        }
+
+        markerElement.appendChild(markerContentElement);
+        const markerMenuButton = this.createMenuButton(
+            command,
+            renderContext.getCommandOutput,
+            renderContext.getBlockRange,
+            renderContext.scrollToCommandTop,
+            renderContext.scrollToCommandBottom,
+        );
+        if (markerMenuButton) {
+            markerElement.appendChild(markerMenuButton);
         }
 
         hostElement.appendChild(markerElement);
@@ -53,6 +86,24 @@ export class PromptMarkerRenderer {
         const element = document.createElement('div');
         element.classList.add('cogno-marker');
         element.style.minWidth = `${3 + (command.id?.length ?? 2)}rem`;
+        element.style.display = 'flex';
+        element.style.alignItems = 'center';
+        element.style.justifyContent = 'flex-start';
+        element.style.gap = '0.5rem';
+        element.style.width = '100%';
+        element.style.minWidth = '0';
+        element.style.boxSizing = 'border-box';
+        return element;
+    }
+
+    private createMarkerContentElement(): HTMLDivElement {
+        const element = document.createElement('div');
+        element.classList.add('cogno-marker__content');
+        element.style.display = 'inline-flex';
+        element.style.alignItems = 'center';
+        element.style.flexWrap = 'wrap';
+        element.style.minWidth = '0';
+        element.style.flex = '0 1 auto';
         return element;
     }
 
@@ -97,6 +148,40 @@ export class PromptMarkerRenderer {
         markerElement.appendChild(span);
     }
 
+    private createMenuButton(
+        command: Command,
+        getCommandOutput?: () => string,
+        getBlockRange?: () => CommandMenuBlockRange,
+        scrollToCommandTop?: () => void,
+        scrollToCommandBottom?: () => void,
+    ): HTMLButtonElement | undefined {
+        if (!this.contextMenuOverlayService || !command.command?.trim()) {
+            return undefined;
+        }
+
+        const buttonElement = document.createElement('button');
+        buttonElement.type = 'button';
+        buttonElement.classList.add('button', 'icon-button', 'prompt-marker-menu-button');
+
+        buttonElement.setAttribute('aria-label', 'Open command menu');
+        buttonElement.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width: 1rem; height: 1rem; display: block;">
+                <path d="${mdiDotsVertical}" fill="currentColor"></path>
+            </svg>
+        `;
+        buttonElement.addEventListener('click', (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const items = this.buildMenuItems(command, getCommandOutput, getBlockRange, scrollToCommandTop, scrollToCommandBottom);
+            this.contextMenuOverlayService?.openContextForElement(
+                buttonElement,
+                { items },
+            );
+        });
+
+        return buttonElement;
+    }
+
     private buildRecord(command: Command): PromptRecord {
         return this.createCommandRecord(command);
     }
@@ -120,6 +205,38 @@ export class PromptMarkerRenderer {
             machine: command.machine,
             isInput: false,
         };
+    }
+
+    private buildMenuItems(
+        command: Command,
+        getCommandOutput?: () => string,
+        getBlockRange?: () => CommandMenuBlockRange,
+        scrollToCommandTop?: () => void,
+        scrollToCommandBottom?: () => void,
+    ): ContextMenuItem[] {
+        return buildCommandMenuItems({
+            commandText: command.command,
+            getCommandOutput,
+            getBlockRange,
+            scrollToCommandTop,
+            scrollToCommandBottom,
+            appBus: this.appBus,
+            terminalId: this.stateManager.terminalId,
+        });
+    }
+
+    private resolveRenderContext(commandIndexOrContext?: number | PromptMarkerRenderContext): PromptMarkerRenderContext {
+        if (typeof commandIndexOrContext === 'number' || commandIndexOrContext === undefined) {
+            return {
+                commandIndex: commandIndexOrContext,
+                getCommandOutput: undefined,
+                getBlockRange: undefined,
+                scrollToCommandTop: undefined,
+                scrollToCommandBottom: undefined,
+            };
+        }
+
+        return commandIndexOrContext;
     }
 
     private resolveSegmentText(

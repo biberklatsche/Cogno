@@ -1,6 +1,21 @@
 {
   "name": "diff",
   "description": "Compare files line by line",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-path",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file",
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": [

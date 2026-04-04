@@ -2,13 +2,18 @@ import {Component, computed} from '@angular/core';
 import {TerminalStateManager} from '../+state/state';
 import {toSignal} from "@angular/core/rxjs-interop";
 import {map} from "rxjs";
-import { IconComponent } from "@cogno/core-ui";
+import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import {TerminalSession} from "../+state/terminal.session";
 import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
-import {TooltipDirective} from "../../common/tooltip/tooltip.directive";
 import {ConfigService} from "../../config/+state/config.service";
 import { timespan } from "../../common/timespan/timespan";
+
+type HeaderCommandViewModel = {
+  command?: string;
+  duration?: number;
+  returnCode?: number;
+};
 
 @Component({
   selector: 'app-terminal-header',
@@ -42,6 +47,13 @@ import { timespan } from "../../common/timespan/timespan";
               </span>
             }
           </span>
+          <button
+            class="button icon-button command-menu-button"
+            type="button"
+            aria-label="Open command menu"
+            (click)="openCommandMenu($event)">
+              <app-icon name="mdiDotsVertical"></app-icon>
+          </button>
         } @else {
           <span class="command">&nbsp;</span>
         }
@@ -56,7 +68,7 @@ import { timespan } from "../../common/timespan/timespan";
           class="button icon-button terminal-menu-button"
           type="button"
           (click)="openMenu($event)">
-          <app-icon name="mdiDotsVertical"></app-icon>
+            <app-icon name="mdiDotsVertical"></app-icon>
         </button>
       </span>
     </div>
@@ -126,6 +138,19 @@ import { timespan } from "../../common/timespan/timespan";
       margin-left: auto;
     }
 
+    .command-menu-button {
+      flex: 0 0 auto;
+      width: 1.4rem;
+      height: 1.4rem;
+      padding: 0;
+
+      app-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+
     .terminal-menu-button {
       flex: 0 0 auto;
     }
@@ -171,9 +196,23 @@ export class TerminalHeaderComponent {
   ) {
   }
 
-  commandOutOfView = toSignal(this.stateManager.commands$.pipe(
-      map(commands => commands.find(s => s.isFirstCommandOutOfViewport))
-  ));
+  commandOutOfView = toSignal(
+      this.stateManager.commands$.pipe(
+          map((commands): HeaderCommandViewModel | undefined => {
+              const commandOutOfView = commands.find((command) => command.isFirstCommandOutOfViewport);
+              if (!commandOutOfView) {
+                  return undefined;
+              }
+
+              return {
+                  command: commandOutOfView.command,
+                  duration: commandOutOfView.duration,
+                  returnCode: commandOutOfView.returnCode,
+              };
+          }),
+      ),
+      { initialValue: undefined },
+  );
 
   cwd = toSignal(this.stateManager.state$.pipe(
       map(state => state.cwd)
@@ -215,6 +254,20 @@ export class TerminalHeaderComponent {
     );
   }
 
+  openCommandMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.terminalSession.focus();
+    const items: ContextMenuItem[] = this.terminalSession.buildHeaderCommandMenu();
+    if (items.length === 0) {
+      return;
+    }
+    this.menu.openContextForElement(
+      event.currentTarget as HTMLElement,
+      {items},
+    );
+  }
+
   private getInitialOsc9ProgressBarEnabled(): boolean {
       try {
           return this.configService.config.terminal?.progress_bar?.enabled ?? true;
@@ -223,3 +276,5 @@ export class TerminalHeaderComponent {
       }
   }
 }
+
+

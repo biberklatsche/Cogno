@@ -1,4 +1,4 @@
-import { AutocompleteQueryContextContract, ShellTypeContract } from "@cogno/core-sdk";
+import { AutocompleteQueryContextContract, BackendOsContract, ShellTypeContract } from "@cogno/core-api";
 
 export type ShellConstraint = ShellTypeContract;
 
@@ -74,11 +74,17 @@ export type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branch
 
 export type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
 
+export type ProcessListSpecProviderBinding = SpecProviderBindingBase<"process-list", undefined>;
+
+export type SshHostsSpecProviderBinding = SpecProviderBindingBase<"ssh-hosts", undefined>;
+
 export type SpecProviderBinding =
     | CommandListSpecProviderBinding
     | FilesystemSpecProviderBinding
     | GitBranchesSpecProviderBinding
-    | NpmScriptsSpecProviderBinding;
+    | NpmScriptsSpecProviderBinding
+    | ProcessListSpecProviderBinding
+    | SshHostsSpecProviderBinding;
 
 export type SpecProviderContext = {
     queryContext: AutocompleteQueryContextContract;
@@ -99,3 +105,13 @@ export interface SpecSuggestionProvider {
     readonly id: string;
     suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>>;
 }
+
+export type SpecSuggestionProviderRegistration = {
+    provider: SpecSuggestionProvider;
+    shells?: ShellConstraint[];
+    backendOs?: BackendOsContract[];
+    priority?: number;
+};
+
+
+

@@ -1,4 +1,4 @@
-import { NotificationChannelsContract, NotificationTypeContract } from "@cogno/core-sdk";
+import { NotificationChannelsContract, NotificationTypeContract } from "@cogno/core-api";
 import { MessageBase } from "../../app-bus/app-bus";
 import { TerminalId } from "../../grid-list/+model/model";
 
@@ -17,3 +17,6 @@ export type NotificationEvent = MessageBase<
     readonly type?: NotificationTypeContract;
   }
 >;
+
+
+

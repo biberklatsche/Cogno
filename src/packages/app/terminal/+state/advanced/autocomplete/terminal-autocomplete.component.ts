@@ -1,12 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, ViewChild } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, signal, ViewChild } from "@angular/core";
 import { NgStyle } from "@angular/common";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { TooltipDirective } from "@cogno/core-ui";
 
 import { SuggestionFilterMode, TerminalAutocompleteService } from "./terminal-autocomplete.service";
 import { AutocompleteSuggestion } from "./autocomplete.types";
-import { TooltipDirective } from "../../../../common/tooltip/tooltip.directive";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
+
+const ITEM_HEIGHT_PX = 32;
+const MAX_VISIBLE_ITEMS = 5;
+const LIST_VERTICAL_PADDING_PX = 4;
+const VIRTUAL_BUFFER_ITEMS = 3;
 
 @Component({
     selector: "app-terminal-autocomplete",
@@ -24,29 +29,35 @@ import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.d
                     transform: viewState().placement === 'above' ? 'translateY(-100%)' : 'none'
                 }"
             >
-                <div class="autocomplete-list">
-                    @for (item of viewState().suggestions; track item.label + ':' + $index) {
+                <div class="autocomplete-list" #list (scroll)="onListScroll($event)">
+                    <div
+                        class="autocomplete-list-viewport"
+                        [style.height.px]="totalContentHeight()"
+                    >
+                    @for (entry of visibleSuggestions(); track entry.item.label + ':' + entry.index) {
                         <button
-                            [attr.data-index]="$index"
+                            [attr.data-index]="entry.index"
                             class="autocomplete-item"
-                            [class.active]="$index === viewState().selectedIndex"
+                            [class.active]="entry.index === viewState().selectedIndex"
+                            [style.transform]="'translateY(' + entry.offsetTop + 'px)'"
                             type="button"
                         >
                             <span
                                 class="label"
                                 appStartEllipsis
-                                [appStartEllipsis]="item.label"
-                                [appStartEllipsisMatches]="item.matchRanges"
+                                [appStartEllipsis]="entry.item.label"
+                                [appStartEllipsisMatches]="entry.item.matchRanges"
                             ></span>
-                            <span class="meta" appTooltip="{{ item.source }} &middot; {{ item.score }}">
+                            <span class="meta" appTooltip="{{ entry.item.source }} &middot; {{ entry.item.score }}">
                                 <span
                                     class="source-dot"
-                                    [class.history]="isHistorySuggestion(item)"
-                                    [class.context]="!isHistorySuggestion(item)"
+                                    [class.history]="isHistorySuggestion(entry.item)"
+                                    [class.context]="!isHistorySuggestion(entry.item)"
                                 ></span>
                             </span>
                         </button>
                     }
+                    </div>
                 </div>
                 <div class="autocomplete-description">
                     <span class="description-text" [appTooltip]="selectedDescription()">
@@ -88,11 +99,18 @@ import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.d
             max-height: calc(5 * 32px + 8px);
             overflow-y: auto;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        .autocomplete-list-viewport {
+            position: relative;
+            width: 100%;
         }
 
         .autocomplete-item {
             display: flex;
             width: 100%;
+            box-sizing: border-box;
             background: transparent;
             color: var(--foreground-color);
             border: none;
@@ -101,11 +119,16 @@ import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.d
             align-items: baseline;
             justify-content: space-between;
             gap: 8px;
-            min-height: 25px;
-            padding: 6px 8px;
+            height: 32px;
+            min-height: 32px;
+            padding: 4px 8px;
             cursor: default;
             font-family: var(--font-family);
             font-size: calc(var(--font-size) - 1px);
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
         }
 
         .autocomplete-item.active {
@@ -212,7 +235,9 @@ import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.d
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TerminalAutocompleteComponent {
-    @ViewChild("panel") private panelRef?: ElementRef<HTMLDivElement>;
+    @ViewChild("list") private listRef?: ElementRef<HTMLDivElement>;
+    private readonly scrollTop = signal(0);
+    private previousSuggestions: AutocompleteSuggestion[] = [];
 
     protected readonly viewState = toSignal(this.autocomplete.viewState$, { initialValue: {
             visible: false,
@@ -236,10 +261,37 @@ export class TerminalAutocompleteComponent {
         if (mode === "history-only") return "Suggestions from your command history";
         return "Suggestions from history and the current context";
     });
+    protected readonly viewportHeight = ITEM_HEIGHT_PX * MAX_VISIBLE_ITEMS + LIST_VERTICAL_PADDING_PX * 2;
+    protected readonly totalContentHeight = computed(() =>
+        this.viewState().suggestions.length * ITEM_HEIGHT_PX + LIST_VERTICAL_PADDING_PX * 2
+    );
+    protected readonly visibleSuggestions = computed(() => {
+        const suggestions = this.viewState().suggestions;
+        const maxVisibleItems = Math.min(MAX_VISIBLE_ITEMS, suggestions.length);
+        const rawStartIndex = Math.floor(this.scrollTop() / ITEM_HEIGHT_PX) - VIRTUAL_BUFFER_ITEMS;
+        const startIndex = Math.max(0, rawStartIndex);
+        const endIndex = Math.min(
+            suggestions.length,
+            startIndex + maxVisibleItems + (VIRTUAL_BUFFER_ITEMS * 2),
+        );
+
+        return suggestions.slice(startIndex, endIndex).map((item, offset) => {
+            const index = startIndex + offset;
+            return {
+                index,
+                item,
+                offsetTop: LIST_VERTICAL_PADDING_PX + index * ITEM_HEIGHT_PX,
+            };
+        });
+    });
 
     constructor(private readonly autocomplete: TerminalAutocompleteService) {
         effect(() => {
             const view = this.viewState();
+            if (view.suggestions !== this.previousSuggestions) {
+                this.previousSuggestions = view.suggestions;
+                this.resetScroll();
+            }
             if (!view.visible || view.selectedIndex === null) return;
             queueMicrotask(() => this.scrollSelectedIntoView(view.selectedIndex!));
         });
@@ -261,10 +313,40 @@ export class TerminalAutocompleteComponent {
         return parts.some(part => part.includes("history"));
     }
 
+    protected onListScroll(event: Event): void {
+        const target = event.target;
+        if (!(target instanceof HTMLDivElement)) return;
+        this.scrollTop.set(target.scrollTop);
+    }
+
     private scrollSelectedIntoView(index: number): void {
-        const panel = this.panelRef?.nativeElement;
-        if (!panel) return;
-        const selected = panel.querySelector<HTMLButtonElement>(`.autocomplete-item[data-index="${index}"]`);
-        selected?.scrollIntoView({ block: "nearest", inline: "nearest" });
+        const list = this.listRef?.nativeElement;
+        if (!list) return;
+
+        const itemTop = index * ITEM_HEIGHT_PX;
+        const itemBottom = itemTop + ITEM_HEIGHT_PX;
+        const viewportTop = list.scrollTop;
+        const viewportBottom = viewportTop + this.viewportHeight;
+
+        if (itemTop < viewportTop) {
+            list.scrollTop = itemTop;
+            this.scrollTop.set(list.scrollTop);
+            return;
+        }
+
+        if (itemBottom > viewportBottom) {
+            list.scrollTop = itemBottom - this.viewportHeight;
+            this.scrollTop.set(list.scrollTop);
+        }
+    }
+
+    private resetScroll(): void {
+        this.scrollTop.set(0);
+        const list = this.listRef?.nativeElement;
+        if (list) {
+            list.scrollTop = 0;
+        }
     }
 }
+
+

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../app-bus/app-bus";
 import { OsNotificationChannelService } from "./os-notification-channel.service";
-import { NotificationOs } from "../../_tauri/notification";
+import { NotificationOs } from "@cogno/app-tauri/notification";
 
-vi.mock("../../_tauri/notification", () => ({
+vi.mock("@cogno/app-tauri/notification", () => ({
   NotificationOs: {
     send: vi.fn<(title: string, body?: string) => Promise<unknown>>(),
   },
@@ -65,3 +65,5 @@ describe("OsNotificationChannelService", () => {
     expect(publishSpy).not.toHaveBeenCalled();
   });
 });
+
+

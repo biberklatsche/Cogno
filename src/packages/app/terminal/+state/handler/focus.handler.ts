@@ -80,3 +80,5 @@ export class FocusHandler implements ITerminalHandler {
         return this.stateManager.isFocused;
     }
 }
+
+

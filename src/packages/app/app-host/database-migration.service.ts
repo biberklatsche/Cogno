@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@angular/core";
+import { databaseAccessToken } from "@cogno/app/app-host/app-host.tokens";
 import {
   buildDatabaseMigrationIdentifier,
   DatabaseAccessContract,
-  databaseAccessToken,
   DatabaseMigrationContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 
 @Injectable({ providedIn: "root" })
 export class DatabaseMigrationService {
@@ -90,3 +90,4 @@ export class DatabaseMigrationService {
     return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   }
 }
+

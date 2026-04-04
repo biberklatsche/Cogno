@@ -1,5 +1,5 @@
 import {Terminal} from "@xterm/xterm";
-import {OS} from "../../../_tauri/os";
+import {OS} from "@cogno/app-tauri/os";
 import {FitAddon} from "@xterm/addon-fit";
 import {SearchAddon} from "@xterm/addon-search";
 import {Unicode11Addon} from "@xterm/addon-unicode11";
@@ -18,6 +18,7 @@ import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
     open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
+    readonly terminal: Terminal;
 
     dispose(): void;
 
@@ -113,4 +114,10 @@ export class Renderer implements IRenderer, IDisposable {
 
         this._terminal?.dispose();
     }
+
+    public get terminal(): Terminal {
+        return this._terminal;
+    }
 }
+
+

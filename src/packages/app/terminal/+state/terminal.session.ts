@@ -25,7 +25,7 @@ import {CommandLineEditor} from './advanced/ui/command-line.editor';
 import {ShellProfile} from "../../config/+models/shell-config";
 import {Injectable} from "@angular/core";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {PaneMaximizedChangedEvent} from "../../grid-list/+bus/events";
 import {LinkHandler} from "./handler/link.handler";
 import {DialogRef, DialogService} from "../../common/dialog";
@@ -36,8 +36,12 @@ import {
 } from "../system-info/terminal-system-info-dialog.component";
 import {TerminalNotificationHandler} from "./handler/terminal-notification.handler";
 import {NotificationChannels} from "../../notification/+bus/events";
-import { NotificationChannelContract } from "@cogno/core-sdk";
+import { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
+import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
+import { ScrollStateHandler } from "./handler/scroll-state.handler";
 
 type NotificationChannelId = string;
 
@@ -55,6 +59,7 @@ export class TerminalSession {
     private processInfoDialogReference?: DialogRef<void>;
     private sessionNotificationChannels?: NotificationChannels;
     private readonly completedCommandNotificationHandler: CompletedCommandNotificationHandler;
+    private readonly commandBlockResolver: CommandBlockResolver;
 
     private terminalId?: TerminalId;
     private shellProfile?: ShellProfile;
@@ -67,6 +72,7 @@ export class TerminalSession {
         private terminalAutocompleteFeatureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
         private dialog: DialogService,
         private wiringService: AppWiringService,
+        private contextMenuOverlayService: ContextMenuOverlayService,
     ) {
         this.renderer = new Renderer(this.configService.config);
         this.disposables = [
@@ -79,6 +85,7 @@ export class TerminalSession {
             () => this.terminalId,
             () => this.getSessionNotificationChannels(),
         );
+        this.commandBlockResolver = new CommandBlockResolver(() => this.renderer.terminal);
     }
 
     initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
@@ -112,29 +119,40 @@ export class TerminalSession {
         this.disposables.push(this.renderer.register(new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager)));
         this.disposables.push(this.renderer.register(this.focusHandler));
         this.disposables.push(this.renderer.register(new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager)));
-        this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty)));
         this.disposables.push(this.renderer.register(new TerminalSearchHandler(this.bus, this.terminalId, this.configService)));
         this.disposables.push(this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)));
         this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
+        this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
         this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager)));
         this.disposables.push(new KeybindExecutor(this.bus, this.stateManager))
 
         if(this.shellProfile.enable_shell_integration) {
             this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(this.shellProfile.shell_type);
+            const shellDefinition = this.wiringService
+                .getShellDefinitions()
+                .find((definition: ShellDefinitionContract) => definition.support.shellType === this.shellProfile?.shell_type);
+            this.disposables.push(this.renderer.register(new InputHandler(
+                this.bus,
+                this.terminalId,
+                this.stateManager,
+                this.pty,
+                shellDefinition?.lineEditor,
+            )));
             this.disposables.push(this.renderer.register(new CommandLineObserver(
                 this.stateManager,
                 this.configService.getPromptSegments(),
+                this.contextMenuOverlayService,
+                this.bus,
                 this.completedCommandNotificationHandler.handleCompletedCommand,
             )));
-            const shellDefinition = this.wiringService
-                .getShellDefinitions()
-                .find(definition => definition.support.shellType === this.shellProfile?.shell_type);
             this.disposables.push(this.renderer.register(new CommandLineEditor(
                 this.bus,
                 this.pty,
                 this.stateManager,
                 shellDefinition?.lineEditor,
             )));
+        } else {
+            this.disposables.push(this.renderer.register(new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty)));
         }
 
     }
@@ -195,6 +213,10 @@ export class TerminalSession {
         return items;
     }
 
+    buildHeaderCommandMenu(): ContextMenuItem[] {
+        return this.buildHeaderCommandMenuItems();
+    }
+
     dispose() {
         if (this.disposed) return;
         this.processInfoDialogReference?.close();
@@ -209,6 +231,10 @@ export class TerminalSession {
 
     focus(): void{
         this.focusHandler?.focus();
+    }
+
+    scrollToBottom(): void {
+        this.renderer.terminal.scrollToBottom();
     }
 
     insertPaths(paths: readonly string[]): void {
@@ -355,6 +381,46 @@ export class TerminalSession {
         }
 
         return notificationAvailability;
+    }
+
+    private buildHeaderCommandMenuItems(): ContextMenuItem[] {
+        const commandOutOfView = this.stateManager.commands.find((command) => command.isFirstCommandOutOfViewport);
+        if (!commandOutOfView?.command) {
+            return [];
+        }
+
+        return buildCommandMenuItems({
+            commandText: commandOutOfView.command,
+            getCommandOutput: () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.outputText ?? "",
+            getBlockRange: () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.blockRange ?? this.createEmptyBlockRange(),
+            scrollToCommandTop: () => {
+                const commandBlockDetails = this.commandBlockResolver.resolveByCommandId(commandOutOfView.id);
+                if (!commandBlockDetails) {
+                    return;
+                }
+
+                this.renderer.terminal.scrollToLine(commandBlockDetails.markerLineIndex);
+            },
+            scrollToCommandBottom: () => {
+                const commandBlockDetails = this.commandBlockResolver.resolveByCommandId(commandOutOfView.id);
+                if (!commandBlockDetails) {
+                    return;
+                }
+
+                this.renderer.terminal.scrollToLine(
+                    Math.max(commandBlockDetails.markerLineIndex, commandBlockDetails.nextMarkerLineIndex - 1),
+                );
+            },
+            appBus: this.bus,
+            terminalId: this.terminalId,
+        });
+    }
+
+    private createEmptyBlockRange(): CommandMenuBlockRange {
+        return {
+            beginBufferLine: 1,
+            endBufferLine: 0,
+        };
     }
 
     private getNotificationDefaults(): NotificationChannels {

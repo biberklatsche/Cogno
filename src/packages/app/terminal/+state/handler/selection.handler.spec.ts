@@ -3,11 +3,11 @@ import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.fa
 import { SelectionHandler } from './selection.handler';
 import { AppBus } from '../../../app-bus/app-bus';
 import { Terminal } from '@xterm/xterm';
-import { Clipboard } from '../../../_tauri/clipboard';
+import { Clipboard } from '@cogno/app-tauri/clipboard';
 import { ConfigServiceMock } from '../../../../__test__/mocks/config-service.mock';
 import { clear, getAppBus, getConfigService, getSelectionHandler, getStateManager } from '../../../../__test__/test-factory';
 
-vi.mock('../../../_tauri/clipboard', () => ({
+vi.mock('@cogno/app-tauri/clipboard', () => ({
   Clipboard: {
     writeText: vi.fn(),
   },
@@ -133,3 +133,5 @@ describe('SelectionHandler', () => {
     });
   });
 });
+
+

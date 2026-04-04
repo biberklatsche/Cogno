@@ -3,7 +3,7 @@ import {
     AutocompleteQueryContextContract,
     AutocompleteSuggestionContract,
     ShellContextContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { TerminalState } from "../../state";
 
 export type AutocompleteMatchRange = AutocompleteMatchRangeContract;
@@ -23,3 +23,6 @@ export type BaseQueryContext = Extract<AutocompleteQueryContextContract, { shell
 export type CdQueryContext = Extract<AutocompleteQueryContextContract, { mode: "cd" }>;
 export type CommandQueryContext = Extract<AutocompleteQueryContextContract, { mode: "command" }>;
 export type QueryContext = AutocompleteQueryContextContract;
+
+
+

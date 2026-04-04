@@ -2,16 +2,15 @@ import {Component} from '@angular/core';
 
 import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
 import {TabListComponent} from "./tab-list/tab-list.component";
-import {OS} from "./_tauri/os";
+import {OS} from "@cogno/app-tauri/os";
 import {GridListComponent} from "./grid-list/grid-list.component";
 import {AppBus} from "./app-bus/app-bus";
-import {DB} from "./_tauri/db";
+import {DB} from "@cogno/app-tauri/db";
 import {Environment} from "./common/environment/environment";
 import {appDatabaseMigrations} from "./migrations/migrate";
 import {AppNotificationToastStackComponent} from "./notification/app-notification-toast-stack.component";
 import {DatabaseMigrationService} from "./app-host/database-migration.service";
 import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
-import { WorkspaceBusBridgeService } from "@cogno/features/side-menu/workspace/workspace-bus-bridge.service";
 
 @Component({
     selector: 'app-root',
@@ -66,7 +65,6 @@ export class AppComponent {
     constructor(
       bus: AppBus,
       private readonly databaseMigrationService: DatabaseMigrationService,
-      private readonly workspaceBusBridgeService: WorkspaceBusBridgeService,
     ) {
         window.addEventListener('contextmenu', (event) => {
             event.preventDefault();
@@ -78,3 +76,5 @@ export class AppComponent {
         });
     }
 }
+
+

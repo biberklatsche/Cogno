@@ -101,3 +101,5 @@ describe("TerminalNotificationHandler", () => {
         expect(disposeSpy).toHaveBeenCalledTimes(1);
     });
 });
+
+

@@ -4,7 +4,7 @@ import {Subscription} from "rxjs";
 import {IDisposable} from "../../../common/models/models";
 import {AppBus} from "../../../app-bus/app-bus";
 import {TerminalId} from "../../../grid-list/+model/model";
-import {Clipboard} from "../../../_tauri/clipboard";
+import {Clipboard} from "@cogno/app-tauri/clipboard";
 import {ConfigService} from "../../../config/+state/config.service";
 import {TerminalStateManager} from "../state";
 
@@ -60,3 +60,5 @@ export class SelectionHandler implements ITerminalHandler {
         this.terminalStateManager.setHasSelection(this.hasSelection());
     }
 }
+
+

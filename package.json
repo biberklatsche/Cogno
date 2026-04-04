@@ -1,6 +1,7 @@
 {
-  "name": "cogno2",
+  "name": "cogno",
   "version": "0.1.0",
+  "description": "A terminal workspace for focused daily shell work",
   "license": "MPL-2.0",
   "licenseText": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.8.1",
@@ -9,7 +10,7 @@
     "dev:web": "ng serve --configuration development",
     "lint": "pnpm lint:code && pnpm lint:architecture",
     "lint:code": "pnpm exec biome check .",
-    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/packages/app/**/*.ts\" \"src/packages/core-sdk/**/*.ts\" \"src/packages/core-host/**/*.ts\" \"src/packages/features/**/*.ts\"",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/app/**/*.ts\" \"src/products/**/*.ts\" \"src/packages/app-tauri/**/*.ts\" \"src/packages/core-domain/**/*.ts\" \"src/packages/app/**/*.ts\" \"src/packages/core-api/**/*.ts\" \"src/packages/core-host/**/*.ts\" \"src/packages/core-ui/**/*.ts\" \"src/packages/features/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

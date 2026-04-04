@@ -1,9 +1,8 @@
 import {DOCUMENT} from "@angular/common";
 import {Component, Inject, OnDestroy, input} from '@angular/core';
-import { IconComponent } from "@cogno/core-ui";
+import { DragPreviewService, IconComponent } from "@cogno/core-ui";
 import {GridListService} from "../+state/grid-list.service";
 import {toSignal} from "@angular/core/rxjs-interop";
-import {DragPreviewService} from "../../common/drag-preview/drag-preview.service";
 
 @Component({
   selector: 'app-pane-header',
@@ -178,3 +177,5 @@ export class PaneHeaderComponent implements OnDestroy {
     return !!elementUnderPointer.closest('.tab-list, app-tab-list');
   }
 }
+
+

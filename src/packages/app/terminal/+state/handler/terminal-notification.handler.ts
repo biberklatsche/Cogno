@@ -88,3 +88,5 @@ export class TerminalNotificationHandler implements ITerminalHandler {
 function hasEnabledNotificationChannel(notificationChannels: NotificationChannels): boolean {
     return Object.values(notificationChannels).some(Boolean);
 }
+
+

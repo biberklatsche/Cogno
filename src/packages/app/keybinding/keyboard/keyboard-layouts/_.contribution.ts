@@ -26,3 +26,5 @@ export class KeyboardLayoutContribution {
         this._layoutInfos.push(layout);
     }
 }
+
+

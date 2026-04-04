@@ -15,6 +15,7 @@ import {
     PtyInitializedEvent,
     TerminalBusyChangedEvent,
     TerminalCwdChangedEvent,
+    TerminalSearchPanelRequestedEvent,
     TerminalSearchRevealRequestedEvent,
     TerminalSearchRequestedEvent,
     TerminalSearchResultEvent,
@@ -43,7 +44,6 @@ import {ActionFiredEvent} from "../action/action.models";
 import {NotificationEvent} from "../notification/+bus/events";
 import {SideMenuEvent} from "../menu/side-menu/+bus/events";
 import {PaneMaximizedChangedEvent, TabTitleChangedEvent} from "../grid-list/+bus/events";
-import { SelectedWorkspaceChangedEvent } from "@cogno/features/side-menu/workspace/+bus/events";
 
 export type TerminalCommandType = AppMessage['type']
 
@@ -62,6 +62,7 @@ export type AppMessage =
     | PtyInitializedEvent
     | TerminalBusyChangedEvent
     | TerminalCwdChangedEvent
+    | TerminalSearchPanelRequestedEvent
     | TerminalTitleChangedEvent
     | TerminalSearchRequestedEvent
     | TerminalSearchResultEvent
@@ -111,5 +112,6 @@ export type AppMessage =
     | SideMenuEvent
     | TabTitleChangedEvent
     | PaneMaximizedChangedEvent
-    | SelectedWorkspaceChangedEvent
     ;
+
+

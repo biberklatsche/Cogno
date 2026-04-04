@@ -4,7 +4,7 @@ import { AppBus } from '../../app-bus/app-bus';
 import { clear, getAppBus, getTerminalComponentFactory, getDestroyRef } from "../../../__test__/test-factory";
 import { TerminalComponentFactory } from "./terminal-component.factory";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import {TerminalConfig} from "@cogno/core-sdk";
+import {TerminalConfig} from "@cogno/core-api";
 import {TabAddedEvent, TabRemovedEvent, TabSelectedEvent} from "../../tab-list/+bus/events";
 import {Grid} from "../+model/model";
 import {
@@ -331,7 +331,7 @@ describe('GridListService', () => {
             }));
         });
 
-        it('should publish FocusTerminal after delayed pane removal if focused', async () => {
+        it('should publish FocusTerminal after pane removal if focused', async () => {
             vi.spyOn(IdCreator, 'newTerminalId').mockReturnValue('term-2');
             bus.publish({ type: 'SplitPaneRight', payload: initialTerminalId } as SplitPaneRightAction);
             
@@ -339,21 +339,18 @@ describe('GridListService', () => {
             bus.publish({ type: 'TerminalFocused', payload: 'term-2' } as TerminalFocusedEvent);
             
             const publishSpy = vi.spyOn(bus, 'publish');
-            vi.useFakeTimers();
             
             bus.publish({
                 type: 'RemovePane',
                 payload: 'term-2'
             } as RemovePaneAction);
 
-            vi.runAllTimers();
-            
-            expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-                type: 'FocusTerminal',
-                payload: initialTerminalId
-            }));
-            
-            vi.useRealTimers();
+            await vi.waitFor(() => {
+                expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
+                    type: 'FocusTerminal',
+                    payload: initialTerminalId
+                }));
+            });
         });
     });
 
@@ -484,3 +481,6 @@ describe('GridListService', () => {
     });
 
 });
+
+
+

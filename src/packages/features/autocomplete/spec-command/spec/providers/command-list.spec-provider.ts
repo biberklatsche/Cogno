@@ -1,4 +1,4 @@
-import { CommandRunnerContract } from "@cogno/core-sdk";
+import { CommandRunnerContract } from "@cogno/core-api";
 import {
     CommandListSpecProviderParams,
     SpecProvidedSuggestion,
@@ -165,3 +165,6 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
         this.cache.set(key, value);
     }
 }
+
+
+

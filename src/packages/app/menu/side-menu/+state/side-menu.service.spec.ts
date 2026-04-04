@@ -118,3 +118,5 @@ describe('SideMenuService', () => {
         expect(service.panelWidthInPixels()).toBe(640);
     });
 });
+
+

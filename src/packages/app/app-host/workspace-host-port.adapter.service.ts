@@ -4,13 +4,10 @@ import { map, Observable } from "rxjs";
 import {
   WorkspaceEntryContract,
   WorkspaceHostPortContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { DialogService } from "../common/dialog";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
-import {
-  WorkspaceConfigUi,
-  WorkspaceHostApplicationService,
-} from "./workspace-host-application.service";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContract {
@@ -46,6 +43,14 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
     await this.workspaceHostApplicationService.closeWorkspace(workspaceId);
   }
 
+  async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
+    await this.workspaceHostApplicationService.reorderWorkspaces(sourceWorkspaceId, targetWorkspaceId);
+  }
+
+  async persistWorkspaceOrder(): Promise<void> {
+    await this.workspaceHostApplicationService.persistWorkspaceOrder();
+  }
+
   openCreateWorkspaceDialog(): void {
     const workspaceDraft = this.workspaceHostApplicationService.createWorkspaceDraft();
     this.dialogService.open(WorkspaceEditDialogComponent, {
@@ -65,7 +70,7 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
       title: `Edit ${workspaceConfigUi.name}`,
       width: "420px",
       showCloseButton: true,
-      data: { ...workspaceConfigUi } as WorkspaceConfigUi,
+      data: { ...workspaceConfigUi },
     });
   }
 
@@ -73,3 +78,6 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
     await this.workspaceHostApplicationService.deleteWorkspace(workspaceId);
   }
 }
+
+
+

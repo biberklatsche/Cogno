@@ -5,11 +5,21 @@ import { PromptSegment } from '../../../../config/+models/prompt-config';
 import { AppBus } from '../../../../app-bus/app-bus';
 import { PathFactory } from '@cogno/core-host';
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { ContextMenuOverlayService } from '../../../../menu/context-menu-overlay/context-menu-overlay.service';
+import { Clipboard } from '@cogno/app-tauri/clipboard';
+
+vi.mock('@cogno/app-tauri/clipboard', () => ({
+    Clipboard: {
+        writeText: vi.fn(),
+        readText: vi.fn(),
+    },
+}));
 
 describe('PromptMarkerRenderer', () => {
     let stateManager: TerminalStateManager;
     let busMock: AppBus;
     let hostElement: HTMLElement;
+    let contextMenuOverlayService: Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
     beforeEach(() => {
         PathFactory.setDefinitions([
@@ -20,6 +30,9 @@ describe('PromptMarkerRenderer', () => {
         stateManager = new TerminalStateManager(busMock);
         stateManager.initialize('test-term', 'Bash' as any);
         hostElement = document.createElement('div');
+        contextMenuOverlayService = {
+            openContextForElement: vi.fn(),
+    };
     });
 
     it('should render default label when no segments are provided', () => {
@@ -210,4 +223,130 @@ describe('PromptMarkerRenderer', () => {
 
         expect(hostElement.textContent).toBe('');
     });
+
+    it('should render a menu button and open a command menu', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getCommandOutput = vi.fn().mockReturnValue('test output');
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        expect(menuButton).toBeTruthy();
+        expect(getCommandOutput).not.toHaveBeenCalled();
+
+        menuButton.click();
+
+        expect(getCommandOutput).toHaveBeenCalledTimes(1);
+        expect(contextMenuOverlayService.openContextForElement).toHaveBeenCalledWith(
+            menuButton,
+            expect.objectContaining({
+                items: expect.arrayContaining([
+                    expect.objectContaining({ label: 'Copy Command', disabled: false }),
+                    expect.objectContaining({ label: 'Copy Output', disabled: false }),
+                    expect.objectContaining({ label: 'Scroll to Top', disabled: true }),
+                    expect.objectContaining({ label: 'Scroll to Bottom', disabled: true }),
+                    expect.objectContaining({ label: 'Filter Block', disabled: true }),
+                ]),
+            }),
+        );
+
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+        expect(menuItems[2]).toEqual(expect.objectContaining({ separator: true }));
+        expect(menuItems[5]).toEqual(expect.objectContaining({ separator: true }));
+    });
+
+    it('should copy the command text from the marker menu action', async () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getCommandOutput = vi.fn().mockReturnValue('test output');
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        menuButton.click();
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+        const copyCommandItem = menuItems.find((item) => item.label === 'Copy Command');
+
+        await copyCommandItem?.action?.();
+
+        expect(Clipboard.writeText).toHaveBeenCalledWith('pnpm test');
+    });
+
+    it('should not resolve command output before the menu is opened', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getCommandOutput = vi.fn().mockReturnValue('test output');
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+        expect(getCommandOutput).not.toHaveBeenCalled();
+    });
+
+    it('should publish search open and block filter events for filter block', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const getBlockRange = vi.fn().mockReturnValue({
+            beginBufferLine: 12,
+            endBufferLine: 20,
+        });
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, { commandIndex: 0, getBlockRange });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        menuButton.click();
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+        const filterBlockItem = menuItems.find((item) => item.label === 'Filter Block');
+
+        filterBlockItem?.action?.();
+
+        expect(getBlockRange).toHaveBeenCalledTimes(1);
+        expect(busMock.publish).toHaveBeenCalledWith(expect.objectContaining({
+            path: ['app', 'action'],
+            type: 'ActionFired',
+            payload: 'open_terminal_search',
+        }));
+        expect(busMock.publish).toHaveBeenCalledWith(expect.objectContaining({
+            path: ['app', 'terminal'],
+            type: 'TerminalSearchPanelRequested',
+            payload: expect.objectContaining({
+                terminalId: 'test-term',
+                beginBufferLine: 12,
+                endBufferLine: 20,
+            }),
+        }));
+    });
+
+    it('should execute scroll actions from the marker menu', () => {
+        stateManager.updateCommand({ id: 'cmd-1' });
+        stateManager.commands[0].set('command', 'pnpm test');
+        const scrollToCommandTop = vi.fn();
+        const scrollToCommandBottom = vi.fn();
+
+        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
+        renderer.render(hostElement, {
+            commandIndex: 0,
+            scrollToCommandTop,
+            scrollToCommandBottom,
+        });
+
+        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
+        menuButton.click();
+        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+
+        menuItems.find((item) => item.label === 'Scroll to Top')?.action?.();
+        menuItems.find((item) => item.label === 'Scroll to Bottom')?.action?.();
+
+        expect(scrollToCommandTop).toHaveBeenCalledTimes(1);
+        expect(scrollToCommandBottom).toHaveBeenCalledTimes(1);
+    });
 });
+
+
+
+
+

@@ -17,7 +17,7 @@ import {
     FeatureSearchSchema,
     FeatureTerminalSchema,
     FeatureWorkspaceSchema
-} from "@cogno/features/feature-settings.schemas";
+} from "@cogno/core-api";
 import {KeybindsSchema, Keybinding} from "./keybind-config";
 
 export {HexColor, FeatureMode, Font, Color, Cursor, Padding, ShellConfig, ShellType, Selection, Scrollbar, Keybinding};
@@ -52,3 +52,6 @@ export const ConfigSchema = z.object({
 }).strict();
 
 export type Config = z.infer<typeof ConfigSchema> & Record<string, unknown>;
+
+
+

@@ -1,6 +1,18 @@
 {
   "name": "more",
   "description": "Opposite of less",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-file",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file"
+        ]
+      }
+    }
+  ],
   "options": [
     {
       "name": [

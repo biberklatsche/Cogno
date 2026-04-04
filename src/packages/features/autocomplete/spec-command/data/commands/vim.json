@@ -1,6 +1,18 @@
 {
   "name": "vim",
   "description": "Vi IMproved, a programmer's text editor",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-file",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file"
+        ]
+      }
+    }
+  ],
   "options": [
     {
       "name": "-v",
@@ -17,6 +29,18 @@
     {
       "name": "-s",
       "description": "Enable silent mode (when in ex mode), or Read Normal mode commands from file",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "scriptin"
@@ -66,6 +90,21 @@
     {
       "name": "-V",
       "description": "Be verbose [level N] [log messages to fname]",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          },
+          "when": {
+            "minArgs": 2
+          }
+        }
+      ],
       "args": [
         {
           "name": "N"
@@ -86,6 +125,18 @@
     {
       "name": "-r",
       "description": "Recover crashed session if filename is specified, otherwise list swap files and exit",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "filename"
@@ -95,6 +146,18 @@
     {
       "name": "-L",
       "description": "Same as -r",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "filename"

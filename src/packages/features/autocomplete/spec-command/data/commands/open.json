@@ -1,6 +1,21 @@
 {
   "name": "open",
   "description": "Open files, apps, or URLs using default application",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-path",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file",
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": "-a",
@@ -112,6 +127,18 @@
         "--stdin"
       ],
       "description": "Launches the application with stdin connected to PATH; defaults to /dev/null",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "PATH"
@@ -124,6 +151,18 @@
         "--stdout"
       ],
       "description": "Launches the application with /dev/stdout connected to PATH",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "PATH"
@@ -133,6 +172,18 @@
     {
       "name": "--stderr",
       "description": "Launches the application with /dev/stderr connected to PATH",
+      "providers": [
+        {
+          "providerId": "filesystem",
+          "source": "fs-file",
+          "baseScore": 58,
+          "params": {
+            "kinds": [
+              "file"
+            ]
+          }
+        }
+      ],
       "args": [
         {
           "name": "PATH"

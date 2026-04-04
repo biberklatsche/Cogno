@@ -1,4 +1,4 @@
-import { OsType } from "../../../_tauri/os";
+import { OsType } from "@cogno/app-tauri/os";
 import { ShellType } from "../../../config/+models/config";
 import { ShellProfile } from "../../../config/+models/shell-config";
 import { ShellContext } from "../advanced/model/models";
@@ -48,3 +48,5 @@ function isWslLauncher(path: string | undefined): boolean {
     const normalized = path.replace(/\\/g, "/").toLowerCase();
     return normalized.endsWith("/wsl.exe") || normalized === "wsl.exe" || normalized.endsWith("/wsl");
 }
+
+

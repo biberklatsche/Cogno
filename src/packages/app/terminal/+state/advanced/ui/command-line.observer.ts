@@ -7,6 +7,11 @@ import {MarkerManager} from "./marker-manager";
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {debounceTime, Subject} from "rxjs";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
+import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
+import { AppBus } from "../../../../app-bus/app-bus";
+import { ErrorReporter } from "../../../../common/error/error-reporter";
+
+type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
 export class CommandLineObserver implements ITerminalHandler {
 
@@ -18,9 +23,11 @@ export class CommandLineObserver implements ITerminalHandler {
     constructor(
         private stateManager: TerminalStateManager,
         promptSegments: PromptSegment[],
+        contextMenuOverlayService: CommandLineObserverContextMenuOverlayPort,
+        appBus: AppBus,
         private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
     ) {
-        this._markerManager = new MarkerManager(stateManager, promptSegments);
+        this._markerManager = new MarkerManager(stateManager, promptSegments, contextMenuOverlayService, appBus);
 
         // Debounce marker refresh to improve performance with long outputs
         // 16ms = ~60fps, which batches rapid render events without noticeable lag
@@ -42,18 +49,24 @@ export class CommandLineObserver implements ITerminalHandler {
             try {
                 const buffer = terminal.buffer?.active;
                 const startInputY = this.findLastCognoMarkerY() + 1;
-                const cursorX = buffer.cursorX; // 0-based column in viewport
-                const cursorYViewport = buffer.cursorY; // 0-based row in viewport
-                const viewportY = buffer.viewportY; // top of viewport absolute 0-based
-                const cursorYAbsolute = cursorYViewport + viewportY; // absolute row in buffer
+                const cursorX = buffer.cursorX;
+                const cursorYViewport = buffer.cursorY;
+                const viewportY = buffer.viewportY;
+                const cursorYAbsolute = cursorYViewport + viewportY;
                 const promptHeight = cursorYAbsolute - startInputY;
                 const cursorIndex = cursorX + terminal.cols * promptHeight;
                 const input = this.stateManager.input;
                 const maxCursorIndex =  cursorIndex > input.maxCursorIndex ? cursorIndex : input.maxCursorIndex;
                 this.stateManager.updateInput({...input, cursorIndex: cursorIndex, maxCursorIndex: maxCursorIndex});
-            } catch {
-                console.log('error');
-                // ignore errors and keep defaults
+            } catch (error) {
+                ErrorReporter.reportException({
+                    error,
+                    handled: true,
+                    source: 'CommandLineObserver',
+                    context: {
+                        operation: 'onCursorMove',
+                    },
+                });
             }
         }));
         this._disposables.push(this._terminal.onRender(() => {

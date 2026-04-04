@@ -38,3 +38,5 @@ describe("AutocompleteContextParser", () => {
         expect((ctx as any).query).toBe("npm");
     });
 });
+
+

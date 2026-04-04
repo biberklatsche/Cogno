@@ -4,7 +4,7 @@ import {Observable} from "rxjs";
 import {Grid} from "./+model/model";
 import {AsyncPipe,} from "@angular/common";
 import {GridComponent} from "./grid/grid.component";
-import {TabId} from "@cogno/core-sdk";
+import {TabId} from "@cogno/core-api";
 import {EmtpyComponent} from "./emtpy/emtpy.component";
 import {SideMenuComponent} from "../menu/side-menu/side-menu/side-menu.component";
 
@@ -29,3 +29,6 @@ export class GridListComponent {
         this.activeTabId$ = gridListService.activeTabId$;
     }
 }
+
+
+

@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AppWindow } from "../_tauri/window";
+import { AppWindow } from "@cogno/app-tauri/window";
 import { TerminalSession } from "./+state/terminal.session";
 
 type NativeDragDropEvent = {
@@ -72,3 +72,5 @@ export class TerminalFileDropService {
             && clientY <= rectangle.bottom;
     }
 }
+
+

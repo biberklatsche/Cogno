@@ -5,9 +5,9 @@ import type {
   NotificationReplyChannelContract,
   NotificationChannelSettingsContract,
   NotificationChannelsContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "../../config/+state/config.service";
 
 @Injectable({ providedIn: "root" })

@@ -346,3 +346,5 @@ export class BinaryNode<Data> {
         return data;
     }
 }
+
+

@@ -6,8 +6,8 @@ import {AppBus} from '../../../../app-bus/app-bus';
 import {Subscription} from 'rxjs';
 import {IPty} from '../../pty/pty';
 import {TerminalStateManager} from "../../state";
-import {Clipboard} from "../../../../_tauri/clipboard";
-import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-sdk";
+import {Clipboard} from "@cogno/app-tauri/clipboard";
+import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-api";
 
 export class CommandLineEditor implements ITerminalHandler  {
     private _terminal?: Terminal;
@@ -50,6 +50,9 @@ export class CommandLineEditor implements ITerminalHandler  {
             if (this.stateManager.isCommandRunning) return true;
             if ((event.key === 'Backspace' || event.key === 'Delete') && this._terminal?.hasSelection()) {
                 return !this.deleteSelection();
+            }
+            if (this.shouldReplaceSelectionWithTypedText(event)) {
+                return !this.replaceSelectionWithText(event.key, event);
             }
             return true;
         });
@@ -319,42 +322,51 @@ export class CommandLineEditor implements ITerminalHandler  {
         this.deleteSelection();
     }
 
-    private deleteSelection(): boolean {
-        if (!this._terminal) return false;
+    private replaceSelectionWithText(text: string, event: KeyboardEvent): boolean {
+        if (this.replaceSelectedRange(text)) {
+            event.preventDefault();
+            event.stopPropagation();
+            return true;
+        }
 
-        const selection = this._terminal.getSelectionPosition();
-        if (!selection) return false;
-
-        const lastCognoY = this.findLastCognoMarkerY();
-        const startInputY = lastCognoY + 1;
-        const cols = this._terminal.cols;
-
-        const startIdx = (selection.start.y - startInputY) * cols + selection.start.x;
-        const endIdx = (selection.end.y - startInputY) * cols + selection.end.x;
-
-        const input = this.stateManager.input;
-        if (startIdx < 0 || endIdx > input.maxCursorIndex) {
-            console.warn('Selection is outside of input area', startIdx, endIdx);
+        if (!this.deleteSelection()) {
             return false;
         }
 
-        const deleteLength = endIdx - startIdx;
+        this._ptyWrite(text);
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    }
+
+    private deleteSelection(): boolean {
+        const range = this.getSelectedInputRange();
+        if (!range) {
+            return false;
+        }
+
+        const deleteLength = range.endIdx - range.startIdx;
         if (deleteLength <= 0) {
             this._clearSelection();
             return true;
         }
 
+        if (this.replaceSelectedRange("")) {
+            return true;
+        }
+
         if (this.supportsNativeShellAction('deleteSelection')) {
             this._pty.executeShellAction('deleteSelection', {
-                start: startIdx,
+                start: range.startIdx,
                 length: deleteLength,
             });
             this._clearSelection();
             return true;
         }
 
+        const input = this.stateManager.input;
         const currentCursorIdx = input.cursorIndex;
-        const cursorOffsetToEnd = endIdx - currentCursorIdx;
+        const cursorOffsetToEnd = range.endIdx - currentCursorIdx;
 
         this._ptyWrite(this._buildCursorMoveCommand(cursorOffsetToEnd) + String.fromCharCode(8).repeat(deleteLength));
         this._clearSelection();
@@ -376,6 +388,64 @@ export class CommandLineEditor implements ITerminalHandler  {
     private _clearSelection() {
         this._selectionStart = null;
         this._terminal?.clearSelection();
+    }
+
+    private shouldReplaceSelectionWithTypedText(event: KeyboardEvent): boolean {
+        return Boolean(
+            this._terminal?.hasSelection()
+            && event.key.length === 1
+            && !event.ctrlKey
+            && !event.altKey
+            && !event.metaKey,
+        );
+    }
+
+    private replaceSelectedRange(replacementText: string): boolean {
+        if (!this.supportsNativeShellAction('replaceCurrentInput')) {
+            return false;
+        }
+
+        const range = this.getSelectedInputRange();
+        if (!range) {
+            return false;
+        }
+
+        const input = this.stateManager.input;
+        const nextText = input.text.slice(0, range.startIdx) + replacementText + input.text.slice(range.endIdx);
+        const nextCursorIndex = range.startIdx + replacementText.length;
+
+        this._pty.executeShellAction('replaceCurrentInput', {
+            text: nextText,
+            cursorIndex: nextCursorIndex,
+        });
+        this._clearSelection();
+        return true;
+    }
+
+    private getSelectedInputRange(): {startIdx: number; endIdx: number} | undefined {
+        if (!this._terminal) {
+            return undefined;
+        }
+
+        const selection = this._terminal.getSelectionPosition();
+        if (!selection) {
+            return undefined;
+        }
+
+        const lastCognoY = this.findLastCognoMarkerY();
+        const startInputY = lastCognoY + 1;
+        const cols = this._terminal.cols;
+
+        const startIdx = (selection.start.y - startInputY) * cols + selection.start.x;
+        const endIdx = (selection.end.y - startInputY) * cols + selection.end.x;
+
+        const input = this.stateManager.input;
+        if (startIdx < 0 || endIdx > input.maxCursorIndex) {
+            console.warn('Selection is outside of input area', startIdx, endIdx);
+            return undefined;
+        }
+
+        return {startIdx, endIdx};
     }
 
     private select(count: number) {
@@ -449,3 +519,6 @@ export class CommandLineEditor implements ITerminalHandler  {
         return pos;
     }
 }
+
+
+

@@ -118,3 +118,5 @@ export class AppBus {
         return {propagationStopped: msg.propagationStopped ?? false, defaultPrevented: msg.defaultPrevented ?? false, performed: msg.performed};
     }
 }
+
+

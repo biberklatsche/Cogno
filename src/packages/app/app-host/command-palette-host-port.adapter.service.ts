@@ -4,13 +4,13 @@ import {
   CommandPaletteActionDefinitionContract,
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { ActionFired } from "../action/action.models";
 import { coreActionNames } from "../action/core-action-names";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "../keybinding/keybind.service";
-import { AppWiringService } from "@cogno/app-setup/app-host/app-wiring.service";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteHostPortAdapterService implements CommandPaletteHostPortContract {
@@ -63,3 +63,7 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
     });
   }
 }
+
+
+
+

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Cogno2 Integration Script for Bash
+# Cogno Integration Script for Bash
 # Provides OSC markers, prompt hooks, and shell integration features
 
 if [[ -n "${COGNO_BASH_INTEGRATION_LOADED}" ]]; then

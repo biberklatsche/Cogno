@@ -1,67 +1,70 @@
-import { DestroyRef, Inject, Injectable, signal } from "@angular/core";
+import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
-  CommandPaletteActionDefinitionContract,
-  CommandPaletteCommandEntryContract,
-  CommandPaletteHostPortContract,
-  commandPaletteHostPortToken,
-} from "@cogno/core-sdk";
+  CommandPaletteHostPort,
+} from "@cogno/core-api";
+import {
+  CommandDiscoveryEntryState as CommandEntry,
+  CommandDiscoveryState,
+  CommandDiscoveryUseCase,
+  SelectionDirection,
+} from "@cogno/core-domain";
+import {
+  DirectionalNavigationItem,
+  resolveNextNavigationTarget,
+} from "../navigation/directional-navigation.engine";
 
-export type CommandEntry = {
-  readonly isSelected: boolean;
-  readonly label: string;
-  readonly keybinding: string;
-  readonly actionDefinition: CommandPaletteActionDefinitionContract;
-};
-
-type NavigationDirection = "up" | "down";
+export type { CommandEntry };
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteService {
-  private readonly commandListSignal = signal<CommandEntry[]>([]);
+  private readonly commandPaletteStateSignal = signal<CommandDiscoveryState>(
+    CommandDiscoveryUseCase.createInitialState(),
+  );
   private readonly filteredCommandListSignal = signal<CommandEntry[]>([]);
-  private readonly querySignal = signal("");
+  private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
 
   readonly filteredCommandList = this.filteredCommandListSignal.asReadonly();
 
   constructor(
-    @Inject(commandPaletteHostPortToken)
-    private readonly commandPaletteHostPort: CommandPaletteHostPortContract,
+    private readonly commandPaletteHostPort: CommandPaletteHostPort,
     destroyRef: DestroyRef,
   ) {
     this.commandPaletteHostPort.commandEntries$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((commandEntries) => {
-        this.updateCommandEntries(commandEntries);
+        this.applyState(
+          CommandDiscoveryUseCase.updateCommandEntries(
+            this.commandPaletteStateSignal(),
+            commandEntries,
+          ),
+        );
       });
   }
 
   handleSideMenuOpen(): void {
-    this.applyFilter(this.querySignal());
+    this.applyState(CommandDiscoveryUseCase.handleCollectionOpen(this.commandPaletteStateSignal()));
   }
 
   handleSideMenuClose(): void {
-    this.querySignal.set("");
-    this.filteredCommandListSignal.set(this.withFirstSelected(this.commandListSignal().map((commandEntry) => ({
-      ...commandEntry,
-      isSelected: false,
-    }))));
+    this.applyState(CommandDiscoveryUseCase.handleCollectionClose(this.commandPaletteStateSignal()));
+  }
+
+  getSelectedEntry(commandEntry?: CommandEntry): CommandEntry | undefined {
+    return CommandDiscoveryUseCase.getSelectedEntry(this.commandPaletteStateSignal(), commandEntry);
   }
 
   fireSelectedAction(commandEntry?: CommandEntry): void {
-    const selectedCommandEntry = commandEntry ?? this.filteredCommandListSignal().find((entry) => entry.isSelected);
+    const selectedCommandEntry = this.getSelectedEntry(commandEntry);
     if (!selectedCommandEntry) {
       return;
     }
 
-    setTimeout(() => {
-      this.commandPaletteHostPort.publishAction(selectedCommandEntry.actionDefinition);
-    }, 50);
+    this.commandPaletteHostPort.publishAction(selectedCommandEntry.actionDefinition);
   }
 
   filterCommands(query: string): void {
-    this.querySignal.set(query);
-    this.applyFilter(query);
+    this.applyState(CommandDiscoveryUseCase.filterCommands(this.commandPaletteStateSignal(), query));
   }
 
   handleNavigationKey(key: string): void {
@@ -74,65 +77,34 @@ export class CommandPaletteService {
     }
   }
 
-  private updateCommandEntries(commandEntries: ReadonlyArray<CommandPaletteCommandEntryContract>): void {
-    const commandList = commandEntries
-      .map((commandEntry) => ({
-        isSelected: false,
-        label: commandEntry.actionDefinition.actionName.replaceAll("_", " "),
-        keybinding: commandEntry.keybinding,
-        actionDefinition: commandEntry.actionDefinition,
-      }))
-      .sort((firstEntry, secondEntry) => firstEntry.label.localeCompare(secondEntry.label));
-
-    this.commandListSignal.set(this.withFirstSelected(commandList));
-    this.applyFilter(this.querySignal());
+  registerNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+    this.navigationItemsProvider = provider;
   }
 
-  private applyFilter(query: string): void {
-    const normalizedQuery = query.toLowerCase();
-    const filteredCommandList = this.commandListSignal()
-      .filter((commandEntry) => commandEntry.label.toLowerCase().includes(normalizedQuery))
-      .map((commandEntry) => ({ ...commandEntry, isSelected: false }));
-
-    this.filteredCommandListSignal.set(this.withFirstSelected(filteredCommandList));
+  unregisterNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+    if (this.navigationItemsProvider === provider) {
+      this.navigationItemsProvider = undefined;
+    }
   }
 
-  private selectNextCommand(direction: NavigationDirection): void {
-    const currentFilteredCommandList = this.filteredCommandListSignal();
-    if (currentFilteredCommandList.length === 0) {
-      return;
-    }
-
-    const selectedIndex = currentFilteredCommandList.findIndex((commandEntry) => commandEntry.isSelected);
-    const nextIndex = this.resolveNextIndex(selectedIndex, currentFilteredCommandList.length, direction);
-    const updatedCommandList = currentFilteredCommandList.map((commandEntry, index) => ({
-      ...commandEntry,
-      isSelected: index === nextIndex,
-    }));
-
-    this.filteredCommandListSignal.set(updatedCommandList);
+  private selectNextCommand(direction: SelectionDirection): void {
+    this.applyState(
+      CommandDiscoveryUseCase.selectNextCommand(
+        this.commandPaletteStateSignal(),
+        direction,
+        (activeCommandId, nextDirection) =>
+          resolveNextNavigationTarget({
+            items: this.navigationItemsProvider?.() ?? [],
+            activeId: activeCommandId,
+            direction: nextDirection,
+            wrap: true,
+          }) ?? undefined,
+      ),
+    );
   }
 
-  private withFirstSelected(commandEntries: CommandEntry[]): CommandEntry[] {
-    if (commandEntries.length === 0) {
-      return commandEntries;
-    }
-
-    return commandEntries.map((commandEntry, index) => ({
-      ...commandEntry,
-      isSelected: index === 0,
-    }));
-  }
-
-  private resolveNextIndex(currentIndex: number, length: number, direction: NavigationDirection): number {
-    if (length === 0) {
-      return -1;
-    }
-
-    if (direction === "down") {
-      return (currentIndex + 1 + length) % length;
-    }
-
-    return (currentIndex - 1 + length) % length;
+  private applyState(state: CommandDiscoveryState): void {
+    this.commandPaletteStateSignal.set(state);
+    this.filteredCommandListSignal.set([...state.filteredCommandList]);
   }
 }

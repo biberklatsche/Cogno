@@ -1,5 +1,5 @@
-import {SearchAddon, ISearchOptions} from "@xterm/addon-search";
-import {Terminal} from "@xterm/xterm";
+import {ISearchOptions, SearchAddon} from "@xterm/addon-search";
+import {IDecoration, IMarker, Terminal} from "@xterm/xterm";
 import {Subscription} from "rxjs";
 import {TerminalId} from "../../../grid-list/+model/model";
 import {AppBus} from "../../../app-bus/app-bus";
@@ -16,10 +16,13 @@ import {
 export class TerminalSearchHandler implements ITerminalHandler {
 
     private readonly subscription: Subscription = new Subscription();
+    private readonly blockSearchDecorations: IDisposable[] = [];
     private terminal?: Terminal;
     private searchAddon?: SearchAddon;
 
     private searchDecorationOptions: ISearchOptions["decorations"];
+    private blockSearchLineCache?: BlockSearchLineCache;
+    private currentSearchRange?: TerminalSearchRange;
 
     constructor(
         private readonly bus: AppBus,
@@ -34,6 +37,12 @@ export class TerminalSearchHandler implements ITerminalHandler {
 
     registerTerminal(terminal: Terminal): IDisposable {
         this.terminal = terminal;
+        const terminalWriteParsedDisposable = terminal.onWriteParsed(() => {
+            this.clearBlockSearchLineCache();
+        });
+        this.subscription.add(() => {
+            terminalWriteParsedDisposable.dispose();
+        });
 
         this.subscription.add(
             this.bus.on$({path: ["app", "terminal"], type: "TerminalSearchRequested"}).subscribe((event) => {
@@ -62,6 +71,8 @@ export class TerminalSearchHandler implements ITerminalHandler {
     }
 
     dispose(): void {
+        this.clearBlockSearchDecorations();
+        this.clearBlockSearchLineCache();
         this.subscription.unsubscribe();
     }
 
@@ -78,10 +89,15 @@ export class TerminalSearchHandler implements ITerminalHandler {
         const query = payload.query.trim();
         const caseSensitive = payload.caseSensitive;
         const regularExpression = payload.regularExpression;
+        const searchRange = this.normalizeSearchRange(payload.beginBufferLine, payload.endBufferLine);
+        const cursorBufferLine = payload.cursorBufferLine;
+        const resultLineLimit = payload.resultLineLimit;
+        this.currentSearchRange = searchRange;
         if (query.length === 0) {
+            this.clearBlockSearchDecorations();
             this.searchAddon?.clearDecorations();
             if (payload.terminalId === this.terminalId) {
-                this.publishSearchResult("", [], caseSensitive, regularExpression);
+                this.publishSearchResult("", [], caseSensitive, regularExpression, searchRange, cursorBufferLine, false, undefined);
             }
             return;
         }
@@ -89,15 +105,33 @@ export class TerminalSearchHandler implements ITerminalHandler {
         const searchOptions = this.createSearchOptions(caseSensitive, regularExpression);
         const searchExpression = this.createSearchExpression(query, caseSensitive, regularExpression);
         if (!searchExpression) {
+            this.clearBlockSearchDecorations();
             this.searchAddon?.clearDecorations();
-            this.publishSearchResult(query, [], caseSensitive, regularExpression);
+            this.publishSearchResult(query, [], caseSensitive, regularExpression, searchRange, cursorBufferLine, false, undefined);
             return;
         }
 
-        this.searchAddon?.findNext(query, searchOptions);
+        if (searchRange) {
+            this.searchAddon?.clearDecorations();
+        } else {
+            this.clearBlockSearchDecorations();
+            this.searchAddon?.findNext(query, searchOptions);
+        }
 
-        const matchingLines = this.collectMatchingLines(searchExpression);
-        this.publishSearchResult(query, matchingLines, caseSensitive, regularExpression);
+        const pagedSearchResult = this.collectMatchingLines(searchExpression, searchRange, cursorBufferLine, resultLineLimit);
+        if (searchRange) {
+            this.renderBlockSearchDecorations(pagedSearchResult.lines, cursorBufferLine === undefined);
+        }
+        this.publishSearchResult(
+            query,
+            pagedSearchResult.lines,
+            caseSensitive,
+            regularExpression,
+            searchRange,
+            cursorBufferLine,
+            pagedSearchResult.hasMore,
+            pagedSearchResult.nextCursorBufferLine,
+        );
     }
 
     private handleSearchRevealRequest(event: TerminalSearchRevealRequestedEvent): void {
@@ -125,6 +159,7 @@ export class TerminalSearchHandler implements ITerminalHandler {
             revealPayload.regularExpression,
             bufferLineIndex,
             revealPayload.matchStartIndex,
+            this.currentSearchRange,
         );
         if (!revealSucceeded) {
             const safeMatchLength = Math.max(1, revealPayload.matchLength);
@@ -139,6 +174,10 @@ export class TerminalSearchHandler implements ITerminalHandler {
         lines: TerminalSearchLineResult[],
         caseSensitive: boolean,
         regularExpression: boolean,
+        searchRange: TerminalSearchRange | undefined,
+        cursorBufferLine: number | undefined,
+        hasMore: boolean,
+        nextCursorBufferLine: number | undefined,
     ): void {
         this.bus.publish({
             path: ["app", "terminal"],
@@ -148,21 +187,45 @@ export class TerminalSearchHandler implements ITerminalHandler {
                 query,
                 caseSensitive,
                 regularExpression,
+                beginBufferLine: searchRange?.beginBufferLine,
+                endBufferLine: searchRange?.endBufferLine,
+                cursorBufferLine,
+                hasMore,
+                nextCursorBufferLine,
                 lines,
             }
         });
     }
 
-    private collectMatchingLines(searchExpression: RegExp): TerminalSearchLineResult[] {
+    private collectMatchingLines(
+        searchExpression: RegExp,
+        searchRange?: TerminalSearchRange,
+        cursorBufferLine?: number,
+        resultLineLimit?: number,
+    ): PagedTerminalSearchResult {
         const activeBuffer = this.terminal?.buffer.active;
         if (!activeBuffer) {
-            return [];
+            return {
+                lines: [],
+                hasMore: false,
+                nextCursorBufferLine: undefined,
+            };
         }
 
         const matchingLines: TerminalSearchLineResult[] = [];
+        const normalizedBeginBufferLine = Math.max(searchRange?.beginBufferLine ?? 1, cursorBufferLine ?? 1);
+        const normalizedEndBufferLine = searchRange?.endBufferLine ?? activeBuffer.length;
+        const normalizedResultLineLimit = Math.max(1, resultLineLimit ?? Number.MAX_SAFE_INTEGER);
+        if (normalizedBeginBufferLine > normalizedEndBufferLine) {
+            return {
+                lines: [],
+                hasMore: false,
+                nextCursorBufferLine: undefined,
+            };
+        }
 
-        for (let lineNumber = 0; lineNumber < activeBuffer.length; lineNumber++) {
-            const lineText = activeBuffer.getLine(lineNumber)?.translateToString(true) ?? "";
+        for (let lineNumber = normalizedBeginBufferLine - 1; lineNumber < normalizedEndBufferLine; lineNumber++) {
+            const lineText = this.resolveLineText(lineNumber, searchRange);
             if (lineText.length === 0) {
                 continue;
             }
@@ -177,9 +240,42 @@ export class TerminalSearchHandler implements ITerminalHandler {
                 lineText,
                 matches,
             });
+
+            if (matchingLines.length >= normalizedResultLineLimit) {
+                return {
+                    lines: matchingLines,
+                    hasMore: this.hasRemainingMatches(searchExpression, lineNumber + 1, normalizedEndBufferLine, searchRange),
+                    nextCursorBufferLine: lineNumber + 2,
+                };
+            }
         }
 
-        return matchingLines;
+        return {
+            lines: matchingLines,
+            hasMore: false,
+            nextCursorBufferLine: undefined,
+        };
+    }
+
+    private resolveLineText(lineNumber: number, searchRange?: TerminalSearchRange): string {
+        const activeBuffer = this.terminal?.buffer.active;
+        if (!activeBuffer) {
+            return "";
+        }
+
+        if (!searchRange) {
+            return activeBuffer.getLine(lineNumber)?.translateToString(true) ?? "";
+        }
+
+        const blockSearchLineCache = this.getOrCreateBlockSearchLineCache(searchRange);
+        const cachedLineText = blockSearchLineCache.lineTexts.get(lineNumber);
+        if (cachedLineText !== undefined) {
+            return cachedLineText;
+        }
+
+        const lineText = activeBuffer.getLine(lineNumber)?.translateToString(true) ?? "";
+        blockSearchLineCache.lineTexts.set(lineNumber, lineText);
+        return lineText;
     }
 
     private findLineMatches(lineText: string, searchRegex: RegExp): TerminalSearchLineMatch[] {
@@ -221,12 +317,20 @@ export class TerminalSearchHandler implements ITerminalHandler {
         };
     }
 
+    private createSearchNavigationOptions(caseSensitive: boolean, regularExpression: boolean): ISearchOptions {
+        return {
+            caseSensitive,
+            regex: regularExpression,
+        };
+    }
+
     private activateSearchMatch(
         query: string,
         caseSensitive: boolean,
         regularExpression: boolean,
         targetBufferLineIndex: number,
         targetMatchStartIndex: number,
+        searchRange?: TerminalSearchRange,
     ): boolean {
         if (!this.searchAddon || !this.terminal) {
             return false;
@@ -237,7 +341,9 @@ export class TerminalSearchHandler implements ITerminalHandler {
             return false;
         }
 
-        const searchOptions = this.createSearchOptions(caseSensitive, regularExpression);
+        const searchOptions = searchRange
+            ? this.createSearchNavigationOptions(caseSensitive, regularExpression)
+            : this.createSearchOptions(caseSensitive, regularExpression);
         const searchAddonWithInternalOptions = this.searchAddon as unknown as SearchAddonWithInternalOptions;
 
         this.terminal.clearSelection();
@@ -251,6 +357,14 @@ export class TerminalSearchHandler implements ITerminalHandler {
 
         for (let iteration = 0; iteration < maxIterations; iteration++) {
             const currentSelection = this.terminal.getSelectionPosition();
+            if (searchRange && currentSelection && !this.selectionFallsWithinRange(currentSelection, searchRange)) {
+                const movedToNextMatch = searchAddonWithInternalOptions.findNext(query, searchOptions, {noScroll: true});
+                if (!movedToNextMatch) {
+                    return false;
+                }
+                continue;
+            }
+
             if (this.matchesTargetSelection(currentSelection, targetBufferLineIndex, targetMatchStartIndex)) {
                 return true;
             }
@@ -269,6 +383,130 @@ export class TerminalSearchHandler implements ITerminalHandler {
             const movedToNextMatch = searchAddonWithInternalOptions.findNext(query, searchOptions, {noScroll: true});
             if (!movedToNextMatch) {
                 return false;
+            }
+        }
+
+        return false;
+    }
+
+    private normalizeSearchRange(
+        beginBufferLine?: number,
+        endBufferLine?: number,
+    ): TerminalSearchRange | undefined {
+        const activeBuffer = this.terminal?.buffer.active;
+        if (!activeBuffer) {
+            return undefined;
+        }
+
+        if (beginBufferLine === undefined && endBufferLine === undefined) {
+            return undefined;
+        }
+
+        return {
+            beginBufferLine: Math.max(1, beginBufferLine ?? 1),
+            endBufferLine: Math.min(activeBuffer.length, endBufferLine ?? activeBuffer.length),
+        };
+    }
+
+    private renderBlockSearchDecorations(
+        matchingLines: ReadonlyArray<TerminalSearchLineResult>,
+        clearExistingDecorations: boolean,
+    ): void {
+        if (clearExistingDecorations) {
+            this.clearBlockSearchDecorations();
+        }
+
+        const terminal = this.terminal;
+        const searchDecorationOptions = this.searchDecorationOptions;
+        if (!terminal || !searchDecorationOptions) {
+            return;
+        }
+
+        for (const matchingLine of matchingLines) {
+            for (const match of matchingLine.matches) {
+                const marker = terminal.registerMarker(
+                    -terminal.buffer.active.baseY - terminal.buffer.active.cursorY + (matchingLine.lineNumber - 1),
+                );
+                const decoration = terminal.registerDecoration({
+                    marker,
+                    x: match.startIndex,
+                    width: Math.max(1, match.endIndex - match.startIndex),
+                    backgroundColor: searchDecorationOptions.matchBackground,
+                    overviewRulerOptions: {
+                        color: searchDecorationOptions.matchOverviewRuler,
+                        position: "center",
+                    },
+                });
+                if (!decoration) {
+                    marker.dispose();
+                    continue;
+                }
+
+                this.applyBlockSearchDecorationStyles(decoration, searchDecorationOptions.matchBorder);
+                this.blockSearchDecorations.push(decoration);
+                this.blockSearchDecorations.push(marker);
+            }
+        }
+    }
+
+    private applyBlockSearchDecorationStyles(decoration: IDecoration, borderColor?: string): void {
+        const decorationDisposables: IDisposable[] = [];
+        decorationDisposables.push(decoration.onRender((element) => {
+            element.classList.add("xterm-find-result-decoration");
+            if (borderColor) {
+                element.style.outline = `1px solid ${borderColor}`;
+            }
+        }));
+        decorationDisposables.push(decoration.onDispose(() => {
+            for (const decorationDisposable of decorationDisposables) {
+                decorationDisposable.dispose();
+            }
+        }));
+        this.blockSearchDecorations.push(...decorationDisposables);
+    }
+
+    private clearBlockSearchDecorations(): void {
+        while (this.blockSearchDecorations.length > 0) {
+            this.blockSearchDecorations.pop()?.dispose();
+        }
+    }
+
+    private getOrCreateBlockSearchLineCache(searchRange: TerminalSearchRange): BlockSearchLineCache {
+        if (
+            this.blockSearchLineCache
+            && this.blockSearchLineCache.beginBufferLine === searchRange.beginBufferLine
+            && this.blockSearchLineCache.endBufferLine === searchRange.endBufferLine
+        ) {
+            return this.blockSearchLineCache;
+        }
+
+        this.blockSearchLineCache = {
+            beginBufferLine: searchRange.beginBufferLine,
+            endBufferLine: searchRange.endBufferLine,
+            lineTexts: new Map<number, string>(),
+        };
+        return this.blockSearchLineCache;
+    }
+
+    private clearBlockSearchLineCache(): void {
+        this.blockSearchLineCache = undefined;
+    }
+
+    private hasRemainingMatches(
+        searchExpression: RegExp,
+        startLineIndex: number,
+        endBufferLine: number,
+        searchRange?: TerminalSearchRange,
+    ): boolean {
+        for (let lineNumber = startLineIndex; lineNumber < endBufferLine; lineNumber++) {
+            const lineText = this.resolveLineText(lineNumber, searchRange);
+            if (lineText.length === 0) {
+                continue;
+            }
+
+            searchExpression.lastIndex = 0;
+            if (searchExpression.test(lineText)) {
+                return true;
             }
         }
 
@@ -323,6 +561,15 @@ export class TerminalSearchHandler implements ITerminalHandler {
         return selection.start.y === targetBufferLineIndex && selection.start.x === targetMatchStartIndex;
     }
 
+    private selectionFallsWithinRange(
+        selection: TerminalSelectionRange,
+        searchRange: TerminalSearchRange,
+    ): boolean {
+        const startBufferLine = selection.start.y + 1;
+        const endBufferLine = selection.end.y + 1;
+        return startBufferLine >= searchRange.beginBufferLine && endBufferLine <= searchRange.endBufferLine;
+    }
+
     private selectionKey(selection: TerminalSelectionRange | undefined): string | undefined {
         if (!selection) {
             return undefined;
@@ -363,3 +610,22 @@ type SearchAddonWithInternalOptions = SearchAddon & {
         },
     ): boolean;
 };
+
+type TerminalSearchRange = {
+    beginBufferLine: number;
+    endBufferLine: number;
+};
+
+type BlockSearchLineCache = {
+    beginBufferLine: number;
+    endBufferLine: number;
+    lineTexts: Map<number, string>;
+};
+
+type PagedTerminalSearchResult = {
+    lines: TerminalSearchLineResult[];
+    hasMore: boolean;
+    nextCursorBufferLine?: number;
+};
+
+

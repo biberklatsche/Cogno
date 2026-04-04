@@ -1,4 +1,4 @@
-import {OsType} from "../_tauri/os";
+import {OsType} from "@cogno/app-tauri/os";
 
 export const Modifier = {
     modifierOrder: (os: OsType): Record<string, number> => {
@@ -76,3 +76,4 @@ export const Modifier = {
         return parts.sort();
     }
 }
+

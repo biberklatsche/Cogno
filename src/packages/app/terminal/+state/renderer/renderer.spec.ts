@@ -106,3 +106,5 @@ describe('Renderer', () => {
         expect(terminalInstance.dispose).toHaveBeenCalled();
     });
 });
+
+

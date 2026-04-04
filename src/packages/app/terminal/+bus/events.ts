@@ -37,6 +37,15 @@ export type TerminalSearchRequestedEvent = MessageBase<"TerminalSearchRequested"
     query: string;
     caseSensitive: boolean;
     regularExpression: boolean;
+    beginBufferLine?: number;
+    endBufferLine?: number;
+    cursorBufferLine?: number;
+    resultLineLimit?: number;
+}>;
+export type TerminalSearchPanelRequestedEvent = MessageBase<"TerminalSearchPanelRequested", {
+    terminalId?: TerminalId;
+    beginBufferLine?: number;
+    endBufferLine?: number;
 }>;
 export type TerminalBusyChangedEvent = MessageBase<"TerminalBusyChanged", {
     terminalId: TerminalId;
@@ -47,6 +56,13 @@ export type TerminalSearchResultEvent = MessageBase<"TerminalSearchResult", {
     query: string;
     caseSensitive: boolean;
     regularExpression: boolean;
+    beginBufferLine?: number;
+    endBufferLine?: number;
+    cursorBufferLine?: number;
+    hasMore: boolean;
+    nextCursorBufferLine?: number;
     lines: TerminalSearchLineResult[];
 }>;
 export type TerminalSearchRevealRequestedEvent = MessageBase<"TerminalSearchRevealRequested", TerminalSearchRevealPayload>;
+
+

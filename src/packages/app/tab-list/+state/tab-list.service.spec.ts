@@ -5,6 +5,9 @@ import { clear, getAppBus, getConfigService, getDestroyRef } from "../../../__te
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import { Tab } from '../+model/tab';
+import { ActionFired, ActionFiredEvent } from "../../action/action.models";
+import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
+import { TabTitleChangedEvent } from "../../grid-list/+bus/events";
 
 describe('TabListService', () => {
     let service: TabListService;
@@ -34,16 +37,23 @@ describe('TabListService', () => {
         clear();
     });
 
+    function createActionEvent(
+      actionName: string,
+      options?: { args?: string[]; triggerAll?: boolean },
+    ): ActionFiredEvent {
+      return ActionFired.create(actionName, options?.triggerAll ? { all: true, unconsumed: false, performable: false } : { all: false, unconsumed: false, performable: false }, options?.args);
+    }
+
     it('should be created', () => {
         expect(service).toBeTruthy();
     });
 
     describe('Event Handling', () => {
         it('should handle CreateTab event', () => {
-            const event = {
+            const event: CreateTabAction = {
                 type: 'CreateTab',
                 payload: { tabId: 'created-tab', title: 'Moved Pane', isActive: true }
-            } as any;
+            };
             bus.publish(event);
 
             let currentTabs: Tab[] = [];
@@ -60,7 +70,7 @@ describe('TabListService', () => {
             service.addTab(tab);
             
             const spy = vi.spyOn(service, 'selectTab');
-            const event = { type: 'SelectTab', payload: 't1' } as any;
+            const event: SelectTabAction = { type: 'SelectTab', payload: 't1' };
             bus.publish(event);
 
             expect(spy).toHaveBeenCalledWith('t1');
@@ -72,7 +82,7 @@ describe('TabListService', () => {
             service.addTab(tab);
 
             const spy = vi.spyOn(service, 'removeTab');
-            const event = { type: 'RemoveTab', payload: 't1' } as any;
+            const event: RemoveTabAction = { type: 'RemoveTab', payload: 't1' };
             bus.publish(event);
 
             expect(spy).toHaveBeenCalledWith('t1');
@@ -83,10 +93,10 @@ describe('TabListService', () => {
             const tab: Tab = { id: 't1', title: 'Old Title', isActive: true, activeShellType: 'unknown' };
             service.addTab(tab);
 
-            const event = { 
+            const event: TabTitleChangedEvent = { 
                 type: 'TabTitleChanged',
                 payload: { tabId: 't1', title: 'New Title' }
-            } as any;
+            };
             bus.publish(event);
 
             let currentTabs: Tab[] = [];
@@ -101,12 +111,7 @@ describe('TabListService', () => {
             vi.spyOn(IdCreator, 'newTabId').mockReturnValue('new-t');
             const spy = vi.spyOn(service, 'addTab');
             
-            const event = { 
-                type: 'ActionFired', 
-                payload: 'new_tab', 
-                path: ['app', 'action'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('new_tab');
             bus.publish(event);
 
             expect(spy).toHaveBeenCalledWith(
@@ -122,13 +127,7 @@ describe('TabListService', () => {
             vi.spyOn(IdCreator, 'newTabId').mockReturnValue('new-shell-tab');
             const publishSpy = vi.spyOn(bus, 'publish');
 
-            const event = {
-                type: 'ActionFired',
-                payload: 'new_tab',
-                path: ['app', 'action'],
-                args: ['test'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('new_tab', { args: ['test'] });
             bus.publish(event);
 
             expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
@@ -144,12 +143,7 @@ describe('TabListService', () => {
             vi.spyOn(IdCreator, 'newTabId').mockReturnValue('slot-1-tab');
             const publishSpy = vi.spyOn(bus, 'publish');
 
-            const event = {
-                type: 'ActionFired',
-                payload: 'open_shell_1',
-                path: ['app', 'action'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('open_shell_1');
             bus.publish(event);
 
             expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
@@ -166,12 +160,7 @@ describe('TabListService', () => {
         it('should do nothing for open_shell_2 when no second shell profile exists', () => {
             const publishSpy = vi.spyOn(bus, 'publish');
 
-            const event = {
-                type: 'ActionFired',
-                payload: 'open_shell_2',
-                path: ['app', 'action'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('open_shell_2');
             bus.publish(event);
 
             expect(publishSpy).not.toHaveBeenCalledWith(expect.objectContaining({
@@ -186,12 +175,7 @@ describe('TabListService', () => {
             service.addTab(tab);
             const spy = vi.spyOn(service, 'removeTab');
 
-            const event = { 
-                type: 'ActionFired', 
-                payload: 'close_tab', 
-                path: ['app', 'action'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('close_tab');
             bus.publish(event);
 
             expect(spy).toHaveBeenCalledWith('t1');
@@ -202,12 +186,7 @@ describe('TabListService', () => {
             service.addTab({ id: 't1', title: 'T1', isActive: true, activeShellType: 'unknown' });
             service.addTab({ id: 't2', title: 'T2', isActive: false, activeShellType: 'unknown' });
 
-            const event = {
-                type: 'ActionFired',
-                payload: 'select_next_tab',
-                path: ['app', 'action'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('select_next_tab');
             bus.publish(event);
 
             let currentTabs: Tab[] = [];
@@ -223,12 +202,7 @@ describe('TabListService', () => {
 
             service.selectTab('t2');
 
-            const event = {
-                type: 'ActionFired',
-                payload: 'select_previous_tab',
-                path: ['app', 'action'],
-                trigger: { all: false }
-            } as any;
+            const event = createActionEvent('select_previous_tab');
             bus.publish(event);
 
             let currentTabs: Tab[] = [];
@@ -238,16 +212,43 @@ describe('TabListService', () => {
             expect(event.defaultPrevented).toBe(true);
         });
 
+        it('should handle select_tab_2 action by selecting the second tab', () => {
+            service.addTab({ id: 't1', title: 'T1', isActive: true, activeShellType: 'unknown' });
+            service.addTab({ id: 't2', title: 'T2', isActive: false, activeShellType: 'unknown' });
+            service.addTab({ id: 't3', title: 'T3', isActive: false, activeShellType: 'unknown' });
+
+            const event = createActionEvent('select_tab_2');
+            bus.publish(event);
+
+            let currentTabs: Tab[] = [];
+            service.tabs$.subscribe(tabs => currentTabs = tabs);
+            expect(currentTabs.find(t => t.id === 't2')?.isActive).toBe(true);
+            expect(currentTabs.find(t => t.id === 't1')?.isActive).toBe(false);
+            expect(event.performed).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should keep the current tab when select_tab_9 exceeds the tab count', () => {
+            service.addTab({ id: 't1', title: 'T1', isActive: true, activeShellType: 'unknown' });
+            service.addTab({ id: 't2', title: 'T2', isActive: false, activeShellType: 'unknown' });
+
+            const event = createActionEvent('select_tab_9');
+            bus.publish(event);
+
+            let currentTabs: Tab[] = [];
+            service.tabs$.subscribe(tabs => currentTabs = tabs);
+            expect(currentTabs.find(t => t.id === 't1')?.isActive).toBe(true);
+            expect(currentTabs.find(t => t.id === 't2')?.isActive).toBe(false);
+            expect(event.performed).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
         it('should handle close_other_tabs action', () => {
             service.addTab({ id: 't1', title: 'T1', isActive: false, activeShellType: 'unknown' });
             service.addTab({ id: 't2', title: 'T2', isActive: true, activeShellType: 'unknown' });
             const spy = vi.spyOn(service, 'removeAllTabs');
 
-            const event = { 
-                type: 'ActionFired', 
-                payload: 'close_other_tabs', 
-                path: ['app', 'action']
-            } as any;
+            const event = createActionEvent('close_other_tabs');
             bus.publish(event);
 
             expect(spy).toHaveBeenCalledWith('t2');
@@ -257,11 +258,7 @@ describe('TabListService', () => {
         it('should handle close_all_tabs action', () => {
             const spy = vi.spyOn(service, 'removeAllTabs');
 
-            const event = { 
-                type: 'ActionFired', 
-                payload: 'close_all_tabs', 
-                path: ['app', 'action']
-            } as any;
+            const event = createActionEvent('close_all_tabs');
             bus.publish(event);
 
             expect(spy).toHaveBeenCalled();
@@ -450,3 +447,5 @@ describe('TabListService', () => {
         });
     });
 });
+
+

@@ -104,3 +104,5 @@ export class PaneComponent implements AfterViewInit {
         this.gridListService.updatePaneSwapTarget(terminalId);
     }
 }
+
+

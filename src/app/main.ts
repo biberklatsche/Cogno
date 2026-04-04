@@ -6,3 +6,5 @@ import { appConfig } from "./app.config";
 Environment.init().then(async () => {
   bootstrapApplication(AppComponent, appConfig).catch((error: unknown) => console.error(error));
 });
+
+

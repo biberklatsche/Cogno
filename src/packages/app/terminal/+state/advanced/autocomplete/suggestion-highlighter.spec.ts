@@ -72,3 +72,5 @@ describe("SuggestionHighlighter", () => {
         expect(result).toEqual(input);
     });
 });
+
+

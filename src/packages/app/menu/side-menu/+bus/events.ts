@@ -10,3 +10,5 @@ export type SideMenuEvent =
     | SideMenuViewClosedEvent
     | SideMenuViewFocusedEvent
     | SideMenuViewBlurredEvent;
+
+

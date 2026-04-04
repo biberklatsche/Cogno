@@ -1,5 +1,4 @@
-import { Type } from "@angular/core";
-import { ApplicationFeatureCollectionContract } from "@cogno/core-sdk";
+import { ApplicationFeatureCollectionContract } from "@cogno/core-api";
 import { featureTerminalAutocompleteSuggestorDefinitions } from "./autocomplete/terminal-autocomplete-suggestor-definitions";
 import { featureDatabaseMigrations } from "./database-migrations";
 import { featureSettingsExtension } from "./feature-settings.extension";
@@ -19,4 +18,4 @@ export const featureApplicationFeatureCollection = {
   sideMenuFeatureDefinitions: featureSideMenuFeatureDefinitions,
   settingsExtensions: [featureSettingsExtension],
   terminalAutocompleteSuggestorDefinitions: featureTerminalAutocompleteSuggestorDefinitions,
-} as const satisfies ApplicationFeatureCollectionContract<Type<unknown>, string, string>;
+} as const satisfies ApplicationFeatureCollectionContract<string, string>;

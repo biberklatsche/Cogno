@@ -1,6 +1,21 @@
 {
   "name": "basename",
   "description": "Return filename portion of pathname",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-path",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file",
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": "-a",

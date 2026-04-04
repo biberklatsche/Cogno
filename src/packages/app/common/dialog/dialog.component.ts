@@ -431,3 +431,5 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     return Math.min(Math.max(value, minimum), maximum);
   }
 }
+
+

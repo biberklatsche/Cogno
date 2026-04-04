@@ -4,7 +4,7 @@ import { debounceTime } from "rxjs/operators";
 
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalAutocompleteSuggestorContract } from "@cogno/core-sdk";
+import { TerminalAutocompleteSuggestorContract } from "@cogno/core-api";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
@@ -18,7 +18,7 @@ import { SuggestionHighlighter } from "./suggestion-highlighter";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
-const MAX_SUGGESTIONS = 20;
+const MAX_SUGGESTIONS = 100;
 const PANEL_MAX_VISIBLE_ITEMS = 6;
 const MAX_TOP_HISTORY_SUGGESTIONS = 3;
 
@@ -760,3 +760,6 @@ export class TerminalAutocompleteService implements OnDestroy {
         return event.key === "Backspace" || event.key === "Delete";
     }
 }
+
+
+

@@ -20,6 +20,8 @@ import {TerminalHistoryPersistenceService} from "./+state/advanced/history/termi
 import {TerminalAutocompleteService} from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import {TerminalAutocompleteComponent} from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 import { TerminalFileDropService } from "./terminal-file-drop.service";
+import { IconComponent } from "@cogno/core-ui";
+import { map } from "rxjs";
 
 @Component({
     selector: 'app-terminal',
@@ -29,7 +31,8 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         TerminalHeaderComponent,
-        TerminalAutocompleteComponent
+        TerminalAutocompleteComponent,
+        IconComponent,
     ],
     providers: [
         TerminalCommandHistoryStore,
@@ -48,6 +51,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     shellProfile = input.required<ShellProfile>();
 
     isFocused: Signal<boolean | undefined>;
+    showScrollToBottomButton: Signal<boolean>;
 
     constructor(
         private destroyRef: DestroyRef,
@@ -58,6 +62,12 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         private terminalFileDropService: TerminalFileDropService,
     ) {
         this.isFocused = toSignal(this.terminalStateManager.isFocused$);
+        this.showScrollToBottomButton = toSignal(
+            this.terminalStateManager.scrolledLinesFromBottom$.pipe(
+                map((scrolledLinesFromBottom) => scrolledLinesFromBottom > 20),
+            ),
+            { initialValue: false },
+        );
     }
 
     ngOnInit(): void {
@@ -86,4 +96,12 @@ export class TerminalComponent implements OnInit, AfterViewInit {
         event.stopPropagation();
         this.terminalSession.focus();
     }
+
+    scrollToBottom(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        this.terminalSession.scrollToBottom();
+    }
 }
+
+

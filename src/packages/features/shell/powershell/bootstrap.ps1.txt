@@ -1,4 +1,4 @@
-# Cogno2 Bootstrap Script for PowerShell
+# Cogno Bootstrap Script for PowerShell
 # Provides shell startup, prompt hooks, and shell integration features
 
 # Guard against double loading

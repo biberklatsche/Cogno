@@ -26,3 +26,5 @@ export class HistoryCommandPatternSuggestor implements TerminalAutocompleteSugge
         return this.suggestionPatternReducer.reduce(learnedCommandPatterns, context);
     }
 }
+
+

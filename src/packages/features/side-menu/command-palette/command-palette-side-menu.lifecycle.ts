@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
+import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
 import { CommandPaletteService } from "./command-palette.service";
+import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteSideMenuLifecycle {
@@ -15,7 +16,7 @@ export class CommandPaletteSideMenuLifecycle {
       },
       onOpen: () => {
         this.commandPaletteService.handleSideMenuOpen();
-        this.focusSideMenuAutofocusElement();
+        focusSideMenuAutofocusElement();
       },
       onClose: () => this.commandPaletteService.handleSideMenuClose(),
       onFocus: () => {
@@ -27,29 +28,19 @@ export class CommandPaletteSideMenuLifecycle {
               return;
             }
             if (keyboardEvent.key === "Enter") {
-              this.commandPaletteService.fireSelectedAction();
+              const selectedCommandEntry = this.commandPaletteService.getSelectedEntry();
               sideMenuFeatureHandle.close();
+              queueMicrotask(() => {
+                this.commandPaletteService.fireSelectedAction(selectedCommandEntry);
+              });
               return;
             }
             this.commandPaletteService.handleNavigationKey(keyboardEvent.key);
           },
         );
-        this.focusSideMenuAutofocusElement();
+        focusSideMenuAutofocusElement();
       },
       onBlur: () => sideMenuFeatureHandle.unregisterKeybindListener(),
     };
-  }
-
-  private focusSideMenuAutofocusElement(): void {
-    const scheduleFocus = globalThis.requestAnimationFrame ?? ((callback: FrameRequestCallback) => setTimeout(callback, 0));
-    scheduleFocus(() => {
-      const documentReference = globalThis.document;
-      if (!documentReference) {
-        return;
-      }
-      const autofocusElement = documentReference.querySelector<HTMLInputElement>("[data-side-menu-autofocus='true']");
-      autofocusElement?.focus();
-      autofocusElement?.select();
-    });
   }
 }

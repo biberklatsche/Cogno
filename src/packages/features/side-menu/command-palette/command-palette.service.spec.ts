@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
 import {
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
+import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 
@@ -38,10 +39,6 @@ describe("CommandPaletteService", () => {
     service.handleSideMenuOpen();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("initializes command list from host port entries", () => {
     const commandList = service.filteredCommandList();
     expect(commandList.length).toBe(3);
@@ -58,6 +55,12 @@ describe("CommandPaletteService", () => {
   });
 
   it("navigates through filtered entries", () => {
+    service.registerNavigationItemsProvider(() => [
+      createNavigationItem("copy", 0, 40, 280, 32),
+      createNavigationItem("open_command_palette", 0, 74, 280, 32),
+      createNavigationItem("split_right", 0, 108, 280, 32),
+    ]);
+
     const initialCommandList = service.filteredCommandList();
     expect(initialCommandList[0].isSelected).toBe(true);
 
@@ -69,9 +72,7 @@ describe("CommandPaletteService", () => {
   });
 
   it("publishes selected action", () => {
-    vi.useFakeTimers();
     service.fireSelectedAction();
-    vi.runAllTimers();
 
     expect(publishActionMock).toHaveBeenCalledWith(
       expect.objectContaining({ actionName: "copy" }),
@@ -110,3 +111,22 @@ describe("CommandPaletteService", () => {
   });
 });
 
+function createNavigationItem(
+  id: string,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): DirectionalNavigationItem<string> {
+  return {
+    id,
+    rect: {
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+    },
+  };
+}

@@ -1,5 +1,5 @@
 import {ChangeDetectionStrategy, Component, computed, Signal} from "@angular/core";
-import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-sdk";
+import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-api";
 import {TerminalSearchService} from "./terminal-search.service";
 
 type SearchTextSegment = {
@@ -49,16 +49,28 @@ type SearchTextSegment = {
                 .*
             </button>
         </div>
+        @if (isBlockSearchActive()) {
+            <div class="block-search-banner">
+                <span>Block search active</span>
+                <button type="button" class="block-search-clear-button" (click)="$event.stopPropagation(); clearBlockSearch()">
+                    Clear
+                </button>
+            </div>
+        }
 
         @if (searchQuery().trim().length === 0) {
             <div class="helper-text">Type to search in the active terminal pane.</div>
         } @else {
-            <div class="result-header">{{ searchResults().length }} matching lines</div>
+            <div class="result-header">
+                <span>{{ searchResults().length }} matching lines</span>
+                @if (hasMoreResults()) {
+                    <span>more available</span>
+                }
+            </div>
             @if (searchResults().length > 0) {
                 <ul class="result-list">
                     @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
                         <li class="result-line" (click)="revealSearchResult(searchLine)">
-                            <span class="line-number">{{ searchLine.lineNumber }}</span>
                             <span class="line-content">
                                 @for (segment of buildSegments(searchLine); track trackSegment(segment, $index)) {
                                     <span [class.match]="segment.isMatch" [style.background-color]="segment.isMatch ? matchBackgroundColor() : null" [style.border]="segment.isMatch ? '1px solid ' + matchBorderColor() : null">{{ segment.text }}</span>
@@ -67,6 +79,9 @@ type SearchTextSegment = {
                         </li>
                     }
                 </ul>
+                @if (hasMoreResults()) {
+                    <button type="button" class="load-more-button" (click)="loadMoreSearchResults()">Load more</button>
+                }
             } @else {
                 <div class="helper-text">No matches</div>
             }
@@ -122,6 +137,35 @@ type SearchTextSegment = {
                 opacity: 0.7;
             }
 
+            .result-header {
+                display: flex;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+
+            .block-search-banner {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.75rem;
+                color: var(--highlight-color);
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+
+            .block-search-clear-button {
+                border: 0;
+                background: transparent;
+                color: inherit;
+                min-height: 1.7rem;
+                padding: 0;
+                font-size: 0.75rem;
+                font-weight: 700;
+                cursor: pointer;
+                flex-shrink: 0;
+                text-decoration: underline;
+            }
+
             .result-list {
                 list-style: none;
                 margin: 0;
@@ -133,10 +177,7 @@ type SearchTextSegment = {
             }
 
             .result-line {
-                display: grid;
-                grid-template-columns: 3.25rem 1fr;
-                gap: 0.75rem;
-                align-items: flex-start;
+                display: block;
                 padding: 0.35rem 0.25rem;
                 border-radius: 4px;
                 cursor: pointer;
@@ -146,13 +187,8 @@ type SearchTextSegment = {
                 }
             }
 
-            .line-number {
-                font-family: monospace;
-                opacity: 0.6;
-                user-select: none;
-            }
-
             .line-content {
+                display: block;
                 white-space: pre-wrap;
                 word-break: break-word;
                 line-height: 1.3;
@@ -161,6 +197,16 @@ type SearchTextSegment = {
 
             .match {
                 border-radius: 2px;
+            }
+
+            .load-more-button {
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.05);
+                color: inherit;
+                border-radius: 6px;
+                min-height: 2rem;
+                padding: 0.35rem 0.75rem;
+                cursor: pointer;
             }
         `,
     ],
@@ -172,6 +218,8 @@ export class TerminalSearchSideComponent {
     readonly regularExpression: Signal<boolean>;
     readonly matchBackgroundColor: Signal<string>;
     readonly matchBorderColor: Signal<string>;
+    readonly isBlockSearchActive: Signal<boolean>;
+    readonly hasMoreResults: Signal<boolean>;
     readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
 
     constructor(private readonly terminalSearchService: TerminalSearchService) {
@@ -181,6 +229,8 @@ export class TerminalSearchSideComponent {
         this.regularExpression = this.terminalSearchService.regularExpression;
         this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
         this.matchBorderColor = this.terminalSearchService.matchBorderColor;
+        this.isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
+        this.hasMoreResults = this.terminalSearchService.hasMoreResults;
         this.reversedSearchResults = computed(() => {
             return [...this.searchResults()].reverse();
         });
@@ -189,6 +239,14 @@ export class TerminalSearchSideComponent {
     updateSearchQuery(event: Event): void {
         const inputElement = event.target as HTMLInputElement;
         this.terminalSearchService.submitSearchQuery(inputElement.value);
+    }
+
+    clearBlockSearch(): void {
+        this.terminalSearchService.clearBlockSearch();
+    }
+
+    loadMoreSearchResults(): void {
+        this.terminalSearchService.loadMoreSearchResults();
     }
 
     revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
@@ -262,3 +320,6 @@ export class TerminalSearchSideComponent {
         });
     }
 }
+
+
+

@@ -5,33 +5,55 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
-import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
-import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
-import { KeybindService } from "@cogno/app/keybinding/keybind.service";
-import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
-import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
-import { StyleService } from "@cogno/app/style/style.service";
-import { WindowService } from "@cogno/app/window/window.service";
-import { NotificationService } from "@cogno/features/side-menu/notification/notification.service";
-import { TerminalSearchService } from "@cogno/features/side-menu/terminal-search/terminal-search.service";
+import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
+import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
+  actionKeybindingToken,
   commandPaletteHostPortToken,
   commandRunnerToken,
   databaseAccessToken,
   filesystemToken,
+  notificationCenterPortToken,
   terminalSearchHostPortToken,
+  workspaceCloseGuardToken,
   workspaceHostPortToken,
-} from "@cogno/core-sdk";
+} from "@cogno/app/app-host/app-host.tokens";
 import { CommandPaletteHostPortAdapterService } from "@cogno/app/app-host/command-palette-host-port.adapter.service";
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
-import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
+import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
+import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
-import { AppWiringService } from "./app-host/app-wiring.service";
+import { WorkspaceShortcutActionService } from "@cogno/app/app-host/workspace-shortcut-action.service";
+import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
+import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
+import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
+import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
+import { KeybindService } from "@cogno/app/keybinding/keybind.service";
+import {
+  sideMenuFeatureDefinitions,
+  sideMenuFeatureDefinitionsToken,
+} from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
+import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
+import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
+import { StyleService } from "@cogno/app/style/style.service";
+import { WindowService } from "@cogno/app/window/window.service";
+import { Logger } from "@cogno/app-tauri/logger";
+import {
+  ActionKeybindingPort,
+  ApplicationProduct,
+  CommandPaletteHostPort,
+  NotificationCenterPort,
+  TerminalSearchHostPort,
+  WorkspaceCloseGuard,
+  WorkspaceHostPort,
+} from "@cogno/core-api";
+import { productDefinition } from "../products/product-definition.instance";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,15 +61,31 @@ export const appConfig: ApplicationConfig = {
     { provide: ConfigService, useClass: RealConfigService },
     { provide: commandRunnerToken, useExisting: CommandRunnerHostService },
     { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
+    { provide: actionKeybindingToken, useExisting: ActionKeybindingPortAdapterService },
     { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
     { provide: filesystemToken, useExisting: FilesystemHostService },
+    { provide: additionalNotificationChannelsToken, useValue: [] },
+    { provide: notificationCenterPortToken, useExisting: NotificationCenterPortAdapterService },
     { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
+    { provide: workspaceCloseGuardToken, useExisting: WorkspaceCloseGuardAdapterService },
     { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },
+    { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
+    { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
+    { provide: CommandPaletteHostPort, useExisting: CommandPaletteHostPortAdapterService },
+    { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
+    {
+      provide: sideMenuFeatureDefinitionsToken,
+      useValue: [...sideMenuFeatureDefinitions, ...productDefinition.sideMenuFeatureDefinitions],
+    },
+    { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
+    { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },
+    { provide: WorkspaceHostPort, useExisting: WorkspaceHostPortAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
+      void Logger.initialize();
       inject(StyleService);
       inject(NotificationDispatchService);
-      inject(NotificationService);
+      inject(ErrorReportingRuntimeService).initialize();
       inject(WorkspaceHostApplicationService);
       inject(KeybindService);
       inject(CliActionService);
@@ -55,10 +93,11 @@ export const appConfig: ApplicationConfig = {
       inject(WindowService);
       inject(AppWiringService);
       inject(SideMenuLifecycleRuntimeService);
+      inject(ActionKeybindingPortAdapterService);
       inject(CommandPaletteHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);
-      inject(TerminalSearchService);
+      inject(WorkspaceShortcutActionService);
     }),
   ],
 };

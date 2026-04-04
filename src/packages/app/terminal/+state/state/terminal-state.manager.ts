@@ -15,8 +15,8 @@ import {
 import {Command} from "./command.model";
 import {TerminalId} from "../../../grid-list/+model/model";
 
-import {OS} from "../../../_tauri/os";
-import { IPathAdapter } from "@cogno/core-sdk";
+import {OS} from "@cogno/app-tauri/os";
+import { IPathAdapter } from "@cogno/core-api";
 import { PathFactory } from "@cogno/core-host";
 import {ShellContext} from "../advanced/model/models";
 import {TerminalCommandHistoryStore} from "../advanced/history/terminal-command-history.store";
@@ -168,6 +168,18 @@ export class TerminalStateManager {
 
     setPaneMaximized(isPaneMaximized: boolean): void {
         this.updateState({isPaneMaximized});
+    }
+
+    get scrolledLinesFromBottom(): number {
+        return this._stateSubject.value.scrolledLinesFromBottom;
+    }
+
+    get scrolledLinesFromBottom$(): Observable<number> {
+        return this._stateSubject.pipe(map(s => s.scrolledLinesFromBottom));
+    }
+
+    setScrolledLinesFromBottom(scrolledLinesFromBottom: number): void {
+        this.updateState({scrolledLinesFromBottom});
     }
 
     get hasUnreadNotification(): boolean {
@@ -334,3 +346,6 @@ export class TerminalStateManager {
     }
 
 }
+
+
+

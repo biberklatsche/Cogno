@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { IPathAdapter } from "@cogno/core-sdk";
+import { IPathAdapter } from "@cogno/core-api";
 import { ShellContext } from "../model/models";
 import { HistoryRepository } from "./history.repository";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
@@ -73,12 +73,11 @@ describe("TerminalHistoryPersistenceService", () => {
         expect(repositoryDouble.upsertWorkingDirectory).toHaveBeenCalledWith("/tmp");
     });
 
-    it("persists only successful commands by default (return code 0)", async () => {
+    it("persists existing commands even when they exit non-zero", async () => {
         const repositoryDouble = createRepositoryDouble();
         const service = await createService(repositoryDouble);
 
-        service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 1 });
-        service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 0 });
+        service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 1, commandExists: true });
         await flushActions();
 
         expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenCalledTimes(1);
@@ -86,6 +85,17 @@ describe("TerminalHistoryPersistenceService", () => {
         expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledTimes(1);
         expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith("npm test", "/tmp");
         expect(repositoryDouble.upsertCommandTransition).not.toHaveBeenCalled();
+    });
+
+    it("does not persist commands that the shell reports as missing", async () => {
+        const repositoryDouble = createRepositoryDouble();
+        const service = await createService(repositoryDouble);
+
+        service.onCommandExecuted({ command: "sdlfjhksdjf", directory: "/tmp", returnCode: 127, commandExists: false });
+        await flushActions();
+
+        expect(repositoryDouble.upsertCommandPatternExecution).not.toHaveBeenCalled();
+        expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
     });
 
     it("never persists cd commands", async () => {
@@ -205,3 +215,6 @@ describe("TerminalHistoryPersistenceService", () => {
         expect(repositoryDouble.deleteCommandExecution).toHaveBeenCalledWith('git commit -am "fix bug"', "/tmp");
     });
 });
+
+
+

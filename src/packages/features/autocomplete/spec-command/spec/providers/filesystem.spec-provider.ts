@@ -1,11 +1,11 @@
-import { FilesystemContract, ShellContextContract } from "@cogno/core-sdk";
+import { FilesystemContract, ShellContextContract } from "@cogno/core-api";
+import { AutocompletePathSupport } from "@cogno/core-support";
 import {
     FilesystemSpecProviderParams,
     SpecProvidedSuggestion,
     SpecProviderContext,
     SpecSuggestionProvider,
 } from "../spec.types";
-import { FilesystemAutocompletePathUtil } from "./filesystem-autocomplete-path.util";
 
 type FilesystemProviderKind = "file" | "directory";
 
@@ -101,7 +101,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             return { parentNorm: cwdNorm, namePrefix: "" };
         }
 
-        const unescapedFragment = FilesystemAutocompletePathUtil.unescapeAutocompletePathFragment(
+        const unescapedFragment = AutocompletePathSupport.unescapeAutocompletePathFragment(
             trimmed,
             shellContext,
         );
@@ -158,7 +158,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             if (
                 displayPath === "."
                 || displayPath === ".."
-                || FilesystemAutocompletePathUtil.isParentTraversalOnly(displayPath)
+                || AutocompletePathSupport.isParentTraversalOnly(displayPath)
             ) {
                 continue;
             }
@@ -166,7 +166,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             const insertText = entry.kind === "directory" && appendSlashToDirectories
                 ? this.filesystem.appendPathSeparator(displayPath, shellContext)
                 : displayPath;
-            const escapedInsertText = FilesystemAutocompletePathUtil.escapePathForAutocompleteInsert(
+            const escapedInsertText = AutocompletePathSupport.escapePathForAutocompleteInsert(
                 insertText,
                 shellContext,
             );
@@ -174,7 +174,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             candidates.push({
                 entryNameLower: entry.name.toLowerCase(),
                 suggestion: {
-                    label: FilesystemAutocompletePathUtil.shortenParentTraversalDisplay(
+                    label: AutocompletePathSupport.shortenParentTraversalDisplay(
                         insertText,
                         shellContext,
                     ),

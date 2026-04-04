@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-sdk";
+import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
 import { TerminalSearchService } from "./terminal-search.service";
+import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
 
 @Injectable({ providedIn: "root" })
 export class TerminalSearchSideMenuLifecycle {
@@ -15,7 +16,7 @@ export class TerminalSearchSideMenuLifecycle {
       },
       onOpen: () => {
         this.terminalSearchService.handleSideMenuOpen();
-        this.focusSideMenuAutofocusElement();
+        focusSideMenuAutofocusElement();
       },
       onClose: () => this.terminalSearchService.handleSideMenuClose(),
       onFocus: () => {
@@ -28,26 +29,12 @@ export class TerminalSearchSideMenuLifecycle {
             this.terminalSearchService.repeatSearch();
           }
         });
-        this.focusSideMenuAutofocusElement();
+        focusSideMenuAutofocusElement();
       },
       onBlur: () => sideMenuFeatureHandle.unregisterKeybindListener(),
     };
   }
-
-  private focusSideMenuAutofocusElement(): void {
-    const scheduleFocus = globalThis.requestAnimationFrame ?? ((callback: FrameRequestCallback) => setTimeout(callback, 0));
-    scheduleFocus(() => {
-      const autofocusElement = this.findSideMenuAutofocusElement();
-      autofocusElement?.focus();
-      autofocusElement?.select();
-    });
-  }
-
-  private findSideMenuAutofocusElement(): HTMLInputElement | null {
-    const documentReference = globalThis.document;
-    if (!documentReference) {
-      return null;
-    }
-    return documentReference.querySelector<HTMLInputElement>("[data-side-menu-autofocus='true']");
-  }
 }
+
+
+

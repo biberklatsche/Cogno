@@ -2,7 +2,7 @@ import {
   BasePathAdapter,
   ShellContextContract,
   ShellPathAdapterDefinitionContract,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 
 type ShellAdapterContext = {
   backendOs: ShellContextContract["backendOs"];
@@ -19,3 +19,6 @@ export const bashShellPathAdapterDefinition: ShellPathAdapterDefinitionContract 
   shellType: "Bash",
   createPathAdapter: shellContext => new BashPathAdapter(shellContext),
 };
+
+
+

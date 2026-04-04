@@ -203,3 +203,5 @@ describe('ConfigReader', () => {
         expect(result.config.terminal?.progress_bar?.enabled).toBe(false);
     });
 });
+
+

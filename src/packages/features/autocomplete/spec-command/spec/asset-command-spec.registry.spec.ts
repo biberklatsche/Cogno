@@ -41,3 +41,6 @@ describe("AssetCommandSpecRegistry", () => {
         expect(subs).toContain("commit");
     });
 });
+
+
+

@@ -3,43 +3,6 @@
 version = 4
 
 [[package]]
-name = "Cogno"
-version = "0.1.0"
-dependencies = [
- "aes",
- "block-modes",
- "block-padding",
- "cipher",
- "clap",
- "cogno_tauri_core",
- "dirs",
- "font-kit",
- "hex",
- "portable-pty",
- "rand 0.8.5",
- "ring",
- "serde",
- "serde_json",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-fs",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "tauri-plugin-os",
- "tauri-plugin-process",
- "tauri-plugin-single-instance",
- "tauri-plugin-sql",
- "tauri-plugin-window-state",
- "uuid",
- "which",
- "winapi",
- "winreg 0.52.0",
-]
-
-[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -769,6 +732,43 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bde03770d3df201d4fb868f2c9c59e66a3e4e2bd06692a0fe701e7103c7e84d4"
 dependencies = [
  "error-code",
+]
+
+[[package]]
+name = "cogno"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "block-modes",
+ "block-padding",
+ "cipher",
+ "clap",
+ "cogno_tauri_core",
+ "dirs",
+ "font-kit",
+ "hex",
+ "portable-pty",
+ "rand 0.8.5",
+ "ring",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-fs",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "tauri-plugin-os",
+ "tauri-plugin-process",
+ "tauri-plugin-single-instance",
+ "tauri-plugin-sql",
+ "tauri-plugin-window-state",
+ "uuid",
+ "which",
+ "winapi",
+ "winreg 0.52.0",
 ]
 
 [[package]]

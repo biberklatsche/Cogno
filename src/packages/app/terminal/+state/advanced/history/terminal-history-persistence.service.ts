@@ -2,12 +2,12 @@ import { Injectable } from "@angular/core";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 
-import { Logger } from "../../../../_tauri/logger";
-import { IPathAdapter } from "@cogno/core-sdk";
+import { IPathAdapter } from "@cogno/core-api";
 import { ShellContext } from "../model/models";
 import { LearnedCommandPattern } from "./command-pattern.models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
 import {ExecutedCommand} from "./terminal-command-history.store";
+import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
 type ReturnCodePolicy = {
@@ -48,8 +48,14 @@ export class TerminalHistoryPersistenceService {
                         take(1),
                         concatMap(repo => from(action(repo))),
                         catchError(err => {
-                            const detail = err instanceof Error ? `${err.message}\n${err.stack ?? ""}` : String(err);
-                            Logger.error(`[TerminalHistoryPersistenceService] action failed: ${detail}`);
+                            ErrorReporter.reportException({
+                                error: err,
+                                handled: true,
+                                source: "TerminalHistoryPersistenceService",
+                                context: {
+                                    operation: "persistenceAction",
+                                },
+                            });
                             return EMPTY;
                         })
                     )
@@ -61,7 +67,14 @@ export class TerminalHistoryPersistenceService {
     initialize(shellContext: ShellContext, adapter: IPathAdapter): void {
         HistoryRepository.createForContext(shellContext, adapter)
             .then(repo => this._repo$.next(repo))
-            .catch(err => Logger.error("[TerminalHistoryPersistenceService] init failed", err));
+            .catch(error => ErrorReporter.reportException({
+                error,
+                handled: true,
+                source: "TerminalHistoryPersistenceService",
+                context: {
+                    operation: "initialize",
+                },
+            }));
     }
 
     onCwdChanged(cwdRaw: string): void {
@@ -160,7 +173,6 @@ export class TerminalHistoryPersistenceService {
 
     private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
         if(executedCommand === undefined) return false;
-        if(executedCommand.commandExists === false) return false;
         if(executedCommand.command === undefined) return false;
         const command = executedCommand.command.trim();
         if(command.length === 0) return false;
@@ -171,6 +183,8 @@ export class TerminalHistoryPersistenceService {
         const token = firstToken(command);
         if (!token) return false;
         if (token === "cd") return false;
+        if (executedCommand.commandExists === true) return true;
+        if (executedCommand.commandExists === false) return false;
         if(executedCommand.returnCode === undefined || !Number.isFinite(executedCommand.returnCode)) return false;
 
         const allowed = this._returnCodePolicy.perCommandAllowedCodes.get(token)
@@ -197,3 +211,6 @@ export class TerminalHistoryPersistenceService {
         return recentCommandExecution.command;
     }
 }
+
+
+

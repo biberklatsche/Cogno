@@ -24,3 +24,5 @@ export const ColorSchema = z.object({
 });
 
 export type Color = z.infer<typeof ColorSchema>;
+
+

@@ -52,3 +52,5 @@ describe("CommandPatternRepository", () => {
         expect(commandPatternRepository.search("git", 10)).toEqual([]);
     });
 });
+
+

@@ -33,7 +33,7 @@ export interface TerminalBusyConfirmationDialogData {
   template: `
     <div class="dialog-content">
       <p class="dialog-message">
-        {{ busyTerminalCountText() }} running. Do you really want to {{ data.actionLabel }}?
+        {{ busyTerminalCountText() }} running a command. Do you really want to {{ data.actionLabel }}?
       </p>
       <div class="dialog-actions">
         <button type="button" class="button" (click)="cancel()">No</button>
@@ -64,3 +64,5 @@ export class TerminalBusyConfirmationDialogComponent {
     this.dialogRef.close(false);
   }
 }
+
+

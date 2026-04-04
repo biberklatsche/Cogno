@@ -3,15 +3,26 @@ import { IDisposable } from '../../../../common/models/models';
 import {PromptSegment} from "../../../../config/+models/prompt-config";
 import {PromptMarkerRenderer} from "./prompt-renderer";
 import {TerminalStateManager} from "../../state";
+import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
+import { AppBus } from "../../../../app-bus/app-bus";
+import { CommandBlockResolver } from "./command-block-resolver";
 
+type MarkerManagerContextMenuOverlayPort = Pick<ContextMenuOverlayService, 'openContextForElement'>;
 
 export class MarkerManager implements IDisposable {
     private _decorations: Map<IMarker, IDecoration> = new Map();
     private _terminal?: Terminal;
     private _renderer?: PromptMarkerRenderer;
+    private readonly commandBlockResolver: CommandBlockResolver;
 
-    constructor(private stateManager: TerminalStateManager, promptSegments: PromptSegment[]) {
-        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments);
+    constructor(
+        private stateManager: TerminalStateManager,
+        promptSegments: PromptSegment[],
+        contextMenuOverlayService: MarkerManagerContextMenuOverlayPort,
+        appBus: AppBus,
+    ) {
+        this._renderer = new PromptMarkerRenderer(stateManager, promptSegments, contextMenuOverlayService, appBus);
+        this.commandBlockResolver = new CommandBlockResolver(() => this._terminal);
     }
 
     setTerminal(terminal: Terminal) {
@@ -31,12 +42,10 @@ export class MarkerManager implements IDisposable {
 
         const buffer = this._terminal.buffer.active;
         const viewportStart = buffer.viewportY - 1;
-        const viewportEnd = viewportStart + this._terminal.rows - 1; // inclusive
+        const viewportEnd = viewportStart + this._terminal.rows - 1;
 
-        // Strictly set visibility of commands to the current viewport
         this.updateViewportVisibility(viewportStart, viewportEnd);
 
-        // We scan the current viewport + a larger buffer to avoid flickering
         const startScan = Math.max(0, viewportStart - 20);
         const endScan = Math.min(buffer.length - 1, viewportEnd + 20);
 
@@ -52,23 +61,19 @@ export class MarkerManager implements IDisposable {
             }
         }
 
-        // Remove disposed decorations and markers
         for (const [marker, decoration] of this._decorations.entries()) {
             if (decoration.isDisposed) {
                 this._decorations.delete(marker);
             }
         }
 
-        // Add new markers
         for (const lineIndex of currentMarkerLines) {
-            // Check if a marker already exists for this line
             const existingMarker = this.findMarkerForLine(lineIndex);
             if (!existingMarker) {
                 this.addMarker(lineIndex);
             }
         }
 
-        // Remove old decorations whose markers are no longer in the scan range
         for (const [marker, decoration] of this._decorations.entries()) {
             const markerLine = marker.line;
             if (markerLine < startScan || markerLine > endScan || !currentMarkerLines.has(markerLine)) {
@@ -106,7 +111,6 @@ export class MarkerManager implements IDisposable {
 
         let firstCommandOutOfViewportIdx = -1;
         if(!isCommandOnFirstLine) {
-            // Find the first command above the viewport
             for (let i = viewportStart - 1; i >= 0; i--) {
                 const line = buffer.getLine(i);
                 if (!line) continue;
@@ -137,7 +141,6 @@ export class MarkerManager implements IDisposable {
         if (!line) return;
 
         const lineText = line.translateToString();
-        // Expect ^^#<ID> at the beginning of the line
         const match = lineText.match(/^\^\^#(\d+)/);
         const commandId = match ? match[1] : undefined;
         const commandIndex = this.findCommandIndex(commandId);
@@ -151,13 +154,27 @@ export class MarkerManager implements IDisposable {
         const decoration = this._terminal.registerDecoration({
             marker,
             x: 0,
-            width: 1,
+            width: this._terminal.cols,
             anchor: 'left'
         });
 
         if (decoration) {
             decoration.onRender((element) => {
-                this._renderer!.render(element, commandIndex);
+                this._renderer!.render(element, {
+                    commandIndex,
+                    getCommandOutput: () => this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.outputText ?? "",
+                    getBlockRange: () => this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.blockRange ?? { beginBufferLine: 1, endBufferLine: 0 },
+                    scrollToCommandTop: () => {
+                        this._terminal?.scrollToLine(lineIndex);
+                    },
+                    scrollToCommandBottom: () => {
+                        const commandBlockDetails = this.commandBlockResolver.resolveByMarkerLine(lineIndex);
+                        const targetLineIndex = commandBlockDetails
+                            ? Math.max(lineIndex, commandBlockDetails.nextMarkerLineIndex - 1)
+                            : lineIndex;
+                        this._terminal?.scrollToLine(targetLineIndex);
+                    },
+                });
             });
             decoration.onDispose(() => {
                 marker.dispose();

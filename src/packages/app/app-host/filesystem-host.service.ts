@@ -1,13 +1,13 @@
 import { Injectable } from "@angular/core";
-import { readDir } from "@tauri-apps/plugin-fs";
 import {
   FilesystemContract,
   FilesystemEntryContract,
   FilesystemListOptionsContract,
   ShellContextContract,
-} from "@cogno/core-sdk";
-import { AutocompletePathUtil, PathFactory } from "@cogno/core-host";
-import { Fs } from "../_tauri/fs";
+} from "@cogno/core-api";
+import { PathFactory } from "@cogno/core-host";
+import { AutocompletePathSupport } from "@cogno/core-support";
+import { Fs } from "@cogno/app-tauri/fs";
 
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService implements FilesystemContract {
@@ -43,7 +43,7 @@ export class FilesystemHostService implements FilesystemContract {
     const backendPath = adapter.render(path, { purpose: "backend_fs" });
     if (!backendPath) return [];
 
-    const entries = await readDir(backendPath);
+    const entries = await Fs.readDir(backendPath);
     const prefixMatches: FilesystemEntryContract[] = [];
     const containsMatches: FilesystemEntryContract[] = [];
     const sep = backendPath.includes("\\") ? "\\" : "/";
@@ -107,14 +107,14 @@ export class FilesystemHostService implements FilesystemContract {
   }
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {
-    return AutocompletePathUtil.toDisplayPath(path, cwd, shellContext);
+    return AutocompletePathSupport.toDisplayPath(path, cwd, PathFactory.createAdapter(shellContext));
   }
 
   appendPathSeparator(path: string, shellContext: ShellContextContract): string {
-    return AutocompletePathUtil.appendDirectorySeparator(path, shellContext);
+    return AutocompletePathSupport.appendDirectorySeparator(path, shellContext);
   }
 
   toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string {
-    return AutocompletePathUtil.toRelativePath(path, cwd);
+    return AutocompletePathSupport.toRelativePath(path, cwd);
   }
 }

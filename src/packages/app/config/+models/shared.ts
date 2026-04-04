@@ -32,3 +32,5 @@ export const TerminalNamedColorSchema = z.union([
     z.literal('brightCyan'),
     z.literal('brightWhite'),
 ]);
+
+

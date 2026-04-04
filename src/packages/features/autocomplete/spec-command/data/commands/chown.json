@@ -1,6 +1,21 @@
 {
   "name": "chown",
   "description": "Change the user and/or group ownership of a given file, directory, or symbolic link",
+  "providers": [
+    {
+      "providerId": "filesystem",
+      "source": "fs-path",
+      "baseScore": 58,
+      "params": {
+        "kinds": [
+          "file",
+          "directory"
+        ],
+        "appendSlashToDirectories": true,
+        "continueSuggestions": true
+      }
+    }
+  ],
   "options": [
     {
       "name": "-f",

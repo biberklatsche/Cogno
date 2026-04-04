@@ -19,3 +19,5 @@ export class DialogRef<TResult = unknown> {
     this._destroy();
   }
 }
+
+

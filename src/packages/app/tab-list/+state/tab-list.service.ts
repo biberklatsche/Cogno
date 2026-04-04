@@ -2,7 +2,7 @@ import {DestroyRef, Injectable, Signal, signal, WritableSignal} from "@angular/c
 import {Tab, TabList} from '../+model/tab';
 import {BehaviorSubject, Observable} from 'rxjs';
 import {AppBus} from "../../app-bus/app-bus";
-import {defaultWorkspaceIdContract, TabConfig, TabId} from "@cogno/core-sdk";
+import {defaultWorkspaceIdContract, TabConfig, TabId} from "@cogno/core-api";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {CreateTabAction, RemoveTabAction, SelectTabAction} from "../+bus/actions";
 import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
@@ -16,6 +16,7 @@ import {TerminalId} from "../../grid-list/+model/model";
 
 @Injectable({providedIn: 'root'})
 export class TabListService {
+    private static readonly indexedShortcutLimit = 9;
 
     private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
     private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
@@ -97,22 +98,29 @@ export class TabListService {
         this.bus.on$(ActionFired.listener())
             .pipe(takeUntilDestroyed(destroyRef))
             .subscribe((event: ActionFiredEvent) => {
+                if (!event.payload) {
+                    return;
+                }
+
+                const shellIndex = this.resolveShortcutIndex(event.payload, 'open_shell_');
+                if (shellIndex !== undefined) {
+                    this.openShell(this.configService.getShellProfileByShortcutIndex(shellIndex)?.name);
+                    event.performed = !event.trigger?.all;
+                    event.defaultPrevented = true;
+                    return;
+                }
+
+                const tabIndex = this.resolveShortcutIndex(event.payload, 'select_tab_');
+                if (tabIndex !== undefined) {
+                    this.selectTabByShortcutIndex(tabIndex);
+                    event.performed = !event.trigger?.all;
+                    event.defaultPrevented = true;
+                    return;
+                }
+
                 switch (event.payload) {
                     case 'new_tab':
                         this.openShell(event.args?.[0] ?? this.configService.getShellProfileByShortcutIndex(1)?.name);
-                        event.performed = !event.trigger?.all;
-                        event.defaultPrevented = true;
-                        break;
-                    case 'open_shell_1':
-                    case 'open_shell_2':
-                    case 'open_shell_3':
-                    case 'open_shell_4':
-                    case 'open_shell_5':
-                    case 'open_shell_6':
-                    case 'open_shell_7':
-                    case 'open_shell_8':
-                    case 'open_shell_9':
-                        this.openShell(this.resolveShellNameByAction(event.payload));
                         event.performed = !event.trigger?.all;
                         event.defaultPrevented = true;
                         break;
@@ -337,10 +345,23 @@ export class TabListService {
         }, false, { shellName });
     }
 
-    private resolveShellNameByAction(actionName: string): string | undefined {
-        const shellIndex = Number.parseInt(actionName.replace('open_shell_', ''), 10);
-        const shellProfile = this.configService.getShellProfileByShortcutIndex(shellIndex);
-        return shellProfile?.name;
+    private selectTabByShortcutIndex(index: number): void {
+        const tab = this._tabList.value[index - 1];
+        if (!tab) {
+            return;
+        }
+        this.selectTab(tab.id);
+    }
+
+    private resolveShortcutIndex(actionName: string, prefix: string): number | undefined {
+        if (!actionName.startsWith(prefix)) {
+            return undefined;
+        }
+        const index = Number.parseInt(actionName.slice(prefix.length), 10);
+        if (Number.isNaN(index) || index < 1 || index > TabListService.indexedShortcutLimit) {
+            return undefined;
+        }
+        return index;
     }
 
     private getRequiredActiveWorkspaceIdentifier(): string {
@@ -366,3 +387,6 @@ export class TabListService {
         return tabList.map((tab) => ({...tab}));
     }
 }
+
+
+

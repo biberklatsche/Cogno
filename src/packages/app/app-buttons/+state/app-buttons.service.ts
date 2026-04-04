@@ -1,8 +1,8 @@
 import {Injectable, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {AppWindow} from "../../_tauri/window";
+import {AppWindow} from "@cogno/app-tauri/window";
 import {DestroyRef} from '@angular/core';
-import {Logger} from "../../_tauri/logger";
+import {Logger} from "@cogno/app-tauri/logger";
 import {AppBus} from "../../app-bus/app-bus";
 import {ActionFired} from "../../action/action.models";
 
@@ -36,3 +36,5 @@ export class AppButtonsService {
         AppWindow.unmaximize().then(() => Logger.debug('unmaximize window'));
     }
 }
+
+

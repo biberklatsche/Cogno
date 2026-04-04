@@ -1,6 +1,6 @@
-import {Path} from '../../_tauri/path';
+import {Path} from '@cogno/app-tauri/path';
 import { isDevMode } from '@angular/core';
-import {Logger} from "../../_tauri/logger";
+import {Logger} from "@cogno/app-tauri/logger";
 
 export const Environment = (() => {
     let homeDir = '';
@@ -50,3 +50,5 @@ export const Environment = (() => {
         },
     };
 })();
+
+

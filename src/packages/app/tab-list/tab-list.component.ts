@@ -2,19 +2,17 @@ import {Component, ElementRef, OnDestroy, Signal, ViewChild, effect} from '@angu
 import {CommonModule} from '@angular/common';
 import {TabListService} from "./+state/tab-list.service";
 import {Observable} from "rxjs";
-import { IconComponent } from "@cogno/core-ui";
+import { DragPreviewService, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import {ShellType} from "../config/+models/config";
 import { Icon } from "@cogno/core-ui";
-import {TabId} from "@cogno/core-sdk";
+import {TabId} from "@cogno/core-api";
 import {IdCreator} from '../common/id-creator/id-creator';
 import {ContextMenuItem} from "../menu/context-menu-overlay/context-menu-overlay.types";
 import {ContextMenuOverlayService} from "../menu/context-menu-overlay/context-menu-overlay.service";
 import {Tab} from "./+model/tab";
 import {AppMenuButtonComponent} from "../menu/app-menu/app-menu-button.component";
-import {TooltipDirective} from "../common/tooltip/tooltip.directive";
 import {ActionKeybindingPipe} from "../keybinding/pipe/keybinding.pipe";
 import {StartEllipsisDirective} from "../common/text/start-ellipsis.directive";
-import {DragPreviewService} from "../common/drag-preview/drag-preview.service";
 
 @Component({
   selector: 'app-tab-list',
@@ -139,6 +137,10 @@ export class TabListComponent implements OnDestroy {
         this.tabListService.commitRename(value);
     }
 
+    getTabShortcutActionName(index: number): string {
+        return `select_tab_${index + 1}`;
+    }
+
     private onWindowMouseMove(event: MouseEvent): void {
         if (this.isDraggingTab) {
             this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
@@ -201,3 +203,6 @@ export class TabListComponent implements OnDestroy {
         return !!eventTarget.closest('.close, .inline-input');
     }
 }
+
+
+

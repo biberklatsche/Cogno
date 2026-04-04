@@ -1,7 +1,15 @@
 import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {AppButtonsService} from './+state/app-buttons.service';
 
-import {OS, OsType} from "../_tauri/os";
+import {OS, OsType} from "@cogno/app-tauri/os";
+
+type WindowControlIconName =
+  | "close"
+  | "linux-arrow-collapse"
+  | "linux-arrow-expand"
+  | "window-maximize"
+  | "window-minimize"
+  | "window-restore";
 
 @Component({
     selector: 'app-window-buttons',
@@ -9,25 +17,27 @@ import {OS, OsType} from "../_tauri/os";
         @if (operatingSystem === 'windows' || operatingSystem === 'linux') {
             <div id="window-buttons" class="{{operatingSystem}}">
                 <button class="btn-flat" (click)="minimizeWindow()">
-                    <svg class="window-control-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path [attr.d]="windowControlIconPaths.windowMinimize" fill="currentColor" />
-                    </svg>
+                    <span class="window-control-icon" [style.mask-image]="iconMask('window-minimize')" [style.webkit-mask-image]="iconMask('window-minimize')" aria-hidden="true"></span>
                 </button>
                 <button class="btn-flat" (click)="toggleMaximizeWindow()">
                     @if (appButtonsService.isMaximized()) {
-                        <svg class="window-control-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path [attr.d]="operatingSystem === 'linux' ? windowControlIconPaths.linuxArrowCollapse : windowControlIconPaths.windowRestore" fill="currentColor" />
-                        </svg>
+                        <span
+                          class="window-control-icon"
+                          [style.mask-image]="iconMask(operatingSystem === 'linux' ? 'linux-arrow-collapse' : 'window-restore')"
+                          [style.webkit-mask-image]="iconMask(operatingSystem === 'linux' ? 'linux-arrow-collapse' : 'window-restore')"
+                          aria-hidden="true"
+                        ></span>
                     } @else {
-                        <svg class="window-control-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path [attr.d]="operatingSystem === 'linux' ? windowControlIconPaths.linuxArrowExpand : windowControlIconPaths.windowMaximize" fill="currentColor" />
-                        </svg>
+                        <span
+                          class="window-control-icon"
+                          [style.mask-image]="iconMask(operatingSystem === 'linux' ? 'linux-arrow-expand' : 'window-maximize')"
+                          [style.webkit-mask-image]="iconMask(operatingSystem === 'linux' ? 'linux-arrow-expand' : 'window-maximize')"
+                          aria-hidden="true"
+                        ></span>
                     }
                 </button>
                 <button class="btn-flat close" (click)="closeWindow()">
-                    <svg class="window-control-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path [attr.d]="windowControlIconPaths.close" fill="currentColor" />
-                    </svg>
+                    <span class="window-control-icon" [style.mask-image]="iconMask('close')" [style.webkit-mask-image]="iconMask('close')" aria-hidden="true"></span>
                 </button>
             </div>
         }
@@ -44,32 +54,36 @@ import {OS, OsType} from "../_tauri/os";
                 width: calc(var(--header-height) * 1.3);
                 border: none;
                 background-color: #00000000;
-                color: var(--foreground-color);
+                color: var(--foreground-color-10t);
                 outline: none;
                 display: inline-flex;
                 justify-content: center;
                 align-items: center;
                 padding: 0;
                 position: relative;
-                opacity: 0.5;
+                opacity: 1;
 
                 .window-control-icon {
-                    color: var(--foreground-color-20d);
+                    background-color: currentColor;
                     height: calc(var(--header-height) / 2);
                     width: calc(var(--header-height) / 2);
                     display: block;
+                    mask-repeat: no-repeat;
+                    mask-position: center;
+                    mask-size: contain;
+                    -webkit-mask-repeat: no-repeat;
+                    -webkit-mask-position: center;
+                    -webkit-mask-size: contain;
                 }
 
                 &:hover {
-                    opacity: 1;
+                    color: var(--foreground-color);
                     background-color: var(--background-color-40l) !important;
                 }
 
                 &.close:hover {
                     background-color: var(--highlight-color) !important;
-                    .window-control-icon {
-                        color: var(--background-color);
-                    }
+                    color: var(--background-color);
                 }
             }
 
@@ -106,16 +120,12 @@ import {OS, OsType} from "../_tauri/os";
 export class AppButtonsComponent {
 
   protected readonly operatingSystem: OsType = OS.platform();
-  protected readonly windowControlIconPaths = {
-    close: 'M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z',
-    linuxArrowCollapse: 'M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z',
-    linuxArrowExpand: 'M10,21V19H6.41L10.91,14.5L9.5,13.09L5,17.59V14H3V21H10M14.5,10.91L19,6.41V10H21V3H14V5H17.59L13.09,9.5L14.5,10.91Z',
-    windowMaximize: 'M4,4H20V20H4V4M6,8V18H18V8H6Z',
-    windowMinimize: 'M20,14H4V10H20',
-    windowRestore: 'M4,8H8V4H20V16H16V20H4V8M16,8V14H18V6H10V8H16M6,12V18H14V12H6Z'
-  } as const;
 
   constructor(protected readonly appButtonsService: AppButtonsService) {}
+
+  protected iconMask(iconName: WindowControlIconName): string {
+    return `url('assets/icons/window-controls/${iconName}.svg')`;
+  }
 
   protected closeWindow(): void {
     this.appButtonsService.closeWindow();
@@ -146,3 +156,5 @@ export class AppButtonsComponent {
   }
 
 }
+
+

@@ -3,7 +3,7 @@ import {
     CdAutocompleteQueryContextContract,
     FilesystemContract,
     QueryContext,
-} from "@cogno/core-sdk";
+} from "@cogno/core-api";
 import { FilesystemSpecProvider } from "./filesystem.spec-provider";
 
 function cdContext(fragment: string): CdAutocompleteQueryContextContract {
@@ -292,3 +292,6 @@ describe("FilesystemSpecProvider", () => {
         expect(result[0].insertText).toBe("\\Users\\My` Folder\\");
     });
 });
+
+
+

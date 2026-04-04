@@ -57,3 +57,6 @@ describe("BashPathAdapter", () => {
     expect(adapter.render("/path/to/file", { purpose: "insert_arg" })).toBe("/path/to/file");
   });
 });
+
+
+

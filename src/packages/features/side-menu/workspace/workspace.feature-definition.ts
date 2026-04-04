@@ -1,7 +1,4 @@
-import { Type } from "@angular/core";
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-sdk";
-import { WorkspaceSideComponent } from "./workspace-side.component";
-import { WorkspaceSideMenuLifecycle } from "./workspace-side-menu.lifecycle";
+import { SideMenuFeatureDefinitionContract } from "@cogno/core-api";
 
 export const workspaceFeatureId = "workspace";
 
@@ -11,8 +8,5 @@ export const workspaceSideMenuFeatureDefinition = {
   icon: "mdiViewDashboard",
   order: 10,
   actionName: "open_workspace",
-  targetComponent: WorkspaceSideComponent,
   configPath: "workspace",
-  createLifecycle: (injector, sideMenuFeatureHandle) =>
-    injector.get(WorkspaceSideMenuLifecycle).create(sideMenuFeatureHandle),
-} as const satisfies SideMenuFeatureDefinitionContract<Type<unknown>, string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
