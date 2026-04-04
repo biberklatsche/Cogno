@@ -1,7 +1,5 @@
 # Cogno
 
-Terminal work, without terminal chaos.
-
 Cogno is a terminal workspace built for heavy daily shell use:
 
 - autocomplete for 1000+ CLI commands
