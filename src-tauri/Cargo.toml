@@ -1,10 +1,10 @@
 [package]
-name = "Cogno"
+name = "cogno"
 version = "0.1.0"
-description = "A Terminal"
+description = "A terminal workspace for focused daily shell work"
 authors = ["Lars Wolfram"]
 edition = "2021"
-license = "FSL-1.1-MIT"
+license = "MPL-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

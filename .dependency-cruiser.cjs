@@ -10,7 +10,7 @@ const featuresPattern = "^src/packages/features/";
 const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
 const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
 const appPackagePattern = "^src/packages/app/";
-const privateSiblingPattern = "^(\\.\\./cogno2-pro/|.*/cogno2-pro/)";
+const privateSiblingPattern = "^(\\.\\./[^/]+-pro/|.*/[^/]+-pro/)";
 const knownCognoAliasPattern =
   "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
 
@@ -209,7 +209,7 @@ module.exports = {
     {
       name: "public-repo-must-not-import-private-sibling",
       severity: "error",
-      comment: "The public repository must not depend on the private cogno2-pro sibling repository.",
+      comment: "The public repository must not depend on a private sibling repository.",
       from: { path: "^(src/|scripts/|package\\.json|angular\\.json|\\.dependency-cruiser\\.cjs)" },
       to: { path: privateSiblingPattern },
     },

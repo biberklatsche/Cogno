@@ -1,6 +1,7 @@
 {
-  "name": "cogno2",
+  "name": "cogno",
   "version": "0.1.0",
+  "description": "A terminal workspace for focused daily shell work",
   "license": "MPL-2.0",
   "licenseText": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.8.1",

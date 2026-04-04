@@ -8,8 +8,8 @@ import { ErrorReporter } from "../common/error/error-reporter";
 const INTEGRATION_VERSION = "1.1.3";
 
 /**
- * Manages shell integration scripts in ~/.cogno2/shell-integration
- * (or ~/.cogno2-dev/shell-integration in dev mode)
+ * Manages shell integration scripts in ~/.cogno/shell-integration
+ * (or ~/.cogno-dev/shell-integration in development mode)
  */
 export class ShellIntegrationWriter {
   /**
@@ -182,6 +182,3 @@ export class ShellIntegrationWriter {
     await Fs.writeTextFile(logFile, existing + entry);
   }
 }
-
-
-

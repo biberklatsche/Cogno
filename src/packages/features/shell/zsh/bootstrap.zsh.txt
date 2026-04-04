@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Cogno2 Bootstrap Script for Zsh
+# Cogno Bootstrap Script for Zsh
 # This script is loaded as .zshrc in the custom ZDOTDIR
 
 # Guard against double loading

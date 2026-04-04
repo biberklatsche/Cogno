@@ -228,7 +228,7 @@ function validateCommandLineArguments(parsedArguments) {
 }
 
 function printHelp() {
-  console.log("Local release builder for Cogno2");
+  console.log("Local release builder for Cogno");
   console.log("");
   console.log("Build current platform:");
   console.log("  pnpm run release:build -- --channel release");
@@ -362,7 +362,7 @@ function loadReleaseSettings({ releaseChannel }) {
     },
     storage: {
       accessKeyId: parsedSettings.storage?.accessKeyId,
-      basePath: parsedSettings.storage?.basePath ?? "cogno2",
+      basePath: parsedSettings.storage?.basePath ?? "cogno",
       bucketName: parsedSettings.storage?.bucketName,
       endpoint: parsedSettings.storage?.endpoint,
       forcePathStyle: coerceBooleanValue(parsedSettings.storage?.forcePathStyle ?? true),
@@ -548,7 +548,7 @@ function buildMacosReleaseArtifacts() {
   const dmgDirectoryPath = join("src-tauri", "target", "release", "bundle", "dmg");
   const tauriMacosBuildConfig = createTauriMacosBuildConfig();
   const macosBuildEnvironment = createMacosBuildEnvironment();
-  const temporaryConfigDirectoryPath = mkdtempSync(join(tmpdir(), "cogno2-tauri-config-"));
+  const temporaryConfigDirectoryPath = mkdtempSync(join(tmpdir(), "cogno-tauri-config-"));
   const temporaryConfigPath = join(temporaryConfigDirectoryPath, "tauri.macos.build.json");
 
   try {
@@ -910,7 +910,7 @@ function createTargetArtifactFileName({
   releaseVersion,
 }) {
   return (
-    ["cogno2", releaseVersion, currentPlatformName, process.arch, currentArtifactKind].join("-") +
+    ["cogno", releaseVersion, currentPlatformName, process.arch, currentArtifactKind].join("-") +
     currentArtifactExtension
   );
 }
@@ -1286,7 +1286,7 @@ function resolveRemoteStorageSettings(releaseSettings) {
 
   return {
     accessKeyId,
-    basePath: normalizeRemotePathSegment(releaseSettings.storage.basePath ?? "cogno2"),
+    basePath: normalizeRemotePathSegment(releaseSettings.storage.basePath ?? "cogno"),
     bucketName,
     endpoint: endpoint.replace(/\/+$/u, ""),
     forcePathStyle,
@@ -1580,7 +1580,7 @@ async function maybeCreateUpdaterManifest({
   }
 
   const remoteStorageSettings = resolveRemoteStorageSettings(releaseSettings);
-  const updaterWorkingDirectoryPath = mkdtempSync(join(tmpdir(), "cogno2-updater-"));
+  const updaterWorkingDirectoryPath = mkdtempSync(join(tmpdir(), "cogno-updater-"));
   const updaterPlatforms = {};
 
   try {
@@ -1751,7 +1751,7 @@ async function buildOrDownloadUpdaterArtifactForSigning({
     extractionDirectoryPath,
   });
   const generatedUpdaterFileName = `${[
-    "cogno2",
+    "cogno",
     platformManifest.version,
     platformManifest.platform,
     platformManifest.architecture,
@@ -1921,7 +1921,7 @@ function createPublicDocumentUrl({ relativePath, releaseSettings }) {
 
 async function uploadJsonDocument({ documentContent, releaseSettings, targetRelativePath }) {
   const remoteStorageSettings = resolveRemoteStorageSettings(releaseSettings);
-  const temporaryDirectoryPath = mkdtempSync(join(tmpdir(), "cogno2-json-"));
+  const temporaryDirectoryPath = mkdtempSync(join(tmpdir(), "cogno-json-"));
   const temporaryFilePath = join(temporaryDirectoryPath, "document.json");
 
   try {

@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Cogno2 Integration Script for Zsh
+# Cogno Integration Script for Zsh
 # Provides OSC markers, prompt hooks, and shell integration features
 
 if [[ -n "${COGNO_ZSH_INTEGRATION_LOADED}" ]]; then

@@ -6,7 +6,11 @@ use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
-    initialize_app_identity(AppIdentity::new("cogno2", ".cogno2", ".cogno2-dev"));
+    initialize_app_identity(AppIdentity::new(
+        "cogno",
+        ".cogno",
+        ".cogno-dev",
+    ));
 
     Builder::default()
         .plugin(tauri_plugin_os::init())
@@ -26,7 +30,7 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            // Wenn eine zweite Instanz gestartet wird, parse die CLI-Argumente
+            // Parse CLI arguments when a second instance is launched.
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(action_payload) = cli.action_payload() {
                     let _ = app.emit("cli-action", &action_payload);
@@ -75,7 +79,7 @@ pub fn run(cli: Cli) {
             let window = win_builder.build().unwrap();
             window.show().unwrap();
 
-            // Beim ersten Start: ggf. gewünschten Command ausführen
+            // Run the requested command on first launch when present.
             if let Some(action_payload) = cli.action_payload() {
                 let _ = app.emit("cli-action", &action_payload);
             }

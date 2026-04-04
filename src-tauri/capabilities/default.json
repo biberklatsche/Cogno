@@ -21,16 +21,16 @@
       "identifier": "fs:scope",
       "allow": [
         {
-          "path": "$HOME/.cogno2"
+          "path": "$HOME/.cogno"
         },
         {
-          "path": "$HOME/.cogno2/**"
+          "path": "$HOME/.cogno/**"
         },
         {
-          "path": "$HOME/.cogno2-dev"
+          "path": "$HOME/.cogno-dev"
         },
         {
-          "path": "$HOME/.cogno2-dev/**"
+          "path": "$HOME/.cogno-dev/**"
         },
         {
           "path": "/"
@@ -39,10 +39,10 @@
           "path": "/**"
         },
         {
-          "path": "$HOME/.cogno2/shell-integration/zsh/.zshrc"
+          "path": "$HOME/.cogno/shell-integration/zsh/.zshrc"
         },
         {
-          "path": "$HOME/.cogno2-dev/shell-integration/zsh/.zshrc"
+          "path": "$HOME/.cogno-dev/shell-integration/zsh/.zshrc"
         }
       ]
     },
@@ -75,12 +75,12 @@
       "identifier": "opener:allow-open-path",
       "allow": [
         { "path": "**/*" },
-        { "path": "$HOME/.cogno2" },
-        { "path": "$HOME/.cogno2/**" },
-        { "path": "$HOME/.cogno2/cogno.config" },
-        { "path": "$HOME/.cogno2-dev" },
-        { "path": "$HOME/.cogno2-dev/**" },
-        { "path": "$HOME/.cogno2-dev/cogno.config" }
+        { "path": "$HOME/.cogno" },
+        { "path": "$HOME/.cogno/**" },
+        { "path": "$HOME/.cogno/cogno.config" },
+        { "path": "$HOME/.cogno-dev" },
+        { "path": "$HOME/.cogno-dev/**" },
+        { "path": "$HOME/.cogno-dev/cogno.config" }
       ]
     }
   ]

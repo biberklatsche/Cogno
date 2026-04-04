@@ -197,7 +197,7 @@ describe('StyleService', () => {
           allow_transparency: true,
         },
         background_image: {
-          path: '~/.cogno2-dev/background-image.png',
+          path: '~/.cogno-dev/background-image.png',
           opacity: 50,
           blur: 0
         }
@@ -207,7 +207,7 @@ describe('StyleService', () => {
       await waitForAsyncEffects();
 
       expect(Path.homeDir).toHaveBeenCalled();
-      expect(Fs.convertFileSrc).toHaveBeenCalledWith('/Users/tester/.cogno2-dev/background-image.png');
+      expect(Fs.convertFileSrc).toHaveBeenCalledWith('/Users/tester/.cogno-dev/background-image.png');
     });
 
     it('should remove background image properties when path is missing', async () => {

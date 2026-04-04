@@ -1,4 +1,4 @@
-# Cogno 2
+# Cogno
 
 Terminal work, without terminal chaos.
 
@@ -55,8 +55,8 @@ cogno config show --defaults
 
 User files live in the Cogno home directory:
 
-- `~/.cogno2`
-- in development builds: `~/.cogno2-dev`
+- `~/.cogno`
+- in development builds: `~/.cogno-dev`
 
 There you will find:
 

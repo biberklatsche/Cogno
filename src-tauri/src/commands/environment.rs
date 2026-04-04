@@ -14,13 +14,13 @@ pub fn get_exe_dir() -> Result<String, String> {
     Ok(dir.display().to_string())
 }
 
-// Optional: Auf macOS den .app-Bundle-Root zurückgeben
+// Optionally return the .app bundle root on macOS.
 #[tauri::command]
 pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
     #[cfg(target_os = "macos")]
     {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-        // .../MyApp.app/Contents/MacOS/MyApp  ->  .../MyApp.app
+        // .../MyApp.app/Contents/MacOS/MyApp -> .../MyApp.app
         if let Some(mac_os) = exe
             .parent()
             .and_then(|p| p.parent())
@@ -38,7 +38,7 @@ pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
     }
 }
 
-/// Returns the cogno home directory path (.cogno or .cogno-dev based on dev_mode)
+/// Returns the Cogno home directory path based on the active mode.
 #[tauri::command]
 pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     let home = dirs::home_dir().ok_or("Could not determine home directory")?;

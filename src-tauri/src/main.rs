@@ -8,7 +8,11 @@ use std::collections::HashMap;
 use std::fs;
 
 fn main() {
-    initialize_app_identity(AppIdentity::new("cogno2", ".cogno2", ".cogno2-dev"));
+    initialize_app_identity(AppIdentity::new(
+        "cogno",
+        ".cogno",
+        ".cogno-dev",
+    ));
 
     let cli = Cli::parse();
 
