@@ -19,6 +19,27 @@ The project source code in this repository is licensed under `MPL-2.0`,
 except for `src/packages/features`, which is licensed under `MIT`, unless a
 file or directory contains a different third-party license notice.
 
+## Configuration
+
+Cogno ships with bundled defaults and keeps user overrides small.
+
+That keeps the user config readable while still exposing the full settings surface through:
+
+```bash
+cogno config show --defaults
+```
+
+User files live in the Cogno home directory:
+
+- `~/.cogno`
+- in development builds: `~/.cogno-dev`
+
+There you will find:
+
+- the user settings
+- generated shell integration scripts under `shell-integration/`
+- database file `cogno.db`
+
 ## CLI
 
 ```bash
@@ -42,28 +63,6 @@ cogno config get shell.default
 cogno action list
 cogno action run open_config
 ```
-
-## Configuration
-
-Cogno ships with bundled defaults and keeps user overrides small.
-
-That keeps the user config readable while still exposing the full settings surface through:
-
-```bash
-cogno config show --defaults
-```
-
-User files live in the Cogno home directory:
-
-- `~/.cogno`
-- in development builds: `~/.cogno-dev`
-
-There you will find:
-
-- the user settings
-- generated shell integration scripts under `shell-integration/`
-- database file `cogno.db`
-
 
 ## Development
 
