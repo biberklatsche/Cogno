@@ -49,6 +49,8 @@ import { TooltipDirective } from "@cogno/core-ui";
         width: fit-content;
         max-width: 100%;
         margin-left: auto;
+        height: 26px;
+        min-height: 26px;
       }
 
       .selected-workspace-header {
@@ -151,7 +153,7 @@ export class SelectedWorkspaceHeaderComponent {
 
   private buildWorkspaceMenuItems(): ContextMenuItem[] {
     return this.openWorkspaceEntries().map((workspaceEntry) => ({
-      label: workspaceEntry.isActive ? `${workspaceEntry.name} (active)` : workspaceEntry.name,
+      label: workspaceEntry.name,
       disabled: workspaceEntry.isActive,
       action: () => {
         void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
