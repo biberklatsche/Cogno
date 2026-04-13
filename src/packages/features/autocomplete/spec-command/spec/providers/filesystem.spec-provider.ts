@@ -185,9 +185,13 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
             });
         }
 
-        candidates.sort((leftCandidate, rightCandidate) =>
-            leftCandidate.entryNameLower.localeCompare(rightCandidate.entryNameLower)
-        );
+        candidates.sort((leftCandidate, rightCandidate) => {
+            const leftStartsWithDot = leftCandidate.entryNameLower.startsWith('.');
+            const rightStartsWithDot = rightCandidate.entryNameLower.startsWith('.');
+            if(leftStartsWithDot && !rightStartsWithDot) return 1;
+            if(!leftStartsWithDot && rightStartsWithDot) return -1;
+            return leftCandidate.entryNameLower.localeCompare(rightCandidate.entryNameLower);
+        });
 
         this.setCache(cacheKey, {
             expiresAt: now + FilesystemSpecProvider.CACHE_TTL_MS,

@@ -79,6 +79,34 @@ describe("FilesystemSpecProvider", () => {
         expect(result.some(r => r.label === "/notes.txt")).toBe(false);
     });
 
+    it("returns directory matches for cd sorted dot", async () => {
+        vi.mocked(filesystem.list).mockResolvedValue([
+            { name: ".notes", path: "/.notes", kind: "directory" },
+            { name: "files", path: "/files", kind: "directory" },
+            { name: "users", path: "/users", kind: "directory" },
+        ]);
+        vi.mocked(filesystem.toDisplayPath).mockImplementation((path) => path);
+
+        const provider = new FilesystemSpecProvider(filesystem);
+        const result = await provider.suggest({
+            queryContext: cdContext("s"),
+            command: "cd",
+            args: ["s"],
+            binding: {
+                providerId: "filesystem",
+                params: {
+                    kinds: ["directory"],
+                    appendSlashToDirectories: true,
+                },
+            },
+        });
+
+        expect(result[0].label.toLowerCase()).toEqual('/files/');
+        expect(result[1].label.toLowerCase()).toEqual('/users/');
+        expect(result[2].label.toLowerCase()).toEqual('/.notes/');
+
+    });
+
     it("resolves absolute root fragments", async () => {
         vi.mocked(filesystem.list).mockResolvedValue([
             { name: "Users", path: "/Users", kind: "directory" },
