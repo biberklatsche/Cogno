@@ -70,7 +70,6 @@ import { TooltipDirective } from "@cogno/core-ui";
       .selected-workspace-header--interactive {
         background: transparent;
         border: none;
-        cursor: pointer;
         border-radius: 0.35rem;
         transition: background-color 120ms ease;
       }

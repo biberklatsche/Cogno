@@ -29,7 +29,7 @@ import {ColorName} from "../../common/color/color";
                             (click)="onItemClick(item)"
                             role="menuitemcheckbox"
                             [attr.aria-checked]="item.toggled ?? false">
-                        <span>{{ item.label }}</span>
+                        <span class="label">{{ item.label }}</span>
                         <span class="toggle-meta">
                             <span class="toggle-state">{{ item.toggled ? 'On' : 'Off' }}</span>
                             <span class="toggle-switch" [class.on]="item.toggled"></span>
@@ -62,6 +62,7 @@ import {ColorName} from "../../common/color/color";
             .ctx-menu {
                 min-width: 180px;
                 max-width: 360px;
+                box-sizing: border-box;
                 user-select: none;
             }
 
@@ -70,8 +71,10 @@ import {ColorName} from "../../common/color/color";
                 flex-direction: row;
                 align-items: center;
                 gap: 1rem;
-                min-width: 100%;
+                width: 100%;
+                max-width: 100%;
                 justify-content: space-between;
+                box-sizing: border-box;
                 padding: 8px 10px;
                 background: transparent;
                 color: inherit;
@@ -81,6 +84,7 @@ import {ColorName} from "../../common/color/color";
                 font-size: .9rem;
                 
                 .keybinding {
+                    flex: 0 0 auto;
                     opacity: 0.5;
                 }
             }
@@ -88,6 +92,7 @@ import {ColorName} from "../../common/color/color";
             .toggle-item {
                 .toggle-meta {
                     display: inline-flex;
+                    flex: 0 0 auto;
                     align-items: center;
                     gap: 8px;
                 }
@@ -145,10 +150,19 @@ import {ColorName} from "../../common/color/color";
                 margin: 4px;
                 opacity: 0.5;
                 text-transform: capitalize;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
             }
             
             .label {
+                flex: 1 1 auto;
+                min-width: 0;
                 text-transform: capitalize;
+                text-align: left;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
             }
             
             .sep {
