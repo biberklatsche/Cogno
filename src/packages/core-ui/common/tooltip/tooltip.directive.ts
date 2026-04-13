@@ -39,6 +39,7 @@ export class TooltipDirective implements OnDestroy {
     }
 
     private showTooltip(): void {
+        this.removeTooltip();
         if (!this.text) return;
 
         this.tooltipElement = document.createElement("div");
