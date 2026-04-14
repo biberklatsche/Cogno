@@ -2837,12 +2837,12 @@
     "file": "klist.json"
   },
   {
-    "name": "kms",
-    "file": "kms.json"
+    "name": "kms-aws",
+    "file": "kms-aws.json"
   },
   {
-    "name": "kms",
-    "file": "kms.json"
+    "name": "kms-google",
+    "file": "kms-google.json"
   },
   {
     "name": "knex",
@@ -2855,10 +2855,6 @@
   {
     "name": "kotlinc",
     "file": "kotlinc.json"
-  },
-  {
-    "name": "kubectl",
-    "file": "kubectl.json"
   },
   {
     "name": "kubectl",

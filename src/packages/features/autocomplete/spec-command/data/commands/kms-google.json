@@ -1,5 +1,5 @@
 {
-  "name": "kms",
+  "name": "kms-google",
   "description": "Manage cryptographic keys in the cloud",
   "options": [
     {
