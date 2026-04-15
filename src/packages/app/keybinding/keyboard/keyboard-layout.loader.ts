@@ -25,9 +25,11 @@ export class KeyboardMappingService {
         );
         if (keymapInfo) {
           return { keymapInfo: keymapInfo, isFallback: false };
-        } else {
-          return { keymapInfo: winKeyboardMappings.find((s) => s.isDefault)!, isFallback: true };
         }
+        return {
+          keymapInfo: this.getDefaultKeymapInfo(winKeyboardMappings),
+          isFallback: true,
+        };
       }
       case "macos": {
         const darwinKeyboardMappings = (
@@ -39,9 +41,11 @@ export class KeyboardMappingService {
         );
         if (keymapInfo) {
           return { keymapInfo: keymapInfo, isFallback: false };
-        } else {
-          return { keymapInfo: darwinKeyboardMappings.find((s) => s.isDefault)!, isFallback: true };
         }
+        return {
+          keymapInfo: this.getDefaultKeymapInfo(darwinKeyboardMappings),
+          isFallback: true,
+        };
       }
       case "linux": {
         const linuxKeyboardMappings = (await import("./keyboard-layouts/layout.contribution.linux"))
@@ -52,10 +56,20 @@ export class KeyboardMappingService {
         );
         if (keymapInfo) {
           return { keymapInfo: keymapInfo, isFallback: false };
-        } else {
-          return { keymapInfo: linuxKeyboardMappings.find((s) => s.isDefault)!, isFallback: true };
         }
+        return {
+          keymapInfo: this.getDefaultKeymapInfo(linuxKeyboardMappings),
+          isFallback: true,
+        };
       }
     }
+  }
+
+  private getDefaultKeymapInfo(keymapInfos: readonly KeymapInfo[]): KeymapInfo {
+    const defaultKeymapInfo = keymapInfos.find((keymapInfo) => keymapInfo.isDefault);
+    if (!defaultKeymapInfo) {
+      throw new Error("No default keyboard layout configured.");
+    }
+    return defaultKeymapInfo;
   }
 }

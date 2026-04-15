@@ -82,7 +82,7 @@ export class CommandLineEditor implements ITerminalHandler {
     Object.entries(actions).forEach(([key, handler]) => {
       const type = key as AppMessage["type"];
       this.subscription.add(
-        this._bus.on$({ path: ["app", "terminal"] }).subscribe(async (event) => {
+        this._bus.on$({ path: ["app", "terminal"], type }).subscribe(async (event) => {
           const payloadTerminalId =
             typeof event.payload === "string"
               ? event.payload

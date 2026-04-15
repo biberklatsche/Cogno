@@ -11,6 +11,16 @@ describe("FocusHandler", () => {
   let mockBus: AppBus;
   const terminalId = "test-terminal-id";
 
+  function getRegisteredListener(type: "focus" | "blur"): () => void {
+    const listener = vi
+      .mocked(mockTerminal.textarea?.addEventListener)
+      .mock.calls.find((call) => call[0] === type)?.[1];
+    if (typeof listener !== "function") {
+      throw new Error(`No ${type} listener registered.`);
+    }
+    return listener as () => void;
+  }
+
   beforeEach(() => {
     vi.useFakeTimers();
     clear();
@@ -33,9 +43,7 @@ describe("FocusHandler", () => {
       mockTerminal = TerminalMockFactory.createTerminal();
       handler.registerTerminal(mockTerminal);
 
-      const focusCallback = vi
-        .mocked(mockTerminal.textarea?.addEventListener)
-        .mock.calls.find((call) => call[0] === "focus")?.[1] as Function;
+      const focusCallback = getRegisteredListener("focus");
       focusCallback();
 
       expect(handler.hasFocus()).toBe(true);
@@ -45,12 +53,8 @@ describe("FocusHandler", () => {
       mockTerminal = TerminalMockFactory.createTerminal();
       handler.registerTerminal(mockTerminal);
 
-      const focusCallback = vi
-        .mocked(mockTerminal.textarea?.addEventListener)
-        .mock.calls.find((call) => call[0] === "focus")?.[1] as Function;
-      const blurCallback = vi
-        .mocked(mockTerminal.textarea?.addEventListener)
-        .mock.calls.find((call) => call[0] === "blur")?.[1] as Function;
+      const focusCallback = getRegisteredListener("focus");
+      const blurCallback = getRegisteredListener("blur");
 
       focusCallback();
       expect(handler.hasFocus()).toBe(true);

@@ -37,13 +37,17 @@ export class PtyHandler implements ITerminalHandler {
           const isFirst = !this._firstWriteEvent;
           if (isFirst) {
             this._firstWriteEvent = true;
+            const shellType = this._shellProfile.shell_type;
+            if (!shellType) {
+              throw new Error("Shell profile must define a shell type.");
+            }
             const disposable = terminal.onWriteParsed(() => {
               this._bus.publish({
                 path: ["app", "terminal", this._terminalId],
                 type: "PtyInitialized",
                 payload: {
                   terminalId: this._terminalId,
-                  shellType: this._shellProfile.shell_type!,
+                  shellType,
                 },
               });
               disposable.dispose();

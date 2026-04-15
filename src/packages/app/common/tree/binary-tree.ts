@@ -20,10 +20,9 @@ export class BinaryTree<Data> {
     }
     const nextChar = key.charAt(0);
     if (nextChar === "l") {
-      return BinaryTree.getNode(node.left!, key.substring(1, key.length));
-    } else {
-      return BinaryTree.getNode(node.right!, key.substring(1, key.length));
+      return node.left ? BinaryTree.getNode(node.left, key.substring(1, key.length)) : undefined;
     }
+    return node.right ? BinaryTree.getNode(node.right, key.substring(1, key.length)) : undefined;
   }
 
   get length(): number {
@@ -171,7 +170,11 @@ export class BinaryNode<Data> {
   }
 
   get children(): BinaryNode<Data>[] {
-    return this.isLeaf ? [] : [this._left!, this._right!];
+    if (this.isLeaf) return [];
+    if (!this._left || !this._right) {
+      throw new Error("Branch node must have both children.");
+    }
+    return [this._left, this._right];
   }
 
   get key(): string {
@@ -231,7 +234,10 @@ export class BinaryNode<Data> {
       throw new Error("Could not remove root");
     }
     const otherChild = this._parent._left === this ? this._parent._right : this._parent._left;
-    otherChild!._parent = this._parent._parent;
+    if (!otherChild) {
+      throw new Error("Parent node has no sibling child.");
+    }
+    otherChild._parent = this._parent._parent;
     if (this._parent._parent !== undefined) {
       if (this._parent._parent._left === this._parent) {
         this._parent._parent._left = otherChild;

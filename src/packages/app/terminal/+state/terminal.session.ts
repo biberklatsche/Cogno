@@ -87,7 +87,10 @@ export class TerminalSession {
     this.shellProfile = shellProfile;
     this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
     this.completedCommandNotificationHandler.initialize();
-    this.stateManager.initialize(terminalId, shellProfile.shell_type!, shellProfile);
+    if (!shellProfile.shell_type) {
+      throw new Error("Shell profile must define a shell type.");
+    }
+    this.stateManager.initialize(terminalId, shellProfile.shell_type, shellProfile);
     this.subscription.add(
       this.bus.onType$("PaneMaximizedChanged").subscribe((event: PaneMaximizedChangedEvent) => {
         this.stateManager.setPaneMaximized(event.payload?.terminalId === this.terminalId);

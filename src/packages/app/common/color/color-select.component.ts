@@ -86,8 +86,9 @@ export class ColorSelectComponent {
 
   readonly colors$: Observable<ColorItem[]> = this.config.config$.pipe(
     map((cfg) => {
-      const color: Color = cfg.color!;
-      const items: { name: ColorName; hex?: string }[] = [
+      const color: Color | undefined = cfg.color;
+      if (!color) return [];
+      const items: { name: ColorName; hex: string }[] = [
         { name: "red", hex: `#${color.red}` },
         { name: "green", hex: `#${color.green}` },
         { name: "yellow", hex: `#${color.yellow}` },
@@ -97,7 +98,7 @@ export class ColorSelectComponent {
       ];
       return items.map((i) => ({
         name: i.name,
-        value: i.hex!,
+        value: i.hex,
       }));
     }),
   );

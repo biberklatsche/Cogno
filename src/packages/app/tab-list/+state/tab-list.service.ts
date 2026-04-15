@@ -72,7 +72,8 @@ export class TabListService {
       .onType$("SelectTab")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: SelectTabAction) => {
-        this.selectTab(event.payload!);
+        if (!event.payload) return;
+        this.selectTab(event.payload);
         event.propagationStopped = true;
       });
     this.bus

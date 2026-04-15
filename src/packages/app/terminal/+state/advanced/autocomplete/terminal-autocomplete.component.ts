@@ -305,7 +305,8 @@ export class TerminalAutocompleteComponent {
         this.resetScroll();
       }
       if (!view.visible || view.selectedIndex === null) return;
-      queueMicrotask(() => this.scrollSelectedIntoView(view.selectedIndex!));
+      const selectedIndex = view.selectedIndex;
+      queueMicrotask(() => this.scrollSelectedIntoView(selectedIndex));
     });
   }
 

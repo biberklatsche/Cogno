@@ -46,8 +46,10 @@ import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
                 </div>
             </header>
             <main>
-                @if (selectedItem()?.component) {
-                    <ng-container *ngComponentOutlet="selectedItem()!.component"></ng-container>
+                @if (selectedItem(); as item) {
+                    @if (item.component) {
+                        <ng-container *ngComponentOutlet="item.component"></ng-container>
+                    }
                 }
             </main>
         </aside>

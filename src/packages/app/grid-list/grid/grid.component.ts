@@ -59,7 +59,10 @@ export class GridComponent {
     if (node.data?.splitDirection === "vertical")
       r = startRatio + (mouseEvent.clientX - startX) / rect.width;
     else r = startRatio + (mouseEvent.clientY - startY) / rect.height;
-    node.data!.ratio = Math.max(0.05, Math.min(0.95, r)); // Mutate in place to preserve the existing tree structure.
+    if (!node.data) {
+      throw new Error("Split pane node does not contain pane data.");
+    }
+    node.data.ratio = Math.max(0.05, Math.min(0.95, r)); // Mutate in place to preserve the existing tree structure.
   }
 
   stopDragDivider() {

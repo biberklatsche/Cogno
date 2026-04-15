@@ -1,5 +1,7 @@
 import { vi } from "vitest";
 
-export const LigaturesAddon = vi.fn().mockImplementation(() => ({
-  dispose: vi.fn(),
-}));
+class LigaturesAddonMock {
+  dispose = vi.fn();
+}
+
+export const LigaturesAddon = vi.fn(LigaturesAddonMock);

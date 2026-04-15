@@ -103,7 +103,8 @@ export class KeybindService {
   unregisterListener(id: string): void {
     const deleteKeys: string[] = [];
     for (const key of this.listeners.keys()) {
-      const stack = this.listeners.get(key)!;
+      const stack = this.listeners.get(key);
+      if (!stack) continue;
       const index = stack.findIndex((l) => l.id === id);
       if (index !== -1) stack.splice(index, 1);
       if (stack.length === 0) deleteKeys.push(key);

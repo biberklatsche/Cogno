@@ -228,7 +228,8 @@ export class GridListService {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         event.propagationStopped = true;
-        const terminalId: TerminalId = event.payload!;
+        const terminalId = event.payload;
+        if (!terminalId) return;
         this.removePane(terminalId);
       });
 
@@ -236,7 +237,8 @@ export class GridListService {
       .onType$("SplitPaneRight")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
-        this.split(event.payload!, "vertical", "r");
+        if (!event.payload) return;
+        this.split(event.payload, "vertical", "r");
         event.propagationStopped = true;
       });
 
@@ -244,7 +246,8 @@ export class GridListService {
       .onType$("SplitPaneLeft")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
-        this.split(event.payload!, "vertical", "l");
+        if (!event.payload) return;
+        this.split(event.payload, "vertical", "l");
         event.propagationStopped = true;
       });
 
@@ -252,7 +255,8 @@ export class GridListService {
       .onType$("SplitPaneDown")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
-        this.split(event.payload!, "horizontal", "r");
+        if (!event.payload) return;
+        this.split(event.payload, "horizontal", "r");
         event.propagationStopped = true;
       });
 
@@ -260,7 +264,8 @@ export class GridListService {
       .onType$("SplitPaneUp")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
-        this.split(event.payload!, "horizontal", "l");
+        if (!event.payload) return;
+        this.split(event.payload, "horizontal", "l");
         event.propagationStopped = true;
       });
 
@@ -412,6 +417,8 @@ export class GridListService {
     const tree = gridList[this._activeTabId.value].tree;
     const node = tree.first((s) => s.isLeaf && s.data?.terminalId === terminalId);
     if (!node) throw new Error("No focused pane found.");
+    const terminalIdToBlur = node.data?.terminalId;
+    if (!terminalIdToBlur) throw new Error("Focused pane does not contain a terminal id.");
     const paneParent: Pane = {
       splitDirection: splitDirection,
       ratio: 0.5,
@@ -419,7 +426,7 @@ export class GridListService {
     this.bus.publish({
       path: ["app", "terminal"],
       type: "BlurTerminal",
-      payload: node.data!.terminalId,
+      payload: terminalIdToBlur,
     });
 
     const paneChild: Pane = { terminalId: IdCreator.newTerminalId() };
@@ -500,11 +507,17 @@ export class GridListService {
       };
     }
     // Split node
+    const pane = node.data;
+    const leftChild = node.left;
+    const rightChild = node.right;
+    if (!pane?.splitDirection || leftChild === undefined || rightChild === undefined) {
+      throw new Error("Invalid split pane node.");
+    }
     return {
-      splitDirection: node.data!.splitDirection,
-      ratio: node.data!.ratio,
-      leftChild: this.serializeNode(node.left!),
-      rightChild: this.serializeNode(node.right!),
+      splitDirection: pane.splitDirection,
+      ratio: pane.ratio,
+      leftChild: this.serializeNode(leftChild),
+      rightChild: this.serializeNode(rightChild),
     };
   }
 
@@ -538,7 +551,8 @@ export class GridListService {
       if (!terminalId) throw new Error("Leaf pane does not contain a terminal id.");
       return terminalId;
     }
-    return this.getFirstTerminalId(node.left!);
+    if (!node.left) throw new Error("Split pane does not contain a left child.");
+    return this.getFirstTerminalId(node.left);
   }
 
   getFocusedTerminalId(): TerminalId | undefined {

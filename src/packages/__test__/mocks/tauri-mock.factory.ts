@@ -56,14 +56,17 @@ export class TauriMockFactory {
   }
 
   static createDb() {
+    class MockDatabase {
+      execute = vi.fn().mockResolvedValue(undefined);
+      query = vi.fn().mockResolvedValue([]);
+      close = vi.fn().mockResolvedValue(undefined);
+    }
+
     return {
       Database: class {
         static async create() {
-          return new this();
+          return new MockDatabase();
         }
-        execute = vi.fn().mockResolvedValue(undefined);
-        query = vi.fn().mockResolvedValue([]);
-        close = vi.fn().mockResolvedValue(undefined);
       },
     };
   }

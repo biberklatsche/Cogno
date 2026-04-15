@@ -6,13 +6,15 @@ import { Renderer } from "./renderer";
 
 // Mock xterm and addons
 vi.mock("@xterm/xterm", () => {
+  class TerminalMock {
+    loadAddon = vi.fn();
+    open = vi.fn();
+    dispose = vi.fn();
+    unicode = { activeVersion: "" };
+  }
+
   return {
-    Terminal: vi.fn().mockImplementation(() => ({
-      loadAddon: vi.fn(),
-      open: vi.fn(),
-      dispose: vi.fn(),
-      unicode: { activeVersion: "" },
-    })),
+    Terminal: vi.fn(TerminalMock),
   };
 });
 

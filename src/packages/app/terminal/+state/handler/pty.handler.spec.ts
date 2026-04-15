@@ -2,6 +2,7 @@ import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
+import type { ShellProfile } from "../../../config/+models/shell-config";
 import type { IPty } from "../pty/pty";
 import { PtyHandler } from "./pty.handler";
 
@@ -11,7 +12,7 @@ describe("PtyHandler", () => {
   let mockBus: AppBus;
   let mockPty: IPty;
   const terminalId = "test-terminal-id";
-  const shellConfig = { command: "bash" } as any;
+  const shellConfig: ShellProfile = { path: "bash", shell_type: "Bash" };
 
   beforeEach(() => {
     mockBus = new AppBus();

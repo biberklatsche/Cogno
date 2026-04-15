@@ -24,23 +24,27 @@ type DialogPort = Pick<DialogService, "open">;
 type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
 
 vi.mock("./renderer/renderer", () => {
+  class RendererMock {
+    open = vi.fn();
+    register = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    dispose = vi.fn();
+    terminal = TerminalMockFactory.createTerminal();
+  }
+
   return {
-    Renderer: vi.fn().mockImplementation(() => ({
-      open: vi.fn(),
-      register: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-      dispose: vi.fn(),
-      terminal: TerminalMockFactory.createTerminal(),
-    })),
+    Renderer: vi.fn(RendererMock),
   };
 });
 
 vi.mock("./pty/pty", () => {
+  class PtyMock {
+    dispose = vi.fn();
+    write = vi.fn();
+    spawn = vi.fn().mockResolvedValue(undefined);
+  }
+
   return {
-    Pty: vi.fn().mockImplementation(() => ({
-      dispose: vi.fn(),
-      write: vi.fn(),
-      spawn: vi.fn().mockResolvedValue(undefined),
-    })),
+    Pty: vi.fn(PtyMock),
   };
 });
 
