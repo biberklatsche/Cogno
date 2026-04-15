@@ -1,11 +1,9 @@
-import { Component } from '@angular/core';
-import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
+import { Component } from "@angular/core";
+import { ActionKeybindingPipe } from "../../keybinding/pipe/keybinding.pipe";
 
 @Component({
-  selector: 'app-empty',
-    imports: [
-        ActionKeybindingPipe
-    ],
+  selector: "app-empty",
+  imports: [ActionKeybindingPipe],
   template: `
       <div class="actions">
           <span class="name">New Tab</span>
@@ -16,7 +14,8 @@ import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
           <span class="keybinding">{{ 'open_config' | actionkeybinding }}</span>
       </div>
   `,
-  styles: [`
+  styles: [
+    `
       :host {
           width: 100%;
           height: 100%;
@@ -37,11 +36,7 @@ import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
         color: var(--foreground-color);
         opacity: 0.4;
     }
-  `]
+  `,
+  ],
 })
-export class EmtpyComponent {
-
-    constructor() { }
-}
-
-
+export class EmtpyComponent {}

@@ -1,10 +1,10 @@
-import { beforeAll, afterEach, describe, expect, it, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
-import { AppBus } from "../app-bus/app-bus";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
+import { AppBus } from "../app-bus/app-bus";
+import type { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "./keybind.service";
-import { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
-import { ConfigService } from "../config/+state/config.service";
+import type { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
 
 describe("KeybindService", () => {
   const config$ = new BehaviorSubject<{ keybind: never[] }>({ keybind: [] });
@@ -40,7 +40,11 @@ describe("KeybindService", () => {
     const handler = vi.fn();
     service.registerListener("test-listener", ["ArrowDown"], handler);
 
-    const event = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
     const dispatchResult = window.dispatchEvent(event);
 
     expect(handler).toHaveBeenCalledOnce();
@@ -56,12 +60,14 @@ describe("KeybindService", () => {
     dialogElement.appendChild(inputElement);
     document.body.appendChild(dialogElement);
 
-    const event = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
     const dispatchResult = inputElement.dispatchEvent(event);
 
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
   });
 });
-
-

@@ -1,11 +1,11 @@
 import { InjectionToken, Injector, Type } from "@angular/core";
+import { ActionName } from "@cogno/app/action/action.models";
 import {
   SideMenuFeatureDefinitionContract,
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core-api";
-import type { ActionName } from "@cogno/app/action/action.models";
-import type { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/core-ui";
 
 export type SideMenuFeatureLifecycleFactory = (
   injector: Injector,

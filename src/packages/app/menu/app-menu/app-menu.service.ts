@@ -16,15 +16,16 @@ export class AppMenuService {
   ) {}
 
   public buildMenu(): ContextMenuItem[] {
-    const terminalItems = this.configService.getOrderedShellProfiles(9).map((profile, index) => ({
-      label: profile.name,
-      actionName: `open_shell_${index + 1}`,
-      action: () => this.bus.publish(ActionFired.create(`open_shell_${index + 1}`)),
-    } satisfies ContextMenuItem));
+    const terminalItems = this.configService.getOrderedShellProfiles(9).map(
+      (profile, index) =>
+        ({
+          label: profile.name,
+          actionName: `open_shell_${index + 1}`,
+          action: () => this.bus.publish(ActionFired.create(`open_shell_${index + 1}`)),
+        }) satisfies ContextMenuItem,
+    );
 
-    const items: ContextMenuItem[] = [
-      ...terminalItems,
-    ];
+    const items: ContextMenuItem[] = [...terminalItems];
 
     if (terminalItems.length > 0) {
       items.push({ separator: true });
@@ -49,5 +50,3 @@ export class AppMenuService {
     };
   }
 }
-
-

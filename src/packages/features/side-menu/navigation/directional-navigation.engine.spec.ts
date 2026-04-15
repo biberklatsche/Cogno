@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
 import {
-  DirectionalNavigationItem,
+  type DirectionalNavigationItem,
   resolveNextNavigationTarget,
 } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
+import { describe, expect, it } from "vitest";
 
 function createNavigationItem(
   id: string,
@@ -79,6 +79,3 @@ describe("resolveNextNavigationTarget", () => {
     expect(nextId).toBe("A");
   });
 });
-
-
-

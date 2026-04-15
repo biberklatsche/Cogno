@@ -1,6 +1,6 @@
-import type { ActionName } from "@cogno/app/action/action.models";
-import type { ApplicationProductContract } from "@cogno/core-api";
-import type { Icon } from "@cogno/core-ui";
+import { ActionName } from "@cogno/app/action/action.models";
+import { ApplicationProductContract } from "@cogno/core-api";
+import { Icon } from "@cogno/core-ui";
 import { productFeatureCollection } from "./product-feature-collection";
 
 export const product = {

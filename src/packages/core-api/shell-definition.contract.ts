@@ -29,5 +29,3 @@ export interface ShellDefinitionContract {
   readonly pathAdapter: ShellPathAdapterDefinitionContract;
   readonly lineEditor?: ShellLineEditorDefinitionContract;
 }
-
-

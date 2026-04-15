@@ -1,6 +1,11 @@
 import { Component, DestroyRef, ElementRef, OnDestroy, Signal, viewChildren } from "@angular/core";
 import { ActionKeybindingPort, defaultWorkspaceIdContract } from "@cogno/core-api";
-import { CopyEditDeleteComponent, DragPreviewService, IconComponent, TooltipDirective } from "@cogno/core-ui";
+import {
+  CopyEditDeleteComponent,
+  DragPreviewService,
+  IconComponent,
+  TooltipDirective,
+} from "@cogno/core-ui";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
@@ -253,9 +258,11 @@ export class WorkspaceSideComponent implements OnDestroy {
   private mouseDownWorkspaceRectangle: DOMRect | undefined;
   private suppressNextWorkspaceClick = false;
   private suppressNextWorkspaceClickTimeoutId: number | undefined;
-  private readonly handleWindowMouseMove = (event: MouseEvent): void => this.onWindowMouseMove(event);
+  private readonly handleWindowMouseMove = (event: MouseEvent): void =>
+    this.onWindowMouseMove(event);
   private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
-  private readonly workspaceTileElements = viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
+  private readonly workspaceTileElements =
+    viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
   private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
   constructor(
@@ -318,7 +325,9 @@ export class WorkspaceSideComponent implements OnDestroy {
     this.mouseDownClientY = event.clientY;
     const currentTargetElement = event.currentTarget;
     this.mouseDownWorkspaceRectangle =
-      currentTargetElement instanceof HTMLElement ? currentTargetElement.getBoundingClientRect() : undefined;
+      currentTargetElement instanceof HTMLElement
+        ? currentTargetElement.getBoundingClientRect()
+        : undefined;
     this.addWindowPointerListeners();
   }
 
@@ -384,7 +393,10 @@ export class WorkspaceSideComponent implements OnDestroy {
       return;
     }
 
-    void this.workspaceService.reorderWorkspaces(this.draggedWorkspaceIdentifier, targetWorkspaceIdentifier);
+    void this.workspaceService.reorderWorkspaces(
+      this.draggedWorkspaceIdentifier,
+      targetWorkspaceIdentifier,
+    );
   }
 
   private onWindowMouseMove(event: MouseEvent): void {
@@ -408,7 +420,11 @@ export class WorkspaceSideComponent implements OnDestroy {
     this.isDraggingWorkspace = true;
     this.draggedWorkspaceIdentifier = this.mouseDownWorkspaceIdentifier;
     if (this.mouseDownWorkspaceRectangle) {
-      this.dragPreviewService.startDragPreview(this.mouseDownWorkspaceRectangle, event.clientX, event.clientY);
+      this.dragPreviewService.startDragPreview(
+        this.mouseDownWorkspaceRectangle,
+        event.clientX,
+        event.clientY,
+      );
     }
     this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
   }
@@ -467,8 +483,8 @@ export class WorkspaceSideComponent implements OnDestroy {
     if (!(eventTarget instanceof HTMLElement)) {
       return false;
     }
-    return !!eventTarget.closest(".workspace-close-button, app-copy-edit-delete, .workspace-actions, button");
+    return !!eventTarget.closest(
+      ".workspace-close-button, app-copy-edit-delete, .workspace-actions, button",
+    );
   }
 }
-
-

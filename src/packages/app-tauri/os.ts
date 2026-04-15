@@ -1,4 +1,4 @@
-import {type as tauriType} from '@tauri-apps/plugin-os';
+import { type as tauriType } from "@tauri-apps/plugin-os";
 
 export type OsType = "linux" | "windows" | "macos";
 
@@ -36,15 +36,15 @@ function getFallbackPlatform(): OsType {
 
 export const OS = {
   platform(): OsType {
-     try {
-       const rawPlatform = tauriType();
-       const platform = mapPlatformName(rawPlatform);
-       if (platform) {
-         return platform;
-       }
-       throw Error(`Unknown OS type: ${rawPlatform}`);
-     } catch {
-       return getFallbackPlatform();
-     }
-  }
-}
+    try {
+      const rawPlatform = tauriType();
+      const platform = mapPlatformName(rawPlatform);
+      if (platform) {
+        return platform;
+      }
+      throw Error(`Unknown OS type: ${rawPlatform}`);
+    } catch {
+      return getFallbackPlatform();
+    }
+  },
+};

@@ -6,6 +6,3 @@ export const zshShellDefinition: ShellDefinitionContract = {
   support: zshShellSupportDefinition,
   pathAdapter: zshShellPathAdapterDefinition,
 };
-
-
-

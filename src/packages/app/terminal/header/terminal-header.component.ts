@@ -1,13 +1,13 @@
-import {Component, computed} from '@angular/core';
-import {TerminalStateManager} from '../+state/state';
-import {toSignal} from "@angular/core/rxjs-interop";
-import {map} from "rxjs";
+import { Component, computed } from "@angular/core";
+import { toSignal } from "@angular/core/rxjs-interop";
 import { IconComponent, TooltipDirective } from "@cogno/core-ui";
-import {TerminalSession} from "../+state/terminal.session";
-import {ContextMenuOverlayService} from "../../menu/context-menu-overlay/context-menu-overlay.service";
-import {ContextMenuItem} from "../../menu/context-menu-overlay/context-menu-overlay.types";
-import {ConfigService} from "../../config/+state/config.service";
+import { map } from "rxjs";
 import { timespan } from "../../common/timespan/timespan";
+import { ConfigService } from "../../config/+state/config.service";
+import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
+import { TerminalStateManager } from "../+state/state";
+import { TerminalSession } from "../+state/terminal.session";
 
 type HeaderCommandViewModel = {
   command?: string;
@@ -16,12 +16,9 @@ type HeaderCommandViewModel = {
 };
 
 @Component({
-  selector: 'app-terminal-header',
+  selector: "app-terminal-header",
   standalone: true,
-  imports: [
-    IconComponent,
-    TooltipDirective
-  ],
+  imports: [IconComponent, TooltipDirective],
   template: `
     <div class="terminal-header">
       @if (visibleProgress(); as currentProgress) {
@@ -184,58 +181,55 @@ type HeaderCommandViewModel = {
         transform: translateX(320%);
       }
     }
-  `
+  `,
 })
 export class TerminalHeaderComponent {
-
   constructor(
     private stateManager: TerminalStateManager,
     private terminalSession: TerminalSession,
     private menu: ContextMenuOverlayService,
     private configService: ConfigService,
-  ) {
-  }
+  ) {}
 
   commandOutOfView = toSignal(
-      this.stateManager.commands$.pipe(
-          map((commands): HeaderCommandViewModel | undefined => {
-              const commandOutOfView = commands.find((command) => command.isFirstCommandOutOfViewport);
-              if (!commandOutOfView) {
-                  return undefined;
-              }
+    this.stateManager.commands$.pipe(
+      map((commands): HeaderCommandViewModel | undefined => {
+        const commandOutOfView = commands.find((command) => command.isFirstCommandOutOfViewport);
+        if (!commandOutOfView) {
+          return undefined;
+        }
 
-              return {
-                  command: commandOutOfView.command,
-                  duration: commandOutOfView.duration,
-                  returnCode: commandOutOfView.returnCode,
-              };
-          }),
-      ),
-      { initialValue: undefined },
+        return {
+          command: commandOutOfView.command,
+          duration: commandOutOfView.duration,
+          returnCode: commandOutOfView.returnCode,
+        };
+      }),
+    ),
+    { initialValue: undefined },
   );
 
-  cwd = toSignal(this.stateManager.state$.pipe(
-      map(state => state.cwd)
-  ));
+  cwd = toSignal(this.stateManager.state$.pipe(map((state) => state.cwd)));
 
-  isNotificationBadgeVisible = toSignal(this.stateManager.hasUnreadNotification$, { initialValue: false });
-  progress = toSignal(this.stateManager.state$.pipe(
-      map(state => state.progress)
-  ), {
-      initialValue: this.stateManager.state.progress
+  isNotificationBadgeVisible = toSignal(this.stateManager.hasUnreadNotification$, {
+    initialValue: false,
+  });
+  progress = toSignal(this.stateManager.state$.pipe(map((state) => state.progress)), {
+    initialValue: this.stateManager.state.progress,
   });
 
-  isOsc9ProgressBarEnabled = toSignal(this.configService.config$.pipe(
-      map(config => config.terminal?.progress_bar?.enabled ?? true)
-  ), {
-      initialValue: this.getInitialOsc9ProgressBarEnabled()
-  });
+  isOsc9ProgressBarEnabled = toSignal(
+    this.configService.config$.pipe(
+      map((config) => config.terminal?.progress_bar?.enabled ?? true),
+    ),
+    {
+      initialValue: this.getInitialOsc9ProgressBarEnabled(),
+    },
+  );
 
   visibleProgress = computed(() => {
-      const progress = this.progress();
-      return this.isOsc9ProgressBarEnabled() && progress?.state !== 'hidden'
-          ? progress
-          : undefined;
+    const progress = this.progress();
+    return this.isOsc9ProgressBarEnabled() && progress?.state !== "hidden" ? progress : undefined;
   });
 
   formatDuration(ms: number): string {
@@ -249,8 +243,8 @@ export class TerminalHeaderComponent {
     const items: ContextMenuItem[] = this.terminalSession.buildHeaderMenu();
     this.menu.openContextForElement(
       event.currentTarget as HTMLElement,
-      {items},
-      {horizontalAlign: 'right'}
+      { items },
+      { horizontalAlign: "right" },
     );
   }
 
@@ -262,19 +256,14 @@ export class TerminalHeaderComponent {
     if (items.length === 0) {
       return;
     }
-    this.menu.openContextForElement(
-      event.currentTarget as HTMLElement,
-      {items},
-    );
+    this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
   }
 
   private getInitialOsc9ProgressBarEnabled(): boolean {
-      try {
-          return this.configService.config.terminal?.progress_bar?.enabled ?? true;
-      } catch {
-          return true;
-      }
+    try {
+      return this.configService.config.terminal?.progress_bar?.enabled ?? true;
+    } catch {
+      return true;
+    }
   }
 }
-
-

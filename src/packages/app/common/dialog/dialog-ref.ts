@@ -1,4 +1,4 @@
-import {Signal, WritableSignal, signal} from '@angular/core';
+import { Signal, signal, WritableSignal } from "@angular/core";
 
 export class DialogRef<TResult = unknown> {
   private readonly _closed: WritableSignal<TResult | undefined> = signal(undefined);
@@ -19,5 +19,3 @@ export class DialogRef<TResult = unknown> {
     this._destroy();
   }
 }
-
-

@@ -1,25 +1,22 @@
-import {TabId} from "@cogno/core-api";
-import {BinaryTree} from "../../common/tree/binary-tree";
+import { TabId } from "@cogno/core-api";
+import { BinaryTree } from "../../common/tree/binary-tree";
 
 export type GridList = Record<TabId, Grid>;
 
 export type TerminalId = string;
 
 export interface Grid {
-    tabId: TabId;
-    tree: BinaryTree<Pane>;
+  tabId: TabId;
+  tree: BinaryTree<Pane>;
 }
 
 export type Pane = {
-    splitDirection?: SplitDirection;
-    ratio?: number;
-    shellName?: string;
-    workingDir?: string;
-    terminalId?: string;
-    isFocused?: boolean;
-}
+  splitDirection?: SplitDirection;
+  ratio?: number;
+  shellName?: string;
+  workingDir?: string;
+  terminalId?: string;
+  isFocused?: boolean;
+};
 
-export type SplitDirection = 'horizontal' | 'vertical';
-
-
-
+export type SplitDirection = "horizontal" | "vertical";

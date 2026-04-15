@@ -6,20 +6,21 @@ import {
   WorkspaceState,
   WorkspaceStateUseCase,
 } from "@cogno/core-domain/workspace";
-import { AppBus } from "../app-bus/app-bus";
-import { IdCreator } from "../common/id-creator/id-creator";
-import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
-import { GridListService } from "../grid-list/+state/grid-list.service";
-import { TabListService } from "../tab-list/+state/tab-list.service";
-import { Color } from "../common/color/color";
 import { ActionFired } from "../action/action.models";
+import { AppBus } from "../app-bus/app-bus";
+import { Color } from "../common/color/color";
+import { IdCreator } from "../common/id-creator/id-creator";
+import { GridListService } from "../grid-list/+state/grid-list.service";
+import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
+import { TabListService } from "../tab-list/+state/tab-list.service";
 import { WorkspaceRepository } from "./workspace.repository";
 
 export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostApplicationService {
-  private readonly defaultWorkspace = WorkspaceStateUseCase.createDefaultWorkspace(DEFAULT_WORKSPACE_ID);
+  private readonly defaultWorkspace =
+    WorkspaceStateUseCase.createDefaultWorkspace(DEFAULT_WORKSPACE_ID);
 
   readonly _workspaceList: WritableSignal<WorkspaceState[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
@@ -78,7 +79,10 @@ export class WorkspaceHostApplicationService {
 
         message.propagationStopped = true;
         this.bus.publish(
-          ActionFired.create(message.payload, message.trigger, [...actionArguments, "workspace_saved"]),
+          ActionFired.create(message.payload, message.trigger, [
+            ...actionArguments,
+            "workspace_saved",
+          ]),
         );
       });
   }
@@ -88,7 +92,10 @@ export class WorkspaceHostApplicationService {
   }
 
   public async activateWorkspace(workspace: WorkspaceState): Promise<void> {
-    const activationPlan = WorkspaceStateUseCase.activateWorkspace(this._workspaceList(), workspace.id);
+    const activationPlan = WorkspaceStateUseCase.activateWorkspace(
+      this._workspaceList(),
+      workspace.id,
+    );
     const previousActiveWorkspace = activationPlan.previousActiveWorkspace;
     const workspaceToActivate = activationPlan.workspaceToActivate;
 
@@ -97,22 +104,27 @@ export class WorkspaceHostApplicationService {
     }
 
     if (
-      previousActiveWorkspace
-      && previousActiveWorkspace.id !== workspaceToActivate.id
-      && previousActiveWorkspace.autosave
+      previousActiveWorkspace &&
+      previousActiveWorkspace.id !== workspaceToActivate.id &&
+      previousActiveWorkspace.autosave
     ) {
       await this.saveWorkspace(previousActiveWorkspace);
     }
 
     if (activationPlan.shouldRestoreRuntime) {
       this.tabListService.restoreTabs(workspaceToActivate.tabs, workspaceToActivate.id);
-      this.gridListService.restoreGridsForWorkspace(workspaceToActivate.grids, workspaceToActivate.id);
+      this.gridListService.restoreGridsForWorkspace(
+        workspaceToActivate.grids,
+        workspaceToActivate.id,
+      );
     }
 
     this.tabListService.activateWorkspace(workspaceToActivate.id);
     this.gridListService.activateWorkspace(workspaceToActivate.id);
 
-    const activeTab = this.tabListService.getTabConfigs(workspaceToActivate.id).find((tabConfiguration) => tabConfiguration.isActive);
+    const activeTab = this.tabListService
+      .getTabConfigs(workspaceToActivate.id)
+      .find((tabConfiguration) => tabConfiguration.isActive);
     const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspaceToActivate.id)[0];
     if (fallbackTab) {
       this.tabListService.selectTab(fallbackTab.tabId);
@@ -165,13 +177,21 @@ export class WorkspaceHostApplicationService {
 
   async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
     this._workspaceList.set(
-      WorkspaceStateUseCase.reorderWorkspaces(this._workspaceList(), sourceWorkspaceId, targetWorkspaceId),
+      WorkspaceStateUseCase.reorderWorkspaces(
+        this._workspaceList(),
+        sourceWorkspaceId,
+        targetWorkspaceId,
+      ),
     );
   }
 
   async persistWorkspaceOrder(): Promise<void> {
-    const persistedWorkspaceList = this._workspaceList().filter((workspace) => workspace.id !== DEFAULT_WORKSPACE_ID);
-    await this.workspaceRepository.reorderWorkspaces(persistedWorkspaceList.map((workspace) => workspace.id));
+    const persistedWorkspaceList = this._workspaceList().filter(
+      (workspace) => workspace.id !== DEFAULT_WORKSPACE_ID,
+    );
+    await this.workspaceRepository.reorderWorkspaces(
+      persistedWorkspaceList.map((workspace) => workspace.id),
+    );
   }
 
   async deleteWorkspace(id: string): Promise<void> {
@@ -198,7 +218,11 @@ export class WorkspaceHostApplicationService {
   async closeWorkspace(id: string): Promise<void> {
     const closePlan = WorkspaceStateUseCase.closeWorkspace(this._workspaceList(), id);
     const workspaceToClose = closePlan.closedWorkspace;
-    if (!workspaceToClose || workspaceToClose.id === DEFAULT_WORKSPACE_ID || !workspaceToClose.isOpen) {
+    if (
+      !workspaceToClose ||
+      workspaceToClose.id === DEFAULT_WORKSPACE_ID ||
+      !workspaceToClose.isOpen
+    ) {
       return;
     }
 
@@ -238,7 +262,9 @@ export class WorkspaceHostApplicationService {
 
     if (isNewWorkspace) {
       workspace.id = IdCreator.newWorkspaceId();
-      workspace.position = this._workspaceList().filter((workspaceEntry) => workspaceEntry.id !== DEFAULT_WORKSPACE_ID).length;
+      workspace.position = this._workspaceList().filter(
+        (workspaceEntry) => workspaceEntry.id !== DEFAULT_WORKSPACE_ID,
+      ).length;
     }
 
     if (sourceWorkspaceId) {

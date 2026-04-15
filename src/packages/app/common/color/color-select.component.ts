@@ -1,9 +1,9 @@
-import {Component, EventEmitter, input, Output} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {map, Observable} from 'rxjs';
-import {ConfigService} from '../../config/+state/config.service';
-import {ColorName} from "./color";
-import {Color} from "../../config/+models/config";
+import { CommonModule } from "@angular/common";
+import { Component, EventEmitter, input, Output } from "@angular/core";
+import { map, Observable } from "rxjs";
+import { Color } from "../../config/+models/config";
+import { ConfigService } from "../../config/+state/config.service";
+import { ColorName } from "./color";
 
 interface ColorItem {
   name: ColorName;
@@ -11,7 +11,7 @@ interface ColorItem {
 }
 
 @Component({
-  selector: 'app-color-select',
+  selector: "app-color-select",
   standalone: true,
   imports: [CommonModule],
   template: `
@@ -74,37 +74,35 @@ interface ColorItem {
         border-radius: 50%;
         border: 1px solid;
     }
-    `
-  ]
+    `,
+  ],
 })
 export class ColorSelectComponent {
   @Output() colorSelected = new EventEmitter<ColorName>();
   selectedColorName = input<ColorName | undefined>();
-  showDefault= input<boolean>(true);
+  showDefault = input<boolean>(true);
 
   constructor(private readonly config: ConfigService) {}
 
   readonly colors$: Observable<ColorItem[]> = this.config.config$.pipe(
-    map(cfg => {
+    map((cfg) => {
       const color: Color = cfg.color!;
-      const items: { name: ColorName; hex?: string}[] = [
-        { name: 'red', hex: `#${color.red}`},
-        { name: 'green', hex: `#${color.green}` },
-        { name: 'yellow', hex: `#${color.yellow}` },
-        { name: 'blue', hex: `#${color.blue}`  },
-        { name: 'magenta', hex: `#${color.magenta}`  },
-        { name: 'cyan', hex: `#${color.cyan}`},
+      const items: { name: ColorName; hex?: string }[] = [
+        { name: "red", hex: `#${color.red}` },
+        { name: "green", hex: `#${color.green}` },
+        { name: "yellow", hex: `#${color.yellow}` },
+        { name: "blue", hex: `#${color.blue}` },
+        { name: "magenta", hex: `#${color.magenta}` },
+        { name: "cyan", hex: `#${color.cyan}` },
       ];
-      return items.map(i => ({
+      return items.map((i) => ({
         name: i.name,
         value: i.hex!,
       }));
-    })
+    }),
   );
 
-  onPick(name: ColorName | 'default'): void {
-    this.colorSelected.emit(name === 'default' ? undefined : name);
+  onPick(name: ColorName | "default"): void {
+    this.colorSelected.emit(name === "default" ? undefined : name);
   }
 }
-
-

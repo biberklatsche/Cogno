@@ -16,7 +16,8 @@
       "tsconfig.app.json",
       "tsconfig.spec.json",
       "src-tauri/*.json",
-      "scripts/**/*.mjs"
+      "scripts/**/*.mjs",
+      "src/**/*.ts"
     ]
   },
   "formatter": {
@@ -28,10 +29,19 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
+      "style": {
+        "useImportType": "off"
+      }
     }
   },
   "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
     "formatter": {
       "quoteStyle": "double"
     }

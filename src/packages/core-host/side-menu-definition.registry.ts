@@ -20,7 +20,9 @@ export class SideMenuDefinitionRegistry<
   registerSideMenuFeature(
     sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
   ): void {
-    const existingDefinition = this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinition.id);
+    const existingDefinition = this.sideMenuFeatureDefinitionsById.get(
+      sideMenuFeatureDefinition.id,
+    );
     if (existingDefinition !== undefined) {
       this.sideMenuFeatureDefinitionsById.set(
         sideMenuFeatureDefinition.id,
@@ -29,12 +31,13 @@ export class SideMenuDefinitionRegistry<
       return;
     }
 
-    this.sideMenuFeatureDefinitionsById.set(sideMenuFeatureDefinition.id, sideMenuFeatureDefinition);
+    this.sideMenuFeatureDefinitionsById.set(
+      sideMenuFeatureDefinition.id,
+      sideMenuFeatureDefinition,
+    );
   }
 
-  registerSideMenuFeatureExtension(
-    sideMenuFeatureExtension: TSideMenuFeatureExtension,
-  ): void {
+  registerSideMenuFeatureExtension(sideMenuFeatureExtension: TSideMenuFeatureExtension): void {
     const existingExtension = this.sideMenuFeatureExtensionsById.get(sideMenuFeatureExtension.id);
     if (existingExtension !== undefined) {
       this.sideMenuFeatureExtensionsById.set(
@@ -56,9 +59,11 @@ export class SideMenuDefinitionRegistry<
   getSideMenuFeatureDefinitions(): ReadonlyArray<
     SideMenuFeatureDefinitionContract<TIcon, TActionName>
   > {
-    return [...this.sideMenuFeatureDefinitionsById.values()].sort((leftDefinition, rightDefinition) => {
-      return leftDefinition.order - rightDefinition.order;
-    });
+    return [...this.sideMenuFeatureDefinitionsById.values()].sort(
+      (leftDefinition, rightDefinition) => {
+        return leftDefinition.order - rightDefinition.order;
+      },
+    );
   }
 
   resolveSideMenuFeatureDefinitionById<TResolved>(
@@ -68,7 +73,9 @@ export class SideMenuDefinitionRegistry<
       sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
     ) => TResolved,
   ): TResolved | undefined {
-    const sideMenuFeatureDefinition = this.getSideMenuFeatureDefinitionById(sideMenuFeatureDefinitionId);
+    const sideMenuFeatureDefinition = this.getSideMenuFeatureDefinitionById(
+      sideMenuFeatureDefinitionId,
+    );
     if (sideMenuFeatureDefinition === undefined) {
       return undefined;
     }

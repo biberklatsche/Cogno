@@ -6,7 +6,9 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
 export class NotificationSideMenuLifecycle {
   constructor(private readonly notificationCenterStateService: NotificationCenterStateService) {}
 
-  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>): SideMenuFeatureLifecycleContract {
+  create(
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+  ): SideMenuFeatureLifecycleContract {
     this.notificationCenterStateService.setSideMenuIconUpdater((iconName) => {
       sideMenuFeatureHandle.updateIcon(iconName);
     });
@@ -22,7 +24,9 @@ export class NotificationSideMenuLifecycle {
         this.notificationCenterStateService.handleSideMenuClose();
       },
       onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => sideMenuFeatureHandle.close());
+        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () =>
+          sideMenuFeatureHandle.close(),
+        );
       },
       onBlur: () => {
         sideMenuFeatureHandle.unregisterKeybindListener();
@@ -30,6 +34,3 @@ export class NotificationSideMenuLifecycle {
     };
   }
 }
-
-
-

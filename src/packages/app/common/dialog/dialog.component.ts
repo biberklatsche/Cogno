@@ -1,35 +1,26 @@
-import {CommonModule} from '@angular/common';
+import { CommonModule, NgComponentOutlet } from "@angular/common";
 import {
-    Component,
-    ElementRef,
-    HostListener,
-    Injector,
-    OnDestroy,
-    OnInit,
-    input,
-    Type,
-    viewChild
-} from '@angular/core';
-import {NgComponentOutlet} from '@angular/common';
-import {DialogConfig} from './dialog-config';
-import {DialogRef} from './dialog-ref';
-import {DIALOG_DATA} from './dialog.tokens';
+  Component,
+  ElementRef,
+  HostListener,
+  Injector,
+  input,
+  OnDestroy,
+  OnInit,
+  Type,
+  viewChild,
+} from "@angular/core";
 import { IconComponent } from "@cogno/core-ui";
+import { DIALOG_DATA } from "./dialog.tokens";
+import { DialogConfig } from "./dialog-config";
+import { DialogRef } from "./dialog-ref";
 
-type ResizeDirection =
-  | 'n'
-  | 's'
-  | 'e'
-  | 'w'
-  | 'ne'
-  | 'nw'
-  | 'se'
-  | 'sw';
+type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
 @Component({
-  selector: 'app-dialog',
+  selector: "app-dialog",
   standalone: true,
-    imports: [CommonModule, NgComponentOutlet, IconComponent],
+  imports: [CommonModule, NgComponentOutlet, IconComponent],
   styles: [
     `
       :host {
@@ -151,7 +142,7 @@ type ResizeDirection =
         bottom: -5px;
         cursor: nesw-resize;
       }
-    `
+    `,
   ],
   template: `
     @if (config().hasBackdrop) {
@@ -183,14 +174,14 @@ type ResizeDirection =
         <div class="resize-handle corner-sw" (mousedown)="startResize($event, 'sw')"></div>
       }
     </div>
-  `
+  `,
 })
 export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
   config = input.required<DialogConfig<TData>>();
   dialogRef = input.required<DialogRef<any>>();
 
   component = input.required<Type<any>>();
-  panelElementRef = viewChild<ElementRef<HTMLElement>>('panelElement');
+  panelElementRef = viewChild<ElementRef<HTMLElement>>("panelElement");
 
   contentInjector?: Injector;
   private isMoveActive = false;
@@ -216,9 +207,9 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     this.contentInjector = Injector.create({
       providers: [
         { provide: DIALOG_DATA, useValue: this.config().data },
-        { provide: DialogRef, useValue: this.dialogRef() }
+        { provide: DialogRef, useValue: this.dialogRef() },
       ],
-      parent: this.injector
+      parent: this.injector,
     });
   }
 
@@ -235,7 +226,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     this.close();
   }
 
-  @HostListener('document:keydown.escape', ['$event'])
+  @HostListener("document:keydown.escape", ["$event"])
   onEsc(e: Event) {
     if (this.config().closeOnEscape === false) {
       return;
@@ -244,7 +235,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     this.close();
   }
 
-  @HostListener('document:mousemove', ['$event'])
+  @HostListener("document:mousemove", ["$event"])
   onDocumentMouseMove(event: MouseEvent): void {
     if (this.isMoveActive) {
       this.updatePanelPositionFromMouse(event);
@@ -256,14 +247,14 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('document:mouseup')
+  @HostListener("document:mouseup")
   onDocumentMouseUp(): void {
     this.isMoveActive = false;
     this.isResizeActive = false;
     this.resizeDirection = null;
   }
 
-  @HostListener('window:resize')
+  @HostListener("window:resize")
   onWindowResize(): void {
     const panelElement = this.getPanelElement();
     if (panelElement === null) return;
@@ -275,7 +266,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     if (mouseEvent.button !== 0) return;
 
     const targetElement = mouseEvent.target as HTMLElement | null;
-    if (targetElement?.closest('button') !== null) return;
+    if (targetElement?.closest("button") !== null) return;
 
     const panelElement = this.getPanelElement();
     if (panelElement === null) return;
@@ -325,18 +316,19 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
         position.right !== undefined ||
         position.bottom !== undefined ||
         position.left !== undefined);
-    const hasPositionOverride = this.positionTopOverride !== null || this.positionLeftOverride !== null;
+    const hasPositionOverride =
+      this.positionTopOverride !== null || this.positionLeftOverride !== null;
 
     return {
-      width: this.widthOverride ?? config.width ?? 'auto',
-      height: this.heightOverride ?? config.height ?? 'auto',
-      maxWidth: config.maxWidth ?? '90vw',
-      maxHeight: config.maxHeight ?? '90vh',
-      top: this.positionTopOverride ?? (hasPosition ? position?.top : '50%'),
-      left: this.positionLeftOverride ?? (hasPosition ? position?.left : '50%'),
+      width: this.widthOverride ?? config.width ?? "auto",
+      height: this.heightOverride ?? config.height ?? "auto",
+      maxWidth: config.maxWidth ?? "90vw",
+      maxHeight: config.maxHeight ?? "90vh",
+      top: this.positionTopOverride ?? (hasPosition ? position?.top : "50%"),
+      left: this.positionLeftOverride ?? (hasPosition ? position?.left : "50%"),
       right: hasPosition && !hasPositionOverride ? position?.right : undefined,
       bottom: hasPosition && !hasPositionOverride ? position?.bottom : undefined,
-      transform: hasPosition || hasPositionOverride ? 'none' : 'translate(-50%, -50%)',
+      transform: hasPosition || hasPositionOverride ? "none" : "translate(-50%, -50%)",
     };
   }
 
@@ -347,8 +339,16 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     const panelRect = panelElement.getBoundingClientRect();
     const maximumLeftPixels = Math.max(0, window.innerWidth - panelRect.width);
     const maximumTopPixels = Math.max(0, window.innerHeight - panelRect.height);
-    const leftPixels = this.clampNumber(mouseEvent.clientX - this.moveMouseOffsetX, 0, maximumLeftPixels);
-    const topPixels = this.clampNumber(mouseEvent.clientY - this.moveMouseOffsetY, 0, maximumTopPixels);
+    const leftPixels = this.clampNumber(
+      mouseEvent.clientX - this.moveMouseOffsetX,
+      0,
+      maximumLeftPixels,
+    );
+    const topPixels = this.clampNumber(
+      mouseEvent.clientY - this.moveMouseOffsetY,
+      0,
+      maximumTopPixels,
+    );
 
     this.positionLeftOverride = `${leftPixels}px`;
     this.positionTopOverride = `${topPixels}px`;
@@ -368,38 +368,54 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     let nextWidthPixels = this.resizeStartWidthPixels;
     let nextHeightPixels = this.resizeStartHeightPixels;
 
-    if (this.resizeDirection.includes('e')) {
+    if (this.resizeDirection.includes("e")) {
       nextWidthPixels = this.resizeStartWidthPixels + deltaX;
     }
-    if (this.resizeDirection.includes('s')) {
+    if (this.resizeDirection.includes("s")) {
       nextHeightPixels = this.resizeStartHeightPixels + deltaY;
     }
-    if (this.resizeDirection.includes('w')) {
+    if (this.resizeDirection.includes("w")) {
       nextWidthPixels = this.resizeStartWidthPixels - deltaX;
       nextLeftPixels = this.resizeStartLeftPixels + deltaX;
     }
-    if (this.resizeDirection.includes('n')) {
+    if (this.resizeDirection.includes("n")) {
       nextHeightPixels = this.resizeStartHeightPixels - deltaY;
       nextTopPixels = this.resizeStartTopPixels + deltaY;
     }
 
     if (nextWidthPixels < minimumWidthPixels) {
-      if (this.resizeDirection.includes('w')) {
+      if (this.resizeDirection.includes("w")) {
         nextLeftPixels -= minimumWidthPixels - nextWidthPixels;
       }
       nextWidthPixels = minimumWidthPixels;
     }
     if (nextHeightPixels < minimumHeightPixels) {
-      if (this.resizeDirection.includes('n')) {
+      if (this.resizeDirection.includes("n")) {
         nextTopPixels -= minimumHeightPixels - nextHeightPixels;
       }
       nextHeightPixels = minimumHeightPixels;
     }
 
-    nextLeftPixels = this.clampNumber(nextLeftPixels, 0, Math.max(0, window.innerWidth - nextWidthPixels));
-    nextTopPixels = this.clampNumber(nextTopPixels, 0, Math.max(0, window.innerHeight - nextHeightPixels));
-    nextWidthPixels = this.clampNumber(nextWidthPixels, minimumWidthPixels, window.innerWidth - nextLeftPixels);
-    nextHeightPixels = this.clampNumber(nextHeightPixels, minimumHeightPixels, window.innerHeight - nextTopPixels);
+    nextLeftPixels = this.clampNumber(
+      nextLeftPixels,
+      0,
+      Math.max(0, window.innerWidth - nextWidthPixels),
+    );
+    nextTopPixels = this.clampNumber(
+      nextTopPixels,
+      0,
+      Math.max(0, window.innerHeight - nextHeightPixels),
+    );
+    nextWidthPixels = this.clampNumber(
+      nextWidthPixels,
+      minimumWidthPixels,
+      window.innerWidth - nextLeftPixels,
+    );
+    nextHeightPixels = this.clampNumber(
+      nextHeightPixels,
+      minimumHeightPixels,
+      window.innerHeight - nextTopPixels,
+    );
 
     this.positionLeftOverride = `${nextLeftPixels}px`;
     this.positionTopOverride = `${nextTopPixels}px`;
@@ -421,15 +437,7 @@ export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
     this.positionTopOverride = `${topPixels}px`;
   }
 
-  private parsePixelValue(pixelValue: string | null): number | undefined {
-    if (pixelValue === null) return undefined;
-    const parsedValue = Number.parseFloat(pixelValue);
-    return Number.isFinite(parsedValue) ? parsedValue : undefined;
-  }
-
   private clampNumber(value: number, minimum: number, maximum: number): number {
     return Math.min(Math.max(value, minimum), maximum);
   }
 }
-
-

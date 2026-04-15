@@ -2,5 +2,7 @@ import { NotificationCenterItemContract, NotificationCenterItemIdContract } from
 
 export interface NotificationInboxState {
   readonly enabled: boolean;
-  readonly notificationMap: Readonly<Record<NotificationCenterItemIdContract, NotificationCenterItemContract>>;
+  readonly notificationMap: Readonly<
+    Record<NotificationCenterItemIdContract, NotificationCenterItemContract>
+  >;
 }

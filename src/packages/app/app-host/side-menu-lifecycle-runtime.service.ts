@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable, Injector } from "@angular/core";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
+import { Icon } from "@cogno/core-ui";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
-import { Icon } from "@cogno/core-ui";
 import { KeybindService } from "../keybinding/keybind.service";
-import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";
 
 @Injectable({ providedIn: "root" })
 export class SideMenuLifecycleRuntimeService {
@@ -29,8 +29,8 @@ export class SideMenuLifecycleRuntimeService {
 
     for (const sideMenuFeatureDefinition of sideMenuFeatureDefinitions) {
       let sideMenuFeatureHandle: SideMenuFeature | undefined;
-      const sideMenuFeatureHandleProxy = this.createSideMenuFeatureHandleProxy(
-        () => this.getRequiredSideMenuFeatureHandle(sideMenuFeatureHandle),
+      const sideMenuFeatureHandleProxy = this.createSideMenuFeatureHandleProxy(() =>
+        this.getRequiredSideMenuFeatureHandle(sideMenuFeatureHandle),
       );
 
       let sideMenuFeatureLifecycle: SideMenuFeatureLifecycleContract = {};
@@ -61,21 +61,20 @@ export class SideMenuLifecycleRuntimeService {
     resolveSideMenuFeatureHandle: () => SideMenuFeature,
   ): SideMenuFeatureHandleContract<Icon> {
     return {
-      registerKeybindListener: (keys, handler) => resolveSideMenuFeatureHandle().registerKeybindListener(keys, handler),
+      registerKeybindListener: (keys, handler) =>
+        resolveSideMenuFeatureHandle().registerKeybindListener(keys, handler),
       unregisterKeybindListener: () => resolveSideMenuFeatureHandle().unregisterKeybindListener(),
       close: () => resolveSideMenuFeatureHandle().close(),
       updateIcon: (icon) => resolveSideMenuFeatureHandle().updateIcon(icon),
     };
   }
 
-  private getRequiredSideMenuFeatureHandle(sideMenuFeatureHandle?: SideMenuFeature): SideMenuFeature {
+  private getRequiredSideMenuFeatureHandle(
+    sideMenuFeatureHandle?: SideMenuFeature,
+  ): SideMenuFeature {
     if (!sideMenuFeatureHandle) {
       throw new Error("Side menu feature handle is not initialized.");
     }
     return sideMenuFeatureHandle;
   }
 }
-
-
-
-

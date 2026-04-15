@@ -1,7 +1,4 @@
-export interface SideMenuFeatureDefinitionContract<
-  TIcon = string,
-  TActionName = string,
-> {
+export interface SideMenuFeatureDefinitionContract<TIcon = string, TActionName = string> {
   readonly id: string;
   readonly title: string;
   readonly icon: TIcon;

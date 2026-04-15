@@ -1,10 +1,7 @@
 import { Injectable } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
+import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { map, Observable } from "rxjs";
-import {
-  WorkspaceEntryContract,
-  WorkspaceHostPortContract,
-} from "@cogno/core-api";
 import { DialogService } from "../common/dialog";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
@@ -44,7 +41,10 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
   }
 
   async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
-    await this.workspaceHostApplicationService.reorderWorkspaces(sourceWorkspaceId, targetWorkspaceId);
+    await this.workspaceHostApplicationService.reorderWorkspaces(
+      sourceWorkspaceId,
+      targetWorkspaceId,
+    );
   }
 
   async persistWorkspaceOrder(): Promise<void> {
@@ -78,6 +78,3 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
     await this.workspaceHostApplicationService.deleteWorkspace(workspaceId);
   }
 }
-
-
-

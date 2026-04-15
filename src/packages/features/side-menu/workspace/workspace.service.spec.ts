@@ -1,8 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BehaviorSubject } from "rxjs";
-import { WorkspaceCloseGuard, WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
-import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
+import type {
+  WorkspaceCloseGuard,
+  WorkspaceEntryContract,
+  WorkspaceHostPort,
+} from "@cogno/core-api";
+import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
+import { BehaviorSubject } from "rxjs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("WorkspaceService", () => {
@@ -48,7 +52,11 @@ describe("WorkspaceService", () => {
       confirmCloseWorkspace: confirmCloseWorkspaceMock,
     } as unknown as WorkspaceCloseGuard;
 
-    workspaceService = new WorkspaceService(workspaceHostPort, workspaceCloseGuard, getDestroyRef());
+    workspaceService = new WorkspaceService(
+      workspaceHostPort,
+      workspaceCloseGuard,
+      getDestroyRef(),
+    );
     workspaceService.initializeSelection();
   });
 

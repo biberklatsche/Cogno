@@ -15,5 +15,3 @@ export interface ShellSupportDefinitionContract {
   readonly integrationFiles: ReadonlyArray<ShellIntegrationFileContract>;
   readonly integrationTemplateShellType?: ShellTypeContract;
 }
-
-

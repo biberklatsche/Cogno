@@ -36,15 +36,15 @@ export class ErrorReporter {
   private static runtime: ErrorReporterRuntime = new FallbackErrorReporterRuntime();
 
   static setRuntime(runtime: ErrorReporterRuntime): void {
-    this.runtime = runtime;
+    ErrorReporter.runtime = runtime;
   }
 
   static reportException(report: ExceptionReport): void {
-    this.runtime.reportException(report);
+    ErrorReporter.runtime.reportException(report);
   }
 
   static reportWarning(report: WarningReport): void {
-    this.runtime.reportWarning(report);
+    ErrorReporter.runtime.reportWarning(report);
   }
 }
 
@@ -89,5 +89,3 @@ function formatContext(context: ErrorReportContext | undefined): string {
     return `\nContext: ${String(context)}`;
   }
 }
-
-

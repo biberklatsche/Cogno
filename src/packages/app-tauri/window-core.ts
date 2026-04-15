@@ -5,5 +5,3 @@ export const WindowCore = {
     return invoke("new_window");
   },
 };
-
-

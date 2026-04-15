@@ -1,9 +1,6 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-  TerminalSearchHostPort,
-  TerminalSearchLineResultContract,
-} from "@cogno/core-api";
+import { TerminalSearchHostPort, TerminalSearchLineResultContract } from "@cogno/core-api";
 import { TextSearchState, TextSearchUseCase } from "@cogno/core-domain";
 
 @Injectable({ providedIn: "root" })
@@ -12,24 +9,36 @@ export class TerminalSearchService {
   private readonly resultPageLineLimit = 200;
   private readonly defaultMatchBackgroundColor = "var(--highlight-color-ct2)";
   private readonly defaultMatchBorderColor = "var(--highlight-color)";
-  private readonly searchStateSignal = signal<TextSearchState>(TextSearchUseCase.createInitialState());
+  private readonly searchStateSignal = signal<TextSearchState>(
+    TextSearchUseCase.createInitialState(),
+  );
   private readonly matchBackgroundColorSignal = signal<string>(this.defaultMatchBackgroundColor);
   private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
   private pendingSearchTimeoutHandle?: ReturnType<typeof setTimeout>;
 
   readonly searchQuery: Signal<string> = computed(() => this.searchStateSignal().query);
-  readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = computed(() => this.searchStateSignal().results);
+  readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = computed(
+    () => this.searchStateSignal().results,
+  );
   readonly caseSensitive: Signal<boolean> = computed(() => this.searchStateSignal().caseSensitive);
-  readonly regularExpression: Signal<boolean> = computed(() => this.searchStateSignal().regularExpression);
+  readonly regularExpression: Signal<boolean> = computed(
+    () => this.searchStateSignal().regularExpression,
+  );
   readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
   readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
-  readonly beginBufferLine: Signal<number | undefined> = computed(() => this.searchStateSignal().beginBufferLine);
-  readonly endBufferLine: Signal<number | undefined> = computed(() => this.searchStateSignal().endBufferLine);
+  readonly beginBufferLine: Signal<number | undefined> = computed(
+    () => this.searchStateSignal().beginBufferLine,
+  );
+  readonly endBufferLine: Signal<number | undefined> = computed(
+    () => this.searchStateSignal().endBufferLine,
+  );
   readonly isBlockSearchActive: Signal<boolean> = computed(() => {
     const searchState = this.searchStateSignal();
     return searchState.beginBufferLine !== undefined || searchState.endBufferLine !== undefined;
   });
-  readonly hasMoreResults: Signal<boolean> = computed(() => this.searchStateSignal().hasMoreResults);
+  readonly hasMoreResults: Signal<boolean> = computed(
+    () => this.searchStateSignal().hasMoreResults,
+  );
 
   constructor(
     private readonly terminalSearchHostPort: TerminalSearchHostPort,
@@ -101,7 +110,10 @@ export class TerminalSearchService {
   }
 
   revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
-    const revealPayload = TextSearchUseCase.buildRevealRequest(this.searchStateSignal(), searchLine);
+    const revealPayload = TextSearchUseCase.buildRevealRequest(
+      this.searchStateSignal(),
+      searchLine,
+    );
     if (!revealPayload) {
       return;
     }
@@ -122,7 +134,7 @@ export class TerminalSearchService {
     this.searchStateSignal.set(TextSearchUseCase.clearForCollectionClose());
   }
 
-  private scheduleSearch(query: string): void {
+  private scheduleSearch(_query: string): void {
     this.cancelPendingSearch();
     this.pendingSearchTimeoutHandle = setTimeout(() => {
       this.pendingSearchTimeoutHandle = undefined;
@@ -140,8 +152,12 @@ export class TerminalSearchService {
   }
 
   private searchInActiveTerminal(cursorBufferLine: number | undefined): void {
-    const activeTerminalId = this.searchStateSignal().activeTerminalId ?? this.terminalSearchHostPort.getFocusedTerminalId();
-    this.searchStateSignal.set(TextSearchUseCase.setActiveCollectionId(this.searchStateSignal(), activeTerminalId));
+    const activeTerminalId =
+      this.searchStateSignal().activeTerminalId ??
+      this.terminalSearchHostPort.getFocusedTerminalId();
+    this.searchStateSignal.set(
+      TextSearchUseCase.setActiveCollectionId(this.searchStateSignal(), activeTerminalId),
+    );
 
     const terminalSearchRequest = TextSearchUseCase.createSearchRequest(
       this.searchStateSignal(),
@@ -150,7 +166,9 @@ export class TerminalSearchService {
       this.resultPageLineLimit,
     );
     if (!terminalSearchRequest) {
-      this.searchStateSignal.set(TextSearchUseCase.applyMissingCollectionResult(this.searchStateSignal()));
+      this.searchStateSignal.set(
+        TextSearchUseCase.applyMissingCollectionResult(this.searchStateSignal()),
+      );
       return;
     }
 
@@ -165,7 +183,9 @@ export class TerminalSearchService {
     const normalizedMatchBackgroundColor = this.normalizeHexColor(matchBackgroundColor);
     const normalizedMatchBorderColor = this.normalizeHexColor(matchBorderColor);
 
-    this.matchBackgroundColorSignal.set(normalizedMatchBackgroundColor ?? this.defaultMatchBackgroundColor);
+    this.matchBackgroundColorSignal.set(
+      normalizedMatchBackgroundColor ?? this.defaultMatchBackgroundColor,
+    );
     this.matchBorderColorSignal.set(normalizedMatchBorderColor ?? this.defaultMatchBorderColor);
   }
 

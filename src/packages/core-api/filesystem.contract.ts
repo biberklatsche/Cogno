@@ -24,7 +24,11 @@ export interface FilesystemListOptionsContract {
 
 export interface FilesystemContract {
   normalizePath(path: string, shellContext: ShellContextContract): string;
-  resolvePath(cwd: string, inputPath: string, shellContext: ShellContextContract): string | undefined;
+  resolvePath(
+    cwd: string,
+    inputPath: string,
+    shellContext: ShellContextContract,
+  ): string | undefined;
   list(
     path: string,
     shellContext: ShellContextContract,
@@ -36,5 +40,3 @@ export interface FilesystemContract {
   appendPathSeparator(path: string, shellContext: ShellContextContract): string;
   toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string;
 }
-
-

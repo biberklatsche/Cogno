@@ -1,15 +1,7 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-  WorkspaceCloseGuard,
-  WorkspaceEntryContract,
-  WorkspaceHostPort,
-} from "@cogno/core-api";
-import {
-  SelectableItemState,
-  SelectableListUseCase,
-  SelectionDirection,
-} from "@cogno/core-domain";
+import { WorkspaceCloseGuard, WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
+import { SelectableItemState, SelectableListUseCase, SelectionDirection } from "@cogno/core-domain";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
@@ -22,7 +14,8 @@ export class WorkspaceService {
   private readonly workspaceEntriesSignal = signal<WorkspaceEntryViewModel[]>([]);
   private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
 
-  readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]> = this.workspaceEntriesSignal.asReadonly();
+  readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]> =
+    this.workspaceEntriesSignal.asReadonly();
 
   constructor(
     private readonly workspaceHostPort: WorkspaceHostPort,
@@ -67,11 +60,15 @@ export class WorkspaceService {
     );
   }
 
-  registerNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+  registerNavigationItemsProvider(
+    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
+  ): void {
     this.navigationItemsProvider = provider;
   }
 
-  unregisterNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+  unregisterNavigationItemsProvider(
+    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
+  ): void {
     if (this.navigationItemsProvider === provider) {
       this.navigationItemsProvider = undefined;
     }

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { mdiAbTesting, mdiClose, mdiGithub, mdiKeyboardOff, mdiSpiderThread } from "@mdi/js";
+import { describe, expect, it } from "vitest";
 import { IconComponent } from "./icon.component";
 
 describe("IconComponent", () => {
@@ -30,5 +30,3 @@ describe("IconComponent", () => {
     expect(cmp.icon).toBe(mdiAbTesting);
   });
 });
-
-

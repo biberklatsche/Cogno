@@ -1,24 +1,24 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TerminalMockFactory } from '../../../../../__test__/mocks/terminal-mock.factory';
-import { CommandLineObserver } from './command-line.observer';
-import { TerminalStateManager } from '../../state';
-import { AppBus } from '../../../../app-bus/app-bus';
-import { ContextMenuOverlayService } from '../../../../menu/context-menu-overlay/context-menu-overlay.service';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
+import { AppBus } from "../../../../app-bus/app-bus";
+import type { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
+import { TerminalStateManager } from "../../state";
+import { CommandLineObserver } from "./command-line.observer";
 
-describe('CommandLineObserver', () => {
+describe("CommandLineObserver", () => {
   let observer: CommandLineObserver;
   let mockTerminal: any;
   let stateManager: TerminalStateManager;
   let mockBus: AppBus;
-  let contextMenuOverlayService: Pick<ContextMenuOverlayService, 'openContextForElement'>;
-  const terminalId = 'test-terminal-id';
+  let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openContextForElement">;
+  const terminalId = "test-terminal-id";
 
   beforeEach(() => {
     vi.useFakeTimers();
     mockBus = new AppBus();
-    vi.spyOn(mockBus, 'publish');
+    vi.spyOn(mockBus, "publish");
     stateManager = new TerminalStateManager(mockBus);
-    stateManager.initialize(terminalId, 'Bash' as any);
+    stateManager.initialize(terminalId, "Bash" as any);
     contextMenuOverlayService = {
       openContextForElement: vi.fn(),
     };
@@ -31,15 +31,15 @@ describe('CommandLineObserver', () => {
     observer.dispose();
   });
 
-  it('should register onWriteParsed and onKey listeners', () => {
+  it("should register onWriteParsed and onKey listeners", () => {
     observer.registerTerminal(mockTerminal);
     expect(mockTerminal.onWriteParsed).toHaveBeenCalled();
     expect(mockTerminal.onKey).toHaveBeenCalled();
   });
 
-  it('should refresh markers on render after debounce time', () => {
-    // @ts-ignore - access private markerManager for spying
-    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+  it("should refresh markers on render after debounce time", () => {
+    // @ts-expect-error - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, "refreshMarkers");
     observer.registerTerminal(mockTerminal);
     const onRenderCallback = vi.mocked(mockTerminal.onRender).mock.calls[0][0];
 
@@ -50,61 +50,61 @@ describe('CommandLineObserver', () => {
     expect(refreshSpy).toHaveBeenCalled();
   });
 
-  it('should set isCommandRunning to true on Enter key', () => {
+  it("should set isCommandRunning to true on Enter key", () => {
     observer.registerTerminal(mockTerminal);
     const onKeyCallback = vi.mocked(mockTerminal.onKey).mock.calls[0][0];
 
     stateManager.endCommand();
-    onKeyCallback({ key: '\r', domEvent: {} as any });
+    onKeyCallback({ key: "\r", domEvent: {} as any });
     expect(stateManager.isCommandRunning).toBe(true);
 
     stateManager.endCommand();
-    onKeyCallback({ key: '\n', domEvent: {} as any });
+    onKeyCallback({ key: "\n", domEvent: {} as any });
     expect(stateManager.isCommandRunning).toBe(true);
   });
 
-  it('should update sessionState.input when terminal is parsed and command is not running', () => {
+  it("should update sessionState.input when terminal is parsed and command is not running", () => {
     observer.registerTerminal(mockTerminal);
     const onWriteParsedCallback = vi.mocked(mockTerminal.onWriteParsed).mock.calls[0][0];
 
     // Mock terminal buffer
-    const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: /path $ ');
-    const inputLine = TerminalMockFactory.createLine('ls -la');
-    
+    const promptLine = TerminalMockFactory.createLine("^^#1 COGNO: /path $ ");
+    const inputLine = TerminalMockFactory.createLine("ls -la");
+
     vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
-        if (index === 0) return promptLine;
-        if (index === 1) return inputLine;
-        return null;
+      if (index === 0) return promptLine;
+      if (index === 1) return inputLine;
+      return null;
     });
     mockTerminal.buffer.active.length = 2;
-    
+
     // Set cursor position and maxCursorIndex in session state
-    stateManager.updateInput({ text: '', cursorIndex: 0, maxCursorIndex: 6 });
+    stateManager.updateInput({ text: "", cursorIndex: 0, maxCursorIndex: 6 });
     stateManager.endCommand();
 
     onWriteParsedCallback();
 
-    expect(stateManager.input.text).toBe('ls -la');
+    expect(stateManager.input.text).toBe("ls -la");
   });
 
-  it('should NOT update sessionState.input when command is running', () => {
+  it("should NOT update sessionState.input when command is running", () => {
     observer.registerTerminal(mockTerminal);
     const onWriteParsedCallback = vi.mocked(mockTerminal.onWriteParsed).mock.calls[0][0];
 
     stateManager.startCommand();
-    stateManager.updateInput({ text: 'old input', cursorIndex: 0, maxCursorIndex: 9 });
+    stateManager.updateInput({ text: "old input", cursorIndex: 0, maxCursorIndex: 9 });
 
     onWriteParsedCallback();
 
-    expect(stateManager.input.text).toBe('old input');
+    expect(stateManager.input.text).toBe("old input");
   });
 
-  it('should NOT update cursorIndex when command is running', () => {
+  it("should NOT update cursorIndex when command is running", () => {
     observer.registerTerminal(mockTerminal);
     const onCursorMoveCallback = vi.mocked(mockTerminal.onCursorMove).mock.calls[0][0];
 
     stateManager.startCommand();
-    stateManager.updateInput({ text: '', cursorIndex: 10, maxCursorIndex: 10 });
+    stateManager.updateInput({ text: "", cursorIndex: 10, maxCursorIndex: 10 });
 
     // Advance time past debounce period to ensure debounce is not the reason for skipping
     vi.advanceTimersByTime(150);
@@ -114,14 +114,14 @@ describe('CommandLineObserver', () => {
     expect(stateManager.input.cursorIndex).toBe(10);
   });
 
-  it('should NOT update cursorIndex during active typing (within debounce period)', () => {
+  it("should NOT update cursorIndex during active typing (within debounce period)", () => {
     observer.registerTerminal(mockTerminal);
     const onCursorMoveCallback = vi.mocked(mockTerminal.onCursorMove).mock.calls[0][0];
     const onKeyCallback = vi.mocked(mockTerminal.onKey).mock.calls[0][0];
 
     // Mock terminal buffer
-    const promptLine = TerminalMockFactory.createLine('^^#1 COGNO: /path $ ');
-    const inputLine = TerminalMockFactory.createLine('some input text');
+    const promptLine = TerminalMockFactory.createLine("^^#1 COGNO: /path $ ");
+    const inputLine = TerminalMockFactory.createLine("some input text");
     vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
       if (index === 0) return promptLine;
       if (index === 1) return inputLine;
@@ -133,10 +133,10 @@ describe('CommandLineObserver', () => {
     mockTerminal.buffer.active.cursorX = 5;
 
     stateManager.endCommand();
-    stateManager.updateInput({ text: '', cursorIndex: 5, maxCursorIndex: 5 });
+    stateManager.updateInput({ text: "", cursorIndex: 5, maxCursorIndex: 5 });
 
     // Simulate a keystroke
-    onKeyCallback({ key: 'a', domEvent: {} as any });
+    onKeyCallback({ key: "a", domEvent: {} as any });
 
     // Try to update cursor position immediately after keystroke
     onCursorMoveCallback();
@@ -152,9 +152,9 @@ describe('CommandLineObserver', () => {
     expect(stateManager.input.cursorIndex).toBe(10);
   });
 
-  it('should refresh markers on render (debounced)', () => {
-    // @ts-ignore - access private markerManager for spying
-    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+  it("should refresh markers on render (debounced)", () => {
+    // @ts-expect-error - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, "refreshMarkers");
     observer.registerTerminal(mockTerminal);
     const onRenderCallback = vi.mocked(mockTerminal.onRender).mock.calls[0][0];
 
@@ -167,9 +167,9 @@ describe('CommandLineObserver', () => {
     expect(refreshSpy).toHaveBeenCalledOnce();
   });
 
-  it('should refresh markers on scroll (debounced)', () => {
-    // @ts-ignore - access private markerManager for spying
-    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+  it("should refresh markers on scroll (debounced)", () => {
+    // @ts-expect-error - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, "refreshMarkers");
     observer.registerTerminal(mockTerminal);
     const onScrollCallback = vi.mocked(mockTerminal.onScroll).mock.calls[0][0];
 
@@ -182,9 +182,9 @@ describe('CommandLineObserver', () => {
     expect(refreshSpy).toHaveBeenCalledOnce();
   });
 
-  it('should refresh markers on resize (immediate)', () => {
-    // @ts-ignore - access private markerManager for spying
-    const refreshSpy = vi.spyOn(observer._markerManager, 'refreshMarkers');
+  it("should refresh markers on resize (immediate)", () => {
+    // @ts-expect-error - access private markerManager for spying
+    const refreshSpy = vi.spyOn(observer._markerManager, "refreshMarkers");
     observer.registerTerminal(mockTerminal);
     const onResizeCallback = vi.mocked(mockTerminal.onResize).mock.calls[0][0];
 
@@ -193,7 +193,7 @@ describe('CommandLineObserver', () => {
     expect(refreshSpy).toHaveBeenCalledOnce();
   });
 
-  it('should dispose listeners on dispose', () => {
+  it("should dispose listeners on dispose", () => {
     const parsedDispose = vi.fn();
     const keyDispose = vi.fn();
     vi.mocked(mockTerminal.onWriteParsed).mockReturnValue({ dispose: parsedDispose });
@@ -206,38 +206,39 @@ describe('CommandLineObserver', () => {
     expect(keyDispose).toHaveBeenCalled();
   });
 
-  it('should register OSC handler for 733', () => {
+  it("should register OSC handler for 733", () => {
     observer.registerTerminal(mockTerminal);
     expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(733, expect.any(Function));
   });
 
-  it('should update sessionState.isCommandRunning to false when OSC 733 is received', () => {
+  it("should update sessionState.isCommandRunning to false when OSC 733 is received", () => {
     observer.registerTerminal(mockTerminal);
     stateManager.startCommand();
 
     // We need to have a command already in the list for the OSC 733 to update it
     stateManager.updateCommand({
-      id: '7',
-      user: 'larswolfram',
-      machine: 'Air',
-      directory: '/Users/lars'
+      id: "7",
+      user: "larswolfram",
+      machine: "Air",
+      directory: "/Users/lars",
     });
 
     const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
-    const data = 'COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air;directory=/Users/lars;id=8;command=ls;';
+    const data =
+      "COGNO:PROMPT;returnCode=0;user=larswolfram;machine=Air;directory=/Users/lars;id=8;command=ls;";
     const result = oscHandler(data);
 
     expect(stateManager.isCommandRunning).toBe(false);
     expect(result).toBe(true);
     expect(stateManager.commands.length).toBe(2);
-    expect(stateManager.commands[0].command).toBe('ls');
-    expect(stateManager.commands[0].directory).toBe('/Users/lars');
+    expect(stateManager.commands[0].command).toBe("ls");
+    expect(stateManager.commands[0].directory).toBe("/Users/lars");
     expect(stateManager.commands[0].returnCode).toBe(0);
-    expect(stateManager.commands[0].id).toBe('7');
-    expect(stateManager.commands[0].user).toBe('larswolfram');
+    expect(stateManager.commands[0].id).toBe("7");
+    expect(stateManager.commands[0].user).toBe("larswolfram");
   });
 
-  it('should dispose registered OSC handler', () => {
+  it("should dispose registered OSC handler", () => {
     const disposeSpy = vi.fn();
     vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });
 
@@ -247,8 +248,3 @@ describe('CommandLineObserver', () => {
     expect(disposeSpy).toHaveBeenCalled();
   });
 });
-
-
-
-
-

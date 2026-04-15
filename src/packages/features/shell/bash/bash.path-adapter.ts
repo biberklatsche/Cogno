@@ -17,8 +17,5 @@ export class BashPathAdapter extends BasePathAdapter {
 
 export const bashShellPathAdapterDefinition: ShellPathAdapterDefinitionContract = {
   shellType: "Bash",
-  createPathAdapter: shellContext => new BashPathAdapter(shellContext),
+  createPathAdapter: (shellContext) => new BashPathAdapter(shellContext),
 };
-
-
-

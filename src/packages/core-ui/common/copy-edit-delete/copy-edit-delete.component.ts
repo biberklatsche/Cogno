@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, input, output, signal } from "@angular/core";
+import { Component, input, output, signal, ViewEncapsulation } from "@angular/core";
 import { IconComponent } from "../../icons/icon/icon.component";
 
 @Component({
@@ -86,5 +86,3 @@ export class CopyEditDeleteComponent {
 
   onEvent = output<"copy" | "edit" | "delete">();
 }
-
-

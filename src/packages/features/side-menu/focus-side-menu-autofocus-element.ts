@@ -1,6 +1,7 @@
 export function focusSideMenuAutofocusElement(): void {
-  const scheduleFocus = globalThis.requestAnimationFrame
-    ?? ((callback: FrameRequestCallback) => setTimeout(callback, 0));
+  const scheduleFocus =
+    globalThis.requestAnimationFrame ??
+    ((callback: FrameRequestCallback) => setTimeout(callback, 0));
 
   scheduleFocus(() => {
     const documentReference = globalThis.document;

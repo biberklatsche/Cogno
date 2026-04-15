@@ -1,13 +1,21 @@
-import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, Component, Inject, OnDestroy, OnInit, Signal, signal} from '@angular/core';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {Observable} from 'rxjs';
-import {DIALOG_DATA} from '../../common/dialog';
-import { ErrorReporter } from '../../common/error/error-reporter';
-import {TerminalId} from '../../grid-list/+model/model';
-import {ProcessDetails, ProcessTreeSnapshot, TauriPty} from '@cogno/app-tauri/pty';
-import {Command, TerminalState} from '../+state/state';
-import {KeybindService} from '../../keybinding/keybind.service';
+import { CommonModule } from "@angular/common";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Inject,
+  OnDestroy,
+  OnInit,
+  Signal,
+  signal,
+} from "@angular/core";
+import { toSignal } from "@angular/core/rxjs-interop";
+import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/app-tauri/pty";
+import { Observable } from "rxjs";
+import { DIALOG_DATA } from "../../common/dialog";
+import { ErrorReporter } from "../../common/error/error-reporter";
+import { TerminalId } from "../../grid-list/+model/model";
+import { KeybindService } from "../../keybinding/keybind.service";
+import { Command, TerminalState } from "../+state/state";
 
 export type TerminalSystemInfoSource = {
   state$: Observable<TerminalState>;
@@ -25,11 +33,12 @@ type ProcessTreeNode = {
 };
 
 @Component({
-  selector: 'app-terminal-system-info-dialog',
+  selector: "app-terminal-system-info-dialog",
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [`
+  styles: [
+    `
     .container {
       display: flex;
       flex-direction: column;
@@ -130,7 +139,8 @@ type ProcessTreeNode = {
     .process-node > .process-tree {
       margin-left: 18px;
     }
-  `],
+  `,
+  ],
   template: `
     <div class="container">
       @if (loading()) {
@@ -336,17 +346,16 @@ type ProcessTreeNode = {
         }
       </li>
     </ng-template>
-  `
+  `,
 })
 export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   private refreshTimer?: number;
   private refreshInFlight = false;
 
-  readonly activeTab = signal<'process' | 'terminal'>('process');
-  readonly terminalState: Signal<TerminalState | null> = toSignal(
-    this.data.systemInfo.state$,
-    { initialValue: null }
-  );
+  readonly activeTab = signal<"process" | "terminal">("process");
+  readonly terminalState: Signal<TerminalState | null> = toSignal(this.data.systemInfo.state$, {
+    initialValue: null,
+  });
   readonly lastKeybinding = this.keybindService.lastFiredKeybinding;
   readonly terminalCommands = toSignal(this.data.systemInfo.commands$, { initialValue: [] });
   readonly loading = signal(true);
@@ -383,11 +392,14 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
       return [];
     }
 
-    const processNodeByProcessIdentifier: Map<number, ProcessTreeNode> = new Map<number, ProcessTreeNode>();
+    const processNodeByProcessIdentifier: Map<number, ProcessTreeNode> = new Map<
+      number,
+      ProcessTreeNode
+    >();
     for (const processDetails of processTreeSnapshot.descendants) {
       processNodeByProcessIdentifier.set(processDetails.processId, {
         processDetails,
-        childProcessNodes: []
+        childProcessNodes: [],
       });
     }
 
@@ -435,7 +447,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
           terminalId: this.data.terminalId,
         },
       });
-      this.error.set('Failed to load system information.');
+      this.error.set("Failed to load system information.");
     } finally {
       if (showLoading) {
         this.loading.set(false);
@@ -445,16 +457,16 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   }
 
   formatBytes(value?: number | null): string {
-    if (value === null || value === undefined) return '-';
-    if (value === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    if (value === null || value === undefined) return "-";
+    if (value === 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
     const idx = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-    const sized = value / Math.pow(1024, idx);
+    const sized = value / 1024 ** idx;
     return `${sized.toFixed(sized >= 10 ? 1 : 2)} ${units[idx]}`;
   }
 
   formatSeconds(value?: number | null): string {
-    if (value === null || value === undefined) return '-';
+    if (value === null || value === undefined) return "-";
     const seconds = Math.floor(value);
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -473,7 +485,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     const rootMemoryBytes = processTreeSnapshot.rootProcess.memoryBytes ?? 0;
     const descendantsMemoryBytes = processTreeSnapshot.descendants.reduce(
       (sum, processDetails) => sum + (processDetails.memoryBytes ?? 0),
-      0
+      0,
     );
 
     return rootMemoryBytes + descendantsMemoryBytes;
@@ -509,5 +521,3 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
     return commands.slice(-5).reverse();
   }
 }
-
-

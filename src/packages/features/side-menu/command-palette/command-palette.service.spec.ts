@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { BehaviorSubject } from "rxjs";
-import {
+import type {
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
 } from "@cogno/core-api";
-import { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
+import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
+import { BehaviorSubject } from "rxjs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("CommandPaletteService", () => {
@@ -43,7 +43,9 @@ describe("CommandPaletteService", () => {
     const commandList = service.filteredCommandList();
     expect(commandList.length).toBe(3);
     expect(commandList.some((commandEntry) => commandEntry.label === "copy")).toBe(true);
-    expect(commandList.some((commandEntry) => commandEntry.label === "open command palette")).toBe(true);
+    expect(commandList.some((commandEntry) => commandEntry.label === "open command palette")).toBe(
+      true,
+    );
     expect(commandList.some((commandEntry) => commandEntry.isSelected)).toBe(true);
   });
 
@@ -74,9 +76,7 @@ describe("CommandPaletteService", () => {
   it("publishes selected action", () => {
     service.fireSelectedAction();
 
-    expect(publishActionMock).toHaveBeenCalledWith(
-      expect.objectContaining({ actionName: "copy" }),
-    );
+    expect(publishActionMock).toHaveBeenCalledWith(expect.objectContaining({ actionName: "copy" }));
   });
 
   it("updates command list when host port emits new entries", () => {

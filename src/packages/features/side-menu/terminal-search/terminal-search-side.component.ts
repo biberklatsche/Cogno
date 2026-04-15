@@ -1,17 +1,17 @@
-import {ChangeDetectionStrategy, Component, computed, Signal} from "@angular/core";
-import {TerminalSearchLineMatchContract, TerminalSearchLineResultContract} from "@cogno/core-api";
-import {TerminalSearchService} from "./terminal-search.service";
+import { ChangeDetectionStrategy, Component, computed, Signal } from "@angular/core";
+import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
+import { TerminalSearchService } from "./terminal-search.service";
 
 type SearchTextSegment = {
-    text: string;
-    isMatch: boolean;
+  text: string;
+  isMatch: boolean;
 };
 
 @Component({
-    selector: "app-terminal-search-side",
-    standalone: true,
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
+  selector: "app-terminal-search-side",
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
         <div class="search-controls">
             <input
                 autocomplete="off"
@@ -87,8 +87,8 @@ type SearchTextSegment = {
             }
         }
     `,
-    styles: [
-        `
+  styles: [
+    `
             :host {
                 display: flex;
                 flex-direction: column;
@@ -209,117 +209,114 @@ type SearchTextSegment = {
                 cursor: pointer;
             }
         `,
-    ],
+  ],
 })
 export class TerminalSearchSideComponent {
-    readonly searchQuery: Signal<string>;
-    readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
-    readonly caseSensitive: Signal<boolean>;
-    readonly regularExpression: Signal<boolean>;
-    readonly matchBackgroundColor: Signal<string>;
-    readonly matchBorderColor: Signal<string>;
-    readonly isBlockSearchActive: Signal<boolean>;
-    readonly hasMoreResults: Signal<boolean>;
-    readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
+  readonly searchQuery: Signal<string>;
+  readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
+  readonly caseSensitive: Signal<boolean>;
+  readonly regularExpression: Signal<boolean>;
+  readonly matchBackgroundColor: Signal<string>;
+  readonly matchBorderColor: Signal<string>;
+  readonly isBlockSearchActive: Signal<boolean>;
+  readonly hasMoreResults: Signal<boolean>;
+  readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
 
-    constructor(private readonly terminalSearchService: TerminalSearchService) {
-        this.searchQuery = this.terminalSearchService.searchQuery;
-        this.searchResults = this.terminalSearchService.searchResults;
-        this.caseSensitive = this.terminalSearchService.caseSensitive;
-        this.regularExpression = this.terminalSearchService.regularExpression;
-        this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
-        this.matchBorderColor = this.terminalSearchService.matchBorderColor;
-        this.isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
-        this.hasMoreResults = this.terminalSearchService.hasMoreResults;
-        this.reversedSearchResults = computed(() => {
-            return [...this.searchResults()].reverse();
-        });
+  constructor(private readonly terminalSearchService: TerminalSearchService) {
+    this.searchQuery = this.terminalSearchService.searchQuery;
+    this.searchResults = this.terminalSearchService.searchResults;
+    this.caseSensitive = this.terminalSearchService.caseSensitive;
+    this.regularExpression = this.terminalSearchService.regularExpression;
+    this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
+    this.matchBorderColor = this.terminalSearchService.matchBorderColor;
+    this.isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
+    this.hasMoreResults = this.terminalSearchService.hasMoreResults;
+    this.reversedSearchResults = computed(() => {
+      return [...this.searchResults()].reverse();
+    });
+  }
+
+  updateSearchQuery(event: Event): void {
+    const inputElement = event.target as HTMLInputElement;
+    this.terminalSearchService.submitSearchQuery(inputElement.value);
+  }
+
+  clearBlockSearch(): void {
+    this.terminalSearchService.clearBlockSearch();
+  }
+
+  loadMoreSearchResults(): void {
+    this.terminalSearchService.loadMoreSearchResults();
+  }
+
+  revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
+    this.terminalSearchService.revealSearchResult(searchLine);
+  }
+
+  toggleCaseSensitive(): void {
+    this.terminalSearchService.toggleCaseSensitive();
+  }
+
+  toggleRegularExpression(): void {
+    this.terminalSearchService.toggleRegularExpression();
+  }
+
+  trackSearchLine(searchLine: TerminalSearchLineResultContract): string {
+    return `${searchLine.lineNumber}:${searchLine.lineText}`;
+  }
+
+  trackSegment(segment: SearchTextSegment, index: number): string {
+    return `${index}:${segment.text}:${segment.isMatch}`;
+  }
+
+  buildSegments(searchLine: TerminalSearchLineResultContract): SearchTextSegment[] {
+    if (searchLine.matches.length === 0) {
+      return [{ text: searchLine.lineText, isMatch: false }];
     }
 
-    updateSearchQuery(event: Event): void {
-        const inputElement = event.target as HTMLInputElement;
-        this.terminalSearchService.submitSearchQuery(inputElement.value);
+    const segments: SearchTextSegment[] = [];
+    let currentIndex = 0;
+
+    for (const match of searchLine.matches) {
+      this.appendTextBeforeMatch(segments, searchLine.lineText, currentIndex, match);
+      this.appendMatchedText(segments, searchLine.lineText, match);
+      currentIndex = match.endIndex;
     }
 
-    clearBlockSearch(): void {
-        this.terminalSearchService.clearBlockSearch();
+    if (currentIndex < searchLine.lineText.length) {
+      segments.push({
+        text: searchLine.lineText.slice(currentIndex),
+        isMatch: false,
+      });
     }
 
-    loadMoreSearchResults(): void {
-        this.terminalSearchService.loadMoreSearchResults();
+    return segments;
+  }
+
+  private appendTextBeforeMatch(
+    segments: SearchTextSegment[],
+    lineText: string,
+    currentIndex: number,
+    match: TerminalSearchLineMatchContract,
+  ): void {
+    if (match.startIndex <= currentIndex) {
+      return;
     }
 
-    revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
-        this.terminalSearchService.revealSearchResult(searchLine);
-    }
+    segments.push({
+      text: lineText.slice(currentIndex, match.startIndex),
+      isMatch: false,
+    });
+  }
 
-    toggleCaseSensitive(): void {
-        this.terminalSearchService.toggleCaseSensitive();
-    }
-
-    toggleRegularExpression(): void {
-        this.terminalSearchService.toggleRegularExpression();
-    }
-
-    trackSearchLine(searchLine: TerminalSearchLineResultContract): string {
-        return `${searchLine.lineNumber}:${searchLine.lineText}`;
-    }
-
-    trackSegment(segment: SearchTextSegment, index: number): string {
-        return `${index}:${segment.text}:${segment.isMatch}`;
-    }
-
-    buildSegments(searchLine: TerminalSearchLineResultContract): SearchTextSegment[] {
-        if (searchLine.matches.length === 0) {
-            return [{text: searchLine.lineText, isMatch: false}];
-        }
-
-        const segments: SearchTextSegment[] = [];
-        let currentIndex = 0;
-
-        for (const match of searchLine.matches) {
-            this.appendTextBeforeMatch(segments, searchLine.lineText, currentIndex, match);
-            this.appendMatchedText(segments, searchLine.lineText, match);
-            currentIndex = match.endIndex;
-        }
-
-        if (currentIndex < searchLine.lineText.length) {
-            segments.push({
-                text: searchLine.lineText.slice(currentIndex),
-                isMatch: false,
-            });
-        }
-
-        return segments;
-    }
-
-    private appendTextBeforeMatch(
-        segments: SearchTextSegment[],
-        lineText: string,
-        currentIndex: number,
-        match: TerminalSearchLineMatchContract,
-    ): void {
-        if (match.startIndex <= currentIndex) {
-            return;
-        }
-
-        segments.push({
-            text: lineText.slice(currentIndex, match.startIndex),
-            isMatch: false,
-        });
-    }
-
-    private appendMatchedText(
-        segments: SearchTextSegment[],
-        lineText: string,
-        match: TerminalSearchLineMatchContract,
-    ): void {
-        segments.push({
-            text: lineText.slice(match.startIndex, match.endIndex),
-            isMatch: true,
-        });
-    }
+  private appendMatchedText(
+    segments: SearchTextSegment[],
+    lineText: string,
+    match: TerminalSearchLineMatchContract,
+  ): void {
+    segments.push({
+      text: lineText.slice(match.startIndex, match.endIndex),
+      isMatch: true,
+    });
+  }
 }
-
-
-

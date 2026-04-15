@@ -1,6 +1,6 @@
+import type { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
+import type { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { BehaviorSubject } from "rxjs";
-import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
-import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/test-factory";
 import { SelectedWorkspaceHeaderComponent } from "./selected-workspace-header.component";
@@ -46,7 +46,9 @@ describe("SelectedWorkspaceHeaderComponent", () => {
   it("enables the dropdown only when multiple workspaces are open", () => {
     expect((component as any).hasWorkspaceMenu()).toBe(true);
 
-    workspaceEntriesSubject.next([{ id: "WS-1", name: "Workspace One", isActive: true, isOpen: true }]);
+    workspaceEntriesSubject.next([
+      { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true },
+    ]);
 
     expect((component as any).hasWorkspaceMenu()).toBe(false);
   });
@@ -66,8 +68,10 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     expect(stopPropagation).toHaveBeenCalledTimes(1);
     expect(openContextForElementMock).toHaveBeenCalledTimes(1);
 
-    const menuConfig = openContextForElementMock.mock.calls[0][1] as { items: Array<{ label: string; action: () => void }> };
-    expect(menuConfig.items.map((item) => item.label)).toEqual(["Workspace One (active)", "Workspace Two"]);
+    const menuConfig = openContextForElementMock.mock.calls[0][1] as {
+      items: Array<{ label: string; action: () => void }>;
+    };
+    expect(menuConfig.items.map((item) => item.label)).toEqual(["Workspace One", "Workspace Two"]);
 
     menuConfig.items[1].action();
 
@@ -80,7 +84,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       { id: "WS-1", name: "Workspace One", isActive: false, isOpen: true },
     ]);
 
-    expect(component["activeWorkspace"]()).toBeUndefined();
+    expect(component.activeWorkspace()).toBeUndefined();
   });
 
   it("does not include the default workspace in the header menu", () => {
@@ -91,7 +95,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     ]);
 
     const button = document.createElement("button");
-    component["openWorkspaceMenu"]({
+    component.openWorkspaceMenu({
       currentTarget: button,
       preventDefault: vi.fn(),
       stopPropagation: vi.fn(),
@@ -100,9 +104,6 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     const menuConfig = openContextForElementMock.mock.calls.at(-1)?.[1] as {
       items: Array<{ label: string }>;
     };
-    expect(menuConfig.items.map((item) => item.label)).toEqual([
-      "Workspace One (active)",
-      "Workspace Two",
-    ]);
+    expect(menuConfig.items.map((item) => item.label)).toEqual(["Workspace One", "Workspace Two"]);
   });
 });

@@ -1,7 +1,7 @@
-import type { ActionName } from "@cogno/app/action/action.models";
-import type { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
-import type { ApplicationProductContract } from "@cogno/core-api";
-import type { Icon } from "@cogno/core-ui";
+import { ActionName } from "@cogno/app/action/action.models";
+import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { ApplicationProductContract } from "@cogno/core-api";
+import { Icon } from "@cogno/core-ui";
 
 export interface ProductDefinition {
   readonly id: string;

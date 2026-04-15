@@ -177,6 +177,3 @@ export class NotificationSideComponent {
     return `${daysAgo}d ago`;
   }
 }
-
-
-

@@ -2,7 +2,7 @@ import { IPathAdapter, ShellContextContract } from "@cogno/core-api";
 
 export class AutocompletePathSupport {
   private static readonly PARENT_TRAVERSAL_PREFIX_RE = /^(?:\.\.\/){2,}/;
-  private static readonly POSIX_AUTOCOMPLETE_ESCAPE_RE = /([\\\s"'$`!*?|&;<>(){}\[\]])/g;
+  private static readonly POSIX_AUTOCOMPLETE_ESCAPE_RE = /([\\\s"'$`!*?|&;<>(){}[\]])/g;
   private static readonly POWERSHELL_AUTOCOMPLETE_ESCAPE_RE = /([`\s"'$])/g;
 
   static normalizeCwd(cwd: string, pathAdapter: IPathAdapter): string {
@@ -15,14 +15,24 @@ export class AutocompletePathSupport {
   }
 
   static toRelativePath(targetNorm: string, cwdNorm: string): string {
-    const target = this.cleanPath(targetNorm);
-    const cwd = this.cleanPath(cwdNorm);
+    const target = AutocompletePathSupport.cleanPath(targetNorm);
+    const cwd = AutocompletePathSupport.cleanPath(cwdNorm);
     const targetSeg = target.split("/").filter(Boolean);
     const cwdSeg = cwd.split("/").filter(Boolean);
-    const targetRoot = target.startsWith("//") ? `${targetSeg[0] ?? ""}/${targetSeg[1] ?? ""}` : targetSeg[0] ?? "";
-    const cwdRoot = cwd.startsWith("//") ? `${cwdSeg[0] ?? ""}/${cwdSeg[1] ?? ""}` : cwdSeg[0] ?? "";
+    const targetRoot = target.startsWith("//")
+      ? `${targetSeg[0] ?? ""}/${targetSeg[1] ?? ""}`
+      : (targetSeg[0] ?? "");
+    const cwdRoot = cwd.startsWith("//")
+      ? `${cwdSeg[0] ?? ""}/${cwdSeg[1] ?? ""}`
+      : (cwdSeg[0] ?? "");
 
-    if (targetRoot !== cwdRoot && (target.startsWith("//") || cwd.startsWith("//") || this.isDrivePath(target) || this.isDrivePath(cwd))) {
+    if (
+      targetRoot !== cwdRoot &&
+      (target.startsWith("//") ||
+        cwd.startsWith("//") ||
+        AutocompletePathSupport.isDrivePath(target) ||
+        AutocompletePathSupport.isDrivePath(cwd))
+    ) {
       return target;
     }
 
@@ -42,17 +52,17 @@ export class AutocompletePathSupport {
   }
 
   static toDisplayPath(targetNorm: string, cwdNorm: string, pathAdapter: IPathAdapter): string {
-    const relative = this.toRelativePath(targetNorm, cwdNorm);
+    const relative = AutocompletePathSupport.toRelativePath(targetNorm, cwdNorm);
     const absolute = pathAdapter.render(targetNorm, { purpose: "display" }) ?? targetNorm;
     const candidates: string[] = [];
-    if (!this.isParentTraversalOnly(relative)) candidates.push(relative);
+    if (!AutocompletePathSupport.isParentTraversalOnly(relative)) candidates.push(relative);
     candidates.push(absolute);
     return candidates.reduce((best, cur) => (cur.length < best.length ? cur : best), candidates[0]);
   }
 
   static appendDirectorySeparator(path: string, shellContext: ShellContextContract): string {
     if (!path) return path;
-    const shellPath = this.toShellDisplayPath(path, shellContext);
+    const shellPath = AutocompletePathSupport.toShellDisplayPath(path, shellContext);
     if (shellPath.endsWith("/") || shellPath.endsWith("\\")) return shellPath;
     return `${shellPath}${shellContext.shellType === "PowerShell" ? "\\" : "/"}`;
   }
@@ -60,22 +70,29 @@ export class AutocompletePathSupport {
   static shortenParentTraversalDisplay(path: string, shellContext: ShellContextContract): string {
     if (!path) return path;
     const separator = shellContext.shellType === "PowerShell" ? "\\" : "/";
-    return path.replace(this.PARENT_TRAVERSAL_PREFIX_RE, `...${separator}`);
+    return path.replace(AutocompletePathSupport.PARENT_TRAVERSAL_PREFIX_RE, `...${separator}`);
   }
 
   static escapePathForAutocompleteInsert(path: string, shellContext: ShellContextContract): string {
     if (!path) return path;
-    if (shellContext.shellType === "PowerShell") return path.replace(this.POWERSHELL_AUTOCOMPLETE_ESCAPE_RE, "`$1");
-    return path.replace(this.POSIX_AUTOCOMPLETE_ESCAPE_RE, "\\$1");
+    if (shellContext.shellType === "PowerShell")
+      return path.replace(AutocompletePathSupport.POWERSHELL_AUTOCOMPLETE_ESCAPE_RE, "`$1");
+    return path.replace(AutocompletePathSupport.POSIX_AUTOCOMPLETE_ESCAPE_RE, "\\$1");
   }
 
-  static unescapeAutocompletePathFragment(pathFragment: string, shellContext: ShellContextContract): string {
+  static unescapeAutocompletePathFragment(
+    pathFragment: string,
+    shellContext: ShellContextContract,
+  ): string {
     if (!pathFragment) return pathFragment;
     if (shellContext.shellType === "PowerShell") return pathFragment.replace(/`(.)/g, "$1");
     return pathFragment.replace(/\\(.)/g, "$1");
   }
 
-  static splitAutocompleteFragmentTokens(fragment: string, shellContext: ShellContextContract): string[] {
+  static splitAutocompleteFragmentTokens(
+    fragment: string,
+    shellContext: ShellContextContract,
+  ): string[] {
     if (!fragment) return [];
     const escapeCharacter = shellContext.shellType === "PowerShell" ? "`" : "\\";
     const tokens: string[] = [];

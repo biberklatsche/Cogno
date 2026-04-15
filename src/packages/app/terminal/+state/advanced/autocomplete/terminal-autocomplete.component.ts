@@ -1,12 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, signal, ViewChild } from "@angular/core";
 import { NgStyle } from "@angular/common";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  effect,
+  signal,
+  ViewChild,
+} from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { TooltipDirective } from "@cogno/core-ui";
-
-import { SuggestionFilterMode, TerminalAutocompleteService } from "./terminal-autocomplete.service";
-import { AutocompleteSuggestion } from "./autocomplete.types";
-import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
+import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
+import { AutocompleteSuggestion } from "./autocomplete.types";
+import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
 const ITEM_HEIGHT_PX = 32;
 const MAX_VISIBLE_ITEMS = 5;
@@ -14,10 +21,10 @@ const LIST_VERTICAL_PADDING_PX = 4;
 const VIRTUAL_BUFFER_ITEMS = 3;
 
 @Component({
-    selector: "app-terminal-autocomplete",
-    standalone: true,
-    imports: [NgStyle, TooltipDirective, ActionKeybindingPipe, StartEllipsisDirective],
-    template: `
+  selector: "app-terminal-autocomplete",
+  standalone: true,
+  imports: [NgStyle, TooltipDirective, ActionKeybindingPipe, StartEllipsisDirective],
+  template: `
         @if (viewState().visible) {
             <div
                 #panel
@@ -80,7 +87,8 @@ const VIRTUAL_BUFFER_ITEMS = 3;
             </div>
         }
     `,
-    styles: [`
+  styles: [
+    `
         .autocomplete-panel {
             position: fixed;
             box-sizing: border-box;
@@ -231,122 +239,124 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         .autocomplete-description .description-hint .mode-badge.mode-context {
             background: var(--color-blue);
         }
-    `],
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    `,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TerminalAutocompleteComponent {
-    @ViewChild("list") private listRef?: ElementRef<HTMLDivElement>;
-    private readonly scrollTop = signal(0);
-    private previousSuggestions: AutocompleteSuggestion[] = [];
+  @ViewChild("list") private listRef?: ElementRef<HTMLDivElement>;
+  private readonly scrollTop = signal(0);
+  private previousSuggestions: AutocompleteSuggestion[] = [];
 
-    protected readonly viewState = toSignal(this.autocomplete.viewState$, { initialValue: {
-            visible: false,
-            x: 0,
-            y: 0,
-            width: 280,
-            placement: "below",
-            selectedIndex: null,
-            suggestions: [],
-        } });
-    protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" });
-    protected readonly filterModeLabel = computed(() => {
-        const mode = this.filterMode();
-        if (mode === "context-only") return "Context";
-        if (mode === "history-only") return "History";
-        return "All";
-    });
-    protected readonly filterModeTooltip = computed(() => {
-        const mode = this.filterMode();
-        if (mode === "context-only") return "Suggestions based on the current context";
-        if (mode === "history-only") return "Suggestions from your command history";
-        return "Suggestions from history and the current context";
-    });
-    protected readonly viewportHeight = ITEM_HEIGHT_PX * MAX_VISIBLE_ITEMS + LIST_VERTICAL_PADDING_PX * 2;
-    protected readonly totalContentHeight = computed(() =>
-        this.viewState().suggestions.length * ITEM_HEIGHT_PX + LIST_VERTICAL_PADDING_PX * 2
+  protected readonly viewState = toSignal(this.autocomplete.viewState$, {
+    initialValue: {
+      visible: false,
+      x: 0,
+      y: 0,
+      width: 280,
+      placement: "below",
+      selectedIndex: null,
+      suggestions: [],
+    },
+  });
+  protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" });
+  protected readonly filterModeLabel = computed(() => {
+    const mode = this.filterMode();
+    if (mode === "context-only") return "Context";
+    if (mode === "history-only") return "History";
+    return "All";
+  });
+  protected readonly filterModeTooltip = computed(() => {
+    const mode = this.filterMode();
+    if (mode === "context-only") return "Suggestions based on the current context";
+    if (mode === "history-only") return "Suggestions from your command history";
+    return "Suggestions from history and the current context";
+  });
+  protected readonly viewportHeight =
+    ITEM_HEIGHT_PX * MAX_VISIBLE_ITEMS + LIST_VERTICAL_PADDING_PX * 2;
+  protected readonly totalContentHeight = computed(
+    () => this.viewState().suggestions.length * ITEM_HEIGHT_PX + LIST_VERTICAL_PADDING_PX * 2,
+  );
+  protected readonly visibleSuggestions = computed(() => {
+    const suggestions = this.viewState().suggestions;
+    const maxVisibleItems = Math.min(MAX_VISIBLE_ITEMS, suggestions.length);
+    const rawStartIndex = Math.floor(this.scrollTop() / ITEM_HEIGHT_PX) - VIRTUAL_BUFFER_ITEMS;
+    const startIndex = Math.max(0, rawStartIndex);
+    const endIndex = Math.min(
+      suggestions.length,
+      startIndex + maxVisibleItems + VIRTUAL_BUFFER_ITEMS * 2,
     );
-    protected readonly visibleSuggestions = computed(() => {
-        const suggestions = this.viewState().suggestions;
-        const maxVisibleItems = Math.min(MAX_VISIBLE_ITEMS, suggestions.length);
-        const rawStartIndex = Math.floor(this.scrollTop() / ITEM_HEIGHT_PX) - VIRTUAL_BUFFER_ITEMS;
-        const startIndex = Math.max(0, rawStartIndex);
-        const endIndex = Math.min(
-            suggestions.length,
-            startIndex + maxVisibleItems + (VIRTUAL_BUFFER_ITEMS * 2),
-        );
 
-        return suggestions.slice(startIndex, endIndex).map((item, offset) => {
-            const index = startIndex + offset;
-            return {
-                index,
-                item,
-                offsetTop: LIST_VERTICAL_PADDING_PX + index * ITEM_HEIGHT_PX,
-            };
-        });
+    return suggestions.slice(startIndex, endIndex).map((item, offset) => {
+      const index = startIndex + offset;
+      return {
+        index,
+        item,
+        offsetTop: LIST_VERTICAL_PADDING_PX + index * ITEM_HEIGHT_PX,
+      };
     });
+  });
 
-    constructor(private readonly autocomplete: TerminalAutocompleteService) {
-        effect(() => {
-            const view = this.viewState();
-            if (view.suggestions !== this.previousSuggestions) {
-                this.previousSuggestions = view.suggestions;
-                this.resetScroll();
-            }
-            if (!view.visible || view.selectedIndex === null) return;
-            queueMicrotask(() => this.scrollSelectedIntoView(view.selectedIndex!));
-        });
+  constructor(private readonly autocomplete: TerminalAutocompleteService) {
+    effect(() => {
+      const view = this.viewState();
+      if (view.suggestions !== this.previousSuggestions) {
+        this.previousSuggestions = view.suggestions;
+        this.resetScroll();
+      }
+      if (!view.visible || view.selectedIndex === null) return;
+      queueMicrotask(() => this.scrollSelectedIntoView(view.selectedIndex!));
+    });
+  }
+
+  protected selectedDescription(): string {
+    const view = this.viewState();
+    if (view.suggestions.length === 0) return "";
+    if (view.selectedIndex === null) return "";
+    const index = view.selectedIndex;
+    return view.suggestions[index]?.description ?? "";
+  }
+
+  protected isHistorySuggestion(item: AutocompleteSuggestion): boolean {
+    const parts = item.source
+      .split("+")
+      .map((v) => v.trim().toLowerCase())
+      .filter(Boolean);
+    return parts.some((part) => part.includes("history"));
+  }
+
+  protected onListScroll(event: Event): void {
+    const target = event.target;
+    if (!(target instanceof HTMLDivElement)) return;
+    this.scrollTop.set(target.scrollTop);
+  }
+
+  private scrollSelectedIntoView(index: number): void {
+    const list = this.listRef?.nativeElement;
+    if (!list) return;
+
+    const itemTop = index * ITEM_HEIGHT_PX;
+    const itemBottom = itemTop + ITEM_HEIGHT_PX;
+    const viewportTop = list.scrollTop;
+    const viewportBottom = viewportTop + this.viewportHeight;
+
+    if (itemTop < viewportTop) {
+      list.scrollTop = itemTop;
+      this.scrollTop.set(list.scrollTop);
+      return;
     }
 
-    protected selectedDescription(): string {
-        const view = this.viewState();
-        if (view.suggestions.length === 0) return "";
-        if (view.selectedIndex === null) return "";
-        const index = view.selectedIndex;
-        return view.suggestions[index]?.description ?? "";
+    if (itemBottom > viewportBottom) {
+      list.scrollTop = itemBottom - this.viewportHeight;
+      this.scrollTop.set(list.scrollTop);
     }
+  }
 
-    protected isHistorySuggestion(item: AutocompleteSuggestion): boolean {
-        const parts = item.source
-            .split("+")
-            .map(v => v.trim().toLowerCase())
-            .filter(Boolean);
-        return parts.some(part => part.includes("history"));
+  private resetScroll(): void {
+    this.scrollTop.set(0);
+    const list = this.listRef?.nativeElement;
+    if (list) {
+      list.scrollTop = 0;
     }
-
-    protected onListScroll(event: Event): void {
-        const target = event.target;
-        if (!(target instanceof HTMLDivElement)) return;
-        this.scrollTop.set(target.scrollTop);
-    }
-
-    private scrollSelectedIntoView(index: number): void {
-        const list = this.listRef?.nativeElement;
-        if (!list) return;
-
-        const itemTop = index * ITEM_HEIGHT_PX;
-        const itemBottom = itemTop + ITEM_HEIGHT_PX;
-        const viewportTop = list.scrollTop;
-        const viewportBottom = viewportTop + this.viewportHeight;
-
-        if (itemTop < viewportTop) {
-            list.scrollTop = itemTop;
-            this.scrollTop.set(list.scrollTop);
-            return;
-        }
-
-        if (itemBottom > viewportBottom) {
-            list.scrollTop = itemBottom - this.viewportHeight;
-            this.scrollTop.set(list.scrollTop);
-        }
-    }
-
-    private resetScroll(): void {
-        this.scrollTop.set(0);
-        const list = this.listRef?.nativeElement;
-        if (list) {
-            list.scrollTop = 0;
-        }
-    }
+  }
 }
-
-

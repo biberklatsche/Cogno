@@ -1,6 +1,9 @@
-import { ApplicationSettingsExtensionContract, defaultFeatureSettingsExtension } from "@cogno/core-api";
-import { z } from "zod";
 import { OS, OsType } from "@cogno/app-tauri/os";
+import {
+  ApplicationSettingsExtensionContract,
+  defaultFeatureSettingsExtension,
+} from "@cogno/core-api";
+import { z } from "zod";
 import { Config } from "../+models/config";
 import { createApplicationSettingsDefinition } from "../application-settings-definition";
 
@@ -29,9 +32,10 @@ export class ConfigReader {
     const settingsExtensions = resolveSettingsExtensions(
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
-    const userConfig = this.parseConfigString(userConfigString || "");
-    const defaultConfig = this.parseConfigString(defaultConfigString || "");
-    return this.toConfigWithDiagnostics(defaultConfig, userConfig, settingsExtensions).config;
+    const userConfig = ConfigReader.parseConfigString(userConfigString || "");
+    const defaultConfig = ConfigReader.parseConfigString(defaultConfigString || "");
+    return ConfigReader.toConfigWithDiagnostics(defaultConfig, userConfig, settingsExtensions)
+      .config;
   }
 
   static fromStringToConfigWithDiagnostics(
@@ -53,9 +57,9 @@ export class ConfigReader {
     const settingsExtensions = resolveSettingsExtensions(
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
-    const userConfig = this.parseConfigString(userConfigString || "");
-    const defaultConfig = this.parseConfigString(defaultConfigString || "");
-    return this.toConfigWithDiagnostics(defaultConfig, userConfig, settingsExtensions);
+    const userConfig = ConfigReader.parseConfigString(userConfigString || "");
+    const defaultConfig = ConfigReader.parseConfigString(defaultConfigString || "");
+    return ConfigReader.toConfigWithDiagnostics(defaultConfig, userConfig, settingsExtensions);
   }
 
   private static toConfigWithDiagnostics(
@@ -68,25 +72,24 @@ export class ConfigReader {
       defaultConfig ?? {},
       applicationSettingsDefinition.defaults,
     );
-    const mergedConfig = this.mergeConfigValues(
+    const mergedConfig = ConfigReader.mergeConfigValues(
       defaultConfigWithExtensions,
       userConfig ?? {},
     ) as Record<string, unknown>;
     const diagnostics: ConfigDiagnostic[] = [];
-    const initialCandidate = this.clone(mergedConfig);
-    let candidate: Record<string, unknown> =
-      initialCandidate === undefined ? {} : initialCandidate;
+    const initialCandidate = ConfigReader.clone(mergedConfig);
+    let candidate: Record<string, unknown> = initialCandidate === undefined ? {} : initialCandidate;
 
     for (let attempt = 0; attempt < 10; attempt++) {
       const result = applicationSettingsDefinition.schema.safeParse(candidate);
       if (result.success) {
         const config = result.data as Config;
         if (config.font?.family) {
-          config.font.family = this.addFontFallbacks(config.font.family);
+          config.font.family = ConfigReader.addFontFallbacks(config.font.family);
         }
         return { config, diagnostics };
       }
-      const changed = this.applyDiagnosticsAndStrip(
+      const changed = ConfigReader.applyDiagnosticsAndStrip(
         candidate,
         defaultConfigWithExtensions,
         result.error,
@@ -95,17 +98,19 @@ export class ConfigReader {
       if (!changed) {
         break;
       }
-      const clonedCandidate = this.clone(candidate);
+      const clonedCandidate = ConfigReader.clone(candidate);
       candidate = clonedCandidate === undefined ? {} : clonedCandidate;
     }
 
-    const fallbackResult = applicationSettingsDefinition.schema.safeParse(defaultConfigWithExtensions);
+    const fallbackResult = applicationSettingsDefinition.schema.safeParse(
+      defaultConfigWithExtensions,
+    );
     const emptyResult = fallbackResult.success
       ? fallbackResult
       : applicationSettingsDefinition.schema.safeParse({});
     const fallback = (emptyResult.success ? emptyResult.data : {}) as Config;
     if (fallback.font?.family) {
-      fallback.font.family = this.addFontFallbacks(fallback.font.family);
+      fallback.font.family = ConfigReader.addFontFallbacks(fallback.font.family);
     }
     diagnostics.push({
       level: "error",
@@ -116,7 +121,7 @@ export class ConfigReader {
 
   private static mergeConfigValues(defaultValue: unknown, userValue: unknown): unknown {
     if (userValue === undefined) {
-      return this.clone(defaultValue);
+      return ConfigReader.clone(defaultValue);
     }
     if (Array.isArray(userValue)) {
       return userValue;
@@ -124,7 +129,7 @@ export class ConfigReader {
     if (Array.isArray(defaultValue)) {
       return userValue;
     }
-    if (!this.isPlainObject(userValue) || !this.isPlainObject(defaultValue)) {
+    if (!ConfigReader.isPlainObject(userValue) || !ConfigReader.isPlainObject(defaultValue)) {
       return userValue;
     }
 
@@ -152,7 +157,7 @@ export class ConfigReader {
         continue;
       }
 
-      mergedConfig[configKey] = this.mergeConfigValues(
+      mergedConfig[configKey] = ConfigReader.mergeConfigValues(
         defaultValue[configKey],
         userValue[configKey],
       );
@@ -163,8 +168,8 @@ export class ConfigReader {
 
   private static addFontFallbacks(fontFamily: string): string {
     const platform = OS.platform();
-    const fallbacks = this.getPlatformFontFallbacks(platform);
-    const cleanedFontFamily = this.quoteFontName(fontFamily);
+    const fallbacks = ConfigReader.getPlatformFontFallbacks(platform);
+    const cleanedFontFamily = ConfigReader.quoteFontName(fontFamily);
     const genericFonts = ["monospace", "sans-serif", "serif", "cursive", "fantasy"];
     if (genericFonts.includes(cleanedFontFamily.toLowerCase())) {
       return fallbacks;
@@ -217,12 +222,12 @@ export class ConfigReader {
         (part): part is string | number => typeof part === "string" || typeof part === "number",
       );
       if (issue.code === "unrecognized_keys") {
-        const pathLabel = this.pathToString(path);
+        const pathLabel = ConfigReader.pathToString(path);
         diagnostics.push({
           level: "warning",
           message: `Unknown setting(s) at ${pathLabel}: ${issue.keys.join(", ")}`,
         });
-        const parent = this.getByPath(target, path);
+        const parent = ConfigReader.getByPath(target, path);
         if (parent && typeof parent === "object") {
           for (const key of issue.keys) {
             if (key in parent) {
@@ -234,18 +239,18 @@ export class ConfigReader {
         continue;
       }
 
-      const pathLabel = this.pathToString(path);
+      const pathLabel = ConfigReader.pathToString(path);
       diagnostics.push({
         level: "error",
         message: `${pathLabel}: ${issue.message}`,
       });
       if (path.length > 0) {
-        const fallback = this.getByPath(defaults, path);
+        const fallback = ConfigReader.getByPath(defaults, path);
         if (fallback !== undefined) {
-          if (this.setByPath(target, path, this.clone(fallback))) {
+          if (ConfigReader.setByPath(target, path, ConfigReader.clone(fallback))) {
             changed = true;
           }
-        } else if (this.deleteByPath(target, path)) {
+        } else if (ConfigReader.deleteByPath(target, path)) {
           diagnostics.push({
             level: "warning",
             message: `${pathLabel}: Removed setting (no default available).`,
@@ -261,7 +266,7 @@ export class ConfigReader {
     if (path.length === 0) {
       return "<root>";
     }
-    return path.map(part => (typeof part === "number" ? `[${part}]` : part)).join(".");
+    return path.map((part) => (typeof part === "number" ? `[${part}]` : part)).join(".");
   }
 
   private static getByPath(
@@ -298,7 +303,7 @@ export class ConfigReader {
 
     const parentPath = path.slice(0, -1);
     const leafPathSegment = path[path.length - 1];
-    const parent = parentPath.length === 0 ? target : this.getByPath(target, parentPath);
+    const parent = parentPath.length === 0 ? target : ConfigReader.getByPath(target, parentPath);
     if (parent === undefined || parent === null) {
       return false;
     }
@@ -309,10 +314,7 @@ export class ConfigReader {
       parent.splice(leafPathSegment, 1);
       return true;
     }
-    if (
-      typeof parent === "object" &&
-      Object.prototype.hasOwnProperty.call(parent, leafPathSegment as string)
-    ) {
+    if (typeof parent === "object" && Object.hasOwn(parent, leafPathSegment as string)) {
       delete (parent as Record<string, unknown>)[leafPathSegment as string];
       return true;
     }
@@ -379,8 +381,8 @@ export class ConfigReader {
 
       const configKey = configEntryMatch[1];
       const configValueString = configEntryMatch[2].trim();
-      const configValue = this.parseValue(configValueString);
-      this.setDotPath(root, configKey, configValue);
+      const configValue = ConfigReader.parseValue(configValueString);
+      ConfigReader.setDotPath(root, configKey, configValue);
     }
 
     return root;
@@ -395,7 +397,7 @@ export class ConfigReader {
     let currentObject: Record<string, unknown> = target;
     for (let index = 0; index < pathSegments.length - 1; index++) {
       const pathSegment = pathSegments[index];
-      if (!this.isPlainObject(currentObject[pathSegment])) {
+      if (!ConfigReader.isPlainObject(currentObject[pathSegment])) {
         currentObject[pathSegment] = {};
       }
       currentObject = currentObject[pathSegment] as Record<string, unknown>;
@@ -442,7 +444,9 @@ export class ConfigReader {
       if (!arrayContent) {
         return [];
       }
-      return arrayContent.split(",").map(arrayEntry => this.parseValue(arrayEntry.trim()));
+      return arrayContent
+        .split(",")
+        .map((arrayEntry) => ConfigReader.parseValue(arrayEntry.trim()));
     }
     return trimmedValue;
   }
@@ -500,6 +504,3 @@ function resolveSettingsExtensions(
 
   return settingsExtensions;
 }
-
-
-

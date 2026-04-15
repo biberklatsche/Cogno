@@ -3,5 +3,3 @@ export interface ApplicationSettingsSectionDefinitionContract {
   readonly title: string;
   readonly order?: number;
 }
-
-

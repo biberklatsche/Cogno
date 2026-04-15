@@ -10,6 +10,3 @@ export const workspaceDatabaseMigrations = registerDatabaseMigrations("workspace
   { name: "add-tab-title-lock", sql: migration004AddWorkspaceTabTitleLock },
   { name: "add-workspace-position", sql: migration005AddWorkspacePosition },
 ]);
-
-
-

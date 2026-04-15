@@ -1,8 +1,7 @@
-import {Component, input, model} from '@angular/core';
-
+import { Component, input, model } from "@angular/core";
 
 @Component({
-  selector: 'app-checkbox',
+  selector: "app-checkbox",
   imports: [],
   template: `
       <div class="checkbox-container" (click)="toggle()">
@@ -16,7 +15,8 @@ import {Component, input, model} from '@angular/core';
           } 
       </div>
   `,
-  styles: [`
+  styles: [
+    `
       .checkbox-container {
           position: relative;
           padding-left: 1.6rem;
@@ -76,17 +76,15 @@ import {Component, input, model} from '@angular/core';
               }
           }
       }
-  `]
+  `,
+  ],
 })
 export class CheckboxComponent {
+  checked = model<boolean>(false);
+  label = input<string | undefined>();
+  description = input<string | undefined>();
 
-    checked = model<boolean>(false);
-    label = input<string | undefined>();
-    description = input<string | undefined>();
-
-    toggle() {
-        this.checked.update(s => !s);
-    }
+  toggle() {
+    this.checked.update((s) => !s);
+  }
 }
-
-

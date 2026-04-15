@@ -7,9 +7,9 @@ export class WorkspaceCloseGuardAdapterService implements WorkspaceCloseGuardCon
   constructor(private readonly terminalBusyStateService: TerminalBusyStateService) {}
 
   confirmCloseWorkspace(actionLabel: string, workspaceId: string): Promise<boolean> {
-    return this.terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(actionLabel, workspaceId);
+    return this.terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(
+      actionLabel,
+      workspaceId,
+    );
   }
 }
-
-
-

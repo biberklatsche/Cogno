@@ -1,13 +1,15 @@
 import { Injectable } from "@angular/core";
 import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
-import { CommandPaletteService } from "./command-palette.service";
 import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
+import { CommandPaletteService } from "./command-palette.service";
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteSideMenuLifecycle {
   constructor(private readonly commandPaletteService: CommandPaletteService) {}
 
-  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>): SideMenuFeatureLifecycleContract {
+  create(
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+  ): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {

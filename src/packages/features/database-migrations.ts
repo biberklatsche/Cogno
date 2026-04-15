@@ -4,6 +4,3 @@ import { workspaceDatabaseMigrations } from "./side-menu/workspace/workspace.mig
 export const featureDatabaseMigrations: ReadonlyArray<DatabaseMigrationContract> = [
   ...workspaceDatabaseMigrations,
 ];
-
-
-

@@ -7,5 +7,3 @@ export interface SideMenuFeatureLifecycleContract {
   onFocus?(): void;
   onBlur?(): void;
 }
-
-

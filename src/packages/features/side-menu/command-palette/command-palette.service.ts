@@ -1,12 +1,10 @@
-import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
+import { DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { CommandPaletteHostPort } from "@cogno/core-api";
 import {
-  CommandPaletteHostPort,
-} from "@cogno/core-api";
-import {
-  CommandDiscoveryEntryState as CommandEntry,
   CommandDiscoveryState,
   CommandDiscoveryUseCase,
+  CommandDiscoveryEntryState as CommandEntry,
   SelectionDirection,
 } from "@cogno/core-domain";
 import {
@@ -47,7 +45,9 @@ export class CommandPaletteService {
   }
 
   handleSideMenuClose(): void {
-    this.applyState(CommandDiscoveryUseCase.handleCollectionClose(this.commandPaletteStateSignal()));
+    this.applyState(
+      CommandDiscoveryUseCase.handleCollectionClose(this.commandPaletteStateSignal()),
+    );
   }
 
   getSelectedEntry(commandEntry?: CommandEntry): CommandEntry | undefined {
@@ -64,7 +64,9 @@ export class CommandPaletteService {
   }
 
   filterCommands(query: string): void {
-    this.applyState(CommandDiscoveryUseCase.filterCommands(this.commandPaletteStateSignal(), query));
+    this.applyState(
+      CommandDiscoveryUseCase.filterCommands(this.commandPaletteStateSignal(), query),
+    );
   }
 
   handleNavigationKey(key: string): void {
@@ -77,11 +79,15 @@ export class CommandPaletteService {
     }
   }
 
-  registerNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+  registerNavigationItemsProvider(
+    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
+  ): void {
     this.navigationItemsProvider = provider;
   }
 
-  unregisterNavigationItemsProvider(provider: () => ReadonlyArray<DirectionalNavigationItem<string>>): void {
+  unregisterNavigationItemsProvider(
+    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
+  ): void {
     if (this.navigationItemsProvider === provider) {
       this.navigationItemsProvider = undefined;
     }

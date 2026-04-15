@@ -43,7 +43,8 @@ export function resolveNextNavigationTarget<TId extends string>(
 
   const activeItem = items.find((item) => item.id === options.activeId) ?? items[0];
   const directionalCandidates = items.filter(
-    (item) => item.id !== activeItem.id && isCandidateInDirection(activeItem, item, options.direction),
+    (item) =>
+      item.id !== activeItem.id && isCandidateInDirection(activeItem, item, options.direction),
   );
 
   const nextItem =
@@ -133,10 +134,23 @@ function getDirectionalMetrics<TId extends string>(
 
   const hasCrossAxisOverlap =
     direction === "right" || direction === "left"
-      ? rangesOverlap(activeItem.rect.top, activeItem.rect.bottom, candidate.rect.top, candidate.rect.bottom)
-      : rangesOverlap(activeItem.rect.left, activeItem.rect.right, candidate.rect.left, candidate.rect.right);
+      ? rangesOverlap(
+          activeItem.rect.top,
+          activeItem.rect.bottom,
+          candidate.rect.top,
+          candidate.rect.bottom,
+        )
+      : rangesOverlap(
+          activeItem.rect.left,
+          activeItem.rect.right,
+          candidate.rect.left,
+          candidate.rect.right,
+        );
 
-  const euclideanDistance = Math.hypot(candidate.centerX - activeItem.centerX, candidate.centerY - activeItem.centerY);
+  const euclideanDistance = Math.hypot(
+    candidate.centerX - activeItem.centerX,
+    candidate.centerY - activeItem.centerY,
+  );
   const anchor =
     direction === "right"
       ? candidate.rect.left
@@ -221,7 +235,10 @@ function getWrapMetrics<TId extends string>(
           ? candidate.rect.top
           : -candidate.rect.bottom;
 
-  const euclideanDistance = Math.hypot(candidate.centerX - activeItem.centerX, candidate.centerY - activeItem.centerY);
+  const euclideanDistance = Math.hypot(
+    candidate.centerX - activeItem.centerX,
+    candidate.centerY - activeItem.centerY,
+  );
 
   return {
     wrapAnchor,
@@ -233,10 +250,17 @@ function getWrapMetrics<TId extends string>(
 }
 
 function cycleDistance(targetValue: number, originValue: number): number {
-  return targetValue >= originValue ? targetValue - originValue : Number.MAX_SAFE_INTEGER + targetValue;
+  return targetValue >= originValue
+    ? targetValue - originValue
+    : Number.MAX_SAFE_INTEGER + targetValue;
 }
 
-function rangesOverlap(firstStart: number, firstEnd: number, secondStart: number, secondEnd: number): boolean {
+function rangesOverlap(
+  firstStart: number,
+  firstEnd: number,
+  secondStart: number,
+  secondEnd: number,
+): boolean {
   return Math.max(firstStart, secondStart) <= Math.min(firstEnd, secondEnd);
 }
 

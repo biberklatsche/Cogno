@@ -11,7 +11,9 @@ describe("TextSearchUseCase", () => {
     });
     state = TextSearchUseCase.setQuery(state, "needle");
 
-    expect(TextSearchUseCase.createSearchRequest(state, state.activeTerminalId, undefined, 200)).toEqual({
+    expect(
+      TextSearchUseCase.createSearchRequest(state, state.activeTerminalId, undefined, 200),
+    ).toEqual({
       terminalId: "terminal-1",
       query: "needle",
       caseSensitive: false,
@@ -56,11 +58,13 @@ describe("TextSearchUseCase", () => {
     state = TextSearchUseCase.applyScopeRequest(state, { terminalId: "terminal-1" });
     state = TextSearchUseCase.setQuery(state, "needle");
 
-    expect(TextSearchUseCase.buildRevealRequest(state, {
-      lineNumber: 42,
-      lineText: "needle value",
-      matches: [{ startIndex: 0, endIndex: 6 }],
-    })).toEqual({
+    expect(
+      TextSearchUseCase.buildRevealRequest(state, {
+        lineNumber: 42,
+        lineText: "needle value",
+        matches: [{ startIndex: 0, endIndex: 6 }],
+      }),
+    ).toEqual({
       terminalId: "terminal-1",
       query: "needle",
       caseSensitive: false,

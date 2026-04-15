@@ -1,7 +1,6 @@
-
 // Local name union used by the color picker item
-import {ActionName} from "../../action/action.models";
-import {ColorName} from "../../common/color/color";
+import { ActionName } from "../../action/action.models";
+import { ColorName } from "../../common/color/color";
 
 export interface ContextMenuOverlayComponent {
   // Provided by ContextMenuOverlayService upon open; call to close the overlay
@@ -27,5 +26,3 @@ export type ContextMenuItem = {
   toggle?: boolean;
   toggled?: boolean;
 };
-
-

@@ -1,352 +1,373 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PromptMarkerRenderer } from './prompt-renderer';
-import { TerminalStateManager } from '../../state';
-import { PromptSegment } from '../../../../config/+models/prompt-config';
-import { AppBus } from '../../../../app-bus/app-bus';
-import { PathFactory } from '@cogno/core-host';
+import { Clipboard } from "@cogno/app-tauri/clipboard";
+import { PathFactory } from "@cogno/core-host";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
-import { ContextMenuOverlayService } from '../../../../menu/context-menu-overlay/context-menu-overlay.service';
-import { Clipboard } from '@cogno/app-tauri/clipboard';
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AppBus } from "../../../../app-bus/app-bus";
+import type { PromptSegment } from "../../../../config/+models/prompt-config";
+import type { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
+import { TerminalStateManager } from "../../state";
+import { PromptMarkerRenderer } from "./prompt-renderer";
 
-vi.mock('@cogno/app-tauri/clipboard', () => ({
-    Clipboard: {
-        writeText: vi.fn(),
-        readText: vi.fn(),
-    },
+vi.mock("@cogno/app-tauri/clipboard", () => ({
+  Clipboard: {
+    writeText: vi.fn(),
+    readText: vi.fn(),
+  },
 }));
 
-describe('PromptMarkerRenderer', () => {
-    let stateManager: TerminalStateManager;
-    let busMock: AppBus;
-    let hostElement: HTMLElement;
-    let contextMenuOverlayService: Pick<ContextMenuOverlayService, 'openContextForElement'>;
+describe("PromptMarkerRenderer", () => {
+  let stateManager: TerminalStateManager;
+  let busMock: AppBus;
+  let hostElement: HTMLElement;
+  let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openContextForElement">;
 
-    beforeEach(() => {
-        PathFactory.setDefinitions([
-            ...featureShellPathAdapterDefinitions,
-        ]);
-        busMock = new AppBus();
-        vi.spyOn(busMock, 'publish');
-        stateManager = new TerminalStateManager(busMock);
-        stateManager.initialize('test-term', 'Bash' as any);
-        hostElement = document.createElement('div');
-        contextMenuOverlayService = {
-            openContextForElement: vi.fn(),
+  beforeEach(() => {
+    PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
+    busMock = new AppBus();
+    vi.spyOn(busMock, "publish");
+    stateManager = new TerminalStateManager(busMock);
+    stateManager.initialize("test-term", "Bash" as any);
+    hostElement = document.createElement("div");
+    contextMenuOverlayService = {
+      openContextForElement: vi.fn(),
     };
+  });
+
+  it("should render default label when no segments are provided", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const renderer = new PromptMarkerRenderer(stateManager, []);
+    renderer.render(hostElement, 0);
+
+    const marker = hostElement.querySelector(".cogno-marker");
+    expect(marker).toBeTruthy();
+    expect(marker?.textContent).toBe("COGNO");
+  });
+
+  it("should render text segments", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [{ text: "Hello " }, { text: "World" }];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, 0);
+
+    const spans = hostElement.querySelectorAll(".prompt-segment");
+    expect(spans.length).toBe(2);
+    expect(spans[0].textContent).toBe("Hello ");
+    expect(spans[1].textContent).toBe("World");
+  });
+
+  it("should render field segments from command", () => {
+    stateManager.updateCommand({
+      id: "cmd-1",
+      user: "tester",
+      machine: "localhost",
+      directory: "~/projects",
     });
 
-    it('should render default label when no segments are provided', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
+    const segments: PromptSegment[] = [
+      { field: "user" },
+      { text: "@" },
+      { field: "machine" },
+      { text: ":" },
+      { field: "directory" },
+    ];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, 0);
 
-        const renderer = new PromptMarkerRenderer(stateManager, []);
-        renderer.render(hostElement, 0);
+    const marker = hostElement.querySelector(".cogno-marker");
+    expect(marker?.textContent).toBe("tester@localhost:~/projects");
+  });
 
-        const marker = hostElement.querySelector('.cogno-marker');
-        expect(marker).toBeTruthy();
-        expect(marker?.textContent).toBe('COGNO');
+  it("should apply styles correctly", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [
+      {
+        text: "Styled",
+        foreground: "red",
+        background: "#00ff00",
+        bold: true,
+        italic: true,
+        underline: true,
+        size: 14,
+        padding_left: 5,
+        margin_right: 10,
+        radius_left: 4,
+        className: "custom-class",
+        title: "Hover me",
+      },
+    ];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, 0);
+
+    const span = hostElement.querySelector(".prompt-segment") as HTMLElement;
+    expect(span.style.color).toBe("var(--color-red)");
+    expect(span.style.backgroundColor).toBe("#00ff00"); // #00ff00
+    expect(span.style.fontWeight).toBe("600");
+    expect(span.style.fontStyle).toBe("italic");
+    expect(span.style.textDecoration).toBe("underline");
+    expect(span.style.fontSize).toBe("14px");
+    expect(span.style.paddingLeft).toBe("5px");
+    expect(span.style.marginRight).toBe("10px");
+    expect(span.style.borderTopLeftRadius).toBe("4px");
+    expect(span.classList.contains("custom-class")).toBe(true);
+    expect(span.title).toBe("Hover me");
+  });
+
+  it('should evaluate "when" conditions correctly', () => {
+    // Create first command
+    stateManager.updateCommand({
+      id: "cmd-1",
+      user: "tester",
+    });
+    // Add second command, which updates first command with data (returnCode=0)
+    stateManager.updateCommand({
+      id: "cmd-2",
+      returnCode: "0",
     });
 
-    it('should render text segments', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
+    const segments: PromptSegment[] = [
+      { text: "OK", when: "returnCode == 0" },
+      { text: "FAIL", when: "returnCode != 0" },
+    ];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
 
-        const segments: PromptSegment[] = [
-            { text: 'Hello ' },
-            { text: 'World' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, 0);
+    // Render cmd-1 (index 0).
+    // In createCommandRecord for index 0:
+    // isLastCommand = commands[0].command === undefined.
+    // It IS undefined, so it returns isInput: true and ONLY directory, user, machine.
+    // Thus returnCode is missing!
 
-        const spans = hostElement.querySelectorAll('.prompt-segment');
-        expect(spans.length).toBe(2);
-        expect(spans[0].textContent).toBe('Hello ');
-        expect(spans[1].textContent).toBe('World');
+    // We need to make it NOT the last command by giving it a command text
+    stateManager.commands[0].set("command", "ls");
+
+    renderer.render(hostElement, 0);
+    expect(hostElement.textContent).toBe("OK");
+  });
+
+  it("should format values correctly", () => {
+    stateManager.updateCommand({
+      id: "cmd-1",
+      user: "john",
     });
 
-    it('should render field segments from command', () => {
-        stateManager.updateCommand({
-            id: 'cmd-1',
-            user: 'tester',
-            machine: 'localhost',
-            directory: '~/projects'
-        });
+    const segments: PromptSegment[] = [
+      { field: "user", format: "upper" },
+      { text: "|" },
+      { field: "user", format: "json" },
+    ];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, 0);
 
-        const segments: PromptSegment[] = [
-            { field: 'user' },
-            { text: '@' },
-            { field: 'machine' },
-            { text: ':' },
-            { field: 'directory' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, 0);
+    expect(hostElement.textContent).toBe('JOHN|"john"');
+  });
 
-        const marker = hostElement.querySelector('.cogno-marker');
-        expect(marker?.textContent).toBe('tester@localhost:~/projects');
+  it('should add "input" class for the last command', () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "Prompt" }]);
+    renderer.render(hostElement, 0);
+
+    const marker = hostElement.querySelector(".cogno-marker");
+    expect(marker?.classList.contains("input")).toBe(true);
+  });
+
+  it("should handle missing fields with fallback", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [{ field: "nonexistent", fallback: "MISSING" }];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, 0);
+
+    expect(hostElement.textContent).toBe("MISSING");
+  });
+
+  it("should handle undefined commandId gracefully", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [{ field: "user", fallback: "anonymous" }];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, 0);
+
+    expect(hostElement.textContent).toBe("anonymous");
+  });
+
+  it('should not render segments with false "when" condition', () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [
+      { text: "Hidden", when: "isInput == true" },
+      { text: "Visible", when: "isInput == false" },
+    ];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    // Command at index 0 with undefined command field returns isInput: true
+    // So we need to add a command field to make it not the input line
+    stateManager.commands[0].set("command", "ls");
+    renderer.render(hostElement, 0);
+
+    expect(hostElement.textContent).toBe("Visible");
+  });
+
+  it('should handle invalid "when" expressions', () => {
+    const segments: PromptSegment[] = [{ text: "ShouldNotAppear", when: "invalid expression" }];
+    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    renderer.render(hostElement, undefined);
+
+    expect(hostElement.textContent).toBe("");
+  });
+
+  it("should render a menu button and open a command menu", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+    stateManager.commands[0].set("command", "pnpm test");
+    const getCommandOutput = vi.fn().mockReturnValue("test output");
+
+    const renderer = new PromptMarkerRenderer(
+      stateManager,
+      [{ text: "Prompt" }],
+      contextMenuOverlayService,
+      busMock,
+    );
+    renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+    const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
+    expect(menuButton).toBeTruthy();
+    expect(getCommandOutput).not.toHaveBeenCalled();
+
+    menuButton.click();
+
+    expect(getCommandOutput).toHaveBeenCalledTimes(1);
+    expect(contextMenuOverlayService.openContextForElement).toHaveBeenCalledWith(
+      menuButton,
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({ label: "Copy Command", disabled: false }),
+          expect.objectContaining({ label: "Copy Output", disabled: false }),
+          expect.objectContaining({ label: "Scroll to Top", disabled: true }),
+          expect.objectContaining({ label: "Scroll to Bottom", disabled: true }),
+          expect.objectContaining({ label: "Filter Block", disabled: true }),
+        ]),
+      }),
+    );
+
+    const menuItems =
+      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+    expect(menuItems[2]).toEqual(expect.objectContaining({ separator: true }));
+    expect(menuItems[5]).toEqual(expect.objectContaining({ separator: true }));
+  });
+
+  it("should copy the command text from the marker menu action", async () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+    stateManager.commands[0].set("command", "pnpm test");
+    const getCommandOutput = vi.fn().mockReturnValue("test output");
+
+    const renderer = new PromptMarkerRenderer(
+      stateManager,
+      [{ text: "Prompt" }],
+      contextMenuOverlayService,
+      busMock,
+    );
+    renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+    const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
+    menuButton.click();
+    const menuItems =
+      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+    const copyCommandItem = menuItems.find((item) => item.label === "Copy Command");
+
+    await copyCommandItem?.action?.();
+
+    expect(Clipboard.writeText).toHaveBeenCalledWith("pnpm test");
+  });
+
+  it("should not resolve command output before the menu is opened", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+    stateManager.commands[0].set("command", "pnpm test");
+    const getCommandOutput = vi.fn().mockReturnValue("test output");
+
+    const renderer = new PromptMarkerRenderer(
+      stateManager,
+      [{ text: "Prompt" }],
+      contextMenuOverlayService,
+      busMock,
+    );
+    renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
+
+    expect(getCommandOutput).not.toHaveBeenCalled();
+  });
+
+  it("should publish search open and block filter events for filter block", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+    stateManager.commands[0].set("command", "pnpm test");
+    const getBlockRange = vi.fn().mockReturnValue({
+      beginBufferLine: 12,
+      endBufferLine: 20,
     });
 
-    it('should apply styles correctly', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
+    const renderer = new PromptMarkerRenderer(
+      stateManager,
+      [{ text: "Prompt" }],
+      contextMenuOverlayService,
+      busMock,
+    );
+    renderer.render(hostElement, { commandIndex: 0, getBlockRange });
 
-        const segments: PromptSegment[] = [{
-            text: 'Styled',
-            foreground: 'red',
-            background: '#00ff00',
-            bold: true,
-            italic: true,
-            underline: true,
-            size: 14,
-            padding_left: 5,
-            margin_right: 10,
-            radius_left: 4,
-            className: 'custom-class',
-            title: 'Hover me'
-        }];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, 0);
+    const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
+    menuButton.click();
+    const menuItems =
+      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+    const filterBlockItem = menuItems.find((item) => item.label === "Filter Block");
 
-        const span = hostElement.querySelector('.prompt-segment') as HTMLElement;
-        expect(span.style.color).toBe('var(--color-red)');
-        expect(span.style.backgroundColor).toBe('#00ff00'); // #00ff00
-        expect(span.style.fontWeight).toBe('600');
-        expect(span.style.fontStyle).toBe('italic');
-        expect(span.style.textDecoration).toBe('underline');
-        expect(span.style.fontSize).toBe('14px');
-        expect(span.style.paddingLeft).toBe('5px');
-        expect(span.style.marginRight).toBe('10px');
-        expect(span.style.borderTopLeftRadius).toBe('4px');
-        expect(span.classList.contains('custom-class')).toBe(true);
-        expect(span.title).toBe('Hover me');
+    filterBlockItem?.action?.();
+
+    expect(getBlockRange).toHaveBeenCalledTimes(1);
+    expect(busMock.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: ["app", "action"],
+        type: "ActionFired",
+        payload: "open_terminal_search",
+      }),
+    );
+    expect(busMock.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: ["app", "terminal"],
+        type: "TerminalSearchPanelRequested",
+        payload: expect.objectContaining({
+          terminalId: "test-term",
+          beginBufferLine: 12,
+          endBufferLine: 20,
+        }),
+      }),
+    );
+  });
+
+  it("should execute scroll actions from the marker menu", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+    stateManager.commands[0].set("command", "pnpm test");
+    const scrollToCommandTop = vi.fn();
+    const scrollToCommandBottom = vi.fn();
+
+    const renderer = new PromptMarkerRenderer(
+      stateManager,
+      [{ text: "Prompt" }],
+      contextMenuOverlayService,
+      busMock,
+    );
+    renderer.render(hostElement, {
+      commandIndex: 0,
+      scrollToCommandTop,
+      scrollToCommandBottom,
     });
 
-    it('should evaluate "when" conditions correctly', () => {
-        // Create first command
-        stateManager.updateCommand({
-            id: 'cmd-1',
-            user: 'tester'
-        });
-        // Add second command, which updates first command with data (returnCode=0)
-        stateManager.updateCommand({
-            id: 'cmd-2',
-            returnCode: '0'
-        });
-        
-        const segments: PromptSegment[] = [
-            { text: 'OK', when: 'returnCode == 0' },
-            { text: 'FAIL', when: 'returnCode != 0' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
+    menuButton.click();
+    const menuItems =
+      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
 
-        // Render cmd-1 (index 0). 
-        // In createCommandRecord for index 0:
-        // isLastCommand = commands[0].command === undefined.
-        // It IS undefined, so it returns isInput: true and ONLY directory, user, machine.
-        // Thus returnCode is missing!
-        
-        // We need to make it NOT the last command by giving it a command text
-        stateManager.commands[0].set('command', 'ls');
+    menuItems.find((item) => item.label === "Scroll to Top")?.action?.();
+    menuItems.find((item) => item.label === "Scroll to Bottom")?.action?.();
 
-        renderer.render(hostElement, 0);
-        expect(hostElement.textContent).toBe('OK');
-    });
-
-    it('should format values correctly', () => {
-        stateManager.updateCommand({
-            id: 'cmd-1',
-            user: 'john'
-        });
-
-        const segments: PromptSegment[] = [
-            { field: 'user', format: 'upper' },
-            { text: '|' },
-            { field: 'user', format: 'json' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, 0);
-
-        expect(hostElement.textContent).toBe('JOHN|"john"');
-    });
-
-    it('should add "input" class for the last command', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }]);
-        renderer.render(hostElement, 0);
-
-        const marker = hostElement.querySelector('.cogno-marker');
-        expect(marker?.classList.contains('input')).toBe(true);
-    });
-
-    it('should handle missing fields with fallback', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-
-        const segments: PromptSegment[] = [
-            { field: 'nonexistent', fallback: 'MISSING' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, 0);
-
-        expect(hostElement.textContent).toBe('MISSING');
-    });
-
-    it('should handle undefined commandId gracefully', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-
-        const segments: PromptSegment[] = [{ field: 'user', fallback: 'anonymous' }];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, 0);
-
-        expect(hostElement.textContent).toBe('anonymous');
-    });
-
-    it('should not render segments with false "when" condition', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-
-        const segments: PromptSegment[] = [
-            { text: 'Hidden', when: 'isInput == true' },
-            { text: 'Visible', when: 'isInput == false' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        // Command at index 0 with undefined command field returns isInput: true
-        // So we need to add a command field to make it not the input line
-        stateManager.commands[0].set('command', 'ls');
-        renderer.render(hostElement, 0);
-
-        expect(hostElement.textContent).toBe('Visible');
-    });
-
-    it('should handle invalid "when" expressions', () => {
-        const segments: PromptSegment[] = [
-            { text: 'ShouldNotAppear', when: 'invalid expression' }
-        ];
-        const renderer = new PromptMarkerRenderer(stateManager, segments);
-        renderer.render(hostElement, undefined);
-
-        expect(hostElement.textContent).toBe('');
-    });
-
-    it('should render a menu button and open a command menu', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-        stateManager.commands[0].set('command', 'pnpm test');
-        const getCommandOutput = vi.fn().mockReturnValue('test output');
-
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
-        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
-
-        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
-        expect(menuButton).toBeTruthy();
-        expect(getCommandOutput).not.toHaveBeenCalled();
-
-        menuButton.click();
-
-        expect(getCommandOutput).toHaveBeenCalledTimes(1);
-        expect(contextMenuOverlayService.openContextForElement).toHaveBeenCalledWith(
-            menuButton,
-            expect.objectContaining({
-                items: expect.arrayContaining([
-                    expect.objectContaining({ label: 'Copy Command', disabled: false }),
-                    expect.objectContaining({ label: 'Copy Output', disabled: false }),
-                    expect.objectContaining({ label: 'Scroll to Top', disabled: true }),
-                    expect.objectContaining({ label: 'Scroll to Bottom', disabled: true }),
-                    expect.objectContaining({ label: 'Filter Block', disabled: true }),
-                ]),
-            }),
-        );
-
-        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
-        expect(menuItems[2]).toEqual(expect.objectContaining({ separator: true }));
-        expect(menuItems[5]).toEqual(expect.objectContaining({ separator: true }));
-    });
-
-    it('should copy the command text from the marker menu action', async () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-        stateManager.commands[0].set('command', 'pnpm test');
-        const getCommandOutput = vi.fn().mockReturnValue('test output');
-
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
-        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
-
-        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
-        menuButton.click();
-        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
-        const copyCommandItem = menuItems.find((item) => item.label === 'Copy Command');
-
-        await copyCommandItem?.action?.();
-
-        expect(Clipboard.writeText).toHaveBeenCalledWith('pnpm test');
-    });
-
-    it('should not resolve command output before the menu is opened', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-        stateManager.commands[0].set('command', 'pnpm test');
-        const getCommandOutput = vi.fn().mockReturnValue('test output');
-
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
-        renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
-
-        expect(getCommandOutput).not.toHaveBeenCalled();
-    });
-
-    it('should publish search open and block filter events for filter block', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-        stateManager.commands[0].set('command', 'pnpm test');
-        const getBlockRange = vi.fn().mockReturnValue({
-            beginBufferLine: 12,
-            endBufferLine: 20,
-        });
-
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
-        renderer.render(hostElement, { commandIndex: 0, getBlockRange });
-
-        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
-        menuButton.click();
-        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
-        const filterBlockItem = menuItems.find((item) => item.label === 'Filter Block');
-
-        filterBlockItem?.action?.();
-
-        expect(getBlockRange).toHaveBeenCalledTimes(1);
-        expect(busMock.publish).toHaveBeenCalledWith(expect.objectContaining({
-            path: ['app', 'action'],
-            type: 'ActionFired',
-            payload: 'open_terminal_search',
-        }));
-        expect(busMock.publish).toHaveBeenCalledWith(expect.objectContaining({
-            path: ['app', 'terminal'],
-            type: 'TerminalSearchPanelRequested',
-            payload: expect.objectContaining({
-                terminalId: 'test-term',
-                beginBufferLine: 12,
-                endBufferLine: 20,
-            }),
-        }));
-    });
-
-    it('should execute scroll actions from the marker menu', () => {
-        stateManager.updateCommand({ id: 'cmd-1' });
-        stateManager.commands[0].set('command', 'pnpm test');
-        const scrollToCommandTop = vi.fn();
-        const scrollToCommandBottom = vi.fn();
-
-        const renderer = new PromptMarkerRenderer(stateManager, [{ text: 'Prompt' }], contextMenuOverlayService, busMock);
-        renderer.render(hostElement, {
-            commandIndex: 0,
-            scrollToCommandTop,
-            scrollToCommandBottom,
-        });
-
-        const menuButton = hostElement.querySelector('.prompt-marker-menu-button') as HTMLButtonElement;
-        menuButton.click();
-        const menuItems = vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
-
-        menuItems.find((item) => item.label === 'Scroll to Top')?.action?.();
-        menuItems.find((item) => item.label === 'Scroll to Bottom')?.action?.();
-
-        expect(scrollToCommandTop).toHaveBeenCalledTimes(1);
-        expect(scrollToCommandBottom).toHaveBeenCalledTimes(1);
-    });
+    expect(scrollToCommandTop).toHaveBeenCalledTimes(1);
+    expect(scrollToCommandBottom).toHaveBeenCalledTimes(1);
+  });
 });
-
-
-
-
-

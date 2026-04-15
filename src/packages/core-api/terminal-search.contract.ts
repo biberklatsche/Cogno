@@ -77,5 +77,3 @@ export abstract class TerminalSearchHostPort implements TerminalSearchHostPortCo
   abstract requestSearchDecorationClear(): void;
   abstract requestReveal(terminalSearchRevealRequest: TerminalSearchRevealRequestContract): void;
 }
-
-

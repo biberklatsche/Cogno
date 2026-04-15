@@ -1,15 +1,19 @@
 import { TerminalAutocompleteSuggestorDefinitionContract } from "@cogno/core-api";
-import { SpecCommandSuggestor } from "./spec-command.suggestor";
 import { AssetCommandSpecRegistry } from "./spec/asset-command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { GitBranchesSpecProvider } from "./spec/providers/git-branches.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
 import { SpecSuggestionProviderRegistration } from "./spec/spec.types";
+import { SpecCommandSuggestor } from "./spec-command.suggestor";
 
 function createDefaultProviderRegistrations(
-  filesystem: Parameters<NonNullable<typeof specCommandSuggestorDefinition.createSuggestor>>[0]["filesystem"],
-  commandRunner: Parameters<NonNullable<typeof specCommandSuggestorDefinition.createSuggestor>>[0]["commandRunner"],
+  filesystem: Parameters<
+    NonNullable<typeof specCommandSuggestorDefinition.createSuggestor>
+  >[0]["filesystem"],
+  commandRunner: Parameters<
+    NonNullable<typeof specCommandSuggestorDefinition.createSuggestor>
+  >[0]["commandRunner"],
 ): SpecSuggestionProviderRegistration[] {
   return [
     { provider: new NpmScriptsSpecProvider(filesystem) },
@@ -27,6 +31,3 @@ export const specCommandSuggestorDefinition: TerminalAutocompleteSuggestorDefini
       createDefaultProviderRegistrations(filesystem, commandRunner),
     ),
 };
-
-
-

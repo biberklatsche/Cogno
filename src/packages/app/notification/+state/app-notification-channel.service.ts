@@ -1,10 +1,9 @@
 import { Injectable, Signal, signal } from "@angular/core";
-import type {
+import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
-  NotificationTypeContract,
 } from "@cogno/core-api";
-import type { AppNotificationToast, AppNotificationToastId } from "./app-notification-toast.models";
+import { AppNotificationToast, AppNotificationToastId } from "./app-notification-toast.models";
 
 @Injectable({ providedIn: "root" })
 export class AppNotificationChannelService implements NotificationChannelContract {
@@ -102,6 +101,3 @@ function readNumberSetting(
   }
   return value;
 }
-
-
-

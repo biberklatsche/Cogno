@@ -1,7 +1,7 @@
+import { NotificationOs } from "@cogno/app-tauri/notification";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../app-bus/app-bus";
 import { OsNotificationChannelService } from "./os-notification-channel.service";
-import { NotificationOs } from "@cogno/app-tauri/notification";
 
 vi.mock("@cogno/app-tauri/notification", () => ({
   NotificationOs: {
@@ -65,5 +65,3 @@ describe("OsNotificationChannelService", () => {
     expect(publishSpy).not.toHaveBeenCalled();
   });
 });
-
-

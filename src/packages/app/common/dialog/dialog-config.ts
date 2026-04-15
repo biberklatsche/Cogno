@@ -1,4 +1,4 @@
-import {TemplateRef, Type} from '@angular/core';
+import { TemplateRef, Type } from "@angular/core";
 
 export interface DialogConfig<TData = unknown, TContext = unknown> {
   // Content
@@ -28,5 +28,3 @@ export interface DialogConfig<TData = unknown, TContext = unknown> {
   backdropClass?: string | string[];
   showCloseButton?: boolean; // default false
 }
-
-

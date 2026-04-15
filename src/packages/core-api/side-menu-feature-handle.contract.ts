@@ -4,5 +4,3 @@ export interface SideMenuFeatureHandleContract<TIcon = string> {
   close(): void;
   updateIcon(icon: TIcon): void;
 }
-
-

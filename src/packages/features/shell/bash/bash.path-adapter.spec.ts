@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { BashPathAdapter } from "./bash.path-adapter";
 
 describe("BashPathAdapter", () => {
@@ -26,13 +26,17 @@ describe("BashPathAdapter", () => {
 
   it("should render for backend_fs on windows", () => {
     const windowsAdapter = new BashPathAdapter({ backendOs: "windows" });
-    expect(windowsAdapter.render("/c/temp/file.txt", { purpose: "backend_fs" })).toBe("C:\\temp\\file.txt");
+    expect(windowsAdapter.render("/c/temp/file.txt", { purpose: "backend_fs" })).toBe(
+      "C:\\temp\\file.txt",
+    );
   });
 
   it("should map unix paths to WSL namespace when context is WSL", () => {
     const wslAdapter = new BashPathAdapter({ backendOs: "windows", wslDistroName: "Ubuntu" });
     expect(wslAdapter.normalize("/home/lars/project")).toBe("//wsl/Ubuntu/home/lars/project");
-    expect(wslAdapter.render("//wsl/Ubuntu/home/lars/project", { purpose: "display" })).toBe("/home/lars/project");
+    expect(wslAdapter.render("//wsl/Ubuntu/home/lars/project", { purpose: "display" })).toBe(
+      "/home/lars/project",
+    );
     expect(wslAdapter.render("//wsl/Ubuntu/home/lars/project", { purpose: "backend_fs" })).toBe(
       "\\\\wsl.localhost\\Ubuntu\\home\\lars\\project",
     );
@@ -40,11 +44,15 @@ describe("BashPathAdapter", () => {
 
   it("should normalize wsl UNC host paths", () => {
     const wslAdapter = new BashPathAdapter({ backendOs: "windows", wslDistroName: "Ubuntu" });
-    expect(wslAdapter.normalize("\\\\wsl.localhost\\Ubuntu\\home\\lars")).toBe("//wsl/Ubuntu/home/lars");
+    expect(wslAdapter.normalize("\\\\wsl.localhost\\Ubuntu\\home\\lars")).toBe(
+      "//wsl/Ubuntu/home/lars",
+    );
   });
 
   it("should quote if needed", () => {
-    expect(adapter.render("/path/with space", { purpose: "insert_arg" })).toBe("'/path/with space'");
+    expect(adapter.render("/path/with space", { purpose: "insert_arg" })).toBe(
+      "'/path/with space'",
+    );
   });
 
   it("should quote with escaped single quotes", () => {
@@ -57,6 +65,3 @@ describe("BashPathAdapter", () => {
     expect(adapter.render("/path/to/file", { purpose: "insert_arg" })).toBe("/path/to/file");
   });
 });
-
-
-

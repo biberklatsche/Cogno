@@ -10,6 +10,3 @@ export const appDatabaseMigrations = registerDatabaseMigrations("app", [
   { name: "add-command-patterns", sql: addCommandPatternsMigration },
   { name: "add-command-pattern-feedback", sql: addCommandPatternFeedbackMigration },
 ]);
-
-
-

@@ -1,4 +1,4 @@
-export * from "./workspace";
-export * from "./selection";
 export * from "./discovery";
 export * from "./inbox";
+export * from "./selection";
+export * from "./workspace";

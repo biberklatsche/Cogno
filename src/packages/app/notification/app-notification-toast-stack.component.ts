@@ -1,15 +1,18 @@
-import {ChangeDetectionStrategy, Component, Signal} from '@angular/core';
+import { ChangeDetectionStrategy, Component, Signal } from "@angular/core";
 import { NotificationTypeContract } from "@cogno/core-api";
 import { Icon, IconComponent } from "@cogno/core-ui";
 import { AppNotificationChannelService } from "./+state/app-notification-channel.service";
-import type { AppNotificationToast, AppNotificationToastId } from "./+state/app-notification-toast.models";
+import {
+  AppNotificationToast,
+  AppNotificationToastId,
+} from "./+state/app-notification-toast.models";
 
 @Component({
-    selector: 'app-notification-toast-stack',
-    standalone: true,
-    imports: [IconComponent],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
+  selector: "app-notification-toast-stack",
+  standalone: true,
+  imports: [IconComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
         @if (appNotificationToasts().length > 0) {
             <section class="toast-stack" aria-live="polite" aria-atomic="false">
                 @for (toast of appNotificationToasts(); track toast.id) {
@@ -33,7 +36,8 @@ import type { AppNotificationToast, AppNotificationToastId } from "./+state/app-
             </section>
         }
     `,
-    styles: [`
+  styles: [
+    `
         .toast-stack {
             position: fixed;
             right: 12px;
@@ -110,33 +114,30 @@ import type { AppNotificationToast, AppNotificationToastId } from "./+state/app-
                 transform: translateY(0);
             }
         }
-    `]
+    `,
+  ],
 })
 export class AppNotificationToastStackComponent {
-    readonly appNotificationToasts: Signal<AppNotificationToast[]>;
+  readonly appNotificationToasts: Signal<AppNotificationToast[]>;
 
-    constructor(private appNotificationChannelService: AppNotificationChannelService) {
-        this.appNotificationToasts = this.appNotificationChannelService.appNotificationToasts;
-    }
+  constructor(private appNotificationChannelService: AppNotificationChannelService) {
+    this.appNotificationToasts = this.appNotificationChannelService.appNotificationToasts;
+  }
 
-    dismiss(toastId: AppNotificationToastId): void {
-        this.appNotificationChannelService.dismissAppNotificationToast(toastId);
-    }
+  dismiss(toastId: AppNotificationToastId): void {
+    this.appNotificationChannelService.dismissAppNotificationToast(toastId);
+  }
 
-    getIcon(type?: NotificationTypeContract): Icon {
-        switch (type) {
-            case 'success':
-                return 'mdiCheckCircle';
-            case 'warning':
-                return 'mdiAlert';
-            case 'error':
-                return 'mdiAlert';
-            case 'info':
-            default:
-                return 'mdiInformation';
-        }
+  getIcon(type?: NotificationTypeContract): Icon {
+    switch (type) {
+      case "success":
+        return "mdiCheckCircle";
+      case "warning":
+        return "mdiAlert";
+      case "error":
+        return "mdiAlert";
+      default:
+        return "mdiInformation";
     }
+  }
 }
-
-
-

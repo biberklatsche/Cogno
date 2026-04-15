@@ -1,10 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DialogService } from './dialog.service';
-import { ApplicationRef, Component, EnvironmentInjector, Injector } from '@angular/core';
-import { DialogRef } from './dialog-ref';
+import {
+  type ApplicationRef,
+  Component,
+  type EnvironmentInjector,
+  type Injector,
+} from "@angular/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DialogService } from "./dialog.service";
+import { DialogRef } from "./dialog-ref";
 
 // Mock Angular's createComponent
-vi.mock('@angular/core', async (importOriginal) => {
+vi.mock("@angular/core", async (importOriginal) => {
   const actual = await importOriginal<any>();
   return {
     ...actual,
@@ -12,16 +17,16 @@ vi.mock('@angular/core', async (importOriginal) => {
   };
 });
 
-import { createComponent } from '@angular/core';
+import { createComponent } from "@angular/core";
 
 @Component({
-  selector: 'app-test-content',
+  selector: "app-test-content",
   standalone: true,
-  template: '<div>Test Content</div>'
+  template: "<div>Test Content</div>",
 })
 class TestContentComponent {}
 
-describe('DialogService', () => {
+describe("DialogService", () => {
   let service: DialogService;
   let appRefMock: any;
   let envInjectorMock: any;
@@ -36,14 +41,14 @@ describe('DialogService', () => {
       detachView: vi.fn(),
     };
     envInjectorMock = {
-        get: vi.fn(),
-        runInContext: vi.fn((fn: any) => fn()),
+      get: vi.fn(),
+      runInContext: vi.fn((fn: any) => fn()),
     };
     injectorMock = {
       get: vi.fn(),
     };
 
-    const hostEl = document.createElement('div');
+    const hostEl = document.createElement("div");
     componentRefMock = {
       instance: {
         dialogRef: vi.fn().mockReturnValue(new DialogRef(1, vi.fn())),
@@ -62,18 +67,18 @@ describe('DialogService', () => {
     service = new DialogService(
       appRefMock as ApplicationRef,
       envInjectorMock as EnvironmentInjector,
-      injectorMock as Injector
+      injectorMock as Injector,
     );
 
-    vi.spyOn(document.body, 'appendChild').mockImplementation(((node: Node) => node) as any);
+    vi.spyOn(document.body, "appendChild").mockImplementation(((node: Node) => node) as any);
   });
 
-  it('should be created', () => {
+  it("should be created", () => {
     expect(service).toBeTruthy();
   });
 
-  it('should create a dialog container and return a DialogRef', () => {
-    const dialogRef = service.open(TestContentComponent, { title: 'Test Dialog' });
+  it("should create a dialog container and return a DialogRef", () => {
+    const dialogRef = service.open(TestContentComponent, { title: "Test Dialog" });
 
     expect(dialogRef).toBeInstanceOf(DialogRef);
     expect(createComponent).toHaveBeenCalled();
@@ -81,7 +86,7 @@ describe('DialogService', () => {
     expect(document.body.appendChild).toHaveBeenCalledWith(componentRefMock.location.nativeElement);
   });
 
-  it('should handle TemplateRef content', () => {
+  it("should handle TemplateRef content", () => {
     const templateRefMock = {} as any;
     const dialogRef = service.open(templateRefMock);
 
@@ -89,34 +94,37 @@ describe('DialogService', () => {
     expect(createComponent).toHaveBeenCalled();
   });
 
-  it('should merge provided config with defaults', () => {
+  it("should merge provided config with defaults", () => {
     service.open(TestContentComponent, { showCloseButton: true });
 
-    expect(componentRefMock.setInput).toHaveBeenCalledWith('config', expect.objectContaining({
-      hasBackdrop: true,
-      showCloseButton: true,
-    }));
+    expect(componentRefMock.setInput).toHaveBeenCalledWith(
+      "config",
+      expect.objectContaining({
+        hasBackdrop: true,
+        showCloseButton: true,
+      }),
+    );
   });
 
-  it('should destroy the component and remove from DOM when closed', () => {
+  it("should destroy the component and remove from DOM when closed", () => {
     const hostEl = componentRefMock.location.nativeElement;
-    vi.spyOn(hostEl, 'remove');
+    vi.spyOn(hostEl, "remove");
 
     // We call open. Internally, a DialogRef is created.
     // But since we mock componentRefMock.instance.dialogRef,
     // we need to ensure that we can test the real behavior,
     // or at least that the destroy function created by the service is correct.
-    
+
     // To test the internal 'destroy' function, we must allow the service
     // to create a DialogRef, and we must intercept it.
     // OR we mock the DialogRef constructor (difficult in JS/TS).
-    
+
     // Simpler way: We look at what the service does with hostRef.setInput('dialogRef', ...).
     // There it passes the DialogRef it created to the component.
-    
+
     let capturedDialogRef: DialogRef<any> | undefined;
     componentRefMock.setInput.mockImplementation((name: string, value: any) => {
-      if (name === 'dialogRef') {
+      if (name === "dialogRef") {
         capturedDialogRef = value;
       }
     });
@@ -124,7 +132,7 @@ describe('DialogService', () => {
     service.open(TestContentComponent);
 
     expect(capturedDialogRef).toBeDefined();
-    
+
     // Jetzt schließen wir den Dialog über das eingefangene DialogRef
     capturedDialogRef?.close();
 
@@ -133,5 +141,3 @@ describe('DialogService', () => {
     expect(hostEl.remove).toHaveBeenCalled();
   });
 });
-
-

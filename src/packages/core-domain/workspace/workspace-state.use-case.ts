@@ -41,13 +41,15 @@ export class WorkspaceStateUseCase {
 
   static createInitialWorkspaceState(
     persistedWorkspaces: ReadonlyArray<WorkspaceConfiguration>,
-    defaultWorkspace: WorkspaceConfiguration = this.createDefaultWorkspace(),
+    defaultWorkspace: WorkspaceConfiguration = WorkspaceStateUseCase.createDefaultWorkspace(),
   ): WorkspaceState[] {
-    const workspaceList = [defaultWorkspace, ...persistedWorkspaces].map((workspaceConfiguration) => ({
-      ...workspaceConfiguration,
-      isSelected: workspaceConfiguration.isActive ?? false,
-      isOpen: false,
-    }));
+    const workspaceList = [defaultWorkspace, ...persistedWorkspaces].map(
+      (workspaceConfiguration) => ({
+        ...workspaceConfiguration,
+        isSelected: workspaceConfiguration.isActive ?? false,
+        isOpen: false,
+      }),
+    );
 
     if (!workspaceList.find((workspace) => workspace.isSelected) && workspaceList[0]) {
       workspaceList[0] = {
@@ -64,8 +66,8 @@ export class WorkspaceStateUseCase {
     workspaceList: ReadonlyArray<WorkspaceState>,
     workspaceId: string,
   ): WorkspaceActivationPlan {
-    const previousActiveWorkspace = this.getActiveWorkspace(workspaceList);
-    const workspaceToActivate = this.getWorkspaceById(workspaceList, workspaceId);
+    const previousActiveWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
+    const workspaceToActivate = WorkspaceStateUseCase.getWorkspaceById(workspaceList, workspaceId);
 
     if (!workspaceToActivate) {
       return {
@@ -82,7 +84,7 @@ export class WorkspaceStateUseCase {
       isSelected: workspaceEntry.id === workspaceId,
       isOpen: workspaceEntry.id === workspaceId ? true : workspaceEntry.isOpen,
     }));
-    const nextWorkspace = this.getWorkspaceById(nextWorkspaceList, workspaceId);
+    const nextWorkspace = WorkspaceStateUseCase.getWorkspaceById(nextWorkspaceList, workspaceId);
 
     return {
       previousActiveWorkspace,
@@ -115,8 +117,8 @@ export class WorkspaceStateUseCase {
   ): WorkspaceUpsertPlan {
     const existingWorkspaceIndex = workspaceList.findIndex(
       (workspaceEntry) =>
-        workspaceEntry.id === workspace.id
-        || (workspace.id === "" && workspaceEntry.name === workspace.name),
+        workspaceEntry.id === workspace.id ||
+        (workspace.id === "" && workspaceEntry.name === workspace.name),
     );
 
     if (existingWorkspaceIndex >= 0) {
@@ -165,16 +167,20 @@ export class WorkspaceStateUseCase {
     targetWorkspaceId: string,
   ): WorkspaceState[] {
     if (
-      sourceWorkspaceId === defaultWorkspaceIdContract
-      || targetWorkspaceId === defaultWorkspaceIdContract
-      || sourceWorkspaceId === targetWorkspaceId
+      sourceWorkspaceId === defaultWorkspaceIdContract ||
+      targetWorkspaceId === defaultWorkspaceIdContract ||
+      sourceWorkspaceId === targetWorkspaceId
     ) {
       return [...workspaceList];
     }
 
     const nextWorkspaceList = [...workspaceList];
-    const sourceWorkspaceIndex = nextWorkspaceList.findIndex((workspace) => workspace.id === sourceWorkspaceId);
-    const targetWorkspaceIndex = nextWorkspaceList.findIndex((workspace) => workspace.id === targetWorkspaceId);
+    const sourceWorkspaceIndex = nextWorkspaceList.findIndex(
+      (workspace) => workspace.id === sourceWorkspaceId,
+    );
+    const targetWorkspaceIndex = nextWorkspaceList.findIndex(
+      (workspace) => workspace.id === targetWorkspaceId,
+    );
 
     if (sourceWorkspaceIndex < 0 || targetWorkspaceIndex < 0) {
       return nextWorkspaceList;
@@ -201,8 +207,12 @@ export class WorkspaceStateUseCase {
     workspaceList: ReadonlyArray<WorkspaceState>,
     workspaceId: string,
   ): WorkspaceClosePlan {
-    const workspaceToClose = this.getWorkspaceById(workspaceList, workspaceId);
-    if (!workspaceToClose || workspaceToClose.id === defaultWorkspaceIdContract || !workspaceToClose.isOpen) {
+    const workspaceToClose = WorkspaceStateUseCase.getWorkspaceById(workspaceList, workspaceId);
+    if (
+      !workspaceToClose ||
+      workspaceToClose.id === defaultWorkspaceIdContract ||
+      !workspaceToClose.isOpen
+    ) {
       return {
         closedWorkspace: workspaceToClose,
         workspaceList: [...workspaceList],
@@ -222,8 +232,10 @@ export class WorkspaceStateUseCase {
 
     if (workspaceToClose.isActive) {
       const fallbackWorkspace =
-        nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isOpen)
-        ?? nextWorkspaceList.find((workspaceEntry) => workspaceEntry.id === defaultWorkspaceIdContract);
+        nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isOpen) ??
+        nextWorkspaceList.find(
+          (workspaceEntry) => workspaceEntry.id === defaultWorkspaceIdContract,
+        );
       return {
         closedWorkspace: workspaceToClose,
         workspaceList: nextWorkspaceList,
@@ -231,7 +243,10 @@ export class WorkspaceStateUseCase {
       };
     }
 
-    if (!nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isSelected) && nextWorkspaceList[0]) {
+    if (
+      !nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isSelected) &&
+      nextWorkspaceList[0]
+    ) {
       nextWorkspaceList[0] = {
         ...nextWorkspaceList[0],
         isSelected: true,
@@ -258,7 +273,10 @@ export class WorkspaceStateUseCase {
       .filter((workspace) => workspace.id !== workspaceId)
       .map((workspace) => ({ ...workspace }));
 
-    if (!nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isSelected) && nextWorkspaceList[0]) {
+    if (
+      !nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isSelected) &&
+      nextWorkspaceList[0]
+    ) {
       nextWorkspaceList[0] = {
         ...nextWorkspaceList[0],
         isSelected: true,

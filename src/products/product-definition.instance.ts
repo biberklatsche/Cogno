@@ -1,5 +1,5 @@
-import type { ProductDefinition } from "./product-definition";
 import { product } from "./product";
+import { ProductDefinition } from "./product-definition";
 import { productSideMenuFeatureDefinitions } from "./product-side-menu-feature-definitions";
 
 export const productDefinition = {

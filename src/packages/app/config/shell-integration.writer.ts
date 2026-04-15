@@ -1,8 +1,8 @@
 import { Fs } from "@cogno/app-tauri/fs";
-import { Environment } from "../common/environment/environment";
 import { Logger } from "@cogno/app-tauri/logger";
 import { Shells } from "@cogno/app-tauri/shells";
 import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-api";
+import { Environment } from "../common/environment/environment";
 import { ErrorReporter } from "../common/error/error-reporter";
 
 const INTEGRATION_VERSION = "1.1.3";
@@ -19,9 +19,9 @@ export class ShellIntegrationWriter {
   static async ensure(
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
   ): Promise<void> {
-    const integrationRoot = await this.getIntegrationRoot();
+    const integrationRoot = await ShellIntegrationWriter.getIntegrationRoot();
 
-    const needsUpdate = await this.needsUpdate(integrationRoot);
+    const needsUpdate = await ShellIntegrationWriter.needsUpdate(integrationRoot);
     if (!needsUpdate) {
       return;
     }
@@ -30,15 +30,20 @@ export class ShellIntegrationWriter {
 
     try {
       const availableShells = await Shells.load();
-      const availableShellTypes = new Set(availableShells.map(shell => shell.shell_type));
-      const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
+      const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
+      const definitionsByShellType =
+        ShellIntegrationWriter.createDefinitionsByShellType(shellSupportDefinitions);
 
       Logger.info(`Found shells: ${Array.from(availableShellTypes).join(", ")}`);
 
-      await this.createBaseDirectories(integrationRoot);
-      await this.writeIntegrationFiles(integrationRoot, availableShellTypes, definitionsByShellType);
-      await this.writeVersion(integrationRoot);
-      await this.logUpdate(integrationRoot);
+      await ShellIntegrationWriter.createBaseDirectories(integrationRoot);
+      await ShellIntegrationWriter.writeIntegrationFiles(
+        integrationRoot,
+        availableShellTypes,
+        definitionsByShellType,
+      );
+      await ShellIntegrationWriter.writeVersion(integrationRoot);
+      await ShellIntegrationWriter.logUpdate(integrationRoot);
 
       Logger.info("Shell integration scripts installed successfully");
     } catch (error) {
@@ -72,7 +77,7 @@ export class ShellIntegrationWriter {
   private static async needsUpdate(integrationRoot: string): Promise<boolean> {
     const versionFile = `${integrationRoot}/VERSION`;
 
-    if (!await Fs.exists(versionFile)) {
+    if (!(await Fs.exists(versionFile))) {
       return true;
     }
 
@@ -81,13 +86,10 @@ export class ShellIntegrationWriter {
   }
 
   private static async createBaseDirectories(integrationRoot: string): Promise<void> {
-    const directories = [
-      integrationRoot,
-      `${integrationRoot}/logs`,
-    ];
+    const directories = [integrationRoot, `${integrationRoot}/logs`];
 
     for (const directory of directories) {
-      if (!await Fs.exists(directory)) {
+      if (!(await Fs.exists(directory))) {
         await Fs.mkdir(directory, { recursive: true });
       }
     }
@@ -106,7 +108,10 @@ export class ShellIntegrationWriter {
         continue;
       }
 
-      const integrationFiles = this.resolveIntegrationFiles(shellDefinition, definitionsByShellType);
+      const integrationFiles = ShellIntegrationWriter.resolveIntegrationFiles(
+        shellDefinition,
+        definitionsByShellType,
+      );
       for (const integrationFile of integrationFiles) {
         if (writtenRelativePaths.has(integrationFile.relativePath)) {
           continue;
@@ -114,8 +119,8 @@ export class ShellIntegrationWriter {
         writtenRelativePaths.add(integrationFile.relativePath);
 
         const filePath = `${integrationRoot}/${integrationFile.relativePath}`;
-        const directoryPath = this.getDirectoryPath(filePath);
-        if (!await Fs.exists(directoryPath)) {
+        const directoryPath = ShellIntegrationWriter.getDirectoryPath(filePath);
+        if (!(await Fs.exists(directoryPath))) {
           await Fs.mkdir(directoryPath, { recursive: true });
         }
 

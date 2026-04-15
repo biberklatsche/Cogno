@@ -46,12 +46,8 @@ describe("AppNotificationChannelService", () => {
       settings: { duration_seconds: 10 },
     });
 
-    expect(appNotificationChannelService.appNotificationToasts().map((toast) => toast.header)).toEqual([
-      "Two",
-      "Three",
-      "Four",
-    ]);
+    expect(
+      appNotificationChannelService.appNotificationToasts().map((toast) => toast.header),
+    ).toEqual(["Two", "Three", "Four"]);
   });
 });
-
-

@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { Fs } from "@cogno/app-tauri/fs";
 import {
   FilesystemContract,
   FilesystemEntryContract,
@@ -7,7 +8,6 @@ import {
 } from "@cogno/core-api";
 import { PathFactory } from "@cogno/core-host";
 import { AutocompletePathSupport } from "@cogno/core-support";
-import { Fs } from "@cogno/app-tauri/fs";
 
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService implements FilesystemContract {
@@ -15,9 +15,14 @@ export class FilesystemHostService implements FilesystemContract {
     return PathFactory.createAdapter(shellContext).normalize(path);
   }
 
-  resolvePath(cwd: string, inputPath: string, shellContext: ShellContextContract): string | undefined {
+  resolvePath(
+    cwd: string,
+    inputPath: string,
+    shellContext: ShellContextContract,
+  ): string | undefined {
     const adapter = PathFactory.createAdapter(shellContext);
-    const absoluteLike = inputPath.startsWith("/") || /^[a-zA-Z]:/.test(inputPath) || inputPath.startsWith("\\\\");
+    const absoluteLike =
+      inputPath.startsWith("/") || /^[a-zA-Z]:/.test(inputPath) || inputPath.startsWith("\\\\");
 
     try {
       if (absoluteLike) {
@@ -27,7 +32,9 @@ export class FilesystemHostService implements FilesystemContract {
       const cwdBackend = adapter.render(cwd, { purpose: "backend_fs" });
       if (!cwdBackend) return undefined;
       const sep = cwdBackend.includes("\\") ? "\\" : "/";
-      const joined = cwdBackend.endsWith(sep) ? `${cwdBackend}${inputPath}` : `${cwdBackend}${sep}${inputPath}`;
+      const joined = cwdBackend.endsWith(sep)
+        ? `${cwdBackend}${inputPath}`
+        : `${cwdBackend}${sep}${inputPath}`;
       return adapter.normalize(joined);
     } catch {
       return undefined;
@@ -56,7 +63,9 @@ export class FilesystemHostService implements FilesystemContract {
       if (options?.directoriesOnly && kind !== "directory") continue;
       if (options?.filesOnly && kind !== "file") continue;
 
-      const childBackend = backendPath.endsWith(sep) ? `${backendPath}${entry.name}` : `${backendPath}${sep}${entry.name}`;
+      const childBackend = backendPath.endsWith(sep)
+        ? `${backendPath}${entry.name}`
+        : `${backendPath}${sep}${entry.name}`;
       let normalizedPath: string;
       try {
         normalizedPath = adapter.normalize(childBackend);
@@ -94,12 +103,16 @@ export class FilesystemHostService implements FilesystemContract {
   }
 
   async exists(path: string, shellContext: ShellContextContract): Promise<boolean> {
-    const backendPath = PathFactory.createAdapter(shellContext).render(path, { purpose: "backend_fs" });
+    const backendPath = PathFactory.createAdapter(shellContext).render(path, {
+      purpose: "backend_fs",
+    });
     return backendPath ? Fs.exists(backendPath) : false;
   }
 
   async readTextFile(path: string, shellContext: ShellContextContract): Promise<string> {
-    const backendPath = PathFactory.createAdapter(shellContext).render(path, { purpose: "backend_fs" });
+    const backendPath = PathFactory.createAdapter(shellContext).render(path, {
+      purpose: "backend_fs",
+    });
     if (!backendPath) {
       throw new Error(`Unable to render filesystem path '${path}'.`);
     }
@@ -107,14 +120,18 @@ export class FilesystemHostService implements FilesystemContract {
   }
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {
-    return AutocompletePathSupport.toDisplayPath(path, cwd, PathFactory.createAdapter(shellContext));
+    return AutocompletePathSupport.toDisplayPath(
+      path,
+      cwd,
+      PathFactory.createAdapter(shellContext),
+    );
   }
 
   appendPathSeparator(path: string, shellContext: ShellContextContract): string {
     return AutocompletePathSupport.appendDirectorySeparator(path, shellContext);
   }
 
-  toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string {
+  toRelativePath(path: string, cwd: string, _shellContext: ShellContextContract): string {
     return AutocompletePathSupport.toRelativePath(path, cwd);
   }
 }

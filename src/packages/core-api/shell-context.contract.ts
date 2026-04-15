@@ -20,5 +20,3 @@ export function isWslShellContext(ctx: ShellContextContract): ctx is WslShellCon
     "wslDistroName" in ctx
   );
 }
-
-

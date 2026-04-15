@@ -1,33 +1,31 @@
-import { Component } from '@angular/core';
+import { Component } from "@angular/core";
 import { IconComponent } from "@cogno/core-ui";
-import {AppMenuService} from "./app-menu.service";
-import {ContextMenuOverlayService} from "../context-menu-overlay/context-menu-overlay.service";
-import {ContextMenuItem} from "../context-menu-overlay/context-menu-overlay.types";
+import { ContextMenuOverlayService } from "../context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "../context-menu-overlay/context-menu-overlay.types";
+import { AppMenuService } from "./app-menu.service";
 
 @Component({
-  selector: 'app-menu-button',
-    imports: [
-        IconComponent
-    ],
+  selector: "app-menu-button",
+  imports: [IconComponent],
   template: `
       <button class="button icon-button" (click)="openMenu($event)"><app-icon name="mdiChevronDown"></app-icon></button>
   `,
-  styles: [`
+  styles: [
+    `
       :host {margin-right: 1rem;}
-  `]
+  `,
+  ],
 })
 export class AppMenuButtonComponent {
+  constructor(
+    private appMenuService: AppMenuService,
+    private menu: ContextMenuOverlayService,
+  ) {}
 
-    constructor(private appMenuService: AppMenuService, private menu: ContextMenuOverlayService) {
-    }
-
-    openMenu(event: Event) {
-        event.preventDefault();
-        event.stopPropagation();
-        const items: ContextMenuItem[] = this.appMenuService.buildMenu();
-        this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
-
-    }
+  openMenu(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const items: ContextMenuItem[] = this.appMenuService.buildMenu();
+    this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
+  }
 }
-
-

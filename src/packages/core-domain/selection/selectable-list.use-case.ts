@@ -52,8 +52,13 @@ export class SelectableListUseCase {
       : undefined;
     const nextIndex =
       nextItemId === undefined
-        ? this.resolveFallbackIndex(items.length, safeCurrentIndex, direction)
-        : this.resolveNavigationIndex(items, nextItemId, safeCurrentIndex, direction);
+        ? SelectableListUseCase.resolveFallbackIndex(items.length, safeCurrentIndex, direction)
+        : SelectableListUseCase.resolveNavigationIndex(
+            items,
+            nextItemId,
+            safeCurrentIndex,
+            direction,
+          );
 
     return items.map((item, index) => ({
       ...item,
@@ -84,7 +89,7 @@ export class SelectableListUseCase {
     if (nextIndex >= 0) {
       return nextIndex;
     }
-    return this.resolveFallbackIndex(items.length, safeCurrentIndex, direction);
+    return SelectableListUseCase.resolveFallbackIndex(items.length, safeCurrentIndex, direction);
   }
 
   private static resolveFallbackIndex(

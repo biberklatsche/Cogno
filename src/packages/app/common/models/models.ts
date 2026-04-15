@@ -1,4 +1,3 @@
 export interface IDisposable {
-    dispose(): void;
+  dispose(): void;
 }
-

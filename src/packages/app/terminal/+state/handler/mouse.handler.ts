@@ -1,7 +1,7 @@
-import {ITerminalHandler} from "./handler";
-import {Terminal} from "@xterm/xterm";
-import {IDisposable} from "../../../common/models/models";
-import {TerminalStateManager} from "../state";
+import { Terminal } from "@xterm/xterm";
+import { IDisposable } from "../../../common/models/models";
+import { TerminalStateManager } from "../state";
+import { ITerminalHandler } from "./handler";
 
 /**
  * Tracks the current terminal cell (col,row)
@@ -14,13 +14,16 @@ export class MouseHandler implements ITerminalHandler {
   private _lastCol?: number;
   private _lastRow?: number;
 
-  constructor(private _terminalContainer: HTMLDivElement, private _stateManager: TerminalStateManager) {
-      this._screenElement = this._terminalContainer.querySelector('.xterm-screen') as HTMLElement;
+  constructor(
+    private _terminalContainer: HTMLDivElement,
+    private _stateManager: TerminalStateManager,
+  ) {
+    this._screenElement = this._terminalContainer.querySelector(".xterm-screen") as HTMLElement;
   }
 
   dispose(): void {
     if (this._listener) {
-      this._screenElement?.removeEventListener('mousemove', this._listener);
+      this._screenElement?.removeEventListener("mousemove", this._listener);
       this._listener = undefined;
     }
   }
@@ -46,8 +49,10 @@ export class MouseHandler implements ITerminalHandler {
       let row = Math.floor(relY / cellH) + 1;
 
       // clamp to terminal bounds
-      if (col < 1) col = 1; else if (col > cols) col = cols;
-      if (row < 1) row = 1; else if (row > rows) row = rows;
+      if (col < 1) col = 1;
+      else if (col > cols) col = cols;
+      if (row < 1) row = 1;
+      else if (row > rows) row = rows;
 
       if (this._lastCol === col && this._lastRow === row) {
         return;
@@ -59,30 +64,27 @@ export class MouseHandler implements ITerminalHandler {
       const buffer = this._terminal.buffer.active as any;
       const absRow = (buffer.viewportY ?? 0) + (row - 1);
       // Try to read the character under the mouse from xterm's buffer
-      let char = '';
+      let char = "";
       try {
-
         // 0-based absolute row in buffer
         const line = buffer.getLine?.(absRow);
         const cell = line?.getCell?.(col - 1);
         const ch = cell?.getChars?.();
-        char = typeof ch === 'string' ? ch : '';
+        char = typeof ch === "string" ? ch : "";
       } catch {
         // ignore, keep empty char
       }
 
       this._stateManager.updateMousePosition({
-        viewport: {col: col, row: row},
+        viewport: { col: col, row: row },
         col: col,
         row: absRow + 1,
-        char: char
+        char: char,
       });
     };
 
-    this._screenElement?.addEventListener('mousemove', this._listener, { passive: true });
+    this._screenElement?.addEventListener("mousemove", this._listener, { passive: true });
 
     return this;
   }
 }
-
-

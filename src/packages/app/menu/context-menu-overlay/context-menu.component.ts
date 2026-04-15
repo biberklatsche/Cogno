@@ -1,14 +1,14 @@
-import {Component, Input} from '@angular/core';
-import { ContextMenuItem, ContextMenuOverlayComponent } from './context-menu-overlay.types';
+import { Component, Input } from "@angular/core";
+import { ColorName } from "../../common/color/color";
 
-import {ColorSelectComponent} from "../../common/color/color-select.component";
-import {ActionKeybindingPipe} from "../../keybinding/pipe/keybinding.pipe";
-import {ColorName} from "../../common/color/color";
+import { ColorSelectComponent } from "../../common/color/color-select.component";
+import { ActionKeybindingPipe } from "../../keybinding/pipe/keybinding.pipe";
+import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-overlay.types";
 
 @Component({
-    selector: 'app-context-menu',
-    standalone: true,
-    template: `
+  selector: "app-context-menu",
+  standalone: true,
+  template: `
         <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
                 @if (item.separator) {
@@ -49,12 +49,9 @@ import {ColorName} from "../../common/color/color";
             }
         </div>
     `,
-    imports: [
-    ActionKeybindingPipe,
-    ColorSelectComponent
-],
-    styles: [
-        `
+  imports: [ActionKeybindingPipe, ColorSelectComponent],
+  styles: [
+    `
             :host {
                 display: block;
             }
@@ -174,8 +171,8 @@ import {ColorName} from "../../common/color/color";
             .embed {
                 padding: 4px;
             }
-        `
-    ]
+        `,
+  ],
 })
 export class ContextMenuComponent implements ContextMenuOverlayComponent {
   @Input() items: ContextMenuItem[] = [];
@@ -200,5 +197,3 @@ export class ContextMenuComponent implements ContextMenuOverlayComponent {
     }
   }
 }
-
-

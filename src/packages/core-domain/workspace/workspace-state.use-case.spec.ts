@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { defaultWorkspaceIdContract } from "@cogno/core-api";
+import { describe, expect, it } from "vitest";
 import { WorkspaceStateUseCase } from "./workspace-state.use-case";
 
 const persistedWorkspace = {
@@ -39,7 +39,11 @@ describe("WorkspaceStateUseCase", () => {
       { ...persistedWorkspace, id: "WS-2", name: "Project Two" },
     ]);
 
-    const nextWorkspaceList = WorkspaceStateUseCase.reorderWorkspaces(workspaceList, "WS-2", "WS-1");
+    const nextWorkspaceList = WorkspaceStateUseCase.reorderWorkspaces(
+      workspaceList,
+      "WS-2",
+      "WS-1",
+    );
 
     expect(nextWorkspaceList.map((workspace) => workspace.id)).toEqual([
       defaultWorkspaceIdContract,
@@ -51,8 +55,13 @@ describe("WorkspaceStateUseCase", () => {
   });
 
   it("closes an active workspace and resolves a fallback activation target", () => {
-    const initialWorkspaceList = WorkspaceStateUseCase.createInitialWorkspaceState([persistedWorkspace]);
-    const activeWorkspaceList = WorkspaceStateUseCase.activateWorkspace(initialWorkspaceList, "WS-1").workspaceList;
+    const initialWorkspaceList = WorkspaceStateUseCase.createInitialWorkspaceState([
+      persistedWorkspace,
+    ]);
+    const activeWorkspaceList = WorkspaceStateUseCase.activateWorkspace(
+      initialWorkspaceList,
+      "WS-1",
+    ).workspaceList;
 
     const closePlan = WorkspaceStateUseCase.closeWorkspace(activeWorkspaceList, "WS-1");
 
@@ -63,9 +72,21 @@ describe("WorkspaceStateUseCase", () => {
 
   it("deletes the active workspace and resolves the first remaining workspace as fallback", () => {
     const workspaceList = [
-      { ...WorkspaceStateUseCase.createDefaultWorkspace(), isSelected: false, isActive: false, isOpen: false },
+      {
+        ...WorkspaceStateUseCase.createDefaultWorkspace(),
+        isSelected: false,
+        isActive: false,
+        isOpen: false,
+      },
       { ...persistedWorkspace, id: "WS-1", isSelected: true, isActive: true, isOpen: true },
-      { ...persistedWorkspace, id: "WS-2", name: "Project Two", isSelected: false, isActive: false, isOpen: false },
+      {
+        ...persistedWorkspace,
+        id: "WS-2",
+        name: "Project Two",
+        isSelected: false,
+        isActive: false,
+        isOpen: false,
+      },
     ];
 
     const deletePlan = WorkspaceStateUseCase.deleteWorkspace(workspaceList, "WS-1");

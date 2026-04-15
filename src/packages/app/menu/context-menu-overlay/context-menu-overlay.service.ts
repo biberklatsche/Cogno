@@ -1,9 +1,16 @@
-import {ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, Type, createComponent} from '@angular/core';
-import { ContextMenuOverlayComponent } from './context-menu-overlay.types';
-import { ContextMenuComponent } from './context-menu.component';
+import {
+  ApplicationRef,
+  ComponentRef,
+  createComponent,
+  EnvironmentInjector,
+  Injectable,
+  Type,
+} from "@angular/core";
+import { ContextMenuComponent } from "./context-menu.component";
+import { ContextMenuOverlayComponent } from "./context-menu-overlay.types";
 
 export type Point = { x: number; y: number };
-export type ContextMenuHorizontalAlign = 'left' | 'right';
+export type ContextMenuHorizontalAlign = "left" | "right";
 export type ContextMenuOpenOptions = {
   horizontalAlign?: ContextMenuHorizontalAlign;
 };
@@ -13,7 +20,7 @@ export interface ContextMenuOverlayRef {
   isOpen: () => boolean;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ContextMenuOverlayService {
   private current?: {
     host: HTMLDivElement;
@@ -25,28 +32,33 @@ export class ContextMenuOverlayService {
 
   private lastOpenEventTs = 0;
 
-  constructor(private appRef: ApplicationRef, private env: EnvironmentInjector) {}
+  constructor(
+    private appRef: ApplicationRef,
+    private env: EnvironmentInjector,
+  ) {}
 
   openAt<T extends ContextMenuOverlayComponent>(
     pointOrEvent: Point | MouseEvent,
     component: Type<T>,
     inputs?: Partial<T>,
-    options?: ContextMenuOpenOptions
+    options?: ContextMenuOpenOptions,
   ): ContextMenuOverlayRef {
     const point: Point = this.toPoint(pointOrEvent);
-    this.lastOpenEventTs = this.isMouseEvent(pointOrEvent) ? pointOrEvent.timeStamp : performance.now();
-    const horizontalAlign: ContextMenuHorizontalAlign = options?.horizontalAlign ?? 'left';
+    this.lastOpenEventTs = this.isMouseEvent(pointOrEvent)
+      ? pointOrEvent.timeStamp
+      : performance.now();
+    const horizontalAlign: ContextMenuHorizontalAlign = options?.horizontalAlign ?? "left";
 
     this.close();
 
-    const host = document.createElement('div');
-    host.classList.add('menu-overlay-host');
+    const host = document.createElement("div");
+    host.classList.add("menu-overlay-host");
     Object.assign(host.style, {
-      position: 'fixed',
-      left: point.x + 'px',
-      top: point.y + 2 + 'px',
-      zIndex: '100000',
-      visibility: 'hidden',
+      position: "fixed",
+      left: `${point.x}px`,
+      top: `${point.y + 2}px`,
+      zIndex: "100000",
+      visibility: "hidden",
     } as CSSStyleDeclaration);
 
     document.body.appendChild(host);
@@ -66,12 +78,12 @@ export class ContextMenuOverlayService {
     this.appRef.attachView(compRef.hostView);
 
     requestAnimationFrame(() => {
-      if (horizontalAlign === 'right') {
+      if (horizontalAlign === "right") {
         const rect = host.getBoundingClientRect();
         host.style.left = `${point.x - rect.width}px`;
       }
       this.repositionWithinViewport(host);
-      host.style.visibility = 'visible';
+      host.style.visibility = "visible";
     });
 
     const pointerListener = (ev: PointerEvent) => {
@@ -80,23 +92,24 @@ export class ContextMenuOverlayService {
         this.close();
       }
     };
-    document.addEventListener('pointerdown', pointerListener, true);
+    document.addEventListener("pointerdown", pointerListener, true);
 
     const keyListener = (ev: KeyboardEvent) => {
-      if (ev.key === 'Escape') this.close();
+      if (ev.key === "Escape") this.close();
     };
-    document.addEventListener('keydown', keyListener, true);
+    document.addEventListener("keydown", keyListener, true);
 
     const sr = () => this.close();
-    window.addEventListener('resize', sr, true);
+    window.addEventListener("resize", sr, true);
 
     this.current = {
       host,
       compRef,
-      removeOutsideListener: () => document.removeEventListener('pointerdown', pointerListener, true),
-      removeKeyListener: () => document.removeEventListener('keydown', keyListener, true),
+      removeOutsideListener: () =>
+        document.removeEventListener("pointerdown", pointerListener, true),
+      removeKeyListener: () => document.removeEventListener("keydown", keyListener, true),
       removeScrollResizeListener: () => {
-        window.removeEventListener('resize', sr, true);
+        window.removeEventListener("resize", sr, true);
       },
     };
 
@@ -111,7 +124,7 @@ export class ContextMenuOverlayService {
   openContextAt(
     pointOrEvent: Point | MouseEvent,
     inputs?: Partial<ContextMenuOverlayComponent>,
-    options?: ContextMenuOpenOptions
+    options?: ContextMenuOpenOptions,
   ): ContextMenuOverlayRef {
     return this.openAt(pointOrEvent, ContextMenuComponent, inputs, options);
   }
@@ -119,11 +132,11 @@ export class ContextMenuOverlayService {
   openContextForElement(
     el: HTMLElement,
     inputs?: Partial<ContextMenuOverlayComponent>,
-    options?: ContextMenuOpenOptions
+    options?: ContextMenuOpenOptions,
   ): ContextMenuOverlayRef {
     const rect = el.getBoundingClientRect();
     const point: Point = { x: rect.left, y: rect.bottom };
-    if (options?.horizontalAlign === 'right') {
+    if (options?.horizontalAlign === "right") {
       point.x = rect.right;
     }
     return this.openAt(point, ContextMenuComponent, inputs, options);
@@ -131,7 +144,8 @@ export class ContextMenuOverlayService {
 
   close() {
     if (!this.current) return;
-    const { host, compRef, removeKeyListener, removeOutsideListener, removeScrollResizeListener } = this.current;
+    const { host, compRef, removeKeyListener, removeOutsideListener, removeScrollResizeListener } =
+      this.current;
     removeOutsideListener();
     removeKeyListener();
     removeScrollResizeListener();
@@ -156,12 +170,12 @@ export class ContextMenuOverlayService {
     const maxH = Math.max(0, vh - padding * 2);
 
     if (w > maxW) {
-      host.style.maxWidth = maxW + 'px';
-      host.style.overflowX = 'auto';
+      host.style.maxWidth = `${maxW}px`;
+      host.style.overflowX = "auto";
     }
     if (h > maxH) {
-      host.style.maxHeight = maxH + 'px';
-      host.style.overflowY = 'auto';
+      host.style.maxHeight = `${maxH}px`;
+      host.style.overflowY = "auto";
     }
 
     rect = host.getBoundingClientRect();
@@ -173,12 +187,14 @@ export class ContextMenuOverlayService {
     if (left < padding) left = padding;
     if (top < padding) top = padding;
 
-    host.style.left = left + 'px';
-    host.style.top = top + 'px';
+    host.style.left = `${left}px`;
+    host.style.top = `${top}px`;
   }
 
   private isMouseEvent(p: Point | MouseEvent): p is MouseEvent {
-    return typeof (p as MouseEvent).clientX === 'number' && typeof (p as MouseEvent).clientY === 'number';
+    return (
+      typeof (p as MouseEvent).clientX === "number" && typeof (p as MouseEvent).clientY === "number"
+    );
   }
 
   private toPoint(p: Point | MouseEvent): Point {
@@ -188,5 +204,3 @@ export class ContextMenuOverlayService {
     return p;
   }
 }
-
-

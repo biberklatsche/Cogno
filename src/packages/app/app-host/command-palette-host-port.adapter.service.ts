@@ -1,16 +1,16 @@
 import { Injectable } from "@angular/core";
-import { map, Observable } from "rxjs";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   CommandPaletteActionDefinitionContract,
   CommandPaletteCommandEntryContract,
   CommandPaletteHostPortContract,
 } from "@cogno/core-api";
+import { map, Observable } from "rxjs";
 import { ActionFired } from "../action/action.models";
 import { coreActionNames } from "../action/core-action-names";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "../keybinding/keybind.service";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class CommandPaletteHostPortAdapterService implements CommandPaletteHostPortContract {
@@ -22,9 +22,7 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
     private readonly keybindService: KeybindService,
     private readonly wiringService: AppWiringService,
   ) {
-    this.commandEntries$ = configService.config$.pipe(
-      map(() => this.buildCommandEntries()),
-    );
+    this.commandEntries$ = configService.config$.pipe(map(() => this.buildCommandEntries()));
   }
 
   publishAction(commandPaletteActionDefinition: CommandPaletteActionDefinitionContract): void {
@@ -51,7 +49,9 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
     );
 
     return actionNames.map((actionName) => {
-      const actionDefinition = this.keybindService.getActionDefinition(actionName) ?? { actionName };
+      const actionDefinition = this.keybindService.getActionDefinition(actionName) ?? {
+        actionName,
+      };
       return {
         actionDefinition: {
           actionName: actionDefinition.actionName,
@@ -63,7 +63,3 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
     });
   }
 }
-
-
-
-

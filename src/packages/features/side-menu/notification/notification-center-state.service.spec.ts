@@ -1,6 +1,9 @@
+import type {
+  NotificationCenterPortContract,
+  NotificationEventPayloadContract,
+} from "@cogno/core-api";
 import { BehaviorSubject } from "rxjs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NotificationCenterPortContract, NotificationEventPayloadContract } from "@cogno/core-api";
+import { beforeEach, describe, expect, it } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 import { NotificationCenterStateService } from "./notification-center-state.service";
 
@@ -11,7 +14,9 @@ describe("NotificationCenterStateService", () => {
   let latestIconName: string | undefined;
 
   beforeEach(() => {
-    notificationEventSubject = new BehaviorSubject<NotificationEventPayloadContract>({ header: "Initial" });
+    notificationEventSubject = new BehaviorSubject<NotificationEventPayloadContract>({
+      header: "Initial",
+    });
     overviewMaxItems = 30;
 
     const notificationCenterPort = {
@@ -19,7 +24,10 @@ describe("NotificationCenterStateService", () => {
       getOverviewMaxItems: () => overviewMaxItems,
     } as NotificationCenterPortContract;
 
-    notificationCenterStateService = new NotificationCenterStateService(notificationCenterPort, getDestroyRef());
+    notificationCenterStateService = new NotificationCenterStateService(
+      notificationCenterPort,
+      getDestroyRef(),
+    );
     notificationCenterStateService.setSideMenuIconUpdater((iconName) => {
       latestIconName = iconName;
     });
@@ -71,10 +79,9 @@ describe("NotificationCenterStateService", () => {
     publishNotification({ header: "Second", timestamp: new Date("2025-01-01T11:00:00.000Z") });
     publishNotification({ header: "Third", timestamp: new Date("2025-01-01T12:00:00.000Z") });
 
-    expect(notificationCenterStateService.notifications().map((notification) => notification.header)).toEqual([
-      "Third",
-      "Second",
-    ]);
+    expect(
+      notificationCenterStateService.notifications().map((notification) => notification.header),
+    ).toEqual(["Third", "Second"]);
   });
 
   function publishNotification(payload: {
@@ -86,6 +93,3 @@ describe("NotificationCenterStateService", () => {
     notificationEventSubject.next(payload);
   }
 });
-
-
-

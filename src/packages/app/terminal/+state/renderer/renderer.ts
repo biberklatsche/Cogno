@@ -1,123 +1,123 @@
-import {Terminal} from "@xterm/xterm";
-import {OS} from "@cogno/app-tauri/os";
-import {FitAddon} from "@xterm/addon-fit";
-import {SearchAddon} from "@xterm/addon-search";
-import {Unicode11Addon} from "@xterm/addon-unicode11";
-import {LigaturesAddon} from "@xterm/addon-ligatures";
-import {WebglAddon} from "@xterm/addon-webgl";
-import {IDisposable} from "../../../common/models/models";
+import { OS } from "@cogno/app-tauri/os";
+import { FitAddon } from "@xterm/addon-fit";
+import { LigaturesAddon } from "@xterm/addon-ligatures";
+import { SearchAddon } from "@xterm/addon-search";
+import { Unicode11Addon } from "@xterm/addon-unicode11";
+import { WebglAddon } from "@xterm/addon-webgl";
+import { Terminal } from "@xterm/xterm";
+import { IDisposable } from "../../../common/models/models";
+import { Config } from "../../../config/+models/config";
 import {
-    IFitHandler,
-    ISearchHandler,
-    isFitHandler,
-    isSearchHandler,
-    isTerminalHandler,
-    ITerminalHandler
+  IFitHandler,
+  ISearchHandler,
+  ITerminalHandler,
+  isFitHandler,
+  isSearchHandler,
+  isTerminalHandler,
 } from "../handler/handler";
-import {Config} from "../../../config/+models/config";
 
 export interface IRenderer {
-    open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
-    readonly terminal: Terminal;
+  open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
+  readonly terminal: Terminal;
 
-    dispose(): void;
+  dispose(): void;
 
-    register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable;
+  register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable;
 }
 
 export class Renderer implements IRenderer, IDisposable {
+  private _terminal: Terminal;
 
-    private _terminal: Terminal;
+  private _fitAddon = new FitAddon();
+  private _searchAddon = new SearchAddon();
+  private _unicodeAddon = new Unicode11Addon();
+  private _ligaturesAddon: LigaturesAddon | undefined = undefined;
+  private _webglAddon: WebglAddon | undefined = undefined;
 
-    private _fitAddon = new FitAddon();
-    private _searchAddon = new SearchAddon();
-    private _unicodeAddon = new Unicode11Addon();
-    private _ligaturesAddon: LigaturesAddon | undefined = undefined;
-    private _webglAddon: WebglAddon | undefined = undefined;
+  constructor(config: Config) {
+    this._terminal = new Terminal({
+      overviewRuler: {
+        width: config.scrollbar?.width,
+        showBottomBorder: false,
+        showTopBorder: false,
+      },
+      scrollback: config.scrollbar?.scrollback_lines,
+      tabStopWidth: config.terminal?.tab_stop_width,
+      scrollSensitivity: config.scrollbar?.sensitivity,
+      fastScrollSensitivity: config.scrollbar?.fast_scroll_sensitivity,
+      scrollOnUserInput: config.scrollbar?.scroll_on_user_input,
+      smoothScrollDuration: config.scrollbar?.smooth_scroll_duration,
+      allowTransparency: config.terminal?.allow_transparency,
+      altClickMovesCursor: config.cursor?.alt_click_moves_cursor,
+      customGlyphs: config.font?.custom_glyphs,
+      drawBoldTextInBrightColors: config.font?.draw_bold_text_in_bright_colors,
+      ignoreBracketedPasteMode: config.terminal?.ignore_bracketed_paste_mode,
+      minimumContrastRatio: config.terminal?.minimum_contrast_ratio,
+      rescaleOverlappingGlyphs: config.font?.rescale_overlapping_glyphs,
+      rightClickSelectsWord: config.selection?.right_click_selects_word,
+      screenReaderMode: config.terminal?.screen_reader_mode,
+      wordSeparator: config.terminal?.word_separator,
+      windowsPty: OS.platform() === "windows" ? { backend: "conpty" } : undefined,
+      allowProposedApi: true,
+      windowOptions: {
+        pushTitle: true, //handle CSI Ps=22 vim on gitbash uses this to enter full screen
+        popTitle: true, //handle CSI Ps=23 vim on gitbash uses this to leaf full screen
+      },
+      // Font settings - must be set during initialization
+      fontFamily: config.font?.family,
+      fontSize: config.font?.size,
+      fontWeight: config.font?.weight,
+      fontWeightBold: config.font?.weight_bold,
+    });
 
-    constructor(config: Config) {
-        this._terminal = new Terminal({
-            overviewRuler: {width: config.scrollbar!.width, showBottomBorder: false, showTopBorder: false},
-            scrollback: config.scrollbar!.scrollback_lines,
-            tabStopWidth: config.terminal?.tab_stop_width,
-            scrollSensitivity: config.scrollbar!.sensitivity,
-            fastScrollSensitivity: config.scrollbar!.fast_scroll_sensitivity,
-            scrollOnUserInput: config.scrollbar!.scroll_on_user_input,
-            smoothScrollDuration: config.scrollbar!.smooth_scroll_duration,
-            allowTransparency: config.terminal?.allow_transparency,
-            altClickMovesCursor: config.cursor!.alt_click_moves_cursor,
-            customGlyphs: config.font!.custom_glyphs,
-            drawBoldTextInBrightColors: config.font!.draw_bold_text_in_bright_colors,
-            ignoreBracketedPasteMode: config.terminal?.ignore_bracketed_paste_mode,
-            minimumContrastRatio: config.terminal?.minimum_contrast_ratio,
-            rescaleOverlappingGlyphs: config.font!.rescale_overlapping_glyphs,
-            rightClickSelectsWord: config.selection!.right_click_selects_word,
-            screenReaderMode: config.terminal?.screen_reader_mode,
-            wordSeparator: config.terminal?.word_separator,
-            windowsPty: OS.platform() === 'windows' ? {backend: 'conpty'} : undefined,
-            allowProposedApi: true,
-            windowOptions: {
-                pushTitle: true, //handle CSI Ps=22 vim on gitbash uses this to enter full screen
-                popTitle: true //handle CSI Ps=23 vim on gitbash uses this to leaf full screen
-            },
-            // Font settings - must be set during initialization
-            fontFamily: config.font!.family,
-            fontSize: config.font!.size,
-            fontWeight: config.font!.weight,
-            fontWeightBold: config.font!.weight_bold,
-        });
-
-        this._terminal.loadAddon(this._fitAddon);
-        this._terminal.loadAddon(this._searchAddon);
-        this._terminal.loadAddon(this._unicodeAddon);
-        this._terminal.unicode.activeVersion = '11';
-        if(config.terminal?.webgl) {
-            this.useWebGl();
-        }
+    this._terminal.loadAddon(this._fitAddon);
+    this._terminal.loadAddon(this._searchAddon);
+    this._terminal.loadAddon(this._unicodeAddon);
+    this._terminal.unicode.activeVersion = "11";
+    if (config.terminal?.webgl) {
+      this.useWebGl();
     }
+  }
 
-    register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable {
-        if(isFitHandler(handler)) {
-            handler.registerFitAddon(this._fitAddon)
-        }
-        if (isSearchHandler(handler)) {
-            handler.registerSearchAddon(this._searchAddon);
-        }
-        if(isTerminalHandler(handler)) {
-            return handler.registerTerminal(this._terminal);
-        }
-        throw new Error('unknown handler type');
+  register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable {
+    if (isFitHandler(handler)) {
+      handler.registerFitAddon(this._fitAddon);
     }
-
-    public open(terminalContainer: HTMLDivElement, enableLigatures: boolean) {
-        this._terminal.open(terminalContainer);
-        if(enableLigatures) {
-            this.useLigatures();
-        }
+    if (isSearchHandler(handler)) {
+      handler.registerSearchAddon(this._searchAddon);
     }
-
-    private useLigatures() {
-        if (!this._ligaturesAddon) {
-            this._ligaturesAddon = new LigaturesAddon();
-        }
-        this._terminal.loadAddon(this._ligaturesAddon);
+    if (isTerminalHandler(handler)) {
+      return handler.registerTerminal(this._terminal);
     }
+    throw new Error("unknown handler type");
+  }
 
-    private useWebGl() {
-        if (!this._webglAddon) {
-            this._webglAddon = new WebglAddon();
-        }
-        this._terminal.loadAddon(this._webglAddon);
+  public open(terminalContainer: HTMLDivElement, enableLigatures: boolean) {
+    this._terminal.open(terminalContainer);
+    if (enableLigatures) {
+      this.useLigatures();
     }
+  }
 
-    public dispose() {
-
-        this._terminal?.dispose();
+  private useLigatures() {
+    if (!this._ligaturesAddon) {
+      this._ligaturesAddon = new LigaturesAddon();
     }
+    this._terminal.loadAddon(this._ligaturesAddon);
+  }
 
-    public get terminal(): Terminal {
-        return this._terminal;
+  private useWebGl() {
+    if (!this._webglAddon) {
+      this._webglAddon = new WebglAddon();
     }
+    this._terminal.loadAddon(this._webglAddon);
+  }
+
+  public dispose() {
+    this._terminal?.dispose();
+  }
+
+  public get terminal(): Terminal {
+    return this._terminal;
+  }
 }
-
-

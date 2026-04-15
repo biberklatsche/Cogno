@@ -1,21 +1,26 @@
-import {Component} from '@angular/core';
-
-import {AppButtonsComponent} from "./app-buttons/app-buttons.component";
-import {TabListComponent} from "./tab-list/tab-list.component";
-import {OS} from "@cogno/app-tauri/os";
-import {GridListComponent} from "./grid-list/grid-list.component";
-import {AppBus} from "./app-bus/app-bus";
-import {DB} from "@cogno/app-tauri/db";
-import {Environment} from "./common/environment/environment";
-import {appDatabaseMigrations} from "./migrations/migrate";
-import {AppNotificationToastStackComponent} from "./notification/app-notification-toast-stack.component";
-import {DatabaseMigrationService} from "./app-host/database-migration.service";
+import { Component } from "@angular/core";
+import { DB } from "@cogno/app-tauri/db";
+import { OS } from "@cogno/app-tauri/os";
+import { AppBus } from "./app-bus/app-bus";
+import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
+import { DatabaseMigrationService } from "./app-host/database-migration.service";
+import { Environment } from "./common/environment/environment";
+import { GridListComponent } from "./grid-list/grid-list.component";
 import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
+import { appDatabaseMigrations } from "./migrations/migrate";
+import { AppNotificationToastStackComponent } from "./notification/app-notification-toast-stack.component";
+import { TabListComponent } from "./tab-list/tab-list.component";
 
 @Component({
-    selector: 'app-root',
-    imports: [GridListComponent, AppButtonsComponent, TabListComponent, AppNotificationToastStackComponent, SelectedWorkspaceHeaderComponent],
-    template: `
+  selector: "app-root",
+  imports: [
+    GridListComponent,
+    AppButtonsComponent,
+    TabListComponent,
+    AppNotificationToastStackComponent,
+    SelectedWorkspaceHeaderComponent,
+  ],
+  template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>
         <app-selected-workspace-header></app-selected-workspace-header>
@@ -26,8 +31,8 @@ import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-he
         <app-notification-toast-stack></app-notification-toast-stack>
     </main>
     `,
-    styles: [
-        `
+  styles: [
+    `
             :host {
                 display: flex;
                 flex-direction: column;
@@ -56,25 +61,23 @@ import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-he
                 display: flex;
                 flex-direction: column;
             }
-        `
-    ],
-    standalone: true
+        `,
+  ],
+  standalone: true,
 })
 export class AppComponent {
-    os = OS.platform();
-    constructor(
-      bus: AppBus,
-      private readonly databaseMigrationService: DatabaseMigrationService,
-    ) {
-        window.addEventListener('contextmenu', (event) => {
-            event.preventDefault();
-        });
-        bus.onceType$('ConfigLoaded').subscribe(async e => {
-            await DB.load(`sqlite:${Environment.dbFilePath()}`);
-            await this.databaseMigrationService.executeMigrations(appDatabaseMigrations);
-            bus.publish({type: 'DBInitialized'});
-        });
-    }
+  os = OS.platform();
+  constructor(
+    bus: AppBus,
+    private readonly databaseMigrationService: DatabaseMigrationService,
+  ) {
+    window.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
+    bus.onceType$("ConfigLoaded").subscribe(async (_e) => {
+      await DB.load(`sqlite:${Environment.dbFilePath()}`);
+      await this.databaseMigrationService.executeMigrations(appDatabaseMigrations);
+      bus.publish({ type: "DBInitialized" });
+    });
+  }
 }
-
-

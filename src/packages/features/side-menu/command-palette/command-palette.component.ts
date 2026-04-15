@@ -1,4 +1,12 @@
-import { Component, DestroyRef, effect, ElementRef, Signal, viewChild, viewChildren } from "@angular/core";
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  effect,
+  Signal,
+  viewChild,
+  viewChildren,
+} from "@angular/core";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 
@@ -105,7 +113,8 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 })
 export class CommandPaletteComponent {
   readonly commandList: Signal<CommandEntry[]>;
-  private readonly commandListElement = viewChild<ElementRef<HTMLUListElement>>("commandListElement");
+  private readonly commandListElement =
+    viewChild<ElementRef<HTMLUListElement>>("commandListElement");
   private readonly commandElements = viewChildren<ElementRef<HTMLElement>>("commandElement");
   private readonly navigationItemsProvider = () => this.collectNavigationItems();
 

@@ -1,5 +1,11 @@
 import { Inject, Injectable } from "@angular/core";
-import { HostFeatureRegistry, SideMenuDefinitionRegistry } from "@cogno/core-host";
+import { ActionName } from "@cogno/app/action/action.models";
+import {
+  SideMenuFeatureDefinition,
+  sideMenuFeatureDefinitionsToken,
+} from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
+import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
 import {
   ApplicationProduct,
   ApplicationSettingsExtensionContract,
@@ -9,23 +15,19 @@ import {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
-import type { ActionName } from "@cogno/app/action/action.models";
-import {
-  sideMenuFeatureDefinitionsToken,
-  type SideMenuFeatureDefinition,
-} from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
-import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
-import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
-import type { Icon } from "@cogno/core-ui";
+import { HostFeatureRegistry, SideMenuDefinitionRegistry } from "@cogno/core-host";
+import { Icon } from "@cogno/core-ui";
+import { additionalNotificationChannelsToken } from "./app-host.tokens";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
-import { additionalNotificationChannelsToken } from "./app-host.tokens";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
-  private readonly featureRegistryHost = new HostFeatureRegistry<Icon, ActionName, SideMenuFeatureDefinition>(
-    new SideMenuDefinitionRegistry<Icon, ActionName, SideMenuFeatureDefinition>(),
-  );
+  private readonly featureRegistryHost = new HostFeatureRegistry<
+    Icon,
+    ActionName,
+    SideMenuFeatureDefinition
+  >(new SideMenuDefinitionRegistry<Icon, ActionName, SideMenuFeatureDefinition>());
 
   constructor(
     private readonly applicationProduct: ApplicationProduct<Icon, ActionName>,
@@ -62,10 +64,9 @@ export class AppWiringService {
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
-    return this.featureRegistryHost
-      .resolveSideMenuFeatureDefinitions((definition, extension) =>
-        this.mergeSideMenuFeatureDefinition(definition, extension),
-      );
+    return this.featureRegistryHost.resolveSideMenuFeatureDefinitions((definition, extension) =>
+      this.mergeSideMenuFeatureDefinition(definition, extension),
+    );
   }
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
@@ -81,9 +82,7 @@ export class AppWiringService {
     ];
   }
 
-  getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<
-    TerminalAutocompleteSuggestorDefinitionContract
-  > {
+  getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract> {
     return this.featureRegistryHost.getTerminalAutocompleteSuggestorDefinitions();
   }
 
@@ -100,7 +99,9 @@ export class AppWiringService {
     uiDefinition: SideMenuFeatureDefinition | undefined,
   ): SideMenuFeatureDefinition {
     if (uiDefinition === undefined) {
-      throw new Error(`Missing side menu UI definition for feature id: ${sideMenuFeatureDefinition.id}`);
+      throw new Error(
+        `Missing side menu UI definition for feature id: ${sideMenuFeatureDefinition.id}`,
+      );
     }
 
     return {

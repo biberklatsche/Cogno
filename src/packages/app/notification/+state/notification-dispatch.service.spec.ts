@@ -1,14 +1,14 @@
 import type { DestroyRef } from "@angular/core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
   NotificationReplyChannelContract,
 } from "@cogno/core-api";
-import type { Config } from "../../config/+models/config";
-import { AppBus } from "../../app-bus/app-bus";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { AppBus } from "../../app-bus/app-bus";
+import type { Config } from "../../config/+models/config";
 import { NotificationDispatchService } from "./notification-dispatch.service";
 
 type DestroyRefMock = DestroyRef & {
@@ -91,7 +91,9 @@ describe("NotificationDispatchService", () => {
     createService([notificationReplyChannel], destroyRef);
 
     expect(startReceivingRepliesMock).toHaveBeenCalledTimes(1);
-    expect(startReceivingRepliesMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
+    expect(startReceivingRepliesMock).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: true }),
+    );
 
     destroyRef.destroy();
 
@@ -106,12 +108,7 @@ describe("NotificationDispatchService", () => {
       getNotificationChannels: () => notificationChannels,
     };
 
-    return new NotificationDispatchService(
-      appBus,
-      appWiringService,
-      configService,
-      destroyRef,
-    );
+    return new NotificationDispatchService(appBus, appWiringService, configService, destroyRef);
   }
 });
 
@@ -119,7 +116,9 @@ function createNotificationChannel({
   id,
   dispatch,
 }: {
-  readonly dispatch: (notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract) => void;
+  readonly dispatch: (
+    notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract,
+  ) => void;
   readonly id: string;
 }): NotificationChannelContract {
   return {
@@ -158,7 +157,9 @@ function createReplyNotificationChannel({
   startReceivingReplies,
   stopReceivingReplies,
 }: {
-  readonly dispatch: (notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract) => void;
+  readonly dispatch: (
+    notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract,
+  ) => void;
   readonly id: string;
   readonly startReceivingReplies: () => void;
   readonly stopReceivingReplies: () => void;

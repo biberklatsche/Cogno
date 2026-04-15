@@ -1,7 +1,6 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
-import {AppButtonsService} from './+state/app-buttons.service';
-
-import {OS, OsType} from "@cogno/app-tauri/os";
+import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { OS, OsType } from "@cogno/app-tauri/os";
+import { AppButtonsService } from "./+state/app-buttons.service";
 
 type WindowControlIconName =
   | "close"
@@ -12,8 +11,8 @@ type WindowControlIconName =
   | "window-restore";
 
 @Component({
-    selector: 'app-window-buttons',
-    template: `
+  selector: "app-window-buttons",
+  template: `
         @if (operatingSystem === 'windows' || operatingSystem === 'linux') {
             <div id="window-buttons" class="{{operatingSystem}}">
                 <button class="btn-flat" (click)="minimizeWindow()">
@@ -43,7 +42,8 @@ type WindowControlIconName =
         }
 
     `,
-    styles: [`
+  styles: [
+    `
         #window-buttons {
             display: flex;
             height: var(--header-height);
@@ -113,12 +113,12 @@ type WindowControlIconName =
                 }
             }
         }
-    `],
-    standalone: true,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    `,
+  ],
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppButtonsComponent {
-
   protected readonly operatingSystem: OsType = OS.platform();
 
   constructor(protected readonly appButtonsService: AppButtonsService) {}
@@ -136,11 +136,11 @@ export class AppButtonsComponent {
   }
 
   protected toggleMaximizeWindow(): void {
-      if (this.appButtonsService.isMaximized()) {
-          this.appButtonsService.unmaximizeWindow();
-      } else {
-          this.appButtonsService.maximizeWindow();
-      }
+    if (this.appButtonsService.isMaximized()) {
+      this.appButtonsService.unmaximizeWindow();
+    } else {
+      this.appButtonsService.maximizeWindow();
+    }
   }
 
   close(): void {
@@ -154,7 +154,4 @@ export class AppButtonsComponent {
   toggleMaximize(): void {
     this.toggleMaximizeWindow();
   }
-
 }
-
-

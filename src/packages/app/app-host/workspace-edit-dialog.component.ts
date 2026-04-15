@@ -1,17 +1,18 @@
-import {Component, Inject, model, signal} from "@angular/core";
-import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
-import {AutofocusDirective} from "../common/autofocus/autofocus.directive";
-import {DialogRef, DIALOG_DATA} from "../common/dialog";
-import {ColorSelectComponent} from "../common/color/color-select.component";
-import {ColorName} from "../common/color/color";
-import {CheckboxComponent} from "../common/checkbox/checkbox.component";
+import { Component, Inject, model, signal } from "@angular/core";
 import { WorkspaceState } from "@cogno/core-domain/workspace";
+import { AutofocusDirective } from "../common/autofocus/autofocus.directive";
+import { CheckboxComponent } from "../common/checkbox/checkbox.component";
+import { ColorName } from "../common/color/color";
+import { ColorSelectComponent } from "../common/color/color-select.component";
+import { DIALOG_DATA, DialogRef } from "../common/dialog";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Component({
   selector: "app-workspace-edit-dialog",
   standalone: true,
   imports: [AutofocusDirective, ColorSelectComponent, CheckboxComponent],
-  styles: [`
+  styles: [
+    `
           .container {
               display: flex;
               flex-direction: column;
@@ -27,7 +28,8 @@ import { WorkspaceState } from "@cogno/core-domain/workspace";
             width: 100%;
             box-sizing: border-box;
           }
-        `],
+        `,
+  ],
   template: `
           <div class="container">
             <input class="workspace-input"
@@ -45,7 +47,7 @@ import { WorkspaceState } from "@cogno/core-domain/workspace";
               <button type="button" class="button primary" (click)="onSave()">Save</button>
             </div>
           </div>
-        `
+        `,
 })
 export class WorkspaceEditDialogComponent {
   constructor(
@@ -84,5 +86,3 @@ export class WorkspaceEditDialogComponent {
     this.color.set(color);
   }
 }
-
-

@@ -1,17 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TerminalMockFactory } from '../../../../__test__/mocks/terminal-mock.factory';
-import { PtyHandler } from './pty.handler';
-import { AppBus } from '../../../app-bus/app-bus';
-import { Terminal } from '@xterm/xterm';
-import { IPty } from '../pty/pty';
+import type { Terminal } from "@xterm/xterm";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
+import { AppBus } from "../../../app-bus/app-bus";
+import type { IPty } from "../pty/pty";
+import { PtyHandler } from "./pty.handler";
 
-describe('PtyHandler', () => {
+describe("PtyHandler", () => {
   let handler: PtyHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   let mockPty: IPty;
-  const terminalId = 'test-terminal-id';
-  const shellConfig = { command: 'bash' } as any;
+  const terminalId = "test-terminal-id";
+  const shellConfig = { command: "bash" } as any;
 
   beforeEach(() => {
     mockBus = new AppBus();
@@ -28,8 +28,8 @@ describe('PtyHandler', () => {
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
-  describe('registration', () => {
-    it('should spawn PTY and register data handlers', async () => {
+  describe("registration", () => {
+    it("should spawn PTY and register data handlers", async () => {
       handler.registerTerminal(mockTerminal);
 
       // Wait for async spawn
@@ -43,34 +43,34 @@ describe('PtyHandler', () => {
     });
   });
 
-  describe('data flow', () => {
-    it('should write terminal data to PTY', async () => {
+  describe("data flow", () => {
+    it("should write terminal data to PTY", async () => {
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockTerminal.onData).toHaveBeenCalled());
 
       const onDataCallback = vi.mocked(mockTerminal.onData).mock.calls[0][0];
-      onDataCallback('user input');
+      onDataCallback("user input");
 
-      expect(mockPty.write).toHaveBeenCalledWith('user input');
+      expect(mockPty.write).toHaveBeenCalledWith("user input");
     });
 
-    it('should write PTY data to terminal and publish PtyInitialized on first data', async () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
-      const writeSpy = vi.spyOn(mockTerminal, 'write');
+    it("should write PTY data to terminal and publish PtyInitialized on first data", async () => {
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const writeSpy = vi.spyOn(mockTerminal, "write");
       const onWriteParsedDispose = vi.fn();
       let onWriteParsedCallback: any;
       vi.mocked(mockTerminal.onWriteParsed).mockImplementation((cb) => {
         onWriteParsedCallback = cb;
         return { dispose: onWriteParsedDispose };
       });
-      
+
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onData).toHaveBeenCalled());
 
       const onPtyDataCallback = vi.mocked(mockPty.onData).mock.calls[0][0];
-      
+
       // First data event
-      onPtyDataCallback('pty output 1');
+      onPtyDataCallback("pty output 1");
 
       // First write is buffered, not written yet
       expect(writeSpy).not.toHaveBeenCalled();
@@ -79,41 +79,45 @@ describe('PtyHandler', () => {
       expect(mockTerminal.onWriteParsed).toHaveBeenCalled();
       onWriteParsedCallback();
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'PtyInitialized',
-        payload: expect.objectContaining({
-          terminalId: terminalId
-        })
-      }));
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "PtyInitialized",
+          payload: expect.objectContaining({
+            terminalId: terminalId,
+          }),
+        }),
+      );
       expect(onWriteParsedDispose).toHaveBeenCalled();
 
       // Second data event - should flush buffered data along with new data
       publishSpy.mockClear();
-      onPtyDataCallback('pty output 2');
-      expect(writeSpy).toHaveBeenCalledWith('pty output 2pty output 1');
+      onPtyDataCallback("pty output 2");
+      expect(writeSpy).toHaveBeenCalledWith("pty output 2pty output 1");
       expect(publishSpy).not.toHaveBeenCalled();
     });
   });
 
-  describe('exit handling', () => {
-    it('should publish RemovePane when PTY exits', async () => {
-      const publishSpy = vi.spyOn(mockBus, 'publish');
-      
+  describe("exit handling", () => {
+    it("should publish RemovePane when PTY exits", async () => {
+      const publishSpy = vi.spyOn(mockBus, "publish");
+
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
 
       const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
       onExitCallback({ exitCode: 0 });
 
-      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({
-        type: 'RemovePane',
-        payload: terminalId
-      }));
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "RemovePane",
+          payload: terminalId,
+        }),
+      );
     });
   });
 
-  describe('Lifecycle', () => {
-    it('should dispose all registered handlers', async () => {
+  describe("Lifecycle", () => {
+    it("should dispose all registered handlers", async () => {
       const terminalDataDispose = vi.fn();
       const ptyDataDispose = vi.fn();
       const ptyExitDispose = vi.fn();
@@ -133,5 +137,3 @@ describe('PtyHandler', () => {
     });
   });
 });
-
-

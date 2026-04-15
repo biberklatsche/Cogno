@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, Signal, computed, signal } from "@angular/core";
+import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   FeatureModeContract,
@@ -6,10 +6,7 @@ import {
   NotificationCenterItemIdContract,
   NotificationCenterPort,
 } from "@cogno/core-api";
-import {
-  NotificationInboxState,
-  NotificationInboxUseCase,
-} from "@cogno/core-domain";
+import { NotificationInboxState, NotificationInboxUseCase } from "@cogno/core-domain";
 
 @Injectable({ providedIn: "root" })
 export class NotificationCenterStateService {
@@ -59,8 +56,7 @@ export class NotificationCenterStateService {
     this.sideMenuIconUpdater?.("mdiBell");
   }
 
-  handleSideMenuClose(): void {
-  }
+  handleSideMenuClose(): void {}
 
   remove(notificationId: NotificationCenterItemIdContract): void {
     this.notificationCenterStateSignal.set(

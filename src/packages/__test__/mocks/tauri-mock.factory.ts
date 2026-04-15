@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject } from "rxjs";
+import { vi } from "vitest";
 
 export class TauriMockFactory {
   static createTauriPty() {
@@ -16,39 +16,39 @@ export class TauriMockFactory {
 
   static createScript() {
     return {
-      read: vi.fn().mockResolvedValue('mock script content'),
+      read: vi.fn().mockResolvedValue("mock script content"),
     };
   }
 
   static createPath() {
     return {
-      join: vi.fn().mockImplementation(async (...args) => args.join('/')),
-      homeDir: vi.fn().mockResolvedValue('/mock/home'),
-      exePath: vi.fn().mockResolvedValue('/mock/exe/path'),
-      exeDir: vi.fn().mockResolvedValue('/mock/exe/dir'),
+      join: vi.fn().mockImplementation(async (...args) => args.join("/")),
+      homeDir: vi.fn().mockResolvedValue("/mock/home"),
+      exePath: vi.fn().mockResolvedValue("/mock/exe/path"),
+      exeDir: vi.fn().mockResolvedValue("/mock/exe/dir"),
       macAppBundle: vi.fn().mockResolvedValue(null),
-      cognoHomeDir: vi.fn().mockResolvedValue('/mock/cogno/home'),
-      cognoConfigFilePath: vi.fn().mockResolvedValue('/mock/cogno/config.json'),
-      cognoDbFilePath: vi.fn().mockResolvedValue('/mock/cogno/db.sqlite'),
+      cognoHomeDir: vi.fn().mockResolvedValue("/mock/cogno/home"),
+      cognoConfigFilePath: vi.fn().mockResolvedValue("/mock/cogno/config.json"),
+      cognoDbFilePath: vi.fn().mockResolvedValue("/mock/cogno/db.sqlite"),
     };
   }
 
   static createOS() {
     return {
-      platform: vi.fn().mockReturnValue('macos'),
+      platform: vi.fn().mockReturnValue("macos"),
     };
   }
 
   static createClipboard() {
     return {
       writeText: vi.fn().mockResolvedValue(undefined),
-      readText: vi.fn().mockResolvedValue('mock clipboard content'),
+      readText: vi.fn().mockResolvedValue("mock clipboard content"),
     };
   }
 
   static createFs() {
     return {
-      readTextFile: vi.fn().mockResolvedValue(''),
+      readTextFile: vi.fn().mockResolvedValue(""),
       watchChanges$: vi.fn().mockReturnValue(new Observable()),
       exists: vi.fn().mockResolvedValue(true),
       convertFileSrc: vi.fn((path: string) => `mock://${path}`),
@@ -58,11 +58,13 @@ export class TauriMockFactory {
   static createDb() {
     return {
       Database: class {
-        static async create() { return new this(); }
+        static async create() {
+          return new this();
+        }
         execute = vi.fn().mockResolvedValue(undefined);
         query = vi.fn().mockResolvedValue([]);
         close = vi.fn().mockResolvedValue(undefined);
-      }
+      },
     };
   }
 
@@ -87,9 +89,9 @@ export class TauriMockFactory {
       unminimize: vi.fn().mockResolvedValue(undefined),
       maximize: vi.fn().mockResolvedValue(undefined),
       unmaximize: vi.fn().mockResolvedValue(undefined),
-      windowSize$: new Observable(s => s.next({ width: 800, height: 600 })),
+      windowSize$: new Observable((s) => s.next({ width: 800, height: 600 })),
       onCloseRequested$: new Subject(),
-      onFocusChanged$: new Observable(s => s.next(true)),
+      onFocusChanged$: new Observable((s) => s.next(true)),
       onDragDrop$: new Subject(),
     };
   }
@@ -109,7 +111,7 @@ export class TauriMockFactory {
 
   static createDefaultConfig() {
     return {
-      read: vi.fn().mockResolvedValue(''),
+      read: vi.fn().mockResolvedValue(""),
     };
   }
 
@@ -129,11 +131,9 @@ export class TauriMockFactory {
   static createKeyboardLayout() {
     return {
       load: vi.fn().mockResolvedValue({
-        id: '00000407',
-        name: 'German',
+        id: "00000407",
+        name: "German",
       }),
     };
   }
 }
-
-

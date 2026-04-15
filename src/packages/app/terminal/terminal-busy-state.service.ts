@@ -27,7 +27,10 @@ export class TerminalBusyStateService {
 
         const terminalId = terminalBusyPayload.terminalId;
         if (terminalBusyPayload.isBusy) {
-          this.busyTerminalWorkspaceIds.set(terminalId, this.resolveWorkspaceIdentifierForTerminal(terminalId));
+          this.busyTerminalWorkspaceIds.set(
+            terminalId,
+            this.resolveWorkspaceIdentifierForTerminal(terminalId),
+          );
           return;
         }
 
@@ -92,7 +95,10 @@ export class TerminalBusyStateService {
     });
   }
 
-  async confirmProceedIfNoBusyTerminalsInWorkspace(actionLabel: string, workspaceId: string): Promise<boolean> {
+  async confirmProceedIfNoBusyTerminalsInWorkspace(
+    actionLabel: string,
+    workspaceId: string,
+  ): Promise<boolean> {
     if (!this.hasBusyTerminalsInWorkspace(workspaceId)) {
       return true;
     }
@@ -101,10 +107,9 @@ export class TerminalBusyStateService {
   }
 
   private resolveWorkspaceIdentifierForTerminal(terminalId: TerminalId): string | undefined {
-    const workspaceIdentifier = this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId);
+    const workspaceIdentifier =
+      this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId);
     this.busyTerminalWorkspaceIds.set(terminalId, workspaceIdentifier);
     return workspaceIdentifier;
   }
 }
-
-

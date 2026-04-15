@@ -12,7 +12,7 @@ export class CommandDiscoveryUseCase {
   }
 
   static handleCollectionOpen(state: CommandDiscoveryState): CommandDiscoveryState {
-    return this.filterCommands(state, state.query);
+    return CommandDiscoveryUseCase.filterCommands(state, state.query);
   }
 
   static handleCollectionClose(state: CommandDiscoveryState): CommandDiscoveryState {
@@ -44,7 +44,7 @@ export class CommandDiscoveryUseCase {
         .sort((firstEntry, secondEntry) => firstEntry.label.localeCompare(secondEntry.label)),
     );
 
-    return this.filterCommands(
+    return CommandDiscoveryUseCase.filterCommands(
       {
         ...state,
         commandList,

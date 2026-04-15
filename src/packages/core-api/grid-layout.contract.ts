@@ -38,5 +38,3 @@ export interface TerminalSession {
   sessionData: string;
   updatedAt?: string;
 }
-
-

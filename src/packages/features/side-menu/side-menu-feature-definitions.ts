@@ -9,6 +9,4 @@ export const featureSideMenuFeatureDefinitions = [
   commandPaletteSideMenuFeatureDefinition,
   notificationSideMenuFeatureDefinition,
   terminalSearchSideMenuFeatureDefinition,
-] as const satisfies ReadonlyArray<
-  SideMenuFeatureDefinitionContract<string, string>
->;
+] as const satisfies ReadonlyArray<SideMenuFeatureDefinitionContract<string, string>>;

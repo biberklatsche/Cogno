@@ -17,6 +17,3 @@ export type NotificationEvent = MessageBase<
     readonly type?: NotificationTypeContract;
   }
 >;
-
-
-

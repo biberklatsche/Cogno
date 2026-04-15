@@ -7,10 +7,7 @@ import { ShellSupportDefinitionContract } from "./shell-support.contract";
 import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition.contract";
 import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-autocomplete.contract";
 
-export interface ApplicationFeatureCollectionContract<
-  TIcon = string,
-  TActionName = string,
-> {
+export interface ApplicationFeatureCollectionContract<TIcon = string, TActionName = string> {
   readonly databaseMigrations: ReadonlyArray<DatabaseMigrationContract>;
   readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract>;
   readonly shellPathAdapterDefinitions: ReadonlyArray<ShellPathAdapterDefinitionContract>;
@@ -20,7 +17,5 @@ export interface ApplicationFeatureCollectionContract<
   >;
   readonly notificationChannels: ReadonlyArray<NotificationChannelContract>;
   readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
-  readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<
-    TerminalAutocompleteSuggestorDefinitionContract
-  >;
+  readonly terminalAutocompleteSuggestorDefinitions: ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract>;
 }

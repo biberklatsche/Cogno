@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NotificationOs } from "./notification";
 import { Logger } from "./logger";
+import { NotificationOs } from "./notification";
 
 const notificationPluginMock = vi.hoisted(() => ({
   isPermissionGranted: vi.fn<() => Promise<boolean>>(),
   requestPermission: vi.fn<() => Promise<"granted" | "denied" | "prompt" | "default">>(),
-  sendNotification: vi.fn<(notification: { readonly title: string; readonly body?: string }) => void>(),
+  sendNotification:
+    vi.fn<(notification: { readonly title: string; readonly body?: string }) => void>(),
 }));
 
 vi.mock("@tauri-apps/plugin-notification", () => notificationPluginMock);
@@ -67,5 +68,3 @@ describe("NotificationOs", () => {
     });
   });
 });
-
-

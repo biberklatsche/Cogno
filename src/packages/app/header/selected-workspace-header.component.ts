@@ -1,9 +1,21 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, Inject, Signal, computed, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  Inject,
+  Signal,
+  signal,
+} from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
 import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
-import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
-import { defaultWorkspaceIdContract, WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
+import {
+  defaultWorkspaceIdContract,
+  WorkspaceEntryContract,
+  WorkspaceHostPortContract,
+} from "@cogno/core-api";
 import { TooltipDirective } from "@cogno/core-ui";
 
 @Component({
@@ -122,16 +134,17 @@ export class SelectedWorkspaceHeaderComponent {
       });
 
     this.activeWorkspace = computed(
-      () => this.workspaceEntries().find(
-        (workspaceEntry) =>
-          workspaceEntry.isActive && workspaceEntry.id !== defaultWorkspaceIdContract,
-      ) ?? undefined,
+      () =>
+        this.workspaceEntries().find(
+          (workspaceEntry) =>
+            workspaceEntry.isActive && workspaceEntry.id !== defaultWorkspaceIdContract,
+        ) ?? undefined,
     );
     this.openWorkspaceEntries = computed(() =>
       this.workspaceEntries().filter(
         (workspaceEntry) =>
-          workspaceEntry.id !== defaultWorkspaceIdContract
-          && (workspaceEntry.isOpen || workspaceEntry.isActive),
+          workspaceEntry.id !== defaultWorkspaceIdContract &&
+          (workspaceEntry.isOpen || workspaceEntry.isActive),
       ),
     );
     this.hasWorkspaceMenu = computed(() => this.openWorkspaceEntries().length > 1);
@@ -160,4 +173,3 @@ export class SelectedWorkspaceHeaderComponent {
     }));
   }
 }
-

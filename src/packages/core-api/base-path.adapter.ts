@@ -1,5 +1,5 @@
-import { isWslShellContext, ResolvedShellContextContract } from "./shell-context.contract";
 import { IPathAdapter, RenderContext } from "./path-adapter.contract";
+import { isWslShellContext, ResolvedShellContextContract } from "./shell-context.contract";
 
 export abstract class BasePathAdapter implements IPathAdapter {
   constructor(protected readonly ctx: ResolvedShellContextContract) {}
@@ -97,7 +97,9 @@ export abstract class BasePathAdapter implements IPathAdapter {
       const distro = mWsl[1];
       const rest = mWsl[2] ?? "";
       const restWin = rest.split("/").join("\\");
-      return restWin ? `\\\\wsl.localhost\\${distro}\\${restWin}` : `\\\\wsl.localhost\\${distro}\\`;
+      return restWin
+        ? `\\\\wsl.localhost\\${distro}\\${restWin}`
+        : `\\\\wsl.localhost\\${distro}\\`;
     }
 
     if (p.startsWith("//msys/")) {
@@ -114,7 +116,10 @@ export abstract class BasePathAdapter implements IPathAdapter {
     return p;
   }
 
-  protected quoteForShell(raw: string | undefined, mode: "never" | "if-needed" | "always"): string | undefined {
+  protected quoteForShell(
+    raw: string | undefined,
+    mode: "never" | "if-needed" | "always",
+  ): string | undefined {
     if (raw === undefined) return undefined;
     if (mode === "never") return raw;
     if (mode === "if-needed" && !this.needsQuoting(raw)) return raw;
@@ -122,7 +127,7 @@ export abstract class BasePathAdapter implements IPathAdapter {
   }
 
   protected needsQuoting(raw: string): boolean {
-    return /[\\'"$`!*?|&;<>(){}\[\]\n\s]/.test(raw);
+    return /[\\'"$`!*?|&;<>(){}[\]\n\s]/.test(raw);
   }
 
   protected applyQuoting(raw: string): string {
@@ -180,5 +185,3 @@ export abstract class BasePathAdapter implements IPathAdapter {
     return p.replace(/\/+$/, "");
   }
 }
-
-

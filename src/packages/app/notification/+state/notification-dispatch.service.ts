@@ -1,13 +1,13 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import type {
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import {
   NotificationChannelContract,
-  NotificationReplyChannelContract,
   NotificationChannelSettingsContract,
   NotificationChannelsContract,
+  NotificationReplyChannelContract,
 } from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "../../config/+state/config.service";
 
 @Injectable({ providedIn: "root" })
@@ -18,11 +18,9 @@ export class NotificationDispatchService {
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
-    this.configService.config$
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(() => {
-        void this.reconcileReplyChannels();
-      });
+    this.configService.config$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      void this.reconcileReplyChannels();
+    });
 
     this.appBus
       .on$({ path: ["notification"], type: "Notification" })
@@ -91,7 +89,9 @@ export class NotificationDispatchService {
         continue;
       }
 
-      const notificationChannelSettings = this.getNotificationChannelSettings(notificationChannel.id);
+      const notificationChannelSettings = this.getNotificationChannelSettings(
+        notificationChannel.id,
+      );
       const channelAvailable = notificationChannelSettings.available ?? true;
       const channelEnabled = notificationChannelSettings.enabled ?? false;
 
@@ -148,7 +148,9 @@ function isNotificationReplyChannel(
   notificationChannel: NotificationChannelContract,
 ): notificationChannel is NotificationReplyChannelContract {
   return (
-    typeof (notificationChannel as NotificationReplyChannelContract).startReceivingReplies === "function"
-    || typeof (notificationChannel as NotificationReplyChannelContract).stopReceivingReplies === "function"
+    typeof (notificationChannel as NotificationReplyChannelContract).startReceivingReplies ===
+      "function" ||
+    typeof (notificationChannel as NotificationReplyChannelContract).stopReceivingReplies ===
+      "function"
   );
 }

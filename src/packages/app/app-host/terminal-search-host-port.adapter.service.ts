@@ -1,5 +1,4 @@
 import { Injectable } from "@angular/core";
-import { map, Observable } from "rxjs";
 import {
   TerminalSearchColorConfigContract,
   TerminalSearchHostPortContract,
@@ -9,9 +8,10 @@ import {
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
 } from "@cogno/core-api";
+import { map, Observable } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
-import { GridListService } from "../grid-list/+state/grid-list.service";
 import { ConfigService } from "../config/+state/config.service";
+import { GridListService } from "../grid-list/+state/grid-list.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalSearchHostPortAdapterService implements TerminalSearchHostPortContract {
@@ -87,6 +87,3 @@ export class TerminalSearchHostPortAdapterService implements TerminalSearchHostP
     });
   }
 }
-
-
-

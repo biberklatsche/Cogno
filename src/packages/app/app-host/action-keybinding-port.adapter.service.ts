@@ -14,6 +14,3 @@ export class ActionKeybindingPortAdapterService implements ActionKeybindingContr
     return this.keybindingPipe.transform(keybinding);
   }
 }
-
-
-

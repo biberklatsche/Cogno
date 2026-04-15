@@ -128,8 +128,12 @@ export class WorkspaceRepository {
         ],
       );
 
-      await databaseAccess.execute("DELETE FROM workspace_tabs WHERE workspace_id = ?", [workspaceConfiguration.id]);
-      await databaseAccess.execute("DELETE FROM workspace_grids WHERE workspace_id = ?", [workspaceConfiguration.id]);
+      await databaseAccess.execute("DELETE FROM workspace_tabs WHERE workspace_id = ?", [
+        workspaceConfiguration.id,
+      ]);
+      await databaseAccess.execute("DELETE FROM workspace_grids WHERE workspace_id = ?", [
+        workspaceConfiguration.id,
+      ]);
 
       let position = 0;
       for (const tabConfiguration of workspaceConfiguration.tabs) {
@@ -147,7 +151,9 @@ export class WorkspaceRepository {
     await this.databaseAccess.execute("DELETE FROM workspaces WHERE id = ?", [workspaceId]);
   }
 
-  async reorderWorkspaces(workspaceIdsInOrder: ReadonlyArray<WorkspaceIdentifierContract>): Promise<void> {
+  async reorderWorkspaces(
+    workspaceIdsInOrder: ReadonlyArray<WorkspaceIdentifierContract>,
+  ): Promise<void> {
     await this.databaseAccess.transaction(async (databaseAccess) => {
       let position = 0;
       for (const workspaceId of workspaceIdsInOrder) {
@@ -190,11 +196,12 @@ export class WorkspaceRepository {
     );
   }
 
-  async getTerminalSessions(workspaceId: WorkspaceIdentifierContract): Promise<WorkspaceTerminalSession[]> {
-    const terminalSessionEntities = await this.databaseAccess.select<WorkspaceTerminalSessionEntity[]>(
-      "SELECT * FROM terminal_sessions WHERE workspace_id = ?",
-      [workspaceId],
-    );
+  async getTerminalSessions(
+    workspaceId: WorkspaceIdentifierContract,
+  ): Promise<WorkspaceTerminalSession[]> {
+    const terminalSessionEntities = await this.databaseAccess.select<
+      WorkspaceTerminalSessionEntity[]
+    >("SELECT * FROM terminal_sessions WHERE workspace_id = ?", [workspaceId]);
 
     return terminalSessionEntities.map((terminalSessionEntity) => ({
       terminalId: terminalSessionEntity.terminal_id,

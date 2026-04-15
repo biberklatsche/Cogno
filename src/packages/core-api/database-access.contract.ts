@@ -3,5 +3,3 @@ export interface DatabaseAccessContract {
   select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T>;
   transaction<T>(handler: (databaseAccess: DatabaseAccessContract) => Promise<T>): Promise<T>;
 }
-
-

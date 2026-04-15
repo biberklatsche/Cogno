@@ -1,4 +1,4 @@
-import { DestroyRef } from "@angular/core";
+import type { DestroyRef } from "@angular/core";
 
 export function getDestroyRef(): DestroyRef {
   return {
@@ -6,6 +6,3 @@ export function getDestroyRef(): DestroyRef {
     destroyed: false,
   };
 }
-
-
-

@@ -6,6 +6,3 @@ export const bashShellDefinition: ShellDefinitionContract = {
   support: bashShellSupportDefinition,
   pathAdapter: bashShellPathAdapterDefinition,
 };
-
-
-

@@ -1,23 +1,27 @@
 import { InjectionToken } from "@angular/core";
-import type {
+import {
   ActionKeybindingContract,
   CommandPaletteHostPortContract,
   CommandRunnerContract,
   DatabaseAccessContract,
   FilesystemContract,
-  NotificationChannelContract,
   NotificationCenterPortContract,
+  NotificationChannelContract,
   TerminalSearchHostPortContract,
   WorkspaceCloseGuardContract,
   WorkspaceHostPortContract,
 } from "@cogno/core-api";
 
-export const actionKeybindingToken = new InjectionToken<ActionKeybindingContract>("action-keybinding-token");
+export const actionKeybindingToken = new InjectionToken<ActionKeybindingContract>(
+  "action-keybinding-token",
+);
 export const commandPaletteHostPortToken = new InjectionToken<CommandPaletteHostPortContract>(
   "command-palette-host-port-token",
 );
 export const commandRunnerToken = new InjectionToken<CommandRunnerContract>("command-runner-token");
-export const databaseAccessToken = new InjectionToken<DatabaseAccessContract>("database-access-token");
+export const databaseAccessToken = new InjectionToken<DatabaseAccessContract>(
+  "database-access-token",
+);
 export const filesystemToken = new InjectionToken<FilesystemContract>("filesystem-token");
 export const additionalNotificationChannelsToken = new InjectionToken<
   ReadonlyArray<NotificationChannelContract>

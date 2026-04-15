@@ -1,5 +1,5 @@
-import { FilesystemContract, ShellContextContract, ShellTypeContract } from "./filesystem.contract";
 import { CommandRunnerContract } from "./command-runner.contract";
+import { FilesystemContract, ShellContextContract, ShellTypeContract } from "./filesystem.contract";
 
 export type AutocompleteMatchRangeContract = {
   start: number;
@@ -66,5 +66,3 @@ export interface TerminalAutocompleteSuggestorDefinitionContract {
     dependencies: TerminalAutocompleteSuggestorDependenciesContract,
   ): TerminalAutocompleteSuggestorContract;
 }
-
-

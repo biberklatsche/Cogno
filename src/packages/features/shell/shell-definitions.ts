@@ -9,12 +9,9 @@ export const featureShellDefinitions = [
 ] as const;
 
 export const featureShellSupportDefinitions = featureShellDefinitions.map(
-  definition => definition.support,
+  (definition) => definition.support,
 );
 
 export const featureShellPathAdapterDefinitions = featureShellDefinitions.map(
-  definition => definition.pathAdapter,
+  (definition) => definition.pathAdapter,
 );
-
-
-

@@ -1,15 +1,14 @@
-import type { ApplicationConfig } from "@angular/core";
 import {
+  ApplicationConfig,
   ErrorHandler,
   inject,
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
-import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   actionKeybindingToken,
+  additionalNotificationChannelsToken,
   commandPaletteHostPortToken,
   commandRunnerToken,
   databaseAccessToken,
@@ -19,6 +18,7 @@ import {
   workspaceCloseGuardToken,
   workspaceHostPortToken,
 } from "@cogno/app/app-host/app-host.tokens";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { CommandPaletteHostPortAdapterService } from "@cogno/app/app-host/command-palette-host-port.adapter.service";
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
@@ -34,11 +34,11 @@ import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-repo
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
+import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
 import {
   sideMenuFeatureDefinitions,
   sideMenuFeatureDefinitionsToken,
 } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
-import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
 import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { StyleService } from "@cogno/app/style/style.service";

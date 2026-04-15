@@ -1,11 +1,20 @@
-import {ApplicationRef, ComponentRef, EnvironmentInjector, Injectable, Injector, TemplateRef, Type, createComponent} from '@angular/core';
-import {DialogComponent} from './dialog.component';
-import {DialogConfig} from './dialog-config';
-import {DialogRef} from './dialog-ref';
+import {
+  ApplicationRef,
+  ComponentRef,
+  createComponent,
+  EnvironmentInjector,
+  Injectable,
+  Injector,
+  TemplateRef,
+  Type,
+} from "@angular/core";
+import { DialogComponent } from "./dialog.component";
+import { DialogConfig } from "./dialog-config";
+import { DialogRef } from "./dialog-ref";
 
 let NEXT_ID = 1;
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class DialogService {
   constructor(
     private readonly appRef: ApplicationRef,
@@ -13,7 +22,10 @@ export class DialogService {
     private readonly injector: Injector,
   ) {}
 
-  open<TData = unknown, TResult = unknown, TContext = unknown>(content: Type<unknown> | TemplateRef<TContext>, config: DialogConfig<TData, TContext> = {}): DialogRef<TResult> {
+  open<TData = unknown, TResult = unknown, TContext = unknown>(
+    content: Type<unknown> | TemplateRef<TContext>,
+    config: DialogConfig<TData, TContext> = {},
+  ): DialogRef<TResult> {
     const id = NEXT_ID++;
     const containerRef = this.createContainer<TResult, TData, TContext>(id, content, config);
     return containerRef.instance.dialogRef();
@@ -49,9 +61,9 @@ export class DialogService {
     const dialogRef = new DialogRef<TResult>(id, destroy);
 
     // Set inputs
-    hostRef.setInput('config', merged);
-    hostRef.setInput('dialogRef', dialogRef);
-    hostRef.setInput('component', content);
+    hostRef.setInput("config", merged);
+    hostRef.setInput("dialogRef", dialogRef);
+    hostRef.setInput("component", content);
 
     // Attach to application and DOM
     this.appRef.attachView(hostRef.hostView);
@@ -60,5 +72,3 @@ export class DialogService {
     return hostRef;
   }
 }
-
-

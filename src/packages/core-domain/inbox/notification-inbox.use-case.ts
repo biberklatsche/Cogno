@@ -19,7 +19,10 @@ export class NotificationInboxUseCase {
     };
   }
 
-  static setCollectionMode(state: NotificationInboxState, mode: FeatureModeContract): NotificationInboxState {
+  static setCollectionMode(
+    state: NotificationInboxState,
+    mode: FeatureModeContract,
+  ): NotificationInboxState {
     const enabled = mode !== "off";
     if (enabled) {
       return {
@@ -54,7 +57,8 @@ export class NotificationInboxUseCase {
 
   static getNotifications(state: NotificationInboxState): NotificationCenterItemContract[] {
     return Object.values(state.notificationMap).sort(
-      (leftNotification, rightNotification) => rightNotification.timestamp.getTime() - leftNotification.timestamp.getTime(),
+      (leftNotification, rightNotification) =>
+        rightNotification.timestamp.getTime() - leftNotification.timestamp.getTime(),
     );
   }
 
@@ -67,7 +71,10 @@ export class NotificationInboxUseCase {
     notificationEventPayload: unknown,
     maxNotifications: number,
   ): NotificationInboxEventResult {
-    if (!state.enabled || !this.isNotificationPayload(notificationEventPayload)) {
+    if (
+      !state.enabled ||
+      !NotificationInboxUseCase.isNotificationPayload(notificationEventPayload)
+    ) {
       return {
         shouldShowBadge: false,
         state,
@@ -75,7 +82,7 @@ export class NotificationInboxUseCase {
     }
 
     const timestamp = notificationEventPayload.timestamp ?? new Date();
-    const notificationId = this.createNotificationId(
+    const notificationId = NotificationInboxUseCase.createNotificationId(
       notificationEventPayload.header,
       notificationEventPayload.body,
     );
@@ -103,7 +110,10 @@ export class NotificationInboxUseCase {
       shouldShowBadge: true,
       state: {
         ...state,
-        notificationMap: this.trimNotificationMap(nextNotificationMap, maxNotifications),
+        notificationMap: NotificationInboxUseCase.trimNotificationMap(
+          nextNotificationMap,
+          maxNotifications,
+        ),
       },
     };
   }
@@ -118,7 +128,8 @@ export class NotificationInboxUseCase {
     }
 
     const sortedByAgeAscending = [...notificationList].sort(
-      (leftNotification, rightNotification) => leftNotification.timestamp.getTime() - rightNotification.timestamp.getTime(),
+      (leftNotification, rightNotification) =>
+        leftNotification.timestamp.getTime() - rightNotification.timestamp.getTime(),
     );
     const overflowCount = sortedByAgeAscending.length - maxNotifications;
     const trimmedNotificationMap = { ...notificationMap };
@@ -144,9 +155,9 @@ export class NotificationInboxUseCase {
     notificationPayload: unknown,
   ): notificationPayload is NotificationEventPayloadContract {
     return (
-      typeof notificationPayload === "object"
-      && notificationPayload !== null
-      && typeof (notificationPayload as { header?: unknown }).header === "string"
+      typeof notificationPayload === "object" &&
+      notificationPayload !== null &&
+      typeof (notificationPayload as { header?: unknown }).header === "string"
     );
   }
 }

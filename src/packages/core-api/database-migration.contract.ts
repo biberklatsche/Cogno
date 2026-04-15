@@ -25,5 +25,3 @@ export function registerDatabaseMigrations(
     sql: databaseMigrationDefinition.sql,
   }));
 }
-
-

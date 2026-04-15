@@ -1,8 +1,8 @@
-import type {
+import {
   ApplicationSettingsExtensionContract,
   ApplicationSettingsSectionDefinitionContract,
 } from "@cogno/core-api";
-import { z, type ZodRawShape } from "zod";
+import { ZodRawShape, z } from "zod";
 import { baseConfigSchemaShape } from "./+models/config";
 
 export interface ApplicationSettingsDefinition {
@@ -125,6 +125,3 @@ function cloneSettingsValue(value: unknown): unknown {
 
   return JSON.parse(JSON.stringify(value));
 }
-
-
-

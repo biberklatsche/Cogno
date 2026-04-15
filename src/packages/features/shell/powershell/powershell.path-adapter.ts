@@ -29,8 +29,5 @@ export class PowerShellPathAdapter extends BasePathAdapter {
 
 export const powerShellShellPathAdapterDefinition: ShellPathAdapterDefinitionContract = {
   shellType: "PowerShell",
-  createPathAdapter: shellContext => new PowerShellPathAdapter(shellContext),
+  createPathAdapter: (shellContext) => new PowerShellPathAdapter(shellContext),
 };
-
-
-

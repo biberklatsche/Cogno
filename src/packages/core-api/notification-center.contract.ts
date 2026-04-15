@@ -21,5 +21,3 @@ export interface NotificationCenterItemContract {
   readonly count: number;
   readonly timestamp: Date;
 }
-
-

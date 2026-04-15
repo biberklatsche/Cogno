@@ -42,5 +42,3 @@ export class DragPreviewService {
     this.previewHalfHeightInPixels = 0;
   }
 }
-
-

@@ -40,5 +40,3 @@ export const defaultFeatureSettingsExtension = {
     { id: "search", title: "Search", order: 600 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;
-
-

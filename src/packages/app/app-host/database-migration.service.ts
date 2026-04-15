@@ -24,7 +24,9 @@ export class DatabaseMigrationService {
     this.registeredFeatureMigrations.push(...databaseMigrations);
   }
 
-  async executeMigrations(appDatabaseMigrations: ReadonlyArray<DatabaseMigrationContract>): Promise<void> {
+  async executeMigrations(
+    appDatabaseMigrations: ReadonlyArray<DatabaseMigrationContract>,
+  ): Promise<void> {
     const allDatabaseMigrations = [
       ...this.registeredCoreMigrations,
       ...appDatabaseMigrations,
@@ -45,9 +47,9 @@ export class DatabaseMigrationService {
       );
     `);
 
-    const appliedMigrations = await this.databaseAccess.select<ReadonlyArray<{ id: string; checksum: string }>>(
-      "SELECT id, checksum FROM schema_migrations;",
-    );
+    const appliedMigrations = await this.databaseAccess.select<
+      ReadonlyArray<{ id: string; checksum: string }>
+    >("SELECT id, checksum FROM schema_migrations;");
     const appliedChecksumByIdentifier = new Map(
       appliedMigrations.map((appliedMigration) => [appliedMigration.id, appliedMigration.checksum]),
     );
@@ -76,10 +78,10 @@ export class DatabaseMigrationService {
 
       await this.databaseAccess.transaction(async (databaseAccess) => {
         await databaseAccess.execute(databaseMigration.sql);
-        await databaseAccess.execute("INSERT INTO schema_migrations (id, checksum) VALUES (?, ?);", [
-          migrationIdentifier,
-          checksum,
-        ]);
+        await databaseAccess.execute(
+          "INSERT INTO schema_migrations (id, checksum) VALUES (?, ?);",
+          [migrationIdentifier, checksum],
+        );
       });
     }
   }
@@ -90,4 +92,3 @@ export class DatabaseMigrationService {
     return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   }
 }
-

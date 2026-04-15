@@ -12,5 +12,3 @@ export interface IPathAdapter {
   basenameOf(cognoPath: string): string;
   depthOf(cognoPath: string): number;
 }
-
-

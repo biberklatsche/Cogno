@@ -6,7 +6,9 @@ import { WorkspaceService } from "./workspace.service";
 export class WorkspaceSideMenuLifecycle {
   constructor(private readonly workspaceService: WorkspaceService) {}
 
-  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>): SideMenuFeatureLifecycleContract {
+  create(
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+  ): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {
@@ -57,6 +59,3 @@ export class WorkspaceSideMenuLifecycle {
     };
   }
 }
-
-
-

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ZshPathAdapter } from "./zsh.path-adapter";
 
 describe("ZshPathAdapter", () => {
@@ -13,9 +13,8 @@ describe("ZshPathAdapter", () => {
   });
 
   it("should quote if needed", () => {
-    expect(adapter.render("/path/with space", { purpose: "insert_arg" })).toBe("'/path/with space'");
+    expect(adapter.render("/path/with space", { purpose: "insert_arg" })).toBe(
+      "'/path/with space'",
+    );
   });
 });
-
-
-

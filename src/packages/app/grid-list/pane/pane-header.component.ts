@@ -1,11 +1,11 @@
-import {DOCUMENT} from "@angular/common";
-import {Component, Inject, OnDestroy, input} from '@angular/core';
+import { DOCUMENT } from "@angular/common";
+import { Component, Inject, input, OnDestroy } from "@angular/core";
+import { toSignal } from "@angular/core/rxjs-interop";
 import { DragPreviewService, IconComponent } from "@cogno/core-ui";
-import {GridListService} from "../+state/grid-list.service";
-import {toSignal} from "@angular/core/rxjs-interop";
+import { GridListService } from "../+state/grid-list.service";
 
 @Component({
-  selector: 'app-pane-header',
+  selector: "app-pane-header",
   standalone: true,
   imports: [IconComponent],
   template: `
@@ -69,13 +69,14 @@ import {toSignal} from "@angular/core/rxjs-interop";
         opacity: 1 !important;
       }
     }
-  `
+  `,
 })
 export class PaneHeaderComponent implements OnDestroy {
   private static readonly minimumDragStartDistanceInPixels = 4;
 
   private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
-  private readonly handleWindowMouseMove = (event: MouseEvent): void => this.onWindowMouseMove(event);
+  private readonly handleWindowMouseMove = (event: MouseEvent): void =>
+    this.onWindowMouseMove(event);
   private dragStartClientX = 0;
   private dragStartClientY = 0;
   private dragSourceRectangle: DOMRect | undefined;
@@ -89,7 +90,7 @@ export class PaneHeaderComponent implements OnDestroy {
   constructor(
     private gridListService: GridListService,
     private dragPreviewService: DragPreviewService,
-    @Inject(DOCUMENT) private readonly document: Document
+    @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 
   ngOnDestroy(): void {
@@ -107,9 +108,10 @@ export class PaneHeaderComponent implements OnDestroy {
     this.dragStartClientY = event.clientY;
     this.hasExceededDragThreshold = false;
     const currentTargetElement = event.currentTarget;
-    this.dragSourceRectangle = currentTargetElement instanceof HTMLElement
-      ? currentTargetElement.getBoundingClientRect()
-      : undefined;
+    this.dragSourceRectangle =
+      currentTargetElement instanceof HTMLElement
+        ? currentTargetElement.getBoundingClientRect()
+        : undefined;
     this.gridListService.startPaneSwapDrag(this.terminalId());
     this.gridListService.focusActiveTerminal();
     this.addWindowMouseUpListener();
@@ -144,10 +146,14 @@ export class PaneHeaderComponent implements OnDestroy {
       const horizontalDistanceInPixels = Math.abs(event.clientX - this.dragStartClientX);
       const verticalDistanceInPixels = Math.abs(event.clientY - this.dragStartClientY);
       this.hasExceededDragThreshold =
-        horizontalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels
-        || verticalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels;
+        horizontalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels ||
+        verticalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels;
       if (this.hasExceededDragThreshold && this.dragSourceRectangle) {
-        this.dragPreviewService.startDragPreview(this.dragSourceRectangle, event.clientX, event.clientY);
+        this.dragPreviewService.startDragPreview(
+          this.dragSourceRectangle,
+          event.clientX,
+          event.clientY,
+        );
       }
     }
     if (this.hasExceededDragThreshold) {
@@ -156,26 +162,24 @@ export class PaneHeaderComponent implements OnDestroy {
   }
 
   private addWindowMouseUpListener(): void {
-    window.addEventListener('mouseup', this.handleWindowMouseUp, true);
+    window.addEventListener("mouseup", this.handleWindowMouseUp, true);
   }
 
   private addWindowMouseMoveListener(): void {
-    window.addEventListener('mousemove', this.handleWindowMouseMove, true);
+    window.addEventListener("mousemove", this.handleWindowMouseMove, true);
   }
 
   private removeWindowMouseUpListener(): void {
-    window.removeEventListener('mouseup', this.handleWindowMouseUp, true);
+    window.removeEventListener("mouseup", this.handleWindowMouseUp, true);
   }
 
   private removeWindowMouseMoveListener(): void {
-    window.removeEventListener('mousemove', this.handleWindowMouseMove, true);
+    window.removeEventListener("mousemove", this.handleWindowMouseMove, true);
   }
 
   private isPointerOverTabList(pointerClientX: number, pointerClientY: number): boolean {
     const elementUnderPointer = this.document.elementFromPoint(pointerClientX, pointerClientY);
     if (!(elementUnderPointer instanceof HTMLElement)) return false;
-    return !!elementUnderPointer.closest('.tab-list, app-tab-list');
+    return !!elementUnderPointer.closest(".tab-list, app-tab-list");
   }
 }
-
-

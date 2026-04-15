@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
-import type {
+import { NotificationOs } from "@cogno/app-tauri/notification";
+import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
 } from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
-import { NotificationOs } from "@cogno/app-tauri/notification";
 
 @Injectable({ providedIn: "root" })
 export class OsNotificationChannelService implements NotificationChannelContract {
@@ -14,13 +14,18 @@ export class OsNotificationChannelService implements NotificationChannelContract
 
   constructor(private readonly appBus: AppBus) {}
 
-  async dispatch(notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract): Promise<void> {
+  async dispatch(
+    notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract,
+  ): Promise<void> {
     const osNotificationSendResult = await NotificationOs.send(
       notificationChannelDispatchRequest.notification.header,
       notificationChannelDispatchRequest.notification.body,
     );
 
-    if (osNotificationSendResult.status !== "skipped" || osNotificationSendResult.reason !== "permission-denied") {
+    if (
+      osNotificationSendResult.status !== "skipped" ||
+      osNotificationSendResult.reason !== "permission-denied"
+    ) {
       return;
     }
 
@@ -40,6 +45,3 @@ export class OsNotificationChannelService implements NotificationChannelContract
     });
   }
 }
-
-
-

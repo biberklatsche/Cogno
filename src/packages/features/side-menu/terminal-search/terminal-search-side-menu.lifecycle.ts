@@ -1,13 +1,15 @@
 import { Injectable } from "@angular/core";
 import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
-import { TerminalSearchService } from "./terminal-search.service";
 import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
+import { TerminalSearchService } from "./terminal-search.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalSearchSideMenuLifecycle {
   constructor(private readonly terminalSearchService: TerminalSearchService) {}
 
-  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>): SideMenuFeatureLifecycleContract {
+  create(
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+  ): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {
@@ -20,21 +22,21 @@ export class TerminalSearchSideMenuLifecycle {
       },
       onClose: () => this.terminalSearchService.handleSideMenuClose(),
       onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape", "Enter"], (keyboardEvent: KeyboardEvent) => {
-          if (keyboardEvent.key === "Escape") {
-            sideMenuFeatureHandle.close();
-            return;
-          }
-          if (keyboardEvent.key === "Enter") {
-            this.terminalSearchService.repeatSearch();
-          }
-        });
+        sideMenuFeatureHandle.registerKeybindListener(
+          ["Escape", "Enter"],
+          (keyboardEvent: KeyboardEvent) => {
+            if (keyboardEvent.key === "Escape") {
+              sideMenuFeatureHandle.close();
+              return;
+            }
+            if (keyboardEvent.key === "Enter") {
+              this.terminalSearchService.repeatSearch();
+            }
+          },
+        );
         focusSideMenuAutofocusElement();
       },
       onBlur: () => sideMenuFeatureHandle.unregisterKeybindListener(),
     };
   }
 }
-
-
-

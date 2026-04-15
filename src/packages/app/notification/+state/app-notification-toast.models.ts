@@ -1,4 +1,4 @@
-import type { NotificationTypeContract } from "@cogno/core-api";
+import { NotificationTypeContract } from "@cogno/core-api";
 
 export type AppNotificationToastId = number;
 
@@ -9,6 +9,3 @@ export interface AppNotificationToast {
   readonly type: NotificationTypeContract;
   readonly timestamp: Date;
 }
-
-
-

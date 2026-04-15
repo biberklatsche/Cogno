@@ -1,6 +1,6 @@
+import type { DatabaseAccessContract } from "@cogno/core-api";
+import type { WorkspaceConfiguration } from "@cogno/core-domain/workspace";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DatabaseAccessContract } from "@cogno/core-api";
-import { WorkspaceConfiguration } from "@cogno/core-domain/workspace";
 import { WorkspaceRepository } from "./workspace.repository";
 
 describe("WorkspaceRepository", () => {
@@ -12,7 +12,10 @@ describe("WorkspaceRepository", () => {
   beforeEach(() => {
     executeMock = vi.fn().mockResolvedValue(undefined);
     selectMock = vi.fn();
-    transactionMock = vi.fn(async (handler: (databaseAccess: DatabaseAccessContract) => Promise<unknown>) => handler(databaseAccess));
+    transactionMock = vi.fn(
+      async (handler: (databaseAccess: DatabaseAccessContract) => Promise<unknown>) =>
+        handler(databaseAccess),
+    );
 
     const databaseAccess: DatabaseAccessContract = {
       execute: executeMock,
@@ -25,7 +28,9 @@ describe("WorkspaceRepository", () => {
 
   it("loads workspaces with tabs and grids", async () => {
     selectMock
-      .mockResolvedValueOnce([{ id: "ws1", name: "Workspace 1", color: "blue", autosave: 1, position: 0 }])
+      .mockResolvedValueOnce([
+        { id: "ws1", name: "Workspace 1", color: "blue", autosave: 1, position: 0 },
+      ])
       .mockResolvedValueOnce([
         {
           workspace_id: "ws1",
@@ -57,17 +62,22 @@ describe("WorkspaceRepository", () => {
       color: "green",
       autosave: true,
       position: 0,
-      tabs: [{ tabId: "TB-1", isActive: true, isTitleLocked: true, title: "Tab 1", color: "green" }],
+      tabs: [
+        { tabId: "TB-1", isActive: true, isTitleLocked: true, title: "Tab 1", color: "green" },
+      ],
       grids: [{ tabId: "TB-1", pane: { terminalId: "TE-1" } }],
     };
 
     await workspaceRepository.createWorkspace(workspaceConfiguration);
 
     expect(transactionMock).toHaveBeenCalledTimes(1);
-    expect(executeMock).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO workspaces"),
-      ["ws1", "Workspace 1", "green", 1, 0],
-    );
+    expect(executeMock).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO workspaces"), [
+      "ws1",
+      "Workspace 1",
+      "green",
+      1,
+      0,
+    ]);
   });
 
   it("updates workspace metadata and layout", async () => {

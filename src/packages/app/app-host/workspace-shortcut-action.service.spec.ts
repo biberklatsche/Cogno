@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
 import { BehaviorSubject } from "rxjs";
-import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
-import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAppBus, getDestroyRef } from "../../__test__/test-factory";
-import { AppBus } from "../app-bus/app-bus";
-import { ActionFired, ActionFiredEvent } from "../action/action.models";
+import { ActionFired, type ActionFiredEvent } from "../action/action.models";
+import type { AppBus } from "../app-bus/app-bus";
+import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 
 describe("WorkspaceShortcutActionService", () => {
   let appBus: AppBus;

@@ -22,7 +22,8 @@ export class WorkspaceShortcutActionService {
         this.workspaceEntries = workspaceEntries;
       });
 
-    this.appBus.on$(ActionFired.listener())
+    this.appBus
+      .on$(ActionFired.listener())
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: ActionFiredEvent) => {
         if (!event.payload) {
@@ -61,11 +62,14 @@ export class WorkspaceShortcutActionService {
     }
 
     const index = Number.parseInt(actionName.slice(prefix.length), 10);
-    if (Number.isNaN(index) || index < 1 || index > WorkspaceShortcutActionService.indexedShortcutLimit) {
+    if (
+      Number.isNaN(index) ||
+      index < 1 ||
+      index > WorkspaceShortcutActionService.indexedShortcutLimit
+    ) {
       return undefined;
     }
 
     return index;
   }
 }
-

@@ -1,14 +1,14 @@
-import { HexColor, ShellType } from "../../config/+models/config";
 import { TabId } from "@cogno/core-api";
 import { ColorName } from "../../common/color/color";
+import { ShellType } from "../../config/+models/config";
 
 export type TabList = Tab[];
 
 export type Tab = {
-    color?: ColorName;
-    id: TabId;
-    title: string;
-    isTitleLocked?: boolean;
-    isActive: boolean;
-    activeShellType: ShellType | 'unknown';
-}
+  color?: ColorName;
+  id: TabId;
+  title: string;
+  isTitleLocked?: boolean;
+  isActive: boolean;
+  activeShellType: ShellType | "unknown";
+};

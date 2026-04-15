@@ -24,7 +24,7 @@ export interface CommandPaletteHostPortContract {
 
 export abstract class CommandPaletteHostPort implements CommandPaletteHostPortContract {
   abstract readonly commandEntries$: Observable<ReadonlyArray<CommandPaletteCommandEntryContract>>;
-  abstract publishAction(commandPaletteActionDefinition: CommandPaletteActionDefinitionContract): void;
+  abstract publishAction(
+    commandPaletteActionDefinition: CommandPaletteActionDefinitionContract,
+  ): void;
 }
-
-

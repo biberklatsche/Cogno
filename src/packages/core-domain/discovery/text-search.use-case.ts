@@ -78,7 +78,7 @@ export class TextSearchUseCase {
   }
 
   static clearForCollectionClose(): TextSearchState {
-    return this.createInitialState();
+    return TextSearchUseCase.createInitialState();
   }
 
   static createSearchRequest(
@@ -140,7 +140,7 @@ export class TextSearchUseCase {
       return state;
     }
 
-    return this.applySearchResultPage(
+    return TextSearchUseCase.applySearchResultPage(
       state,
       terminalSearchResult.lines,
       terminalSearchResult.hasMore,
@@ -180,9 +180,7 @@ export class TextSearchUseCase {
     nextCursorBufferLine: number | undefined,
     appendResults: boolean,
   ): TextSearchState {
-    const nextResults = appendResults
-      ? [...state.results, ...lines]
-      : [...lines];
+    const nextResults = appendResults ? [...state.results, ...lines] : [...lines];
 
     return {
       ...state,

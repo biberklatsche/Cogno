@@ -1,5 +1,5 @@
 import { Component, Inject } from "@angular/core";
-import { DialogRef, DIALOG_DATA } from "../common/dialog";
+import { DIALOG_DATA, DialogRef } from "../common/dialog";
 
 export interface TerminalBusyConfirmationDialogData {
   readonly actionLabel: string;
@@ -64,5 +64,3 @@ export class TerminalBusyConfirmationDialogComponent {
     this.dialogRef.close(false);
   }
 }
-
-

@@ -21,7 +21,8 @@ export class HostFeatureRegistry<
   private readonly shellDefinitions: ShellDefinitionContract[] = [];
   private readonly shellSupportDefinitions: ShellSupportDefinitionContract[] = [];
   private readonly settingsExtensions: ApplicationSettingsExtensionContract[] = [];
-  private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] = [];
+  private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] =
+    [];
 
   constructor(
     private readonly sideMenuDefinitionRegistry: SideMenuDefinitionRegistry<
@@ -69,7 +70,9 @@ export class HostFeatureRegistry<
   getSideMenuFeatureDefinitionById(
     sideMenuFeatureDefinitionId: string,
   ): SideMenuFeatureDefinitionContract<TIcon, TActionName> | undefined {
-    return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitionById(sideMenuFeatureDefinitionId);
+    return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitionById(
+      sideMenuFeatureDefinitionId,
+    );
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<
@@ -78,9 +81,7 @@ export class HostFeatureRegistry<
     return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitions();
   }
 
-  registerSideMenuFeatureExtension(
-    sideMenuFeatureExtension: TSideMenuFeatureExtension,
-  ): void {
+  registerSideMenuFeatureExtension(sideMenuFeatureExtension: TSideMenuFeatureExtension): void {
     this.sideMenuDefinitionRegistry.registerSideMenuFeatureExtension(sideMenuFeatureExtension);
   }
 
@@ -110,9 +111,7 @@ export class HostFeatureRegistry<
     return this.settingsExtensions;
   }
 
-  getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<
-    TerminalAutocompleteSuggestorDefinitionContract
-  > {
+  getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract> {
     return this.terminalAutocompleteSuggestorDefinitions;
   }
 }

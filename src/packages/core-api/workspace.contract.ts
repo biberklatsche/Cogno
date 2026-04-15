@@ -32,5 +32,3 @@ export abstract class WorkspaceHostPort implements WorkspaceHostPortContract {
   abstract openEditWorkspaceDialog(workspaceId: string): void;
   abstract deleteWorkspace(workspaceId: string): Promise<void>;
 }
-
-

@@ -5,5 +5,3 @@ export interface ShellPathAdapterDefinitionContract {
   readonly shellType: ShellTypeContract;
   createPathAdapter(shellContext: ShellContextContract): IPathAdapter;
 }
-
-

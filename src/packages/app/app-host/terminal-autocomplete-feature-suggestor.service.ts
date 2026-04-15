@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@angular/core";
 import { commandRunnerToken, filesystemToken } from "@cogno/app/app-host/app-host.tokens";
+import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   CommandRunnerContract,
   FilesystemContract,
   ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
 } from "@cogno/core-api";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAutocompleteFeatureSuggestorService {
@@ -22,10 +22,12 @@ export class TerminalAutocompleteFeatureSuggestorService {
     if (!this.sharedSuggestors) {
       this.sharedSuggestors = this.wiringService
         .getTerminalAutocompleteSuggestorDefinitions()
-        .map((definition) => definition.createSuggestor({
-          filesystem: this.filesystem,
-          commandRunner: this.commandRunner,
-        }));
+        .map((definition) =>
+          definition.createSuggestor({
+            filesystem: this.filesystem,
+            commandRunner: this.commandRunner,
+          }),
+        );
     }
 
     return this.sharedSuggestors;
@@ -37,4 +39,3 @@ export class TerminalAutocompleteFeatureSuggestorService {
     }
   }
 }
-

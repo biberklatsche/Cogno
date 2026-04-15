@@ -16,5 +16,3 @@ export interface CommandRunnerResultContract {
 export interface CommandRunnerContract {
   run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract>;
 }
-
-

@@ -8,7 +8,11 @@ const hexColorSchema = z
     "Must be a 4-, 6-, or 8-digit hex color",
   );
 
-const featureModeSchema = z.enum(["off", "hidden", "visible"] satisfies ReadonlyArray<FeatureModeContract>);
+const featureModeSchema = z.enum([
+  "off",
+  "hidden",
+  "visible",
+] satisfies ReadonlyArray<FeatureModeContract>);
 
 export const FeatureWorkspaceSchema = z.object({
   mode: featureModeSchema.optional(),
@@ -24,7 +28,9 @@ export const FeatureNotificationSchema = z.object({
           enabled: z
             .boolean()
             .optional()
-            .describe("Show a notification for handled exceptions reported through the central error reporter."),
+            .describe(
+              "Show a notification for handled exceptions reported through the central error reporter.",
+            ),
         })
         .optional(),
       unhandled: z
@@ -32,7 +38,9 @@ export const FeatureNotificationSchema = z.object({
           enabled: z
             .boolean()
             .optional()
-            .describe("Show a notification for unhandled renderer exceptions caught by the global error reporter."),
+            .describe(
+              "Show a notification for unhandled renderer exceptions caught by the global error reporter.",
+            ),
         })
         .optional(),
     })
@@ -116,5 +124,3 @@ export const FeatureSearchSchema = z.object({
     })
     .optional(),
 });
-
-

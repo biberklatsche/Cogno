@@ -30,6 +30,3 @@ export const zshShellSupportDefinition: ShellSupportDefinitionContract = {
     },
   ],
 };
-
-
-

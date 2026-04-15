@@ -1,5 +1,5 @@
-import { Terminal, IBuffer, IBufferLine, IBufferCell } from '@xterm/xterm';
-import { vi } from 'vitest';
+import type { IBuffer, IBufferCell, IBufferLine, Terminal } from "@xterm/xterm";
+import { vi } from "vitest";
 
 export interface TerminalMockOptions {
   cursorX?: number;
@@ -13,7 +13,9 @@ export interface TerminalMockOptions {
   onTitleChange?: (callback: (title: string) => void) => { dispose: () => void };
   onSelectionChange?: (callback: () => void) => { dispose: () => void };
   onWriteParsed?: (callback: () => void) => { dispose: () => void };
-  onKey?: (callback: (event: { key: string; domEvent: KeyboardEvent }) => void) => { dispose: () => void };
+  onKey?: (callback: (event: { key: string; domEvent: KeyboardEvent }) => void) => {
+    dispose: () => void;
+  };
   onScroll?: (callback: () => void) => { dispose: () => void };
   onRender?: (callback: (event: { start: number; end: number }) => void) => { dispose: () => void };
 }
@@ -50,7 +52,7 @@ export class TerminalMockFactory {
       onRender = () => ({ dispose: vi.fn() }),
     } = options;
 
-    const buffer = this.createBuffer({ cursorX, cursorY, viewportY });
+    const buffer = TerminalMockFactory.createBuffer({ cursorX, cursorY, viewportY });
 
     return {
       cols,
@@ -101,20 +103,22 @@ export class TerminalMockFactory {
         onDispose: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
         dispose: vi.fn(),
       })),
-      registerDecoration: vi.fn().mockImplementation((decorationOptions: { marker: { line: number } }) => ({
-        marker: decorationOptions.marker,
-        element: undefined,
-        options: {},
-        isDisposed: false,
-        onRender: vi.fn().mockImplementation((listener: (element: HTMLElement) => void) => {
-          listener(document.createElement('div'));
-          return { dispose: vi.fn() };
-        }),
-        onDispose: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
-        dispose: vi.fn(),
-      })),
+      registerDecoration: vi
+        .fn()
+        .mockImplementation((decorationOptions: { marker: { line: number } }) => ({
+          marker: decorationOptions.marker,
+          element: undefined,
+          options: {},
+          isDisposed: false,
+          onRender: vi.fn().mockImplementation((listener: (element: HTMLElement) => void) => {
+            listener(document.createElement("div"));
+            return { dispose: vi.fn() };
+          }),
+          onDispose: vi.fn().mockImplementation(() => ({ dispose: vi.fn() })),
+          dispose: vi.fn(),
+        })),
       options: {},
-      element: document.createElement('div'),
+      element: document.createElement("div"),
       textarea: {
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
@@ -125,13 +129,7 @@ export class TerminalMockFactory {
   }
 
   static createBuffer(options: BufferMockOptions = {}): IBuffer {
-    const {
-      cursorX = 0,
-      cursorY = 0,
-      viewportY = 0,
-      baseY = 0,
-      length = 100,
-    } = options;
+    const { cursorX = 0, cursorY = 0, viewportY = 0, baseY = 0, length = 100 } = options;
 
     return {
       cursorX,
@@ -140,20 +138,21 @@ export class TerminalMockFactory {
       baseY,
       length,
       getLine: vi.fn(),
-      getNullCell: vi.fn(() => this.createCell('')),
+      getNullCell: vi.fn(() => TerminalMockFactory.createCell("")),
     } as unknown as IBuffer;
   }
 
   static createLine(content: string | IBufferCell[]): IBufferLine {
-    const cells = typeof content === 'string'
-      ? content.split('').map(char => this.createCell(char))
-      : content;
+    const cells =
+      typeof content === "string"
+        ? content.split("").map((char) => TerminalMockFactory.createCell(char))
+        : content;
 
     return {
       length: cells.length,
       getCell: vi.fn((index: number) => cells[index] || null),
       translateToString: vi.fn((trimRight?: boolean, startColumn?: number, endColumn?: number) => {
-        let str = typeof content === 'string' ? content : cells.map(c => c.getChars()).join('');
+        let str = typeof content === "string" ? content : cells.map((c) => c.getChars()).join("");
         if (startColumn !== undefined || endColumn !== undefined) {
           str = str.substring(startColumn || 0, endColumn);
         }
@@ -197,12 +196,7 @@ export class TerminalMockFactory {
     } as unknown as IBufferCell;
   }
 
-  static createLineWithContent(
-    content: string,
-    cursorPosition?: number
-  ): IBufferLine {
-    return this.createLine(content);
+  static createLineWithContent(content: string, _cursorPosition?: number): IBufferLine {
+    return TerminalMockFactory.createLine(content);
   }
 }
-
-

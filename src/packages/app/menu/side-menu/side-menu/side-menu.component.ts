@@ -1,32 +1,27 @@
+import { NgComponentOutlet } from "@angular/common";
 import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    EffectRef,
-    effect,
-    ElementRef,
-    OnDestroy,
-    Signal,
-    ViewChild,
-} from '@angular/core';
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  EffectRef,
+  ElementRef,
+  effect,
+  OnDestroy,
+  Signal,
+  ViewChild,
+} from "@angular/core";
 import { IconComponent, TooltipDirective } from "@cogno/core-ui";
-import {SideMenuItem, SideMenuService} from "../+state/side-menu.service";
-import {NgComponentOutlet} from "@angular/common";
-import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
+import { ActionKeybindingPipe } from "../../../keybinding/pipe/keybinding.pipe";
+import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
 
 @Component({
-    selector: 'app-side-menu',
-    imports: [
-        IconComponent,
-        NgComponentOutlet,
-        TooltipDirective,
-        ActionKeybindingPipe,
-    ],
-    host: {
-        '[class.overlay-host]': '!overlay()'
-    },
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `
+  selector: "app-side-menu",
+  imports: [IconComponent, NgComponentOutlet, TooltipDirective, ActionKeybindingPipe],
+  host: {
+    "[class.overlay-host]": "!overlay()",
+  },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
         <aside #overlayAside class="base-overlay"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
@@ -67,7 +62,8 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 </button>
             }
         </menu>`,
-    styles: [`
+  styles: [
+    `
         :host {
             display: flex;
             flex-direction: row;
@@ -186,116 +182,119 @@ import {ActionKeybindingPipe} from "../../../keybinding/pipe/keybinding.pipe";
                 min-height: 0;
             }
         }
-    `]
+    `,
+  ],
 })
 export class SideMenuComponent implements OnDestroy {
-    menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
-    visibleItems: Signal<SideMenuItem[]> = computed(() => {
-        return this.menuItems()
-            .filter((menuItem) => !menuItem.hidden)
-            .slice()
-            .sort((leftMenuItem, rightMenuItem) => (leftMenuItem.order ?? 0) - (rightMenuItem.order ?? 0));
+  menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
+  visibleItems: Signal<SideMenuItem[]> = computed(() => {
+    return this.menuItems()
+      .filter((menuItem) => !menuItem.hidden)
+      .slice()
+      .sort(
+        (leftMenuItem, rightMenuItem) => (leftMenuItem.order ?? 0) - (rightMenuItem.order ?? 0),
+      );
+  });
+  selectedItem = this.menuItemService.selectedItem;
+  overlay = this.menuItemService.displacement;
+  focused = this.menuItemService.isFocused;
+  panelWidthInPixels = this.menuItemService.panelWidthInPixels;
+
+  @ViewChild("overlayAside", { static: false }) overlayAsideRef?: ElementRef<HTMLElement>;
+  @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
+
+  private clickOutsideEffect: EffectRef;
+  private lastOpenTimestamp = 0;
+  private resizeStartPointerClientX = 0;
+  private resizeStartPanelWidthInPixels = 0;
+
+  constructor(private menuItemService: SideMenuService) {
+    this.clickOutsideEffect = effect(() => {
+      const isOpen = !!this.selectedItem();
+      const isFocused = this.focused();
+
+      if (isOpen && isFocused) {
+        this.lastOpenTimestamp = performance.now();
+        document.addEventListener("pointerdown", this.onPointerDown, true);
+      } else {
+        document.removeEventListener("pointerdown", this.onPointerDown, true);
+      }
     });
-    selectedItem = this.menuItemService.selectedItem;
-    overlay = this.menuItemService.displacement;
-    focused = this.menuItemService.isFocused;
-    panelWidthInPixels = this.menuItemService.panelWidthInPixels;
 
-    @ViewChild('overlayAside', {static: false}) overlayAsideRef?: ElementRef<HTMLElement>;
-    @ViewChild('menuCol', {static: false}) menuColRef?: ElementRef<HTMLElement>;
+    effect(() => {
+      const isOpen = !!this.selectedItem();
+      const isFocused = this.focused();
+      if (!isOpen || !isFocused) return;
+      queueMicrotask(() => this.overlayAsideRef?.nativeElement.focus());
+    });
+  }
 
-    private clickOutsideEffect: EffectRef;
-    private lastOpenTimestamp = 0;
-    private resizeStartPointerClientX = 0;
-    private resizeStartPanelWidthInPixels = 0;
+  ngOnDestroy() {
+    document.removeEventListener("pointerdown", this.onPointerDown, true);
+    window.removeEventListener("pointermove", this.onWindowPointerMove, true);
+    window.removeEventListener("pointerup", this.onWindowPointerUp, true);
+    this.clickOutsideEffect.destroy();
+  }
 
-    constructor(private menuItemService: SideMenuService) {
-        this.clickOutsideEffect = effect(() => {
-            const isOpen = !!this.selectedItem();
-            const isFocused = this.focused();
+  private onPointerDown = (ev: PointerEvent) => {
+    // Ignore the very event that triggered open
+    if (Math.abs(ev.timeStamp - this.lastOpenTimestamp) < 10) return;
 
-            if (isOpen && isFocused) {
-                this.lastOpenTimestamp = performance.now();
-                document.addEventListener('pointerdown', this.onPointerDown, true);
-            } else {
-                document.removeEventListener('pointerdown', this.onPointerDown, true);
-            }
-        });
+    const target = ev.target as Node;
+    const targetElement = target instanceof Element ? target : null;
+    const clickedInsideDialog = !!targetElement?.closest("app-dialog");
+    if (clickedInsideDialog) return;
 
-        effect(() => {
-            const isOpen = !!this.selectedItem();
-            const isFocused = this.focused();
-            if (!isOpen || !isFocused) return;
-            queueMicrotask(() => this.overlayAsideRef?.nativeElement.focus());
-        });
+    const clickedInsideAside = this.overlayAsideRef?.nativeElement.contains(target);
+    const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
+
+    if (!clickedInsideAside && !clickedInsideMenu) {
+      if (this.selectedItem()?.pinned) {
+        this.menuItemService.blur();
+        return;
+      }
+      this.close();
     }
+  };
 
-    ngOnDestroy() {
-        document.removeEventListener('pointerdown', this.onPointerDown, true);
-        window.removeEventListener('pointermove', this.onWindowPointerMove, true);
-        window.removeEventListener('pointerup', this.onWindowPointerUp, true);
-        this.clickOutsideEffect.destroy();
-    }
+  open(menuItem: SideMenuItem) {
+    this.menuItemService.open(menuItem.label);
+  }
 
-    private onPointerDown = (ev: PointerEvent) => {
-        // Ignore the very event that triggered open
-        if (Math.abs(ev.timeStamp - this.lastOpenTimestamp) < 10) return;
+  close() {
+    this.menuItemService.close(true);
+  }
 
-        const target = ev.target as Node;
-        const targetElement = target instanceof Element ? target : null;
-        const clickedInsideDialog = !!targetElement?.closest('app-dialog');
-        if (clickedInsideDialog) return;
+  focus() {
+    this.menuItemService.focus();
+  }
 
-        const clickedInsideAside = this.overlayAsideRef?.nativeElement.contains(target);
-        const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
+  toggleDisplacement() {
+    this.menuItemService.toggleDisplacement();
+  }
 
-        if (!clickedInsideAside && !clickedInsideMenu) {
-            if (this.selectedItem()?.pinned) {
-                this.menuItemService.blur();
-                return;
-            }
-            this.close();
-        }
-    };
+  togglePin() {
+    this.menuItemService.togglePin();
+  }
 
-    open(menuItem: SideMenuItem) {
-        this.menuItemService.open(menuItem.label);
-    }
+  startResize(pointerEvent: PointerEvent): void {
+    pointerEvent.preventDefault();
+    pointerEvent.stopPropagation();
+    this.resizeStartPointerClientX = pointerEvent.clientX;
+    this.resizeStartPanelWidthInPixels = this.panelWidthInPixels();
+    window.addEventListener("pointermove", this.onWindowPointerMove, true);
+    window.addEventListener("pointerup", this.onWindowPointerUp, true);
+  }
 
-    close() {
-        this.menuItemService.close(true);
-    }
+  private onWindowPointerMove = (pointerEvent: PointerEvent): void => {
+    const horizontalDeltaInPixels = this.resizeStartPointerClientX - pointerEvent.clientX;
+    this.menuItemService.setPanelWidthInPixels(
+      this.resizeStartPanelWidthInPixels + horizontalDeltaInPixels,
+    );
+  };
 
-    focus() {
-        this.menuItemService.focus();
-    }
-
-    toggleDisplacement() {
-        this.menuItemService.toggleDisplacement();
-    }
-
-    togglePin() {
-        this.menuItemService.togglePin();
-    }
-
-    startResize(pointerEvent: PointerEvent): void {
-        pointerEvent.preventDefault();
-        pointerEvent.stopPropagation();
-        this.resizeStartPointerClientX = pointerEvent.clientX;
-        this.resizeStartPanelWidthInPixels = this.panelWidthInPixels();
-        window.addEventListener('pointermove', this.onWindowPointerMove, true);
-        window.addEventListener('pointerup', this.onWindowPointerUp, true);
-    }
-
-    private onWindowPointerMove = (pointerEvent: PointerEvent): void => {
-        const horizontalDeltaInPixels = this.resizeStartPointerClientX - pointerEvent.clientX;
-        this.menuItemService.setPanelWidthInPixels(this.resizeStartPanelWidthInPixels + horizontalDeltaInPixels);
-    };
-
-    private onWindowPointerUp = (): void => {
-        window.removeEventListener('pointermove', this.onWindowPointerMove, true);
-        window.removeEventListener('pointerup', this.onWindowPointerUp, true);
-    };
+  private onWindowPointerUp = (): void => {
+    window.removeEventListener("pointermove", this.onWindowPointerMove, true);
+    window.removeEventListener("pointerup", this.onWindowPointerUp, true);
+  };
 }
-
-

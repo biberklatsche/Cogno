@@ -1,10 +1,17 @@
+import type { SideMenuFeatureHandleContract } from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CommandEntry, CommandPaletteService } from "./command-palette.service";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
-import { CommandPaletteService, CommandEntry } from "./command-palette.service";
-import { SideMenuFeatureHandleContract } from "@cogno/core-api";
 
 describe("CommandPaletteSideMenuLifecycle", () => {
-  let commandPaletteService: Pick<CommandPaletteService, "getSelectedEntry" | "fireSelectedAction" | "handleSideMenuOpen" | "handleSideMenuClose" | "handleNavigationKey">;
+  let commandPaletteService: Pick<
+    CommandPaletteService,
+    | "getSelectedEntry"
+    | "fireSelectedAction"
+    | "handleSideMenuOpen"
+    | "handleSideMenuClose"
+    | "handleNavigationKey"
+  >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
   let registerKeybindListenerMock: ReturnType<typeof vi.fn>;
   let closeMock: ReturnType<typeof vi.fn>;
@@ -39,10 +46,14 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     };
     vi.mocked(commandPaletteService.getSelectedEntry).mockReturnValue(selectedEntry);
 
-    const lifecycle = new CommandPaletteSideMenuLifecycle(commandPaletteService as CommandPaletteService);
+    const lifecycle = new CommandPaletteSideMenuLifecycle(
+      commandPaletteService as CommandPaletteService,
+    );
     lifecycle.create(sideMenuFeatureHandle).onFocus?.();
 
-    const keybindHandler = registerKeybindListenerMock.mock.calls[0][1] as (event: KeyboardEvent) => void;
+    const keybindHandler = registerKeybindListenerMock.mock.calls[0][1] as (
+      event: KeyboardEvent,
+    ) => void;
     keybindHandler({ key: "Enter" } as KeyboardEvent);
 
     await Promise.resolve();

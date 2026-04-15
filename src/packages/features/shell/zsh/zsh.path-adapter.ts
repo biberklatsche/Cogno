@@ -17,8 +17,5 @@ export class ZshPathAdapter extends BasePathAdapter {
 
 export const zshShellPathAdapterDefinition: ShellPathAdapterDefinitionContract = {
   shellType: "ZSH",
-  createPathAdapter: shellContext => new ZshPathAdapter(shellContext),
+  createPathAdapter: (shellContext) => new ZshPathAdapter(shellContext),
 };
-
-
-

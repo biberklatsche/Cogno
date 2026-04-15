@@ -1,11 +1,11 @@
-import { BehaviorSubject } from "rxjs";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
+import type {
   TerminalSearchColorConfigContract,
   TerminalSearchHostPortContract,
   TerminalSearchPanelRequestContract,
   TerminalSearchResultContract,
 } from "@cogno/core-api";
+import { BehaviorSubject } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 import { TerminalSearchService } from "./terminal-search.service";
 
@@ -105,10 +105,12 @@ describe("TerminalSearchService", () => {
     vi.runAllTimers();
 
     expect(requestSearchMock).toHaveBeenCalledTimes(1);
-    expect(requestSearchMock).toHaveBeenCalledWith(expect.objectContaining({
-      query: "needle",
-      resultLineLimit: 200,
-    }));
+    expect(requestSearchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: "needle",
+        resultLineLimit: 200,
+      }),
+    );
   });
 
   it("appends the next page when more results are loaded", () => {
@@ -141,10 +143,12 @@ describe("TerminalSearchService", () => {
 
     terminalSearchService.loadMoreSearchResults();
 
-    expect(requestSearchMock).toHaveBeenLastCalledWith(expect.objectContaining({
-      cursorBufferLine: 20,
-      resultLineLimit: 200,
-    }));
+    expect(requestSearchMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cursorBufferLine: 20,
+        resultLineLimit: 200,
+      }),
+    );
 
     terminalSearchResultSubject.next({
       terminalId: "terminal-77",
@@ -168,6 +172,3 @@ describe("TerminalSearchService", () => {
     expect(terminalSearchService.hasMoreResults()).toBe(false);
   });
 });
-
-
-

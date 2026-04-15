@@ -1,15 +1,15 @@
 import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { ConfigService } from "@cogno/app/config/+state/config.service";
+import { Logger } from "@cogno/app-tauri/logger";
 import {
+  buildLogMessage,
   ErrorReporter,
   ErrorReporterRuntime,
   ExceptionReport,
-  WarningReport,
-  buildLogMessage,
   formatUnknownError,
+  WarningReport,
 } from "./error-reporter";
-import { Logger } from "@cogno/app-tauri/logger";
 
 const DEDUPLICATION_WINDOW_MS = 1000;
 const MAX_NOTIFICATION_BODY_LENGTH = 2000;
@@ -60,7 +60,9 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
         },
       });
     } catch (error) {
-      Logger.error(`[ErrorReportingRuntimeService] Failed to report exception: ${formatUnknownError(error)}`);
+      Logger.error(
+        `[ErrorReportingRuntimeService] Failed to report exception: ${formatUnknownError(error)}`,
+      );
     }
   }
 
@@ -89,7 +91,9 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
         },
       });
     } catch (error) {
-      Logger.error(`[ErrorReportingRuntimeService] Failed to report warning: ${formatUnknownError(error)}`);
+      Logger.error(
+        `[ErrorReportingRuntimeService] Failed to report warning: ${formatUnknownError(error)}`,
+      );
     }
   }
 
@@ -120,9 +124,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
     }
 
     const notificationConfig = this.readExceptionNotificationConfiguration();
-    return report.handled
-      ? notificationConfig.handledEnabled
-      : notificationConfig.unhandledEnabled;
+    return report.handled ? notificationConfig.handledEnabled : notificationConfig.unhandledEnabled;
   }
 
   private readExceptionNotificationConfiguration(): {
@@ -130,8 +132,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
     readonly unhandledEnabled: boolean;
   } {
     try {
-      const exceptionsConfiguration =
-        this.configService.config.notification?.exceptions;
+      const exceptionsConfiguration = this.configService.config.notification?.exceptions;
 
       return {
         handledEnabled: exceptionsConfiguration?.handled?.enabled ?? false,
@@ -186,12 +187,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
       ].join("|");
     }
 
-    return [
-      "warning",
-      report.source ?? "",
-      report.message,
-      serializedContext,
-    ].join("|");
+    return ["warning", report.source ?? "", report.message, serializedContext].join("|");
   }
 
   private shouldSuppressDuplicate(fingerprint: string): boolean {
@@ -216,5 +212,3 @@ function safeSerialize(value: unknown): string {
     return String(value);
   }
 }
-
-

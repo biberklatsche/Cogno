@@ -1,9 +1,6 @@
 import { Injectable } from "@angular/core";
+import { NotificationCenterPortContract, NotificationEventPayloadContract } from "@cogno/core-api";
 import { map, Observable } from "rxjs";
-import {
-  NotificationCenterPortContract,
-  NotificationEventPayloadContract,
-} from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
 import { ConfigService } from "../../config/+state/config.service";
 
@@ -15,20 +12,19 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
     private readonly appBus: AppBus,
     private readonly configService: ConfigService,
   ) {
-    this.notificationEvents$ = this.appBus.on$({ path: ["notification"], type: "Notification" }).pipe(
-      map((notificationEvent) => {
-        if (!notificationEvent.payload) {
-          throw new Error("Notification payload must be defined.");
-        }
-        return notificationEvent.payload;
-      }),
-    );
+    this.notificationEvents$ = this.appBus
+      .on$({ path: ["notification"], type: "Notification" })
+      .pipe(
+        map((notificationEvent) => {
+          if (!notificationEvent.payload) {
+            throw new Error("Notification payload must be defined.");
+          }
+          return notificationEvent.payload;
+        }),
+      );
   }
 
   getOverviewMaxItems(): number {
     return this.configService.config.notification?.overview?.max_items ?? 30;
   }
 }
-
-
-
