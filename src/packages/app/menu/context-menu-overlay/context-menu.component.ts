@@ -181,7 +181,7 @@ export class ContextMenuComponent implements ContextMenuOverlayComponent {
   onItemClick(item: ContextMenuItem) {
     if (item.disabled) return;
     try {
-      item.action?.(item);
+      (item.action as ((item?: ContextMenuItem) => void) | undefined)?.(item);
     } finally {
       if (item.closeOnSelect !== false) {
         this.close?.();
@@ -191,7 +191,7 @@ export class ContextMenuComponent implements ContextMenuOverlayComponent {
 
   onColorPick(item: ContextMenuItem, name: ColorName) {
     try {
-      item.action?.(name);
+      (item.action as ((name?: ColorName) => void) | undefined)?.(name);
     } finally {
       this.close?.();
     }

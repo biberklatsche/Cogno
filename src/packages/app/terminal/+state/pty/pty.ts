@@ -11,10 +11,10 @@ export interface IPty extends IDisposable {
     dimensions: TerminalDimensions,
   ): Promise<void>;
   resize(dimensions: TerminalDimensions): void;
-  onData(listener: (e: string) => any): IDisposable;
+  onData(listener: (e: string) => void): IDisposable;
   write(data: string): void;
   executeShellAction(action: string, payload?: object): void;
-  onExit(listener: (e: { exitCode: number; signal?: number }) => any): IDisposable;
+  onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable;
   kill(signal?: string): void;
 }
 
@@ -75,7 +75,7 @@ export class Pty implements IPty {
     );
   }
 
-  onData(listener: (e: string) => any): IDisposable {
+  onData(listener: (e: string) => void): IDisposable {
     if (!this._terminalId) throw Error("Please spawn Pty before listen on data.");
     const terminalId = this._terminalId;
     TauriPty.onData(terminalId, listener).then((unlisten) => {
@@ -120,7 +120,7 @@ export class Pty implements IPty {
     );
   }
 
-  onExit(listener: (e: { exitCode: number; signal?: number }) => any): IDisposable {
+  onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable {
     if (!this._terminalId) throw Error("Please spawn Pty before listen on exit.");
     const terminalId = this._terminalId;
     TauriPty.onExit(terminalId, listener).then((unlisten) => {

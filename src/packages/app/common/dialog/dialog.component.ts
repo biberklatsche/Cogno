@@ -176,11 +176,11 @@ type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
     </div>
   `,
 })
-export class DialogComponent<TData = unknown> implements OnInit, OnDestroy {
+export class DialogComponent<TData = unknown, TResult = unknown> implements OnInit, OnDestroy {
   config = input.required<DialogConfig<TData>>();
-  dialogRef = input.required<DialogRef<any>>();
+  dialogRef = input.required<DialogRef<TResult>>();
 
-  component = input.required<Type<any>>();
+  component = input.required<Type<unknown>>();
   panelElementRef = viewChild<ElementRef<HTMLElement>>("panelElement");
 
   contentInjector?: Injector;

@@ -38,6 +38,18 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": ["src/**/*.spec.ts", "src/**/__test__/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "parser": {
       "unsafeParameterDecoratorsEnabled": true

@@ -3,6 +3,10 @@ import { IDisposable } from "../../../common/models/models";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";
 
+type TerminalBufferWithViewport = Terminal["buffer"]["active"] & {
+  viewportY?: number;
+};
+
 /**
  * Tracks the current terminal cell (col,row)
  * under the mouse while moving over the terminal container.
@@ -61,7 +65,7 @@ export class MouseHandler implements ITerminalHandler {
       this._lastCol = col;
       this._lastRow = row;
 
-      const buffer = this._terminal.buffer.active as any;
+      const buffer = this._terminal.buffer.active as TerminalBufferWithViewport;
       const absRow = (buffer.viewportY ?? 0) + (row - 1);
       // Try to read the character under the mouse from xterm's buffer
       let char = "";

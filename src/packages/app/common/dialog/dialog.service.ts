@@ -35,7 +35,7 @@ export class DialogService {
     id: number,
     content: Type<unknown> | TemplateRef<TContext>,
     config: DialogConfig<TData, TContext>,
-  ): ComponentRef<DialogComponent<TData>> {
+  ): ComponentRef<DialogComponent<TData, TResult>> {
     // Defaults
     const merged: DialogConfig<TData, TContext> = {
       hasBackdrop: true,
@@ -46,7 +46,7 @@ export class DialogService {
       ...config,
     };
 
-    const hostRef = createComponent(DialogComponent<TData>, {
+    const hostRef = createComponent(DialogComponent<TData, TResult>, {
       environmentInjector: this.envInjector,
       elementInjector: this.injector,
     });

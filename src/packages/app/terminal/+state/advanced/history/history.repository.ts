@@ -95,7 +95,8 @@ function firstToken(cmd: string): string {
 }
 
 function isLockError(e: unknown): boolean {
-  const msg = String((e as any)?.message ?? e ?? "");
+  const message = e instanceof Error ? e.message : undefined;
+  const msg = String(message ?? e ?? "");
   return /database is locked|SQLITE_BUSY|SQLITE_LOCKED|busy|locked/i.test(msg);
 }
 

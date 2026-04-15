@@ -6,16 +6,26 @@ export interface ITerminalHandler extends IDisposable {
   registerTerminal(terminal: Terminal): IDisposable;
 }
 
-export function isTerminalHandler(h: any): h is ITerminalHandler {
-  return typeof h.registerTerminal === "function";
+export function isTerminalHandler(h: unknown): h is ITerminalHandler {
+  return (
+    typeof h === "object" &&
+    h !== null &&
+    "registerTerminal" in h &&
+    typeof (h as ITerminalHandler).registerTerminal === "function"
+  );
 }
 
 export interface IFitHandler {
   registerFitAddon(fitAddon: FitAddon): void;
 }
 
-export function isFitHandler(h: any): h is IFitHandler {
-  return typeof h.registerFitAddon === "function";
+export function isFitHandler(h: unknown): h is IFitHandler {
+  return (
+    typeof h === "object" &&
+    h !== null &&
+    "registerFitAddon" in h &&
+    typeof (h as IFitHandler).registerFitAddon === "function"
+  );
 }
 
 export interface ISearchHandler {

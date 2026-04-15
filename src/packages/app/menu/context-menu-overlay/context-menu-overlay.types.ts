@@ -12,7 +12,7 @@ export type ContextMenuItem = {
   // Regular action item
   label?: string;
   actionName?: ActionName;
-  action?: (arg?: any) => void;
+  action?: (() => void) | ((arg?: ColorName) => void) | ((arg?: ContextMenuItem) => void);
   disabled?: boolean;
   closeOnSelect?: boolean;
   separator?: boolean;

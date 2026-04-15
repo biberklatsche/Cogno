@@ -10,6 +10,17 @@ import { IFitHandler, ITerminalHandler } from "./handler";
 
 export type TerminalDimensions = { rows: number; cols: number };
 
+type TerminalCoreWithCharSize = {
+  _core?: {
+    _renderService?: {
+      _charSizeService?: {
+        height?: number;
+        width?: number;
+      };
+    };
+  };
+};
+
 export class ResizeHandler implements ITerminalHandler, IFitHandler {
   private _subscription?: Subscription;
   private _resizeObserver?: ResizeObserver;
@@ -80,7 +91,8 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     };
     const newRendererDimensions = this._fitAddon.proposeDimensions();
     if (!newRendererDimensions) return;
-    const coreBeforeFit = (this._terminal as any)._core;
+    const terminalCore = this._terminal as Terminal & TerminalCoreWithCharSize;
+    const coreBeforeFit = terminalCore._core;
     const cellHeightBeforeFit = coreBeforeFit?._renderService?._charSizeService?.height;
     const cellWidthBeforeFit = coreBeforeFit?._renderService?._charSizeService?.width;
     const viewportWidth = this._terminalContainer.clientWidth;
@@ -90,9 +102,9 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
       this._pty.resize(newRendererDimensions);
       this._fitAddon.fit();
     }
-    const core = (this._terminal as any)._core;
-    const cellHeight = core?._renderService?._charSizeService?.height ?? cellHeightBeforeFit;
-    const cellWidth = core?._renderService?._charSizeService?.width ?? cellWidthBeforeFit;
+    const core = terminalCore._core;
+    const cellHeight = core?._renderService?._charSizeService?.height ?? cellHeightBeforeFit ?? 0;
+    const cellWidth = core?._renderService?._charSizeService?.width ?? cellWidthBeforeFit ?? 0;
     this._stateManager.updateDimensions({
       cols: this._terminal.cols,
       rows: this._terminal.rows,
