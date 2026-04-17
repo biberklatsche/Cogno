@@ -659,5 +659,19 @@ describe("SpecCommandSuggestor", () => {
     expect(runLabels).toContain("--file");
     expect(runLabels).toContain("--artifacts-path");
     expect(runLabels).toContain("--environment");
+
+    const watchLabels = (await suggestor.suggest(commandContext("dotnet watch "))).map(
+      (v) => v.label,
+    );
+    expect(watchLabels).toContain("run");
+    expect(watchLabels).toContain("build");
+    expect(watchLabels).toContain("test");
+    expect(watchLabels).not.toContain("publish");
+
+    const watchRunLabels = (await suggestor.suggest(commandContext("dotnet watch run --"))).map(
+      (v) => v.label,
+    );
+    expect(watchRunLabels).toContain("--file");
+    expect(watchRunLabels).toContain("--project");
   });
 });
