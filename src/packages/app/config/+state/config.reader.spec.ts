@@ -193,6 +193,26 @@ describe("ConfigReader", () => {
     expect(result.config.search?.active_match?.border_color).toBe("f5e663");
   });
 
+  it("parses numeric-looking hex color settings as strings", () => {
+    const text = `
+      color.background=050505
+      color.black=123456
+      scrollbar.slider_hover_color=123456
+      selection.background_color=12345678
+      search.match.border_color=123
+      prompt.segment.user.background=050505
+    `;
+    const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text);
+
+    expect(result.diagnostics.length).toBe(0);
+    expect(result.config.color?.background).toBe("050505");
+    expect(result.config.color?.black).toBe("123456");
+    expect(result.config.scrollbar?.slider_hover_color).toBe("123456");
+    expect(result.config.selection?.background_color).toBe("12345678");
+    expect(result.config.search?.match?.border_color).toBe("123");
+    expect(result.config.prompt?.segment.user?.background).toBe("050505");
+  });
+
   it("parses terminal progress bar visibility setting", () => {
     const text = `
       terminal.progress_bar.enabled=false

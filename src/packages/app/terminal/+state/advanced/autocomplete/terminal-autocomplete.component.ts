@@ -95,7 +95,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
             min-width: 0;
             max-width: 920px;
             overflow: hidden;
-            background: rgba(19, 29, 41, 0.97);
+            background: var(--background-color);
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 8px;
             box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);

@@ -5,7 +5,10 @@ import {
 } from "@cogno/core-api";
 import { z } from "zod";
 import { Config } from "../+models/config";
-import { createApplicationSettingsDefinition } from "../application-settings-definition";
+import {
+  ApplicationSettingsDefinition,
+  createApplicationSettingsDefinition,
+} from "../application-settings-definition";
 
 export type ConfigDiagnostic = {
   level: "warning" | "error";
@@ -32,10 +35,20 @@ export class ConfigReader {
     const settingsExtensions = resolveSettingsExtensions(
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
-    const userConfig = ConfigReader.parseConfigString(userConfigString || "");
-    const defaultConfig = ConfigReader.parseConfigString(defaultConfigString || "");
-    return ConfigReader.toConfigWithDiagnostics(defaultConfig, userConfig, settingsExtensions)
-      .config;
+    const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
+    const userConfig = ConfigReader.parseConfigString(
+      userConfigString || "",
+      applicationSettingsDefinition.schema,
+    );
+    const defaultConfig = ConfigReader.parseConfigString(
+      defaultConfigString || "",
+      applicationSettingsDefinition.schema,
+    );
+    return ConfigReader.toConfigWithDiagnostics(
+      defaultConfig,
+      userConfig,
+      applicationSettingsDefinition,
+    ).config;
   }
 
   static fromStringToConfigWithDiagnostics(
@@ -57,17 +70,27 @@ export class ConfigReader {
     const settingsExtensions = resolveSettingsExtensions(
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
-    const userConfig = ConfigReader.parseConfigString(userConfigString || "");
-    const defaultConfig = ConfigReader.parseConfigString(defaultConfigString || "");
-    return ConfigReader.toConfigWithDiagnostics(defaultConfig, userConfig, settingsExtensions);
+    const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
+    const userConfig = ConfigReader.parseConfigString(
+      userConfigString || "",
+      applicationSettingsDefinition.schema,
+    );
+    const defaultConfig = ConfigReader.parseConfigString(
+      defaultConfigString || "",
+      applicationSettingsDefinition.schema,
+    );
+    return ConfigReader.toConfigWithDiagnostics(
+      defaultConfig,
+      userConfig,
+      applicationSettingsDefinition,
+    );
   }
 
   private static toConfigWithDiagnostics(
     defaultConfig: Record<string, unknown>,
     userConfig: Record<string, unknown>,
-    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
+    applicationSettingsDefinition: ApplicationSettingsDefinition,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
     const defaultConfigWithExtensions = mergeConfigObjects(
       defaultConfig ?? {},
       applicationSettingsDefinition.defaults,
@@ -364,7 +387,7 @@ export class ConfigReader {
     return true;
   }
 
-  static parseConfigString(text: string): Record<string, unknown> {
+  static parseConfigString(text: string, schema?: z.ZodType): Record<string, unknown> {
     const root: Record<string, unknown> = {};
     const lines = (text || "").split(/\r?\n/);
 
@@ -381,8 +404,9 @@ export class ConfigReader {
 
       const configKey = configEntryMatch[1];
       const configValueString = configEntryMatch[2].trim();
-      const configValue = ConfigReader.parseValue(configValueString);
-      ConfigReader.setDotPath(root, configKey, configValue);
+      const valueSchema = ConfigReader.getSchemaAtDotPath(schema, configKey);
+      const configValue = ConfigReader.parseValue(configValueString, valueSchema);
+      ConfigReader.setDotPath(root, configKey, configValue, valueSchema);
     }
 
     return root;
@@ -392,6 +416,7 @@ export class ConfigReader {
     target: Record<string, unknown>,
     dottedPath: string,
     value: unknown,
+    schema?: z.ZodType,
   ): void {
     const pathSegments = dottedPath.split(".");
     let currentObject: Record<string, unknown> = target;
@@ -404,7 +429,7 @@ export class ConfigReader {
     }
 
     const leafPathSegment = pathSegments[pathSegments.length - 1];
-    if (leafPathSegment === "keybind") {
+    if (ConfigReader.isArraySchema(schema) && !Array.isArray(value)) {
       const existingKeybindValue = currentObject[leafPathSegment];
       if (existingKeybindValue === undefined) {
         currentObject[leafPathSegment] = [value];
@@ -419,7 +444,7 @@ export class ConfigReader {
     currentObject[leafPathSegment] = value;
   }
 
-  private static parseValue(rawValue: string): unknown {
+  private static parseValue(rawValue: string, schema?: z.ZodType): unknown {
     const trimmedValue = rawValue.trim();
     if (
       (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) ||
@@ -427,6 +452,12 @@ export class ConfigReader {
     ) {
       return trimmedValue.slice(1, -1);
     }
+
+    const schemaValue = ConfigReader.parseValueForSchema(trimmedValue, schema);
+    if (schemaValue !== undefined) {
+      return schemaValue;
+    }
+
     if (trimmedValue === "true") {
       return true;
     }
@@ -449,6 +480,154 @@ export class ConfigReader {
         .map((arrayEntry) => ConfigReader.parseValue(arrayEntry.trim()));
     }
     return trimmedValue;
+  }
+
+  private static parseValueForSchema(rawValue: string, schema: z.ZodType | undefined): unknown {
+    const unwrappedSchema = ConfigReader.unwrapSchema(schema);
+    if (!unwrappedSchema) {
+      return undefined;
+    }
+
+    if (ConfigReader.safeParseSchema(unwrappedSchema, rawValue).success) {
+      return rawValue;
+    }
+
+    if (rawValue === "true" || rawValue === "false") {
+      const booleanValue = rawValue === "true";
+      if (ConfigReader.safeParseSchema(unwrappedSchema, booleanValue).success) {
+        return booleanValue;
+      }
+    }
+
+    if (/^-?\d+$/.test(rawValue) || /^-?\d+\.\d+$/.test(rawValue)) {
+      const numberValue = Number(rawValue);
+      if (ConfigReader.safeParseSchema(unwrappedSchema, numberValue).success) {
+        return numberValue;
+      }
+    }
+
+    if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
+      const arraySchema = ConfigReader.unwrapSchema(unwrappedSchema);
+      if (arraySchema && ConfigReader.isArraySchema(arraySchema)) {
+        const arrayContent = rawValue.slice(1, -1).trim();
+        if (!arrayContent) {
+          return [];
+        }
+        const itemSchema = ConfigReader.getArrayItemSchema(arraySchema);
+        if (!itemSchema) {
+          return undefined;
+        }
+        const arrayValue = arrayContent
+          .split(",")
+          .map((arrayEntry) => ConfigReader.parseValue(arrayEntry.trim(), itemSchema));
+        if (ConfigReader.safeParseSchema(arraySchema, arrayValue).success) {
+          return arrayValue;
+        }
+      }
+    }
+
+    if (ConfigReader.isArraySchema(unwrappedSchema)) {
+      const itemSchema = ConfigReader.getArrayItemSchema(unwrappedSchema);
+      if (!itemSchema) {
+        return undefined;
+      }
+      const itemValue = ConfigReader.parseValue(rawValue, itemSchema);
+      if (ConfigReader.safeParseSchema(unwrappedSchema, [itemValue]).success) {
+        return itemValue;
+      }
+    }
+
+    return undefined;
+  }
+
+  private static getSchemaAtDotPath(
+    schema: z.ZodType | undefined,
+    dottedPath: string,
+  ): z.ZodType | undefined {
+    let currentSchema = ConfigReader.unwrapSchema(schema);
+    for (const pathSegment of dottedPath.split(".")) {
+      currentSchema = ConfigReader.getChildSchema(currentSchema, pathSegment);
+      if (!currentSchema) {
+        return undefined;
+      }
+    }
+    return currentSchema;
+  }
+
+  private static getChildSchema(schema: z.ZodType | undefined, key: string): z.ZodType | undefined {
+    const unwrappedSchema = ConfigReader.unwrapSchema(schema);
+    if (!unwrappedSchema) {
+      return undefined;
+    }
+
+    const definition = ConfigReader.getSchemaDefinition(unwrappedSchema);
+    if (definition?.["type"] === "object") {
+      const shape = ConfigReader.getObjectShape(unwrappedSchema);
+      return ConfigReader.isPlainObject(shape) ? (shape[key] as z.ZodType | undefined) : undefined;
+    }
+    if (definition?.["type"] === "record") {
+      return definition["valueType"] as z.ZodType | undefined;
+    }
+    if (definition?.["type"] === "union") {
+      for (const option of definition["options"] as z.ZodType[]) {
+        const childSchema = ConfigReader.getChildSchema(option, key);
+        if (childSchema) {
+          return childSchema;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private static unwrapSchema(schema: z.ZodType | undefined): z.ZodType | undefined {
+    let currentSchema: z.ZodType | undefined = schema;
+    while (currentSchema) {
+      const definition = ConfigReader.getSchemaDefinition(currentSchema);
+      if (definition?.["innerType"]) {
+        currentSchema = definition["innerType"] as z.ZodType;
+        continue;
+      }
+      if (definition?.["schema"]) {
+        currentSchema = definition["schema"] as z.ZodType;
+        continue;
+      }
+      break;
+    }
+    return currentSchema;
+  }
+
+  private static isArraySchema(schema: z.ZodType | undefined): schema is z.ZodType {
+    return (
+      ConfigReader.getSchemaDefinition(ConfigReader.unwrapSchema(schema))?.["type"] === "array"
+    );
+  }
+
+  private static getArrayItemSchema(schema: z.ZodType): z.ZodType | undefined {
+    const definition = ConfigReader.getSchemaDefinition(ConfigReader.unwrapSchema(schema));
+    return definition?.["element"] as z.ZodType | undefined;
+  }
+
+  private static getObjectShape(schema: z.ZodType): unknown {
+    const definition = ConfigReader.getSchemaDefinition(schema);
+    const shape = definition?.["shape"];
+    return typeof shape === "function" ? shape() : shape;
+  }
+
+  private static getSchemaDefinition(
+    schema: z.ZodType | undefined,
+  ): Record<string, unknown> | undefined {
+    if (!schema || !ConfigReader.isPlainObject(schema)) {
+      return undefined;
+    }
+    const definition = schema["def"] ?? schema["_def"];
+    return ConfigReader.isPlainObject(definition) ? definition : undefined;
+  }
+
+  private static safeParseSchema(
+    schema: z.ZodType,
+    value: unknown,
+  ): ReturnType<z.ZodType["safeParse"]> {
+    return schema.safeParse(value);
   }
 }
 
