@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CommandRunnerContract, FilesystemContract, QueryContext } from "@cogno/core-api";
 import { describe, expect, it, vi } from "vitest";
 import { CommandSpecRegistry } from "./spec/command-spec.registry";
@@ -41,6 +43,25 @@ function commandContextWithShell(
     shellContext: { shellType, backendOs: "macos" } as any,
     query: beforeCursor.trim(),
   };
+}
+
+function loadCommandSpec(name: string): CommandSpec {
+  return JSON.parse(
+    readFileSync(
+      join(
+        process.cwd(),
+        "src",
+        "packages",
+        "features",
+        "autocomplete",
+        "spec-command",
+        "data",
+        "commands",
+        `${name}.json`,
+      ),
+      "utf8",
+    ),
+  ) as CommandSpec;
 }
 
 describe("SpecCommandSuggestor", () => {
@@ -615,5 +636,28 @@ describe("SpecCommandSuggestor", () => {
     const labels = result.map((v) => v.label);
     expect(labels).toContain("-a");
     expect(labels).toContain("-m");
+  });
+
+  it("suggests current dotnet SDK subcommands and options from the imported spec", async () => {
+    const dotnetSpec = loadCommandSpec("dotnet");
+    const suggestor = new SpecCommandSuggestor(new CommandSpecRegistry([dotnetSpec]), []);
+
+    const rootLabels = (await suggestor.suggest(commandContext("dotnet "))).map((v) => v.label);
+    expect(rootLabels).toContain("package");
+    expect(rootLabels).toContain("reference");
+    expect(rootLabels).toContain("sdk");
+    expect(rootLabels).toContain("workload");
+
+    const newLabels = (await suggestor.suggest(commandContext("dotnet new "))).map((v) => v.label);
+    expect(newLabels).toContain("create");
+    expect(newLabels).toContain("install");
+    expect(newLabels).toContain("list");
+
+    const runLabels = (await suggestor.suggest(commandContext("dotnet run --"))).map(
+      (v) => v.label,
+    );
+    expect(runLabels).toContain("--file");
+    expect(runLabels).toContain("--artifacts-path");
+    expect(runLabels).toContain("--environment");
   });
 });
