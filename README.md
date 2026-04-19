@@ -3,7 +3,9 @@
 # Cogno
 
 Cogno is a lightweight, customizable terminal designed to support your daily workflow.
-It helps you spend less time searching and more time doing — with fast, context-aware autocomplete and a clean, focused experience. Local-first, open-source, and built to stay out of your way.
+It helps you spend less time searching and more time doing with fast,
+context-aware autocomplete and a clean, focused experience. Cogno is
+local-first, open source, and built to stay out of your way.
 
 ## Highlights
 
@@ -14,6 +16,7 @@ It helps you spend less time searching and more time doing — with fast, contex
 - Command palette and terminal search
 - Process information for active shells and commands
 - CLI access for automation and scripting
+- Binary under 30 MB
 
 ## Why Cogno?
 
