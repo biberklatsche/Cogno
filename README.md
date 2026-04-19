@@ -29,7 +29,15 @@ Terminals are often where development, debugging, deployment, and daily automati
 The project is actively shaped as a community-friendly workspace for modern terminal use. Feedback, issue reports, ideas, and focused contributions are welcome.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, checks, and contribution
-guidelines.
+guidelines. Please also read the [Code of Conduct](./CODE_OF_CONDUCT.md)
+before joining project spaces.
+
+## Community
+
+- Website: [cogno.rocks](https://cogno.rocks)
+- Discord: [Join the Cogno Discord](https://discord.gg/hNk9zzzRnU)
+- Reddit: [r/cogno](https://www.reddit.com/r/cogno/)
+- YouTube: [Cogno on YouTube](https://www.youtube.com/channel/UCPzQB0-9aaBQj1glWJIG6xw)
 
 ## Quick Start
 
