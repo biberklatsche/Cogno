@@ -1,15 +1,42 @@
+![Cogno terminal workspace](./cogno.jpg)
+
 # Cogno
 
-Cogno is a terminal workspace built for heavy daily shell use:
+Cogno is a terminal workspace for people who spend serious time in the
+shell. It combines a fast terminal experience with workspace management,
+discoverable actions, and editor-like input so recurring command-line work
+feels organized instead of scattered.
 
-- autocomplete for 1000+ CLI commands
-- multiple tabs and split panes
-- workspaces for recurring setups
-- editor-like input behavior
-- command palette and terminal search
-- process information for active shells and commands
-- CLI
-- ...and more!
+## Highlights
+
+- Autocomplete for 1000+ CLI commands
+- Multiple tabs and split panes
+- Reusable workspaces for recurring setups
+- Editor-like input behavior
+- Command palette and terminal search
+- Process information for active shells and commands
+- CLI access for automation and scripting
+
+## Why Cogno?
+
+Terminals are often where development, debugging, deployment, and daily
+automation meet. Cogno is built around that reality: keep the speed and
+flexibility of the shell, add structure where long-running work benefits
+from it, and make powerful commands easier to find when you need them.
+
+The project is actively shaped as a community-friendly workspace for modern
+terminal use. Feedback, issue reports, ideas, and focused contributions are
+welcome.
+
+## Quick Start
+
+```bash
+pnpm install
+pnpm dev
+```
+
+For the desktop application, make sure the platform-specific Tauri
+prerequisites are installed as well.
 
 ## License
 
