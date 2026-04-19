@@ -14,6 +14,7 @@ local-first, open source, and built to stay out of your way.
 - Reusable workspaces for recurring setups
 - Editor-like input behavior
 - Command palette and terminal search
+- Notifications for long-running commands and OSC 9 messages
 - Process information for active shells and commands
 - CLI access for automation and scripting
 - Tiny executable, typically under 50 MB
