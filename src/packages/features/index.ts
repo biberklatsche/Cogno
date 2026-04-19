@@ -3,7 +3,6 @@ export * from "./autocomplete/spec-command/spec-command.suggestor-definition";
 export * from "./autocomplete/terminal-autocomplete-suggestor-definitions";
 export * from "./database-migrations";
 export * from "./feature-application-feature.collection";
-export * from "./feature-settings.extension";
 export * from "./feature-settings.schemas";
 export * from "./shell/bash/bash.path-adapter";
 export * from "./shell/bash/bash.shell-definition";

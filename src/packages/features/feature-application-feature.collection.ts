@@ -1,7 +1,9 @@
-import { ApplicationFeatureCollectionContract } from "@cogno/core-api";
+import {
+  ApplicationFeatureCollectionContract,
+  defaultFeatureSettingsExtension,
+} from "@cogno/core-api";
 import { featureTerminalAutocompleteSuggestorDefinitions } from "./autocomplete/terminal-autocomplete-suggestor-definitions";
 import { featureDatabaseMigrations } from "./database-migrations";
-import { featureSettingsExtension } from "./feature-settings.extension";
 import {
   featureShellDefinitions,
   featureShellPathAdapterDefinitions,
@@ -16,6 +18,6 @@ export const featureApplicationFeatureCollection = {
   shellPathAdapterDefinitions: featureShellPathAdapterDefinitions,
   shellSupportDefinitions: featureShellSupportDefinitions,
   sideMenuFeatureDefinitions: featureSideMenuFeatureDefinitions,
-  settingsExtensions: [featureSettingsExtension],
+  settingsExtensions: [defaultFeatureSettingsExtension],
   terminalAutocompleteSuggestorDefinitions: featureTerminalAutocompleteSuggestorDefinitions,
 } as const satisfies ApplicationFeatureCollectionContract<string, string>;
