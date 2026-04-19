@@ -16,7 +16,7 @@ local-first, open source, and built to stay out of your way.
 - Command palette and terminal search
 - Process information for active shells and commands
 - CLI access for automation and scripting
-- Binary under 30 MB
+- Tiny executable, typically under 50 MB
 
 ## Why Cogno?
 
