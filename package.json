@@ -24,7 +24,7 @@
     "release:build:test": "node ./scripts/release-build.mjs --test",
     "release:test": "node ./scripts/release-build.mjs --test"
   },
-  "private": true,
+  "private": false,
   "dependencies": {
     "@angular/animations": "21.2.1",
     "@angular/common": "21.2.1",
