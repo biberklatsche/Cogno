@@ -5,7 +5,8 @@
 Cogno is a lightweight, customizable terminal designed to support your daily workflow.
 It helps you spend less time searching and more time doing with fast,
 context-aware autocomplete and a clean, focused experience. Cogno is
-local-first, open source, and built to stay out of your way.
+local-first, open source, and built to stay out of your way. It works on
+Windows, Linux, and macOS with PowerShell, Bash, and Zsh.
 
 ## Highlights
 
@@ -15,6 +16,8 @@ local-first, open source, and built to stay out of your way.
 - Editor-like input behavior
 - Command palette and terminal search
 - Notifications for long-running commands and OSC 9 messages
+- Windows, Linux, and macOS support
+- PowerShell, Bash, and Zsh support
 - Process information for active shells and commands
 - CLI access for automation and scripting
 - Tiny executable, typically under 50 MB
