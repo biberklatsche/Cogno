@@ -25,6 +25,9 @@ Terminals are often where development, debugging, deployment, and daily automati
 
 The project is actively shaped as a community-friendly workspace for modern terminal use. Feedback, issue reports, ideas, and focused contributions are welcome.
 
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, checks, and contribution
+guidelines.
+
 ## Quick Start
 
 ```bash
