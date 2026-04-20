@@ -1,4 +1,5 @@
 import {
+  AutocompleteProviderIssueReporterContract,
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
   ShellTypeContract,
@@ -10,11 +11,14 @@ import {
   CommandSpec,
   OptionSpec,
   ShellConstraint,
+  SpecProvidedSuggestion,
   SpecProviderBinding,
   SpecSuggestionProvider,
   SpecSuggestionProviderRegistration,
   SubcommandSpec,
 } from "./spec/spec.types";
+
+const DEFAULT_SPEC_PROVIDER_TIMEOUT_MS = 160;
 
 type ParsedInput = {
   tokens: Array<{ value: string; start: number; end: number }>;
@@ -66,6 +70,13 @@ type TraverseState = {
 };
 
 const ROOT_NAME = "__root__";
+
+class SpecProviderTimeoutError extends Error {
+  constructor(readonly timeoutMs: number) {
+    super(`Provider did not respond within ${timeoutMs}ms.`);
+    this.name = "SpecProviderTimeoutError";
+  }
+}
 
 function namesOf(name: string | string[]): string[] {
   return Array.isArray(name) ? name : [name];
@@ -229,6 +240,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
   constructor(
     private readonly registry: CommandSpecSource,
     providers: ReadonlyArray<SpecSuggestionProvider | SpecSuggestionProviderRegistration> = [],
+    private readonly issueReporter?: AutocompleteProviderIssueReporterContract,
+    private readonly getProviderTimeoutMs?: () => number,
   ) {
     this._providerRegistry = new SpecProviderRegistry(providers);
   }
@@ -466,12 +479,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     for (const binding of bindings) {
       const provider = this._providerRegistry.resolve(binding.providerId, context.shellContext);
       if (!provider || !this.matchesProviderBinding(binding, parsed, argsInput)) continue;
-      const provided = await provider.suggest({
-        queryContext: context,
-        command,
-        args: parsed.tokens.map((t) => t.value),
-        binding,
-      });
+      const provided = await this.suggestFromProvider(provider, binding, parsed, context, command);
       for (const value of provided) {
         const label = value.label.trim();
         if (!label) continue;
@@ -497,6 +505,63 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     }
 
     return suggestions;
+  }
+
+  private async suggestFromProvider(
+    provider: SpecSuggestionProvider,
+    binding: SpecProviderBinding,
+    parsed: ParsedInput,
+    context: AutocompleteQueryContextContract,
+    command: string,
+  ): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
+    try {
+      const timeoutMs = this.resolveProviderTimeoutMs();
+      return await this.withProviderTimeout(
+        provider.suggest({
+          queryContext: context,
+          command,
+          args: parsed.tokens.map((t) => t.value),
+          binding,
+        }),
+        timeoutMs,
+      );
+    } catch (error) {
+      this.reportProviderIssue(binding.providerId, command, error);
+      return [];
+    }
+  }
+
+  private reportProviderIssue(providerId: string, command: string, error: unknown): void {
+    this.issueReporter?.reportAutocompleteProviderIssue({
+      kind: error instanceof SpecProviderTimeoutError ? "timeout" : "error",
+      providerId,
+      suggestorId: this.id,
+      command,
+      message: this.errorMessage(error),
+    });
+  }
+
+  private async withProviderTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new SpecProviderTimeoutError(timeoutMs)), timeoutMs);
+    });
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  }
+
+  private errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  private resolveProviderTimeoutMs(): number {
+    const configured = this.getProviderTimeoutMs?.();
+    return Number.isFinite(configured) && configured !== undefined && configured > 0
+      ? configured
+      : DEFAULT_SPEC_PROVIDER_TIMEOUT_MS;
   }
 
   private traverse(

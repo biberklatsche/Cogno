@@ -58,7 +58,15 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
       program,
       args,
     });
-    if (result.exitCode !== 0 || !result.stdout.trim()) {
+    if (result.exitCode !== 0) {
+      throw new Error(
+        this.renderCommandError(program, args, context.queryContext.cwd, result.exitCode, [
+          result.stderr,
+          result.stdout,
+        ]),
+      );
+    }
+    if (!result.stdout.trim()) {
       return [];
     }
 
@@ -167,5 +175,17 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
       if (oldestKey) this.cache.delete(oldestKey);
     }
     this.cache.set(key, value);
+  }
+
+  private renderCommandError(
+    program: string,
+    args: readonly string[],
+    cwd: string,
+    exitCode: number,
+    outputs: readonly string[],
+  ): string {
+    const details = outputs.map((output) => output.trim()).find(Boolean) ?? "no output";
+    const command = [program, ...args].join(" ");
+    return `Command provider "${command}" failed in "${cwd}" with exit code ${exitCode}: ${details}`;
   }
 }

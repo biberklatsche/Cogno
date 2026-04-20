@@ -1,5 +1,6 @@
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
 import {
+  FeatureAutocompleteSchema,
   FeatureCommandPaletteSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
@@ -14,6 +15,7 @@ const featureSettingsSchemaShape = {
   notifications: FeatureNotificationsSchema.optional(),
   command_palette: FeatureCommandPaletteSchema.optional(),
   terminal: FeatureTerminalSchema.optional(),
+  autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
 } as const;
 
@@ -29,6 +31,11 @@ export const defaultFeatureSettingsExtension = {
         },
       },
     },
+    autocomplete: {
+      provider: {
+        timeout_ms: 160,
+      },
+    },
   },
   schemaShape: featureSettingsSchemaShape,
   settingsSections: [
@@ -37,6 +44,7 @@ export const defaultFeatureSettingsExtension = {
     { id: "notifications", title: "Notification Channels", order: 300 },
     { id: "command_palette", title: "Command Palette", order: 400 },
     { id: "terminal", title: "Terminal", order: 500 },
-    { id: "search", title: "Search", order: 600 },
+    { id: "autocomplete", title: "Autocomplete", order: 600 },
+    { id: "search", title: "Search", order: 700 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;
