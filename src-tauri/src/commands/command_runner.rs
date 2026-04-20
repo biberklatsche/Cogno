@@ -3,6 +3,12 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommandRunnerResult {
@@ -18,13 +24,17 @@ pub fn command_runner_execute(
     cwd: String,
     timeout_ms: Option<u64>,
 ) -> Result<CommandRunnerResult, String> {
-    let mut child = Command::new(program)
+    let mut command = Command::new(program);
+    command
         .current_dir(cwd)
         .args(args)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|error| error.to_string())?;
+        .stderr(Stdio::piped());
+
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let mut child = command.spawn().map_err(|error| error.to_string())?;
 
     if let Some(timeout_ms) = timeout_ms.filter(|value| *value > 0) {
         let deadline = Instant::now() + Duration::from_millis(timeout_ms);
