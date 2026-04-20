@@ -101,6 +101,7 @@ export type SpecProviderContext = {
   command: string;
   args: string[];
   binding: SpecProviderBinding;
+  timeoutMs?: number;
 };
 
 export type SpecProvidedSuggestion = {

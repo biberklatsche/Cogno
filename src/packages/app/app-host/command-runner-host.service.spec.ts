@@ -31,6 +31,7 @@ describe("CommandRunnerHostService", () => {
       "git",
       ["tag", "--list"],
       "C:\\repo\\project",
+      undefined,
     );
     expect(result.exitCode).toBe(0);
   });

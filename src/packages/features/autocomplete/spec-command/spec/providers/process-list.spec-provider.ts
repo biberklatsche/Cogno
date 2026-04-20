@@ -49,6 +49,7 @@ export class ProcessListSpecProvider implements SpecSuggestionProvider {
       shellContext: context.queryContext.shellContext,
       program: "ps",
       args: ["-e", "-o", "pid=", "-o", "comm="],
+      timeoutMs: context.timeoutMs,
     });
     if (result.exitCode !== 0 || !result.stdout.trim()) return [];
 
@@ -73,6 +74,7 @@ export class ProcessListSpecProvider implements SpecSuggestionProvider {
       shellContext: context.queryContext.shellContext,
       program: "tasklist",
       args: ["/FO", "CSV", "/NH"],
+      timeoutMs: context.timeoutMs,
     });
     if (result.exitCode !== 0 || !result.stdout.trim()) return [];
 

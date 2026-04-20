@@ -52,6 +52,7 @@ describe("CommandListSpecProvider", () => {
       shellContext: expect.anything(),
       program: "git",
       args: ["tag", "--list"],
+      timeoutMs: undefined,
     });
     expect(result.map((item) => item.label)).toEqual(["release/1.0", "feature/search"]);
     expect(result[0]?.description).toBe("git tag");
@@ -87,5 +88,36 @@ describe("CommandListSpecProvider", () => {
         description: "nginx:latest",
       },
     ]);
+  });
+
+  it("does not start the same command again while a previous load is still running", async () => {
+    vi.mocked(commandRunner.run).mockReturnValue(new Promise(() => undefined));
+
+    const provider = new CommandListSpecProvider(commandRunner);
+    const context = {
+      queryContext: commandContext("git checkout re"),
+      command: "git",
+      args: ["checkout", "re"],
+      binding: {
+        providerId: "command-list" as const,
+        params: {
+          program: "git",
+          args: ["for-each-ref", "refs/heads"],
+          itemLabel: "git branch",
+        },
+      },
+      timeoutMs: 160,
+    };
+
+    void provider.suggest(context);
+    const result = await provider.suggest(context);
+
+    expect(result).toEqual([]);
+    expect(commandRunner.run).toHaveBeenCalledTimes(1);
+    expect(commandRunner.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeoutMs: 160,
+      }),
+    );
   });
 });

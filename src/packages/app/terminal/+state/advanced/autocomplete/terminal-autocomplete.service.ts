@@ -82,6 +82,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   private _latestSuggestions: AutocompleteSuggestion[] = [];
   private _latestContext: QueryContext | null = null;
   private readonly _lastSuggestorIssueNotificationAt = new Map<string, number>();
+  private readonly _runningSuggestors = new Map<string, Promise<AutocompleteSuggestion[]>>();
 
   get viewState$() {
     return this._viewState.asObservable();
@@ -396,11 +397,32 @@ export class TerminalAutocompleteService implements OnDestroy {
     suggestor: TerminalAutocompleteSuggestor,
     context: QueryContext,
   ): Promise<SuggestorRunResult> {
+    if (this._runningSuggestors.has(suggestor.id)) {
+      return { status: "fulfilled", suggestor, suggestions: [] };
+    }
+
+    const suggestionsPromise = suggestor.suggest(context);
+    this._runningSuggestors.set(suggestor.id, suggestionsPromise);
+    void suggestionsPromise.then(
+      () => {
+        if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
+          this._runningSuggestors.delete(suggestor.id);
+        }
+      },
+      () => {
+        if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
+          this._runningSuggestors.delete(suggestor.id);
+        }
+      },
+    );
+
     try {
-      const suggestions = await this.withTimeout(suggestor.suggest(context), SUGGESTOR_TIMEOUT_MS);
+      const suggestions = await this.withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
       return { status: "fulfilled", suggestor, suggestions };
     } catch (reason) {
-      this.notifySuggestorIssue(suggestor, reason, context);
+      if (!(reason instanceof AutocompleteSuggestorTimeoutError)) {
+        this.notifySuggestorIssue(suggestor, reason, context);
+      }
       return { status: "rejected", suggestor, reason };
     }
   }

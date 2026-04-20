@@ -18,7 +18,12 @@ export class CommandRunnerHostService implements CommandRunnerContract {
         return { stdout: "", stderr: "", exitCode: 1 };
       }
 
-      return await CommandRunner.execute(request.program, request.args ?? [], backendPath);
+      return await CommandRunner.execute(
+        request.program,
+        request.args ?? [],
+        backendPath,
+        request.timeoutMs,
+      );
     } catch (error) {
       return {
         stdout: "",

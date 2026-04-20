@@ -514,14 +514,15 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     context: AutocompleteQueryContextContract,
     command: string,
   ): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
+    const timeoutMs = this.resolveProviderTimeoutMs();
     try {
-      const timeoutMs = this.resolveProviderTimeoutMs();
       return await this.withProviderTimeout(
         provider.suggest({
           queryContext: context,
           command,
           args: parsed.tokens.map((t) => t.value),
           binding,
+          timeoutMs,
         }),
         timeoutMs,
       );
@@ -532,8 +533,12 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
   }
 
   private reportProviderIssue(providerId: string, command: string, error: unknown): void {
+    if (error instanceof SpecProviderTimeoutError) {
+      return;
+    }
+
     this.issueReporter?.reportAutocompleteProviderIssue({
-      kind: error instanceof SpecProviderTimeoutError ? "timeout" : "error",
+      kind: "error",
       providerId,
       suggestorId: this.id,
       command,

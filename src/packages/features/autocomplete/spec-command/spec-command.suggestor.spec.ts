@@ -370,7 +370,7 @@ describe("SpecCommandSuggestor", () => {
     );
   });
 
-  it("uses configured provider timeout for spec providers", async () => {
+  it("uses configured provider timeout for spec providers without notifying", async () => {
     vi.useFakeTimers();
     try {
       const reportAutocompleteProviderIssue = vi.fn();
@@ -400,13 +400,7 @@ describe("SpecCommandSuggestor", () => {
       const result = await pending;
 
       expect(result).toEqual([]);
-      expect(reportAutocompleteProviderIssue).toHaveBeenCalledWith(
-        expect.objectContaining({
-          kind: "timeout",
-          providerId: "slow-provider",
-          message: "Provider did not respond within 25ms.",
-        }),
-      );
+      expect(reportAutocompleteProviderIssue).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
