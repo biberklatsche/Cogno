@@ -25,9 +25,11 @@ function createDefaultProviderRegistrations(
 
 export const specCommandSuggestorDefinition: TerminalAutocompleteSuggestorDefinitionContract = {
   id: "features:spec-command",
-  createSuggestor: ({ filesystem, commandRunner }) =>
+  createSuggestor: ({ filesystem, commandRunner, issueReporter, getProviderTimeoutMs }) =>
     new SpecCommandSuggestor(
       new AssetCommandSpecRegistry(),
       createDefaultProviderRegistrations(filesystem, commandRunner),
+      issueReporter,
+      getProviderTimeoutMs,
     ),
 };

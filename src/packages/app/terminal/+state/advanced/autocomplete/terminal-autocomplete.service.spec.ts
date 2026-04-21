@@ -150,6 +150,75 @@ describe("TerminalAutocompleteService", () => {
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
   });
 
+  it("keeps autocomplete alive and notifies when a suggestor fails", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => {
+        throw new Error("git executable not found");
+      }, "broken-provider"),
+    );
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")], "ok"));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
+
+    const notificationCall = (bus.publish as any).mock.calls.find(
+      (c: any[]) => c[0]?.type === "Notification",
+    );
+    expect(notificationCall?.[0].payload.header).toBe("Autocomplete provider failed");
+    expect(notificationCall?.[0].payload.body).toContain("Provider: broken-provider");
+    expect(notificationCall?.[0].payload.body).toContain("git executable not found");
+  });
+
+  it("keeps autocomplete alive without notifying when a suggestor times out", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        () => new Promise<AutocompleteSuggestion[]>(() => undefined),
+        "slow-provider",
+      ),
+    );
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")], "ok"));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
+
+    expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "Notification")).toBe(
+      false,
+    );
+  });
+
+  it("does not start another run for a suggestor that is still unresolved after timeout", async () => {
+    const slowSuggest = vi.fn(() => new Promise<AutocompleteSuggestion[]>(() => undefined));
+    service.registerSuggestor(new DummySuggestor(slowSuggest, "slow-provider"));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git sta", cursorIndex: 7, maxCursorIndex: 7 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(slowSuggest).toHaveBeenCalledTimes(1);
+  });
+
   it("Enter without selection does not apply a suggestion", async () => {
     service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
     fakeState.emit({

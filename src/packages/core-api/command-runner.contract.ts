@@ -5,6 +5,7 @@ export interface CommandRunnerRequestContract {
   readonly shellContext: ShellContextContract;
   readonly program: string;
   readonly args?: ReadonlyArray<string>;
+  readonly timeoutMs?: number;
 }
 
 export interface CommandRunnerResultContract {

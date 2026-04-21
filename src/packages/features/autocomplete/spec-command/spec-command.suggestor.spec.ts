@@ -317,6 +317,95 @@ describe("SpecCommandSuggestor", () => {
     expect(runner.run).toHaveBeenCalledTimes(1);
   });
 
+  it("reports command provider failures without rejecting the spec suggestor", async () => {
+    const runner = commandRunner();
+    vi.mocked(runner.run).mockResolvedValue({
+      stdout: "",
+      stderr: "program not found",
+      exitCode: 1,
+    });
+    const reportAutocompleteProviderIssue = vi.fn();
+
+    const gitSpec: CommandSpec = {
+      name: "git",
+      subcommands: [
+        {
+          name: "checkout",
+          args: [{ name: "branch" }],
+          providers: [
+            {
+              providerId: "command-list",
+              source: "git-branch",
+              params: {
+                program: "git",
+                args: ["for-each-ref", "refs/heads"],
+                itemLabel: "git branch",
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const suggestor = new SpecCommandSuggestor(
+      new CommandSpecRegistry([...defaults, gitSpec]),
+      [new CommandListSpecProvider(runner)],
+      { reportAutocompleteProviderIssue },
+    );
+
+    const result = await suggestor.suggest(commandContext("git checkout fe"));
+
+    expect(result).toEqual([]);
+    expect(reportAutocompleteProviderIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "error",
+        providerId: "command-list",
+        suggestorId: "spec-command",
+        command: "git",
+        message: expect.stringContaining("program not found"),
+      }),
+    );
+    expect(reportAutocompleteProviderIssue.mock.calls[0][0].message).toContain(
+      'Command provider "git for-each-ref refs/heads" failed',
+    );
+  });
+
+  it("uses configured provider timeout for spec providers without notifying", async () => {
+    vi.useFakeTimers();
+    try {
+      const reportAutocompleteProviderIssue = vi.fn();
+      const slowProvider: SpecSuggestionProvider = {
+        id: "slow-provider",
+        suggest: vi.fn(() => new Promise(() => undefined)),
+      };
+      const spec: CommandSpec = {
+        name: "tool",
+        subcommands: [
+          {
+            name: "select",
+            args: { name: "item" },
+            providers: [{ providerId: "slow-provider" }],
+          },
+        ],
+      };
+      const suggestor = new SpecCommandSuggestor(
+        new CommandSpecRegistry([...defaults, spec]),
+        [slowProvider],
+        { reportAutocompleteProviderIssue },
+        () => 25,
+      );
+
+      const pending = suggestor.suggest(commandContext("tool select a"));
+      await vi.advanceTimersByTimeAsync(30);
+      const result = await pending;
+
+      expect(result).toEqual([]);
+      expect(reportAutocompleteProviderIssue).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("suggests git branches only after the remote argument for push", async () => {
     const runner = commandRunner();
     vi.mocked(runner.run).mockResolvedValue({

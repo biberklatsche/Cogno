@@ -18,6 +18,7 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
   private static readonly DEFAULT_LIMIT = 100;
 
   private readonly cache = new Map<string, CacheEntry>();
+  private readonly inFlight = new Map<string, Promise<ReadonlyArray<SpecProvidedSuggestion>>>();
 
   constructor(private readonly commandRunner: CommandRunnerContract) {}
 
@@ -52,13 +53,69 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
       return this.filterSuggestions(cached.suggestions, query, limit);
     }
 
+    const pending = this.inFlight.get(cacheKey);
+    if (pending) {
+      return [];
+    }
+
+    const suggestionsPromise = this.loadSuggestions(context, {
+      program,
+      args,
+      labelField,
+      descriptionField,
+      stripLabelPrefix,
+      itemLabel,
+    });
+    this.inFlight.set(cacheKey, suggestionsPromise);
+    void suggestionsPromise.then(
+      () => {
+        if (this.inFlight.get(cacheKey) === suggestionsPromise) {
+          this.inFlight.delete(cacheKey);
+        }
+      },
+      () => {
+        if (this.inFlight.get(cacheKey) === suggestionsPromise) {
+          this.inFlight.delete(cacheKey);
+        }
+      },
+    );
+
+    const suggestions = await suggestionsPromise;
+    this.setCache(cacheKey, {
+      expiresAt: now + CommandListSpecProvider.CACHE_TTL_MS,
+      suggestions,
+    });
+    return this.filterSuggestions(suggestions, query, limit);
+  }
+
+  private async loadSuggestions(
+    context: SpecProviderContext,
+    config: {
+      program: string;
+      args: string[];
+      labelField: number;
+      descriptionField?: number;
+      stripLabelPrefix?: string;
+      itemLabel: string;
+    },
+  ): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
+    const { program, args, labelField, descriptionField, stripLabelPrefix, itemLabel } = config;
     const result = await this.commandRunner.run({
       cwd: context.queryContext.cwd,
       shellContext: context.queryContext.shellContext,
       program,
       args,
+      timeoutMs: context.timeoutMs,
     });
-    if (result.exitCode !== 0 || !result.stdout.trim()) {
+    if (result.exitCode !== 0) {
+      throw new Error(
+        this.renderCommandError(program, args, context.queryContext.cwd, result.exitCode, [
+          result.stderr,
+          result.stdout,
+        ]),
+      );
+    }
+    if (!result.stdout.trim()) {
       return [];
     }
 
@@ -75,12 +132,7 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
         }),
       )
       .filter((value): value is SpecProvidedSuggestion => !!value);
-
-    this.setCache(cacheKey, {
-      expiresAt: now + CommandListSpecProvider.CACHE_TTL_MS,
-      suggestions,
-    });
-    return this.filterSuggestions(suggestions, query, limit);
+    return suggestions;
   }
 
   private filterSuggestions(
@@ -167,5 +219,17 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
       if (oldestKey) this.cache.delete(oldestKey);
     }
     this.cache.set(key, value);
+  }
+
+  private renderCommandError(
+    program: string,
+    args: readonly string[],
+    cwd: string,
+    exitCode: number,
+    outputs: readonly string[],
+  ): string {
+    const details = outputs.map((output) => output.trim()).find(Boolean) ?? "no output";
+    const command = [program, ...args].join(" ");
+    return `Command provider "${command}" failed in "${cwd}" with exit code ${exitCode}: ${details}`;
   }
 }

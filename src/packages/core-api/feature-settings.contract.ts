@@ -107,6 +107,19 @@ export const FeatureTerminalSchema = z.object({
     .optional(),
 });
 
+export const FeatureAutocompleteSchema = z.object({
+  provider: z
+    .object({
+      timeout_ms: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe("Maximum time in milliseconds for one dynamic autocomplete provider."),
+    })
+    .optional(),
+});
+
 export const FeatureSearchSchema = z.object({
   mode: featureModeSchema.optional(),
   match: z

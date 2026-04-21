@@ -71,6 +71,7 @@ export class SshHostsSpecProvider implements SpecSuggestionProvider {
       program: backendOs === "windows" ? "cmd.exe" : "sh",
       args:
         backendOs === "windows" ? ["/d", "/c", "echo %USERPROFILE%"] : ["-lc", 'printf %s "$HOME"'],
+      timeoutMs: context.timeoutMs,
     });
     if (result.exitCode !== 0) return undefined;
 

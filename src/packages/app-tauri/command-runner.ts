@@ -11,11 +11,13 @@ export const CommandRunner = {
     program: string,
     args: readonly string[],
     cwd: string,
+    timeoutMs?: number,
   ): Promise<CommandRunnerExecuteResult> {
     return invoke<CommandRunnerExecuteResult>("command_runner_execute", {
       program,
       args: [...args],
       cwd,
+      timeoutMs,
     });
   },
 };

@@ -20,6 +20,7 @@ const SUGGESTOR_TIMEOUT_MS = 180;
 const MAX_SUGGESTIONS = 100;
 const PANEL_MAX_VISIBLE_ITEMS = 6;
 const MAX_TOP_HISTORY_SUGGESTIONS = 3;
+const SUGGESTOR_ISSUE_NOTIFICATION_THROTTLE_MS = 10_000;
 
 const PANEL_MIN_WIDTH = 280;
 const PANEL_MAX_WIDTH = 920;
@@ -43,6 +44,25 @@ const INITIAL_VIEW_STATE: AutocompleteViewState = {
   suggestions: [],
 };
 
+class AutocompleteSuggestorTimeoutError extends Error {
+  constructor(readonly timeoutMs: number) {
+    super(`Provider did not respond within ${timeoutMs}ms.`);
+    this.name = "AutocompleteSuggestorTimeoutError";
+  }
+}
+
+type SuggestorRunResult =
+  | {
+      readonly status: "fulfilled";
+      readonly suggestor: TerminalAutocompleteSuggestorContract;
+      readonly suggestions: AutocompleteSuggestion[];
+    }
+  | {
+      readonly status: "rejected";
+      readonly suggestor: TerminalAutocompleteSuggestorContract;
+      readonly reason: unknown;
+    };
+
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
   private static visibleOwner: TerminalAutocompleteService | null = null;
@@ -61,6 +81,8 @@ export class TerminalAutocompleteService implements OnDestroy {
   private readonly _filterMode = new BehaviorSubject<SuggestionFilterMode>("all");
   private _latestSuggestions: AutocompleteSuggestion[] = [];
   private _latestContext: QueryContext | null = null;
+  private readonly _lastSuggestorIssueNotificationAt = new Map<string, number>();
+  private readonly _runningSuggestors = new Map<string, Promise<AutocompleteSuggestion[]>>();
 
   get viewState$() {
     return this._viewState.asObservable();
@@ -367,21 +389,53 @@ export class TerminalAutocompleteService implements OnDestroy {
   private async runSuggestors(
     suggestors: TerminalAutocompleteSuggestor[],
     context: QueryContext,
-  ): Promise<PromiseSettledResult<AutocompleteSuggestion[]>[]> {
-    return Promise.allSettled(
-      suggestors.map((s) => this.withTimeout(s.suggest(context), SUGGESTOR_TIMEOUT_MS)),
+  ): Promise<SuggestorRunResult[]> {
+    return Promise.all(suggestors.map((suggestor) => this.runSuggestor(suggestor, context)));
+  }
+
+  private async runSuggestor(
+    suggestor: TerminalAutocompleteSuggestor,
+    context: QueryContext,
+  ): Promise<SuggestorRunResult> {
+    if (this._runningSuggestors.has(suggestor.id)) {
+      return { status: "fulfilled", suggestor, suggestions: [] };
+    }
+
+    const suggestionsPromise = suggestor.suggest(context);
+    this._runningSuggestors.set(suggestor.id, suggestionsPromise);
+    void suggestionsPromise.then(
+      () => {
+        if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
+          this._runningSuggestors.delete(suggestor.id);
+        }
+      },
+      () => {
+        if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
+          this._runningSuggestors.delete(suggestor.id);
+        }
+      },
     );
+
+    try {
+      const suggestions = await this.withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
+      return { status: "fulfilled", suggestor, suggestions };
+    } catch (reason) {
+      if (!(reason instanceof AutocompleteSuggestorTimeoutError)) {
+        this.notifySuggestorIssue(suggestor, reason, context);
+      }
+      return { status: "rejected", suggestor, reason };
+    }
   }
 
   private rankSuggestions(
-    settled: PromiseSettledResult<AutocompleteSuggestion[]>[],
+    settled: SuggestorRunResult[],
     state: TerminalState,
   ): AutocompleteSuggestion[] {
     return settled
       .filter(
-        (r): r is PromiseFulfilledResult<AutocompleteSuggestion[]> => r.status === "fulfilled",
+        (r): r is Extract<SuggestorRunResult, { status: "fulfilled" }> => r.status === "fulfilled",
       )
-      .flatMap((r) => r.value)
+      .flatMap((r) => r.suggestions)
       .filter((s) => !this.suggestionEqualsCurrentInput(s, state.input.text))
       .sort((a, b) => b.score - a.score);
   }
@@ -769,13 +823,46 @@ export class TerminalAutocompleteService implements OnDestroy {
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error("timeout")), timeoutMs);
+      timeoutId = setTimeout(
+        () => reject(new AutocompleteSuggestorTimeoutError(timeoutMs)),
+        timeoutMs,
+      );
     });
     try {
       return await Promise.race([promise, timeoutPromise]);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
     }
+  }
+
+  private notifySuggestorIssue(
+    suggestor: TerminalAutocompleteSuggestorContract,
+    reason: unknown,
+    context: QueryContext,
+  ): void {
+    const kind = reason instanceof AutocompleteSuggestorTimeoutError ? "timeout" : "error";
+    const message = reason instanceof Error ? reason.message : String(reason);
+    const key = `${suggestor.id}:${kind}:${message}`;
+    const now = Date.now();
+    const lastNotificationAt = this._lastSuggestorIssueNotificationAt.get(key) ?? 0;
+    if (now - lastNotificationAt < SUGGESTOR_ISSUE_NOTIFICATION_THROTTLE_MS) {
+      return;
+    }
+    this._lastSuggestorIssueNotificationAt.set(key, now);
+
+    this.bus.publish({
+      type: "Notification",
+      path: ["notification"],
+      payload: {
+        header:
+          kind === "timeout" ? "Autocomplete provider timed out" : "Autocomplete provider failed",
+        body: `Provider: ${suggestor.id}\nInput: ${context.beforeCursor}\n${message}`,
+        source: "autocomplete",
+        terminalId: this.stateManager.terminalId,
+        timestamp: new Date(),
+        type: kind === "timeout" ? "warning" : "error",
+      },
+    });
   }
 
   private hasInputChanged(state: TerminalState): boolean {
