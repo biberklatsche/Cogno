@@ -133,18 +133,20 @@ export class SelectedWorkspaceHeaderComponent {
         this.workspaceEntries.set(workspaceEntries);
       });
 
-    this.activeWorkspace = computed(
-      () =>
-        this.workspaceEntries().find(
-          (workspaceEntry) =>
-            workspaceEntry.isActive && workspaceEntry.id !== defaultWorkspaceIdContract,
-        ) ?? undefined,
-    );
+    this.activeWorkspace = computed(() => {
+      const activeWorkspaceEntry = this.workspaceEntries().find(
+        (workspaceEntry) => workspaceEntry.isActive,
+      );
+
+      if (activeWorkspaceEntry?.id !== defaultWorkspaceIdContract) {
+        return activeWorkspaceEntry;
+      }
+
+      return this.openWorkspaceEntries().length > 1 ? activeWorkspaceEntry : undefined;
+    });
     this.openWorkspaceEntries = computed(() =>
       this.workspaceEntries().filter(
-        (workspaceEntry) =>
-          workspaceEntry.id !== defaultWorkspaceIdContract &&
-          (workspaceEntry.isOpen || workspaceEntry.isActive),
+        (workspaceEntry) => workspaceEntry.isOpen || workspaceEntry.isActive,
       ),
     );
     this.hasWorkspaceMenu = computed(() => this.openWorkspaceEntries().length > 1);
