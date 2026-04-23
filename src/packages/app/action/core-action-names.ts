@@ -36,6 +36,8 @@ export const coreActionNames: ReadonlyArray<string> = [
   "delete_next_word",
   "go_to_next_word",
   "go_to_previous_word",
+  "go_to_start_of_line",
+  "go_to_end_of_line",
   "select_all",
   "select_text_right",
   "select_text_left",

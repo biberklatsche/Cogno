@@ -139,6 +139,20 @@ describe("CommandLineEditor", () => {
     expect(mockPty.write).toHaveBeenCalledWith("\x1b[D".repeat(5));
   });
 
+  it("should go to start of line", () => {
+    state.input = { text: "hello world example", cursorIndex: 11, maxCursorIndex: 19 };
+    mockBus.publish({ type: "GoToStartOfLine", payload: terminalId, path: ["app", "terminal"] });
+
+    expect(mockPty.write).toHaveBeenCalledWith("\x1b[D".repeat(11));
+  });
+
+  it("should go to end of line", () => {
+    state.input = { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 };
+    mockBus.publish({ type: "GoToEndOfLine", payload: terminalId, path: ["app", "terminal"] });
+
+    expect(mockPty.write).toHaveBeenCalledWith("\x1b[C".repeat(13));
+  });
+
   it("should not perform action if terminalId mismatch", () => {
     mockBus.publish({ type: "ClearLineToEnd", payload: "wrong-id", path: ["app", "terminal"] });
     expect(mockPty.write).not.toHaveBeenCalled();
