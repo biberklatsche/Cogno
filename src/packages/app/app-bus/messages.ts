@@ -13,7 +13,7 @@ import {
   SplitPaneRightAction,
   SplitPaneUpAction,
 } from "../grid-list/+bus/actions";
-import { PaneMaximizedChangedEvent, TabTitleChangedEvent } from "../grid-list/+bus/events";
+import { ChangeTabTitleEvent, PaneMaximizedChangedEvent } from "../grid-list/+bus/events";
 import { SideMenuEvent } from "../menu/side-menu/+bus/events";
 import { NotificationEvent } from "../notification/+bus/events";
 import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../tab-list/+bus/actions";
@@ -141,5 +141,5 @@ export type AppMessage =
   | FocusActiveTerminalAction
   | NotificationEvent
   | SideMenuEvent
-  | TabTitleChangedEvent
+  | ChangeTabTitleEvent
   | PaneMaximizedChangedEvent;

@@ -7,8 +7,8 @@ export type TabList = Tab[];
 export type Tab = {
   color?: ColorName;
   id: TabId;
-  title: string;
-  isTitleLocked?: boolean;
+  systemTitle: string;
+  userTitle?: string;
   isActive: boolean;
   activeShellType: ShellType | "unknown";
 };

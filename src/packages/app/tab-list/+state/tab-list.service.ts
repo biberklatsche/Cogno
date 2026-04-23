@@ -7,7 +7,7 @@ import { AppBus } from "../../app-bus/app-bus";
 import { ColorName } from "../../common/color/color";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import { ConfigService } from "../../config/+state/config.service";
-import { TabTitleChangedEvent } from "../../grid-list/+bus/events";
+import { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
 import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import { Tab, TabList } from "../+model/tab";
@@ -92,7 +92,7 @@ export class TabListService {
         this.addTab(
           {
             id: event.payload.tabId,
-            title: event.payload.title ?? "Shell",
+            systemTitle: event.payload.systemTitle ?? "Shell",
             activeShellType: configService.getShellProfileOrDefault(shellName).shell_type,
             isActive: event.payload.isActive ?? true,
           },
@@ -102,13 +102,13 @@ export class TabListService {
         event.propagationStopped = true;
       });
     this.bus
-      .onType$("TabTitleChanged")
+      .onType$("ChangeTabTitle")
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: TabTitleChangedEvent) => {
+      .subscribe((event: ChangeTabTitleEvent) => {
         const tabList = this.cloneTabList(this._tabList.value);
         const tab = tabList.find((s) => s.id === event.payload?.tabId);
-        if (!tab || tab.isTitleLocked || !event.payload?.title) return;
-        tab.title = event.payload.title;
+        if (!tab || !event.payload?.title) return;
+        tab.systemTitle = event.payload.title;
         this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
         event.propagationStopped = true;
       });
@@ -192,6 +192,9 @@ export class TabListService {
       { label: "Close all tabs", action: () => this.removeAllTabs(), actionName: "close_all_tabs" },
       { separator: true },
       { label: "Rename tab", action: () => this._showRename.set(tabId) },
+      tab.userTitle
+        ? { label: "Reset Tab Name", action: () => this.resetTabName(tabId) }
+        : undefined,
       { separator: true },
       {
         colorpicker: true,
@@ -303,11 +306,20 @@ export class TabListService {
     const tabList = this.cloneTabList(this._tabList.value);
     const tab = tabList.find((tab) => tab.id === tabId);
     if (!tab) return;
-    tab.title = value;
-    tab.isTitleLocked = true;
+    tab.userTitle = value;
     this.setTabListForWorkspace(workspaceIdentifier, tabList);
-    this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, title: tab.title } });
+    this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, userTitle: tab.userTitle } });
     this.closeRename();
+  }
+
+  resetTabName(tabId: TabId) {
+    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+    const tabList = this.cloneTabList(this._tabList.value);
+    const tab = tabList.find((tab) => tab.id === tabId);
+    if (!tab || !tab.userTitle) return;
+    tab.userTitle = undefined;
+    this.setTabListForWorkspace(workspaceIdentifier, tabList);
+    this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, userTitle: tab.userTitle } });
   }
 
   private setColor(tabId: TabId, name: ColorName | undefined) {
@@ -325,8 +337,8 @@ export class TabListService {
       const tab: Tab = {
         id: config.tabId,
         color: config.color as ColorName | undefined,
-        title: config.title ?? "Shell",
-        isTitleLocked: config.isTitleLocked ?? false,
+        systemTitle: config.systemTitle ?? "Shell",
+        userTitle: config.userTitle,
         isActive: config.isActive ?? false,
         activeShellType: "unknown",
       };
@@ -342,8 +354,8 @@ export class TabListService {
       tabId: tab.id,
       isActive: tab.isActive,
       color: tab.color,
-      title: tab.title,
-      isTitleLocked: tab.isTitleLocked ?? false,
+      systemTitle: tab.systemTitle,
+      userTitle: tab.userTitle,
     }));
   }
 
@@ -371,7 +383,7 @@ export class TabListService {
     this.addTab(
       {
         id: IdCreator.newTabId(),
-        title: "Shell",
+        systemTitle: "Shell",
         activeShellType: this.configService.getShellProfileOrDefault(shellName).shell_type,
         isActive: true,
       },

@@ -4,7 +4,7 @@ import { clear, getAppBus, getConfigService, getDestroyRef } from "../../../__te
 import { ActionFired, type ActionFiredEvent } from "../../action/action.models";
 import type { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import type { TabTitleChangedEvent } from "../../grid-list/+bus/events";
+import type { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
 import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
@@ -58,7 +58,7 @@ describe("TabListService", () => {
     it("should handle CreateTab event", () => {
       const event: CreateTabAction = {
         type: "CreateTab",
-        payload: { tabId: "created-tab", title: "Moved Pane", isActive: true },
+        payload: { tabId: "created-tab", systemTitle: "Moved Pane", isActive: true },
       };
       bus.publish(event);
 
@@ -66,13 +66,13 @@ describe("TabListService", () => {
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
       expect(currentTabs.length).toBe(1);
       expect(currentTabs[0].id).toBe("created-tab");
-      expect(currentTabs[0].title).toBe("Moved Pane");
+      expect(currentTabs[0].systemTitle).toBe("Moved Pane");
       expect(currentTabs[0].isActive).toBe(true);
       expect(event.propagationStopped).toBe(true);
     });
 
     it("should handle SelectTab event", () => {
-      const tab: Tab = { id: "t1", title: "T1", isActive: false, activeShellType: "unknown" };
+      const tab: Tab = { id: "t1", systemTitle: "T1", isActive: false, activeShellType: "unknown" };
       service.addTab(tab);
 
       const spy = vi.spyOn(service, "selectTab");
@@ -84,7 +84,7 @@ describe("TabListService", () => {
     });
 
     it("should handle RemoveTab event", () => {
-      const tab: Tab = { id: "t1", title: "T1", isActive: true, activeShellType: "unknown" };
+      const tab: Tab = { id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" };
       service.addTab(tab);
 
       const spy = vi.spyOn(service, "removeTab");
@@ -95,19 +95,24 @@ describe("TabListService", () => {
       expect(event.propagationStopped).toBe(true);
     });
 
-    it("should handle TabTitleChanged event", () => {
-      const tab: Tab = { id: "t1", title: "Old Title", isActive: true, activeShellType: "unknown" };
+    it("should handle ChangeTabTitle event", () => {
+      const tab: Tab = {
+        id: "t1",
+        systemTitle: "Old Title",
+        isActive: true,
+        activeShellType: "unknown",
+      };
       service.addTab(tab);
 
-      const event: TabTitleChangedEvent = {
-        type: "TabTitleChanged",
+      const event: ChangeTabTitleEvent = {
+        type: "ChangeTabTitle",
         payload: { tabId: "t1", title: "New Title" },
       };
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
-      expect(currentTabs[0].title).toBe("New Title");
+      expect(currentTabs[0].systemTitle).toBe("New Title");
       expect(event.propagationStopped).toBe(true);
     });
   });
@@ -121,7 +126,11 @@ describe("TabListService", () => {
       bus.publish(event);
 
       expect(spy).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "new-t", title: "Shell", activeShellType: "PowerShell" }),
+        expect.objectContaining({
+          id: "new-t",
+          systemTitle: "Shell",
+          activeShellType: "PowerShell",
+        }),
         false,
         { shellName: "test" },
       );
@@ -183,7 +192,7 @@ describe("TabListService", () => {
     });
 
     it("should handle close_tab action", () => {
-      const tab: Tab = { id: "t1", title: "T1", isActive: true, activeShellType: "unknown" };
+      const tab: Tab = { id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" };
       service.addTab(tab);
       const spy = vi.spyOn(service, "removeTab");
 
@@ -195,8 +204,8 @@ describe("TabListService", () => {
     });
 
     it("should handle select_next_tab action", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
 
       const event = createActionEvent("select_next_tab");
       bus.publish(event);
@@ -209,8 +218,8 @@ describe("TabListService", () => {
     });
 
     it("should handle select_previous_tab action", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
 
       service.selectTab("t2");
 
@@ -225,9 +234,9 @@ describe("TabListService", () => {
     });
 
     it("should handle select_tab_2 action by selecting the second tab", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
-      service.addTab({ id: "t3", title: "T3", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t3", systemTitle: "T3", isActive: false, activeShellType: "unknown" });
 
       const event = createActionEvent("select_tab_2");
       bus.publish(event);
@@ -241,8 +250,8 @@ describe("TabListService", () => {
     });
 
     it("should keep the current tab when select_tab_9 exceeds the tab count", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
 
       const event = createActionEvent("select_tab_9");
       bus.publish(event);
@@ -256,8 +265,8 @@ describe("TabListService", () => {
     });
 
     it("should handle close_other_tabs action", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: false, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: true, activeShellType: "unknown" });
       const spy = vi.spyOn(service, "removeAllTabs");
 
       const event = createActionEvent("close_other_tabs");
@@ -281,7 +290,7 @@ describe("TabListService", () => {
   describe("Tab Management", () => {
     it("should add a tab and publish TabAdded", () => {
       const publishSpy = vi.spyOn(bus, "publish");
-      const tab: Tab = { id: "t1", title: "T1", isActive: true, activeShellType: "unknown" };
+      const tab: Tab = { id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" };
 
       service.addTab(tab);
 
@@ -297,7 +306,7 @@ describe("TabListService", () => {
     });
 
     it("should not add duplicate tab", () => {
-      const tab: Tab = { id: "t1", title: "T1", isActive: true, activeShellType: "unknown" };
+      const tab: Tab = { id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" };
       service.addTab(tab);
       service.addTab(tab);
 
@@ -307,8 +316,8 @@ describe("TabListService", () => {
     });
 
     it("should deactivate other tabs when adding an active tab", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: true, activeShellType: "unknown" });
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
@@ -318,7 +327,7 @@ describe("TabListService", () => {
 
     it("should remove a tab and publish TabRemoved", () => {
       const publishSpy = vi.spyOn(bus, "publish");
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
 
       service.removeTab("t1");
 
@@ -334,8 +343,8 @@ describe("TabListService", () => {
     });
 
     it("should select next tab when active tab is removed", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: false, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: true, activeShellType: "unknown" });
 
       service.removeTab("t2");
 
@@ -345,8 +354,8 @@ describe("TabListService", () => {
     });
 
     it("should select a tab", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
 
       service.selectTab("t2");
 
@@ -357,8 +366,8 @@ describe("TabListService", () => {
     });
 
     it("should remove all tabs except one", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
 
       service.removeAllTabs("t1");
 
@@ -369,9 +378,9 @@ describe("TabListService", () => {
     });
 
     it("should reorder tabs", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
-      service.addTab({ id: "t3", title: "T3", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t3", systemTitle: "T3", isActive: false, activeShellType: "unknown" });
 
       service.reorderTabs("t1", "t3");
 
@@ -383,21 +392,21 @@ describe("TabListService", () => {
 
   describe("Rename Logic", () => {
     it("should commit rename", () => {
-      service.addTab({ id: "t1", title: "Old", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "Old", isActive: true, activeShellType: "unknown" });
       service._showRename.set("t1");
 
       service.commitRename("New Name");
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
-      expect(currentTabs[0].title).toBe("New Name");
-      expect(currentTabs[0].isTitleLocked).toBe(true);
+      expect(currentTabs[0].systemTitle).toBe("Old");
+      expect(currentTabs[0].userTitle).toBe("New Name");
       expect(service.showRename$()).toBeUndefined();
     });
 
     it("should close rename and focus terminal", () => {
       const publishSpy = vi.spyOn(bus, "publish");
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
       service._showRename.set("t1");
 
       service.closeRename();
@@ -409,12 +418,36 @@ describe("TabListService", () => {
         }),
       );
     });
+
+    it("should reset a renamed tab", () => {
+      const publishSpy = vi.spyOn(bus, "publish");
+      service.addTab({
+        id: "t1",
+        systemTitle: "C:\\repo",
+        userTitle: "Custom Name",
+        isActive: true,
+        activeShellType: "unknown",
+      });
+
+      service.resetTabName("t1");
+
+      let currentTabs: Tab[] = [];
+      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      expect(currentTabs[0].systemTitle).toBe("C:\\repo");
+      expect(currentTabs[0].userTitle).toBeUndefined();
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "TabRenamed",
+          payload: { tabId: "t1", userTitle: undefined },
+        }),
+      );
+    });
   });
 
   describe("Context Menu", () => {
     it("should build context menu", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
-      service.addTab({ id: "t2", title: "T2", isActive: false, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
 
       const menu = service.buildContextMenu("t1");
 
@@ -424,8 +457,43 @@ describe("TabListService", () => {
       expect(menu.find((i) => i.colorpicker)).toBeTruthy();
     });
 
+    it("should show reset tab name only for renamed tabs", () => {
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({
+        id: "t2",
+        systemTitle: "T2",
+        userTitle: "Custom Name",
+        isActive: false,
+        activeShellType: "unknown",
+      });
+
+      const unlockedMenu = service.buildContextMenu("t1");
+      const lockedMenu = service.buildContextMenu("t2");
+
+      expect(unlockedMenu.find((i) => i.label === "Reset Tab Name")).toBeUndefined();
+      expect(lockedMenu.find((i) => i.label === "Reset Tab Name")).toBeTruthy();
+    });
+
+    it("should reset tab name from context menu", () => {
+      service.addTab({
+        id: "t1",
+        systemTitle: "C:\\repo",
+        userTitle: "Custom Name",
+        isActive: true,
+        activeShellType: "unknown",
+      });
+      const menu = service.buildContextMenu("t1");
+
+      menu.find((i) => i.label === "Reset Tab Name")?.action?.();
+
+      let currentTabs: Tab[] = [];
+      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      expect(currentTabs[0].systemTitle).toBe("C:\\repo");
+      expect(currentTabs[0].userTitle).toBeUndefined();
+    });
+
     it("should set color from context menu", () => {
-      service.addTab({ id: "t1", title: "T1", isActive: true, activeShellType: "unknown" });
+      service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
       const menu = service.buildContextMenu("t1");
       const colorPicker = menu.find((i) => i.colorpicker);
 
@@ -442,10 +510,10 @@ describe("TabListService", () => {
       const configs = [
         {
           tabId: "c1",
-          title: "Conf 1",
+          systemTitle: "C:\\repo",
+          userTitle: "Conf 1",
           isActive: true,
           color: "blue" as const,
-          isTitleLocked: true,
         },
       ];
 
@@ -456,16 +524,17 @@ describe("TabListService", () => {
       expect(currentTabs.length).toBe(1);
       expect(currentTabs[0].id).toBe("c1");
       expect(currentTabs[0].color).toBe("blue");
-      expect(currentTabs[0].isTitleLocked).toBe(true);
+      expect(currentTabs[0].systemTitle).toBe("C:\\repo");
+      expect(currentTabs[0].userTitle).toBe("Conf 1");
     });
 
     it("should return tab configs", () => {
       service.addTab({
         id: "t1",
-        title: "T1",
+        systemTitle: "C:\\repo",
+        userTitle: "T1",
         isActive: true,
         color: "green",
-        isTitleLocked: true,
         activeShellType: "unknown",
       });
 
@@ -474,7 +543,8 @@ describe("TabListService", () => {
       expect(configs.length).toBe(1);
       expect(configs[0].tabId).toBe("t1");
       expect(configs[0].color).toBe("green");
-      expect(configs[0].isTitleLocked).toBe(true);
+      expect(configs[0].systemTitle).toBe("C:\\repo");
+      expect(configs[0].userTitle).toBe("T1");
     });
   });
 });

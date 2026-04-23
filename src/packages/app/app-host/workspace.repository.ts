@@ -23,8 +23,10 @@ export interface WorkspaceTabEntity {
   workspace_id: string;
   tab_id: string;
   is_active: number;
-  is_title_locked?: number;
+  system_title?: string;
+  user_title?: string;
   color?: string;
+  // Legacy alpha column. Keep reading it so older workspace rows do not break startup.
   title?: string;
   position?: number;
 }
@@ -74,9 +76,9 @@ export class WorkspaceRepository {
         tabs: tabEntities.map((tabEntity) => ({
           tabId: tabEntity.tab_id,
           isActive: tabEntity.is_active === 1,
-          isTitleLocked: tabEntity.is_title_locked === 1,
           color: tabEntity.color,
-          title: tabEntity.title,
+          systemTitle: tabEntity.system_title ?? tabEntity.title ?? "Shell",
+          userTitle: tabEntity.user_title,
         })),
         grids: gridEntities.map((gridEntity) => ({
           tabId: gridEntity.tab_id,
@@ -232,14 +234,14 @@ export class WorkspaceRepository {
     position: number,
   ): Promise<void> {
     await databaseAccess.execute(
-      "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, is_title_locked, color, title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO workspace_tabs (workspace_id, tab_id, is_active, color, system_title, user_title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
         workspaceId,
         tabConfiguration.tabId,
         tabConfiguration.isActive ? 1 : 0,
-        tabConfiguration.isTitleLocked ? 1 : 0,
         tabConfiguration.color,
-        tabConfiguration.title,
+        tabConfiguration.systemTitle,
+        tabConfiguration.userTitle,
         position,
       ],
     );

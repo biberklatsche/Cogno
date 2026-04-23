@@ -94,7 +94,7 @@ export class TabListComponent implements OnDestroy {
   addTab() {
     this.tabListService.addTab({
       id: IdCreator.newTabId(),
-      title: "Shell",
+      systemTitle: "Shell",
       activeShellType: "unknown",
       isActive: true,
     });
@@ -144,6 +144,10 @@ export class TabListComponent implements OnDestroy {
 
   commitRename(value: string) {
     this.tabListService.commitRename(value);
+  }
+
+  displayTitle(tab: Tab): string {
+    return tab.userTitle ?? tab.systemTitle;
   }
 
   getTabShortcutActionName(index: number): string {

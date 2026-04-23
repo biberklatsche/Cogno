@@ -11,7 +11,7 @@ import { GridListService } from "../+state/grid-list.service";
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
-        <span class="cwd">{{cwd()}}</span>
+        <span class="title">{{ title() }}</span>
         <button class="close" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
           <app-icon name="mdiClose"></app-icon>
         </button>
@@ -41,7 +41,7 @@ import { GridListService } from "../+state/grid-list.service";
       }
     }
 
-    .cwd {
+    .title {
       font-family: var(--font-family);
       font-size: calc(var(--font-size) * 0.9);
       color: var(--foreground-color);
@@ -82,7 +82,7 @@ export class PaneHeaderComponent implements OnDestroy {
   private dragSourceRectangle: DOMRect | undefined;
   private hasExceededDragThreshold = false;
 
-  cwd = input.required<string>();
+  title = input.required<string>();
   terminalId = input.required<string>();
 
   shouldShow = toSignal(this.gridListService.activeGridIsSplit$, { initialValue: false });
