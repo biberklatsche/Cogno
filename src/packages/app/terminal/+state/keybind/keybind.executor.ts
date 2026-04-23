@@ -205,6 +205,24 @@ export class KeybindExecutor implements IDisposable {
               event.performed = true;
               break;
             }
+            case "go_to_start_of_line": {
+              this._bus.publish({
+                type: "GoToStartOfLine",
+                payload: this._stateManager.terminalId,
+                path: ["app", "terminal"],
+              });
+              event.performed = true;
+              break;
+            }
+            case "go_to_end_of_line": {
+              this._bus.publish({
+                type: "GoToEndOfLine",
+                payload: this._stateManager.terminalId,
+                path: ["app", "terminal"],
+              });
+              event.performed = true;
+              break;
+            }
             case "select_text_right": {
               this._bus.publish({
                 type: "SelectTextRight",

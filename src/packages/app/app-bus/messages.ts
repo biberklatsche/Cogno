@@ -35,8 +35,10 @@ import {
   DeleteNextWordAction,
   DeletePreviousWordAction,
   FocusTerminalAction,
+  GoToEndOfLineAction,
   GoToNextWordAction,
   GoToPreviousWordAction,
+  GoToStartOfLineAction,
   InjectTerminalInputAction,
   PasteAction,
   SelectAllAction,
@@ -109,6 +111,8 @@ export type AppMessage =
   | DeleteNextWordAction
   | GoToNextWordAction
   | GoToPreviousWordAction
+  | GoToStartOfLineAction
+  | GoToEndOfLineAction
   | SelectAllAction
   | SelectTextRightAction
   | SelectTextLeftAction

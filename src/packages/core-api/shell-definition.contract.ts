@@ -10,6 +10,8 @@ export type ShellLineEditorActionContract =
   | "deleteSelection"
   | "goToNextWord"
   | "goToPreviousWord"
+  | "goToStartOfLine"
+  | "goToEndOfLine"
   | "replaceCurrentInput"
   | "selectTextRight"
   | "selectTextLeft"

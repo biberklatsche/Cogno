@@ -64,6 +64,8 @@ export class CommandLineEditor implements ITerminalHandler {
       DeleteNextWord: { actionId: "deleteNextWord", run: () => this.deleteNextWord() },
       GoToNextWord: { actionId: "goToNextWord", run: () => this.goToNextWord() },
       GoToPreviousWord: { actionId: "goToPreviousWord", run: () => this.goToPreviousWord() },
+      GoToStartOfLine: { actionId: "goToStartOfLine", run: () => this.goToStartOfLine() },
+      GoToEndOfLine: { actionId: "goToEndOfLine", run: () => this.goToEndOfLine() },
       SelectAll: { actionId: "selectAll", run: () => this.selectAll() },
       SelectTextRight: { actionId: "selectTextRight", run: () => this.selectTextRight() },
       SelectTextLeft: { actionId: "selectTextLeft", run: () => this.selectTextLeft() },
@@ -239,6 +241,21 @@ export class CommandLineEditor implements ITerminalHandler {
     if (countToMove > 0) {
       this._ptyWrite(this._buildCursorMoveCommand(-countToMove));
     }
+  }
+
+  goToStartOfLine() {
+    const input = this.stateManager.input;
+    if (input.cursorIndex === 0) return;
+
+    this._ptyWrite(this._buildCursorMoveCommand(-input.cursorIndex));
+  }
+
+  goToEndOfLine() {
+    const input = this.stateManager.input;
+    const countToMove = input.text.length - input.cursorIndex;
+    if (countToMove <= 0) return;
+
+    this._ptyWrite(this._buildCursorMoveCommand(countToMove));
   }
 
   selectTextRight() {
