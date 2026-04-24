@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { WorkspaceHostPort } from "@cogno/core-api";
-import { firstValueFrom, Subscription, take } from "rxjs";
+import { Subscription } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { GridListService } from "../../grid-list/+state/grid-list.service";
 
@@ -33,14 +33,6 @@ export class NotificationTargetRuntimeService {
 
   async openTarget(target: NotificationTargetRuntime | undefined): Promise<void> {
     if (!target) {
-      return;
-    }
-
-    const workspaceEntries = await firstValueFrom(
-      this.workspaceHostPort.workspaceEntries$.pipe(take(1)),
-    );
-    if (!workspaceEntries.some((workspaceEntry) => workspaceEntry.id === target.workspaceId)) {
-      this.publishUnavailableTargetNotification();
       return;
     }
 
