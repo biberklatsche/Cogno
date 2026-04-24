@@ -1,3 +1,4 @@
+import { NotificationTargetContract } from "@cogno/core-api";
 import { AppBus } from "../../../app-bus/app-bus";
 import { timespan } from "../../../common/timespan/timespan";
 import { ConfigService } from "../../../config/+state/config.service";
@@ -14,6 +15,7 @@ export class CompletedCommandNotificationHandler {
     private readonly appBus: AppBus,
     private readonly terminalIdResolver: () => TerminalId | undefined,
     private readonly notificationChannelsResolver: () => NotificationChannels,
+    private readonly notificationTargetResolver: () => NotificationTargetContract | undefined,
   ) {}
 
   initialize(): void {
@@ -67,6 +69,7 @@ export class CompletedCommandNotificationHandler {
         type: executedCommand.returnCode && executedCommand.returnCode !== 0 ? "warning" : "info",
         timestamp: new Date(),
         terminalId,
+        target: this.notificationTargetResolver(),
         channels: notificationChannels,
       },
     });

@@ -1,5 +1,9 @@
 import { Injectable } from "@angular/core";
-import { NotificationCenterPortContract, NotificationEventPayloadContract } from "@cogno/core-api";
+import {
+  NotificationCenterPortContract,
+  NotificationEventPayloadContract,
+  NotificationTargetContract,
+} from "@cogno/core-api";
 import { map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { ConfigService } from "../../config/+state/config.service";
@@ -26,5 +30,13 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
 
   getOverviewMaxItems(): number {
     return this.configService.config.notification?.overview?.max_items ?? 30;
+  }
+
+  openTarget(target: NotificationTargetContract): void {
+    this.appBus.publish({
+      path: ["app", "notification"],
+      type: "OpenNotificationTarget",
+      payload: target,
+    });
   }
 }

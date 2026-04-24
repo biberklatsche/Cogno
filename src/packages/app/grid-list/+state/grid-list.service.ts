@@ -67,6 +67,17 @@ export class GridListService {
     return undefined;
   }
 
+  findTabIdByTerminalId(terminalId: TerminalId): TabId | undefined {
+    for (const gridList of this.gridListByWorkspaceIdentifier.values()) {
+      const tabId = this.determineTabId(gridList, terminalId);
+      if (tabId) {
+        return tabId;
+      }
+    }
+
+    return undefined;
+  }
+
   moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
     const sourceWorkspaceIdentifier = this.activeWorkspaceIdentifier;
     if (!sourceWorkspaceIdentifier || sourceWorkspaceIdentifier === targetWorkspaceIdentifier) {

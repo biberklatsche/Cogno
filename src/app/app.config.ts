@@ -41,6 +41,7 @@ import {
 } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
+import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
 import { Logger } from "@cogno/app-tauri/logger";
@@ -85,6 +86,7 @@ export const appConfig: ApplicationConfig = {
       void Logger.initialize();
       inject(StyleService);
       inject(NotificationDispatchService);
+      inject(NotificationTargetRuntimeService);
       inject(ErrorReportingRuntimeService).initialize();
       inject(WorkspaceHostApplicationService);
       inject(KeybindService);
