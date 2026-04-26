@@ -5,6 +5,7 @@ import {
   NotificationCenterItemContract,
   NotificationCenterItemIdContract,
   NotificationCenterPort,
+  NotificationTargetContract,
 } from "@cogno/core-api";
 import { NotificationInboxState, NotificationInboxUseCase } from "@cogno/core-domain";
 
@@ -69,6 +70,10 @@ export class NotificationCenterStateService {
       NotificationInboxUseCase.clear(this.notificationCenterStateSignal()),
     );
     this.sideMenuIconUpdater?.("mdiBell");
+  }
+
+  openTarget(target: NotificationTargetContract): void {
+    this.notificationCenterPort.openTarget(target);
   }
 
   getNotificationCount(): number {

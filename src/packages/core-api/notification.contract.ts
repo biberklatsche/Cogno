@@ -2,11 +2,19 @@ export type NotificationTypeContract = "error" | "success" | "warning" | "info";
 
 export type NotificationChannelsContract = Readonly<Record<string, boolean>>;
 
+export interface NotificationTargetContract {
+  readonly workspaceId: string;
+  readonly tabId: string;
+  readonly terminalId?: string;
+  readonly label?: string;
+}
+
 export interface NotificationEventPayloadContract {
   readonly header: string;
   readonly body?: string;
   readonly source?: string;
   readonly terminalId?: string;
+  readonly target?: NotificationTargetContract;
   readonly timestamp?: Date;
   readonly type?: NotificationTypeContract;
   readonly channels?: Partial<NotificationChannelsContract>;

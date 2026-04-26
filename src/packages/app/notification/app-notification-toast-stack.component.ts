@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, Signal } from "@angular/core";
 import { NotificationTypeContract } from "@cogno/core-api";
 import { Icon, IconComponent } from "@cogno/core-ui";
+import { AppBus } from "../app-bus/app-bus";
 import { AppNotificationChannelService } from "./+state/app-notification-channel.service";
 import {
   AppNotificationToast,
@@ -22,6 +23,11 @@ import {
                             <header class="title">{{ toast.header }}</header>
                             @if (toast.body) {
                                 <p class="message">{{ toast.body }}</p>
+                            }
+                            @if (toast.target) {
+                                <button class="target-link" type="button" (click)="openTarget(toast)">
+                                    Open tab
+                                </button>
                             }
                         </div>
                         <button
@@ -82,6 +88,18 @@ import {
             white-space: pre-wrap;
         }
 
+        .target-link {
+            margin-top: 0.4rem;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: var(--color-blue);
+            text-decoration: underline;
+            cursor: pointer;
+            font: inherit;
+            text-align: left;
+        }
+
         .icon-button {
             transform: scale(0.7);
             margin-top: -6px;
@@ -120,12 +138,27 @@ import {
 export class AppNotificationToastStackComponent {
   readonly appNotificationToasts: Signal<AppNotificationToast[]>;
 
-  constructor(private appNotificationChannelService: AppNotificationChannelService) {
+  constructor(
+    private appNotificationChannelService: AppNotificationChannelService,
+    private readonly appBus: AppBus,
+  ) {
     this.appNotificationToasts = this.appNotificationChannelService.appNotificationToasts;
   }
 
   dismiss(toastId: AppNotificationToastId): void {
     this.appNotificationChannelService.dismissAppNotificationToast(toastId);
+  }
+
+  openTarget(toast: AppNotificationToast): void {
+    if (!toast.target) {
+      return;
+    }
+
+    this.appBus.publish({
+      path: ["app", "notification"],
+      type: "OpenNotificationTarget",
+      payload: toast.target,
+    });
   }
 
   getIcon(type?: NotificationTypeContract): Icon {

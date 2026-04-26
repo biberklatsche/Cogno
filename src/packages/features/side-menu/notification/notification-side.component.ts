@@ -23,6 +23,11 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
             @if (notification.body) {
               <main class="message">{{ notification.body }}</main>
             }
+            @if (notification.target) {
+              <button class="target-link" type="button" (click)="openTarget(notification)">
+                Open tab
+              </button>
+            }
             <small class="timestamp">{{ toRelativeTime(notification.timestamp) }}</small>
           </div>
           @if (notification.count > 1) {
@@ -102,6 +107,18 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         white-space: pre-wrap;
       }
 
+      .target-link {
+        width: fit-content;
+        margin: 0.35rem 0 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--color-blue);
+        text-decoration: underline;
+        cursor: pointer;
+        font: inherit;
+      }
+
       .icon-button {
         transform: scale(0.8);
         position: absolute;
@@ -158,6 +175,14 @@ export class NotificationSideComponent {
 
   clearAll(): void {
     this.notificationCenterStateService.clear();
+  }
+
+  openTarget(notification: NotificationCenterItemContract): void {
+    if (!notification.target) {
+      return;
+    }
+
+    this.notificationCenterStateService.openTarget(notification.target);
   }
 
   toRelativeTime(timestamp: Date): string {

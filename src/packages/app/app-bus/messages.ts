@@ -15,6 +15,7 @@ import {
 } from "../grid-list/+bus/actions";
 import { PaneMaximizedChangedEvent, TabTitleChangedEvent } from "../grid-list/+bus/events";
 import { SideMenuEvent } from "../menu/side-menu/+bus/events";
+import { OpenNotificationTargetAction } from "../notification/+bus/actions";
 import { NotificationEvent } from "../notification/+bus/events";
 import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../tab-list/+bus/actions";
 import {
@@ -140,6 +141,7 @@ export type AppMessage =
   | ClearBufferAction
   | FocusActiveTerminalAction
   | NotificationEvent
+  | OpenNotificationTargetAction
   | SideMenuEvent
   | TabTitleChangedEvent
   | PaneMaximizedChangedEvent;

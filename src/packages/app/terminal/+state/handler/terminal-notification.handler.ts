@@ -1,3 +1,4 @@
+import { NotificationTargetContract } from "@cogno/core-api";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { IDisposable } from "../../../common/models/models";
@@ -12,6 +13,7 @@ export class TerminalNotificationHandler implements ITerminalHandler {
     private readonly bus: AppBus,
     private readonly stateManager: TerminalStateManager,
     private readonly channelResolver?: () => NotificationChannels,
+    private readonly targetResolver?: () => NotificationTargetContract | undefined,
   ) {}
 
   registerTerminal(terminal: Terminal): IDisposable {
@@ -40,6 +42,7 @@ export class TerminalNotificationHandler implements ITerminalHandler {
             type: "info",
             timestamp: new Date(),
             terminalId: this.stateManager.terminalId,
+            target: this.targetResolver?.(),
             channels,
           },
         });

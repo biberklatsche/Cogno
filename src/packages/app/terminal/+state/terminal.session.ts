@@ -13,6 +13,7 @@ import { TerminalId } from "../../grid-list/+model/model";
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import { NotificationChannels } from "../../notification/+bus/events";
+import { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import {
   TerminalSystemInfoDialogComponent,
   TerminalSystemInfoDialogData,
@@ -70,6 +71,7 @@ export class TerminalSession {
     private dialog: DialogService,
     private wiringService: AppWiringService,
     private contextMenuOverlayService: ContextMenuOverlayService,
+    private notificationTargetResolverService: NotificationTargetResolverService,
   ) {
     this.renderer = new Renderer(this.configService.config);
     this.disposables = [this.renderer, this.pty];
@@ -78,6 +80,7 @@ export class TerminalSession {
       this.bus,
       () => this.terminalId,
       () => this.getSessionNotificationChannels(),
+      () => this.resolveNotificationTarget(),
     );
     this.commandBlockResolver = new CommandBlockResolver(() => this.renderer.terminal);
   }
@@ -133,9 +136,14 @@ export class TerminalSession {
     );
     this.disposables.push(
       this.renderer.register(
-        new TerminalNotificationHandler(this.bus, this.stateManager, () => ({
-          ...this.getSessionNotificationChannels(),
-        })),
+        new TerminalNotificationHandler(
+          this.bus,
+          this.stateManager,
+          () => ({
+            ...this.getSessionNotificationChannels(),
+          }),
+          () => this.resolveNotificationTarget(),
+        ),
       ),
     );
     this.disposables.push(
@@ -594,5 +602,13 @@ export class TerminalSession {
 
   private getRegisteredNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
     return this.wiringService.getNotificationChannels();
+  }
+
+  private resolveNotificationTarget() {
+    if (!this.terminalId) {
+      return undefined;
+    }
+
+    return this.notificationTargetResolverService.resolveForTerminal(this.terminalId);
   }
 }

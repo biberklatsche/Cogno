@@ -34,6 +34,7 @@ export class AppNotificationChannelService implements NotificationChannelContrac
     const toastId = this.showAppNotificationToast({
       body: notificationChannelDispatchRequest.notification.body,
       header: notificationChannelDispatchRequest.notification.header,
+      target: notificationChannelDispatchRequest.notification.target,
       timestamp: notificationChannelDispatchRequest.notification.timestamp ?? new Date(),
       type: notificationChannelDispatchRequest.notification.type ?? "info",
     });

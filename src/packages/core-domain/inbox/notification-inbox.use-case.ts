@@ -85,6 +85,7 @@ export class NotificationInboxUseCase {
     const notificationId = NotificationInboxUseCase.createNotificationId(
       notificationEventPayload.header,
       notificationEventPayload.body,
+      notificationEventPayload.target,
     );
     const nextNotificationMap = { ...state.notificationMap };
     const existingNotification = nextNotificationMap[notificationId];
@@ -100,6 +101,7 @@ export class NotificationInboxUseCase {
         id: notificationId,
         header: notificationEventPayload.header,
         body: notificationEventPayload.body,
+        target: notificationEventPayload.target,
         type: notificationEventPayload.type ?? "info",
         count: 1,
         timestamp,
@@ -141,8 +143,12 @@ export class NotificationInboxUseCase {
     return trimmedNotificationMap;
   }
 
-  private static createNotificationId(header: string, body?: string): number {
-    const text = `${header}|${body ?? ""}`;
+  private static createNotificationId(
+    header: string,
+    body?: string,
+    target?: NotificationEventPayloadContract["target"],
+  ): number {
+    const text = `${header}|${body ?? ""}|${target?.workspaceId ?? ""}|${target?.tabId ?? ""}|${target?.terminalId ?? ""}`;
     let hash = 0;
     for (let index = 0; index < text.length; index += 1) {
       hash = (hash << 5) - hash + text.charCodeAt(index);
