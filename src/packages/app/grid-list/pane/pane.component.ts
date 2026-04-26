@@ -26,7 +26,7 @@ import { PaneHeaderComponent } from "./pane-header.component";
   },
   template: `
       @if (pane().terminalId) {
-          <app-pane-header [cwd]="cwd()" [terminalId]="pane().terminalId!"></app-pane-header>
+          <app-pane-header [title]="title()" [terminalId]="pane().terminalId!"></app-pane-header>
       }
       <div #dock class="dock"></div>
   `,
@@ -70,7 +70,7 @@ export class PaneComponent implements AfterViewInit {
     initialValue: undefined,
   });
 
-  cwd = computed(() => this.pane().workingDir || "");
+  title = computed(() => this.pane().title ?? this.pane().workingDir ?? "");
   isMaximizedPane = computed(() => this.maximizedTerminalId() === this.pane().terminalId);
   isHiddenDuringMaximize = computed(() => {
     const maximizedTerminalId = this.maximizedTerminalId();

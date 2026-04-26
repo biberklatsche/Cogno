@@ -15,6 +15,7 @@ export type Pane = {
   ratio?: number;
   shellName?: string;
   workingDir?: string;
+  title?: string;
   terminalId?: string;
   isFocused?: boolean;
 };

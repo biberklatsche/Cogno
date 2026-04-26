@@ -167,14 +167,14 @@ export class GridListService {
       .onType$("TerminalTitleChanged")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: TerminalTitleChangedEvent) => {
-        const gridList = this._gridList.value;
-        const tabId = this.determineTabId(gridList, event.payload?.terminalId);
-        if (!tabId || !event.payload?.title) return;
-        this.bus.publish({
-          path: ["app", "terminal"],
-          type: "TabTitleChanged",
-          payload: { tabId, title: event.payload.title },
-        });
+        const gridList = this.getActiveWorkspaceGridList();
+        const gridAndNode = this.determineGrid(gridList, event.payload?.terminalId);
+        if (!gridAndNode?.node.data || !event.payload?.title) return;
+        gridAndNode.node.data = { ...gridAndNode.node.data, title: event.payload.title };
+        this.setActiveWorkspaceGridList(gridList);
+        if (gridAndNode.node.data.isFocused) {
+          this.publishPaneTitleToTab(gridAndNode.grid.tabId, gridAndNode.node.data);
+        }
       });
 
     this.bus
@@ -188,14 +188,11 @@ export class GridListService {
           (s) => s.isLeaf && s.data?.terminalId === event.payload?.terminalId,
         );
         if (!node?.data) return;
-        // Immutable update der Pane
         node.data = { ...node.data, workingDir: event.payload.cwd };
         this.setActiveWorkspaceGridList(gridList);
-        this.bus.publish({
-          path: ["app", "terminal"],
-          type: "TabTitleChanged",
-          payload: { tabId, title: event.payload.cwd },
-        });
+        if (node.data.isFocused && !node.data.title) {
+          this.publishPaneTitleToTab(tabId, node.data);
+        }
       });
 
     this.bus
@@ -232,6 +229,7 @@ export class GridListService {
         if (!paneConfig) return;
         paneConfig.isFocused = true;
         this.setActiveWorkspaceGridList(gridList);
+        this.publishPaneTitleToTab(this._activeTabId.value, paneConfig);
       });
 
     this.bus
@@ -399,7 +397,11 @@ export class GridListService {
 
     this.bus.publish({
       type: "CreateTab",
-      payload: { tabId: newTabId, title: sourcePaneData.workingDir ?? "Shell", isActive: true },
+      payload: {
+        tabId: newTabId,
+        systemTitle: this.resolvePaneTitle(sourcePaneData),
+        isActive: true,
+      },
     });
 
     this.cancelPaneSwapDrag();
@@ -504,6 +506,7 @@ export class GridListService {
       parent.data = {
         shellName: nodeConfig.shellName,
         workingDir: nodeConfig.workingDir,
+        title: nodeConfig.title,
         terminalId: IdCreator.newTerminalId(),
       };
     }
@@ -515,6 +518,7 @@ export class GridListService {
       return {
         shellName: node.data?.shellName,
         workingDir: node.data?.workingDir,
+        title: node.data?.title,
       };
     }
     // Split node
@@ -650,6 +654,18 @@ export class GridListService {
       }
     }
     return;
+  }
+
+  private publishPaneTitleToTab(tabId: TabId, pane: Pane): void {
+    this.bus.publish({
+      path: ["app", "terminal"],
+      type: "ChangeTabTitle",
+      payload: { tabId, title: this.resolvePaneTitle(pane) },
+    });
+  }
+
+  private resolvePaneTitle(pane: Pane): string {
+    return pane.title ?? pane.workingDir ?? "Shell";
   }
 
   private getRequiredActiveWorkspaceIdentifier(): string {

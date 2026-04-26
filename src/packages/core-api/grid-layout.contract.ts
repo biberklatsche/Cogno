@@ -10,6 +10,7 @@ export interface PersistedPaneConfigurationContract {
   rightChild?: PersistedPaneConfigurationContract;
   shellName?: string;
   workingDir?: string;
+  title?: string;
   terminalId?: string;
 }
 
@@ -17,8 +18,8 @@ export interface PersistedTabConfigurationContract {
   readonly tabId: TabIdentifierContract;
   readonly isActive?: boolean;
   readonly color?: string;
-  readonly title?: string;
-  readonly isTitleLocked?: boolean;
+  readonly systemTitle?: string;
+  readonly userTitle?: string;
 }
 
 export interface PersistedGridConfigurationContract {

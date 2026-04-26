@@ -36,9 +36,9 @@ describe("WorkspaceRepository", () => {
           workspace_id: "ws1",
           tab_id: "TB-1",
           is_active: 1,
-          is_title_locked: 1,
           color: "blue",
-          title: "Tab 1",
+          system_title: "C:\\repo",
+          user_title: "Tab 1",
           position: 0,
         },
       ])
@@ -52,6 +52,8 @@ describe("WorkspaceRepository", () => {
     expect(workspaceConfigurations[0].id).toBe("ws1");
     expect(workspaceConfigurations[0].position).toBe(0);
     expect(workspaceConfigurations[0].tabs[0].tabId).toBe("TB-1");
+    expect(workspaceConfigurations[0].tabs[0].systemTitle).toBe("C:\\repo");
+    expect(workspaceConfigurations[0].tabs[0].userTitle).toBe("Tab 1");
     expect(workspaceConfigurations[0].grids[0].tabId).toBe("TB-1");
   });
 
@@ -63,7 +65,13 @@ describe("WorkspaceRepository", () => {
       autosave: true,
       position: 0,
       tabs: [
-        { tabId: "TB-1", isActive: true, isTitleLocked: true, title: "Tab 1", color: "green" },
+        {
+          tabId: "TB-1",
+          isActive: true,
+          systemTitle: "C:\\repo",
+          userTitle: "Tab 1",
+          color: "green",
+        },
       ],
       grids: [{ tabId: "TB-1", pane: { terminalId: "TE-1" } }],
     };
@@ -87,7 +95,7 @@ describe("WorkspaceRepository", () => {
       color: "red",
       autosave: false,
       position: 4,
-      tabs: [{ tabId: "TB-2", isActive: true, isTitleLocked: false, title: "Tab 2", color: "red" }],
+      tabs: [{ tabId: "TB-2", isActive: true, systemTitle: "Tab 2", color: "red" }],
       grids: [{ tabId: "TB-2", pane: { terminalId: "TE-2" } }],
     };
 
