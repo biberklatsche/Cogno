@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
-import { Subscription } from "rxjs";
+import { Observable, Subscription } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { DialogRef, DialogService } from "../../common/dialog";
@@ -371,6 +371,10 @@ export class TerminalSession {
 
   scrollToBottom(): void {
     this.renderer.terminal.scrollToBottom();
+  }
+
+  get isWebglContextLost$(): Observable<boolean> {
+    return this.renderer.isWebglContextLost$;
   }
 
   insertPaths(paths: readonly string[]): void {

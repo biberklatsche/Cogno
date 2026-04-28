@@ -5,6 +5,7 @@ import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
+import { BehaviorSubject, Observable } from "rxjs";
 import { IDisposable } from "../../../common/models/models";
 import { Config } from "../../../config/+models/config";
 import {
@@ -19,6 +20,7 @@ import {
 export interface IRenderer {
   open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
   readonly terminal: Terminal;
+  readonly isWebglContextLost$: Observable<boolean>;
 
   dispose(): void;
 
@@ -26,15 +28,24 @@ export interface IRenderer {
 }
 
 export class Renderer implements IRenderer, IDisposable {
+  private static readonly WEBGL_RESTORE_DELAYS_MS = [0, 250, 1000, 3000] as const;
+
   private _terminal: Terminal;
+  private readonly _webglEnabled: boolean;
+  private _disposed = false;
 
   private _fitAddon = new FitAddon();
   private _searchAddon = new SearchAddon();
   private _unicodeAddon = new Unicode11Addon();
   private _ligaturesAddon: LigaturesAddon | undefined = undefined;
   private _webglAddon: WebglAddon | undefined = undefined;
+  private _webglContextLossDisposable: IDisposable | undefined = undefined;
+  private _webglRestoreTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  private _webglRestoreAttempt = 0;
+  private readonly _isWebglContextLostSubject = new BehaviorSubject<boolean>(false);
 
   constructor(config: Config) {
+    this._webglEnabled = config.terminal?.webgl ?? false;
     this._terminal = new Terminal({
       overviewRuler: {
         width: config.scrollbar?.width,
@@ -74,7 +85,7 @@ export class Renderer implements IRenderer, IDisposable {
     this._terminal.loadAddon(this._searchAddon);
     this._terminal.loadAddon(this._unicodeAddon);
     this._terminal.unicode.activeVersion = "11";
-    if (config.terminal?.webgl) {
+    if (this._webglEnabled) {
       this.useWebGl();
     }
   }
@@ -109,15 +120,60 @@ export class Renderer implements IRenderer, IDisposable {
   private useWebGl() {
     if (!this._webglAddon) {
       this._webglAddon = new WebglAddon();
+      this._webglContextLossDisposable = this._webglAddon.onContextLoss(() => {
+        this.handleWebGlContextLoss();
+      });
     }
     this._terminal.loadAddon(this._webglAddon);
   }
 
   public dispose() {
+    this._disposed = true;
+    if (this._webglRestoreTimeout) {
+      clearTimeout(this._webglRestoreTimeout);
+      this._webglRestoreTimeout = undefined;
+    }
+    this.disposeWebGlAddon();
     this._terminal?.dispose();
+    this._isWebglContextLostSubject.complete();
   }
 
   public get terminal(): Terminal {
     return this._terminal;
+  }
+
+  public get isWebglContextLost$(): Observable<boolean> {
+    return this._isWebglContextLostSubject.asObservable();
+  }
+
+  private disposeWebGlAddon() {
+    this._webglContextLossDisposable?.dispose();
+    this._webglContextLossDisposable = undefined;
+    this._webglAddon?.dispose();
+    this._webglAddon = undefined;
+  }
+
+  private handleWebGlContextLoss() {
+    this._isWebglContextLostSubject.next(true);
+    this.disposeWebGlAddon();
+    this.scheduleWebGlRestore();
+  }
+
+  private scheduleWebGlRestore() {
+    if (!this._webglEnabled || this._disposed || this._webglRestoreTimeout) {
+      return;
+    }
+    const restoreDelay =
+      Renderer.WEBGL_RESTORE_DELAYS_MS[this._webglRestoreAttempt] ??
+      Renderer.WEBGL_RESTORE_DELAYS_MS[Renderer.WEBGL_RESTORE_DELAYS_MS.length - 1];
+    this._webglRestoreAttempt += 1;
+    this._webglRestoreTimeout = setTimeout(() => {
+      this._webglRestoreTimeout = undefined;
+      if (this._disposed) {
+        return;
+      }
+      this.useWebGl();
+      this._isWebglContextLostSubject.next(false);
+    }, restoreDelay);
   }
 }

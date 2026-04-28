@@ -51,6 +51,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
 
   isFocused: Signal<boolean | undefined>;
   showScrollToBottomButton: Signal<boolean>;
+  isWebglContextLost: Signal<boolean>;
 
   constructor(
     private destroyRef: DestroyRef,
@@ -67,6 +68,9 @@ export class TerminalComponent implements OnInit, AfterViewInit {
       ),
       { initialValue: false },
     );
+    this.isWebglContextLost = toSignal(this.terminalSession.isWebglContextLost$, {
+      initialValue: false,
+    });
   }
 
   ngOnInit(): void {

@@ -1,5 +1,14 @@
 <app-terminal-header></app-terminal-header>
-<div class="terminal-container" #terminalContainer (click)="focus($event)" (contextmenu)="onContextMenu($event)">
+<div
+    class="terminal-container"
+    [class.webgl-context-lost]="isWebglContextLost()"
+    #terminalContainer
+    (click)="focus($event)"
+    (contextmenu)="onContextMenu($event)"
+>
+    @if (isWebglContextLost()) {
+        <div class="webgl-restore-overlay">Restoring terminal renderer…</div>
+    }
     <app-terminal-autocomplete></app-terminal-autocomplete>
     @if (showScrollToBottomButton()) {
         <button type="button" class="scroll-to-bottom-button" (click)="scrollToBottom($event)">

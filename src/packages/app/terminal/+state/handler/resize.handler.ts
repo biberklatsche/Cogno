@@ -9,6 +9,10 @@ import { TerminalStateManager } from "../state";
 import { IFitHandler, ITerminalHandler } from "./handler";
 
 export type TerminalDimensions = { rows: number; cols: number };
+type NullableTerminalDimensions = {
+  rows: number | null | undefined;
+  cols: number | null | undefined;
+};
 
 type TerminalCoreWithCharSize = {
   _core?: {
@@ -98,7 +102,10 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     const viewportWidth = this._terminalContainer.clientWidth;
     const viewportHeight = this._terminalContainer.clientHeight;
 
-    if (!this.areDimensionsEqual(newRendererDimensions, currentDimensions)) {
+    if (
+      this.isValidDimensions(newRendererDimensions) &&
+      !this.areDimensionsEqual(newRendererDimensions, currentDimensions)
+    ) {
       this._pty.resize(newRendererDimensions);
       this._fitAddon.fit();
     }
@@ -117,5 +124,21 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
 
   private areDimensionsEqual(a?: TerminalDimensions, b?: TerminalDimensions) {
     return a?.rows === b?.rows && a?.cols === b?.cols;
+  }
+
+  private isValidDimensions(
+    dimensions: NullableTerminalDimensions,
+  ): dimensions is TerminalDimensions {
+    const { cols, rows } = dimensions;
+    return (
+      Number.isInteger(cols) &&
+      Number.isInteger(rows) &&
+      cols !== null &&
+      cols !== undefined &&
+      rows !== null &&
+      rows !== undefined &&
+      cols > 0 &&
+      rows > 0
+    );
   }
 }

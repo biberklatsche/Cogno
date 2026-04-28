@@ -1,8 +1,11 @@
-import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../../../config/+models/config";
 import { Renderer } from "./renderer";
+
+let webglContextLossListener: (() => void) | undefined;
+let webglContextLossDisposable: { dispose: ReturnType<typeof vi.fn> } | undefined;
+let webglAddonDisposeSpy: ReturnType<typeof vi.fn> | undefined;
 
 // Mock xterm and addons
 vi.mock("@xterm/xterm", () => {
@@ -21,7 +24,21 @@ vi.mock("@xterm/xterm", () => {
 vi.mock("@xterm/addon-fit", () => ({ FitAddon: vi.fn() }));
 vi.mock("@xterm/addon-search", () => ({ SearchAddon: vi.fn() }));
 vi.mock("@xterm/addon-unicode11", () => ({ Unicode11Addon: vi.fn() }));
-vi.mock("@xterm/addon-webgl", () => ({ WebglAddon: vi.fn() }));
+vi.mock("@xterm/addon-webgl", () => ({
+  WebglAddon: class WebglAddonMock {
+    dispose = vi.fn();
+
+    constructor() {
+      webglAddonDisposeSpy = this.dispose;
+      webglContextLossDisposable = { dispose: vi.fn() };
+    }
+
+    onContextLoss(listener: () => void) {
+      webglContextLossListener = listener;
+      return webglContextLossDisposable;
+    }
+  },
+}));
 vi.mock("@xterm/addon-ligatures", () => ({ LigaturesAddon: vi.fn() }));
 
 describe("Renderer", () => {
@@ -29,6 +46,10 @@ describe("Renderer", () => {
   let mockConfig: Config;
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    webglContextLossListener = undefined;
+    webglContextLossDisposable = undefined;
+    webglAddonDisposeSpy = undefined;
     mockConfig = {
       scrollbar: {
         width: 10,
@@ -50,6 +71,10 @@ describe("Renderer", () => {
       },
     };
     renderer = new Renderer(mockConfig);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("should initialize terminal with config", () => {
@@ -89,8 +114,43 @@ describe("Renderer", () => {
     renderer = new Renderer(mockConfig);
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
-    expect(WebglAddon).toHaveBeenCalled();
+    expect(webglContextLossDisposable).toBeDefined();
     expect(terminalInstance.loadAddon).toHaveBeenCalled();
+  });
+
+  it("should dispose WebGL addon on context loss", () => {
+    mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
+    renderer = new Renderer(mockConfig);
+
+    webglContextLossListener?.();
+
+    expect(webglContextLossDisposable?.dispose).toHaveBeenCalled();
+    expect(webglAddonDisposeSpy).toHaveBeenCalled();
+  });
+
+  it("should try to restore WebGL after context loss", () => {
+    mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
+    renderer = new Renderer(mockConfig);
+    const terminalInstance =
+      vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
+
+    webglContextLossListener?.();
+    vi.runOnlyPendingTimers();
+
+    expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(5);
+  });
+
+  it("should expose WebGL context loss state during restore", () => {
+    mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
+    renderer = new Renderer(mockConfig);
+    const states: boolean[] = [];
+    const subscription = renderer.isWebglContextLost$.subscribe((state) => states.push(state));
+
+    webglContextLossListener?.();
+    vi.runOnlyPendingTimers();
+
+    expect(states).toEqual([false, true, false]);
+    subscription.unsubscribe();
   });
 
   it("should open terminal in container and use ligatures if enabled", () => {
