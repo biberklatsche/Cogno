@@ -29,7 +29,7 @@ describe("WorkspaceRepository", () => {
   it("loads workspaces with tabs and grids", async () => {
     selectMock
       .mockResolvedValueOnce([
-        { id: "ws1", name: "Workspace 1", color: "blue", autosave: 1, position: 0 },
+        { id: "ws1", name: "Workspace 1", color: "blue", position: 0 },
       ])
       .mockResolvedValueOnce([
         {
@@ -62,7 +62,6 @@ describe("WorkspaceRepository", () => {
       id: "ws1",
       name: "Workspace 1",
       color: "green",
-      autosave: true,
       position: 0,
       tabs: [
         {
@@ -83,7 +82,6 @@ describe("WorkspaceRepository", () => {
       "ws1",
       "Workspace 1",
       "green",
-      1,
       0,
     ]);
   });
@@ -93,7 +91,6 @@ describe("WorkspaceRepository", () => {
       id: "ws1",
       name: "Updated",
       color: "red",
-      autosave: false,
       position: 4,
       tabs: [{ tabId: "TB-2", isActive: true, systemTitle: "Tab 2", color: "red" }],
       grids: [{ tabId: "TB-2", pane: { terminalId: "TE-2" } }],
@@ -104,7 +101,7 @@ describe("WorkspaceRepository", () => {
     expect(transactionMock).toHaveBeenCalledTimes(1);
     expect(executeMock).toHaveBeenCalledWith(
       expect.stringContaining("UPDATE workspaces SET name = ?"),
-      ["Updated", "red", 0, 4, "ws1"],
+      ["Updated", "red", 4, "ws1"],
     );
   });
 

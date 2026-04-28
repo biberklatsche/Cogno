@@ -30,6 +30,7 @@ describe("NotificationTargetRuntimeService", () => {
     workspaceHostPort = {
       workspaceEntries$: of([{ id: "workspace-1", name: "Workspace 1" }]),
       restoreWorkspace: restoreWorkspaceMock,
+      saveWorkspace: vi.fn(),
       closeWorkspace: vi.fn(),
       reorderWorkspaces: vi.fn(),
       persistWorkspaceOrder: vi.fn(),

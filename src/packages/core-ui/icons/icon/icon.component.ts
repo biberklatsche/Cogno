@@ -30,6 +30,7 @@ import {
   mdiCogs,
   mdiConsole,
   mdiContentCopy,
+  mdiContentSaveOutline,
   mdiCropSquare,
   mdiDesktopClassic,
   mdiDotsSquare,
@@ -68,6 +69,8 @@ import {
   mdiStar,
   mdiStarOutline,
   mdiSwapHorizontal,
+  mdiTable,
+  mdiTableEdit,
   mdiThemeLightDark,
   mdiThumbUp,
   mdiToyBrick,
@@ -258,6 +261,12 @@ export class IconComponent {
       case "mdiViewDashboard":
         this.icon = mdiViewDashboard;
         break;
+      case "mdiTable":
+        this.icon = mdiTable;
+        break;
+      case "mdiTableEdit":
+        this.icon = mdiTableEdit;
+        break;
       case "mdiSquareEditOutline":
         this.icon = mdiSquareEditOutline;
         break;
@@ -275,6 +284,9 @@ export class IconComponent {
         break;
       case "mdiCheckCircle":
         this.icon = mdiCheckCircle;
+        break;
+      case "mdiContentSaveOutline":
+        this.icon = mdiContentSaveOutline;
         break;
       case "mdiCheckboxBlankCircle":
         this.icon = mdiCheckboxBlankCircle;

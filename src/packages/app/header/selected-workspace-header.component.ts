@@ -16,7 +16,7 @@ import {
   WorkspaceEntryContract,
   WorkspaceHostPortContract,
 } from "@cogno/core-api";
-import { TooltipDirective } from "@cogno/core-ui";
+import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 
 @Component({
   selector: "app-selected-workspace-header",
@@ -33,6 +33,11 @@ import { TooltipDirective } from "@cogno/core-ui";
           aria-label="Select open workspace"
           (click)="openWorkspaceMenu($event)"
         >
+          @if (activeWorkspaceEntry.isDirty) {
+            <span class="selected-workspace-header__dirty" aria-hidden="true">
+              <app-icon name="mdiTableEdit"></app-icon>
+            </span>
+          }
           <span class="selected-workspace-header__label">
             {{ activeWorkspaceEntry.name }}
           </span>
@@ -44,6 +49,11 @@ import { TooltipDirective } from "@cogno/core-ui";
           [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
           [appTooltip]="activeWorkspaceEntry.name"
         >
+          @if (activeWorkspaceEntry.isDirty) {
+            <span class="selected-workspace-header__dirty" aria-hidden="true">
+              <app-icon name="mdiTableEdit"></app-icon>
+            </span>
+          }
           <span class="selected-workspace-header__label">
             {{ activeWorkspaceEntry.name }}
           </span>
@@ -101,6 +111,15 @@ import { TooltipDirective } from "@cogno/core-ui";
         min-width: 0;
       }
 
+      .selected-workspace-header__dirty {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 0.95rem;
+        height: 0.95rem;
+        opacity: 0.9;
+      }
+
       .selected-workspace-header__chevron {
         flex: 0 0 auto;
         width: 0.45rem;
@@ -113,7 +132,7 @@ import { TooltipDirective } from "@cogno/core-ui";
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TooltipDirective],
+  imports: [IconComponent, TooltipDirective],
 })
 export class SelectedWorkspaceHeaderComponent {
   private readonly workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([]);

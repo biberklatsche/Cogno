@@ -12,7 +12,6 @@ export interface WorkspaceConfiguration {
   tabs: PersistedTabConfigurationContract[];
   position?: number;
   isActive?: boolean;
-  autosave?: boolean;
 }
 
 export interface WorkspaceTerminalSession {
@@ -24,4 +23,5 @@ export interface WorkspaceTerminalSession {
 export interface WorkspaceState extends WorkspaceConfiguration {
   isSelected: boolean;
   isOpen?: boolean;
+  isDirty?: boolean;
 }

@@ -13,6 +13,7 @@ describe("WorkspaceService", () => {
   let workspaceService: WorkspaceService;
   let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
+  let saveWorkspaceMock: ReturnType<typeof vi.fn>;
   let closeWorkspaceMock: ReturnType<typeof vi.fn>;
   let reorderWorkspacesMock: ReturnType<typeof vi.fn>;
   let persistWorkspaceOrderMock: ReturnType<typeof vi.fn>;
@@ -24,11 +25,12 @@ describe("WorkspaceService", () => {
   beforeEach(() => {
     workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
-      { id: "WS-1", name: "Project One", color: "blue", autosave: true, isActive: false },
-      { id: "WS-2", name: "Project Two", color: "red", autosave: false, isActive: false },
+      { id: "WS-1", name: "Project One", color: "blue", isActive: false },
+      { id: "WS-2", name: "Project Two", color: "red", isActive: false },
     ]);
 
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    saveWorkspaceMock = vi.fn().mockResolvedValue(undefined);
     closeWorkspaceMock = vi.fn().mockResolvedValue(undefined);
     reorderWorkspacesMock = vi.fn().mockResolvedValue(undefined);
     persistWorkspaceOrderMock = vi.fn().mockResolvedValue(undefined);
@@ -40,6 +42,7 @@ describe("WorkspaceService", () => {
     const workspaceHostPort: WorkspaceHostPort = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
+      saveWorkspace: saveWorkspaceMock,
       closeWorkspace: closeWorkspaceMock,
       reorderWorkspaces: reorderWorkspacesMock,
       persistWorkspaceOrder: persistWorkspaceOrderMock,
@@ -80,9 +83,9 @@ describe("WorkspaceService", () => {
   it("moves through a variable grid using registered geometry", () => {
     workspaceEntriesSubject.next([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
-      { id: "WS-1", name: "Project One", color: "blue", autosave: true, isActive: false },
-      { id: "WS-2", name: "Project Two", color: "red", autosave: false, isActive: false },
-      { id: "WS-3", name: "Project Three", color: "yellow", autosave: false, isActive: false },
+      { id: "WS-1", name: "Project One", color: "blue", isActive: false },
+      { id: "WS-2", name: "Project Two", color: "red", isActive: false },
+      { id: "WS-3", name: "Project Three", color: "yellow", isActive: false },
     ]);
 
     workspaceService.registerNavigationItemsProvider(() => [
@@ -104,11 +107,12 @@ describe("WorkspaceService", () => {
     expect(restoreWorkspaceMock).toHaveBeenCalledWith("WS-1");
   });
 
-  it("delegates create, edit and delete operations to host", async () => {
+  it("delegates create, save, edit and delete operations to host", async () => {
     await workspaceService.closeWorkspace("WS-1");
     await workspaceService.reorderWorkspaces("WS-2", "WS-1");
     await workspaceService.persistWorkspaceOrder();
     workspaceService.openCreateWorkspaceDialog();
+    await workspaceService.saveWorkspace("WS-1");
     workspaceService.openEditWorkspaceDialog("WS-1");
     await workspaceService.deleteWorkspace("WS-2");
 
@@ -116,6 +120,7 @@ describe("WorkspaceService", () => {
     expect(reorderWorkspacesMock).toHaveBeenCalledWith("WS-2", "WS-1");
     expect(persistWorkspaceOrderMock).toHaveBeenCalledTimes(1);
     expect(openCreateWorkspaceDialogMock).toHaveBeenCalledTimes(1);
+    expect(saveWorkspaceMock).toHaveBeenCalledWith("WS-1");
     expect(openEditWorkspaceDialogMock).toHaveBeenCalledWith("WS-1");
     expect(deleteWorkspaceMock).toHaveBeenCalledWith("WS-2");
   });

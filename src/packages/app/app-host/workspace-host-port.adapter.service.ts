@@ -20,7 +20,7 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
           id: workspaceConfigUi.id,
           name: workspaceConfigUi.name,
           color: workspaceConfigUi.color,
-          autosave: workspaceConfigUi.autosave,
+          isDirty: workspaceConfigUi.isDirty,
           isActive: workspaceConfigUi.isActive,
           isOpen: workspaceConfigUi.isOpen,
         })),
@@ -34,6 +34,10 @@ export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContrac
       return;
     }
     await this.workspaceHostApplicationService.restoreWorkspace(workspaceConfigUi);
+  }
+
+  async saveWorkspace(workspaceId: string): Promise<void> {
+    await this.workspaceHostApplicationService.saveWorkspace(workspaceId);
   }
 
   async closeWorkspace(workspaceId: string): Promise<void> {

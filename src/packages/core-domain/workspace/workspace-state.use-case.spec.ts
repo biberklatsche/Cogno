@@ -6,7 +6,6 @@ const persistedWorkspace = {
   id: "WS-1",
   name: "Project One",
   color: "blue",
-  autosave: true,
   grids: [{ tabId: "TB-1", pane: {} }],
   tabs: [{ tabId: "TB-1" }],
 };
@@ -61,13 +60,16 @@ describe("WorkspaceStateUseCase", () => {
     const activeWorkspaceList = WorkspaceStateUseCase.activateWorkspace(
       initialWorkspaceList,
       "WS-1",
-    ).workspaceList;
+    ).workspaceList.map((workspace) =>
+      workspace.id === "WS-1" ? { ...workspace, isDirty: true } : workspace,
+    );
 
     const closePlan = WorkspaceStateUseCase.closeWorkspace(activeWorkspaceList, "WS-1");
 
     expect(closePlan.closedWorkspace?.id).toBe("WS-1");
     expect(closePlan.workspaceToActivateId).toBe(defaultWorkspaceIdContract);
     expect(closePlan.workspaceList[1].isOpen).toBe(false);
+    expect(closePlan.workspaceList[1].isDirty).toBe(false);
   });
 
   it("deletes the active workspace and resolves the first remaining workspace as fallback", () => {

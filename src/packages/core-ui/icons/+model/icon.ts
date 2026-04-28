@@ -44,6 +44,8 @@ export type Icon =
   | "mdiAlert"
   | "mdiTrashCanOutline"
   | "mdiViewDashboard"
+  | "mdiTable"
+  | "mdiTableEdit"
   | "mdiSquareEditOutline"
   | "mdiContentCopy"
   | "mdiCloseBoxMultipleOutline"
@@ -77,4 +79,5 @@ export type Icon =
   | "mdiPaletteSwatch"
   | "mdiBell"
   | "mdiBellBadge"
-  | "mdiFilter";
+  | "mdiFilter"
+  | "mdiContentSaveOutline";
