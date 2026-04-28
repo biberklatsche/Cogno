@@ -28,9 +28,7 @@ describe("WorkspaceRepository", () => {
 
   it("loads workspaces with tabs and grids", async () => {
     selectMock
-      .mockResolvedValueOnce([
-        { id: "ws1", name: "Workspace 1", color: "blue", position: 0 },
-      ])
+      .mockResolvedValueOnce([{ id: "ws1", name: "Workspace 1", color: "blue", position: 0 }])
       .mockResolvedValueOnce([
         {
           workspace_id: "ws1",
@@ -43,7 +41,11 @@ describe("WorkspaceRepository", () => {
         },
       ])
       .mockResolvedValueOnce([
-        { workspace_id: "ws1", tab_id: "TB-1", pane_json: JSON.stringify({ terminalId: "TE-1" }) },
+        {
+          workspace_id: "ws1",
+          tab_id: "TB-1",
+          pane_json: JSON.stringify({ terminalId: "TE-1" }),
+        },
       ]);
 
     const workspaceConfigurations = await workspaceRepository.getAllWorkspaces();

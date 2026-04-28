@@ -13,8 +13,8 @@ import type { Grid } from "../grid-list/+model/model";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
 import { TabListService } from "../tab-list/+state/tab-list.service";
-import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 import type { WorkspaceRepository } from "./workspace.repository";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 describe("WorkspaceHostApplicationService", () => {
   let bus: AppBus;

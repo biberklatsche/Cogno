@@ -116,8 +116,7 @@ export class WorkspaceHostApplicationService {
       const activeTab = this.tabListService
         .getTabConfigs(workspaceToActivate.id)
         .find((tabConfiguration) => tabConfiguration.isActive);
-      const fallbackTab =
-        activeTab ?? this.tabListService.getTabConfigs(workspaceToActivate.id)[0];
+      const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspaceToActivate.id)[0];
       if (fallbackTab) {
         this.tabListService.selectTab(fallbackTab.tabId);
       }
