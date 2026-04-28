@@ -204,6 +204,7 @@ export class RealConfigService extends ConfigService {
   private async loadConfig() {
     this._unwatch?.unsubscribe();
     const settingsExtensions = this.wiringService.getSettingsExtensions();
+    const shellSupportDefinitions = this.wiringService.getShellSupportDefinitions();
 
     const configDir = Environment.configDir();
     if (!(await Fs.exists(configDir))) {
@@ -217,6 +218,25 @@ export class RealConfigService extends ConfigService {
     }
 
     const defaultConfigString = await DefaultConfig.read();
+    const defaultConfig = ConfigReader.fromStringToConfig(
+      defaultConfigString,
+      "",
+      settingsExtensions,
+    );
+    const writeConfig = (config: Config) =>
+      Fs.writeTextFile(
+        path,
+        InitialConfigOverridesWriter.toDotString(config, { defaultSettings: defaultConfig }),
+      );
+    const readConfig = async () => {
+      let userConfigString = await Fs.readTextFile(path);
+      userConfigString = await this.applyCliSetOverrides(userConfigString);
+      return ConfigReader.fromStringToConfigWithDiagnostics(
+        defaultConfigString,
+        userConfigString,
+        settingsExtensions,
+      );
+    };
 
     if (!(await Fs.exists(path))) {
       const userConfig = ConfigReader.fromStringToConfig(
@@ -224,28 +244,19 @@ export class RealConfigService extends ConfigService {
         "",
         settingsExtensions,
       );
-      await this.shells.apply(userConfig, this.wiringService.getShellSupportDefinitions());
-      const defaultConfig = ConfigReader.fromStringToConfig(
-        defaultConfigString,
-        "",
-        settingsExtensions,
-      );
-      await Fs.writeTextFile(
-        path,
-        InitialConfigOverridesWriter.toDotString(userConfig, defaultConfig),
-      );
+      await this.shells.apply(userConfig, shellSupportDefinitions);
+      await writeConfig(userConfig);
     }
 
-    let userConfigString = await Fs.readTextFile(path);
-    userConfigString = await this.applyCliSetOverrides(userConfigString);
-    const { config, diagnostics } = ConfigReader.fromStringToConfigWithDiagnostics(
-      defaultConfigString,
-      userConfigString,
-      settingsExtensions,
-    );
+    let { config, diagnostics } = await readConfig();
+    if (Object.keys(config.shell?.profiles ?? {}).length === 0) {
+      await this.shells.apply(config, shellSupportDefinitions);
+      await writeConfig(config);
+      ({ config, diagnostics } = await readConfig());
+    }
 
     // Ensure shell integration scripts are installed
-    await ShellIntegrationWriter.ensure(this.wiringService.getShellSupportDefinitions());
+    await ShellIntegrationWriter.ensure(shellSupportDefinitions);
 
     if (config.enable_watch_config) {
       await this.watch();

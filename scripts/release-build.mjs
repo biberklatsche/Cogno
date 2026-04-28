@@ -23,6 +23,7 @@ import { URL } from "node:url";
 const artifactRootDirectoryPath = "release-artifacts";
 const packageJsonPath = "package.json";
 const releaseSettingsFilePath = join(homedir(), ".cogno-secrets", "release.settings.json");
+const tauriBundleDirectoryPath = join("src-tauri", "target", "release", "bundle");
 const tauriCargoTomlPath = "src-tauri/Cargo.toml";
 const tauriConfigPath = "src-tauri/tauri.conf.json";
 const supportedChannels = ["dev", "release"];
@@ -533,6 +534,8 @@ function runBuild({ currentPlatformName, releaseTag, releaseVersion }) {
   console.log("");
   console.log(`Building ${releaseVersion} for ${currentPlatformName} from tag ${releaseTag}`);
 
+  cleanBundleOutputDirectory();
+
   if (currentPlatformName === "macos") {
     buildMacosReleaseArtifacts();
     return;
@@ -545,7 +548,7 @@ function runBuild({ currentPlatformName, releaseTag, releaseVersion }) {
 }
 
 function buildMacosReleaseArtifacts() {
-  const dmgDirectoryPath = join("src-tauri", "target", "release", "bundle", "dmg");
+  const dmgDirectoryPath = join(tauriBundleDirectoryPath, "dmg");
   const tauriMacosBuildConfig = createTauriMacosBuildConfig();
   const macosBuildEnvironment = createMacosBuildEnvironment();
   const temporaryConfigDirectoryPath = mkdtempSync(join(tmpdir(), "cogno-tauri-config-"));
@@ -697,11 +700,18 @@ function resolveNewestMatchingFilePath({ directoryPath, fileExtension }) {
   })[0];
 }
 
+function cleanBundleOutputDirectory() {
+  if (!existsSync(tauriBundleDirectoryPath)) {
+    return;
+  }
+
+  rmSync(tauriBundleDirectoryPath, { force: true, recursive: true });
+}
+
 function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, releaseVersion }) {
-  const sourceBundleDirectoryPath = join("src-tauri", "target", "release", "bundle");
   const discoveredArtifactPaths = findBundleArtifacts({
     currentPlatformName,
-    sourceBundleDirectoryPath,
+    sourceBundleDirectoryPath: tauriBundleDirectoryPath,
   }).sort((leftArtifactPath, rightArtifactPath) =>
     leftArtifactPath.localeCompare(rightArtifactPath),
   );
@@ -768,6 +778,12 @@ function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, rel
       });
     }
   }
+
+  assertCollectedArtifactsMatchVersion({
+    collectedArtifacts,
+    currentPlatformName,
+    releaseVersion,
+  });
 
   return collectedArtifacts.sort((leftArtifact, rightArtifact) =>
     leftArtifact.fileName.localeCompare(rightArtifact.fileName),
@@ -945,6 +961,44 @@ function copyArtifact(sourceArtifactPath, targetArtifactPath) {
   }
 
   copyFileSync(sourceArtifactPath, targetArtifactPath);
+}
+
+function assertCollectedArtifactsMatchVersion({
+  collectedArtifacts,
+  currentPlatformName,
+  releaseVersion,
+}) {
+  const normalizedReleaseVersion = normalizeVersionToken(releaseVersion);
+
+  for (const currentArtifact of collectedArtifacts) {
+    if (!shouldValidateArtifactVersion(currentPlatformName, currentArtifact.kind)) {
+      continue;
+    }
+
+    const normalizedSourceFileName = normalizeVersionToken(basename(currentArtifact.sourcePath));
+
+    if (!normalizedSourceFileName.includes(normalizedReleaseVersion)) {
+      throw new Error(
+        `Collected artifact "${currentArtifact.sourcePath}" does not match release version "${releaseVersion}".`,
+      );
+    }
+  }
+}
+
+function shouldValidateArtifactVersion(currentPlatformName, artifactKind) {
+  if (currentPlatformName === "windows") {
+    return ["msi", "nsis", "exe"].includes(artifactKind);
+  }
+
+  if (currentPlatformName === "linux") {
+    return ["appimage", "deb", "rpm", "tarball"].includes(artifactKind);
+  }
+
+  return false;
+}
+
+function normalizeVersionToken(value) {
+  return String(value).replaceAll(".", "_").toLowerCase();
 }
 
 function createManifest({

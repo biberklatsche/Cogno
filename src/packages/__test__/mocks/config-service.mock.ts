@@ -1,8 +1,8 @@
+import { ConfigService, type ShellProfileEntry } from "@cogno/app/config/+state/config.service";
 import { BehaviorSubject, type Observable } from "rxjs";
 import { filter } from "rxjs/operators";
 import type { Config } from "../../app/config/+models/config";
 import type { ShellProfile } from "../../app/config/+models/shell-config";
-import { ConfigService, type ShellProfileEntry } from "../../app/config/+state/config.service";
 
 export class ConfigServiceMock extends ConfigService {
   private _config$ = new BehaviorSubject<Config | undefined>(undefined);

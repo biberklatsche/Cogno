@@ -7,10 +7,16 @@ import { AppBus } from "../../../app-bus/app-bus";
 import type { Config, ShellType } from "../../../config/+models/config";
 import type { PromptSegment } from "../../../config/+models/prompt-config";
 import type { ShellProfile } from "../../../config/+models/shell-config";
-import { ConfigService } from "../../../config/+state/config.service";
+import { ConfigService, ShellProfileEntry } from "../../../config/+state/config.service";
 import { TerminalStateManager } from "./terminal-state.manager";
 
 class ConfigServiceMockForNotificationBadge extends ConfigService {
+  override getOrderedShellProfiles(_limit?: number): ShellProfileEntry[] {
+    throw new Error("Method not implemented.");
+  }
+  override getShellProfileByShortcutIndex(_index: number): ShellProfileEntry | undefined {
+    throw new Error("Method not implemented.");
+  }
   constructor(private readonly notificationBadgeEnabledState: { value: boolean }) {
     super();
   }

@@ -23,7 +23,7 @@ describe("InitialConfigOverridesWriter", () => {
     if (!curr.scrollbar) curr.scrollbar = {};
     curr.scrollbar.scrollback_lines = 1234;
 
-    const text = InitialConfigOverridesWriter.toDotString(curr, false);
+    const text = InitialConfigOverridesWriter.toDotString(curr, { asComments: false });
     const lines = text.trimEnd().split("\n");
 
     // Ensure no comment lines are present
@@ -58,7 +58,10 @@ describe("InitialConfigOverridesWriter", () => {
       },
     };
 
-    const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS, false);
+    const text = InitialConfigOverridesWriter.toDotString(currentConfig, {
+      defaultSettings: DEFAULTS,
+      asComments: false,
+    });
 
     expect(text).toContain("scrollbar.scrollback_lines = 1234");
     expect(text).toContain("shell.default = zsh");
@@ -68,7 +71,10 @@ describe("InitialConfigOverridesWriter", () => {
   it("writes nothing when config matches defaults exactly", () => {
     const currentConfig: Config = JSON.parse(JSON.stringify(DEFAULTS));
 
-    const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS, false);
+    const text = InitialConfigOverridesWriter.toDotString(currentConfig, {
+      defaultSettings: DEFAULTS,
+      asComments: false,
+    });
 
     expect(text).toBe("");
   });
@@ -77,7 +83,7 @@ describe("InitialConfigOverridesWriter", () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
     curr.terminal = { ...(curr.terminal ?? {}), webgl: true };
 
-    const text = InitialConfigOverridesWriter.toDotString(curr, true);
+    const text = InitialConfigOverridesWriter.toDotString(curr, { asComments: true });
     // Since we don't know the exact descriptions without looking at ConfigSchema closely,
     // we check for general presence of comments.
     expect(text).toContain("# ");
@@ -95,7 +101,7 @@ describe("InitialConfigOverridesWriter", () => {
 
     // We can't easily pass a custom schema to toDotString without changing the signature,
     // but we can test it through the public API with different config structures.
-    const text = InitialConfigOverridesWriter.toDotString(mockConfig, true);
+    const text = InitialConfigOverridesWriter.toDotString(mockConfig, { asComments: true });
     expect(text).toContain("scrollbar.slider_color = 11111");
   });
 
@@ -103,7 +109,7 @@ describe("InitialConfigOverridesWriter", () => {
     const config = {
       some_array: [1, 2, "three"],
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config, false);
+    const text = InitialConfigOverridesWriter.toDotString(config, { asComments: false });
     expect(text).toContain("some_array = [1,2,three]");
   });
 
@@ -116,7 +122,7 @@ describe("InitialConfigOverridesWriter", () => {
         d: 2,
       },
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config, false);
+    const text = InitialConfigOverridesWriter.toDotString(config, { asComments: false });
     const lines = text.trim().split("\n");
     expect(lines).toContain("a.b.c = 1");
     expect(lines).toContain("a.d = 2");
@@ -194,7 +200,7 @@ describe("InitialConfigOverridesWriter", () => {
     const config = {
       keybind: ["a=b", "c=d"],
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config, false);
+    const text = InitialConfigOverridesWriter.toDotString(config, { asComments: false });
     expect(text).toContain("keybind = a=b\nkeybind = c=d");
   });
 
@@ -206,7 +212,7 @@ describe("InitialConfigOverridesWriter", () => {
         },
       },
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config, false);
+    const text = InitialConfigOverridesWriter.toDotString(config, { asComments: false });
     expect(text).toContain("terminal.progress_bar.enabled = false");
   });
 });
