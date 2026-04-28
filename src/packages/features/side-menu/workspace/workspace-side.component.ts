@@ -41,12 +41,14 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                 [style.background-color]="workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : 'var(--color-green)'"
               >
                 {{ (workspaceEntry.name || "")[0] || "?" }}
+                @if (workspaceEntry.isDirty) {
+                  <span class="workspace-dirty-indicator" aria-hidden="true">
+                    <app-icon name="mdiTableEdit"></app-icon>
+                  </span>
+                }
               </div>
               <div class="workspace-text">
                 <div class="workspace-name">{{ workspaceEntry.name }}</div>
-                @if (workspaceEntry.autosave) {
-                  <small class="workspace-autosave">Auto Save</small>
-                }
               </div>
 
               @if (workspaceEntry.id !== defaultWorkspaceId) {
@@ -62,6 +64,16 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                 }
                 <div class="space"></div>
                 <div class="workspace-actions">
+                  @if (workspaceEntry.isDirty) {
+                    <button
+                      class="button icon-button workspace-save-button visible"
+                      type="button"
+                      title="Save workspace"
+                      (click)="saveWorkspace(workspaceEntry.id, $event)"
+                    >
+                      <app-icon name="mdiContentSaveOutline"></app-icon>
+                    </button>
+                  }
                   <app-copy-edit-delete
                     [enableEdit]="true"
                     [enableDelete]="true"
@@ -178,6 +190,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       }
 
       .workspace-badge {
+        position: relative;
         width: 24px;
         min-width: 24px;
         height: 24px;
@@ -199,6 +212,23 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         min-width: 0;
       }
 
+      .workspace-dirty-indicator {
+        position: absolute;
+        right: -0.28rem;
+        bottom: -0.28rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 0.8rem;
+        height: 0.8rem;
+        padding: 1px;
+        border-radius: 999px;
+        background: var(--background-color-20l-ct);
+        color: var(--foreground-color);
+        box-shadow: 0 0 0 1px var(--background-color-20l-ct);
+        opacity: 0.95;
+      }
+
       .workspace-name {
         font-size: 1rem;
         color: var(--color-text, inherit);
@@ -206,10 +236,6 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         text-overflow: ellipsis;
         white-space: nowrap;
         width: 100%;
-      }
-
-      .workspace-autosave {
-        font-size: 0.8rem;
       }
 
       .space {
@@ -224,10 +250,21 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
       .workspace-actions {
         display: flex;
+        align-items: center;
+        gap: 0.2rem;
         flex: 0 0 auto;
         opacity: 0;
         transition: opacity 120ms ease-out;
         transform: translateX(-25px);
+      }
+
+      .workspace-save-button {
+        opacity: 0;
+        transition: opacity 120ms ease-out;
+      }
+
+      .workspace-save-button.visible {
+        opacity: 1;
       }
 
       .workspace-close-button {
@@ -306,6 +343,11 @@ export class WorkspaceSideComponent implements OnDestroy {
   async closeWorkspace(workspaceId: string, event: MouseEvent): Promise<void> {
     event.stopPropagation();
     await this.workspaceService.closeWorkspace(workspaceId);
+  }
+
+  async saveWorkspace(workspaceId: string, event: MouseEvent): Promise<void> {
+    event.stopPropagation();
+    await this.workspaceService.saveWorkspace(workspaceId);
   }
 
   startWorkspaceReorderInteraction(event: MouseEvent, workspaceId: string): void {

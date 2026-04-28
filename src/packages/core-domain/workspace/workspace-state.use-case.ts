@@ -48,6 +48,7 @@ export class WorkspaceStateUseCase {
         ...workspaceConfiguration,
         isSelected: workspaceConfiguration.isActive ?? false,
         isOpen: false,
+        isDirty: false,
       }),
     );
 
@@ -128,6 +129,7 @@ export class WorkspaceStateUseCase {
         isSelected: nextWorkspaceList[existingWorkspaceIndex].isSelected,
         isActive: nextWorkspaceList[existingWorkspaceIndex].isActive,
         isOpen: nextWorkspaceList[existingWorkspaceIndex].isOpen,
+        isDirty: nextWorkspaceList[existingWorkspaceIndex].isDirty ?? false,
       };
       return {
         wasExisting: true,
@@ -151,6 +153,7 @@ export class WorkspaceStateUseCase {
       isSelected: true,
       isActive: true,
       isOpen: true,
+      isDirty: false,
     };
 
     nextWorkspaceList.push(workspaceEntry);
@@ -227,6 +230,7 @@ export class WorkspaceStateUseCase {
             isOpen: false,
             isActive: false,
             isSelected: false,
+            isDirty: false,
           },
     );
 

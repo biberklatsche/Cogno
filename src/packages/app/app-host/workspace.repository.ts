@@ -13,7 +13,6 @@ export interface WorkspaceEntity {
   id: string;
   name: string;
   color: string;
-  autosave: number;
   position?: number;
   created_at?: string;
   updated_at?: string;
@@ -72,7 +71,6 @@ export class WorkspaceRepository {
         name: workspaceEntity.name,
         color: workspaceEntity.color,
         position: workspaceEntity.position,
-        autosave: workspaceEntity.autosave === 1,
         tabs: tabEntities.map((tabEntity) => ({
           tabId: tabEntity.tab_id,
           isActive: tabEntity.is_active === 1,
@@ -95,12 +93,11 @@ export class WorkspaceRepository {
       const workspacePosition =
         workspaceConfiguration.position ?? (await this.getNextWorkspacePosition(databaseAccess));
       await databaseAccess.execute(
-        "INSERT INTO workspaces (id, name, color, autosave, position) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO workspaces (id, name, color, position) VALUES (?, ?, ?, ?)",
         [
           workspaceConfiguration.id,
           workspaceConfiguration.name,
           workspaceConfiguration.color,
-          workspaceConfiguration.autosave ? 1 : 0,
           workspacePosition,
         ],
       );
@@ -120,11 +117,10 @@ export class WorkspaceRepository {
   async updateWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
     await this.databaseAccess.transaction(async (databaseAccess) => {
       await databaseAccess.execute(
-        "UPDATE workspaces SET name = ?, color = ?, autosave = ?, position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        "UPDATE workspaces SET name = ?, color = ?, position = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         [
           workspaceConfiguration.name,
           workspaceConfiguration.color,
-          workspaceConfiguration.autosave ? 1 : 0,
           workspaceConfiguration.position ?? (await this.getNextWorkspacePosition(databaseAccess)),
           workspaceConfiguration.id,
         ],

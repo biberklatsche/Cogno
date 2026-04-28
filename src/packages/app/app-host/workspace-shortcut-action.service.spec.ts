@@ -23,6 +23,7 @@ describe("WorkspaceShortcutActionService", () => {
     const workspaceHostPort: WorkspaceHostPortContract = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
+      saveWorkspace: vi.fn().mockResolvedValue(undefined),
       closeWorkspace: vi.fn().mockResolvedValue(undefined),
       reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
       persistWorkspaceOrder: vi.fn().mockResolvedValue(undefined),

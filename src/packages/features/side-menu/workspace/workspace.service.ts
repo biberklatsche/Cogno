@@ -86,6 +86,10 @@ export class WorkspaceService {
     await this.workspaceHostPort.restoreWorkspace(workspaceId);
   }
 
+  async saveWorkspace(workspaceId: string): Promise<void> {
+    await this.workspaceHostPort.saveWorkspace(workspaceId);
+  }
+
   async closeWorkspace(workspaceId: string): Promise<void> {
     const shouldProceed = await this.workspaceCloseGuard.confirmCloseWorkspace(
       "close this workspace",

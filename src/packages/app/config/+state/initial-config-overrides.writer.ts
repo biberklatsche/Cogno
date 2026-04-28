@@ -1,18 +1,16 @@
 import { Config, ConfigSchema } from "../+models/config";
 
+interface DotStringOptions {
+  readonly defaultSettings?: Config;
+  readonly asComments?: boolean;
+}
+
 /**
  * Writes the initial user config as a compact overrides file.
  */
 export class InitialConfigOverridesWriter {
-  public static toDotString(
-    settings: Config,
-    defaultSettingsOrAsComments?: Config | boolean,
-    asComments: boolean = false,
-  ): string {
-    const defaultSettings =
-      typeof defaultSettingsOrAsComments === "boolean" ? undefined : defaultSettingsOrAsComments;
-    const shouldRenderComments =
-      typeof defaultSettingsOrAsComments === "boolean" ? defaultSettingsOrAsComments : asComments;
+  public static toDotString(settings: Config, options: DotStringOptions = {}): string {
+    const { defaultSettings, asComments = false } = options;
     const effectiveSettings =
       defaultSettings === undefined
         ? settings
@@ -21,7 +19,7 @@ export class InitialConfigOverridesWriter {
       effectiveSettings,
       "",
       ConfigSchema,
-      shouldRenderComments,
+      asComments,
     );
     return lines.join("\n") + (lines.length ? "\n" : "");
   }

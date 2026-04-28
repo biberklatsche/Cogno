@@ -51,18 +51,16 @@ export class WindowService {
             event.performed = true;
             break;
           case "close_window":
-            if (event.args?.includes("workspace_saved")) {
-              if (
-                !(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals(
-                  "close the application window",
-                ))
-              ) {
-                return;
-              }
-              this.isClosing = true;
-              AppWindow.close().then(() => Logger.debug("close window"));
-              event.performed = true;
+            if (
+              !(await this.terminalBusyStateService.confirmProceedIfNoBusyTerminals(
+                "close the application window",
+              ))
+            ) {
+              return;
             }
+            this.isClosing = true;
+            AppWindow.close().then(() => Logger.debug("close window"));
+            event.performed = true;
             break;
         }
       });

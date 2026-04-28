@@ -127,7 +127,7 @@ describe("WindowService", () => {
     });
 
     it("should handle close_window action", async () => {
-      const event = createActionEvent("close_window", ["workspace_saved"]);
+      const event = createActionEvent("close_window");
       bus.publish(event);
 
       await vi.waitFor(() => {
@@ -156,7 +156,7 @@ describe("WindowService", () => {
 
     it("should not close the window when busy terminals block the action", async () => {
       vi.mocked(terminalBusyStateService.confirmProceedIfNoBusyTerminals).mockResolvedValue(false);
-      const event = createActionEvent("close_window", ["workspace_saved"]);
+      const event = createActionEvent("close_window");
       bus.publish(event);
 
       await vi.waitFor(() => {
@@ -193,6 +193,19 @@ describe("WindowService", () => {
           payload: "close_window",
         }),
       );
+    });
+
+    it("should close the window when the native close request is received", async () => {
+      const preventDefault = vi.fn();
+      (AppWindow.onCloseRequested$ as Subject<any>).next({ preventDefault });
+
+      await vi.waitFor(() => {
+        expect(preventDefault).toHaveBeenCalledTimes(1);
+        expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
+          "close the application window",
+        );
+        expect(AppWindow.close).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });

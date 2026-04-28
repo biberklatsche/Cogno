@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { defaultWorkspaceIdContract } from "@cogno/core-api";
+import { defaultWorkspaceIdContract, PersistedPaneConfigurationContract } from "@cogno/core-api";
 import {
   WorkspaceConfiguration,
   WorkspaceState,
   WorkspaceStateUseCase,
 } from "@cogno/core-domain/workspace";
-import { ActionFired } from "../action/action.models";
+import { merge } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { Color } from "../common/color/color";
 import { IdCreator } from "../common/id-creator/id-creator";
@@ -17,10 +17,31 @@ import { WorkspaceRepository } from "./workspace.repository";
 
 export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
+interface DirtyTrackingPaneSignature {
+  readonly splitDirection?: PersistedPaneConfigurationContract["splitDirection"];
+  readonly ratio?: number;
+  readonly leftChild?: DirtyTrackingPaneSignature;
+  readonly rightChild?: DirtyTrackingPaneSignature;
+  readonly shellName?: string;
+  readonly workingDir?: string;
+}
+
+interface DirtyTrackingWorkspaceSignature {
+  readonly tabs: ReadonlyArray<{
+    readonly tabId: string;
+  }>;
+  readonly grids: ReadonlyArray<{
+    readonly tabId: string;
+    readonly pane: DirtyTrackingPaneSignature;
+  }>;
+}
+
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostApplicationService {
   private readonly defaultWorkspace =
     WorkspaceStateUseCase.createDefaultWorkspace(DEFAULT_WORKSPACE_ID);
+  private readonly persistedWorkspaceRuntimeSignatureById = new Map<string, string>();
+  private synchronizingWorkspaceRuntimeDepth = 0;
 
   readonly _workspaceList: WritableSignal<WorkspaceState[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
@@ -40,6 +61,13 @@ export class WorkspaceHostApplicationService {
         this.defaultWorkspace,
       );
 
+      for (const workspace of workspaces) {
+        this.persistedWorkspaceRuntimeSignatureById.set(
+          workspace.id,
+          this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.grids),
+        );
+      }
+
       this._workspaceList.set(workspaceList);
 
       const activeWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
@@ -48,42 +76,13 @@ export class WorkspaceHostApplicationService {
       }
     });
 
-    this.bus
-      .onType$("TabRenamed")
+    merge(this.tabListService.tabs$, this.gridListService.grids$)
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(async () => {
-        const activeWorkspace = this.getActiveWorkspace();
-        if (!activeWorkspace || activeWorkspace.id === DEFAULT_WORKSPACE_ID) {
+      .subscribe(() => {
+        if (this.synchronizingWorkspaceRuntimeDepth > 0) {
           return;
         }
-        await this.saveWorkspace(activeWorkspace);
-      });
-
-    this.bus
-      .on$({ path: ["app"], type: "ActionFired", phase: "capture" })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(async (message) => {
-        if (message.payload !== "close_window" && message.payload !== "quit") {
-          return;
-        }
-
-        const actionArguments = message.args ?? [];
-        if (actionArguments.includes("workspace_saved")) {
-          return;
-        }
-
-        const activeWorkspace = this.getActiveWorkspace();
-        if (activeWorkspace?.autosave) {
-          await this.saveWorkspace(activeWorkspace);
-        }
-
-        message.propagationStopped = true;
-        this.bus.publish(
-          ActionFired.create(message.payload, message.trigger, [
-            ...actionArguments,
-            "workspace_saved",
-          ]),
-        );
+        this.refreshDirtyStateForActiveWorkspace();
       });
   }
 
@@ -92,52 +91,46 @@ export class WorkspaceHostApplicationService {
   }
 
   public async activateWorkspace(workspace: WorkspaceState): Promise<void> {
-    const activationPlan = WorkspaceStateUseCase.activateWorkspace(
-      this._workspaceList(),
-      workspace.id,
-    );
-    const previousActiveWorkspace = activationPlan.previousActiveWorkspace;
-    const workspaceToActivate = activationPlan.workspaceToActivate;
-
-    if (!workspaceToActivate) {
-      return;
-    }
-
-    if (
-      previousActiveWorkspace &&
-      previousActiveWorkspace.id !== workspaceToActivate.id &&
-      previousActiveWorkspace.autosave
-    ) {
-      await this.saveWorkspace(previousActiveWorkspace);
-    }
-
-    if (activationPlan.shouldRestoreRuntime) {
-      this.tabListService.restoreTabs(workspaceToActivate.tabs, workspaceToActivate.id);
-      this.gridListService.restoreGridsForWorkspace(
-        workspaceToActivate.grids,
-        workspaceToActivate.id,
+    await this.runWithoutDirtyTracking(async () => {
+      const activationPlan = WorkspaceStateUseCase.activateWorkspace(
+        this._workspaceList(),
+        workspace.id,
       );
-    }
+      const workspaceToActivate = activationPlan.workspaceToActivate;
 
-    this.tabListService.activateWorkspace(workspaceToActivate.id);
-    this.gridListService.activateWorkspace(workspaceToActivate.id);
+      if (!workspaceToActivate) {
+        return;
+      }
 
-    const activeTab = this.tabListService
-      .getTabConfigs(workspaceToActivate.id)
-      .find((tabConfiguration) => tabConfiguration.isActive);
-    const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspaceToActivate.id)[0];
-    if (fallbackTab) {
-      this.tabListService.selectTab(fallbackTab.tabId);
-    }
+      if (activationPlan.shouldRestoreRuntime) {
+        this.tabListService.restoreTabs(workspaceToActivate.tabs, workspaceToActivate.id);
+        this.gridListService.restoreGridsForWorkspace(
+          workspaceToActivate.grids,
+          workspaceToActivate.id,
+        );
+      }
 
-    this._workspaceList.set(activationPlan.workspaceList);
+      this.tabListService.activateWorkspace(workspaceToActivate.id);
+      this.gridListService.activateWorkspace(workspaceToActivate.id);
 
-    if (workspaceToActivate.id === DEFAULT_WORKSPACE_ID) {
-      this.sideMenuService.updateBadgeColor("Workspace", undefined);
-      return;
-    }
+      const activeTab = this.tabListService
+        .getTabConfigs(workspaceToActivate.id)
+        .find((tabConfiguration) => tabConfiguration.isActive);
+      const fallbackTab = activeTab ?? this.tabListService.getTabConfigs(workspaceToActivate.id)[0];
+      if (fallbackTab) {
+        this.tabListService.selectTab(fallbackTab.tabId);
+      }
 
-    this.sideMenuService.updateBadgeColor("Workspace", workspaceToActivate.color);
+      this._workspaceList.set(activationPlan.workspaceList);
+      this.refreshDirtyStateForWorkspace(workspaceToActivate.id);
+
+      if (workspaceToActivate.id === DEFAULT_WORKSPACE_ID) {
+        this.sideMenuService.updateBadgeColor("Workspace", undefined);
+        return;
+      }
+
+      this.sideMenuService.updateBadgeColor("Workspace", workspaceToActivate.color);
+    });
   }
 
   createWorkspaceDraft(): WorkspaceState {
@@ -151,28 +144,53 @@ export class WorkspaceHostApplicationService {
 
     const isNewWorkspace = workspace.id === "";
     const previousActiveWorkspace = this.getActiveWorkspace();
-    const workspaceId = await this.saveWorkspace(workspace);
+    const workspaceId = await this.persistWorkspaceConfiguration(workspace);
 
-    if (isNewWorkspace && previousActiveWorkspace) {
-      this.tabListService.moveActiveWorkspaceRuntime(workspaceId);
-      this.gridListService.moveActiveWorkspaceRuntime(workspaceId);
-    }
+    await this.runWithoutDirtyTracking(async () => {
+      if (isNewWorkspace && previousActiveWorkspace) {
+        this.tabListService.moveActiveWorkspaceRuntime(workspaceId);
+        this.gridListService.moveActiveWorkspaceRuntime(workspaceId);
+      }
 
-    const upsertPlan = WorkspaceStateUseCase.upsertWorkspace(
-      this._workspaceList(),
-      workspace,
-      previousActiveWorkspace?.id,
-    );
+      const upsertPlan = WorkspaceStateUseCase.upsertWorkspace(
+        this._workspaceList(),
+        workspace,
+        previousActiveWorkspace?.id,
+      );
 
-    this._workspaceList.set(upsertPlan.workspaceList);
-    if (upsertPlan.wasExisting) {
-      return workspaceId;
-    }
+      this._workspaceList.set(upsertPlan.workspaceList);
+      this.setWorkspaceDirtyState(workspaceId, false);
 
-    if (upsertPlan.workspaceEntry) {
+      if (upsertPlan.wasExisting || !upsertPlan.workspaceEntry) {
+        return;
+      }
+
       await this.activateWorkspace(upsertPlan.workspaceEntry);
-    }
+    });
+
     return workspaceId;
+  }
+
+  public async saveWorkspace(workspaceId: string): Promise<void> {
+    if (workspaceId === DEFAULT_WORKSPACE_ID) {
+      return;
+    }
+
+    const workspace = this.getWorkspaceById(workspaceId);
+    if (!workspace) {
+      return;
+    }
+
+    const workspaceToSave: WorkspaceConfiguration = {
+      id: workspace.id,
+      name: workspace.name,
+      color: workspace.color,
+      grids: workspace.grids,
+      tabs: workspace.tabs,
+      position: workspace.position,
+      isActive: workspace.isActive,
+    };
+    await this.save(workspaceToSave);
   }
 
   async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
@@ -197,22 +215,25 @@ export class WorkspaceHostApplicationService {
   async deleteWorkspace(id: string): Promise<void> {
     const deletePlan = WorkspaceStateUseCase.deleteWorkspace(this._workspaceList(), id);
     await this.workspaceRepository.deleteWorkspace(id);
+    this.persistedWorkspaceRuntimeSignatureById.delete(id);
 
-    if (deletePlan.deletedWorkspace?.isOpen) {
-      this.tabListService.removeWorkspaceRuntime(id);
-      this.gridListService.removeWorkspaceRuntime(id);
-    }
+    await this.runWithoutDirtyTracking(async () => {
+      if (deletePlan.deletedWorkspace?.isOpen) {
+        this.tabListService.removeWorkspaceRuntime(id);
+        this.gridListService.removeWorkspaceRuntime(id);
+      }
 
-    this._workspaceList.set(deletePlan.workspaceList);
+      this._workspaceList.set(deletePlan.workspaceList);
 
-    if (!deletePlan.workspaceToActivateId) {
-      return;
-    }
+      if (!deletePlan.workspaceToActivateId) {
+        return;
+      }
 
-    const fallbackWorkspace = this.getWorkspaceById(deletePlan.workspaceToActivateId);
-    if (fallbackWorkspace) {
-      await this.activateWorkspace(fallbackWorkspace);
-    }
+      const fallbackWorkspace = this.getWorkspaceById(deletePlan.workspaceToActivateId);
+      if (fallbackWorkspace) {
+        await this.activateWorkspace(fallbackWorkspace);
+      }
+    });
   }
 
   async closeWorkspace(id: string): Promise<void> {
@@ -226,22 +247,20 @@ export class WorkspaceHostApplicationService {
       return;
     }
 
-    if (workspaceToClose.autosave) {
-      await this.saveWorkspace(workspaceToClose);
-    }
+    await this.runWithoutDirtyTracking(async () => {
+      this.tabListService.removeWorkspaceRuntime(id);
+      this.gridListService.removeWorkspaceRuntime(id);
+      this._workspaceList.set(closePlan.workspaceList);
 
-    this.tabListService.removeWorkspaceRuntime(id);
-    this.gridListService.removeWorkspaceRuntime(id);
-    this._workspaceList.set(closePlan.workspaceList);
+      if (!closePlan.workspaceToActivateId) {
+        return;
+      }
 
-    if (!closePlan.workspaceToActivateId) {
-      return;
-    }
-
-    const fallbackWorkspace = this.getWorkspaceById(closePlan.workspaceToActivateId);
-    if (fallbackWorkspace) {
-      await this.activateWorkspace(fallbackWorkspace);
-    }
+      const fallbackWorkspace = this.getWorkspaceById(closePlan.workspaceToActivateId);
+      if (fallbackWorkspace) {
+        await this.activateWorkspace(fallbackWorkspace);
+      }
+    });
   }
 
   getWorkspaceById(id: string): WorkspaceState | undefined {
@@ -252,7 +271,7 @@ export class WorkspaceHostApplicationService {
     return WorkspaceStateUseCase.getActiveWorkspace(this._workspaceList());
   }
 
-  private async saveWorkspace(workspace: WorkspaceConfiguration): Promise<string> {
+  private async persistWorkspaceConfiguration(workspace: WorkspaceConfiguration): Promise<string> {
     const isNewWorkspace = workspace.id === "";
     const sourceWorkspaceId = isNewWorkspace
       ? this.getActiveWorkspace()?.id
@@ -278,6 +297,91 @@ export class WorkspaceHostApplicationService {
       await this.workspaceRepository.updateWorkspace(workspace);
     }
 
+    this.persistedWorkspaceRuntimeSignatureById.set(
+      workspace.id,
+      this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.grids),
+    );
+
     return workspace.id;
+  }
+
+  private refreshDirtyStateForActiveWorkspace(): void {
+    this.refreshDirtyStateForWorkspace(this.getActiveWorkspace()?.id);
+  }
+
+  private refreshDirtyStateForWorkspace(workspaceId: string | undefined): void {
+    if (!workspaceId || workspaceId === DEFAULT_WORKSPACE_ID) {
+      return;
+    }
+
+    const persistedSignature = this.persistedWorkspaceRuntimeSignatureById.get(workspaceId);
+    const currentSignature = this.createWorkspaceRuntimeSignature(
+      this.tabListService.getTabConfigs(workspaceId),
+      this.gridListService.getGridConfigs(workspaceId),
+    );
+
+    this.setWorkspaceDirtyState(workspaceId, persistedSignature !== currentSignature);
+  }
+
+  private setWorkspaceDirtyState(workspaceId: string, isDirty: boolean): void {
+    const currentWorkspaceList = this._workspaceList();
+    const workspaceIndex = currentWorkspaceList.findIndex(
+      (workspaceEntry) => workspaceEntry.id === workspaceId,
+    );
+    if (workspaceIndex === -1 || currentWorkspaceList[workspaceIndex].isDirty === isDirty) {
+      return;
+    }
+
+    const nextWorkspaceList = [...currentWorkspaceList];
+    nextWorkspaceList[workspaceIndex] = {
+      ...nextWorkspaceList[workspaceIndex],
+      isDirty,
+    };
+    this._workspaceList.set(nextWorkspaceList);
+  }
+
+  private createWorkspaceRuntimeSignature(
+    tabs: WorkspaceConfiguration["tabs"],
+    grids: WorkspaceConfiguration["grids"],
+  ): string {
+    const signature: DirtyTrackingWorkspaceSignature = {
+      tabs: tabs.map((tab) => ({ tabId: tab.tabId })),
+      grids: grids.map((grid) => ({
+        tabId: grid.tabId,
+        pane: this.createDirtyTrackingPaneSignature(grid.pane),
+      })),
+    };
+    return JSON.stringify(signature);
+  }
+
+  private createDirtyTrackingPaneSignature(
+    pane: PersistedPaneConfigurationContract,
+  ): DirtyTrackingPaneSignature {
+    if (pane.splitDirection) {
+      return {
+        splitDirection: pane.splitDirection,
+        ratio: pane.ratio,
+        leftChild: pane.leftChild
+          ? this.createDirtyTrackingPaneSignature(pane.leftChild)
+          : undefined,
+        rightChild: pane.rightChild
+          ? this.createDirtyTrackingPaneSignature(pane.rightChild)
+          : undefined,
+      };
+    }
+
+    return {
+      shellName: pane.shellName,
+      workingDir: pane.workingDir,
+    };
+  }
+
+  private async runWithoutDirtyTracking<T>(callback: () => Promise<T>): Promise<T> {
+    this.synchronizingWorkspaceRuntimeDepth += 1;
+    try {
+      return await callback();
+    } finally {
+      this.synchronizingWorkspaceRuntimeDepth -= 1;
+    }
   }
 }

@@ -1,7 +1,6 @@
-import { Component, Inject, model, signal } from "@angular/core";
+import { Component, Inject, signal } from "@angular/core";
 import { WorkspaceState } from "@cogno/core-domain/workspace";
 import { AutofocusDirective } from "../common/autofocus/autofocus.directive";
-import { CheckboxComponent } from "../common/checkbox/checkbox.component";
 import { ColorName } from "../common/color/color";
 import { ColorSelectComponent } from "../common/color/color-select.component";
 import { DIALOG_DATA, DialogRef } from "../common/dialog";
@@ -10,7 +9,7 @@ import { WorkspaceHostApplicationService } from "./workspace-host-application.se
 @Component({
   selector: "app-workspace-edit-dialog",
   standalone: true,
-  imports: [AutofocusDirective, ColorSelectComponent, CheckboxComponent],
+  imports: [AutofocusDirective, ColorSelectComponent],
   styles: [
     `
           .container {
@@ -40,8 +39,7 @@ import { WorkspaceHostApplicationService } from "./workspace-host-application.se
                    (keydown.enter)="onSave()"
                    (keydown.escape)="onCancel()"
                    [appAutofocus]="true"/>
-             <app-color-select [selectedColorName]="color()" [showDefault]="false" (colorSelected)="selectColor($event)"></app-color-select> 
-             <app-checkbox [(checked)]="autosave" label="Auto Save" description="Automatically save workspace changes."></app-checkbox> 
+             <app-color-select [selectedColorName]="color()" [showDefault]="false" (colorSelected)="selectColor($event)"></app-color-select>
             <div class="actions">
               <button type="button" class="button" (click)="onCancel()">Cancel</button>
               <button type="button" class="button primary" (click)="onSave()">Save</button>
@@ -58,7 +56,6 @@ export class WorkspaceEditDialogComponent {
 
   readonly name = signal<string>(this.workspace?.name ?? "");
   readonly color = signal<ColorName | undefined>(this.workspace?.color as ColorName | undefined);
-  readonly autosave = model<boolean>(this.workspace?.autosave ?? false);
 
   onNameInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value ?? "";
@@ -73,7 +70,6 @@ export class WorkspaceEditDialogComponent {
     }
     this.workspace.name = newName;
     this.workspace.color = this.color();
-    this.workspace.autosave = this.autosave();
     void this.workspaceHostApplicationService.save(this.workspace);
     this.dialogRef.close();
   }

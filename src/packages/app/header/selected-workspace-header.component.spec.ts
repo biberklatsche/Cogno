@@ -25,6 +25,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     const workspaceHostPort: WorkspaceHostPortContract = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
+      saveWorkspace: vi.fn().mockResolvedValue(undefined),
       closeWorkspace: vi.fn().mockResolvedValue(undefined),
       reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
       persistWorkspaceOrder: vi.fn().mockResolvedValue(undefined),
@@ -94,6 +95,14 @@ describe("SelectedWorkspaceHeaderComponent", () => {
 
     expect(component.activeWorkspace()?.name).toBe("Default Workspace");
     expect((component as any).hasWorkspaceMenu()).toBe(true);
+  });
+
+  it("keeps the dirty marker state on the active workspace", () => {
+    workspaceEntriesSubject.next([
+      { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true, isDirty: true },
+    ]);
+
+    expect(component.activeWorkspace()?.isDirty).toBe(true);
   });
 
   it("includes the default workspace in the header menu when multiple workspaces are open", () => {
