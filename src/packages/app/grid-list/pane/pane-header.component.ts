@@ -11,6 +11,11 @@ import { GridListService } from "../+state/grid-list.service";
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
+        @if (isBusy()) {
+          <span class="busy-indicator">
+            <app-icon name="mdiSpeedometer"></app-icon>
+          </span>
+        }
         <span class="title">{{ title() }}</span>
         <button class="close" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
           <app-icon name="mdiClose"></app-icon>
@@ -33,9 +38,9 @@ import { GridListService } from "../+state/grid-list.service";
       height: 24px;
 
       &:hover .close {
-        opacity: 0.5;
+        opacity: 1;
       }
-      
+
       &:active {
         cursor: pointer;
       }
@@ -47,6 +52,28 @@ import { GridListService } from "../+state/grid-list.service";
       color: var(--foreground-color);
       opacity: 0.7;
       text-align: center;
+    }
+
+    .busy-indicator {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      padding: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      color: color-mix(in srgb, var(--foreground-color) 60%, transparent);
+      background: transparent;
+      transform: translateY(-50%);
+
+      app-icon {
+        width: 16px;
+        height: 16px;
+      }
     }
 
     .close {
@@ -62,8 +89,9 @@ import { GridListService } from "../+state/grid-list.service";
       cursor: default;
       color: var(--foreground-color);
       background-color: var(--background-color-20l-ct);
-      border: none;
+      transition: opacity 120ms ease;
       opacity: 0;
+      border: none;
 
       &:hover {
         opacity: 1 !important;
@@ -84,6 +112,7 @@ export class PaneHeaderComponent implements OnDestroy {
 
   title = input.required<string>();
   terminalId = input.required<string>();
+  isBusy = input.required<boolean>();
 
   shouldShow = toSignal(this.gridListService.activeGridIsSplit$, { initialValue: false });
 

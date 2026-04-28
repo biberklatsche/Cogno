@@ -1,6 +1,6 @@
 [package]
 name = "cogno"
-version = "0.2.0"
+version = "0.3.0"
 description = "A terminal workspace for focused daily shell work"
 authors = ["Lars Wolfram"]
 edition = "2021"

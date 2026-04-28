@@ -74,6 +74,10 @@
   &.is-dragging {
     border-style: dashed;
   }
+
+  &.is-busy {
+    padding-left: 28px;
+  }
 }
 
 .inline-input {
@@ -88,6 +92,23 @@
   animation: slide-out 100ms;
 }
 
+.busy-indicator {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  flex: 0 0 16px;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--foreground-color-40d) 60%, transparent);
+  transform: translateY(-50%);
+}
+
 .close {
   position: absolute;
   right: 2px;
@@ -99,8 +120,10 @@
   width: 16px;
   height: 16px;
   cursor: default;
-  background-color: var(--background-color-20l-ct);
   opacity: 0;
+  color: var(--foreground-color-40d);
+  background-color: var(--background-color-20l-ct);
+  transition: opacity 120ms ease;
 
   &:hover {
     opacity: 1 !important;

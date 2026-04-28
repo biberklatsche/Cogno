@@ -10,5 +10,6 @@ export type Tab = {
   systemTitle: string;
   userTitle?: string;
   isActive: boolean;
+  isBusy?: boolean;
   activeShellType: ShellType | "unknown";
 };

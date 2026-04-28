@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, input, OnDestroy } from "@angular/core";
+import { AfterViewInit, Directive, ElementRef, effect, input, OnDestroy } from "@angular/core";
 
 type MatchRange = { start: number; end: number };
 
@@ -12,22 +12,45 @@ export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
 
   private readonly prefix = "\u2026";
   private resizeObserver?: ResizeObserver;
+  private readonly handleWindowResize = () => this.scheduleApply();
+  private animationFrameId?: number;
 
-  constructor(private readonly elementRef: ElementRef<HTMLElement>) {}
+  constructor(private readonly elementRef: ElementRef<HTMLElement>) {
+    effect(() => {
+      this.appStartEllipsis();
+      this.appStartEllipsisMatches();
+      this.scheduleApply();
+    });
+  }
 
   ngAfterViewInit(): void {
     const element = this.elementRef.nativeElement;
-    this.resizeObserver = new ResizeObserver(() => this.apply());
+    this.resizeObserver = new ResizeObserver(() => this.scheduleApply());
     this.resizeObserver.observe(element);
-    queueMicrotask(() => this.apply());
+    if (element.parentElement) {
+      this.resizeObserver.observe(element.parentElement);
+    }
+    window.addEventListener("resize", this.handleWindowResize, true);
+    this.scheduleApply();
   }
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
+    window.removeEventListener("resize", this.handleWindowResize, true);
+    if (this.animationFrameId !== undefined) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = undefined;
+    }
   }
 
-  ngDoCheck(): void {
-    this.apply();
+  private scheduleApply(): void {
+    if (this.animationFrameId !== undefined) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    this.animationFrameId = requestAnimationFrame(() => {
+      this.animationFrameId = undefined;
+      this.apply();
+    });
   }
 
   private apply(): void {

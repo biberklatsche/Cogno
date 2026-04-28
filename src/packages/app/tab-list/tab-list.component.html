@@ -4,6 +4,7 @@
                 type="button"
                 class="tab"
                 [class.is-active] = tab.isActive
+                [class.is-busy]="tab.isBusy"
                 [class.is-dragging]="isDraggingTab && draggedTabIdentifier === tab.id"
                 [style.background-color]="tab.color ? `var(--color-${tab.color}-ct2)` : undefined"
                 [appTooltip]="displayTitle(tab)"
@@ -16,6 +17,11 @@
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
+            @if (tab.isBusy) {
+                <span class="busy-indicator">
+                    <app-icon name="mdiSpeedometer"></app-icon>
+                </span>
+            }
             @if (showRename()===tab.id) {
                 <input class="inline-input"
                     #renameInput
@@ -40,4 +46,3 @@
         <app-menu-button></app-menu-button>
     </div>
 </nav>
-

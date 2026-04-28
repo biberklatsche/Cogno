@@ -26,7 +26,7 @@ import { PaneHeaderComponent } from "./pane-header.component";
   },
   template: `
       @if (pane().terminalId) {
-          <app-pane-header [title]="title()" [terminalId]="pane().terminalId!"></app-pane-header>
+          <app-pane-header [title]="title()" [terminalId]="pane().terminalId!" [isBusy]="pane().isBusy ?? false"></app-pane-header>
       }
       <div #dock class="dock"></div>
   `,

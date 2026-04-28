@@ -5,6 +5,7 @@ import { ActionFired, type ActionFiredEvent } from "../../action/action.models";
 import type { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import type { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
+import type { GridListService } from "../../grid-list/+state/grid-list.service";
 import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
@@ -13,6 +14,7 @@ describe("TabListService", () => {
   let service: TabListService;
   let bus: AppBus;
   let configService: ConfigServiceMock;
+  let gridListService: GridListService;
 
   beforeEach(() => {
     bus = getAppBus();
@@ -30,7 +32,16 @@ describe("TabListService", () => {
       },
     });
 
-    service = new TabListService(bus, configService, getDestroyRef());
+    gridListService = {
+      findWorkspaceIdentifierByTerminalId: vi.fn((terminalId: string) =>
+        terminalId === "terminal-1" ? "workspace-1" : undefined,
+      ),
+      findTabIdByTerminalId: vi.fn((terminalId: string) =>
+        terminalId === "terminal-1" ? "t1" : undefined,
+      ),
+    } as unknown as GridListService;
+
+    service = new TabListService(bus, configService, gridListService, getDestroyRef());
   });
 
   afterEach(() => {
@@ -114,6 +125,40 @@ describe("TabListService", () => {
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
       expect(currentTabs[0].systemTitle).toBe("New Title");
       expect(event.propagationStopped).toBe(true);
+    });
+
+    it("should track busy state on tabs via TerminalBusyChanged", () => {
+      service.activateWorkspace("workspace-1");
+      service.addTab({
+        id: "t1",
+        systemTitle: "Busy Tab",
+        isActive: true,
+        activeShellType: "unknown",
+      });
+
+      bus.publish({
+        path: ["app", "terminal"],
+        type: "TerminalBusyChanged",
+        payload: {
+          terminalId: "terminal-1",
+          isBusy: true,
+        },
+      });
+
+      let currentTabs: Tab[] = [];
+      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      expect(currentTabs[0].isBusy).toBe(true);
+
+      bus.publish({
+        path: ["app", "terminal"],
+        type: "TerminalBusyChanged",
+        payload: {
+          terminalId: "terminal-1",
+          isBusy: false,
+        },
+      });
+
+      expect(currentTabs[0].isBusy).toBe(false);
     });
   });
 
