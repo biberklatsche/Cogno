@@ -18,6 +18,7 @@ export type Pane = {
   title?: string;
   terminalId?: string;
   isFocused?: boolean;
+  isBusy?: boolean;
 };
 
 export type SplitDirection = "horizontal" | "vertical";

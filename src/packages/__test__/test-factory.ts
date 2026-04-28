@@ -125,7 +125,12 @@ export function getGridListService(): GridListService {
 
 export function getTabListService(): TabListService {
   if (!tabListService) {
-    tabListService = new TabListService(getAppBus(), getConfigService(), getDestroyRef());
+    tabListService = new TabListService(
+      getAppBus(),
+      getConfigService(),
+      getGridListService(),
+      getDestroyRef(),
+    );
   }
   return tabListService;
 }
