@@ -1,4 +1,6 @@
-<app-terminal-header></app-terminal-header>
+@if (!isInFullScreenMode()) {
+    <app-terminal-header></app-terminal-header>
+}
 <div
     class="terminal-container"
     [class.webgl-context-lost]="isWebglContextLost()"

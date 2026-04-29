@@ -167,6 +167,7 @@ export class MarkerManager implements IDisposable {
       decoration.onRender((element) => {
         this._renderer?.render(element, {
           commandIndex,
+          markerText: lineText,
           getCommandOutput: () =>
             this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.outputText ?? "",
           getBlockRange: () =>

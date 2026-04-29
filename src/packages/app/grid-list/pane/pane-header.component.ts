@@ -1,7 +1,8 @@
 import { DOCUMENT } from "@angular/common";
-import { Component, Inject, input, OnDestroy } from "@angular/core";
+import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { DragPreviewService, IconComponent } from "@cogno/core-ui";
+import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
 
 @Component({
@@ -114,10 +115,17 @@ export class PaneHeaderComponent implements OnDestroy {
   terminalId = input.required<string>();
   isBusy = input.required<boolean>();
 
-  shouldShow = toSignal(this.gridListService.activeGridIsSplit$, { initialValue: false });
+  private readonly activeGridIsSplit = toSignal(this.gridListService.activeGridIsSplit$, {
+    initialValue: false,
+  });
+  private readonly isInFullScreenMode = computed(() =>
+    this.terminalFullscreenService.isTerminalFullScreen(this.terminalId()),
+  );
+  shouldShow = computed(() => this.activeGridIsSplit() && !this.isInFullScreenMode());
 
   constructor(
     private gridListService: GridListService,
+    private terminalFullscreenService: TerminalFullscreenService,
     private dragPreviewService: DragPreviewService,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}

@@ -106,5 +106,5 @@ trap '_cogno_preexec' DEBUG
 # PROMPT_COMMAND must be a simple string in Bash 3.2
 PROMPT_COMMAND='_cogno_precmd'
 
-# Set prompt - Bash 3.2 doesn't expand variables in PS1 as easily
-PS1='\n^^#${COGNO_COUNT}\n'
+# Hide the marker from the user while keeping it in the buffer for detection.
+PS1='\n\[\e[8m\]^^#${COGNO_COUNT}\[\e[0m\]\n'

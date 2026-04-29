@@ -6,6 +6,7 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
 import { IDisposable } from "../../../../common/models/models";
 import { ITerminalHandler } from "../../handler/handler";
+import { isPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
 import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
 
@@ -363,7 +364,7 @@ export class CommandLineEditor implements ITerminalHandler {
   private cutSelection() {
     if (!this._terminal?.hasSelection()) return;
 
-    const selectionText = this._terminal.getSelection();
+    const selectionText = sanitizePromptMarkerText(this._terminal.getSelection());
     if (selectionText) {
       Clipboard.writeText(selectionText);
     }
@@ -540,7 +541,7 @@ export class CommandLineEditor implements ITerminalHandler {
     if (!this._terminal?.buffer?.active) return lastPromptRow;
     for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
       const line = this._terminal.buffer.active.getLine(i);
-      if (line?.translateToString().startsWith("^^#")) {
+      if (line && isPromptMarkerLine(line.translateToString())) {
         lastPromptRow = i;
         break;
       }

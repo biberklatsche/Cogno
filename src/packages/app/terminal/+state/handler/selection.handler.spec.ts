@@ -55,6 +55,11 @@ describe("SelectionHandler", () => {
       expect(handler.getSelection()).toBe("selected text");
     });
 
+    it("should sanitize prompt markers in getSelection", () => {
+      vi.mocked(mockTerminal.getSelection).mockReturnValue("selected\n^^#7\ntext");
+      expect(handler.getSelection()).toBe("selected\ntext");
+    });
+
     it("should proxy clearSelection", () => {
       handler.clearSelection();
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
@@ -85,6 +90,17 @@ describe("SelectionHandler", () => {
 
       await vi.waitFor(() => {
         expect(Clipboard.writeText).toHaveBeenCalledWith("text to copy");
+      });
+    });
+
+    it("should strip prompt markers from copied text", async () => {
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelection).mockReturnValue("line 1\n^^#12\nline 2");
+
+      mockBus.publish({ type: "Copy", payload: terminalId, path: ["app", "terminal"] });
+
+      await vi.waitFor(() => {
+        expect(Clipboard.writeText).toHaveBeenCalledWith("line 1\nline 2");
       });
     });
 

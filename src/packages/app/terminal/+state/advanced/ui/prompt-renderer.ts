@@ -1,9 +1,9 @@
+import { AppBus } from "@cogno/app/app-bus/app-bus";
+import { timespan } from "@cogno/app/common/timespan/timespan";
+import { PromptSegment } from "@cogno/app/config/+models/prompt-config";
+import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
+import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
 import { mdiDotsVertical } from "@mdi/js";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { timespan } from "../../../../common/timespan/timespan";
-import { PromptSegment } from "../../../../config/+models/prompt-config";
-import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../../../../menu/context-menu-overlay/context-menu-overlay.types";
 import { Command, TerminalStateManager } from "../../state";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
 
@@ -21,6 +21,7 @@ type ComparisonOperator = "==" | "!=";
 type PrimitiveValue = string | number | boolean;
 type PromptMarkerRenderContext = {
   commandIndex?: number;
+  markerText?: string;
   getCommandOutput?: () => string;
   getBlockRange?: () => CommandMenuBlockRange;
   scrollToCommandTop?: () => void;
@@ -54,6 +55,7 @@ export class PromptMarkerRenderer {
     }
 
     const markerElement = this.createMarkerElement(command);
+    const markerCoverElement = this.createMarkerCoverElement(renderContext.markerText, command);
     const markerContentElement = this.createMarkerContentElement();
     const record = this.buildRecord(command);
 
@@ -67,6 +69,7 @@ export class PromptMarkerRenderer {
       markerElement.classList.add("input");
     }
 
+    markerElement.appendChild(markerCoverElement);
     markerElement.appendChild(markerContentElement);
     const markerMenuButton = this.createMenuButton(
       command,
@@ -96,15 +99,45 @@ export class PromptMarkerRenderer {
     return element;
   }
 
+  private createMarkerCoverElement(
+    markerText: string | undefined,
+    command: Command,
+  ): HTMLDivElement {
+    const element = document.createElement("div");
+    element.classList.add("cogno-marker__cover");
+    element.style.position = "absolute";
+    element.style.left = "0";
+    element.style.top = "0";
+    element.style.height = "100%";
+    element.style.width = `${this.resolveMarkerWidth(markerText, command)}ch`;
+    element.style.backgroundColor = "var(--background-color)";
+    element.style.pointerEvents = "none";
+    element.style.zIndex = "1";
+    return element;
+  }
+
   private createMarkerContentElement(): HTMLDivElement {
     const element = document.createElement("div");
     element.classList.add("cogno-marker__content");
+    element.style.position = "relative";
+    element.style.zIndex = "2";
     element.style.display = "inline-flex";
     element.style.alignItems = "center";
-    element.style.flexWrap = "wrap";
+    element.style.flexWrap = "nowrap";
+    element.style.whiteSpace = "nowrap";
     element.style.minWidth = "0";
     element.style.flex = "0 1 auto";
+    element.style.overflow = "hidden";
     return element;
+  }
+
+  private resolveMarkerWidth(markerText: string | undefined, command: Command): number {
+    const match = markerText?.match(/^\^\^#\d+/);
+    if (match) {
+      return match[0].length;
+    }
+
+    return 3 + (command.id?.length ?? 2);
   }
 
   private renderFallback(markerElement: HTMLElement): void {
@@ -231,6 +264,7 @@ export class PromptMarkerRenderer {
     if (typeof commandIndexOrContext === "number" || commandIndexOrContext === undefined) {
       return {
         commandIndex: commandIndexOrContext,
+        markerText: undefined,
         getCommandOutput: undefined,
         getBlockRange: undefined,
         scrollToCommandTop: undefined,

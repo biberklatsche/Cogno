@@ -52,6 +52,8 @@ if ($env:COGNO_INTEGRATION_ROOT) {
 
 $esc = [char]27
 $bel = [char]7
+$conceal = "${esc}[8m"
+$sgrReset = "${esc}[0m"
 
 # State
 $global:COGNO_COUNT = 0
@@ -150,7 +152,7 @@ function prompt {
     $global:COGNO_CMD_SEEN = $false
 
     # Return prompt string
-    return "`n^^#$ts`n"
+    return "`n${conceal}^^#$ts${sgrReset}`n"
 }
 
 Write-CognoLog "PowerShell bootstrap completed"
