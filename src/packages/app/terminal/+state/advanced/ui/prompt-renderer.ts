@@ -1,9 +1,9 @@
-import { mdiDotsVertical } from "@mdi/js";
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { timespan } from "@cogno/app/common/timespan/timespan";
 import { PromptSegment } from "@cogno/app/config/+models/prompt-config";
 import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
+import { mdiDotsVertical } from "@mdi/js";
 import { Command, TerminalStateManager } from "../../state";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
 
@@ -99,7 +99,10 @@ export class PromptMarkerRenderer {
     return element;
   }
 
-  private createMarkerCoverElement(markerText: string | undefined, command: Command): HTMLDivElement {
+  private createMarkerCoverElement(
+    markerText: string | undefined,
+    command: Command,
+  ): HTMLDivElement {
     const element = document.createElement("div");
     element.classList.add("cogno-marker__cover");
     element.style.position = "absolute";

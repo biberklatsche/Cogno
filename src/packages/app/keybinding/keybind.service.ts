@@ -7,6 +7,7 @@ import { ConfigService } from "../config/+state/config.service";
 import { KeybindingMatcher } from "./keybind.matcher";
 import { ActionDefinition } from "./keybind-action.interpreter";
 import { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
+import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";
 
 type Key = string;
 
@@ -30,6 +31,7 @@ export class KeybindService {
     keyboardMappingService: KeyboardMappingService,
     configService: ConfigService,
     bus: AppBus,
+    terminalKeybindingContext: TerminalKeybindingContextService,
     ref: DestroyRef,
   ) {
     keyboardMappingService
@@ -41,6 +43,9 @@ export class KeybindService {
     window.addEventListener(
       "keydown",
       (e) => {
+        if (terminalKeybindingContext.shouldSuppressAppKeybindings()) {
+          return;
+        }
         // 1) Check registered listeners first (e.g., side menu overlays)
         const stack = this.listeners.get(e.key);
         if (stack?.length && !this.isEventInsideDialog(e)) {

@@ -50,6 +50,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
   shellProfile = input.required<ShellProfile>();
 
   isFocused: Signal<boolean | undefined>;
+  isInFullScreenMode: Signal<boolean | undefined>;
   showScrollToBottomButton: Signal<boolean>;
   isWebglContextLost: Signal<boolean>;
 
@@ -62,6 +63,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalFileDropService: TerminalFileDropService,
   ) {
     this.isFocused = toSignal(this.terminalStateManager.isFocused$);
+    this.isInFullScreenMode = toSignal(this.terminalStateManager.isInFullScreenMode$);
     this.showScrollToBottomButton = toSignal(
       this.terminalStateManager.scrolledLinesFromBottom$.pipe(
         map((scrolledLinesFromBottom) => scrolledLinesFromBottom > 20),

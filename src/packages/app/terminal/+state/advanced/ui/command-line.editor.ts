@@ -6,8 +6,8 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
 import { IDisposable } from "../../../../common/models/models";
 import { ITerminalHandler } from "../../handler/handler";
-import { IPty } from "../../pty/pty";
 import { isPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
+import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
 
 export class CommandLineEditor implements ITerminalHandler {

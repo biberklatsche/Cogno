@@ -81,6 +81,40 @@ describe("FullScreenAppHandler", () => {
       );
     });
 
+    it("should publish FullScreenAppEntered when alternate screen is enabled with combined params", () => {
+      const csiHandler = vi
+        .mocked(mockTerminal.parser.registerCsiHandler)
+        .mock.calls.find(
+          (call) => (call[0] as any).prefix === "?" && (call[0] as any).final === "h",
+        )?.[1];
+
+      csiHandler([1049, 1000, 1006]);
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "FullScreenAppEntered",
+          payload: terminalId,
+        }),
+      );
+    });
+
+    it("should publish FullScreenAppEntered when legacy alternate screen buffer is enabled", () => {
+      const csiHandler = vi
+        .mocked(mockTerminal.parser.registerCsiHandler)
+        .mock.calls.find(
+          (call) => (call[0] as any).prefix === "?" && (call[0] as any).final === "h",
+        )?.[1];
+
+      csiHandler([1047]);
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "FullScreenAppEntered",
+          payload: terminalId,
+        }),
+      );
+    });
+
     it("should publish FullScreenAppLeaved when alternate screen buffer is disabled", () => {
       const csiHandler = vi
         .mocked(mockTerminal.parser.registerCsiHandler)
@@ -89,6 +123,23 @@ describe("FullScreenAppHandler", () => {
         )?.[1];
 
       csiHandler([1049]);
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "FullScreenAppLeaved",
+          payload: terminalId,
+        }),
+      );
+    });
+
+    it("should publish FullScreenAppLeaved when legacy alternate screen buffer is disabled", () => {
+      const csiHandler = vi
+        .mocked(mockTerminal.parser.registerCsiHandler)
+        .mock.calls.find(
+          (call) => (call[0] as any).prefix === "?" && (call[0] as any).final === "l",
+        )?.[1];
+
+      csiHandler([47]);
 
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -3,8 +3,10 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
 import { AppBus } from "../app-bus/app-bus";
 import type { ConfigService } from "../config/+state/config.service";
+import { TerminalFullscreenService } from "../terminal/terminal-fullscreen.service";
 import { KeybindService } from "./keybind.service";
 import type { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
+import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";
 
 describe("KeybindService", () => {
   const config$ = new BehaviorSubject<{ keybind: never[] }>({ keybind: [] });
@@ -19,6 +21,11 @@ describe("KeybindService", () => {
     config$,
   };
   const bus = new AppBus();
+  const terminalFullscreenService = new TerminalFullscreenService(bus);
+  const terminalKeybindingContext = new TerminalKeybindingContextService(
+    bus,
+    terminalFullscreenService,
+  );
 
   let service: KeybindService;
 
@@ -27,6 +34,7 @@ describe("KeybindService", () => {
       keyboardMappingService as KeyboardMappingService,
       configService as ConfigService,
       bus,
+      terminalKeybindingContext,
       getDestroyRef(),
     );
   });
@@ -66,6 +74,29 @@ describe("KeybindService", () => {
       cancelable: true,
     });
     const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("suppresses Cogno keybindings while the focused selected terminal is in fullscreen mode", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["ArrowDown"], handler);
+
+    bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
+    bus.publish({ type: "TerminalFocused", payload: "terminal-1" });
+    bus.publish({
+      path: ["app", "terminal", "terminal-1"],
+      type: "FullScreenAppEntered",
+      payload: "terminal-1",
+    });
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = window.dispatchEvent(event);
 
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
