@@ -23,15 +23,19 @@ export class TerminalSearchSideMenuLifecycle {
       onClose: () => this.terminalSearchService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
-          ["Escape", "Enter"],
+          ["Escape", "Enter", "ArrowDown", "ArrowUp"],
           (keyboardEvent: KeyboardEvent) => {
             if (keyboardEvent.key === "Escape") {
               sideMenuFeatureHandle.close();
               return;
             }
             if (keyboardEvent.key === "Enter") {
-              this.terminalSearchService.repeatSearch();
+              if (!this.terminalSearchService.revealSelectedSearchResult()) {
+                this.terminalSearchService.repeatSearch();
+              }
+              return;
             }
+            this.terminalSearchService.handleNavigationKey(keyboardEvent.key);
           },
         );
         focusSideMenuAutofocusElement();

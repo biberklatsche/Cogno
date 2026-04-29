@@ -1,5 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, Signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  effect,
+  Signal,
+  viewChild,
+  viewChildren,
+} from "@angular/core";
 import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
+import {
+  collectDirectionalNavigationItems,
+  scrollSelectedListItemIntoView,
+} from "../navigation/directional-navigation.dom";
+import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { TerminalSearchService } from "./terminal-search.service";
 
 type SearchTextSegment = {
@@ -68,9 +83,15 @@ type SearchTextSegment = {
                 }
             </div>
             @if (searchResults().length > 0) {
-                <ul class="result-list">
+                <ul #resultListElement class="result-list">
                     @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
-                        <li class="result-line" (click)="revealSearchResult(searchLine)">
+                        <li
+                            #resultElement
+                            [attr.data-navigation-id]="trackSearchLine(searchLine)"
+                            class="result-line"
+                            [class.selected]="isSelectedSearchResult(searchLine)"
+                            (click)="revealSearchResult(searchLine)"
+                        >
                             <span class="line-content">
                                 @for (segment of buildSegments(searchLine); track trackSegment(segment, $index)) {
                                     <span [class.match]="segment.isMatch" [style.background-color]="segment.isMatch ? matchBackgroundColor() : null" [style.border]="segment.isMatch ? '1px solid ' + matchBorderColor() : null">{{ segment.text }}</span>
@@ -182,7 +203,8 @@ type SearchTextSegment = {
                 border-radius: 4px;
                 cursor: pointer;
 
-                &:hover {
+                &:hover,
+                &.selected {
                     background: var(--background-color-20l);
                 }
             }
@@ -221,8 +243,15 @@ export class TerminalSearchSideComponent {
   readonly isBlockSearchActive: Signal<boolean>;
   readonly hasMoreResults: Signal<boolean>;
   readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
+  readonly selectedSearchResultId: Signal<string | undefined>;
+  private readonly resultListElement = viewChild<ElementRef<HTMLUListElement>>("resultListElement");
+  private readonly resultElements = viewChildren<ElementRef<HTMLElement>>("resultElement");
+  private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
-  constructor(private readonly terminalSearchService: TerminalSearchService) {
+  constructor(
+    private readonly terminalSearchService: TerminalSearchService,
+    destroyRef: DestroyRef,
+  ) {
     this.searchQuery = this.terminalSearchService.searchQuery;
     this.searchResults = this.terminalSearchService.searchResults;
     this.caseSensitive = this.terminalSearchService.caseSensitive;
@@ -231,8 +260,27 @@ export class TerminalSearchSideComponent {
     this.matchBorderColor = this.terminalSearchService.matchBorderColor;
     this.isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
     this.hasMoreResults = this.terminalSearchService.hasMoreResults;
+    this.selectedSearchResultId = this.terminalSearchService.selectedSearchResultId;
     this.reversedSearchResults = computed(() => {
       return [...this.searchResults()].reverse();
+    });
+    this.terminalSearchService.registerNavigationItemsProvider(this.navigationItemsProvider);
+    destroyRef.onDestroy(() => {
+      this.terminalSearchService.unregisterNavigationItemsProvider(this.navigationItemsProvider);
+    });
+
+    effect(() => {
+      const searchResults = this.reversedSearchResults();
+      const selectedSearchResultId = this.selectedSearchResultId();
+      const resultListElement = this.resultListElement()?.nativeElement;
+      if (!selectedSearchResultId || searchResults.length === 0 || !resultListElement) {
+        return;
+      }
+
+      const selectedIndex = searchResults.findIndex(
+        (searchLine) => this.trackSearchLine(searchLine) === selectedSearchResultId,
+      );
+      scrollSelectedListItemIntoView(resultListElement, selectedIndex);
     });
   }
 
@@ -251,6 +299,10 @@ export class TerminalSearchSideComponent {
 
   revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
     this.terminalSearchService.revealSearchResult(searchLine);
+  }
+
+  isSelectedSearchResult(searchLine: TerminalSearchLineResultContract): boolean {
+    return this.selectedSearchResultId() === this.trackSearchLine(searchLine);
   }
 
   toggleCaseSensitive(): void {
@@ -318,5 +370,9 @@ export class TerminalSearchSideComponent {
       text: lineText.slice(match.startIndex, match.endIndex),
       isMatch: true,
     });
+  }
+
+  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
+    return collectDirectionalNavigationItems(this.resultElements());
   }
 }

@@ -4,6 +4,7 @@ import type {
   TerminalSearchPanelRequestContract,
   TerminalSearchResultContract,
 } from "@cogno/core-api";
+import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
@@ -14,6 +15,7 @@ describe("TerminalSearchService", () => {
   let terminalSearchColorConfigSubject: BehaviorSubject<TerminalSearchColorConfigContract>;
   let terminalSearchPanelRequestSubject: BehaviorSubject<TerminalSearchPanelRequestContract>;
   let requestSearchMock: ReturnType<typeof vi.fn>;
+  let requestRevealMock: ReturnType<typeof vi.fn>;
   let terminalSearchService: TerminalSearchService;
 
   beforeEach(() => {
@@ -29,6 +31,7 @@ describe("TerminalSearchService", () => {
     terminalSearchColorConfigSubject = new BehaviorSubject<TerminalSearchColorConfigContract>({});
     terminalSearchPanelRequestSubject = new BehaviorSubject<TerminalSearchPanelRequestContract>({});
     requestSearchMock = vi.fn();
+    requestRevealMock = vi.fn();
 
     const terminalSearchHostPort = {
       terminalSearchResult$: terminalSearchResultSubject.asObservable(),
@@ -37,7 +40,7 @@ describe("TerminalSearchService", () => {
       getFocusedTerminalId: vi.fn().mockReturnValue("focused-terminal"),
       requestSearch: requestSearchMock,
       requestSearchDecorationClear: vi.fn(),
-      requestReveal: vi.fn(),
+      requestReveal: requestRevealMock,
     } as TerminalSearchHostPortContract;
 
     terminalSearchService = new TerminalSearchService(terminalSearchHostPort, getDestroyRef());
@@ -171,4 +174,93 @@ describe("TerminalSearchService", () => {
     expect(terminalSearchService.searchResults()).toHaveLength(2);
     expect(terminalSearchService.hasMoreResults()).toBe(false);
   });
+
+  it("selects the first rendered result and navigates through results with arrow keys", () => {
+    terminalSearchService.submitSearchQuery("needle");
+    vi.runAllTimers();
+
+    terminalSearchResultSubject.next({
+      terminalId: "focused-terminal",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      hasMore: false,
+      lines: [
+        {
+          lineNumber: 14,
+          lineText: "needle one",
+          matches: [{ startIndex: 0, endIndex: 6 }],
+        },
+        {
+          lineNumber: 21,
+          lineText: "needle two",
+          matches: [{ startIndex: 0, endIndex: 6 }],
+        },
+      ],
+    });
+
+    terminalSearchService.registerNavigationItemsProvider(() => [
+      createNavigationItem("21:needle two", 0, 40, 280, 32),
+      createNavigationItem("14:needle one", 0, 74, 280, 32),
+    ]);
+
+    expect(terminalSearchService.selectedSearchResultId()).toBe("21:needle two");
+
+    terminalSearchService.handleNavigationKey("ArrowDown");
+    expect(terminalSearchService.selectedSearchResultId()).toBe("14:needle one");
+
+    terminalSearchService.handleNavigationKey("ArrowUp");
+    expect(terminalSearchService.selectedSearchResultId()).toBe("21:needle two");
+  });
+
+  it("reveals the selected search result", () => {
+    terminalSearchService.submitSearchQuery("needle");
+    vi.runAllTimers();
+
+    terminalSearchResultSubject.next({
+      terminalId: "focused-terminal",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      hasMore: false,
+      lines: [
+        {
+          lineNumber: 14,
+          lineText: "needle one",
+          matches: [{ startIndex: 0, endIndex: 6 }],
+        },
+      ],
+    });
+
+    expect(terminalSearchService.revealSelectedSearchResult()).toBe(true);
+    expect(requestRevealMock).toHaveBeenCalledWith({
+      terminalId: "focused-terminal",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      lineNumber: 14,
+      matchStartIndex: 0,
+      matchLength: 6,
+    });
+  });
 });
+
+function createNavigationItem(
+  id: string,
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): DirectionalNavigationItem<string> {
+  return {
+    id,
+    rect: {
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+    },
+  };
+}
