@@ -417,6 +417,21 @@ describe("CommandLineEditor", () => {
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
     });
 
+    it("should strip prompt markers from clipboard text when cutting", async () => {
+      state.input = { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 };
+
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 },
+      });
+      vi.mocked(mockTerminal.getSelection).mockReturnValue("hello\n^^#12\nworld");
+
+      mockBus.publish({ type: "Cut", payload: terminalId, path: ["app", "terminal"] });
+
+      expect(Clipboard.writeText).toHaveBeenCalledWith("hello\nworld");
+    });
+
     it("should replace selected text when typing a printable character", () => {
       state.input = { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 };
       vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);

@@ -57,6 +57,22 @@ describe("PromptMarkerRenderer", () => {
     expect(spans[1].textContent).toBe("World");
   });
 
+  it("should render a cover sized to the marker text and keep the prompt on one line", () => {
+    stateManager.updateCommand({ id: "123" });
+
+    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "Prompt" }]);
+    renderer.render(hostElement, { commandIndex: 0, markerText: "^^#123" });
+
+    const cover = hostElement.querySelector(".cogno-marker__cover") as HTMLElement;
+    const content = hostElement.querySelector(".cogno-marker__content") as HTMLElement;
+
+    expect(cover).toBeTruthy();
+    expect(cover.style.width).toBe("6ch");
+    expect(content.style.flexWrap).toBe("nowrap");
+    expect(content.style.whiteSpace).toBe("nowrap");
+    expect(content.style.overflow).toBe("hidden");
+  });
+
   it("should render field segments from command", () => {
     stateManager.updateCommand({
       id: "cmd-1",

@@ -5,6 +5,7 @@ import { AppBus } from "../../../app-bus/app-bus";
 import { IDisposable } from "../../../common/models/models";
 import { ConfigService } from "../../../config/+state/config.service";
 import { TerminalId } from "../../../grid-list/+model/model";
+import { sanitizePromptMarkerText } from "../prompt-marker";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";
 
@@ -47,7 +48,7 @@ export class SelectionHandler implements ITerminalHandler {
   }
 
   getSelection(): string {
-    return this.terminal?.getSelection() ?? "";
+    return sanitizePromptMarkerText(this.terminal?.getSelection() ?? "");
   }
 
   clearSelection(): void {
