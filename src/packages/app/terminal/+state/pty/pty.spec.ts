@@ -42,6 +42,12 @@ describe("Pty", () => {
     expect(TauriPty.resize).toHaveBeenCalledWith(terminalId, 100, 30);
   });
 
+  it("should ignore invalid resize dimensions", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions);
+    pty.resize({ cols: null, rows: null } as any);
+    expect(TauriPty.resize).not.toHaveBeenCalled();
+  });
+
   it("should buffer resize until spawn is finished", async () => {
     let resolveSpawn!: () => void;
     vi.mocked(TauriPty.spawn).mockImplementationOnce(
@@ -59,6 +65,24 @@ describe("Pty", () => {
     await spawnPromise;
 
     expect(TauriPty.resize).toHaveBeenCalledWith(terminalId, 120, 40);
+  });
+
+  it("should discard invalid buffered resize dimensions", async () => {
+    let resolveSpawn!: () => void;
+    vi.mocked(TauriPty.spawn).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSpawn = resolve;
+        }),
+    );
+
+    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions);
+    pty.resize({ cols: null, rows: null } as any);
+
+    resolveSpawn();
+    await spawnPromise;
+
+    expect(TauriPty.resize).not.toHaveBeenCalled();
   });
 
   it("should write to pty if spawned", async () => {

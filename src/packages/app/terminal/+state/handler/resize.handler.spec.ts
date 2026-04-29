@@ -102,6 +102,20 @@ describe("ResizeHandler", () => {
       expect(stateManager.dimensions.rows).toBe(30);
     });
 
+    it("should ignore invalid proposed dimensions", () => {
+      vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols: null, rows: null } as any);
+
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
+
+      handler.resize();
+
+      expect(mockPty.resize).not.toHaveBeenCalled();
+      expect(mockFitAddon.fit).not.toHaveBeenCalled();
+      expect(stateManager.dimensions.cols).toBe(80);
+      expect(stateManager.dimensions.rows).toBe(24);
+    });
+
     it("should throw error if terminal does not match proposed dimensions after fit", () => {
       vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols: 100, rows: 30 });
       // terminal remains 80x24

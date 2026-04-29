@@ -10,6 +10,27 @@ app-terminal {
         flex: 1;
         width: 100%;
         overflow: auto; /* Scrollbar am Container statt im xterm-Viewport */
+
+        &.webgl-context-lost {
+            .xterm {
+                visibility: hidden;
+            }
+        }
+    }
+
+    .webgl-restore-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: color-mix(in srgb, var(--background-color) 86%, transparent);
+        color: var(--foreground-color);
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        backdrop-filter: blur(4px);
+        pointer-events: none;
     }
 
     .scroll-to-bottom-button {

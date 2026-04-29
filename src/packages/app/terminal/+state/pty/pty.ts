@@ -56,6 +56,7 @@ export class Pty implements IPty {
 
   resize(dimensions: TerminalDimensions) {
     if (!this._terminalId) throw Error("Please spawn Pty before resize.");
+    if (!this.isValidDimensions(dimensions)) return;
     if (!this._spawned) {
       this._pendingResize = dimensions;
       return;
@@ -149,6 +150,7 @@ export class Pty implements IPty {
     if (!this._terminalId || !this._spawned || !this._pendingResize) return;
     const pendingResize = this._pendingResize;
     this._pendingResize = undefined;
+    if (!this.isValidDimensions(pendingResize)) return;
     TauriPty.resize(this._terminalId, pendingResize.cols, pendingResize.rows).catch((error) =>
       ErrorReporter.reportException({
         error,
@@ -161,6 +163,22 @@ export class Pty implements IPty {
           terminalId: this._terminalId,
         },
       }),
+    );
+  }
+
+  private isValidDimensions(
+    dimensions: Partial<TerminalDimensions> & { cols?: number | null; rows?: number | null },
+  ): dimensions is TerminalDimensions {
+    const { cols, rows } = dimensions;
+    return (
+      Number.isInteger(cols) &&
+      Number.isInteger(rows) &&
+      cols !== null &&
+      cols !== undefined &&
+      rows !== null &&
+      rows !== undefined &&
+      cols > 0 &&
+      rows > 0
     );
   }
 }
