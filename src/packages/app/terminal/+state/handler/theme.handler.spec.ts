@@ -134,6 +134,33 @@ describe("ThemeHandler", () => {
 
       expect(container.style.getPropertyValue("--padding-xterm")).toBe("");
     });
+
+    it("should restore cursor theme when requested", () => {
+      const initialTheme = { cursor: "#ff00ff", cursorAccent: "#000000", foreground: "#ffffff" };
+      const optionState = {
+        theme: initialTheme,
+      };
+      const themeAssignments: unknown[] = [];
+
+      Object.defineProperty(mockTerminal.options, "theme", {
+        get: () => optionState.theme,
+        set: (value) => {
+          themeAssignments.push(value);
+          optionState.theme = value as typeof initialTheme;
+        },
+        configurable: true,
+      });
+
+      mockBus.publish({
+        type: "TerminalCursorRestoreRequested",
+        path: ["app", "terminal", terminalId],
+        payload: terminalId,
+      });
+
+      expect(themeAssignments).toHaveLength(1);
+      expect(themeAssignments[0]).toEqual(initialTheme);
+      expect(themeAssignments[0]).not.toBe(initialTheme);
+    });
   });
 
   describe("Lifecycle", () => {

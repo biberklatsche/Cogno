@@ -66,6 +66,7 @@ export type TerminalBusyChangedEvent = MessageBase<
     isBusy: boolean;
   }
 >;
+export type TerminalCursorRestoreRequestedEvent = MessageBase<"TerminalCursorRestoreRequested">;
 export type TerminalSearchResultEvent = MessageBase<
   "TerminalSearchResult",
   {

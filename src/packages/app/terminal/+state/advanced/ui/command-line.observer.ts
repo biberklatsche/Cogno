@@ -26,7 +26,7 @@ export class CommandLineObserver implements ITerminalHandler {
     private stateManager: TerminalStateManager,
     promptSegments: PromptSegment[],
     contextMenuOverlayService: CommandLineObserverContextMenuOverlayPort,
-    appBus: AppBus,
+    private readonly appBus: AppBus,
     private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
   ) {
     this._markerManager = new MarkerManager(
@@ -116,6 +116,10 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables.push(
       terminal.parser.registerOscHandler(733, (data: string) => {
         this.stateManager.endCommand();
+        this.appBus.publish({
+          path: ["app", "terminal", this.stateManager.terminalId],
+          type: "TerminalCursorRestoreRequested",
+        });
         const kv = OscParser.parse(data);
         if (!kv) return true;
         kv["duration"] = this.stateManager.getCommandDuration()?.toString() ?? "";

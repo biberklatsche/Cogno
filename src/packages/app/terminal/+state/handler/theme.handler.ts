@@ -13,6 +13,10 @@ export type TerminalThemePaddingRemovedEvent = MessageBase<
   "TerminalThemePaddingRemoved",
   TerminalId
 >;
+export type TerminalCursorRestoreRequestedEvent = MessageBase<
+  "TerminalCursorRestoreRequested",
+  TerminalId
+>;
 
 export class ThemeHandler implements ITerminalHandler {
   private readonly subscription = new Subscription();
@@ -114,6 +118,24 @@ export class ThemeHandler implements ITerminalHandler {
           }
         }),
     );
+    this.subscription.add(
+      this._bus
+        .on$({ type: "TerminalCursorRestoreRequested", path: ["app", "terminal", this._terminalId] })
+        .subscribe(() => {
+          this.restoreCursorTheme();
+        }),
+    );
     return this;
+  }
+
+  private restoreCursorTheme(): void {
+    if (!this._terminal) {
+      return;
+    }
+
+    const theme = this._terminal.options.theme;
+    if (theme?.cursor) {
+      this._terminal.options.theme = { ...theme, cursor: theme.cursor };
+    }
   }
 }
