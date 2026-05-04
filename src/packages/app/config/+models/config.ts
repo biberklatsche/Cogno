@@ -1,6 +1,7 @@
 import {
   FeatureAutocompleteSchema,
   FeatureCommandPaletteSchema,
+  FeatureLlmSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
   FeatureSearchSchema,
@@ -58,6 +59,7 @@ export const featureConfigSchemaShape = {
   terminal: FeatureTerminalSchema.optional(),
   autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
+  llm: FeatureLlmSchema.optional(),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z

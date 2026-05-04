@@ -2,6 +2,7 @@ import { ApplicationSettingsExtensionContract } from "./application-settings-ext
 import {
   FeatureAutocompleteSchema,
   FeatureCommandPaletteSchema,
+  FeatureLlmSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
   FeatureSearchSchema,
@@ -17,6 +18,7 @@ const featureSettingsSchemaShape = {
   terminal: FeatureTerminalSchema.optional(),
   autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
+  llm: FeatureLlmSchema.optional(),
 } as const;
 
 export const defaultFeatureSettingsExtension = {
@@ -36,6 +38,24 @@ export const defaultFeatureSettingsExtension = {
         timeout_ms: 160,
       },
     },
+    llm: {
+      mode: "off",
+      active_provider: "",
+      providers: {
+        default: {
+          type: "openai_compatible",
+          base_url: "",
+          model: "",
+          api_key: "",
+          enabled: false,
+        },
+      },
+      request: {
+        include_process_tree: false,
+        max_commands: 8,
+        max_output_chars: 4000,
+      },
+    },
   },
   schemaShape: featureSettingsSchemaShape,
   settingsSections: [
@@ -46,5 +66,6 @@ export const defaultFeatureSettingsExtension = {
     { id: "terminal", title: "Terminal", order: 500 },
     { id: "autocomplete", title: "Autocomplete", order: 600 },
     { id: "search", title: "Search", order: 700 },
+    { id: "llm", title: "LLM", order: 800 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;

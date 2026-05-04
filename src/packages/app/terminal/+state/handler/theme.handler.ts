@@ -120,7 +120,10 @@ export class ThemeHandler implements ITerminalHandler {
     );
     this.subscription.add(
       this._bus
-        .on$({ type: "TerminalCursorRestoreRequested", path: ["app", "terminal", this._terminalId] })
+        .on$({
+          type: "TerminalCursorRestoreRequested",
+          path: ["app", "terminal", this._terminalId],
+        })
         .subscribe(() => {
           this.restoreCursorTheme();
         }),

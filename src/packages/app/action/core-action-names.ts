@@ -20,6 +20,7 @@ export const coreActionNames: ReadonlyArray<string> = [
   "close_all_tabs",
   "open_workspace",
   "open_command_palette",
+  "open_llm_chat",
   "open_notification",
   "quit",
   "new_window",

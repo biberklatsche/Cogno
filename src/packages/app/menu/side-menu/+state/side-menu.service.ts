@@ -80,6 +80,10 @@ export class SideMenuService {
     });
   }
 
+  isSelected(label: string): boolean {
+    return this._selectedItem()?.label === label;
+  }
+
   open(label: string): void {
     const current = this._selectedItem();
     if (current?.label === label) {

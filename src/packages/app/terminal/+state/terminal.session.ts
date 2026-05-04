@@ -42,6 +42,7 @@ import { KeybindExecutor } from "./keybind/keybind.executor";
 import { IPty, Pty } from "./pty/pty";
 import { IRenderer, Renderer } from "./renderer/renderer";
 import { TerminalStateManager } from "./state";
+import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 type NotificationChannelId = string;
 
@@ -72,6 +73,7 @@ export class TerminalSession {
     private wiringService: AppWiringService,
     private contextMenuOverlayService: ContextMenuOverlayService,
     private notificationTargetResolverService: NotificationTargetResolverService,
+    private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.renderer = new Renderer(this.configService.config);
     this.disposables = [this.renderer, this.pty];
@@ -88,6 +90,7 @@ export class TerminalSession {
   initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
     this.terminalId = terminalId;
     this.shellProfile = shellProfile;
+    this.terminalSessionRegistry.register(terminalId, shellProfile, this, this.stateManager);
     this.sessionNotificationChannels = this.getDefaultSessionNotificationChannels();
     this.completedCommandNotificationHandler.initialize();
     if (!shellProfile.shell_type) {
@@ -351,6 +354,7 @@ export class TerminalSession {
     if (this.disposed) return;
     this.processInfoDialogReference?.close();
     this.processInfoDialogReference = undefined;
+    this.terminalSessionRegistry.unregister(this.terminalId);
     this.bus.publish({
       type: "TerminalRemoved",
       path: ["app", "terminal"],
@@ -371,6 +375,54 @@ export class TerminalSession {
 
   scrollToBottom(): void {
     this.renderer.terminal.scrollToBottom();
+  }
+
+  getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {
+    const terminal = this.renderer?.terminal;
+    if (!terminal) {
+      return "";
+    }
+
+    const lineTexts: string[] = [];
+    const beginLineIndex = Math.max(0, terminal.buffer.active.length - maxLines);
+    for (
+      let currentLineIndex = beginLineIndex;
+      currentLineIndex < terminal.buffer.active.length;
+      currentLineIndex++
+    ) {
+      const line = terminal.buffer.active.getLine(currentLineIndex);
+      if (!line) {
+        continue;
+      }
+
+      const lineText = line.translateToString(false);
+      if (lineText.startsWith("^^#")) {
+        continue;
+      }
+      lineTexts.push(lineText);
+    }
+
+    const snapshot = lineTexts.join("\n").trim();
+    if (snapshot.length <= maxChars) {
+      return snapshot;
+    }
+
+    return snapshot.slice(snapshot.length - maxChars);
+  }
+
+  getLatestCommandOutputSnapshot(maxChars = 3000): string {
+    const latestCommand = this.stateManager.commands.at(-1);
+    if (!latestCommand) {
+      return "";
+    }
+
+    const outputText =
+      this.commandBlockResolver.resolveByCommandId(latestCommand.id)?.outputText ?? "";
+    if (outputText.length <= maxChars) {
+      return outputText;
+    }
+
+    return outputText.slice(outputText.length - maxChars);
   }
 
   get isWebglContextLost$(): Observable<boolean> {

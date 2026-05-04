@@ -2,15 +2,19 @@ import { TabId, WorkspaceId } from "@cogno/core-api";
 import { TerminalId } from "../../grid-list/+model/model";
 
 export const IdCreator = {
+  newId(prefix = "ID"): string {
+    return `${prefix}${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  },
+
   newTabId(): TabId {
-    return `TB${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    return this.newId("TB");
   },
 
   newTerminalId(): TerminalId {
-    return `TE${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    return this.newId("TE");
   },
 
   newWorkspaceId(): WorkspaceId {
-    return `WS${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    return this.newId("WS");
   },
 };

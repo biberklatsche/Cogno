@@ -50,7 +50,8 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
   private setupConfigListener(): void {
     const sub = this.configService.config$.subscribe((cfg) => {
       const mode = this.getFeatureMode(cfg as Record<string, unknown>);
-      this.handleModeChange(mode);
+      const isAvailable = this.config.isAvailable?.(cfg as Record<string, unknown>) ?? true;
+      this.handleModeChange(mode, isAvailable);
     });
     this.subscriptions.add(sub);
   }
@@ -100,8 +101,17 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     return "visible";
   }
 
-  private handleModeChange(mode: FeatureModeContract): void {
+  private handleModeChange(mode: FeatureModeContract, isAvailable: boolean): void {
     this.lifecycle.onModeChange?.(mode);
+
+    if (!isAvailable) {
+      this.removeKeybindHandler();
+      if (this.sideMenuService.isSelected(this.menuItem.label)) {
+        this.sideMenuService.close(true);
+      }
+      this.sideMenuService.removeMenuItem(this.menuItem.label);
+      return;
+    }
 
     switch (mode) {
       case "off":

@@ -46,6 +46,9 @@ export class KeybindService {
         if (terminalKeybindingContext.shouldSuppressAppKeybindings()) {
           return;
         }
+        if (this.isEventOnEditableTarget(e)) {
+          return;
+        }
         // 1) Check registered listeners first (e.g., side menu overlays)
         const stack = this.listeners.get(e.key);
         if (stack?.length && !this.isEventInsideDialog(e)) {
@@ -126,5 +129,17 @@ export class KeybindService {
     }
 
     return eventTarget.closest("app-dialog") !== null;
+  }
+
+  private isEventOnEditableTarget(event: KeyboardEvent): boolean {
+    const eventTarget = event.target;
+    if (!(eventTarget instanceof Element)) {
+      return false;
+    }
+
+    const editableElement = eventTarget.closest(
+      'input, textarea, select, [contenteditable=""], [contenteditable="true"]',
+    );
+    return editableElement !== null;
   }
 }

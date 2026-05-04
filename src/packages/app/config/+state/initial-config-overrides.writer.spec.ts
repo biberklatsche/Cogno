@@ -215,4 +215,16 @@ describe("InitialConfigOverridesWriter", () => {
     const text = InitialConfigOverridesWriter.toDotString(config, { asComments: false });
     expect(text).toContain("terminal.progress_bar.enabled = false");
   });
+
+  it("renders llm defaults with empty placeholders", () => {
+    const text = InitialConfigOverridesWriter.toDotString(DEFAULTS, { asComments: false });
+
+    expect(text).toContain("llm.mode = off");
+    expect(text).toContain("llm.active_provider = ");
+    expect(text).toContain("llm.providers.default.type = openai_compatible");
+    expect(text).toContain("llm.providers.default.base_url = ");
+    expect(text).toContain("llm.providers.default.model = ");
+    expect(text).toContain("llm.providers.default.api_key = ");
+    expect(text).toContain("llm.providers.default.enabled = false");
+  });
 });

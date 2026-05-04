@@ -1,5 +1,6 @@
 export {
   FeatureCommandPaletteSchema,
+  FeatureLlmSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
   FeatureSearchSchema,

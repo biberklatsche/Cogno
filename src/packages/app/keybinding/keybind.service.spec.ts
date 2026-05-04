@@ -101,4 +101,23 @@ describe("KeybindService", () => {
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
   });
+
+  it("does not route registered listeners when the event target is an editable field", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["v"], handler);
+
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "v",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
 });
