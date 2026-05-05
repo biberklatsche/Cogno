@@ -1,5 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { OS } from "@cogno/app-tauri/os";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
 import { AppBus } from "../app-bus/app-bus";
 import type { ConfigService } from "../config/+state/config.service";
@@ -42,6 +43,8 @@ describe("KeybindService", () => {
   afterEach(() => {
     service.unregisterListener("test-listener");
     document.body.innerHTML = "";
+    config$.next({ keybind: [] });
+    vi.restoreAllMocks();
   });
 
   it("handles registered arrow key listeners outside dialogs", () => {
@@ -119,5 +122,47 @@ describe("KeybindService", () => {
 
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
+  });
+
+  it("keeps native macOS copy/paste shortcuts in editable fields", () => {
+    vi.spyOn(OS, "platform").mockReturnValue("macos");
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["c"], handler);
+
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "c",
+      metaKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("does not treat non-editing shortcuts as native editable field shortcuts", () => {
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "1",
+      code: "Digit1",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    inputElement.dispatchEvent(event);
+
+    const result = (
+      service as unknown as {
+        shouldUseNativeEditableFieldHandling: (keyboardEvent: KeyboardEvent) => boolean;
+      }
+    ).shouldUseNativeEditableFieldHandling(event);
+
+    expect(result).toBe(false);
   });
 });

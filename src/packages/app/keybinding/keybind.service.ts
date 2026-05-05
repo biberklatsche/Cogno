@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { Logger } from "@cogno/app-tauri/logger";
+import { OS } from "@cogno/app-tauri/os";
 import { ActionName } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
@@ -46,7 +47,7 @@ export class KeybindService {
         if (terminalKeybindingContext.shouldSuppressAppKeybindings()) {
           return;
         }
-        if (this.isEventOnEditableTarget(e)) {
+        if (this.shouldUseNativeEditableFieldHandling(e)) {
           return;
         }
         // 1) Check registered listeners first (e.g., side menu overlays)
@@ -141,5 +142,64 @@ export class KeybindService {
       'input, textarea, select, [contenteditable=""], [contenteditable="true"]',
     );
     return editableElement !== null;
+  }
+
+  private shouldUseNativeEditableFieldHandling(event: KeyboardEvent): boolean {
+    if (!this.isEventOnEditableTarget(event)) {
+      return false;
+    }
+
+    return this.isEditableFieldShortcut(event);
+  }
+
+  private isEditableFieldShortcut(event: KeyboardEvent): boolean {
+    if (event.altKey && event.ctrlKey && !event.metaKey) {
+      return false;
+    }
+
+    const key = event.key;
+    const lowerKey = key.toLowerCase();
+
+    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+      return true;
+    }
+
+    if (event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      return true;
+    }
+
+    if (key.startsWith("Arrow") || key === "Home" || key === "End") {
+      return true;
+    }
+
+    if (key === "Backspace" || key === "Delete" || key === "Enter" || key === "Escape") {
+      return true;
+    }
+
+    const isMac = OS.platform() === "macos";
+    const primaryModifierPressed = isMac ? event.metaKey : event.ctrlKey;
+    if (primaryModifierPressed) {
+      if (["a", "c", "v", "x", "z"].includes(lowerKey)) {
+        return true;
+      }
+
+      if (!isMac && lowerKey === "y") {
+        return true;
+      }
+
+      if (isMac && lowerKey === "z" && event.shiftKey) {
+        return true;
+      }
+
+      if (key.startsWith("Arrow") || key === "Home" || key === "End" || key === "Backspace") {
+        return true;
+      }
+    }
+
+    if (event.altKey && (key.startsWith("Arrow") || key === "Backspace" || key === "Delete")) {
+      return true;
+    }
+
+    return false;
   }
 }
