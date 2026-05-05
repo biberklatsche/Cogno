@@ -60,4 +60,24 @@ describe("llm-config", () => {
       }),
     ).toBe(true);
   });
+
+  it("should disable provider resolution when llm mode is off", () => {
+    const configuration = {
+      llm: {
+        mode: "off",
+        active_provider: "local",
+        providers: {
+          local: {
+            type: "openai_compatible",
+            base_url: "http://localhost:1234/v1",
+            model: "gpt-oss",
+            enabled: true,
+          },
+        },
+      },
+    };
+
+    expect(hasUsableLlmProvider(configuration)).toBe(false);
+    expect(resolveActiveProvider(configuration)).toBeUndefined();
+  });
 });

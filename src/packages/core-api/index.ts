@@ -14,6 +14,8 @@ export * from "./feature-settings-extension.contract";
 export * from "./filesystem.contract";
 export * from "./grid-layout.contract";
 export * from "./llm.contract";
+export * from "./llm-command-extraction.utils";
+export * from "./llm-config.utils";
 export * from "./notification.contract";
 export * from "./notification-center.contract";
 export * from "./path-adapter.contract";

@@ -12,6 +12,7 @@ import type { DialogService } from "../../common/dialog";
 import { DialogRef } from "../../common/dialog/dialog-ref";
 import type { ShellProfile } from "../../config/+models/shell-config";
 import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import { Renderer } from "./renderer/renderer";
 import { TerminalSession } from "./terminal.session";
 
@@ -22,6 +23,7 @@ type TerminalAutocompleteSuggestorPort = Pick<
 type WiringPort = Pick<AppWiringService, "getShellDefinitions" | "getNotificationChannels">;
 type DialogPort = Pick<DialogService, "open">;
 type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
+type NotificationTargetResolverPort = Pick<NotificationTargetResolverService, "resolveForTerminal">;
 
 vi.mock("./renderer/renderer", () => {
   class RendererMock {
@@ -60,6 +62,7 @@ describe("TerminalSession", () => {
   let openDialogMock: ReturnType<typeof vi.fn>;
   let dialogService: DialogPort;
   let wiringService: WiringPort;
+  let notificationTargetResolverService: NotificationTargetResolverPort;
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
@@ -98,6 +101,13 @@ describe("TerminalSession", () => {
     dialogService = {
       open: openDialogMock,
     };
+    notificationTargetResolverService = {
+      resolveForTerminal: vi.fn().mockReturnValue({
+        workspaceId: "workspace-1",
+        tabId: "tab-1",
+        terminalId,
+      }),
+    };
 
     wiringService = {
       getShellDefinitions: vi
@@ -123,6 +133,7 @@ describe("TerminalSession", () => {
       dialogService,
       wiringService,
       contextMenuOverlayService,
+      notificationTargetResolverService as NotificationTargetResolverService,
     );
   });
 
@@ -136,6 +147,7 @@ describe("TerminalSession", () => {
       dialogService,
       wiringService,
       { openContextForElement: vi.fn() },
+      notificationTargetResolverService as NotificationTargetResolverService,
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
