@@ -23,14 +23,67 @@ describe("LlmCommandExtractionService", () => {
       {
         command: "npm run build",
         language: "sh",
+        executionMode: "run_only",
         sourceMessageId: "MSG1",
         target: { terminalId: "TE123" },
       },
       {
         command: "Get-ChildItem -Force",
         language: "powershell",
+        executionMode: "run_only",
         sourceMessageId: "MSG1",
         target: { terminalId: "TE123" },
+      },
+    ]);
+  });
+
+  it("should extract continue mode from the code fence header", () => {
+    const service = new LlmCommandExtractionService();
+
+    const commands = service.extractCommands(
+      "MSG3",
+      ["```sh llm:continue", "npm view cogno version", "```"].join("\n"),
+      { terminalId: "TE999" },
+    );
+
+    expect(commands).toEqual([
+      {
+        command: "npm view cogno version",
+        language: "sh",
+        executionMode: "run_and_continue",
+        sourceMessageId: "MSG3",
+        target: { terminalId: "TE999" },
+      },
+    ]);
+  });
+
+  it("should prefer structured command metadata and hide it from display text", () => {
+    const service = new LlmCommandExtractionService();
+
+    const parsedResponse = service.parseAssistantResponse(
+      "MSG4",
+      [
+        "Inspect the pods first.",
+        "",
+        "```sh",
+        "kubectl get pods -A",
+        "```",
+        "",
+        '<cogno-commands>{"commands":[{"command":"kubectl get pods -A","language":"sh","executionMode":"run_and_continue"}]}</cogno-commands>',
+      ].join("\n"),
+      { terminalId: "TE111" },
+    );
+
+    expect(parsedResponse.displayText).toBe(
+      ["Inspect the pods first.", "", "```sh", "kubectl get pods -A", "```"].join("\n"),
+    );
+    expect(parsedResponse.commands).toEqual([
+      {
+        command: "kubectl get pods -A",
+        language: "sh",
+        executionMode: "run_and_continue",
+        sourceMessageId: "MSG4",
+        target: { terminalId: "TE111" },
       },
     ]);
   });

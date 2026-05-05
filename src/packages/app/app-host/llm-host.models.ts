@@ -26,8 +26,13 @@ export type LlmChatMessage = {
   readonly content: string;
 };
 
-export type LlmChatCompletion = {
+export type LlmProviderCapabilitySet = {
+  readonly supportsStreaming: boolean;
+};
+
+export type LlmStreamChunk = {
   readonly text: string;
+  readonly done?: boolean;
 };
 
 export type LlmChatRequest = {
@@ -66,19 +71,23 @@ export type ChatTurnTargetTerminalReference = {
   readonly terminalId?: string;
 };
 
+export type LlmCommandExecutionMode = "run_only" | "run_and_continue";
+
 export type LlmCommandSuggestion = {
   readonly command: string;
   readonly language?: string;
+  readonly executionMode: LlmCommandExecutionMode;
   readonly sourceMessageId: string;
   readonly target: ChatTurnTargetTerminalReference;
 };
 
 export interface LlmProviderAdapter {
   readonly type: LlmProviderType;
+  readonly capabilities: LlmProviderCapabilitySet;
   validateConfiguration(providerId: string, config: LlmProviderConfig): ReadonlyArray<string>;
-  completeChat(
+  streamChat(
     providerId: string,
     config: LlmProviderConfig,
     request: LlmChatRequest,
-  ): Promise<LlmChatCompletion>;
+  ): AsyncIterable<LlmStreamChunk>;
 }

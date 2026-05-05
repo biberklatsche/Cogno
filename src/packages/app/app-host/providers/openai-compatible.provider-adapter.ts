@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
 import {
-  LlmChatCompletion,
   LlmChatRequest,
   LlmProviderAdapter,
   LlmProviderConfig,
+  LlmStreamChunk,
 } from "../llm-host.models";
 import {
   buildProviderUrl,
@@ -13,15 +13,19 @@ import {
 
 type OpenAiChatResponse = {
   choices?: ReadonlyArray<{
-    message?: {
-      content?: string | null;
+    delta?: {
+      content?: string;
     };
+    finish_reason?: string | null;
   }>;
 };
 
 @Injectable({ providedIn: "root" })
 export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
   readonly type = "openai_compatible" as const;
+  readonly capabilities = {
+    supportsStreaming: true,
+  } as const;
 
   validateConfiguration(_providerId: string, config: LlmProviderConfig): ReadonlyArray<string> {
     const validationErrors: string[] = [];
@@ -34,18 +38,18 @@ export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
     return validationErrors;
   }
 
-  async completeChat(
+  async *streamChat(
     providerId: string,
     config: LlmProviderConfig,
     request: LlmChatRequest,
-  ): Promise<LlmChatCompletion> {
+  ): AsyncIterable<LlmStreamChunk> {
     const response = await fetch(buildProviderUrl(config.base_url ?? "", "/chat/completions"), {
       method: "POST",
       headers: createProviderHeaders(config.api_key, config.headers),
       body: JSON.stringify({
         model: request.model,
         messages: request.messages,
-        stream: false,
+        stream: true,
       }),
       signal: request.abortSignal,
     });
@@ -59,11 +63,67 @@ export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
       );
     }
 
-    const parsedResponse = (await response.json()) as OpenAiChatResponse;
-    const message = parsedResponse.choices?.[0]?.message;
-    return {
-      text: message?.content ?? "",
-    };
+    if (!response.body) {
+      const fallbackResponse = (await response.json()) as {
+        choices?: ReadonlyArray<{ message?: { content?: string | null } }>;
+      };
+      const fallbackText = fallbackResponse.choices?.[0]?.message?.content ?? "";
+      if (fallbackText) {
+        yield { text: fallbackText, done: true };
+        return;
+      }
+      throw createProviderError(providerId, this.type, response.status, "Empty response body.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let pendingText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      pendingText += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+      const lines = pendingText.split(/\r?\n/);
+      pendingText = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine.startsWith("data:")) {
+          continue;
+        }
+
+        const payload = trimmedLine.slice(5).trim();
+        if (!payload || payload === "[DONE]") {
+          continue;
+        }
+
+        const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
+        const choice = parsedChunk.choices?.[0];
+        const chunkText = choice?.delta?.content ?? "";
+        if (chunkText) {
+          yield { text: chunkText };
+        }
+        if (choice?.finish_reason) {
+          yield { text: "", done: true };
+        }
+      }
+
+      if (done) {
+        break;
+      }
+    }
+
+    if (pendingText.trim().length > 0 && pendingText.trim() !== "data: [DONE]") {
+      const payload = pendingText.replace(/^data:\s*/, "").trim();
+      if (payload && payload !== "[DONE]") {
+        const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
+        const chunkText = parsedChunk.choices?.[0]?.delta?.content ?? "";
+        if (chunkText) {
+          yield { text: chunkText };
+        }
+      }
+    }
+
+    yield { text: "", done: true };
   }
 }
 

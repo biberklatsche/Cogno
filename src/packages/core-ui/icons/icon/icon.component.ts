@@ -46,6 +46,7 @@ import {
   mdiKeyboardOff,
   mdiLanConnect,
   mdiLiquidSpot,
+  mdiLoading,
   mdiMonitor,
   mdiNuke,
   mdiOpenInNew,
@@ -63,6 +64,7 @@ import {
   mdiRobotOff,
   mdiRocketLaunch,
   mdiScanHelper,
+  mdiSend,
   mdiSpeedometer,
   mdiSpiderThread,
   mdiSquareEditOutline,
@@ -122,6 +124,9 @@ export class IconComponent {
         break;
       case "mdiBookmark":
         this.icon = mdiBookmark;
+        break;
+      case "mdiLoading":
+        this.icon = mdiLoading;
         break;
       case "mdiDotsVertical":
         this.icon = mdiDotsVertical;
@@ -356,6 +361,9 @@ export class IconComponent {
         break;
       case "mdiFilter":
         this.icon = mdiFilter;
+        break;
+      case "mdiSend":
+        this.icon = mdiSend;
         break;
       default:
         this.icon = mdiAbTesting;

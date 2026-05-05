@@ -42,7 +42,7 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
               <span>{{ formatRole(message) }}</span>
               @if (message.isPending) {
                 <span class="pending-indicator" aria-label="Loading response">
-                  <app-icon name="mdiRefreshAuto" class="spinner-icon"></app-icon>
+                  <app-icon name="mdiLoading" class="spinner-icon"></app-icon>
                 </span>
               }
               @if (message.isError) {
@@ -71,7 +71,7 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
                         [disabled]="!canApplyCommandSuggestion(command)"
                         (click)="runCommandSuggestion(command)">
                         <app-icon name="mdiRocketLaunch"></app-icon>
-                        <span>Run</span>
+                        <span>{{ getRunButtonLabel(command) }}</span>
                       </button>
                     </div>
                   </div>
@@ -96,9 +96,16 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
           [value]="composerText()"
           (input)="updateComposerText($event)"
           (keydown)="handleComposerKeydown($event)"></textarea>
-        <button type="button" class="send-button" [disabled]="!canSend()" (click)="sendCurrentPrompt()">
-          Send
-        </button>
+        <div class="composer-actions">
+          <button
+            type="button"
+            class="send-button icon-send-button"
+            aria-label="Send"
+            [disabled]="!canSend()"
+            (click)="sendCurrentPrompt()">
+            <app-icon name="mdiSend"></app-icon>
+          </button>
+        </div>
       </div>
     </div>
   `,
@@ -266,19 +273,48 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
 
       .composer {
         display: grid;
-        grid-template-columns: 1fr auto;
         gap: 0.5rem;
+        padding: 0.65rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
       }
 
       .composer-input {
-        resize: vertical;
+        resize: none;
         min-height: 5.5rem;
         max-height: 12rem;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        background: rgba(255, 255, 255, 0.04);
+        border: 0;
+        outline: none;
+        background: transparent;
         color: inherit;
-        padding: 0.75rem;
+        padding: 0.1rem;
+      }
+
+      .composer-input:focus {
+        outline: none;
+      }
+
+      .composer-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .icon-send-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        min-height: 1.5rem;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+      }
+
+      .icon-send-button app-icon {
+        width: 1rem;
+        height: 1rem;
       }
     `,
   ],
@@ -343,6 +379,10 @@ export class LlmChatSideComponent {
 
   async runCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): Promise<void> {
     await this.llmChatService.runCommandSuggestion(commandSuggestion);
+  }
+
+  getRunButtonLabel(commandSuggestion: LlmCommandSuggestionContract): string {
+    return commandSuggestion.executionMode === "run_and_continue" ? "Run + Continue" : "Run";
   }
 
   formatRole(message: LlmChatThreadMessageContract): string {

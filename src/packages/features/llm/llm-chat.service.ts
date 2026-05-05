@@ -36,8 +36,15 @@ export class LlmChatService {
       return;
     }
 
-    await this.hostPort.sendPrompt(prompt);
     this.composerTextSignal.set("");
+    try {
+      await this.hostPort.sendPrompt(prompt);
+    } catch (error) {
+      if (!this.composerTextSignal()) {
+        this.composerTextSignal.set(prompt);
+      }
+      throw error;
+    }
   }
 
   clearConversation(): void {

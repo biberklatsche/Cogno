@@ -14,6 +14,7 @@ import { LlmContextSnapshotService } from "./llm-context-snapshot.service";
 import {
   ChatTurnTargetTerminalReference,
   LlmChatMessage,
+  LlmStreamChunk,
   TerminalContextSnapshot,
 } from "./llm-host.models";
 import { LlmProviderRegistryService } from "./llm-provider-registry.service";
@@ -96,10 +97,17 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
       return;
     }
 
+    if (commandSuggestion.executionMode !== "run_and_continue") {
+      this.focusTerminal(terminalId);
+      this.injectTerminalInput(terminalId, commandSuggestion.command, true);
+      this.appendSystemMessage(`Running command: ${commandSuggestion.command}`);
+      return;
+    }
+
     const executionStatePromise = this.waitForCommandExecution(terminalId);
     this.focusTerminal(terminalId);
     this.injectTerminalInput(terminalId, commandSuggestion.command, true);
-    this.appendSystemMessage(`Running command: ${commandSuggestion.command}`);
+    this.appendSystemMessage(`Running command and continuing: ${commandSuggestion.command}`);
 
     const executionState = await executionStatePromise;
     if (executionState !== "completed") {
@@ -187,7 +195,10 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
 
     try {
       const providerMessages = this.createProviderConversation();
-      const completion = await resolvedProvider.adapter.completeChat(
+      let assistantText = "";
+      let streamCompleted = false;
+
+      for await (const chunk of resolvedProvider.adapter.streamChat(
         resolvedProvider.providerId,
         resolvedProvider.config,
         {
@@ -195,12 +206,21 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
           messages: providerMessages,
           abortSignal: this.abortController.signal,
         },
-      );
+      )) {
+        ({ assistantText, streamCompleted } = this.applyAssistantStreamChunk(
+          assistantMessageId,
+          target,
+          assistantText,
+          chunk,
+        ));
+      }
 
-      this.updateAssistantMessage(assistantMessageId, completion.text, target, false, false, {
-        role: "assistant",
-        content: completion.text,
-      });
+      if (!streamCompleted) {
+        this.updateAssistantMessage(assistantMessageId, assistantText, target, false, false, {
+          role: "assistant",
+          content: assistantText,
+        });
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "The configured LLM provider request failed.";
@@ -231,6 +251,13 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
         "You are an assistant inside a terminal workspace application.",
         "Use the provided terminal context to answer precisely.",
         "If you suggest runnable commands, put each command in its own fenced code block with a shell language tag such as ```sh or ```powershell.",
+        "Whenever you include runnable commands, also append a final machine-readable block using exactly this format:",
+        '<cogno-commands>{"commands":[{"command":"kubectl get pods -A","language":"sh","executionMode":"run_and_continue"}]}</cogno-commands>.',
+        "Set executionMode to run_only when the command itself is the final answer the user should run.",
+        "Set executionMode to run_and_continue when you need terminal output before you can finish helping.",
+        "Use run_and_continue for inspection, discovery, diagnostics, and fact gathering commands.",
+        "Do not use run_and_continue for final solution commands, install commands, or commands that already fully answer the request.",
+        "The <cogno-commands> block must contain valid JSON and must be the final block in your reply.",
         "Keep explanations concise and practical.",
       ].join(" "),
     };
@@ -278,20 +305,24 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     isError = false,
     providerMessage?: LlmChatMessage,
   ): void {
-    const commands = this.llmCommandExtractionService
-      .extractCommands(messageId, text, target)
-      .map((commandSuggestion) => ({
-        command: commandSuggestion.command,
-        language: commandSuggestion.language,
-        sourceMessageId: commandSuggestion.sourceMessageId,
-        targetTerminalId: commandSuggestion.target.terminalId,
-      }));
+    const parsedAssistantResponse = this.llmCommandExtractionService.parseAssistantResponse(
+      messageId,
+      text,
+      target,
+    );
+    const commands = parsedAssistantResponse.commands.map((commandSuggestion) => ({
+      command: commandSuggestion.command,
+      language: commandSuggestion.language,
+      executionMode: commandSuggestion.executionMode,
+      sourceMessageId: commandSuggestion.sourceMessageId,
+      targetTerminalId: commandSuggestion.target.terminalId,
+    }));
     this.threadMessagesSubject.next(
       this.threadMessagesSubject.value.map((message) =>
         message.id === messageId
           ? {
               ...message,
-              text,
+              text: parsedAssistantResponse.displayText,
               providerMessage:
                 providerMessage ?? (message as ThreadMessageWithProviderMessage).providerMessage,
               commands,
@@ -301,6 +332,23 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
           : message,
       ),
     );
+  }
+
+  private applyAssistantStreamChunk(
+    messageId: string,
+    target: ChatTurnTargetTerminalReference,
+    currentText: string,
+    chunk: LlmStreamChunk,
+  ): { assistantText: string; streamCompleted: boolean } {
+    const assistantText = currentText + chunk.text;
+    this.updateAssistantMessage(messageId, assistantText, target, !chunk.done, false, {
+      role: "assistant",
+      content: assistantText,
+    });
+    return {
+      assistantText,
+      streamCompleted: !!chunk.done,
+    };
   }
 
   private appendSystemMessage(text: string, isError = false): void {

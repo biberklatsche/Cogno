@@ -5,9 +5,12 @@ export type LlmProviderStatusContract = {
   readonly providerType: string;
 };
 
+export type LlmCommandExecutionModeContract = "run_only" | "run_and_continue";
+
 export type LlmCommandSuggestionContract = {
   readonly command: string;
   readonly language?: string;
+  readonly executionMode?: LlmCommandExecutionModeContract;
   readonly sourceMessageId: string;
   readonly targetTerminalId?: string;
 };

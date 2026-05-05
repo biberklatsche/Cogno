@@ -81,9 +81,12 @@ export type ChatTurnTargetTerminalReference = {
   readonly terminalId?: string;
 };
 
+export type LlmCommandExecutionMode = "run_only" | "run_and_continue";
+
 export type LlmCommandSuggestion = {
   readonly command: string;
   readonly language?: string;
+  readonly executionMode: LlmCommandExecutionMode;
   readonly sourceMessageId: string;
   readonly target: ChatTurnTargetTerminalReference;
 };
