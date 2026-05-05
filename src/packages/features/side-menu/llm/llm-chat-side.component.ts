@@ -139,9 +139,9 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
       .toolbar-button,
       .send-button,
       .command-button {
-        border: 1px solid rgba(255, 255, 255, 0.16);
+        border: 1px solid var(--background-color-20l);
         border-radius: 6px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--background-color-10l);
         color: inherit;
         cursor: pointer;
       }
@@ -163,7 +163,7 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
       .empty-state {
         padding: 0.75rem;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.03);
+        background: var(--background-color-10l);
         font-size: 0.9rem;
         opacity: 0.75;
       }
@@ -174,15 +174,15 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
         gap: 0.5rem;
         padding: 0.75rem;
         border-radius: 10px;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--background-color-10l);
       }
 
       .message-card.assistant {
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--background-color-20l);
       }
 
       .message-card.system {
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid var(--background-color-20l);
       }
 
       .message-header {
@@ -240,8 +240,8 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
         align-items: start;
         padding: 0.6rem;
         border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(0, 0, 0, 0.16);
+        border: 1px solid var(--background-color-20l);
+        background: var(--background-color-10l);
       }
 
       .command-card.disabled {
@@ -268,16 +268,16 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
       }
 
       .run-button {
-        background: rgba(52, 187, 254, 0.16);
+        background: var(--highlight-color-10l);
       }
 
       .composer {
         display: grid;
         gap: 0.5rem;
         padding: 0.65rem;
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        border: 1px solid var(--background-color-20l);
         border-radius: 10px;
-        background: rgba(255, 255, 255, 0.04);
+        background: var(--background-color-10l);
       }
 
       .composer-input {

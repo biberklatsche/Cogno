@@ -51,7 +51,7 @@ type ProcessTreeNode = {
       gap: 6px;
       padding: 2px;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--background-color-10l);
       align-self: flex-start;
     }
 
@@ -68,7 +68,7 @@ type ProcessTreeNode = {
 
     .tab.is-active {
       opacity: 1;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--background-color-20l);
     }
 
     .row {

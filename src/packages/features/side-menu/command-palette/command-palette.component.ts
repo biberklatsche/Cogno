@@ -66,8 +66,8 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
       .search-input {
         padding: 6px 8px;
         border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--background-color-20l);
+        background: var(--background-color-10l);
         color: inherit;
         outline: none;
         box-sizing: border-box;

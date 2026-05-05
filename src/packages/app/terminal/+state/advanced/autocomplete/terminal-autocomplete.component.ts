@@ -96,9 +96,9 @@ const VIRTUAL_BUFFER_ITEMS = 3;
             max-width: 920px;
             overflow: hidden;
             background: var(--background-color);
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            border: 1px solid var(--background-color-20l);
             border-radius: 8px;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+            box-shadow: var(--shadow3);
             z-index: 110;
             padding: 4px;
         }
@@ -188,8 +188,8 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         .autocomplete-description {
             margin-top: 4px;
             padding: 6px 8px 4px;
-            border-top: 1px solid rgba(255, 255, 255, 0.12);
-            color: rgba(255, 255, 255, 0.82);
+            border-top: 1px solid var(--background-color-20l);
+            color: var(--foreground-color);
             font-size: 11px;
             display: flex;
             align-items: center;
@@ -229,7 +229,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         }
 
         .autocomplete-description .description-hint .mode-badge.mode-all {
-            background: rgba(255, 255, 255, 0.22);
+            background: var(--background-color-20l);
         }
 
         .autocomplete-description .description-hint .mode-badge.mode-history {

@@ -45,11 +45,11 @@ app-terminal {
         justify-content: center;
         width: 2rem;
         height: 2rem;
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        border: 1px solid var(--background-color-20l);
         border-radius: 5px;
         background: color-mix(in srgb, var(--background-color-20l) 88%, transparent);
         color: color-mix(in srgb, var(--foreground-color-40d) 88%, transparent);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        box-shadow: var(--shadow2);
 
         &:hover {
             opacity: 1;
