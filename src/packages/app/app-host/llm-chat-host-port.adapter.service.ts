@@ -26,6 +26,7 @@ type ThreadMessageWithProviderMessage = LlmChatThreadMessageContract & {
 export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
   private static readonly RUN_COMPLETION_TIMEOUT_MS = 30_000;
   private static readonly RUN_START_TIMEOUT_MS = 1_500;
+  private static readonly ABORTED_REQUEST_MESSAGE = "Request canceled.";
   private readonly threadMessagesSubject = new BehaviorSubject<
     ReadonlyArray<LlmChatThreadMessageContract>
   >([]);
@@ -33,7 +34,8 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
   private readonly providerStatusSubject = new BehaviorSubject<
     LlmProviderStatusContract | undefined
   >(undefined);
-  private abortController?: AbortController;
+  private activeAbortController?: AbortController;
+  private activeRequestId = 0;
 
   readonly threadMessages$: Observable<ReadonlyArray<LlmChatThreadMessageContract>> =
     this.threadMessagesSubject.asObservable();
@@ -58,8 +60,9 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
   }
 
   clearConversation(): void {
-    this.abortController?.abort();
-    this.abortController = undefined;
+    this.activeRequestId++;
+    this.activeAbortController?.abort();
+    this.activeAbortController = undefined;
     this.pendingSubject.next(false);
     this.threadMessagesSubject.next([]);
     this.refreshProviderStatus();
@@ -176,8 +179,10 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
       isPending: true,
     };
 
-    this.abortController?.abort();
-    this.abortController = new AbortController();
+    const requestId = ++this.activeRequestId;
+    this.activeAbortController?.abort();
+    const abortController = new AbortController();
+    this.activeAbortController = abortController;
     this.pendingSubject.next(true);
     this.threadMessagesSubject.next([
       ...this.threadMessagesSubject.value,
@@ -193,7 +198,7 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
         {
           model: resolvedProvider.config.model ?? "",
           messages: providerMessages,
-          abortSignal: this.abortController.signal,
+          abortSignal: abortController.signal,
         },
       );
 
@@ -202,13 +207,30 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
         content: completion.text,
       });
     } catch (error) {
+      if (this.isAbortedRequestError(error, abortController.signal)) {
+        this.updateAssistantMessage(
+          assistantMessageId,
+          LlmChatHostPortAdapterService.ABORTED_REQUEST_MESSAGE,
+          target,
+          false,
+          false,
+          {
+            role: "assistant",
+            content: LlmChatHostPortAdapterService.ABORTED_REQUEST_MESSAGE,
+          },
+        );
+        return;
+      }
+
       const errorMessage =
         error instanceof Error ? error.message : "The configured LLM provider request failed.";
       this.updateAssistantMessage(assistantMessageId, errorMessage, target, false, true);
     } finally {
-      this.pendingSubject.next(false);
-      this.abortController = undefined;
-      this.refreshProviderStatus();
+      if (this.activeRequestId === requestId) {
+        this.pendingSubject.next(false);
+        this.activeAbortController = undefined;
+        this.refreshProviderStatus();
+      }
     }
   }
 
@@ -362,5 +384,13 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
 
     await startedPromise;
     return (await completedPromise) ? "completed" : "timeout";
+  }
+
+  private isAbortedRequestError(error: unknown, abortSignal: AbortSignal): boolean {
+    return Boolean(
+      abortSignal.aborted &&
+        error instanceof Error &&
+        (error.name === "AbortError" || error.message === "This operation was aborted"),
+    );
   }
 }

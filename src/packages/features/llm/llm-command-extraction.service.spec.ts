@@ -46,4 +46,14 @@ describe("LlmCommandExtractionService", () => {
 
     expect(commands).toEqual([]);
   });
+
+  it("should ignore untagged code blocks", () => {
+    const service = new LlmCommandExtractionService();
+
+    const commands = service.extractCommands("MSG3", ["```", "npm run build", "```"].join("\n"), {
+      terminalId: "TE456",
+    });
+
+    expect(commands).toEqual([]);
+  });
 });
