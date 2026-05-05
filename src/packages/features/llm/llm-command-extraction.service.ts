@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
 import {
   extractLlmCommandSuggestions,
-  parseLlmAssistantResponse,
   ParsedLlmAssistantResponse,
+  parseLlmAssistantResponse,
 } from "@cogno/core-api";
 import { ChatTurnTargetTerminalReference, LlmCommandSuggestion } from "./llm.models";
 

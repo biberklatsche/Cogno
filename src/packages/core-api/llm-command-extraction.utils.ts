@@ -136,7 +136,10 @@ function stripStructuredCommandBlocks(text: string): string {
     return text;
   }
 
-  return text.replace(COMMAND_BLOCK_PATTERN, "").replace(/\n{3,}/g, "\n\n").trim();
+  return text
+    .replace(COMMAND_BLOCK_PATTERN, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function extractCodeBlocks(text: string): ReadonlyArray<ExtractedCodeBlock> {
