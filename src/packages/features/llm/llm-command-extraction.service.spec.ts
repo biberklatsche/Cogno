@@ -57,25 +57,21 @@ describe("LlmCommandExtractionService", () => {
     ]);
   });
 
-  it("should prefer structured command metadata and hide it from display text", () => {
+  it("should keep visible text unchanged while extracting executionMode from the fence header", () => {
     const service = new LlmCommandExtractionService();
 
     const parsedResponse = service.parseAssistantResponse(
       "MSG4",
-      [
-        "Inspect the pods first.",
-        "",
-        "```sh",
-        "kubectl get pods -A",
-        "```",
-        "",
-        '<cogno-commands>{"commands":[{"command":"kubectl get pods -A","language":"sh","executionMode":"run_and_continue"}]}</cogno-commands>',
-      ].join("\n"),
+      ["Inspect the pods first.", "", "```sh llm:continue", "kubectl get pods -A", "```"].join(
+        "\n",
+      ),
       { terminalId: "TE111" },
     );
 
     expect(parsedResponse.displayText).toBe(
-      ["Inspect the pods first.", "", "```sh", "kubectl get pods -A", "```"].join("\n"),
+      ["Inspect the pods first.", "", "```sh llm:continue", "kubectl get pods -A", "```"].join(
+        "\n",
+      ),
     );
     expect(parsedResponse.commands).toEqual([
       {

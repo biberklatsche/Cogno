@@ -13,21 +13,12 @@ export type ParsedLlmAssistantResponse<TTarget> = {
   readonly commands: ReadonlyArray<ExtractedLlmCommandSuggestion<TTarget>>;
 };
 
-type StructuredCommandPayload = {
-  readonly commands?: ReadonlyArray<{
-    readonly command?: string;
-    readonly language?: string;
-    readonly executionMode?: string;
-  }>;
-};
-
 type ExtractedCodeBlock = {
   readonly language?: string;
   readonly content: string;
   readonly executionMode: LlmCommandExecutionModeContract;
 };
 
-const COMMAND_BLOCK_PATTERN = /<cogno-commands>\s*([\s\S]*?)\s*<\/cogno-commands>/gi;
 const CODE_BLOCK_PATTERN = /```([^\r\n]*)\r?\n([\s\S]*?)```/g;
 
 export function parseLlmAssistantResponse<TTarget>(
@@ -35,13 +26,9 @@ export function parseLlmAssistantResponse<TTarget>(
   text: string,
   target: TTarget,
 ): ParsedLlmAssistantResponse<TTarget> {
-  const structuredCommands = extractStructuredCommands(messageId, text, target);
-  const fallbackCommands =
-    structuredCommands.length > 0 ? [] : extractCodeBlockCommands(messageId, text, target);
-
   return {
-    displayText: stripStructuredCommandBlocks(text),
-    commands: structuredCommands.length > 0 ? structuredCommands : fallbackCommands,
+    displayText: text,
+    commands: extractCodeBlockCommands(messageId, text, target),
   };
 }
 
@@ -51,52 +38,6 @@ export function extractLlmCommandSuggestions<TTarget>(
   target: TTarget,
 ): ReadonlyArray<ExtractedLlmCommandSuggestion<TTarget>> {
   return parseLlmAssistantResponse(messageId, text, target).commands;
-}
-
-function extractStructuredCommands<TTarget>(
-  messageId: string,
-  text: string,
-  target: TTarget,
-): ReadonlyArray<ExtractedLlmCommandSuggestion<TTarget>> {
-  const commands: ExtractedLlmCommandSuggestion<TTarget>[] = [];
-  const seenCommands = new Set<string>();
-
-  for (const match of text.matchAll(COMMAND_BLOCK_PATTERN)) {
-    const payloadText = (match[1] ?? "").trim();
-    if (!payloadText) {
-      continue;
-    }
-
-    let payload: StructuredCommandPayload;
-    try {
-      payload = JSON.parse(payloadText) as StructuredCommandPayload;
-    } catch {
-      continue;
-    }
-
-    for (const entry of payload.commands ?? []) {
-      const normalizedCommand = entry.command?.trim();
-      if (!normalizedCommand || seenCommands.has(normalizedCommand)) {
-        continue;
-      }
-
-      const language = entry.language?.trim().toLowerCase();
-      if (!isShellLikeLanguage(language)) {
-        continue;
-      }
-
-      seenCommands.add(normalizedCommand);
-      commands.push({
-        command: normalizedCommand,
-        language,
-        executionMode: normalizeExecutionMode(entry.executionMode),
-        sourceMessageId: messageId,
-        target,
-      });
-    }
-  }
-
-  return commands;
 }
 
 function extractCodeBlockCommands<TTarget>(
@@ -129,17 +70,6 @@ function extractCodeBlockCommands<TTarget>(
   }
 
   return commands;
-}
-
-function stripStructuredCommandBlocks(text: string): string {
-  if (!text.match(COMMAND_BLOCK_PATTERN)) {
-    return text;
-  }
-
-  return text
-    .replace(COMMAND_BLOCK_PATTERN, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
 
 function extractCodeBlocks(text: string): ReadonlyArray<ExtractedCodeBlock> {
@@ -177,12 +107,6 @@ function tokenizeHeader(header: string): string[] {
     .split(/\s+/)
     .map((token) => token.trim())
     .filter((token) => token.length > 0);
-}
-
-function normalizeExecutionMode(
-  executionMode: string | undefined,
-): LlmCommandExecutionModeContract {
-  return executionMode === "run_and_continue" ? "run_and_continue" : "run_only";
 }
 
 function isShellLikeLanguage(language: string | undefined): boolean {

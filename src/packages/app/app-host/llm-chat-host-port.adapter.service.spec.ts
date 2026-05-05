@@ -105,20 +105,14 @@ describe("LlmChatHostPortAdapterService", () => {
     ]);
   });
 
-  it("extracts structured command metadata and hides it from the visible assistant text", async () => {
+  it("extracts continue mode directly from the visible code fence header", async () => {
     const providerAdapter = {
       type: "openai_compatible" as const,
       capabilities: { supportsStreaming: true },
       validateConfiguration: vi.fn().mockReturnValue([]),
       streamChat: vi.fn(async function* () {
         yield {
-          text: [
-            "Check this first:",
-            "```sh",
-            "docker ps",
-            "```",
-            '<cogno-commands>{"commands":[{"command":"docker ps","language":"sh","executionMode":"run_and_continue"}]}</cogno-commands>',
-          ].join("\n"),
+          text: ["Check this first:", "```sh llm:continue", "docker ps", "```"].join("\n"),
           done: true,
         };
       }),
@@ -157,7 +151,7 @@ describe("LlmChatHostPortAdapterService", () => {
     await service.sendPrompt("inspect containers");
 
     expect(latestMessages[1]).toMatchObject({
-      text: ["Check this first:", "```sh", "docker ps", "```"].join("\n"),
+      text: ["Check this first:", "```sh llm:continue", "docker ps", "```"].join("\n"),
       isPending: false,
       isError: false,
     });
