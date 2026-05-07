@@ -5,7 +5,6 @@ import {
   ElementRef,
   effect,
   Signal,
-  signal,
   viewChild,
 } from "@angular/core";
 import {
@@ -13,13 +12,13 @@ import {
   AiCommandSuggestionContract,
   AiProviderStatusContract,
 } from "@cogno/core-api";
-import { IconComponent } from "@cogno/core-ui";
+import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
 import { AiChatService } from "@cogno/features/ai/ai-chat.service";
 
 @Component({
   selector: "app-ai-chat-side",
   standalone: true,
-  imports: [IconComponent],
+  imports: [DropdownComponent, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="chat-shell">
@@ -113,38 +112,14 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
           (input)="updateComposerText($event)"
           (keydown)="handleComposerKeydown($event)"></textarea>
         <div class="composer-actions">
-          <div class="provider-selector-shell">
-            <button
-              #providerMenuButton
-              type="button"
-              class="provider-selector"
-              aria-haspopup="menu"
-              aria-label="Select AI provider"
-              [attr.aria-expanded]="isProviderMenuOpen()"
-              (click)="toggleProviderMenu()">
-              <span class="provider-selector__label">
-                {{ statusLabel() ?? "No provider configured" }}
-              </span>
-              <span class="provider-selector__chevron" aria-hidden="true"></span>
-            </button>
-            @if (isProviderMenuOpen()) {
-              <div class="provider-menu" role="menu">
-                @for (providerStatus of providerStatuses(); track providerStatus.providerId) {
-                  <button
-                    type="button"
-                    class="provider-menu__item"
-                    role="menuitem"
-                    [class.provider-menu__item--active]="
-                      formatProviderStatus(providerStatus) === statusLabel()
-                    "
-                    [disabled]="formatProviderStatus(providerStatus) === statusLabel()"
-                    (click)="selectProvider(providerStatus.providerId)">
-                    {{ formatProviderStatus(providerStatus) ?? providerStatus.providerId }}
-                  </button>
-                }
-              </div>
-            }
-          </div>
+          <app-dropdown
+            ariaLabel="Select AI provider"
+            [label]="statusLabel() ?? 'No provider configured'"
+            [value]="selectedProviderId()"
+            [items]="providerDropdownItems()"
+            [disabled]="providerDropdownItems().length === 0"
+            (valueChange)="selectProvider($event)">
+          </app-dropdown>
           <button
             type="button"
             class="send-button icon-send-button"
@@ -164,92 +139,22 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
         height: 100%;
       }
 
-      .chat-shell {
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        gap: 0.75rem;
-        height: 100%;
-        min-height: 0;
+      .chat-shell { display: grid; grid-template-rows: auto 1fr auto; gap: 0.75rem; height: 100%; min-height: 0; }
+      .chat-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+      .status { font-size: 0.8rem; opacity: 0.75; }
+      .toolbar-button, .send-button, .command-button {
+        border: 1px solid var(--background-color-20l); border-radius: 6px; background: var(--background-color-10l); color: inherit; cursor: pointer;
       }
-
-      .chat-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.5rem;
-      }
-
-      .status {
-        font-size: 0.8rem;
-        opacity: 0.75;
-      }
-
-      .toolbar-button,
-      .send-button,
-      .command-button {
-        border: 1px solid var(--background-color-20l);
-        border-radius: 6px;
-        background: var(--background-color-10l);
-        color: inherit;
-        cursor: pointer;
-      }
-
-      .toolbar-button,
-      .send-button {
-        min-height: 2rem;
-        padding: 0.45rem 0.8rem;
-      }
-
-      .message-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        overflow: auto;
-        min-height: 0;
-      }
-
-      .empty-state {
-        padding: 0.75rem;
-        border-radius: 8px;
-        background: var(--background-color-10l);
-        font-size: 0.9rem;
-        opacity: 0.75;
-      }
-
-      .message-card {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        border-radius: 10px;
-        background: var(--background-color-10l);
-      }
-
-      .message-card.assistant {
-        background: var(--background-color-20l);
-      }
-
-      .message-card.system {
-        border: 1px solid var(--background-color-20l);
-      }
-
+      .toolbar-button, .send-button { min-height: 2rem; padding: 0.45rem 0.8rem; }
+      .message-list { display: flex; flex-direction: column; gap: 0.75rem; overflow: auto; min-height: 0; }
+      .empty-state { padding: 0.75rem; border-radius: 8px; background: var(--background-color-10l); font-size: 0.9rem; opacity: 0.75; }
+      .message-card { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: 10px; background: var(--background-color-10l); }
+      .message-card.assistant { background: var(--background-color-20l); }
+      .message-card.system { border: 1px solid var(--background-color-20l); }
       .message-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-        font-size: 0.75rem;
-        letter-spacing: 0.03em;
-        opacity: 0.7;
-        text-transform: uppercase;
+        display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.03em; opacity: 0.7; text-transform: uppercase;
       }
-
-      .pending-indicator {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1rem;
-        height: 1rem;
-      }
+      .pending-indicator { display: inline-flex; align-items: center; justify-content: center; width: 1rem; height: 1rem; }
 
       .spinner-icon {
         width: 1rem;
@@ -275,43 +180,16 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
         font-family: inherit;
       }
 
-      .command-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
+      .command-list { display: flex; flex-direction: column; gap: 0.5rem; }
       .command-card {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 0.5rem;
-        align-items: start;
-        padding: 0.6rem;
-        border-radius: 8px;
-        border: 1px solid var(--background-color-20l);
-        background: var(--background-color-10l);
+        display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: start; padding: 0.6rem;
+        border: 1px solid var(--background-color-20l); border-radius: 8px; background: var(--background-color-10l);
       }
-
-      .command-card.disabled {
-        opacity: 0.55;
-      }
-
-      .command-text {
-        font-family: var(--font-family-monospace, monospace);
-        font-size: 0.85rem;
-      }
-
+      .command-card.disabled { opacity: 0.55; }
+      .command-text { font-family: var(--font-family-monospace, monospace); font-size: 0.85rem; }
       .command-context-note {
-        grid-column: 1 / -1;
-        display: flex;
-        align-items: center;
-        gap: 0.45rem;
-        flex-wrap: wrap;
-        margin-top: 0.1rem;
-        padding-top: 0.4rem;
-        border-top: 1px solid var(--background-color-20l);
-        font-size: 0.72rem;
-        opacity: 0.7;
+        grid-column: 1 / -1; display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.1rem;
+        padding-top: 0.4rem; border-top: 1px solid var(--background-color-20l); font-size: 0.72rem; opacity: 0.7;
       }
 
       .command-context-link {
@@ -343,121 +221,15 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
       }
 
       .composer {
-        display: grid;
-        gap: 0.5rem;
-        padding: 0.65rem;
-        border: 1px solid var(--background-color-20l);
-        border-radius: 10px;
-        background: var(--background-color-10l);
+        display: grid; gap: 0.5rem; padding: 0.65rem; border: 1px solid var(--background-color-20l);
+        border-radius: 10px; background: var(--background-color-10l);
       }
-
       .composer-input {
-        resize: none;
-        min-height: 5.5rem;
-        max-height: 12rem;
-        border: 0;
-        outline: none;
-        background: transparent;
-        color: inherit;
-        padding: 0.1rem;
+        resize: none; min-height: 5.5rem; max-height: 12rem; border: 0; outline: none; background: transparent; color: inherit; padding: 0.1rem;
       }
+      .composer-input:focus { outline: none; }
 
-      .composer-input:focus {
-        outline: none;
-      }
-
-      .composer-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-        justify-content: flex-end;
-      }
-
-      .provider-selector {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        max-width: min(100%, 18rem);
-        min-height: 1.6rem;
-        padding: 0.15rem 0.45rem 0;
-        border: 0;
-        background: transparent;
-        color: inherit;
-        cursor: pointer;
-        font: inherit;
-        font-size: 0.9rem;
-        font-weight: 600;
-        line-height: 1.2;
-      }
-
-      .provider-selector-shell {
-        position: relative;
-        display: inline-flex;
-        justify-content: flex-end;
-      }
-
-      .provider-selector:hover,
-      .provider-selector:focus-visible {
-        background: var(--background-color-20l);
-        border-radius: 0.35rem;
-        outline: none;
-      }
-
-      .provider-selector__label {
-        display: block;
-        max-width: 15ch;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .provider-selector__chevron {
-        flex: 0 0 auto;
-        width: 0.45rem;
-        height: 0.45rem;
-        border-right: 1.5px solid currentColor;
-        border-bottom: 1.5px solid currentColor;
-        transform: translateY(-0.1rem) rotate(45deg);
-        opacity: 0.8;
-      }
-
-      .provider-menu {
-        position: absolute;
-        right: 0;
-        bottom: calc(100% + 0.35rem);
-        display: flex;
-        flex-direction: column;
-        min-width: 14rem;
-        max-width: 20rem;
-        padding: 0.35rem;
-        border: 1px solid var(--background-color-20l);
-        border-radius: 0.6rem;
-        background: var(--background-color);
-        box-shadow: 0 0.5rem 1.4rem rgb(0 0 0 / 18%);
-        z-index: 5;
-      }
-
-      .provider-menu__item {
-        border: 0;
-        border-radius: 0.4rem;
-        background: transparent;
-        color: inherit;
-        cursor: pointer;
-        font: inherit;
-        text-align: left;
-        padding: 0.45rem 0.6rem;
-      }
-
-      .provider-menu__item:hover,
-      .provider-menu__item:focus-visible {
-        background: var(--background-color-20l);
-        outline: none;
-      }
-
-      .provider-menu__item--active {
-        opacity: 0.6;
-      }
+      .composer-actions { display: flex; align-items: center; gap: 0.35rem; justify-content: flex-end; }
 
       .icon-send-button {
         display: inline-flex;
@@ -471,10 +243,7 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
         background: transparent;
       }
 
-      .icon-send-button app-icon {
-        width: 1rem;
-        height: 1rem;
-      }
+      .icon-send-button app-icon { width: 1rem; height: 1rem; }
     `,
   ],
 })
@@ -487,10 +256,18 @@ export class AiChatSideComponent {
   readonly statusLabel: Signal<string | undefined> = computed(() =>
     this.aiChatService.getStatusMessage(),
   );
-  readonly isProviderMenuOpen = signal(false);
+  readonly providerDropdownItems: Signal<ReadonlyArray<DropdownItem>> = computed(() =>
+    this.providerStatuses().map((providerStatus) => ({
+      value: providerStatus.providerId,
+      label: this.formatProviderStatus(providerStatus) ?? providerStatus.providerId,
+      disabled: providerStatus.providerId === this.selectedProviderId(),
+    })),
+  );
+  readonly selectedProviderId: Signal<string | undefined> = computed(
+    () => this.aiChatService.providerStatus()?.providerId,
+  );
   private readonly messageListElement = viewChild<ElementRef<HTMLDivElement>>("messageListElement");
   private readonly composerElement = viewChild<ElementRef<HTMLTextAreaElement>>("composerElement");
-  private readonly providerMenuButton = viewChild<ElementRef<HTMLButtonElement>>("providerMenuButton");
 
   constructor(private readonly aiChatService: AiChatService) {
     effect(() => {
@@ -502,13 +279,6 @@ export class AiChatSideComponent {
         }
         messageListElement.scrollTop = messageListElement.scrollHeight;
       });
-    });
-    effect(() => {
-      this.statusLabel();
-      this.providerStatuses();
-      if (this.providerStatuses().length <= 1 && this.isProviderMenuOpen()) {
-        this.isProviderMenuOpen.set(false);
-      }
     });
   }
 
@@ -524,14 +294,6 @@ export class AiChatSideComponent {
 
   clearConversation(): void {
     this.aiChatService.clearConversation();
-  }
-
-  toggleProviderMenu(): void {
-    if (this.providerStatuses().length === 0) {
-      return;
-    }
-
-    this.isProviderMenuOpen.update((isOpen) => !isOpen);
   }
 
   handleComposerKeydown(keyboardEvent: KeyboardEvent): void {
@@ -576,9 +338,7 @@ export class AiChatSideComponent {
   }
 
   async selectProvider(providerId: string): Promise<void> {
-    this.isProviderMenuOpen.set(false);
     await this.aiChatService.selectProvider(providerId);
-    this.providerMenuButton()?.nativeElement.focus();
   }
 
   getRunButtonLabel(commandSuggestion: AiCommandSuggestionContract): string {
@@ -594,5 +354,4 @@ export class AiChatSideComponent {
     }
     return "You";
   }
-
 }
