@@ -144,6 +144,30 @@ describe("KeybindService", () => {
     expect(dispatchResult).toBe(true);
   });
 
+  it("does not treat the xterm helper textarea as a native editable field", () => {
+    const terminalElement = document.createElement("div");
+    terminalElement.className = "terminal xterm";
+    const helperTextareaElement = document.createElement("textarea");
+    helperTextareaElement.className = "xterm-helper-textarea";
+    terminalElement.appendChild(helperTextareaElement);
+    document.body.appendChild(terminalElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowLeft",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    const result = (
+      service as unknown as {
+        shouldUseNativeEditableFieldHandling: (keyboardEvent: KeyboardEvent) => boolean;
+      }
+    ).shouldUseNativeEditableFieldHandling(event);
+
+    expect(result).toBe(false);
+  });
+
   it("does not treat non-editing shortcuts as native editable field shortcuts", () => {
     const inputElement = document.createElement("input");
     document.body.appendChild(inputElement);

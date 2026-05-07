@@ -144,8 +144,26 @@ export class KeybindService {
     return editableElement !== null;
   }
 
+  private isEventInsideTerminalEditableSurface(event: KeyboardEvent): boolean {
+    const eventTarget = event.target;
+    if (!(eventTarget instanceof Element)) {
+      return false;
+    }
+
+    const isTerminalHelperTextarea = eventTarget.closest(".xterm-helper-textarea") !== null;
+    if (!isTerminalHelperTextarea) {
+      return false;
+    }
+
+    return eventTarget.closest(".terminal.xterm") !== null;
+  }
+
   private shouldUseNativeEditableFieldHandling(event: KeyboardEvent): boolean {
     if (!this.isEventOnEditableTarget(event)) {
+      return false;
+    }
+
+    if (this.isEventInsideTerminalEditableSurface(event)) {
       return false;
     }
 
