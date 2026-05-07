@@ -1,8 +1,5 @@
 import { OS, OsType } from "@cogno/app-tauri/os";
-import {
-  ApplicationSettingsExtensionContract,
-  defaultFeatureSettingsExtension,
-} from "@cogno/core-api";
+import { ApplicationSettingsExtensionContract } from "@cogno/core-api";
 import { z } from "zod";
 import { Config } from "../+models/config";
 import {
@@ -677,9 +674,5 @@ function cloneConfigObjectValue(value: unknown): unknown {
 function resolveSettingsExtensions(
   settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract> | undefined,
 ): ReadonlyArray<ApplicationSettingsExtensionContract> {
-  if (settingsExtensions === undefined || settingsExtensions.length === 0) {
-    return [defaultFeatureSettingsExtension];
-  }
-
-  return settingsExtensions;
+  return settingsExtensions ?? [];
 }

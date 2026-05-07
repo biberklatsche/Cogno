@@ -9,10 +9,10 @@ import {
 } from "@angular/core";
 import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
 import {
-  AiChatThreadMessageContract,
-  AiCommandSuggestionContract,
-  AiProviderStatusContract,
-} from "@cogno/feature-api/ai/ai-chat.port";
+  AiChatThreadMessage,
+  AiCommandSuggestion,
+  AiProviderStatus,
+} from "@cogno/features/ai/ai.models";
 import { AiChatService } from "@cogno/features/ai/ai-chat.service";
 
 @Component({
@@ -309,31 +309,29 @@ export class AiChatSideComponent {
     }
   }
 
-  canApplyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): boolean {
+  canApplyCommandSuggestion(commandSuggestion: AiCommandSuggestion): boolean {
     return this.aiChatService.canApplyCommandSuggestion(commandSuggestion);
   }
 
-  isCommandSuggestionFromDifferentTerminal(
-    commandSuggestion: AiCommandSuggestionContract,
-  ): boolean {
+  isCommandSuggestionFromDifferentTerminal(commandSuggestion: AiCommandSuggestion): boolean {
     const targetTerminalId = commandSuggestion.targetTerminalId;
     const focusedTerminalId = this.focusedTerminalId();
     return !!targetTerminalId && !!focusedTerminalId && targetTerminalId !== focusedTerminalId;
   }
 
-  applyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): void {
+  applyCommandSuggestion(commandSuggestion: AiCommandSuggestion): void {
     this.aiChatService.applyCommandSuggestion(commandSuggestion);
   }
 
-  openCommandSuggestionTerminal(commandSuggestion: AiCommandSuggestionContract): void {
+  openCommandSuggestionTerminal(commandSuggestion: AiCommandSuggestion): void {
     this.aiChatService.openCommandSuggestionTerminal(commandSuggestion);
   }
 
-  async runCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): Promise<void> {
+  async runCommandSuggestion(commandSuggestion: AiCommandSuggestion): Promise<void> {
     await this.aiChatService.runCommandSuggestion(commandSuggestion);
   }
 
-  formatProviderStatus(providerStatus: AiProviderStatusContract | undefined): string | undefined {
+  formatProviderStatus(providerStatus: AiProviderStatus | undefined): string | undefined {
     return this.aiChatService.formatStatusMessage(providerStatus);
   }
 
@@ -341,11 +339,11 @@ export class AiChatSideComponent {
     await this.aiChatService.selectProvider(providerId);
   }
 
-  getRunButtonLabel(commandSuggestion: AiCommandSuggestionContract): string {
+  getRunButtonLabel(commandSuggestion: AiCommandSuggestion): string {
     return commandSuggestion.executionMode === "run_and_continue" ? "Run + Continue" : "Run";
   }
 
-  formatRole(message: AiChatThreadMessageContract): string {
+  formatRole(message: AiChatThreadMessage): string {
     if (message.role === "assistant") {
       return "Assistant";
     }

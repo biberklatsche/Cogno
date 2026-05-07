@@ -1,9 +1,9 @@
-import type { AiCommandExecutionModeContract } from "./ai-chat.port";
+import type { AiCommandExecutionMode } from "./ai.models";
 
 export type ExtractedAiCommandSuggestion<TTarget> = {
   readonly command: string;
   readonly language?: string;
-  readonly executionMode: AiCommandExecutionModeContract;
+  readonly executionMode: AiCommandExecutionMode;
   readonly sourceMessageId: string;
   readonly target: TTarget;
 };
@@ -16,7 +16,7 @@ export type ParsedAiAssistantResponse<TTarget> = {
 type ExtractedCodeBlock = {
   readonly language?: string;
   readonly content: string;
-  readonly executionMode: AiCommandExecutionModeContract;
+  readonly executionMode: AiCommandExecutionMode;
 };
 
 const CODE_BLOCK_PATTERN = /```([^\r\n]*)\r?\n([\s\S]*?)```/g;
@@ -92,7 +92,7 @@ function extractLanguage(header: string): string | undefined {
   return language?.trim().toLowerCase() || undefined;
 }
 
-function extractExecutionMode(header: string): AiCommandExecutionModeContract {
+function extractExecutionMode(header: string): AiCommandExecutionMode {
   const metadataTokens = tokenizeHeader(header)
     .slice(1)
     .map((token) => token.toLowerCase());

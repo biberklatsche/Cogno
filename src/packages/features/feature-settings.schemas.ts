@@ -1,5 +1,6 @@
 export {
   FeatureAiSchema,
+  FeatureAutocompleteSchema,
   FeatureCommandPaletteSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,

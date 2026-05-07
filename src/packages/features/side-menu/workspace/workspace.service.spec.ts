@@ -1,8 +1,5 @@
-import type {
-  WorkspaceCloseGuard,
-  WorkspaceEntryContract,
-  WorkspaceHostPort,
-} from "@cogno/core-api";
+import type { WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
+import type { WorkspaceCloseGuard } from "./workspace-close-guard.port";
 import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
 import { BehaviorSubject } from "rxjs";

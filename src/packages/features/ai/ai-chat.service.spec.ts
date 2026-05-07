@@ -1,72 +1,97 @@
-import { Injector, runInInjectionContext } from "@angular/core";
-import type {
-  AiChatHostPort,
-  AiChatThreadMessageContract,
-  AiProviderStatusContract,
-} from "@cogno/feature-api/ai/ai-chat.port";
+import type { DestroyRef } from "@angular/core";
+import {
+  ApplicationConfigurationPort,
+  type TerminalBusyStateChangeContract,
+  TerminalGateway,
+} from "@cogno/core-api";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatService } from "./ai-chat.service";
+import { AiCommandExtractionService } from "./ai-command-extraction.service";
+import { AiProviderRegistryService } from "./ai-provider-registry.service";
 
 describe("AiChatService", () => {
-  let sendPromptMock: ReturnType<typeof vi.fn>;
+  let applicationConfigurationPort: ApplicationConfigurationPort;
+  let terminalGateway: TerminalGateway;
+  let aiCommandExtractionService: AiCommandExtractionService;
+  let aiProviderRegistryService: AiProviderRegistryService;
   let aiChatService: AiChatService;
 
   beforeEach(() => {
-    const threadMessagesSubject = new BehaviorSubject<ReadonlyArray<AiChatThreadMessageContract>>(
-      [],
-    );
-    const pendingSubject = new BehaviorSubject(false);
-    const providerStatusSubject = new BehaviorSubject<AiProviderStatusContract | undefined>({
-      providerId: "provider-1",
-      providerType: "openai_compatible",
-      providerModel: "gpt-test",
+    const configurationSubject = new BehaviorSubject<Readonly<Record<string, unknown>>>({});
+    const focusedTerminalIdSubject = new BehaviorSubject<string | undefined>(undefined);
+    const busyStateChangesSubject = new BehaviorSubject<TerminalBusyStateChangeContract>({
+      terminalId: "",
+      isBusy: false,
     });
-    const providerStatusesSubject = new BehaviorSubject<ReadonlyArray<AiProviderStatusContract>>(
-      [],
-    );
-    sendPromptMock = vi.fn().mockResolvedValue(undefined);
 
-    const hostPort: AiChatHostPort = {
-      threadMessages$: threadMessagesSubject.asObservable(),
-      pending$: pendingSubject.asObservable(),
-      providerStatus$: providerStatusSubject.asObservable(),
-      providerStatuses$: providerStatusesSubject.asObservable(),
-      focusedTerminalId$: new BehaviorSubject<string | undefined>(undefined).asObservable(),
-      sendPrompt: sendPromptMock,
-      selectProvider: vi.fn().mockResolvedValue(undefined),
-      clearConversation: vi.fn(),
-      canApplyCommandSuggestion: vi.fn().mockReturnValue(false),
-      applyCommandSuggestion: vi.fn(),
-      openCommandSuggestionTerminal: vi.fn(),
-      runCommandSuggestion: vi.fn().mockResolvedValue(undefined),
+    applicationConfigurationPort = {
+      configuration$: configurationSubject.asObservable(),
+      getConfiguration: vi.fn().mockReturnValue({}),
     };
+    terminalGateway = {
+      focusedTerminalId$: focusedTerminalIdSubject.asObservable(),
+      busyStateChanges$: busyStateChangesSubject.asObservable(),
+      getFocusedTerminalId: vi.fn().mockReturnValue(undefined),
+      hasTerminal: vi.fn().mockReturnValue(false),
+      focusTerminal: vi.fn(),
+      injectInput: vi.fn(),
+      captureFocusedSnapshot: vi.fn().mockResolvedValue(undefined),
+      captureSnapshot: vi.fn().mockResolvedValue(undefined),
+    };
+    aiCommandExtractionService = {
+      parseAssistantResponse: vi.fn().mockReturnValue({
+        displayText: "",
+        commands: [],
+      }),
+      extractCommands: vi.fn().mockReturnValue([]),
+    } as unknown as AiCommandExtractionService;
+    aiProviderRegistryService = {
+      resolveActiveProvider: vi.fn().mockReturnValue({
+        providerId: "provider-1",
+        config: {
+          type: "openai_compatible",
+          model: "gpt-test",
+        },
+        adapter: {
+          type: "openai_compatible",
+          capabilities: { supportsStreaming: true },
+          validateConfiguration: vi.fn().mockReturnValue([]),
+          streamChat: vi.fn().mockImplementation(async function* () {
+            yield { text: "done", done: true };
+          }),
+        },
+      }),
+      validateActiveProvider: vi.fn().mockReturnValue([]),
+      listEnabledProviderStatuses: vi.fn().mockReturnValue([]),
+      selectActiveProvider: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AiProviderRegistryService;
+    const destroyRef = {
+      onDestroy: vi.fn(),
+    } as unknown as DestroyRef;
 
-    aiChatService = runInInjectionContext(
-      Injector.create({ providers: [] }),
-      () => new AiChatService(hostPort),
+    aiChatService = new AiChatService(
+      applicationConfigurationPort,
+      terminalGateway,
+      aiCommandExtractionService,
+      aiProviderRegistryService,
+      destroyRef,
     );
   });
 
   it("clears the composer immediately when sending a prompt", async () => {
-    let resolveSendPrompt: (() => void) | undefined;
-    sendPromptMock.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveSendPrompt = resolve;
-        }),
-    );
     aiChatService.updateComposerText("list files");
 
     const sendPromise = aiChatService.sendCurrentPrompt();
 
     expect(aiChatService.composerText()).toBe("");
-    resolveSendPrompt?.();
     await sendPromise;
   });
 
   it("restores the composer text when sending fails", async () => {
-    sendPromptMock.mockRejectedValue(new Error("send failed"));
+    vi.mocked(aiProviderRegistryService.resolveActiveProvider).mockImplementation(() => {
+      throw new Error("send failed");
+    });
     aiChatService.updateComposerText("list files");
 
     await expect(aiChatService.sendCurrentPrompt()).rejects.toThrow("send failed");

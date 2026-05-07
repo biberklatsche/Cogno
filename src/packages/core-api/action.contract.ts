@@ -23,6 +23,7 @@ export interface ActionCatalogContract {
 
 export interface ActionDispatcherContract {
   dispatchAction(actionDefinition: ActionDefinitionContract): void;
+  onAction$(actionName: string): Observable<void>;
 }
 
 export abstract class ActionCatalog implements ActionCatalogContract {
@@ -31,4 +32,5 @@ export abstract class ActionCatalog implements ActionCatalogContract {
 
 export abstract class ActionDispatcher implements ActionDispatcherContract {
   abstract dispatchAction(actionDefinition: ActionDefinitionContract): void;
+  abstract onAction$(actionName: string): Observable<void>;
 }

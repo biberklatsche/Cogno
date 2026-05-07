@@ -1,4 +1,4 @@
-import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
+import { ApplicationSettingsExtensionContract } from "@cogno/core-api";
 import {
   FeatureAiSchema,
   FeatureAutocompleteSchema,
@@ -8,7 +8,7 @@ import {
   FeatureSearchSchema,
   FeatureTerminalSchema,
   FeatureWorkspaceSchema,
-} from "./feature-settings.contract";
+} from "./feature-settings.schemas";
 
 const featureSettingsSchemaShape = {
   workspace: FeatureWorkspaceSchema.optional(),

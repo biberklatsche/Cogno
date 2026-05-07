@@ -25,14 +25,14 @@ describe("AiCommandExtractionService", () => {
         language: "sh",
         executionMode: "run_only",
         sourceMessageId: "MSG1",
-        target: { terminalId: "TE123" },
+        targetTerminalId: "TE123",
       },
       {
         command: "Get-ChildItem -Force",
         language: "powershell",
         executionMode: "run_only",
         sourceMessageId: "MSG1",
-        target: { terminalId: "TE123" },
+        targetTerminalId: "TE123",
       },
     ]);
   });
@@ -52,7 +52,7 @@ describe("AiCommandExtractionService", () => {
         language: "sh",
         executionMode: "run_and_continue",
         sourceMessageId: "MSG3",
-        target: { terminalId: "TE999" },
+        targetTerminalId: "TE999",
       },
     ]);
   });

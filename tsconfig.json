@@ -7,8 +7,6 @@
     "paths": {
       "@cogno/core-api": ["src/packages/core-api/index.ts"],
       "@cogno/core-api/*": ["src/packages/core-api/*"],
-      "@cogno/feature-api": ["src/packages/feature-api/index.ts"],
-      "@cogno/feature-api/*": ["src/packages/feature-api/*"],
       "@cogno/core-domain": ["src/packages/core-domain/index.ts"],
       "@cogno/core-domain/*": ["src/packages/core-domain/*"],
       "@cogno/core-host": ["src/packages/core-host/index.ts"],

@@ -22,7 +22,7 @@ import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <aside #overlayAside class="base-overlay"
+        <aside #overlayAside class="base-overlay flat"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
                [class.shift-left]="visibleItems().length > 0"

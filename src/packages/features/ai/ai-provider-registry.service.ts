@@ -1,12 +1,11 @@
 import { Injectable } from "@angular/core";
-import { AiProviderStatusContract } from "@cogno/feature-api/ai/ai-chat.port";
+import { ApplicationConfigurationPort } from "@cogno/core-api";
+import { AiProviderAdapter, AiProviderConfig, AiProviderStatus } from "./ai.models";
 import {
   getAiFeatureConfig,
   isUsableProviderConfig,
   resolveActiveProvider,
-} from "@cogno/feature-api/ai/ai-config.utils";
-import { ConfigService } from "../config/+state/config.service";
-import { AiProviderAdapter, AiProviderConfig, AiProviderType } from "./ai-host.models";
+} from "./ai-config.utils";
 import { OllamaNativeProviderAdapter } from "./providers/ollama-native.provider-adapter";
 import { OpenAiCompatibleProviderAdapter } from "./providers/openai-compatible.provider-adapter";
 
@@ -18,11 +17,11 @@ export type ResolvedAiProvider = {
 
 @Injectable({ providedIn: "root" })
 export class AiProviderRegistryService {
-  private readonly adapterByType = new Map<AiProviderType, AiProviderAdapter>();
+  private readonly adapterByType = new Map<string, AiProviderAdapter>();
   private selectedProviderId?: string;
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     openAiCompatibleProviderAdapter: OpenAiCompatibleProviderAdapter,
     ollamaNativeProviderAdapter: OllamaNativeProviderAdapter,
   ) {
@@ -31,12 +30,13 @@ export class AiProviderRegistryService {
   }
 
   resolveActiveProvider(): ResolvedAiProvider | undefined {
-    const config = this.getCurrentConfig();
-    if (!config) {
+    const configuration = this.applicationConfigurationPort.getConfiguration();
+    if (!configuration) {
       return undefined;
     }
 
-    const activeProvider = this.resolveSelectedProvider(config) ?? resolveActiveProvider(config);
+    const activeProvider =
+      this.resolveSelectedProvider(configuration) ?? resolveActiveProvider(configuration);
     if (!activeProvider) {
       return undefined;
     }
@@ -54,12 +54,13 @@ export class AiProviderRegistryService {
   }
 
   validateActiveProvider(): ReadonlyArray<string> {
-    const config = this.getCurrentConfig();
-    if (!config) {
+    const configuration = this.applicationConfigurationPort.getConfiguration();
+    if (!configuration) {
       return ["Config is not loaded yet."];
     }
 
-    const activeProvider = this.resolveSelectedProvider(config) ?? resolveActiveProvider(config);
+    const activeProvider =
+      this.resolveSelectedProvider(configuration) ?? resolveActiveProvider(configuration);
     if (!activeProvider) {
       return ["No usable AI provider is configured."];
     }
@@ -72,13 +73,13 @@ export class AiProviderRegistryService {
     return adapter.validateConfiguration(activeProvider.providerId, activeProvider.providerConfig);
   }
 
-  listEnabledProviderStatuses(): ReadonlyArray<AiProviderStatusContract> {
-    const config = this.getCurrentConfig();
-    if (!config) {
+  listEnabledProviderStatuses(): ReadonlyArray<AiProviderStatus> {
+    const configuration = this.applicationConfigurationPort.getConfiguration();
+    if (!configuration) {
       return [];
     }
 
-    const aiConfig = getAiFeatureConfig(config);
+    const aiConfig = getAiFeatureConfig(configuration);
     if (!aiConfig || aiConfig.mode === "off") {
       return [];
     }
@@ -93,16 +94,17 @@ export class AiProviderRegistryService {
   }
 
   async selectActiveProvider(providerId: string): Promise<void> {
-    const config = this.getCurrentConfig();
-    if (!config) {
+    const configuration = this.applicationConfigurationPort.getConfiguration();
+    if (!configuration) {
       return;
     }
 
-    const aiConfig = getAiFeatureConfig(config);
+    const aiConfig = getAiFeatureConfig(configuration);
     const providerConfig = aiConfig?.providers?.[providerId];
     if (!providerConfig || !isUsableProviderConfig(providerConfig)) {
       return;
     }
+
     this.selectedProviderId = providerId;
   }
 
@@ -110,22 +112,14 @@ export class AiProviderRegistryService {
     this.adapterByType.set(adapter.type, adapter);
   }
 
-  private getCurrentConfig() {
-    try {
-      return this.configService.config;
-    } catch {
-      return undefined;
-    }
-  }
-
   private resolveSelectedProvider(
-    config: ReturnType<AiProviderRegistryService["getCurrentConfig"]>,
+    configuration: Readonly<Record<string, unknown>>,
   ): { providerId: string; providerConfig: AiProviderConfig } | undefined {
-    if (!config || !this.selectedProviderId) {
+    if (!this.selectedProviderId) {
       return undefined;
     }
 
-    const aiConfig = getAiFeatureConfig(config);
+    const aiConfig = getAiFeatureConfig(configuration);
     const providerConfig = aiConfig?.providers?.[this.selectedProviderId];
     if (!providerConfig || !isUsableProviderConfig(providerConfig)) {
       return undefined;

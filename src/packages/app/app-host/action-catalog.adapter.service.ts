@@ -6,7 +6,7 @@ import {
   ActionDispatcher,
   ActionEntryContract,
 } from "@cogno/core-api";
-import { map, Observable } from "rxjs";
+import { filter, map, Observable, share, tap } from "rxjs";
 import { ActionFired } from "../action/action.models";
 import { coreActionNames } from "../action/core-action-names";
 import { AppBus } from "../app-bus/app-bus";
@@ -16,6 +16,7 @@ import { KeybindService } from "../keybinding/keybind.service";
 @Injectable({ providedIn: "root" })
 export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatcher {
   readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
+  private readonly actionStreams = new Map<string, Observable<void>>();
 
   constructor(
     private readonly appBus: AppBus,
@@ -34,6 +35,23 @@ export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatc
         actionDefinition.args ? [...actionDefinition.args] : undefined,
       ),
     );
+  }
+
+  onAction$(actionName: string): Observable<void> {
+    const cached = this.actionStreams.get(actionName);
+    if (cached) return cached;
+
+    const stream = this.appBus.on$(ActionFired.listener()).pipe(
+      filter((event) => event.payload === actionName),
+      tap((event) => {
+        event.performed = !event.trigger?.all;
+        event.defaultPrevented = true;
+      }),
+      map(() => undefined),
+      share(),
+    );
+    this.actionStreams.set(actionName, stream);
+    return stream;
   }
 
   private buildActionEntries(): ReadonlyArray<ActionEntryContract> {

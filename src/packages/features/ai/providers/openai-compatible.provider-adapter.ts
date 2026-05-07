@@ -1,11 +1,6 @@
 import { Injectable } from "@angular/core";
-import { AiHttp } from "@cogno/app-tauri/ai-http";
-import {
-  AiChatRequest,
-  AiProviderAdapter,
-  AiProviderConfig,
-  AiStreamChunk,
-} from "../ai-host.models";
+import { HttpClientPort } from "@cogno/core-api";
+import { AiChatRequest, AiProviderAdapter, AiProviderConfig, AiStreamChunk } from "../ai.models";
 import {
   buildProviderUrl,
   createProviderHeaders,
@@ -29,6 +24,8 @@ export class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
     supportsStreaming: true,
   } as const;
 
+  constructor(private readonly httpClientPort: HttpClientPort) {}
+
   validateConfiguration(_providerId: string, config: AiProviderConfig): ReadonlyArray<string> {
     const validationErrors: string[] = [];
     if (!config.base_url) {
@@ -45,7 +42,7 @@ export class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
     config: AiProviderConfig,
     request: AiChatRequest,
   ): AsyncIterable<AiStreamChunk> {
-    const response = await AiHttp.request({
+    const response = await this.httpClientPort.request({
       method: "POST",
       url: buildProviderUrl(config.base_url ?? "", "/chat/completions"),
       headers: headersToRecord(createProviderHeaders(config.api_key, config.headers)),

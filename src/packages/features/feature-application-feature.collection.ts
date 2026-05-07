@@ -1,7 +1,5 @@
-import {
-  ApplicationFeatureCollectionContract,
-  defaultFeatureSettingsExtension,
-} from "@cogno/core-api";
+import { ApplicationFeatureCollectionContract } from "@cogno/core-api";
+import { defaultFeatureSettingsExtension } from "./feature-settings-extension";
 import { featureTerminalAutocompleteSuggestorDefinitions } from "./autocomplete/terminal-autocomplete-suggestor-definitions";
 import { featureDatabaseMigrations } from "./database-migrations";
 import {

@@ -3,9 +3,11 @@ import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 import type { Config } from "../+models/config";
+import { defaultFeatureSettingsExtension } from "@cogno/features/feature-settings-extension";
 import { ConfigReader } from "./config.reader";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 
+const extensions = [defaultFeatureSettingsExtension];
 let defaultText = "";
 let DEFAULTS: Config;
 
@@ -13,7 +15,7 @@ beforeAll(() => {
   const p = join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = readFileSync(p, "utf-8");
   // Parse defaults from text (no user overrides)
-  DEFAULTS = ConfigReader.fromStringToConfig(defaultText, "");
+  DEFAULTS = ConfigReader.fromStringToConfig(defaultText, "", extensions);
 });
 
 describe("InitialConfigOverridesWriter", () => {

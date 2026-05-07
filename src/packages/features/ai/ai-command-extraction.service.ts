@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
+import { AiCommandSuggestion, ChatTurnTargetTerminalReference } from "./ai.models";
 import {
   extractAiCommandSuggestions,
   ParsedAiAssistantResponse,
   parseAiAssistantResponse,
-} from "@cogno/feature-api/ai/ai-command-extraction.utils";
-import { AiCommandSuggestion, ChatTurnTargetTerminalReference } from "./ai.models";
+} from "./ai-command-extraction.utils";
 
 @Injectable({ providedIn: "root" })
 export class AiCommandExtractionService {
@@ -21,6 +21,12 @@ export class AiCommandExtractionService {
     text: string,
     target: ChatTurnTargetTerminalReference,
   ): ReadonlyArray<AiCommandSuggestion> {
-    return extractAiCommandSuggestions(messageId, text, target);
+    return extractAiCommandSuggestions(messageId, text, target).map((commandSuggestion) => ({
+      command: commandSuggestion.command,
+      language: commandSuggestion.language,
+      executionMode: commandSuggestion.executionMode,
+      sourceMessageId: commandSuggestion.sourceMessageId,
+      targetTerminalId: commandSuggestion.target.terminalId,
+    }));
   }
 }

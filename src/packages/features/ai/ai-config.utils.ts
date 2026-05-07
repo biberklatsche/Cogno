@@ -66,7 +66,6 @@ export function resolveActiveProvider(
   }
 
   const providers = aiConfig.providers ?? {};
-
   const activeProviderId = aiConfig.active_provider;
   if (activeProviderId) {
     const activeProvider = providers[activeProviderId];

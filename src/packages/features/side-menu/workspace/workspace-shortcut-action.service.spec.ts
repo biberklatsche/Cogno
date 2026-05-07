@@ -1,18 +1,27 @@
-import type { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
-import { BehaviorSubject } from "rxjs";
+import type { ActionDispatcher, WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
+import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getAppBus, getDestroyRef } from "../../__test__/test-factory";
-import { ActionFired, type ActionFiredEvent } from "../action/action.models";
-import type { AppBus } from "../app-bus/app-bus";
+import { getDestroyRef } from "../../__test__/destroy-ref";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 
 describe("WorkspaceShortcutActionService", () => {
-  let appBus: AppBus;
+  let actionSubjects: Map<string, Subject<void>>;
+  let actionDispatcher: ActionDispatcher;
   let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    appBus = getAppBus();
+    actionSubjects = new Map();
+    actionDispatcher = {
+      dispatchAction: vi.fn(),
+      onAction$: (actionName: string) => {
+        if (!actionSubjects.has(actionName)) {
+          actionSubjects.set(actionName, new Subject<void>());
+        }
+        return actionSubjects.get(actionName)!.asObservable();
+      },
+    } as unknown as ActionDispatcher;
+
     workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
       { id: "WS-1", name: "Project One", isActive: false },
@@ -20,7 +29,7 @@ describe("WorkspaceShortcutActionService", () => {
     ]);
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
 
-    const workspaceHostPort: WorkspaceHostPortContract = {
+    const workspaceHostPort = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       saveWorkspace: vi.fn().mockResolvedValue(undefined),
@@ -30,42 +39,23 @@ describe("WorkspaceShortcutActionService", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-    };
+    } as unknown as WorkspaceHostPort;
 
-    new WorkspaceShortcutActionService(appBus, workspaceHostPort, getDestroyRef());
+    new WorkspaceShortcutActionService(actionDispatcher, workspaceHostPort, getDestroyRef());
   });
 
-  function createActionEvent(actionName: string): ActionFiredEvent {
-    return ActionFired.create(actionName, { all: false, unconsumed: false, performable: false });
-  }
-
   it("restores the default workspace for select_workspace_default", () => {
-    const event = createActionEvent("select_workspace_default");
-
-    appBus.publish(event);
-
+    actionSubjects.get("select_workspace_default")?.next();
     expect(restoreWorkspaceMock).toHaveBeenCalledWith("WS-DEFAULT");
-    expect(event.performed).toBe(true);
-    expect(event.defaultPrevented).toBe(true);
   });
 
   it("restores the second list entry for select_workspace_1", () => {
-    const event = createActionEvent("select_workspace_1");
-
-    appBus.publish(event);
-
+    actionSubjects.get("select_workspace_1")?.next();
     expect(restoreWorkspaceMock).toHaveBeenCalledWith("WS-1");
-    expect(event.performed).toBe(true);
-    expect(event.defaultPrevented).toBe(true);
   });
 
   it("ignores numbered workspace shortcuts that exceed the visible list", () => {
-    const event = createActionEvent("select_workspace_9");
-
-    appBus.publish(event);
-
+    actionSubjects.get("select_workspace_9")?.next();
     expect(restoreWorkspaceMock).not.toHaveBeenCalled();
-    expect(event.performed).toBe(true);
-    expect(event.defaultPrevented).toBe(true);
   });
 });
