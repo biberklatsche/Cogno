@@ -76,7 +76,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("should support one trigger", () => {
-    matcher.initBindings(["Alt+Ctrl+A=[broadcast]doA"]);
+    matcher.initBindings(["broadcast:Alt+Ctrl+A=doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
@@ -84,7 +84,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("should support many triggers", () => {
-    matcher.initBindings(["Alt+Ctrl+A=[broadcast:unconsumed:performable]doA"]);
+    matcher.initBindings(["broadcast:unconsumed:performable:Alt+Ctrl+A=doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
@@ -102,7 +102,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("should support many args", () => {
-    matcher.initBindings(["Alt+Ctrl+A=[broadcast]doA:a:b:c"]);
+    matcher.initBindings(["broadcast:Alt+Ctrl+A=doA:a:b:c"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
@@ -142,7 +142,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("sequence retains triggers and args parsing", () => {
-    matcher.initBindings(["Ctrl+A>N=[broadcast]doA:x:y"]);
+    matcher.initBindings(["broadcast:Ctrl+A>N=doA:x:y"]);
 
     const step1 = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
     const step2 = makeEvent({ key: "n", code: "KeyN" });
@@ -188,8 +188,8 @@ describe("KeybindingMatcher (linux)", () => {
     expect(action?.event.trigger?.performable).toBe(true);
   });
 
-  it("merges keybind-side prefix with action-side trigger", () => {
-    matcher.initBindings(["broadcast:Ctrl+A=[unconsumed]doA"]);
+  it("supports combining multiple prefixes", () => {
+    matcher.initBindings(["broadcast:unconsumed:Ctrl+A=doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");

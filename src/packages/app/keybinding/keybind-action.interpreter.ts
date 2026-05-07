@@ -1,5 +1,4 @@
 import { ActionName } from "../action/action.models";
-import { ActionTrigger, validTriggers } from "../app-bus/app-bus";
 import { Modifier } from "./modifier";
 
 export type ActionDefinition = {
@@ -75,22 +74,8 @@ export const KeybindInterpreter = {
 
 export const KeybindActionInterpreter = {
   parse(actionDef: string): ActionDefinition {
-    let trigger: Trigger | undefined;
-    if (actionDef.includes("[") && actionDef.includes("]")) {
-      const triggersList = actionDef
-        .substring(actionDef.indexOf("[") + 1, actionDef.lastIndexOf("]"))
-        .split(":");
-      for (const triggerString of triggersList) {
-        if (!trigger) trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
-        if (!validTriggers.includes(triggerString as ActionTrigger)) continue;
-        if (triggerString === "broadcast") trigger.broadcast = true;
-        if (triggerString === "performable") trigger.performable = true;
-        if (triggerString === "unconsumed") trigger.unconsumed = true;
-        if (triggerString === "always") trigger.always = true;
-      }
-    }
-    const args = actionDef.substring(actionDef.lastIndexOf("]") + 1).split(":");
+    const args = actionDef.split(":");
     const actionName = args.splice(0, 1)[0] as ActionName;
-    return { actionName, trigger, args };
+    return { actionName, args };
   },
 };

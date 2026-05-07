@@ -3,8 +3,8 @@ import { z } from "zod";
 export const KeybindSchema = z
   .string()
   .regex(
-    /^(?:(?:all|unconsumed|performable):)*[^\s=>:]+(?:\+[^\s=>:]+)*(?:>(?:[^\s=>:]+(?:\+[^\s=>:]+)*))*=(?:\[(?:all|unconsumed|performable)(?::(?:all|unconsumed|performable))*\])?[A-Za-z0-9_]+(?::[A-Za-z0-9_]+)*$/,
-    "Keybind must be of the form [prefix:]combo[>combo...]=[triggers]action[:arg...]",
+    /^(?:(?:broadcast|unconsumed|performable|always):)*[^\s=>:]+(?:\+[^\s=>:]+)*(?:>(?:[^\s=>:]+(?:\+[^\s=>:]+)*))*=[A-Za-z0-9_]+(?::[A-Za-z0-9_]+)*$/,
+    "Keybind must be of the form [trigger:]*combo[>combo...]=action[:arg...]",
   );
 
 export const KeybindsSchema = z.array(KeybindSchema);
