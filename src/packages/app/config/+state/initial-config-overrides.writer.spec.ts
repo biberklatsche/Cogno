@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { defaultFeatureSettingsExtension } from "@cogno/features/feature-settings-extension";
 import { beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 import type { Config } from "../+models/config";
-import { defaultFeatureSettingsExtension } from "@cogno/features/feature-settings-extension";
 import { ConfigReader } from "./config.reader";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 

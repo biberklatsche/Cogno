@@ -493,7 +493,6 @@ export class CommandLineEditor implements ITerminalHandler {
 
     const input = this.stateManager.input;
     if (startIdx < 0 || endIdx > input.maxCursorIndex) {
-      console.warn("Selection is outside of input area", startIdx, endIdx);
       return undefined;
     }
 

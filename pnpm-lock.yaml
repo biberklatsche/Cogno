@@ -60,8 +60,8 @@ importers:
         specifier: 2.3.1
         version: 2.3.1
       '@tauri-apps/plugin-sql':
-        specifier: 2.3.1
-        version: 2.3.1
+        specifier: 2.4.0
+        version: 2.4.0
       '@tauri-apps/plugin-window-state':
         specifier: 2.4.1
         version: 2.4.1
@@ -135,10 +135,15 @@ importers:
 
   src/app: {}
 
+  src/packages/app-tauri: {}
+
   src/packages/assets: {}
 
-  src/packages/core-host: {}
+  src/packages/core-api: {}
 
+  src/packages/core-domain: {}
+
+  src/packages/core-host: {}
 
   src/packages/core-ui: {}
 
@@ -1628,8 +1633,8 @@ packages:
   '@tauri-apps/plugin-process@2.3.1':
     resolution: {integrity: sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA==}
 
-  '@tauri-apps/plugin-sql@2.3.1':
-    resolution: {integrity: sha512-iNgHnFIR+jRkx9INKVKepzMlxXtNkJUaWuhagFjT4dOttPaNyRnVHgwTjpqZhyVjiklDh2UdEPAJkQKiCPAekw==}
+  '@tauri-apps/plugin-sql@2.4.0':
+    resolution: {integrity: sha512-SIICc5JlnK6OrBZzOw7MmhXHPlmASpt5zLWIu10WW4kLr5cDYOXHdV2MoCgYQkgZLQfyBYgF3SQa5XCisUiQkw==}
 
   '@tauri-apps/plugin-window-state@2.4.1':
     resolution: {integrity: sha512-OuvdrzyY8Q5Dbzpj+GcrnV1iCeoZbcFdzMjanZMMcAEUNy/6PH5pxZPXpaZLOR7whlzXiuzx0L9EKZbH7zpdRw==}
@@ -4487,7 +4492,7 @@ snapshots:
     dependencies:
       '@tauri-apps/api': 2.10.1
 
-  '@tauri-apps/plugin-sql@2.3.1':
+  '@tauri-apps/plugin-sql@2.4.0':
     dependencies:
       '@tauri-apps/api': 2.10.1
 
@@ -6227,5 +6232,3 @@ snapshots:
   zod@4.3.5: {}
 
   zod@4.3.6: {}
-
-

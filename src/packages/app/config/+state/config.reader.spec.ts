@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { beforeAll, describe, expect, it } from "vitest";
 import { defaultFeatureSettingsExtension } from "@cogno/features/feature-settings-extension";
+import { beforeAll, describe, expect, it } from "vitest";
 import { ConfigReader } from "./config.reader";
 
 const extensions = [defaultFeatureSettingsExtension];

@@ -154,6 +154,49 @@ describe("KeybindingMatcher (linux)", () => {
     expect(action?.event.args).toEqual(["x", "y"]);
   });
 
+  it("supports all: prefix on keybind side", () => {
+    matcher.initBindings(["all:Alt+Ctrl+A=doA"]);
+    const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
+    const action = matcher.match(event);
+    expect(action?.event.payload).toBe("doA");
+    expect(action?.event.trigger?.all).toBe(true);
+  });
+
+  it("supports unconsumed: prefix on keybind side", () => {
+    matcher.initBindings(["unconsumed:Ctrl+A=doA"]);
+    const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
+    const action = matcher.match(event);
+    expect(action?.event.payload).toBe("doA");
+    expect(action?.event.trigger?.unconsumed).toBe(true);
+  });
+
+  it("supports performable: prefix on keybind side", () => {
+    matcher.initBindings(["performable:Ctrl+A=doA"]);
+    const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
+    const action = matcher.match(event);
+    expect(action?.event.payload).toBe("doA");
+    expect(action?.event.trigger?.performable).toBe(true);
+  });
+
+  it("supports multiple prefixes on keybind side", () => {
+    matcher.initBindings(["all:unconsumed:performable:Alt+Ctrl+A=doA"]);
+    const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
+    const action = matcher.match(event);
+    expect(action?.event.payload).toBe("doA");
+    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.unconsumed).toBe(true);
+    expect(action?.event.trigger?.performable).toBe(true);
+  });
+
+  it("merges keybind-side prefix with action-side trigger", () => {
+    matcher.initBindings(["all:Ctrl+A=[unconsumed]doA"]);
+    const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
+    const action = matcher.match(event);
+    expect(action?.event.payload).toBe("doA");
+    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.unconsumed).toBe(true);
+  });
+
   it("ignores keyup events for matching", () => {
     matcher.initBindings(["Ctrl+A=doA"]);
     const up = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, payload: "keyup" });

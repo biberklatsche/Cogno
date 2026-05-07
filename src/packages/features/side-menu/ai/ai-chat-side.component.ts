@@ -139,7 +139,7 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
         height: 100%;
       }
 
-      .chat-shell { display: grid; grid-template-rows: auto 1fr auto; gap: 0.75rem; height: 100%; min-height: 0; }
+      .chat-shell { display: grid; grid-template-rows: auto 1fr auto; gap: .75rem; height: 100%; min-height: 0; }
       .chat-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
       .status { font-size: 0.8rem; opacity: 0.75; }
       .toolbar-button, .send-button, .command-button {
@@ -239,7 +239,6 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
         min-height: 1.5rem;
         padding: 0;
         border: 0;
-        border-radius: 0;
         background: transparent;
       }
 
