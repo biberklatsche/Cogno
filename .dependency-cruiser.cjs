@@ -3,6 +3,7 @@ const productsPattern = "^(src/products/|src/packages/products/)";
 const bootstrapPattern = "^src/app/";
 const coreDomainPattern = "^src/packages/core-domain/";
 const coreApiPattern = "^src/packages/core-api/";
+const featureApiPattern = "^src/packages/feature-api/";
 const coreHostPattern = "^src/packages/core-host/";
 const coreUiPattern = "^src/packages/core-ui/";
 const coreSupportPattern = "^src/packages/core-support/";
@@ -12,7 +13,7 @@ const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
 const appPackagePattern = "^src/packages/app/";
 const privateSiblingPattern = "^(\\.\\./[^/]+-pro/|.*/[^/]+-pro/)";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|feature-api(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -100,6 +101,34 @@ module.exports = {
       comment: "core-api must not depend on products.",
       from: { path: coreApiPattern },
       to: { path: productsPattern },
+    },
+    {
+      name: "feature-api-must-be-frameworkfree",
+      severity: "error",
+      comment: "feature-api must remain framework-free and reusable.",
+      from: { path: featureApiPattern },
+      to: { path: "^(src/packages/app|src/packages/core-host|src/packages/features|src/products/|src/packages/products/|@angular/|@tauri-apps/)" },
+    },
+    {
+      name: "core-domain-must-not-import-feature-api",
+      severity: "error",
+      comment: "core-domain must not depend on feature-api.",
+      from: { path: coreDomainPattern },
+      to: { path: featureApiPattern },
+    },
+    {
+      name: "core-api-must-not-import-feature-api",
+      severity: "error",
+      comment: "core-api must not depend on feature-api.",
+      from: { path: coreApiPattern },
+      to: { path: featureApiPattern },
+    },
+    {
+      name: "core-host-must-not-import-feature-api",
+      severity: "error",
+      comment: "core-host must not depend on feature-api.",
+      from: { path: coreHostPattern },
+      to: { path: featureApiPattern },
     },
     {
       name: "core-host-must-not-import-app",

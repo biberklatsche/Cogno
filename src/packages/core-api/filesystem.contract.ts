@@ -40,3 +40,22 @@ export interface FilesystemContract {
   appendPathSeparator(path: string, shellContext: ShellContextContract): string;
   toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string;
 }
+
+export abstract class Filesystem implements FilesystemContract {
+  abstract normalizePath(path: string, shellContext: ShellContextContract): string;
+  abstract resolvePath(
+    cwd: string,
+    inputPath: string,
+    shellContext: ShellContextContract,
+  ): string | undefined;
+  abstract list(
+    path: string,
+    shellContext: ShellContextContract,
+    options?: FilesystemListOptionsContract,
+  ): Promise<ReadonlyArray<FilesystemEntryContract>>;
+  abstract exists(path: string, shellContext: ShellContextContract): Promise<boolean>;
+  abstract readTextFile(path: string, shellContext: ShellContextContract): Promise<string>;
+  abstract toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string;
+  abstract appendPathSeparator(path: string, shellContext: ShellContextContract): string;
+  abstract toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string;
+}

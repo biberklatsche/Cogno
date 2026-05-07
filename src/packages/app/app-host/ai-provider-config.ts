@@ -3,4 +3,4 @@ export {
   hasUsableAiProvider,
   isUsableProviderConfig,
   resolveActiveProvider,
-} from "@cogno/core-api";
+} from "@cogno/feature-api/ai/ai-config.utils";

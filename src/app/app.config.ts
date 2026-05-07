@@ -5,22 +5,11 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
+import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
 import { AiChatHostPortAdapterService } from "@cogno/app/app-host/ai-chat-host-port.adapter.service";
-import {
-  actionKeybindingToken,
-  additionalNotificationChannelsToken,
-  commandPaletteHostPortToken,
-  commandRunnerToken,
-  databaseAccessToken,
-  filesystemToken,
-  notificationCenterPortToken,
-  terminalSearchHostPortToken,
-  workspaceCloseGuardToken,
-  workspaceHostPortToken,
-} from "@cogno/app/app-host/app-host.tokens";
+import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { CommandPaletteHostPortAdapterService } from "@cogno/app/app-host/command-palette-host-port.adapter.service";
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
@@ -47,34 +36,33 @@ import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
 import { Logger } from "@cogno/app-tauri/logger";
 import {
+  ActionCatalog,
+  ActionDispatcher,
   ActionKeybindingPort,
-  AiChatHostPort,
   ApplicationProduct,
-  CommandPaletteHostPort,
+  CommandRunner,
+  DatabaseAccess,
+  Filesystem,
   NotificationCenterPort,
   TerminalSearchHostPort,
   WorkspaceCloseGuard,
   WorkspaceHostPort,
 } from "@cogno/core-api";
+import { AiChatHostPort } from "@cogno/feature-api/ai/ai-chat.port";
 import { productDefinition } from "../products/product-definition.instance";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
-    { provide: commandRunnerToken, useExisting: CommandRunnerHostService },
-    { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
-    { provide: actionKeybindingToken, useExisting: ActionKeybindingPortAdapterService },
-    { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
-    { provide: filesystemToken, useExisting: FilesystemHostService },
-    { provide: additionalNotificationChannelsToken, useValue: [] },
-    { provide: notificationCenterPortToken, useExisting: NotificationCenterPortAdapterService },
-    { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
-    { provide: workspaceCloseGuardToken, useExisting: WorkspaceCloseGuardAdapterService },
-    { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },
+    { provide: CommandRunner, useExisting: CommandRunnerHostService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
+    { provide: DatabaseAccess, useExisting: DatabaseAccessHostService },
+    { provide: Filesystem, useExisting: FilesystemHostService },
+    { provide: additionalNotificationChannelsToken, useValue: [] },
+    { provide: ActionCatalog, useExisting: ActionCatalogAdapterService },
+    { provide: ActionDispatcher, useExisting: ActionCatalogAdapterService },
     { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
-    { provide: CommandPaletteHostPort, useExisting: CommandPaletteHostPortAdapterService },
     { provide: AiChatHostPort, useExisting: AiChatHostPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     {
@@ -98,8 +86,8 @@ export const appConfig: ApplicationConfig = {
       inject(WindowService);
       inject(AppWiringService);
       inject(SideMenuLifecycleRuntimeService);
+      inject(ActionCatalogAdapterService);
       inject(ActionKeybindingPortAdapterService);
-      inject(CommandPaletteHostPortAdapterService);
       inject(AiChatHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);

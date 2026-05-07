@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
-import { AiProviderStatusContract } from "@cogno/core-api";
-import { ConfigService } from "../config/+state/config.service";
-import { AiProviderAdapter, AiProviderConfig, AiProviderType } from "./ai-host.models";
+import { AiProviderStatusContract } from "@cogno/feature-api/ai/ai-chat.port";
 import {
   getAiFeatureConfig,
   isUsableProviderConfig,
   resolveActiveProvider,
-} from "./ai-provider-config";
+} from "@cogno/feature-api/ai/ai-config.utils";
+import { ConfigService } from "../config/+state/config.service";
+import { AiProviderAdapter, AiProviderConfig, AiProviderType } from "./ai-host.models";
 import { OllamaNativeProviderAdapter } from "./providers/ollama-native.provider-adapter";
 import { OpenAiCompatibleProviderAdapter } from "./providers/openai-compatible.provider-adapter";
 

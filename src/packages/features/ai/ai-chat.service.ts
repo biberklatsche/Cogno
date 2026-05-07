@@ -5,7 +5,7 @@ import {
   AiChatThreadMessageContract,
   AiCommandSuggestionContract,
   AiProviderStatusContract,
-} from "@cogno/core-api";
+} from "@cogno/feature-api/ai/ai-chat.port";
 
 @Injectable({ providedIn: "root" })
 export class AiChatService {

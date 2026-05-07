@@ -1,11 +1,10 @@
-import { Inject, Injectable } from "@angular/core";
-import { commandRunnerToken, filesystemToken } from "@cogno/app/app-host/app-host.tokens";
+import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   AutocompleteProviderIssueContract,
   AutocompleteProviderIssueReporterContract,
-  CommandRunnerContract,
-  FilesystemContract,
+  CommandRunner,
+  Filesystem,
   ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
 } from "@cogno/core-api";
@@ -27,8 +26,8 @@ export class TerminalAutocompleteFeatureSuggestorService {
     private readonly wiringService: AppWiringService,
     private readonly bus: AppBus,
     private readonly configService: ConfigService,
-    @Inject(filesystemToken) private readonly filesystem: FilesystemContract,
-    @Inject(commandRunnerToken) private readonly commandRunner: CommandRunnerContract,
+    private readonly filesystem: Filesystem,
+    private readonly commandRunner: CommandRunner,
   ) {}
 
   getSharedSuggestors(): ReadonlyArray<TerminalAutocompleteSuggestorContract> {

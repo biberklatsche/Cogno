@@ -3,7 +3,7 @@ import type {
   AiChatHostPort,
   AiChatThreadMessageContract,
   AiProviderStatusContract,
-} from "@cogno/core-api";
+} from "@cogno/feature-api/ai/ai-chat.port";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatService } from "./ai-chat.service";

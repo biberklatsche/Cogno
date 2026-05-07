@@ -5,7 +5,7 @@ import {
   AiChatThreadMessageContract,
   AiCommandSuggestionContract,
   AiProviderStatusContract,
-} from "@cogno/core-api";
+} from "@cogno/feature-api/ai/ai-chat.port";
 import { BehaviorSubject, firstValueFrom, Observable } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { IdCreator } from "../common/id-creator/id-creator";

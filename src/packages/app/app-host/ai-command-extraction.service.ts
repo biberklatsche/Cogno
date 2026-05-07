@@ -3,7 +3,7 @@ import {
   extractAiCommandSuggestions,
   ParsedAiAssistantResponse,
   parseAiAssistantResponse,
-} from "@cogno/core-api";
+} from "@cogno/feature-api/ai/ai-command-extraction.utils";
 import { AiCommandSuggestion, ChatTurnTargetTerminalReference } from "./ai-host.models";
 
 @Injectable({ providedIn: "root" })

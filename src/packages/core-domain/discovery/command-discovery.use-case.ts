@@ -1,4 +1,4 @@
-import { CommandPaletteCommandEntryContract } from "@cogno/core-api";
+import { ActionEntryContract } from "@cogno/core-api";
 import { SelectableListUseCase, SelectionDirection } from "../selection";
 import { CommandDiscoveryEntryState, CommandDiscoveryState } from "./command-discovery-state";
 
@@ -30,7 +30,7 @@ export class CommandDiscoveryUseCase {
 
   static updateCommandEntries(
     state: CommandDiscoveryState,
-    commandEntries: ReadonlyArray<CommandPaletteCommandEntryContract>,
+    commandEntries: ReadonlyArray<ActionEntryContract>,
   ): CommandDiscoveryState {
     const commandList = SelectableListUseCase.initializeSelection(
       commandEntries

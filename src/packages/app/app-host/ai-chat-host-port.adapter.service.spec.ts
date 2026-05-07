@@ -1,4 +1,4 @@
-import type { AiChatThreadMessageContract } from "@cogno/core-api";
+import type { AiChatThreadMessageContract } from "@cogno/feature-api/ai/ai-chat.port";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/test-factory";
 import { AppBus } from "../app-bus/app-bus";

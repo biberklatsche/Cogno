@@ -1,14 +1,14 @@
 import { Injectable } from "@angular/core";
 import { CommandRunner } from "@cogno/app-tauri/command-runner";
 import {
-  CommandRunnerContract,
+  CommandRunner as CommandRunnerPort,
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
 } from "@cogno/core-api";
 import { PathFactory } from "@cogno/core-host";
 
 @Injectable({ providedIn: "root" })
-export class CommandRunnerHostService implements CommandRunnerContract {
+export class CommandRunnerHostService extends CommandRunnerPort {
   async run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract> {
     try {
       const adapter = PathFactory.createAdapter(request.shellContext);

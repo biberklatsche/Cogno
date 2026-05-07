@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
 import { DB } from "@cogno/app-tauri/db";
-import { DatabaseAccessContract } from "@cogno/core-api";
+import { DatabaseAccess, DatabaseAccessContract } from "@cogno/core-api";
 
 @Injectable({ providedIn: "root" })
-export class DatabaseAccessHostService implements DatabaseAccessContract {
+export class DatabaseAccessHostService extends DatabaseAccess {
   async execute(query: string, parameters?: ReadonlyArray<unknown>): Promise<void> {
     await DB.execute(query, parameters as unknown[] | undefined);
   }

@@ -1,4 +1,4 @@
-import type { AiCommandExecutionModeContract } from "./ai.contract";
+import type { AiCommandExecutionModeContract } from "./ai-chat.port";
 
 export type ExtractedAiCommandSuggestion<TTarget> = {
   readonly command: string;

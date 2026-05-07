@@ -1,8 +1,7 @@
-import { Inject, Injectable } from "@angular/core";
-import { databaseAccessToken } from "@cogno/app/app-host/app-host.tokens";
+import { Injectable } from "@angular/core";
 import {
   buildDatabaseMigrationIdentifier,
-  DatabaseAccessContract,
+  DatabaseAccess,
   DatabaseMigrationContract,
 } from "@cogno/core-api";
 
@@ -11,10 +10,7 @@ export class DatabaseMigrationService {
   private readonly registeredCoreMigrations: DatabaseMigrationContract[] = [];
   private readonly registeredFeatureMigrations: DatabaseMigrationContract[] = [];
 
-  constructor(
-    @Inject(databaseAccessToken)
-    private readonly databaseAccess: DatabaseAccessContract,
-  ) {}
+  constructor(private readonly databaseAccess: DatabaseAccess) {}
 
   registerCoreMigrations(databaseMigrations: ReadonlyArray<DatabaseMigrationContract>): void {
     this.registeredCoreMigrations.push(...databaseMigrations);

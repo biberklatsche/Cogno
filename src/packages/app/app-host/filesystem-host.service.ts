@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Fs } from "@cogno/app-tauri/fs";
 import {
-  FilesystemContract,
+  Filesystem,
   FilesystemEntryContract,
   FilesystemListOptionsContract,
   ShellContextContract,
@@ -10,7 +10,7 @@ import { PathFactory } from "@cogno/core-host";
 import { AutocompletePathSupport } from "@cogno/core-support";
 
 @Injectable({ providedIn: "root" })
-export class FilesystemHostService implements FilesystemContract {
+export class FilesystemHostService extends Filesystem {
   normalizePath(path: string, shellContext: ShellContextContract): string {
     return PathFactory.createAdapter(shellContext).normalize(path);
   }

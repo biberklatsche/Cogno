@@ -1,7 +1,6 @@
-import { DestroyRef, Inject, Injectable } from "@angular/core";
+import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
-import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
+import { WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
 import { ActionFired, ActionFiredEvent } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 
@@ -12,8 +11,7 @@ export class WorkspaceShortcutActionService {
 
   constructor(
     private readonly appBus: AppBus,
-    @Inject(workspaceHostPortToken)
-    private readonly workspaceHostPort: WorkspaceHostPortContract,
+    private readonly workspaceHostPort: WorkspaceHostPort,
     destroyRef: DestroyRef,
   ) {
     this.workspaceHostPort.workspaceEntries$

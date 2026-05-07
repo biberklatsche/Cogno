@@ -7,12 +7,12 @@ import {
   Signal,
   viewChild,
 } from "@angular/core";
+import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
 import {
   AiChatThreadMessageContract,
   AiCommandSuggestionContract,
   AiProviderStatusContract,
-} from "@cogno/core-api";
-import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
+} from "@cogno/feature-api/ai/ai-chat.port";
 import { AiChatService } from "@cogno/features/ai/ai-chat.service";
 
 @Component({
