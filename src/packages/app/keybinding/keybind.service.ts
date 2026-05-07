@@ -44,22 +44,24 @@ export class KeybindService {
     window.addEventListener(
       "keydown",
       (e) => {
-        if (terminalKeybindingContext.shouldSuppressAppKeybindings()) {
-          return;
+        const suppressed = terminalKeybindingContext.shouldSuppressAppKeybindings();
+
+        if (!suppressed) {
+          if (this.shouldUseNativeEditableFieldHandling(e)) return;
+          // 1) Check registered listeners first (e.g., side menu overlays)
+          const stack = this.listeners.get(e.key);
+          if (stack?.length && !this.isEventInsideDialog(e)) {
+            stack.at(-1)?.handler(e);
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
         }
-        if (this.shouldUseNativeEditableFieldHandling(e)) {
-          return;
-        }
-        // 1) Check registered listeners first (e.g., side menu overlays)
-        const stack = this.listeners.get(e.key);
-        if (stack?.length && !this.isEventInsideDialog(e)) {
-          stack.at(-1)?.handler(e);
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
+
         const ActionFiredEvent = this._keybindMatcher.match(e);
         if (!ActionFiredEvent) return;
+        if (suppressed && !ActionFiredEvent.event.trigger?.always) return;
+
         this._lastFiredKeybinding.set(ActionFiredEvent.eventKey);
         Logger.info(`Action fired${ActionFiredEvent.event.payload}`);
         const result = bus.publish(ActionFiredEvent.event);

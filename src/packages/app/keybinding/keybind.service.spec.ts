@@ -105,6 +105,34 @@ describe("KeybindService", () => {
     expect(dispatchResult).toBe(true);
   });
 
+  it("fires always: keybindings while the focused selected terminal is in fullscreen mode", () => {
+    config$.next({ keybind: ["always:ctrl+shift+k=test_always_action"] as never[] });
+
+    bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
+    bus.publish({ type: "TerminalFocused", payload: "terminal-1" });
+    bus.publish({
+      path: ["app", "terminal", "terminal-1"],
+      type: "FullScreenAppEntered",
+      payload: "terminal-1",
+    });
+
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    const event = new KeyboardEvent("keydown", {
+      key: "k",
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = window.dispatchEvent(event);
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: "test_always_action" }),
+    );
+    expect(dispatchResult).toBe(false);
+  });
+
   it("does not route registered listeners when the event target is an editable field", () => {
     const handler = vi.fn();
     service.registerListener("test-listener", ["v"], handler);

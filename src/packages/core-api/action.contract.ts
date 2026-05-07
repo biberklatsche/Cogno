@@ -1,9 +1,10 @@
 import { Observable } from "rxjs";
 
 export interface ActionTriggerContract {
-  readonly all: boolean;
+  readonly broadcast: boolean;
   readonly unconsumed: boolean;
   readonly performable: boolean;
+  readonly always: boolean;
 }
 
 export interface ActionDefinitionContract {

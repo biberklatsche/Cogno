@@ -13,7 +13,7 @@ export const ActionFired = {
     ),
   create: (
     actionName: ActionName,
-    trigger?: { all: boolean; unconsumed: boolean; performable: boolean },
+    trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean },
     args?: string[],
   ): ActionFiredEvent => ({
     type: "ActionFired",

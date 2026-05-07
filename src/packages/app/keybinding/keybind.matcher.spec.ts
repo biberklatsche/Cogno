@@ -76,19 +76,19 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("should support one trigger", () => {
-    matcher.initBindings(["Alt+Ctrl+A=[all]doA"]);
+    matcher.initBindings(["Alt+Ctrl+A=[broadcast]doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
-    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(true);
   });
 
   it("should support many triggers", () => {
-    matcher.initBindings(["Alt+Ctrl+A=[all:unconsumed:performable]doA"]);
+    matcher.initBindings(["Alt+Ctrl+A=[broadcast:unconsumed:performable]doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
-    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(true);
     expect(action?.event.trigger?.unconsumed).toBe(true);
     expect(action?.event.trigger?.performable).toBe(true);
   });
@@ -102,7 +102,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("should support many args", () => {
-    matcher.initBindings(["Alt+Ctrl+A=[all]doA:a:b:c"]);
+    matcher.initBindings(["Alt+Ctrl+A=[broadcast]doA:a:b:c"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
@@ -142,7 +142,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("sequence retains triggers and args parsing", () => {
-    matcher.initBindings(["Ctrl+A>N=[all]doA:x:y"]);
+    matcher.initBindings(["Ctrl+A>N=[broadcast]doA:x:y"]);
 
     const step1 = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
     const step2 = makeEvent({ key: "n", code: "KeyN" });
@@ -150,16 +150,16 @@ describe("KeybindingMatcher (linux)", () => {
     expect(matcher.match(step1)).toBeUndefined();
     const action = matcher.match(step2);
     expect(action?.event.payload).toBe("doA");
-    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(true);
     expect(action?.event.args).toEqual(["x", "y"]);
   });
 
-  it("supports all: prefix on keybind side", () => {
-    matcher.initBindings(["all:Alt+Ctrl+A=doA"]);
+  it("supports broadcast: prefix on keybind side", () => {
+    matcher.initBindings(["broadcast:Alt+Ctrl+A=doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
-    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(true);
   });
 
   it("supports unconsumed: prefix on keybind side", () => {
@@ -179,21 +179,21 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("supports multiple prefixes on keybind side", () => {
-    matcher.initBindings(["all:unconsumed:performable:Alt+Ctrl+A=doA"]);
+    matcher.initBindings(["broadcast:unconsumed:performable:Alt+Ctrl+A=doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
-    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(true);
     expect(action?.event.trigger?.unconsumed).toBe(true);
     expect(action?.event.trigger?.performable).toBe(true);
   });
 
   it("merges keybind-side prefix with action-side trigger", () => {
-    matcher.initBindings(["all:Ctrl+A=[unconsumed]doA"]);
+    matcher.initBindings(["broadcast:Ctrl+A=[unconsumed]doA"]);
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
     const action = matcher.match(event);
     expect(action?.event.payload).toBe("doA");
-    expect(action?.event.trigger?.all).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(true);
     expect(action?.event.trigger?.unconsumed).toBe(true);
   });
 

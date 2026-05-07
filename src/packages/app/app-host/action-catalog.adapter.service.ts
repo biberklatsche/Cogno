@@ -44,7 +44,7 @@ export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatc
     const stream = this.appBus.on$(ActionFired.listener()).pipe(
       filter((event) => event.payload === actionName),
       tap((event) => {
-        event.performed = !event.trigger?.all;
+        event.performed = !event.trigger?.broadcast;
         event.defaultPrevented = true;
       }),
       map(() => undefined),

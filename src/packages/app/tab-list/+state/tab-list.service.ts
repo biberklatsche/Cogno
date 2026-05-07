@@ -145,7 +145,7 @@ export class TabListService {
         const shellIndex = this.resolveShortcutIndex(event.payload, "open_shell_");
         if (shellIndex !== undefined) {
           this.openShell(this.configService.getShellProfileByShortcutIndex(shellIndex)?.name);
-          event.performed = !event.trigger?.all;
+          event.performed = !event.trigger?.broadcast;
           event.defaultPrevented = true;
           return;
         }
@@ -153,7 +153,7 @@ export class TabListService {
         const tabIndex = this.resolveShortcutIndex(event.payload, "select_tab_");
         if (tabIndex !== undefined) {
           this.selectTabByShortcutIndex(tabIndex);
-          event.performed = !event.trigger?.all;
+          event.performed = !event.trigger?.broadcast;
           event.defaultPrevented = true;
           return;
         }
@@ -163,36 +163,36 @@ export class TabListService {
             this.openShell(
               event.args?.[0] ?? this.configService.getShellProfileByShortcutIndex(1)?.name,
             );
-            event.performed = !event.trigger?.all;
+            event.performed = !event.trigger?.broadcast;
             event.defaultPrevented = true;
             break;
           case "close_tab": {
             const activeTabId = this._tabList.value.find((s) => s.isActive)?.id;
             this.removeTab(activeTabId);
-            event.performed = !event.trigger?.all;
+            event.performed = !event.trigger?.broadcast;
             event.defaultPrevented = true;
             break;
           }
           case "select_next_tab":
             this.selectAdjacentTab(1);
-            event.performed = !event.trigger?.all;
+            event.performed = !event.trigger?.broadcast;
             event.defaultPrevented = true;
             break;
           case "select_previous_tab":
             this.selectAdjacentTab(-1);
-            event.performed = !event.trigger?.all;
+            event.performed = !event.trigger?.broadcast;
             event.defaultPrevented = true;
             break;
           case "close_other_tabs": {
             const activeTab = this._tabList.value.find((s) => s.isActive);
             this.removeAllTabs(activeTab?.id);
-            event.performed = !event.trigger?.all;
+            event.performed = !event.trigger?.broadcast;
             event.defaultPrevented = true;
             break;
           }
           case "close_all_tabs":
             this.removeAllTabs();
-            event.performed = !event.trigger?.all;
+            event.performed = !event.trigger?.broadcast;
             event.defaultPrevented = true;
             break;
         }

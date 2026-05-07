@@ -4,7 +4,7 @@ import { Modifier } from "./modifier";
 
 export type ActionDefinition = {
   actionName: ActionName;
-  trigger?: { all: boolean; unconsumed: boolean; performable: boolean };
+  trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
   args?: string[];
 };
 export type ShortcutDefinition = { shortcut: string; steps: string[] };
@@ -14,7 +14,7 @@ export type KeybindDefinition = {
   shortcutDefinition: ShortcutDefinition;
 };
 
-type Trigger = { all: boolean; unconsumed: boolean; performable: boolean };
+type Trigger = { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
 
 export const KeybindInterpreter = {
   parse(binding: string): KeybindDefinition | undefined {
@@ -25,10 +25,11 @@ export const KeybindInterpreter = {
     const action = KeybindActionInterpreter.parse(actionDef);
 
     if (keybindTrigger) {
-      if (!action.trigger) action.trigger = { all: false, unconsumed: false, performable: false };
-      if (keybindTrigger.all) action.trigger.all = true;
+      if (!action.trigger) action.trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
+      if (keybindTrigger.broadcast) action.trigger.broadcast = true;
       if (keybindTrigger.unconsumed) action.trigger.unconsumed = true;
       if (keybindTrigger.performable) action.trigger.performable = true;
+      if (keybindTrigger.always) action.trigger.always = true;
     }
 
     // Supports sequences using '>'
@@ -47,9 +48,9 @@ export const KeybindInterpreter = {
     let trigger: Trigger | undefined;
 
     for (;;) {
-      const match = remaining.match(/^(all|unconsumed|performable):/);
+      const match = remaining.match(/^(broadcast|unconsumed|performable|always):/);
       if (!match) break;
-      if (!trigger) trigger = { all: false, unconsumed: false, performable: false };
+      if (!trigger) trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
       trigger[match[1] as keyof Trigger] = true;
       remaining = remaining.slice(match[0].length);
     }
@@ -80,11 +81,12 @@ export const KeybindActionInterpreter = {
         .substring(actionDef.indexOf("[") + 1, actionDef.lastIndexOf("]"))
         .split(":");
       for (const triggerString of triggersList) {
-        if (!trigger) trigger = { all: false, unconsumed: false, performable: false };
+        if (!trigger) trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
         if (!validTriggers.includes(triggerString as ActionTrigger)) continue;
-        if (triggerString === "all") trigger.all = true;
+        if (triggerString === "broadcast") trigger.broadcast = true;
         if (triggerString === "performable") trigger.performable = true;
         if (triggerString === "unconsumed") trigger.unconsumed = true;
+        if (triggerString === "always") trigger.always = true;
       }
     }
     const args = actionDef.substring(actionDef.lastIndexOf("]") + 1).split(":");

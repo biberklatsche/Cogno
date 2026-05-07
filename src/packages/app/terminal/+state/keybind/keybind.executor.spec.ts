@@ -335,7 +335,7 @@ describe("KeybindExecutor", () => {
     expect(event.performed).toBe(false);
   });
 
-  it("should NOT ignore events if trigger.all is true even without focus", async () => {
+  it("should NOT ignore events if trigger.broadcast is true even without focus", async () => {
     terminalStateManager.setFocus(false);
     const publishSpy = vi.spyOn(mockBus, "publish");
     const event: any = {
@@ -343,7 +343,7 @@ describe("KeybindExecutor", () => {
       type: "ActionFired",
       payload: "split_right",
       performed: false,
-      trigger: { all: true },
+      trigger: { broadcast: true },
     };
 
     mockBus.publish(event);
