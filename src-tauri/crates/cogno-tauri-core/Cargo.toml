@@ -22,7 +22,8 @@ block-padding = "0.2"
 dirs = "6.0.0"
 uuid = { version = "1.11", features = ["v4"] }
 sysinfo = "0.33"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+futures-util = "0.3"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

@@ -40,60 +40,71 @@ export class OllamaNativeProviderAdapter implements AiProviderAdapter {
     config: AiProviderConfig,
     request: AiChatRequest,
   ): AsyncIterable<AiStreamChunk> {
-    const response = await this.httpClientPort.request({
-      method: "POST",
-      url: buildProviderUrl(config.base_url ?? "", "/api/chat"),
-      headers: headersToRecord(createProviderHeaders(undefined, config.headers)),
-      body: JSON.stringify({
-        model: request.model,
-        messages: request.messages,
-        stream: true,
-      }),
-    });
+    if (request.abortSignal?.aborted) throw createAbortError();
 
-    if (request.abortSignal?.aborted) {
-      throw createAbortError();
-    }
-
-    if (response.status < 200 || response.status >= 300) {
-      throw createProviderError(
-        providerId,
-        this.type,
-        response.status,
-        parseErrorResponseText(response.body, response.status),
-      );
-    }
-
+    let status = 200;
+    let lineBuffer = "";
     let sawChunk = false;
-    for (const line of response.body.split(/\r?\n/)) {
-      if (request.abortSignal?.aborted) {
-        throw createAbortError();
-      }
+    let collectedBody = "";
 
-      const trimmedLine = line.trim();
-      if (!trimmedLine) {
+    for await (const event of this.httpClientPort.streamRequest(
+      {
+        method: "POST",
+        url: buildProviderUrl(config.base_url ?? "", "/api/chat"),
+        headers: headersToRecord(createProviderHeaders(undefined, config.headers)),
+        body: JSON.stringify({
+          model: request.model,
+          messages: request.messages,
+          stream: true,
+        }),
+      },
+      request.abortSignal,
+    )) {
+      if (request.abortSignal?.aborted) throw createAbortError();
+      if (event.type === "error") throw new Error(event.message);
+      if (event.type === "status") {
+        status = event.status;
         continue;
       }
+      if (event.type === "data") lineBuffer += event.text;
 
-      sawChunk = true;
-      const parsedChunk = JSON.parse(trimmedLine) as OllamaChatResponse;
-      const chunkText = parsedChunk.message?.content ?? "";
-      if (chunkText) {
-        yield { text: chunkText };
-      }
-      if (parsedChunk.done) {
-        yield { text: "", done: true };
-      }
-    }
+      const isDone = event.type === "done";
 
-    if (!sawChunk) {
-      const fallbackResponse = JSON.parse(response.body) as OllamaChatResponse;
-      const fallbackText = fallbackResponse.message?.content ?? "";
-      if (fallbackText) {
-        yield { text: fallbackText, done: true };
-        return;
+      while (lineBuffer.length > 0) {
+        const newlineIdx = lineBuffer.indexOf("\n");
+        if (newlineIdx === -1 && !isDone) break;
+        const endIdx = newlineIdx !== -1 ? newlineIdx : lineBuffer.length;
+        const line = lineBuffer.slice(0, endIdx).replace(/\r$/, "");
+        lineBuffer = newlineIdx !== -1 ? lineBuffer.slice(newlineIdx + 1) : "";
+
+        if (!line.trim()) continue;
+
+        if (status < 200 || status >= 300) {
+          collectedBody += line + "\n";
+          continue;
+        }
+
+        sawChunk = true;
+        const parsedChunk = JSON.parse(line.trim()) as OllamaChatResponse;
+        const chunkText = parsedChunk.message?.content ?? "";
+        if (chunkText) yield { text: chunkText };
+        if (parsedChunk.done) yield { text: "", done: true };
       }
-      throw createProviderError(providerId, this.type, response.status, "Empty response body.");
+
+      if (isDone) {
+        if (status < 200 || status >= 300) {
+          throw createProviderError(
+            providerId,
+            this.type,
+            status,
+            parseErrorResponseText(collectedBody, status),
+          );
+        }
+        if (!sawChunk) {
+          throw createProviderError(providerId, this.type, status, "Empty response body.");
+        }
+        break;
+      }
     }
 
     yield { text: "", done: true };

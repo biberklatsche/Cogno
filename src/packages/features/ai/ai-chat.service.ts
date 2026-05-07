@@ -420,7 +420,8 @@ export class AiChatService {
     chunk: { readonly text: string; readonly done?: boolean },
   ): { assistantText: string; streamCompleted: boolean } {
     const assistantText = currentText + chunk.text;
-    this.updateAssistantMessage(messageId, assistantText, target, !chunk.done, false, {
+    const isPending = !chunk.done && assistantText.length === 0;
+    this.updateAssistantMessage(messageId, assistantText, target, isPending, false, {
       role: "assistant",
       content: assistantText,
     });

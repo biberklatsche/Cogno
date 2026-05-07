@@ -42,66 +42,87 @@ export class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
     config: AiProviderConfig,
     request: AiChatRequest,
   ): AsyncIterable<AiStreamChunk> {
-    const response = await this.httpClientPort.request({
-      method: "POST",
-      url: buildProviderUrl(config.base_url ?? "", "/chat/completions"),
-      headers: headersToRecord(createProviderHeaders(config.api_key, config.headers)),
-      body: JSON.stringify({
-        model: request.model,
-        messages: request.messages,
-        stream: true,
-      }),
-    });
+    if (request.abortSignal?.aborted) throw createAbortError();
 
-    if (request.abortSignal?.aborted) {
-      throw createAbortError();
-    }
+    let status = 200;
+    let lineBuffer = "";
+    let streamingMode: "sse" | "json" | "unknown" = "unknown";
+    let collectedBody = "";
 
-    if (response.status < 200 || response.status >= 300) {
-      throw createProviderError(
-        providerId,
-        this.type,
-        response.status,
-        parseErrorResponseText(response.body, response.status),
-      );
-    }
-
-    const trimmedBody = response.body.trim();
-    if (trimmedBody.startsWith("{")) {
-      const fallbackResponse = JSON.parse(trimmedBody) as {
-        choices?: ReadonlyArray<{ message?: { content?: string | null } }>;
-      };
-      const fallbackText = fallbackResponse.choices?.[0]?.message?.content ?? "";
-      if (fallbackText) {
-        yield { text: fallbackText, done: true };
-        return;
-      }
-      throw createProviderError(providerId, this.type, response.status, "Empty response body.");
-    }
-
-    for (const line of response.body.split(/\r?\n/)) {
-      if (request.abortSignal?.aborted) {
-        throw createAbortError();
-      }
-
-      const trimmedLine = line.trim();
-      if (!trimmedLine.startsWith("data:")) {
+    for await (const event of this.httpClientPort.streamRequest(
+      {
+        method: "POST",
+        url: buildProviderUrl(config.base_url ?? "", "/chat/completions"),
+        headers: headersToRecord(createProviderHeaders(config.api_key, config.headers)),
+        body: JSON.stringify({
+          model: request.model,
+          messages: request.messages,
+          stream: true,
+        }),
+      },
+      request.abortSignal,
+    )) {
+      if (request.abortSignal?.aborted) throw createAbortError();
+      if (event.type === "error") throw new Error(event.message);
+      if (event.type === "status") {
+        status = event.status;
         continue;
       }
+      if (event.type === "data") lineBuffer += event.text;
 
-      const payload = trimmedLine.slice(5).trim();
-      if (!payload || payload === "[DONE]") {
-        continue;
+      const isDone = event.type === "done";
+
+      while (lineBuffer.length > 0) {
+        const newlineIdx = lineBuffer.indexOf("\n");
+        if (newlineIdx === -1 && !isDone) break;
+        const endIdx = newlineIdx !== -1 ? newlineIdx : lineBuffer.length;
+        const line = lineBuffer.slice(0, endIdx).replace(/\r$/, "");
+        lineBuffer = newlineIdx !== -1 ? lineBuffer.slice(newlineIdx + 1) : "";
+
+        if (!line.trim()) continue;
+
+        if (streamingMode === "unknown") {
+          streamingMode = line.trim().startsWith("{") ? "json" : "sse";
+        }
+
+        if (status < 200 || status >= 300 || streamingMode === "json") {
+          collectedBody += line + "\n";
+          continue;
+        }
+
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const payload = trimmed.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+
+        const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
+        const choice = parsedChunk.choices?.[0];
+        const chunkText = choice?.delta?.content ?? "";
+        if (chunkText) yield { text: chunkText };
+        if (choice?.finish_reason) yield { text: "", done: true };
       }
 
-      const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
-      const choice = parsedChunk.choices?.[0];
-      const chunkText = choice?.delta?.content ?? "";
-      if (chunkText) {
-        yield { text: chunkText };
-      }
-      if (choice?.finish_reason) {
-        yield { text: "", done: true };
+      if (isDone) {
+        if (status < 200 || status >= 300) {
+          throw createProviderError(
+            providerId,
+            this.type,
+            status,
+            parseErrorResponseText(collectedBody, status),
+          );
+        }
+        if (streamingMode === "json") {
+          const fallback = JSON.parse(collectedBody.trim()) as {
+            choices?: ReadonlyArray<{ message?: { content?: string | null } }>;
+          };
+          const text = fallback.choices?.[0]?.message?.content ?? "";
+          if (text) {
+            yield { text, done: true };
+            return;
+          }
+          throw createProviderError(providerId, this.type, status, "Empty response body.");
+        }
+        break;
       }
     }
 

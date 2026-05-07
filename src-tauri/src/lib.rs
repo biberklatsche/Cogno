@@ -45,6 +45,7 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::shells::list_shells,
             cogno_tauri_core::commands::keyboard::get_keyboard_layout,
             cogno_tauri_core::commands::ai_http::ai_http_request,
+            cogno_tauri_core::commands::ai_http::ai_http_request_stream,
             cogno_tauri_core::commands::crypto::decrypt,
             cogno_tauri_core::commands::crypto::encrypt,
             cogno_tauri_core::commands::pty::pty_spawn,
