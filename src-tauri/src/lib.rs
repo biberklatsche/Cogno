@@ -1,4 +1,3 @@
-use clap::Parser;
 use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
@@ -26,11 +25,10 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            // Parse CLI arguments when a second instance is launched.
+            use clap::Parser;
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(action_payload) = cli.action_payload() {
                     let _ = app.emit("cli-action", &action_payload);

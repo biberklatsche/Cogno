@@ -1,11 +1,13 @@
 # Cogno Bootstrap Script for PowerShell
 # Provides shell startup, prompt hooks, and shell integration features
 
-# Guard against double loading
-if ($env:COGNO_PWSH_BOOTSTRAPPED -eq "1") {
+# Guard against double loading within the same session.
+# Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
+# terminal does not suppress integration in a freshly spawned session.
+if ($env:COGNO_SESSION_ID -and $env:COGNO_PWSH_BOOTSTRAPPED -eq $env:COGNO_SESSION_ID) {
     return
 }
-$env:COGNO_PWSH_BOOTSTRAPPED = "1"
+$env:COGNO_PWSH_BOOTSTRAPPED = if ($env:COGNO_SESSION_ID) { $env:COGNO_SESSION_ID } else { "1" }
 
 # Logging function
 function Write-CognoLog {

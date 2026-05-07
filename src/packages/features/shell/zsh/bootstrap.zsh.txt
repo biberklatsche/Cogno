@@ -2,11 +2,13 @@
 # Cogno Bootstrap Script for Zsh
 # This script is loaded as .zshrc in the custom ZDOTDIR
 
-# Guard against double loading
-if [[ -n "${COGNO_ZSH_BOOTSTRAPPED}" ]]; then
+# Guard against double loading within the same session.
+# Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
+# terminal does not suppress integration in a freshly spawned session.
+if [[ -n "${COGNO_SESSION_ID}" && "${COGNO_ZSH_BOOTSTRAPPED}" == "${COGNO_SESSION_ID}" ]]; then
     return 0
 fi
-export COGNO_ZSH_BOOTSTRAPPED=1
+export COGNO_ZSH_BOOTSTRAPPED="${COGNO_SESSION_ID:-1}"
 
 # Logging function
 _cogno_log() {

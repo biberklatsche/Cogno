@@ -6,7 +6,7 @@
   "licenseText": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.8.1",
   "scripts": {
-    "dev": "pnpm exec tauri dev --config src-tauri/tauri.conf.json",
+    "dev": "pnpm exec tauri dev --config '{\"identifier\":\"rocks.cogno.dev\",\"productName\":\"Cogno Dev\"}'",
     "dev:web": "ng serve --configuration development",
     "lint": "pnpm lint:code && pnpm lint:architecture",
     "lint:code": "pnpm exec biome check .",
