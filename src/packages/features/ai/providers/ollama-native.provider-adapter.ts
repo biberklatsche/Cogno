@@ -80,7 +80,7 @@ export class OllamaNativeProviderAdapter implements AiProviderAdapter {
         if (!line.trim()) continue;
 
         if (status < 200 || status >= 300) {
-          collectedBody += line + "\n";
+          collectedBody += `${line}\n`;
           continue;
         }
 

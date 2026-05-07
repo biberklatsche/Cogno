@@ -86,7 +86,7 @@ export class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
         }
 
         if (status < 200 || status >= 300 || streamingMode === "json") {
-          collectedBody += line + "\n";
+          collectedBody += `${line}\n`;
           continue;
         }
 
