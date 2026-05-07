@@ -216,15 +216,15 @@ describe("InitialConfigOverridesWriter", () => {
     expect(text).toContain("terminal.progress_bar.enabled = false");
   });
 
-  it("renders llm defaults with empty placeholders", () => {
+  it("renders ai defaults with empty placeholders", () => {
     const text = InitialConfigOverridesWriter.toDotString(DEFAULTS, { asComments: false });
 
-    expect(text).toContain("llm.mode = off");
-    expect(text).toContain("llm.active_provider = ");
-    expect(text).toContain("llm.providers.default.type = openai_compatible");
-    expect(text).toContain("llm.providers.default.base_url = ");
-    expect(text).toContain("llm.providers.default.model = ");
-    expect(text).toContain("llm.providers.default.api_key = ");
-    expect(text).toContain("llm.providers.default.enabled = false");
+    expect(text).toContain("ai.mode = off");
+    expect(text).toContain("ai.active_provider = ");
+    expect(text).toContain("ai.providers.default.type = openai_compatible");
+    expect(text).toContain("ai.providers.default.base_url = ");
+    expect(text).toContain("ai.providers.default.model = ");
+    expect(text).toContain("ai.providers.default.api_key = ");
+    expect(text).toContain("ai.providers.default.enabled = false");
   });
 });

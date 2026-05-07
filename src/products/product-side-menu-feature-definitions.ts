@@ -1,11 +1,11 @@
 import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
-import { hasUsableLlmProvider } from "@cogno/features/llm/llm-config";
+import { hasUsableAiProvider } from "@cogno/features/ai/ai-config";
+import { aiChatSideMenuFeatureDefinition } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
+import { AiChatSideComponent } from "@cogno/features/side-menu/ai/ai-chat-side.component";
+import { AiChatSideMenuLifecycle } from "@cogno/features/side-menu/ai/ai-chat-side-menu.lifecycle";
 import { CommandPaletteComponent } from "@cogno/features/side-menu/command-palette/command-palette.component";
 import { commandPaletteSideMenuFeatureDefinition } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
 import { CommandPaletteSideMenuLifecycle } from "@cogno/features/side-menu/command-palette/command-palette-side-menu.lifecycle";
-import { llmChatSideMenuFeatureDefinition } from "@cogno/features/side-menu/llm/llm-chat.feature-definition";
-import { LlmChatSideComponent } from "@cogno/features/side-menu/llm/llm-chat-side.component";
-import { LlmChatSideMenuLifecycle } from "@cogno/features/side-menu/llm/llm-chat-side-menu.lifecycle";
 import { notificationSideMenuFeatureDefinition } from "@cogno/features/side-menu/notification/notification.feature-definition";
 import { NotificationSideComponent } from "@cogno/features/side-menu/notification/notification-side.component";
 import { NotificationSideMenuLifecycle } from "@cogno/features/side-menu/notification/notification-side-menu.lifecycle";
@@ -30,11 +30,11 @@ export const productSideMenuFeatureDefinitions = [
       injector.get(CommandPaletteSideMenuLifecycle).create(sideMenuFeatureHandle),
   },
   {
-    ...llmChatSideMenuFeatureDefinition,
-    targetComponent: LlmChatSideComponent,
+    ...aiChatSideMenuFeatureDefinition,
+    targetComponent: AiChatSideComponent,
     createLifecycle: (injector, sideMenuFeatureHandle) =>
-      injector.get(LlmChatSideMenuLifecycle).create(sideMenuFeatureHandle),
-    isAvailable: (configuration) => hasUsableLlmProvider(configuration),
+      injector.get(AiChatSideMenuLifecycle).create(sideMenuFeatureHandle),
+    isAvailable: (configuration) => hasUsableAiProvider(configuration),
   },
   {
     ...notificationSideMenuFeatureDefinition,

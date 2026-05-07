@@ -23,10 +23,13 @@ export function createProviderHeaders(
   return providerHeaders;
 }
 
-export async function parseErrorResponse(response: Response): Promise<string> {
-  const responseText = await response.text();
+export function headersToRecord(headers: Headers): Readonly<Record<string, string>> {
+  return Object.fromEntries(headers.entries());
+}
+
+export function parseErrorResponseText(responseText: string, status: number): string {
   if (!responseText) {
-    return `Request failed with status ${response.status}.`;
+    return `Request failed with status ${status}.`;
   }
 
   try {

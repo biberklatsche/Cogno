@@ -1,6 +1,6 @@
 export {
-  getLlmFeatureConfig,
-  hasUsableLlmProvider,
+  getAiFeatureConfig,
+  hasUsableAiProvider,
   isUsableProviderConfig,
   resolveActiveProvider,
 } from "@cogno/core-api";

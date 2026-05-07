@@ -1,14 +1,16 @@
 import { Injectable } from "@angular/core";
+import { AiHttp } from "@cogno/app-tauri/ai-http";
 import {
-  LlmChatRequest,
-  LlmProviderAdapter,
-  LlmProviderConfig,
-  LlmStreamChunk,
-} from "../llm-host.models";
+  AiChatRequest,
+  AiProviderAdapter,
+  AiProviderConfig,
+  AiStreamChunk,
+} from "../ai-host.models";
 import {
   buildProviderUrl,
   createProviderHeaders,
-  parseErrorResponse,
+  headersToRecord,
+  parseErrorResponseText,
 } from "./provider-fetch.utils";
 
 type OpenAiChatResponse = {
@@ -21,13 +23,13 @@ type OpenAiChatResponse = {
 };
 
 @Injectable({ providedIn: "root" })
-export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
+export class OpenAiCompatibleProviderAdapter implements AiProviderAdapter {
   readonly type = "openai_compatible" as const;
   readonly capabilities = {
     supportsStreaming: true,
   } as const;
 
-  validateConfiguration(_providerId: string, config: LlmProviderConfig): ReadonlyArray<string> {
+  validateConfiguration(_providerId: string, config: AiProviderConfig): ReadonlyArray<string> {
     const validationErrors: string[] = [];
     if (!config.base_url) {
       validationErrors.push("base_url is required.");
@@ -40,31 +42,36 @@ export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
 
   async *streamChat(
     providerId: string,
-    config: LlmProviderConfig,
-    request: LlmChatRequest,
-  ): AsyncIterable<LlmStreamChunk> {
-    const response = await fetch(buildProviderUrl(config.base_url ?? "", "/chat/completions"), {
+    config: AiProviderConfig,
+    request: AiChatRequest,
+  ): AsyncIterable<AiStreamChunk> {
+    const response = await AiHttp.request({
       method: "POST",
-      headers: createProviderHeaders(config.api_key, config.headers),
+      url: buildProviderUrl(config.base_url ?? "", "/chat/completions"),
+      headers: headersToRecord(createProviderHeaders(config.api_key, config.headers)),
       body: JSON.stringify({
         model: request.model,
         messages: request.messages,
         stream: true,
       }),
-      signal: request.abortSignal,
     });
 
-    if (!response.ok) {
+    if (request.abortSignal?.aborted) {
+      throw createAbortError();
+    }
+
+    if (response.status < 200 || response.status >= 300) {
       throw createProviderError(
         providerId,
         this.type,
         response.status,
-        await parseErrorResponse(response),
+        parseErrorResponseText(response.body, response.status),
       );
     }
 
-    if (!response.body) {
-      const fallbackResponse = (await response.json()) as {
+    const trimmedBody = response.body.trim();
+    if (trimmedBody.startsWith("{")) {
+      const fallbackResponse = JSON.parse(trimmedBody) as {
         choices?: ReadonlyArray<{ message?: { content?: string | null } }>;
       };
       const fallbackText = fallbackResponse.choices?.[0]?.message?.content ?? "";
@@ -75,51 +82,29 @@ export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
       throw createProviderError(providerId, this.type, response.status, "Empty response body.");
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let pendingText = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      pendingText += decoder.decode(value ?? new Uint8Array(), { stream: !done });
-      const lines = pendingText.split(/\r?\n/);
-      pendingText = lines.pop() ?? "";
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine.startsWith("data:")) {
-          continue;
-        }
-
-        const payload = trimmedLine.slice(5).trim();
-        if (!payload || payload === "[DONE]") {
-          continue;
-        }
-
-        const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
-        const choice = parsedChunk.choices?.[0];
-        const chunkText = choice?.delta?.content ?? "";
-        if (chunkText) {
-          yield { text: chunkText };
-        }
-        if (choice?.finish_reason) {
-          yield { text: "", done: true };
-        }
+    for (const line of response.body.split(/\r?\n/)) {
+      if (request.abortSignal?.aborted) {
+        throw createAbortError();
       }
 
-      if (done) {
-        break;
+      const trimmedLine = line.trim();
+      if (!trimmedLine.startsWith("data:")) {
+        continue;
       }
-    }
 
-    if (pendingText.trim().length > 0 && pendingText.trim() !== "data: [DONE]") {
-      const payload = pendingText.replace(/^data:\s*/, "").trim();
-      if (payload && payload !== "[DONE]") {
-        const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
-        const chunkText = parsedChunk.choices?.[0]?.delta?.content ?? "";
-        if (chunkText) {
-          yield { text: chunkText };
-        }
+      const payload = trimmedLine.slice(5).trim();
+      if (!payload || payload === "[DONE]") {
+        continue;
+      }
+
+      const parsedChunk = JSON.parse(payload) as OpenAiChatResponse;
+      const choice = parsedChunk.choices?.[0];
+      const chunkText = choice?.delta?.content ?? "";
+      if (chunkText) {
+        yield { text: chunkText };
+      }
+      if (choice?.finish_reason) {
+        yield { text: "", done: true };
       }
     }
 
@@ -129,17 +114,21 @@ export class OpenAiCompatibleProviderAdapter implements LlmProviderAdapter {
 
 function createProviderError(
   providerId: string,
-  providerType: LlmProviderAdapter["type"],
+  providerType: AiProviderAdapter["type"],
   status: number | undefined,
   message: string,
-): Error & { status?: number; providerId: string; providerType: LlmProviderAdapter["type"] } {
+): Error & { status?: number; providerId: string; providerType: AiProviderAdapter["type"] } {
   const error = new Error(message) as Error & {
     status?: number;
     providerId: string;
-    providerType: LlmProviderAdapter["type"];
+    providerType: AiProviderAdapter["type"];
   };
   error.status = status;
   error.providerId = providerId;
   error.providerType = providerType;
   return error;
+}
+
+function createAbortError(): DOMException {
+  return new DOMException("This operation was aborted", "AbortError");
 }

@@ -5,14 +5,19 @@ import {
   ElementRef,
   effect,
   Signal,
+  signal,
   viewChild,
 } from "@angular/core";
-import { LlmChatThreadMessageContract, LlmCommandSuggestionContract } from "@cogno/core-api";
+import {
+  AiChatThreadMessageContract,
+  AiCommandSuggestionContract,
+  AiProviderStatusContract,
+} from "@cogno/core-api";
 import { IconComponent } from "@cogno/core-ui";
-import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
+import { AiChatService } from "@cogno/features/ai/ai-chat.service";
 
 @Component({
-  selector: "app-llm-chat-side",
+  selector: "app-ai-chat-side",
   standalone: true,
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,6 +79,17 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
                         <span>{{ getRunButtonLabel(command) }}</span>
                       </button>
                     </div>
+                    @if (isCommandSuggestionFromDifferentTerminal(command)) {
+                      <div class="command-context-note">
+                        <span>Erzeugt auf Grundlage einer anderen Terminal-ID.</span>
+                        <button
+                          type="button"
+                          class="command-context-link"
+                          (click)="openCommandSuggestionTerminal(command)">
+                          Terminal öffnen
+                        </button>
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -92,11 +108,43 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
           autocorrect="off"
           data-private="off"
           rows="5"
-          placeholder="Ask the configured LLM about the current terminal session..."
+          placeholder="Ask the configured AI assistant about the current terminal session..."
           [value]="composerText()"
           (input)="updateComposerText($event)"
           (keydown)="handleComposerKeydown($event)"></textarea>
         <div class="composer-actions">
+          <div class="provider-selector-shell">
+            <button
+              #providerMenuButton
+              type="button"
+              class="provider-selector"
+              aria-haspopup="menu"
+              aria-label="Select AI provider"
+              [attr.aria-expanded]="isProviderMenuOpen()"
+              (click)="toggleProviderMenu()">
+              <span class="provider-selector__label">
+                {{ statusLabel() ?? "No provider configured" }}
+              </span>
+              <span class="provider-selector__chevron" aria-hidden="true"></span>
+            </button>
+            @if (isProviderMenuOpen()) {
+              <div class="provider-menu" role="menu">
+                @for (providerStatus of providerStatuses(); track providerStatus.providerId) {
+                  <button
+                    type="button"
+                    class="provider-menu__item"
+                    role="menuitem"
+                    [class.provider-menu__item--active]="
+                      formatProviderStatus(providerStatus) === statusLabel()
+                    "
+                    [disabled]="formatProviderStatus(providerStatus) === statusLabel()"
+                    (click)="selectProvider(providerStatus.providerId)">
+                    {{ formatProviderStatus(providerStatus) ?? providerStatus.providerId }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
           <button
             type="button"
             class="send-button icon-send-button"
@@ -253,6 +301,29 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
         font-size: 0.85rem;
       }
 
+      .command-context-note {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        margin-top: 0.1rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid var(--background-color-20l);
+        font-size: 0.72rem;
+        opacity: 0.7;
+      }
+
+      .command-context-link {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        text-decoration: underline;
+      }
+
       .command-button {
         display: inline-flex;
         align-items: center;
@@ -297,7 +368,95 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
 
       .composer-actions {
         display: flex;
+        align-items: center;
+        gap: 0.35rem;
         justify-content: flex-end;
+      }
+
+      .provider-selector {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        max-width: min(100%, 18rem);
+        min-height: 1.6rem;
+        padding: 0.15rem 0.45rem 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .provider-selector-shell {
+        position: relative;
+        display: inline-flex;
+        justify-content: flex-end;
+      }
+
+      .provider-selector:hover,
+      .provider-selector:focus-visible {
+        background: var(--background-color-20l);
+        border-radius: 0.35rem;
+        outline: none;
+      }
+
+      .provider-selector__label {
+        display: block;
+        max-width: 15ch;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .provider-selector__chevron {
+        flex: 0 0 auto;
+        width: 0.45rem;
+        height: 0.45rem;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: translateY(-0.1rem) rotate(45deg);
+        opacity: 0.8;
+      }
+
+      .provider-menu {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 0.35rem);
+        display: flex;
+        flex-direction: column;
+        min-width: 14rem;
+        max-width: 20rem;
+        padding: 0.35rem;
+        border: 1px solid var(--background-color-20l);
+        border-radius: 0.6rem;
+        background: var(--background-color);
+        box-shadow: 0 0.5rem 1.4rem rgb(0 0 0 / 18%);
+        z-index: 5;
+      }
+
+      .provider-menu__item {
+        border: 0;
+        border-radius: 0.4rem;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+        padding: 0.45rem 0.6rem;
+      }
+
+      .provider-menu__item:hover,
+      .provider-menu__item:focus-visible {
+        background: var(--background-color-20l);
+        outline: none;
+      }
+
+      .provider-menu__item--active {
+        opacity: 0.6;
       }
 
       .icon-send-button {
@@ -319,17 +478,21 @@ import { LlmChatService } from "@cogno/features/llm/llm-chat.service";
     `,
   ],
 })
-export class LlmChatSideComponent {
-  readonly threadMessages = this.llmChatService.threadMessages;
-  readonly composerText = this.llmChatService.composerText;
-  readonly canSend = this.llmChatService.canSend;
+export class AiChatSideComponent {
+  readonly threadMessages = this.aiChatService.threadMessages;
+  readonly composerText = this.aiChatService.composerText;
+  readonly canSend = this.aiChatService.canSend;
+  readonly providerStatuses = this.aiChatService.providerStatuses;
+  readonly focusedTerminalId = this.aiChatService.focusedTerminalId;
   readonly statusLabel: Signal<string | undefined> = computed(() =>
-    this.llmChatService.getStatusMessage(),
+    this.aiChatService.getStatusMessage(),
   );
+  readonly isProviderMenuOpen = signal(false);
   private readonly messageListElement = viewChild<ElementRef<HTMLDivElement>>("messageListElement");
   private readonly composerElement = viewChild<ElementRef<HTMLTextAreaElement>>("composerElement");
+  private readonly providerMenuButton = viewChild<ElementRef<HTMLButtonElement>>("providerMenuButton");
 
-  constructor(private readonly llmChatService: LlmChatService) {
+  constructor(private readonly aiChatService: AiChatService) {
     effect(() => {
       this.threadMessages();
       queueMicrotask(() => {
@@ -340,20 +503,35 @@ export class LlmChatSideComponent {
         messageListElement.scrollTop = messageListElement.scrollHeight;
       });
     });
+    effect(() => {
+      this.statusLabel();
+      this.providerStatuses();
+      if (this.providerStatuses().length <= 1 && this.isProviderMenuOpen()) {
+        this.isProviderMenuOpen.set(false);
+      }
+    });
   }
 
   updateComposerText(event: Event): void {
     const textareaElement = event.target as HTMLTextAreaElement;
-    this.llmChatService.updateComposerText(textareaElement.value);
+    this.aiChatService.updateComposerText(textareaElement.value);
   }
 
   async sendCurrentPrompt(): Promise<void> {
-    await this.llmChatService.sendCurrentPrompt();
+    await this.aiChatService.sendCurrentPrompt();
     this.composerElement()?.nativeElement.focus();
   }
 
   clearConversation(): void {
-    this.llmChatService.clearConversation();
+    this.aiChatService.clearConversation();
+  }
+
+  toggleProviderMenu(): void {
+    if (this.providerStatuses().length === 0) {
+      return;
+    }
+
+    this.isProviderMenuOpen.update((isOpen) => !isOpen);
   }
 
   handleComposerKeydown(keyboardEvent: KeyboardEvent): void {
@@ -369,23 +547,45 @@ export class LlmChatSideComponent {
     }
   }
 
-  canApplyCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): boolean {
-    return this.llmChatService.canApplyCommandSuggestion(commandSuggestion);
+  canApplyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): boolean {
+    return this.aiChatService.canApplyCommandSuggestion(commandSuggestion);
   }
 
-  applyCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): void {
-    this.llmChatService.applyCommandSuggestion(commandSuggestion);
+  isCommandSuggestionFromDifferentTerminal(
+    commandSuggestion: AiCommandSuggestionContract,
+  ): boolean {
+    const targetTerminalId = commandSuggestion.targetTerminalId;
+    const focusedTerminalId = this.focusedTerminalId();
+    return !!targetTerminalId && !!focusedTerminalId && targetTerminalId !== focusedTerminalId;
   }
 
-  async runCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): Promise<void> {
-    await this.llmChatService.runCommandSuggestion(commandSuggestion);
+  applyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): void {
+    this.aiChatService.applyCommandSuggestion(commandSuggestion);
   }
 
-  getRunButtonLabel(commandSuggestion: LlmCommandSuggestionContract): string {
+  openCommandSuggestionTerminal(commandSuggestion: AiCommandSuggestionContract): void {
+    this.aiChatService.openCommandSuggestionTerminal(commandSuggestion);
+  }
+
+  async runCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): Promise<void> {
+    await this.aiChatService.runCommandSuggestion(commandSuggestion);
+  }
+
+  formatProviderStatus(providerStatus: AiProviderStatusContract | undefined): string | undefined {
+    return this.aiChatService.formatStatusMessage(providerStatus);
+  }
+
+  async selectProvider(providerId: string): Promise<void> {
+    this.isProviderMenuOpen.set(false);
+    await this.aiChatService.selectProvider(providerId);
+    this.providerMenuButton()?.nativeElement.focus();
+  }
+
+  getRunButtonLabel(commandSuggestion: AiCommandSuggestionContract): string {
     return commandSuggestion.executionMode === "run_and_continue" ? "Run + Continue" : "Run";
   }
 
-  formatRole(message: LlmChatThreadMessageContract): string {
+  formatRole(message: AiChatThreadMessageContract): string {
     if (message.role === "assistant") {
       return "Assistant";
     }
@@ -394,4 +594,5 @@ export class LlmChatSideComponent {
     }
     return "You";
   }
+
 }

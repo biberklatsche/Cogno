@@ -138,10 +138,10 @@ export const FeatureSearchSchema = z.object({
     .optional(),
 });
 
-const llmProviderTypeSchema = z.enum(["openai_compatible", "ollama_native"] as const);
+const aiProviderTypeSchema = z.enum(["openai_compatible", "ollama_native"] as const);
 
-const llmProviderSchema = z.object({
-  type: llmProviderTypeSchema,
+const aiProviderSchema = z.object({
+  type: aiProviderTypeSchema,
   base_url: z.string().optional(),
   model: z.string().optional(),
   api_key: z.string().optional(),
@@ -149,10 +149,10 @@ const llmProviderSchema = z.object({
   enabled: z.boolean().optional(),
 });
 
-export const FeatureLlmSchema = z.object({
+export const FeatureAiSchema = z.object({
   mode: featureModeSchema.optional(),
   active_provider: z.string().optional(),
-  providers: z.record(z.string(), llmProviderSchema).optional(),
+  providers: z.record(z.string(), aiProviderSchema).optional(),
   request: z
     .object({
       include_process_tree: z.boolean().optional(),

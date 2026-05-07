@@ -6,6 +6,7 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
+import { AiChatHostPortAdapterService } from "@cogno/app/app-host/ai-chat-host-port.adapter.service";
 import {
   actionKeybindingToken,
   additionalNotificationChannelsToken,
@@ -23,7 +24,6 @@ import { CommandPaletteHostPortAdapterService } from "@cogno/app/app-host/comman
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
-import { LlmChatHostPortAdapterService } from "@cogno/app/app-host/llm-chat-host-port.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
@@ -48,9 +48,9 @@ import { WindowService } from "@cogno/app/window/window.service";
 import { Logger } from "@cogno/app-tauri/logger";
 import {
   ActionKeybindingPort,
+  AiChatHostPort,
   ApplicationProduct,
   CommandPaletteHostPort,
-  LlmChatHostPort,
   NotificationCenterPort,
   TerminalSearchHostPort,
   WorkspaceCloseGuard,
@@ -75,7 +75,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
     { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
     { provide: CommandPaletteHostPort, useExisting: CommandPaletteHostPortAdapterService },
-    { provide: LlmChatHostPort, useExisting: LlmChatHostPortAdapterService },
+    { provide: AiChatHostPort, useExisting: AiChatHostPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     {
       provide: sideMenuFeatureDefinitionsToken,
@@ -100,7 +100,7 @@ export const appConfig: ApplicationConfig = {
       inject(SideMenuLifecycleRuntimeService);
       inject(ActionKeybindingPortAdapterService);
       inject(CommandPaletteHostPortAdapterService);
-      inject(LlmChatHostPortAdapterService);
+      inject(AiChatHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);
       inject(WorkspaceShortcutActionService);

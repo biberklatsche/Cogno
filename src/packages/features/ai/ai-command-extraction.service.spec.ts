@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { LlmCommandExtractionService } from "./llm-command-extraction.service";
+import { AiCommandExtractionService } from "./ai-command-extraction.service";
 
-describe("LlmCommandExtractionService", () => {
+describe("AiCommandExtractionService", () => {
   it("should extract shell code blocks as command suggestions", () => {
-    const service = new LlmCommandExtractionService();
+    const service = new AiCommandExtractionService();
 
     const commands = service.extractCommands(
       "MSG1",
@@ -38,11 +38,11 @@ describe("LlmCommandExtractionService", () => {
   });
 
   it("should extract continue mode from the code fence header", () => {
-    const service = new LlmCommandExtractionService();
+    const service = new AiCommandExtractionService();
 
     const commands = service.extractCommands(
       "MSG3",
-      ["```sh llm:continue", "npm view cogno version", "```"].join("\n"),
+      ["```sh ai:continue", "npm view cogno version", "```"].join("\n"),
       { terminalId: "TE999" },
     );
 
@@ -58,20 +58,16 @@ describe("LlmCommandExtractionService", () => {
   });
 
   it("should keep visible text unchanged while extracting executionMode from the fence header", () => {
-    const service = new LlmCommandExtractionService();
+    const service = new AiCommandExtractionService();
 
     const parsedResponse = service.parseAssistantResponse(
       "MSG4",
-      ["Inspect the pods first.", "", "```sh llm:continue", "kubectl get pods -A", "```"].join(
-        "\n",
-      ),
+      ["Inspect the pods first.", "", "```sh ai:continue", "kubectl get pods -A", "```"].join("\n"),
       { terminalId: "TE111" },
     );
 
     expect(parsedResponse.displayText).toBe(
-      ["Inspect the pods first.", "", "```sh llm:continue", "kubectl get pods -A", "```"].join(
-        "\n",
-      ),
+      ["Inspect the pods first.", "", "```sh ai:continue", "kubectl get pods -A", "```"].join("\n"),
     );
     expect(parsedResponse.commands).toEqual([
       {
@@ -85,7 +81,7 @@ describe("LlmCommandExtractionService", () => {
   });
 
   it("should ignore non-shell code blocks", () => {
-    const service = new LlmCommandExtractionService();
+    const service = new AiCommandExtractionService();
 
     const commands = service.extractCommands(
       "MSG2",
@@ -97,7 +93,7 @@ describe("LlmCommandExtractionService", () => {
   });
 
   it("should ignore untagged code blocks", () => {
-    const service = new LlmCommandExtractionService();
+    const service = new AiCommandExtractionService();
 
     const commands = service.extractCommands("MSG3", ["```", "npm run build", "```"].join("\n"), {
       terminalId: "TE456",

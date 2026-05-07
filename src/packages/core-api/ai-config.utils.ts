@@ -1,7 +1,7 @@
-export type LlmProviderTypeConfigValue = "openai_compatible" | "ollama_native";
+export type AiProviderTypeConfigValue = "openai_compatible" | "ollama_native";
 
-export type LlmProviderConfigValue = {
-  readonly type: LlmProviderTypeConfigValue;
+export type AiProviderConfigValue = {
+  readonly type: AiProviderTypeConfigValue;
   readonly base_url?: string;
   readonly model?: string;
   readonly api_key?: string;
@@ -9,10 +9,10 @@ export type LlmProviderConfigValue = {
   readonly enabled?: boolean;
 };
 
-export type LlmFeatureConfigValue = {
+export type AiFeatureConfigValue = {
   readonly mode?: "off" | "hidden" | "visible";
   readonly active_provider?: string;
-  readonly providers?: Readonly<Record<string, LlmProviderConfigValue>>;
+  readonly providers?: Readonly<Record<string, AiProviderConfigValue>>;
   readonly request?: {
     readonly include_process_tree?: boolean;
     readonly max_commands?: number;
@@ -22,52 +22,52 @@ export type LlmFeatureConfigValue = {
 
 type ConfigLike = Record<string, unknown>;
 
-export function getLlmFeatureConfig(configuration: ConfigLike): LlmFeatureConfigValue | undefined {
-  const llmConfig = configuration["llm"];
-  if (!isPlainObject(llmConfig)) {
+export function getAiFeatureConfig(configuration: ConfigLike): AiFeatureConfigValue | undefined {
+  const aiConfig = configuration["ai"];
+  if (!isPlainObject(aiConfig)) {
     return undefined;
   }
 
-  const providers = isPlainObject(llmConfig["providers"])
-    ? normalizeProviders(llmConfig["providers"])
+  const providers = isPlainObject(aiConfig["providers"])
+    ? normalizeProviders(aiConfig["providers"])
     : undefined;
 
   return {
-    mode: normalizeMode(llmConfig["mode"]),
-    active_provider: asNonEmptyString(llmConfig["active_provider"]),
+    mode: normalizeMode(aiConfig["mode"]),
+    active_provider: asNonEmptyString(aiConfig["active_provider"]),
     providers,
-    request: isPlainObject(llmConfig["request"])
+    request: isPlainObject(aiConfig["request"])
       ? {
-          include_process_tree: asBoolean(llmConfig["request"]["include_process_tree"]),
-          max_commands: asNumber(llmConfig["request"]["max_commands"]),
-          max_output_chars: asNumber(llmConfig["request"]["max_output_chars"]),
+          include_process_tree: asBoolean(aiConfig["request"]["include_process_tree"]),
+          max_commands: asNumber(aiConfig["request"]["max_commands"]),
+          max_output_chars: asNumber(aiConfig["request"]["max_output_chars"]),
         }
       : undefined,
   };
 }
 
-export function hasUsableLlmProvider(configuration: ConfigLike): boolean {
-  const llmConfig = getLlmFeatureConfig(configuration);
-  if (!llmConfig || llmConfig.mode === "off") {
+export function hasUsableAiProvider(configuration: ConfigLike): boolean {
+  const aiConfig = getAiFeatureConfig(configuration);
+  if (!aiConfig || aiConfig.mode === "off") {
     return false;
   }
 
-  return Object.entries(llmConfig.providers ?? {}).some(([, providerConfig]) =>
+  return Object.entries(aiConfig.providers ?? {}).some(([, providerConfig]) =>
     isUsableProviderConfig(providerConfig),
   );
 }
 
 export function resolveActiveProvider(
   configuration: ConfigLike,
-): { providerId: string; providerConfig: LlmProviderConfigValue } | undefined {
-  const llmConfig = getLlmFeatureConfig(configuration);
-  if (!llmConfig || llmConfig.mode === "off") {
+): { providerId: string; providerConfig: AiProviderConfigValue } | undefined {
+  const aiConfig = getAiFeatureConfig(configuration);
+  if (!aiConfig || aiConfig.mode === "off") {
     return undefined;
   }
 
-  const providers = llmConfig.providers ?? {};
+  const providers = aiConfig.providers ?? {};
 
-  const activeProviderId = llmConfig.active_provider;
+  const activeProviderId = aiConfig.active_provider;
   if (activeProviderId) {
     const activeProvider = providers[activeProviderId];
     if (activeProvider && isUsableProviderConfig(activeProvider)) {
@@ -87,9 +87,7 @@ export function resolveActiveProvider(
   return undefined;
 }
 
-export function isUsableProviderConfig(
-  providerConfig: LlmProviderConfigValue | undefined,
-): boolean {
+export function isUsableProviderConfig(providerConfig: AiProviderConfigValue | undefined): boolean {
   return Boolean(
     providerConfig &&
       providerConfig.enabled !== false &&
@@ -101,8 +99,8 @@ export function isUsableProviderConfig(
 
 function normalizeProviders(
   value: Record<string, unknown>,
-): Readonly<Record<string, LlmProviderConfigValue>> {
-  const providers: Record<string, LlmProviderConfigValue> = {};
+): Readonly<Record<string, AiProviderConfigValue>> {
+  const providers: Record<string, AiProviderConfigValue> = {};
 
   for (const [providerId, providerValue] of Object.entries(value)) {
     if (!isPlainObject(providerValue)) {
@@ -135,11 +133,11 @@ function normalizeProviders(
   return providers;
 }
 
-function normalizeProviderType(value: unknown): LlmProviderTypeConfigValue | undefined {
+function normalizeProviderType(value: unknown): AiProviderTypeConfigValue | undefined {
   return value === "openai_compatible" || value === "ollama_native" ? value : undefined;
 }
 
-function normalizeMode(value: unknown): LlmFeatureConfigValue["mode"] | undefined {
+function normalizeMode(value: unknown): AiFeatureConfigValue["mode"] | undefined {
   return value === "off" || value === "hidden" || value === "visible" ? value : undefined;
 }
 

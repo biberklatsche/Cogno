@@ -1,26 +1,32 @@
 import { computed, Injectable, Signal, signal } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import {
-  LlmChatHostPort,
-  LlmChatThreadMessageContract,
-  LlmCommandSuggestionContract,
-  LlmProviderStatusContract,
+  AiChatHostPort,
+  AiChatThreadMessageContract,
+  AiCommandSuggestionContract,
+  AiProviderStatusContract,
 } from "@cogno/core-api";
 
 @Injectable({ providedIn: "root" })
-export class LlmChatService {
+export class AiChatService {
   private readonly composerTextSignal = signal("");
 
-  readonly threadMessages: Signal<ReadonlyArray<LlmChatThreadMessageContract>>;
+  readonly threadMessages: Signal<ReadonlyArray<AiChatThreadMessageContract>>;
   readonly pending: Signal<boolean>;
-  readonly providerStatus: Signal<LlmProviderStatusContract | undefined>;
+  readonly providerStatus: Signal<AiProviderStatusContract | undefined>;
+  readonly providerStatuses: Signal<ReadonlyArray<AiProviderStatusContract>>;
+  readonly focusedTerminalId: Signal<string | undefined>;
   readonly composerText: Signal<string> = this.composerTextSignal.asReadonly();
   readonly canSend: Signal<boolean>;
 
-  constructor(private readonly hostPort: LlmChatHostPort) {
+  constructor(private readonly hostPort: AiChatHostPort) {
     this.threadMessages = toSignal(this.hostPort.threadMessages$, { initialValue: [] });
     this.pending = toSignal(this.hostPort.pending$, { initialValue: false });
     this.providerStatus = toSignal(this.hostPort.providerStatus$, { initialValue: undefined });
+    this.providerStatuses = toSignal(this.hostPort.providerStatuses$, { initialValue: [] });
+    this.focusedTerminalId = toSignal(this.hostPort.focusedTerminalId$, {
+      initialValue: undefined,
+    });
     this.canSend = computed(() => {
       return !this.pending() && this.composerText().trim().length > 0 && !!this.providerStatus();
     });
@@ -51,22 +57,33 @@ export class LlmChatService {
     this.hostPort.clearConversation();
   }
 
-  canApplyCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): boolean {
+  async selectProvider(providerId: string): Promise<void> {
+    await this.hostPort.selectProvider(providerId);
+  }
+
+  canApplyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): boolean {
     return this.hostPort.canApplyCommandSuggestion(commandSuggestion);
   }
 
-  applyCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): void {
+  applyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): void {
     this.hostPort.applyCommandSuggestion(commandSuggestion);
   }
 
-  async runCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): Promise<void> {
+  openCommandSuggestionTerminal(commandSuggestion: AiCommandSuggestionContract): void {
+    this.hostPort.openCommandSuggestionTerminal(commandSuggestion);
+  }
+
+  async runCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): Promise<void> {
     await this.hostPort.runCommandSuggestion(commandSuggestion);
   }
 
   getStatusMessage(): string | undefined {
-    const providerStatus = this.providerStatus();
+    return this.formatStatusMessage(this.providerStatus());
+  }
+
+  formatStatusMessage(providerStatus: AiProviderStatusContract | undefined): string | undefined {
     return providerStatus
-      ? `${providerStatus.providerId} (${providerStatus.providerType})`
+      ? `${providerStatus.providerId} (${providerStatus.providerModel})`
       : undefined;
   }
 }

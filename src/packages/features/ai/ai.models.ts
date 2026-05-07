@@ -1,7 +1,7 @@
-export type LlmProviderType = "openai_compatible" | "ollama_native";
+export type AiProviderType = "openai_compatible" | "ollama_native";
 
-export type LlmProviderConfig = {
-  readonly type: LlmProviderType;
+export type AiProviderConfig = {
+  readonly type: AiProviderType;
   readonly base_url?: string;
   readonly model?: string;
   readonly api_key?: string;
@@ -9,10 +9,10 @@ export type LlmProviderConfig = {
   readonly enabled?: boolean;
 };
 
-export type LlmFeatureConfig = {
+export type AiFeatureConfig = {
   readonly mode?: "off" | "hidden" | "visible";
   readonly active_provider?: string;
-  readonly providers?: Readonly<Record<string, LlmProviderConfig>>;
+  readonly providers?: Readonly<Record<string, AiProviderConfig>>;
   readonly request?: {
     readonly include_process_tree?: boolean;
     readonly max_commands?: number;
@@ -20,33 +20,33 @@ export type LlmFeatureConfig = {
   };
 };
 
-export type LlmChatRole = "system" | "user" | "assistant";
+export type AiChatRole = "system" | "user" | "assistant";
 
-export type LlmChatMessage = {
-  readonly role: LlmChatRole;
+export type AiChatMessage = {
+  readonly role: AiChatRole;
   readonly content: string;
 };
 
-export type LlmProviderCapabilitySet = {
+export type AiProviderCapabilitySet = {
   readonly supportsStreaming: boolean;
 };
 
-export type LlmStreamChunk = {
+export type AiStreamChunk = {
   readonly text: string;
   readonly done?: boolean;
 };
 
-export type LlmChatRequest = {
+export type AiChatRequest = {
   readonly model: string;
-  readonly messages: ReadonlyArray<LlmChatMessage>;
+  readonly messages: ReadonlyArray<AiChatMessage>;
   readonly abortSignal?: AbortSignal;
 };
 
-export type LlmProviderError = {
+export type AiProviderError = {
   readonly message: string;
   readonly status?: number;
   readonly providerId: string;
-  readonly providerType: LlmProviderType;
+  readonly providerType: AiProviderType;
 };
 
 export type TerminalContextCommandSummary = {
@@ -81,35 +81,35 @@ export type ChatTurnTargetTerminalReference = {
   readonly terminalId?: string;
 };
 
-export type LlmCommandExecutionMode = "run_only" | "run_and_continue";
+export type AiCommandExecutionMode = "run_only" | "run_and_continue";
 
-export type LlmCommandSuggestion = {
+export type AiCommandSuggestion = {
   readonly command: string;
   readonly language?: string;
-  readonly executionMode: LlmCommandExecutionMode;
+  readonly executionMode: AiCommandExecutionMode;
   readonly sourceMessageId: string;
   readonly target: ChatTurnTargetTerminalReference;
 };
 
-export type LlmChatThreadMessage = {
+export type AiChatThreadMessage = {
   readonly id: string;
   readonly role: "user" | "assistant" | "system";
   readonly text: string;
-  readonly providerMessage: LlmChatMessage;
+  readonly providerMessage: AiChatMessage;
   readonly target: ChatTurnTargetTerminalReference;
-  readonly commands?: ReadonlyArray<LlmCommandSuggestion>;
+  readonly commands?: ReadonlyArray<AiCommandSuggestion>;
   readonly isPending?: boolean;
   readonly isError?: boolean;
 };
 
-export interface LlmProviderAdapter {
-  readonly type: LlmProviderType;
-  readonly capabilities: LlmProviderCapabilitySet;
+export interface AiProviderAdapter {
+  readonly type: AiProviderType;
+  readonly capabilities: AiProviderCapabilitySet;
 
-  validateConfiguration(providerId: string, config: LlmProviderConfig): ReadonlyArray<string>;
+  validateConfiguration(providerId: string, config: AiProviderConfig): ReadonlyArray<string>;
   streamChat(
     providerId: string,
-    config: LlmProviderConfig,
-    request: LlmChatRequest,
-  ): AsyncIterable<LlmStreamChunk>;
+    config: AiProviderConfig,
+    request: AiChatRequest,
+  ): AsyncIterable<AiStreamChunk>;
 }

@@ -1,4 +1,7 @@
 export * from "./action-keybinding.contract";
+export * from "./ai.contract";
+export * from "./ai-command-extraction.utils";
+export * from "./ai-config.utils";
 export * from "./application-feature-collection.contract";
 export * from "./application-product.contract";
 export * from "./application-settings-extension.contract";
@@ -13,9 +16,6 @@ export * from "./feature-settings.contract";
 export * from "./feature-settings-extension.contract";
 export * from "./filesystem.contract";
 export * from "./grid-layout.contract";
-export * from "./llm.contract";
-export * from "./llm-command-extraction.utils";
-export * from "./llm-config.utils";
 export * from "./notification.contract";
 export * from "./notification-center.contract";
 export * from "./path-adapter.contract";

@@ -1,62 +1,85 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
-  LlmChatHostPortContract,
-  LlmChatThreadMessageContract,
-  LlmCommandSuggestionContract,
-  LlmProviderStatusContract,
+  AiChatHostPortContract,
+  AiChatThreadMessageContract,
+  AiCommandSuggestionContract,
+  AiProviderStatusContract,
 } from "@cogno/core-api";
 import { BehaviorSubject, firstValueFrom, Observable } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { IdCreator } from "../common/id-creator/id-creator";
-import { LlmCommandExtractionService } from "./llm-command-extraction.service";
-import { LlmContextSnapshotService } from "./llm-context-snapshot.service";
+import { AiCommandExtractionService } from "./ai-command-extraction.service";
+import { AiContextSnapshotService } from "./ai-context-snapshot.service";
 import {
+  AiChatMessage,
+  AiStreamChunk,
   ChatTurnTargetTerminalReference,
-  LlmChatMessage,
-  LlmStreamChunk,
   TerminalContextSnapshot,
-} from "./llm-host.models";
-import { LlmProviderRegistryService } from "./llm-provider-registry.service";
+} from "./ai-host.models";
+import { AiProviderRegistryService } from "./ai-provider-registry.service";
 
-type ThreadMessageWithProviderMessage = LlmChatThreadMessageContract & {
-  readonly providerMessage?: LlmChatMessage;
+type ThreadMessageWithProviderMessage = AiChatThreadMessageContract & {
+  readonly providerMessage?: AiChatMessage;
 };
 
 @Injectable({ providedIn: "root" })
-export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
+export class AiChatHostPortAdapterService implements AiChatHostPortContract {
   private static readonly RUN_COMPLETION_TIMEOUT_MS = 30_000;
   private static readonly RUN_START_TIMEOUT_MS = 1_500;
   private static readonly ABORTED_REQUEST_MESSAGE = "Request canceled.";
   private readonly threadMessagesSubject = new BehaviorSubject<
-    ReadonlyArray<LlmChatThreadMessageContract>
+    ReadonlyArray<AiChatThreadMessageContract>
   >([]);
   private readonly pendingSubject = new BehaviorSubject(false);
+  private readonly focusedTerminalIdSubject = new BehaviorSubject<string | undefined>(undefined);
+  private readonly providerStatusesSubject = new BehaviorSubject<
+    ReadonlyArray<AiProviderStatusContract>
+  >([]);
   private readonly providerStatusSubject = new BehaviorSubject<
-    LlmProviderStatusContract | undefined
+    AiProviderStatusContract | undefined
   >(undefined);
   private activeAbortController?: AbortController;
   private activeRequestId = 0;
 
-  readonly threadMessages$: Observable<ReadonlyArray<LlmChatThreadMessageContract>> =
+  readonly threadMessages$: Observable<ReadonlyArray<AiChatThreadMessageContract>> =
     this.threadMessagesSubject.asObservable();
   readonly pending$: Observable<boolean> = this.pendingSubject.asObservable();
-  readonly providerStatus$: Observable<LlmProviderStatusContract | undefined> =
+  readonly focusedTerminalId$: Observable<string | undefined> =
+    this.focusedTerminalIdSubject.asObservable();
+  readonly providerStatuses$: Observable<ReadonlyArray<AiProviderStatusContract>> =
+    this.providerStatusesSubject.asObservable();
+  readonly providerStatus$: Observable<AiProviderStatusContract | undefined> =
     this.providerStatusSubject.asObservable();
 
   constructor(
     private readonly destroyRef: DestroyRef,
     private readonly appBus: AppBus,
-    private readonly llmCommandExtractionService: LlmCommandExtractionService,
-    private readonly llmContextSnapshotService: LlmContextSnapshotService,
-    private readonly providerRegistryService: LlmProviderRegistryService,
+    private readonly aiCommandExtractionService: AiCommandExtractionService,
+    private readonly aiContextSnapshotService: AiContextSnapshotService,
+    private readonly providerRegistryService: AiProviderRegistryService,
   ) {
+    this.focusedTerminalIdSubject.next(this.aiContextSnapshotService.getFocusedTerminalId());
     this.refreshProviderStatus();
     this.appBus
       .onType$("ConfigLoaded", { path: ["app", "settings"] })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.refreshProviderStatus();
+      });
+    this.appBus
+      .onType$("FocusTerminal", { path: ["app", "terminal"] })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        this.focusedTerminalIdSubject.next(event.payload);
+      });
+    this.appBus
+      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        if (event.payload && event.payload === this.focusedTerminalIdSubject.value) {
+          this.focusedTerminalIdSubject.next(undefined);
+        }
       });
   }
 
@@ -78,14 +101,20 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     await this.sendPromptForTerminal(trimmedPrompt);
   }
 
-  canApplyCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): boolean {
-    return this.llmContextSnapshotService.hasTerminal(commandSuggestion.targetTerminalId);
+  async selectProvider(providerId: string): Promise<void> {
+    await this.providerRegistryService.selectActiveProvider(providerId);
+    this.refreshProviderStatus();
   }
 
-  applyCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): void {
-    const terminalId = commandSuggestion.targetTerminalId;
-    if (!this.canApplyCommandSuggestion(commandSuggestion) || !terminalId) {
-      this.appendSystemMessage("The target terminal session is no longer available.", true);
+  canApplyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): boolean {
+    const executionTerminalId = this.resolveExecutionTerminalId(commandSuggestion);
+    return !!executionTerminalId && this.aiContextSnapshotService.hasTerminal(executionTerminalId);
+  }
+
+  applyCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): void {
+    const terminalId = this.resolveExecutionTerminalId(commandSuggestion);
+    if (!terminalId || !this.aiContextSnapshotService.hasTerminal(terminalId)) {
+      this.appendSystemMessage("No active terminal session is available.", true);
       return;
     }
 
@@ -93,10 +122,19 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     this.injectTerminalInput(terminalId, commandSuggestion.command, false);
   }
 
-  async runCommandSuggestion(commandSuggestion: LlmCommandSuggestionContract): Promise<void> {
+  openCommandSuggestionTerminal(commandSuggestion: AiCommandSuggestionContract): void {
     const terminalId = commandSuggestion.targetTerminalId;
-    if (!this.canApplyCommandSuggestion(commandSuggestion) || !terminalId) {
-      this.appendSystemMessage("The target terminal session is no longer available.", true);
+    if (!terminalId || !this.aiContextSnapshotService.hasTerminal(terminalId)) {
+      return;
+    }
+
+    this.focusTerminal(terminalId);
+  }
+
+  async runCommandSuggestion(commandSuggestion: AiCommandSuggestionContract): Promise<void> {
+    const terminalId = this.resolveExecutionTerminalId(commandSuggestion);
+    if (!terminalId || !this.aiContextSnapshotService.hasTerminal(terminalId)) {
+      this.appendSystemMessage("No active terminal session is available.", true);
       return;
     }
 
@@ -139,7 +177,7 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
   ): Promise<void> {
     const resolvedProvider = this.providerRegistryService.resolveActiveProvider();
     if (!resolvedProvider) {
-      this.appendSystemMessage("No usable LLM provider is configured.", true);
+      this.appendSystemMessage("No usable AI provider is configured.", true);
       this.refreshProviderStatus();
       return;
     }
@@ -154,26 +192,27 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     this.providerStatusSubject.next({
       providerId: resolvedProvider.providerId,
       providerType: resolvedProvider.config.type,
+      providerModel: resolvedProvider.config.model || "",
     });
 
     const contextSnapshot = terminalId
-      ? await this.llmContextSnapshotService.captureTerminalContext(terminalId)
-      : await this.llmContextSnapshotService.captureFocusedTerminalContext();
+      ? await this.aiContextSnapshotService.captureTerminalContext(terminalId)
+      : await this.aiContextSnapshotService.captureFocusedTerminalContext();
     const target: ChatTurnTargetTerminalReference = {
       terminalId: contextSnapshot?.terminalId,
     };
     const userMessageId = IdCreator.newId("MSG");
     const assistantMessageId = IdCreator.newId("MSG");
     const providerUserMessage = this.createProviderUserMessage(prompt, contextSnapshot);
-    const userThreadMessage: LlmChatThreadMessageContract & { providerMessage: LlmChatMessage } = {
+    const userThreadMessage: AiChatThreadMessageContract & { providerMessage: AiChatMessage } = {
       id: userMessageId,
       role: "user",
       text: visiblePromptText ?? prompt,
       providerMessage: providerUserMessage,
       targetTerminalId: target.terminalId,
     };
-    const assistantThreadMessage: LlmChatThreadMessageContract & {
-      providerMessage: LlmChatMessage;
+    const assistantThreadMessage: AiChatThreadMessageContract & {
+      providerMessage: AiChatMessage;
     } = {
       id: assistantMessageId,
       role: "assistant",
@@ -230,20 +269,20 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
       if (this.isAbortedRequestError(error, abortController.signal)) {
         this.updateAssistantMessage(
           assistantMessageId,
-          LlmChatHostPortAdapterService.ABORTED_REQUEST_MESSAGE,
+          AiChatHostPortAdapterService.ABORTED_REQUEST_MESSAGE,
           target,
           false,
           false,
           {
             role: "assistant",
-            content: LlmChatHostPortAdapterService.ABORTED_REQUEST_MESSAGE,
+            content: AiChatHostPortAdapterService.ABORTED_REQUEST_MESSAGE,
           },
         );
         return;
       }
 
       const errorMessage =
-        error instanceof Error ? error.message : "The configured LLM provider request failed.";
+        error instanceof Error ? error.message : "The configured AI provider request failed.";
       this.updateAssistantMessage(assistantMessageId, errorMessage, target, false, true);
     } finally {
       if (this.activeRequestId === requestId) {
@@ -255,35 +294,37 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
   }
 
   private refreshProviderStatus(): void {
+    this.providerStatusesSubject.next(this.providerRegistryService.listEnabledProviderStatuses());
     const resolvedProvider = this.providerRegistryService.resolveActiveProvider();
     this.providerStatusSubject.next(
       resolvedProvider
         ? {
             providerId: resolvedProvider.providerId,
             providerType: resolvedProvider.config.type,
+            providerModel: resolvedProvider.config.model || "",
           }
         : undefined,
     );
   }
 
-  private createSystemMessage(): LlmChatMessage {
+  private createSystemMessage(): AiChatMessage {
     return {
       role: "system",
       content: [
         "You are an assistant inside a terminal workspace application.",
         "Use the provided terminal context to answer precisely.",
         "If you suggest runnable commands, put each command in its own fenced code block with a shell language tag such as ```sh or ```powershell.",
-        "If you need terminal output before you can continue helping, add llm:continue to the fenced code block header, for example ```sh llm:continue.",
-        "Blocks without llm:continue are treated as run_only.",
-        "Use llm:continue for inspection, discovery, diagnostics, and fact gathering commands.",
-        "Do not use llm:continue for final solution commands, install commands, or commands that already fully answer the request.",
+        "If you need terminal output before you can continue helping, add ai:continue to the fenced code block header, for example ```sh ai:continue.",
+        "Blocks without ai:continue are treated as run_only.",
+        "Use ai:continue for inspection, discovery, diagnostics, and fact gathering commands.",
+        "Do not use ai:continue for final solution commands, install commands, or commands that already fully answer the request.",
         "Everything runnable must appear directly in the visible fenced code block text.",
         "Keep explanations concise and practical.",
       ].join(" "),
     };
   }
 
-  private createProviderConversation(): LlmChatMessage[] {
+  private createProviderConversation(): AiChatMessage[] {
     return [
       this.createSystemMessage(),
       ...this.threadMessagesSubject.value.flatMap((message) => {
@@ -298,7 +339,7 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
   private createProviderUserMessage(
     prompt: string,
     contextSnapshot: TerminalContextSnapshot | undefined,
-  ): LlmChatMessage {
+  ): AiChatMessage {
     const contextPayload = contextSnapshot
       ? JSON.stringify(contextSnapshot, null, 2)
       : JSON.stringify({ terminal: null }, null, 2);
@@ -323,9 +364,9 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     target: ChatTurnTargetTerminalReference,
     isPending: boolean,
     isError = false,
-    providerMessage?: LlmChatMessage,
+    providerMessage?: AiChatMessage,
   ): void {
-    const parsedAssistantResponse = this.llmCommandExtractionService.parseAssistantResponse(
+    const parsedAssistantResponse = this.aiCommandExtractionService.parseAssistantResponse(
       messageId,
       text,
       target,
@@ -358,7 +399,7 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     messageId: string,
     target: ChatTurnTargetTerminalReference,
     currentText: string,
-    chunk: LlmStreamChunk,
+    chunk: AiStreamChunk,
   ): { assistantText: string; streamCompleted: boolean } {
     const assistantText = currentText + chunk.text;
     this.updateAssistantMessage(messageId, assistantText, target, !chunk.done, false, {
@@ -404,6 +445,12 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
     });
   }
 
+  private resolveExecutionTerminalId(
+    commandSuggestion: AiCommandSuggestionContract,
+  ): string | undefined {
+    return this.focusedTerminalIdSubject.value ?? commandSuggestion.targetTerminalId;
+  }
+
   private async waitForCommandExecution(terminalId: string): Promise<"completed" | "timeout"> {
     const startedPromise = firstValueFrom(
       this.appBus.once$({
@@ -411,7 +458,7 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
         type: "TerminalBusyChanged",
         predicate: (event) =>
           event.payload?.terminalId === terminalId && event.payload.isBusy === true,
-        timeoutMs: LlmChatHostPortAdapterService.RUN_START_TIMEOUT_MS,
+        timeoutMs: AiChatHostPortAdapterService.RUN_START_TIMEOUT_MS,
       }),
     )
       .then(() => true)
@@ -422,7 +469,7 @@ export class LlmChatHostPortAdapterService implements LlmChatHostPortContract {
         type: "TerminalBusyChanged",
         predicate: (event) =>
           event.payload?.terminalId === terminalId && event.payload.isBusy === false,
-        timeoutMs: LlmChatHostPortAdapterService.RUN_COMPLETION_TIMEOUT_MS,
+        timeoutMs: AiChatHostPortAdapterService.RUN_COMPLETION_TIMEOUT_MS,
       }),
     )
       .then(() => true)

@@ -1,8 +1,8 @@
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
 import {
+  FeatureAiSchema,
   FeatureAutocompleteSchema,
   FeatureCommandPaletteSchema,
-  FeatureLlmSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
   FeatureSearchSchema,
@@ -18,7 +18,7 @@ const featureSettingsSchemaShape = {
   terminal: FeatureTerminalSchema.optional(),
   autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
-  llm: FeatureLlmSchema.optional(),
+  ai: FeatureAiSchema.optional(),
 } as const;
 
 export const defaultFeatureSettingsExtension = {
@@ -38,7 +38,7 @@ export const defaultFeatureSettingsExtension = {
         timeout_ms: 160,
       },
     },
-    llm: {
+    ai: {
       mode: "off",
       active_provider: "",
       providers: {
@@ -66,6 +66,6 @@ export const defaultFeatureSettingsExtension = {
     { id: "terminal", title: "Terminal", order: 500 },
     { id: "autocomplete", title: "Autocomplete", order: 600 },
     { id: "search", title: "Search", order: 700 },
-    { id: "llm", title: "LLM", order: 800 },
+    { id: "ai", title: "AI", order: 800 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;

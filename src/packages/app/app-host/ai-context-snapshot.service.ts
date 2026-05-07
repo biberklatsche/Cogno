@@ -5,11 +5,11 @@ import { TerminalId } from "../grid-list/+model/model";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { Command } from "../terminal/+state/state";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
-import { TerminalContextCommandSummary, TerminalContextSnapshot } from "./llm-host.models";
-import { getLlmFeatureConfig } from "./llm-provider-config";
+import { TerminalContextCommandSummary, TerminalContextSnapshot } from "./ai-host.models";
+import { getAiFeatureConfig } from "./ai-provider-config";
 
 @Injectable({ providedIn: "root" })
-export class LlmContextSnapshotService {
+export class AiContextSnapshotService {
   constructor(
     private readonly configService: ConfigService,
     private readonly gridListService: GridListService,
@@ -17,7 +17,7 @@ export class LlmContextSnapshotService {
   ) {}
 
   async captureFocusedTerminalContext(): Promise<TerminalContextSnapshot | undefined> {
-    const focusedTerminalId = this.gridListService.getFocusedTerminalId();
+    const focusedTerminalId = this.getFocusedTerminalId();
     if (!focusedTerminalId) {
       return undefined;
     }
@@ -33,10 +33,10 @@ export class LlmContextSnapshotService {
       return undefined;
     }
 
-    const llmFeatureConfig = getLlmFeatureConfig(this.configService.config);
-    const maxCommands = llmFeatureConfig?.request?.max_commands ?? 8;
-    const maxOutputChars = llmFeatureConfig?.request?.max_output_chars ?? 4000;
-    const includeProcessTree = llmFeatureConfig?.request?.include_process_tree ?? false;
+    const aiFeatureConfig = getAiFeatureConfig(this.configService.config);
+    const maxCommands = aiFeatureConfig?.request?.max_commands ?? 8;
+    const maxOutputChars = aiFeatureConfig?.request?.max_output_chars ?? 4000;
+    const includeProcessTree = aiFeatureConfig?.request?.include_process_tree ?? false;
     const terminalState = terminalSessionEntry.stateManager.state;
 
     const commandSummaries = terminalSessionEntry.stateManager.commands
@@ -83,6 +83,10 @@ export class LlmContextSnapshotService {
 
   hasTerminal(terminalId: TerminalId | undefined): boolean {
     return this.terminalSessionRegistry.has(terminalId);
+  }
+
+  getFocusedTerminalId(): TerminalId | undefined {
+    return this.gridListService.getFocusedTerminalId();
   }
 
   private toCommandSummary(command: Command): TerminalContextCommandSummary {

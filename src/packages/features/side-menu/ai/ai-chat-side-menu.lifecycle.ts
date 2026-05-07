@@ -3,7 +3,7 @@ import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from 
 import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
 
 @Injectable({ providedIn: "root" })
-export class LlmChatSideMenuLifecycle {
+export class AiChatSideMenuLifecycle {
   create(
     sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
   ): SideMenuFeatureLifecycleContract {

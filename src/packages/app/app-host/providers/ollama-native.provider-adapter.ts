@@ -1,14 +1,16 @@
 import { Injectable } from "@angular/core";
+import { AiHttp } from "@cogno/app-tauri/ai-http";
 import {
-  LlmChatRequest,
-  LlmProviderAdapter,
-  LlmProviderConfig,
-  LlmStreamChunk,
-} from "../llm-host.models";
+  AiChatRequest,
+  AiProviderAdapter,
+  AiProviderConfig,
+  AiStreamChunk,
+} from "../ai-host.models";
 import {
   buildProviderUrl,
   createProviderHeaders,
-  parseErrorResponse,
+  headersToRecord,
+  parseErrorResponseText,
 } from "./provider-fetch.utils";
 
 type OllamaChatResponse = {
@@ -19,13 +21,13 @@ type OllamaChatResponse = {
 };
 
 @Injectable({ providedIn: "root" })
-export class OllamaNativeProviderAdapter implements LlmProviderAdapter {
+export class OllamaNativeProviderAdapter implements AiProviderAdapter {
   readonly type = "ollama_native" as const;
   readonly capabilities = {
     supportsStreaming: true,
   } as const;
 
-  validateConfiguration(_providerId: string, config: LlmProviderConfig): ReadonlyArray<string> {
+  validateConfiguration(_providerId: string, config: AiProviderConfig): ReadonlyArray<string> {
     const validationErrors: string[] = [];
     if (!config.base_url) {
       validationErrors.push("base_url is required.");
@@ -38,31 +40,57 @@ export class OllamaNativeProviderAdapter implements LlmProviderAdapter {
 
   async *streamChat(
     providerId: string,
-    config: LlmProviderConfig,
-    request: LlmChatRequest,
-  ): AsyncIterable<LlmStreamChunk> {
-    const response = await fetch(buildProviderUrl(config.base_url ?? "", "/api/chat"), {
+    config: AiProviderConfig,
+    request: AiChatRequest,
+  ): AsyncIterable<AiStreamChunk> {
+    const response = await AiHttp.request({
       method: "POST",
-      headers: createProviderHeaders(undefined, config.headers),
+      url: buildProviderUrl(config.base_url ?? "", "/api/chat"),
+      headers: headersToRecord(createProviderHeaders(undefined, config.headers)),
       body: JSON.stringify({
         model: request.model,
         messages: request.messages,
         stream: true,
       }),
-      signal: request.abortSignal,
     });
 
-    if (!response.ok) {
+    if (request.abortSignal?.aborted) {
+      throw createAbortError();
+    }
+
+    if (response.status < 200 || response.status >= 300) {
       throw createProviderError(
         providerId,
         this.type,
         response.status,
-        await parseErrorResponse(response),
+        parseErrorResponseText(response.body, response.status),
       );
     }
 
-    if (!response.body) {
-      const fallbackResponse = (await response.json()) as OllamaChatResponse;
+    let sawChunk = false;
+    for (const line of response.body.split(/\r?\n/)) {
+      if (request.abortSignal?.aborted) {
+        throw createAbortError();
+      }
+
+      const trimmedLine = line.trim();
+      if (!trimmedLine) {
+        continue;
+      }
+
+      sawChunk = true;
+      const parsedChunk = JSON.parse(trimmedLine) as OllamaChatResponse;
+      const chunkText = parsedChunk.message?.content ?? "";
+      if (chunkText) {
+        yield { text: chunkText };
+      }
+      if (parsedChunk.done) {
+        yield { text: "", done: true };
+      }
+    }
+
+    if (!sawChunk) {
+      const fallbackResponse = JSON.parse(response.body) as OllamaChatResponse;
       const fallbackText = fallbackResponse.message?.content ?? "";
       if (fallbackText) {
         yield { text: fallbackText, done: true };
@@ -71,61 +99,27 @@ export class OllamaNativeProviderAdapter implements LlmProviderAdapter {
       throw createProviderError(providerId, this.type, response.status, "Empty response body.");
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let pendingText = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      pendingText += decoder.decode(value ?? new Uint8Array(), { stream: !done });
-      const lines = pendingText.split(/\r?\n/);
-      pendingText = lines.pop() ?? "";
-
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) {
-          continue;
-        }
-        const parsedChunk = JSON.parse(trimmedLine) as OllamaChatResponse;
-        const chunkText = parsedChunk.message?.content ?? "";
-        if (chunkText) {
-          yield { text: chunkText };
-        }
-        if (parsedChunk.done) {
-          yield { text: "", done: true };
-        }
-      }
-
-      if (done) {
-        break;
-      }
-    }
-
-    if (pendingText.trim().length > 0) {
-      const parsedChunk = JSON.parse(pendingText.trim()) as OllamaChatResponse;
-      const chunkText = parsedChunk.message?.content ?? "";
-      if (chunkText) {
-        yield { text: chunkText };
-      }
-    }
-
     yield { text: "", done: true };
   }
 }
 
 function createProviderError(
   providerId: string,
-  providerType: LlmProviderAdapter["type"],
+  providerType: AiProviderAdapter["type"],
   status: number | undefined,
   message: string,
-): Error & { status?: number; providerId: string; providerType: LlmProviderAdapter["type"] } {
+): Error & { status?: number; providerId: string; providerType: AiProviderAdapter["type"] } {
   const error = new Error(message) as Error & {
     status?: number;
     providerId: string;
-    providerType: LlmProviderAdapter["type"];
+    providerType: AiProviderAdapter["type"];
   };
   error.status = status;
   error.providerId = providerId;
   error.providerType = providerType;
   return error;
+}
+
+function createAbortError(): DOMException {
+  return new DOMException("This operation was aborted", "AbortError");
 }

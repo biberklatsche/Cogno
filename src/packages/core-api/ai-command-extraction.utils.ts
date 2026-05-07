@@ -1,52 +1,52 @@
-import type { LlmCommandExecutionModeContract } from "./llm.contract";
+import type { AiCommandExecutionModeContract } from "./ai.contract";
 
-export type ExtractedLlmCommandSuggestion<TTarget> = {
+export type ExtractedAiCommandSuggestion<TTarget> = {
   readonly command: string;
   readonly language?: string;
-  readonly executionMode: LlmCommandExecutionModeContract;
+  readonly executionMode: AiCommandExecutionModeContract;
   readonly sourceMessageId: string;
   readonly target: TTarget;
 };
 
-export type ParsedLlmAssistantResponse<TTarget> = {
+export type ParsedAiAssistantResponse<TTarget> = {
   readonly displayText: string;
-  readonly commands: ReadonlyArray<ExtractedLlmCommandSuggestion<TTarget>>;
+  readonly commands: ReadonlyArray<ExtractedAiCommandSuggestion<TTarget>>;
 };
 
 type ExtractedCodeBlock = {
   readonly language?: string;
   readonly content: string;
-  readonly executionMode: LlmCommandExecutionModeContract;
+  readonly executionMode: AiCommandExecutionModeContract;
 };
 
 const CODE_BLOCK_PATTERN = /```([^\r\n]*)\r?\n([\s\S]*?)```/g;
 
-export function parseLlmAssistantResponse<TTarget>(
+export function parseAiAssistantResponse<TTarget>(
   messageId: string,
   text: string,
   target: TTarget,
-): ParsedLlmAssistantResponse<TTarget> {
+): ParsedAiAssistantResponse<TTarget> {
   return {
     displayText: text,
     commands: extractCodeBlockCommands(messageId, text, target),
   };
 }
 
-export function extractLlmCommandSuggestions<TTarget>(
+export function extractAiCommandSuggestions<TTarget>(
   messageId: string,
   text: string,
   target: TTarget,
-): ReadonlyArray<ExtractedLlmCommandSuggestion<TTarget>> {
-  return parseLlmAssistantResponse(messageId, text, target).commands;
+): ReadonlyArray<ExtractedAiCommandSuggestion<TTarget>> {
+  return parseAiAssistantResponse(messageId, text, target).commands;
 }
 
 function extractCodeBlockCommands<TTarget>(
   messageId: string,
   text: string,
   target: TTarget,
-): ReadonlyArray<ExtractedLlmCommandSuggestion<TTarget>> {
+): ReadonlyArray<ExtractedAiCommandSuggestion<TTarget>> {
   const codeBlocks = extractCodeBlocks(text);
-  const commands: ExtractedLlmCommandSuggestion<TTarget>[] = [];
+  const commands: ExtractedAiCommandSuggestion<TTarget>[] = [];
   const seenCommands = new Set<string>();
 
   for (const codeBlock of codeBlocks) {
@@ -92,11 +92,11 @@ function extractLanguage(header: string): string | undefined {
   return language?.trim().toLowerCase() || undefined;
 }
 
-function extractExecutionMode(header: string): LlmCommandExecutionModeContract {
+function extractExecutionMode(header: string): AiCommandExecutionModeContract {
   const metadataTokens = tokenizeHeader(header)
     .slice(1)
     .map((token) => token.toLowerCase());
-  if (metadataTokens.includes("llm:continue")) {
+  if (metadataTokens.includes("ai:continue")) {
     return "run_and_continue";
   }
   return "run_only";

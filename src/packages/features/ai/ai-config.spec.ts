@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getLlmFeatureConfig, hasUsableLlmProvider, resolveActiveProvider } from "./llm-config";
+import { getAiFeatureConfig, hasUsableAiProvider, resolveActiveProvider } from "./ai-config";
 
-describe("llm-config", () => {
+describe("ai-config", () => {
   it("should resolve the active provider when configured", () => {
     const configuration = {
-      llm: {
+      ai: {
         active_provider: "local",
         providers: {
           local: {
@@ -17,7 +17,7 @@ describe("llm-config", () => {
       },
     };
 
-    expect(getLlmFeatureConfig(configuration)?.active_provider).toBe("local");
+    expect(getAiFeatureConfig(configuration)?.active_provider).toBe("local");
     expect(resolveActiveProvider(configuration)).toEqual({
       providerId: "local",
       providerConfig: {
@@ -33,8 +33,8 @@ describe("llm-config", () => {
 
   it("should report availability only for usable providers", () => {
     expect(
-      hasUsableLlmProvider({
-        llm: {
+      hasUsableAiProvider({
+        ai: {
           providers: {
             broken: {
               type: "openai_compatible",
@@ -46,8 +46,8 @@ describe("llm-config", () => {
     ).toBe(false);
 
     expect(
-      hasUsableLlmProvider({
-        llm: {
+      hasUsableAiProvider({
+        ai: {
           providers: {
             local: {
               type: "openai_compatible",
@@ -61,9 +61,9 @@ describe("llm-config", () => {
     ).toBe(true);
   });
 
-  it("should disable provider resolution when llm mode is off", () => {
+  it("should disable provider resolution when ai mode is off", () => {
     const configuration = {
-      llm: {
+      ai: {
         mode: "off",
         active_provider: "local",
         providers: {
@@ -77,7 +77,7 @@ describe("llm-config", () => {
       },
     };
 
-    expect(hasUsableLlmProvider(configuration)).toBe(false);
+    expect(hasUsableAiProvider(configuration)).toBe(false);
     expect(resolveActiveProvider(configuration)).toBeUndefined();
   });
 });

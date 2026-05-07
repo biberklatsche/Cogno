@@ -1,6 +1,6 @@
 export {
+  FeatureAiSchema,
   FeatureCommandPaletteSchema,
-  FeatureLlmSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
   FeatureSearchSchema,
