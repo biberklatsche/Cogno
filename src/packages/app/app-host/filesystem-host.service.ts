@@ -6,7 +6,7 @@ import {
   FilesystemListOptionsContract,
   ShellContextContract,
 } from "@cogno/core-api";
-import { PathFactory } from "@cogno/core-host";
+import { PathFactory } from "./path.factory";
 import { AutocompletePathSupport } from "@cogno/core-support";
 
 @Injectable({ providedIn: "root" })

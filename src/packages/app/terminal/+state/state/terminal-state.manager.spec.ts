@@ -1,4 +1,4 @@
-import { PathFactory } from "@cogno/core-host";
+import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import type { Observable } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";

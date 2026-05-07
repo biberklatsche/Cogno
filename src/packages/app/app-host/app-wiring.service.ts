@@ -15,7 +15,8 @@ import {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
-import { HostFeatureRegistry, SideMenuDefinitionRegistry } from "@cogno/core-host";
+import { HostFeatureRegistry } from "./host-feature.registry";
+import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 import { Icon } from "@cogno/core-ui";
 import { additionalNotificationChannelsToken } from "./app-host.tokens";
 import { DatabaseMigrationService } from "./database-migration.service";

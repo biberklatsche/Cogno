@@ -1,4 +1,4 @@
-import { PathFactory } from "@cogno/core-host";
+import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { AutocompletePathSupport } from "@cogno/core-support";
 import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";

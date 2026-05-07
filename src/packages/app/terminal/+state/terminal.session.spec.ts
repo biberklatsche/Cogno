@@ -1,6 +1,6 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
-import { PathFactory } from "@cogno/core-host";
+import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";

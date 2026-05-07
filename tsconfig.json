@@ -9,8 +9,6 @@
       "@cogno/core-api/*": ["src/packages/core-api/*"],
       "@cogno/core-domain": ["src/packages/core-domain/index.ts"],
       "@cogno/core-domain/*": ["src/packages/core-domain/*"],
-      "@cogno/core-host": ["src/packages/core-host/index.ts"],
-      "@cogno/core-host/*": ["src/packages/core-host/*"],
       "@cogno/core-ui": ["src/packages/core-ui/index.ts"],
       "@cogno/core-ui/*": ["src/packages/core-ui/*"],
       "@cogno/core-support": ["src/packages/core-support/index.ts"],

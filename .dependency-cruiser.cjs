@@ -3,7 +3,6 @@ const productsPattern = "^(src/products/|src/packages/products/)";
 const bootstrapPattern = "^src/app/";
 const coreDomainPattern = "^src/packages/core-domain/";
 const coreApiPattern = "^src/packages/core-api/";
-const coreHostPattern = "^src/packages/core-host/";
 const coreUiPattern = "^src/packages/core-ui/";
 const coreSupportPattern = "^src/packages/core-support/";
 const featuresPattern = "^src/packages/features/";
@@ -12,7 +11,7 @@ const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
 const appPackagePattern = "^src/packages/app/";
 const privateSiblingPattern = "^(\\.\\./[^/]+-pro/|.*/[^/]+-pro/)";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-host(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -109,32 +108,11 @@ module.exports = {
       to: { path: "(feature-settings-extension|feature-.*-defaults?|.*-aggregation|.*-collection\\.ts$)" },
     },
     {
-      name: "core-host-must-not-import-app",
-      severity: "error",
-      comment: "core-host must not depend on the reusable app implementation.",
-      from: { path: coreHostPattern },
-      to: { path: appPackagePattern },
-    },
-    {
-      name: "core-host-must-not-import-features",
-      severity: "error",
-      comment: "core-host must not depend on concrete features.",
-      from: { path: coreHostPattern },
-      to: { path: featuresPattern },
-    },
-    {
-      name: "core-host-must-not-import-products",
-      severity: "error",
-      comment: "core-host must not depend on products.",
-      from: { path: coreHostPattern },
-      to: { path: productsPattern },
-    },
-    {
       name: "core-ui-is-isolated",
       severity: "error",
       comment: "core-ui must not import other internal modules.",
       from: { path: coreUiPattern },
-      to: { path: "^(src/packages/app|src/packages/core-host|src/packages/features)/" },
+      to: { path: "^(src/packages/app|src/packages/features)/" },
     },
     {
       name: "core-ui-must-not-import-products",
@@ -148,14 +126,14 @@ module.exports = {
       severity: "error",
       comment: "core-support must remain framework-free and reusable.",
       from: { path: coreSupportPattern },
-      to: { path: "^(src/packages/app|src/packages/core-host|src/packages/features|src/products/|src/packages/products/|@angular/|@tauri-apps/)" },
+      to: { path: "^(src/packages/app|src/packages/features|src/products/|src/packages/products/|@angular/|@tauri-apps/)" },
     },
     {
-      name: "features-must-not-import-app-or-core-host",
+      name: "features-must-not-import-app",
       severity: "error",
-      comment: "features must not depend on app or core-host.",
+      comment: "features must not depend on app.",
       from: { path: featuresPattern },
-      to: { path: "^(src/packages/app|src/packages/core-host)/" },
+      to: { path: "^src/packages/app/" },
     },
     {
       name: "features-must-not-import-app-angular",

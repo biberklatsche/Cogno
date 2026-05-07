@@ -1,6 +1,6 @@
 import { Opener } from "@cogno/app-tauri/opener";
 import { OS, type OsType } from "@cogno/app-tauri/os";
-import { PathFactory } from "@cogno/core-host";
+import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
@@ -90,7 +90,7 @@ describe("LinkHandler", () => {
   it("resolves bare relative paths against cwd for PowerShell on Windows", () => {
     createScenario("PowerShell", "windows", "C:\\work");
     const line = TerminalMockFactory.createLine(
-      "Open src/packages/core-host/path/path.factory.spec.ts",
+      "Open src/packages/app/app-host/path.factory.spec.ts",
     );
     vi.mocked(terminal.buffer.active.getLine).mockReturnValue(line);
 
@@ -103,7 +103,7 @@ describe("LinkHandler", () => {
     links?.[0].activate(new MouseEvent("click", { ctrlKey: true }), links?.[0].text);
 
     expect(openPathSpy).toHaveBeenCalledWith(
-      "C:\\work\\src\\packages\\core-host\\path\\path.factory.spec.ts",
+      "C:\\work\\src\\packages\\app\\app-host\\path.factory.spec.ts",
     );
   });
 

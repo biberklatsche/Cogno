@@ -6,7 +6,7 @@ Cogno is a lightweight, customizable terminal designed to support your daily wor
 It helps you spend less time searching and more time doing with fast,
 context-aware autocomplete and a clean, focused experience. Cogno is
 local-first, open source, and built to stay out of your way. It works on
-Windows, Linux, and macOS with PowerShell, Bash, and Zsh.
+Windows, Linux, and MacOS with PowerShell, Bash, and Zsh.
 
 ## Highlights
 
@@ -136,28 +136,26 @@ pnpm build:desktop # build the desktop application bundle
 Main areas:
 
 - `src/app`
-  app entry, startup, and application wiring
+  Angular entry point: configures DI and registers the product
 - `src/packages/__test__`
   shared test helpers, fixtures, and mocks
 - `src/packages/app`
-  main application implementation, terminal UI, menus, config, notifications
+  platform contract implementations, Angular adapters, terminal UI, and runtime wiring
 - `src/packages/app-tauri`
-  Tauri-facing adapters for desktop integration
+  Tauri adapters for desktop integration; proxies AI provider HTTP requests to the backend
 - `src/packages/assets`
   shared styles, icons, fonts, and static assets
 - `src/packages/core-api`
-  public application contracts and extension interfaces
+  stable platform contracts: abstract classes and interfaces consumed by all layers
 - `src/packages/core-domain`
   framework-independent domain logic and use cases
-- `src/packages/core-host`
-  host infrastructure and feature registry
 - `src/packages/core-support`
-  shared framework-independent support utilities
+  small, pure, low-dependency utilities
 - `src/packages/core-ui`
-  shared UI building blocks
+  generic UI building blocks with no feature or app semantics
 - `src/packages/features`
-  feature packages such as workspaces, notifications, autocomplete, and search
+  complete feature logic: AI chat, workspaces, notifications, autocomplete, shell support, and search
 - `src/products`
-  product composition and application-specific feature wiring
+  composition layer: binds features, app, and Angular providers for a specific product
 - `src-tauri`
   native desktop wrapper and Rust-side commands

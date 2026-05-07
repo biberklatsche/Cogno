@@ -5,7 +5,7 @@ import {
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
 } from "@cogno/core-api";
-import { PathFactory } from "@cogno/core-host";
+import { PathFactory } from "./path.factory";
 
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService extends CommandRunnerPort {
