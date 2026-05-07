@@ -24,10 +24,19 @@ Write-CognoLog "PowerShell bootstrap started"
 
 # Optionally load user's profile (only if COGNO_ALLOW_USER_RC=1)
 if ($env:COGNO_ALLOW_USER_RC -eq "1") {
-    $userProfile = $PROFILE.CurrentUserAllHosts
-    if (Test-Path $userProfile) {
-        Write-CognoLog "Loading user profile: $userProfile"
-        . $userProfile
+    $profilePaths = @(
+        @{ Label = "AllUsersAllHosts"; Path = $PROFILE.AllUsersAllHosts },
+        @{ Label = "AllUsersCurrentHost"; Path = $PROFILE.AllUsersCurrentHost },
+        @{ Label = "CurrentUserAllHosts"; Path = $PROFILE.CurrentUserAllHosts },
+        @{ Label = "CurrentUserCurrentHost"; Path = $PROFILE.CurrentUserCurrentHost }
+    )
+
+    foreach ($profileEntry in $profilePaths) {
+        $profilePath = $profileEntry.Path
+        if ($profilePath -and (Test-Path $profilePath)) {
+            Write-CognoLog "Loading $($profileEntry.Label): $profilePath"
+            . $profilePath
+        }
     }
 }
 

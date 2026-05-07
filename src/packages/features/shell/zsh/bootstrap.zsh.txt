@@ -29,17 +29,37 @@ fi
 # Optionally load user's Zsh startup files (only if COGNO_ALLOW_USER_RC=1)
 # We run with custom ZDOTDIR, so ~/.zshenv/.zprofile are not loaded automatically.
 if [[ "${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    if [[ -f "/etc/zshenv" ]]; then
+        _cogno_log "Loading /etc/zshenv"
+        source "/etc/zshenv"
+    fi
     if [[ -f "${HOME}/.zshenv" ]]; then
         _cogno_log "Loading user .zshenv"
         source "${HOME}/.zshenv"
+    fi
+    if [[ -f "/etc/zprofile" ]]; then
+        _cogno_log "Loading /etc/zprofile"
+        source "/etc/zprofile"
     fi
     if [[ -f "${HOME}/.zprofile" ]]; then
         _cogno_log "Loading user .zprofile"
         source "${HOME}/.zprofile"
     fi
+    if [[ -f "/etc/zshrc" ]]; then
+        _cogno_log "Loading /etc/zshrc"
+        source "/etc/zshrc"
+    fi
     if [[ -f "${HOME}/.zshrc" ]]; then
         _cogno_log "Loading user .zshrc"
         source "${HOME}/.zshrc"
+    fi
+    if [[ -f "/etc/zlogin" ]]; then
+        _cogno_log "Loading /etc/zlogin"
+        source "/etc/zlogin"
+    fi
+    if [[ -f "${HOME}/.zlogin" ]]; then
+        _cogno_log "Loading user .zlogin"
+        source "${HOME}/.zlogin"
     fi
 fi
 

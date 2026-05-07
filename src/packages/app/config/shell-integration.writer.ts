@@ -5,7 +5,7 @@ import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-a
 import { Environment } from "../common/environment/environment";
 import { ErrorReporter } from "../common/error/error-reporter";
 
-const INTEGRATION_VERSION = "1.1.4";
+const INTEGRATION_VERSION = "1.1.5";
 
 /**
  * Manages shell integration scripts in ~/.cogno/shell-integration
