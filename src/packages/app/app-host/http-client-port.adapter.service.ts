@@ -19,13 +19,19 @@ export class HttpClientPortAdapterService extends HttpClientPort {
     });
   }
 
-  streamRequest(request: HttpRequestContract, abortSignal?: AbortSignal): AsyncIterable<HttpStreamEvent> {
-    return AiHttp.streamRequest({
-      method: request.method,
-      url: request.url,
-      headers: request.headers ?? {},
-      body: request.body ?? "",
-      timeoutMs: request.timeoutMs,
-    }, abortSignal);
+  streamRequest(
+    request: HttpRequestContract,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<HttpStreamEvent> {
+    return AiHttp.streamRequest(
+      {
+        method: request.method,
+        url: request.url,
+        headers: request.headers ?? {},
+        body: request.body ?? "",
+        timeoutMs: request.timeoutMs,
+      },
+      abortSignal,
+    );
   }
 }

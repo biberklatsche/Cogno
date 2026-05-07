@@ -1,5 +1,5 @@
-import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
+import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";

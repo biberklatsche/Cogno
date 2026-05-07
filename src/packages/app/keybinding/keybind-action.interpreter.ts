@@ -24,7 +24,8 @@ export const KeybindInterpreter = {
     const action = KeybindActionInterpreter.parse(actionDef);
 
     if (keybindTrigger) {
-      if (!action.trigger) action.trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
+      if (!action.trigger)
+        action.trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
       if (keybindTrigger.broadcast) action.trigger.broadcast = true;
       if (keybindTrigger.unconsumed) action.trigger.unconsumed = true;
       if (keybindTrigger.performable) action.trigger.performable = true;
@@ -49,7 +50,8 @@ export const KeybindInterpreter = {
     for (;;) {
       const match = remaining.match(/^(broadcast|unconsumed|performable|always):/);
       if (!match) break;
-      if (!trigger) trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
+      if (!trigger)
+        trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
       trigger[match[1] as keyof Trigger] = true;
       remaining = remaining.slice(match[0].length);
     }

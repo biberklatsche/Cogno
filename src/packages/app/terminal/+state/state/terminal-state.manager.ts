@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
+import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { OS } from "@cogno/app-tauri/os";
 import { IPathAdapter } from "@cogno/core-api";
-import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { BehaviorSubject, map, Observable, Subject, takeUntil } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ShellType } from "../../../config/+models/config";

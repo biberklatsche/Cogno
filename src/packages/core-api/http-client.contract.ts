@@ -19,10 +19,16 @@ export type HttpStreamEvent =
 
 export interface HttpClientPortContract {
   request(request: HttpRequestContract): Promise<HttpResponseContract>;
-  streamRequest(request: HttpRequestContract, abortSignal?: AbortSignal): AsyncIterable<HttpStreamEvent>;
+  streamRequest(
+    request: HttpRequestContract,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<HttpStreamEvent>;
 }
 
 export abstract class HttpClientPort implements HttpClientPortContract {
   abstract request(request: HttpRequestContract): Promise<HttpResponseContract>;
-  abstract streamRequest(request: HttpRequestContract, abortSignal?: AbortSignal): AsyncIterable<HttpStreamEvent>;
+  abstract streamRequest(
+    request: HttpRequestContract,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<HttpStreamEvent>;
 }

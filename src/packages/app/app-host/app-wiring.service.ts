@@ -15,12 +15,12 @@ import {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
-import { HostFeatureRegistry } from "./host-feature.registry";
-import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 import { Icon } from "@cogno/core-ui";
 import { additionalNotificationChannelsToken } from "./app-host.tokens";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
+import { HostFeatureRegistry } from "./host-feature.registry";
+import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
