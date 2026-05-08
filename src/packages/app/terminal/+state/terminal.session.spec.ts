@@ -161,7 +161,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
     expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-    expect(rendererInstance.register).toHaveBeenCalledTimes(14);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(15);
   });
 
   it("should enable shell integration features if configured", () => {
@@ -173,7 +173,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance =
       vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-    expect(rendererInstance.register).toHaveBeenCalledTimes(16);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(17);
     expect(preloadForShellIntegrationMock).toHaveBeenCalledWith("Bash");
   });
 

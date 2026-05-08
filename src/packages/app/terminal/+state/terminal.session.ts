@@ -23,6 +23,7 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { ClipboardHandler } from "./handler/clipboard.handler";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { CursorHandler } from "./handler/cursor.handler";
 import { FocusHandler } from "./handler/focus.handler";
@@ -155,11 +156,8 @@ export class TerminalSession {
       ),
     );
     this.disposables.push(this.renderer.register(this.focusHandler));
-    this.disposables.push(
-      this.renderer.register(
-        new SelectionHandler(this.bus, this.configService, this.terminalId, this.stateManager),
-      ),
-    );
+    const selectionHandler = new SelectionHandler(this.stateManager);
+    this.disposables.push(this.renderer.register(selectionHandler));
     this.disposables.push(
       this.renderer.register(
         new TerminalSearchHandler(this.bus, this.terminalId, this.configService),
@@ -173,26 +171,37 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager)));
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
+    const shellDefinition = this.shellProfile.enable_shell_integration
+      ? this.wiringService
+          .getShellDefinitions()
+          .find(
+            (definition: ShellDefinitionContract) =>
+              definition.support.shellType === this.shellProfile?.shell_type,
+          )
+      : undefined;
+
+    this.disposables.push(
+      this.renderer.register(
+        new ClipboardHandler(
+          this.bus,
+          this.terminalId,
+          this.stateManager,
+          this.pty,
+          this.configService,
+          selectionHandler,
+          shellDefinition?.lineEditor,
+        ),
+      ),
+    );
+    this.disposables.push(
+      this.renderer.register(
+        new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty),
+      ),
+    );
+
     if (this.shellProfile.enable_shell_integration) {
       this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(
         this.shellProfile.shell_type,
-      );
-      const shellDefinition = this.wiringService
-        .getShellDefinitions()
-        .find(
-          (definition: ShellDefinitionContract) =>
-            definition.support.shellType === this.shellProfile?.shell_type,
-        );
-      this.disposables.push(
-        this.renderer.register(
-          new InputHandler(
-            this.bus,
-            this.terminalId,
-            this.stateManager,
-            this.pty,
-            shellDefinition?.lineEditor,
-          ),
-        ),
       );
       this.disposables.push(
         this.renderer.register(
@@ -208,12 +217,6 @@ export class TerminalSession {
       this.disposables.push(
         this.renderer.register(
           new CommandLineEditor(this.bus, this.pty, this.stateManager, shellDefinition?.lineEditor),
-        ),
-      );
-    } else {
-      this.disposables.push(
-        this.renderer.register(
-          new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty),
         ),
       );
     }

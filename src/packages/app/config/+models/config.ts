@@ -9,6 +9,7 @@ import {
   FeatureWorkspaceSchema,
 } from "@cogno/core-api";
 import { z } from "zod";
+import { ClipboardConfig, ClipboardConfigSchema } from "./clipboard-config";
 import { Color, ColorSchema } from "./color-config";
 import { Cursor, CursorSchema } from "./cursor-config";
 import { Font, FontSchema } from "./font-config";
@@ -34,6 +35,7 @@ export {
   Selection,
   Scrollbar,
   Keybinding,
+  ClipboardConfig,
 };
 
 export const baseConfigSchemaShape = {
@@ -46,6 +48,7 @@ export const baseConfigSchemaShape = {
   background_image: ImageSchema.optional(),
   shell: ShellConfigSchema.optional(),
   selection: SelectionSchema.optional(),
+  clipboard: ClipboardConfigSchema.optional(),
   menu: MenuSchema.optional(),
   scrollbar: ScrollbarSchema.optional(),
   prompt: PromptConfigSchema.optional(),

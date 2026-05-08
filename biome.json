@@ -45,7 +45,9 @@
       "linter": {
         "rules": {
           "suspicious": {
-            "noExplicitAny": "off"
+            "noControlCharactersInRegex": "off",
+            "noExplicitAny": "off",
+            "noIrregularWhitespace": "off"
           },
           "style": {
             "noNonNullAssertion": "off"

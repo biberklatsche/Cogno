@@ -1,29 +1,48 @@
 import { invoke } from "@tauri-apps/api/core";
+import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { remove } from "@tauri-apps/plugin-fs";
-import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 
-const PASTE_FILE_TTL_MS = 60_000;
+const DEFAULT_PASTE_FILE_TTL_MS = 60_000;
 
-async function saveImageBlobToFile(blob: Blob): Promise<string> {
-  const arrayBuffer = await blob.arrayBuffer();
-  const bytes = new Uint8Array(arrayBuffer);
-
-  // Encode to base64 in chunks to avoid call stack overflow on large images
+export function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
   const chunkSize = 8192;
   for (let i = 0; i < bytes.length; i += chunkSize) {
     binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
   }
+  return btoa(binary);
+}
 
-  const base64Data = btoa(binary);
+function rgbaToBlob(rgba: Uint8Array, width: number, height: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      reject(new Error("Canvas 2D context not available"));
+      return;
+    }
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(rgba), width, height), 0, 0);
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Canvas toBlob failed"))),
+      "image/png",
+    );
+  });
+}
+
+async function saveImageBlobToFile(blob: Blob, ttlMs: number): Promise<string> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+
+  const base64Data = bytesToBase64(bytes);
   const extension = blob.type === "image/jpeg" ? "jpg" : "png";
 
   const filePath = await invoke<string>("save_clipboard_image_to_file", { base64Data, extension });
 
-  // Auto-delete after TTL — long enough for Claude to read the file
   setTimeout(() => {
     remove(filePath).catch(() => undefined);
-  }, PASTE_FILE_TTL_MS);
+  }, ttlMs);
 
   return filePath;
 }
@@ -37,16 +56,14 @@ export const Clipboard = {
     return await readText();
   },
 
-  async readImageFromPasteEvent(clipboardData: DataTransfer | null): Promise<string | null> {
-    if (!clipboardData) return null;
-    for (const item of Array.from(clipboardData.items)) {
-      if (item.type.startsWith("image/")) {
-        const blob = item.getAsFile();
-        if (blob) {
-          return await saveImageBlobToFile(blob);
-        }
-      }
+  async readImageFromClipboard(ttlMs: number = DEFAULT_PASTE_FILE_TTL_MS): Promise<string | null> {
+    try {
+      const image = await readImage();
+      const [rgba, { width, height }] = await Promise.all([image.rgba(), image.size()]);
+      const blob = await rgbaToBlob(new Uint8Array(rgba), width, height);
+      return await saveImageBlobToFile(blob, ttlMs);
+    } catch {
+      return null;
     }
-    return null;
   },
 };

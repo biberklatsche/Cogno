@@ -739,7 +739,6 @@ name = "cogno"
 version = "0.3.0"
 dependencies = [
  "aes",
- "base64 0.22.1",
  "block-modes",
  "block-padding",
  "cipher",

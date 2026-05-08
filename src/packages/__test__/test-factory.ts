@@ -8,8 +8,10 @@ import { GridListService } from "../app/grid-list/+state/grid-list.service";
 import type { TerminalComponentFactory } from "../app/grid-list/+state/terminal-component.factory";
 import { KeybindService } from "../app/keybinding/keybind.service";
 import { KeyboardMappingService } from "../app/keybinding/keyboard/keyboard-layout.loader";
+import type { TerminalKeybindingContextService } from "../app/keybinding/terminal-keybinding-context.service";
 import type { ContextMenuOverlayService } from "../app/menu/context-menu-overlay/context-menu-overlay.service";
 import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
+import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
 import { TabListService } from "../app/tab-list/+state/tab-list.service";
 import { FocusHandler } from "../app/terminal/+state/handler/focus.handler";
 import { SelectionHandler } from "../app/terminal/+state/handler/selection.handler";
@@ -38,6 +40,8 @@ let terminalAutocompleteFeatureSuggestorService:
 let appWiringService: AppWiringService | undefined;
 let terminalBusyStateService: TerminalBusyStateService | undefined;
 let contextMenuOverlayService: ContextMenuOverlayService | undefined;
+let notificationTargetResolverService: NotificationTargetResolverService | undefined;
+let terminalKeybindingContextService: TerminalKeybindingContextService | undefined;
 
 export function getAppBus(): AppBus {
   if (!appBus) appBus = new AppBus();
@@ -57,6 +61,24 @@ export function getSideMenuService(): SideMenuService {
   return sideMenuService;
 }
 
+export function getNotificationTargetResolverService(): NotificationTargetResolverService {
+  if (!notificationTargetResolverService) {
+    notificationTargetResolverService = {
+      resolveForTerminal: vi.fn().mockReturnValue(undefined),
+    } as unknown as NotificationTargetResolverService;
+  }
+  return notificationTargetResolverService;
+}
+
+export function getTerminalKeybindingContextService(): TerminalKeybindingContextService {
+  if (!terminalKeybindingContextService) {
+    terminalKeybindingContextService = {
+      shouldSuppressAppKeybindings: vi.fn().mockReturnValue(false),
+    } as unknown as TerminalKeybindingContextService;
+  }
+  return terminalKeybindingContextService;
+}
+
 export function getTerminalSession(): TerminalSession {
   if (!terminalSession) {
     terminalSession = new TerminalSession(
@@ -67,6 +89,7 @@ export function getTerminalSession(): TerminalSession {
       { open: () => ({ close: () => undefined }) } as any,
       getAppWiringService(),
       getContextMenuOverlayService(),
+      getNotificationTargetResolverService() as any,
     );
   }
   return terminalSession;
@@ -102,6 +125,7 @@ export function getKeybindService(): KeybindService {
       getKeyboardMappingService(),
       getConfigService(),
       getAppBus(),
+      getTerminalKeybindingContextService() as any,
       getDestroyRef(),
     );
   return keybindService;
@@ -196,14 +220,9 @@ export function getFocusHandler(terminalId: TerminalId): FocusHandler {
   return focusHandler;
 }
 
-export function getSelectionHandler(terminalId: TerminalId): SelectionHandler {
+export function getSelectionHandler(_terminalId: TerminalId): SelectionHandler {
   if (!selectionHandler) {
-    selectionHandler = new SelectionHandler(
-      getAppBus(),
-      getConfigService(),
-      terminalId,
-      getStateManager(),
-    );
+    selectionHandler = new SelectionHandler(getStateManager());
   }
   return selectionHandler;
 }
@@ -226,4 +245,6 @@ export function clear() {
   appWiringService = undefined;
   terminalBusyStateService = undefined;
   contextMenuOverlayService = undefined;
+  notificationTargetResolverService = undefined;
+  terminalKeybindingContextService = undefined;
 }

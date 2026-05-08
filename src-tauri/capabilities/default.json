@@ -68,6 +68,7 @@
     "sql:allow-execute",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-read-image",
     "process:default",
     "notification:default",
     {
