@@ -21,6 +21,7 @@ block-modes = "0.8.1"
 block-padding = "0.2"
 dirs = "6.0.0"
 uuid = { version = "1.11", features = ["v4"] }
+base64 = "0.22"
 sysinfo = "0.33"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 futures-util = "0.3"

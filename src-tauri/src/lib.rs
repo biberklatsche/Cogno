@@ -61,7 +61,8 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::environment::get_cogno_db_file_path,
             cogno_tauri_core::commands::environment::get_system_path,
             cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
-            cogno_tauri_core::commands::window::new_window
+            cogno_tauri_core::commands::window::new_window,
+            cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file
         ])
         .setup(move |app| {
             let webview_window_builder =

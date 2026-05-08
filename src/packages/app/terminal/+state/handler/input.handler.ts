@@ -14,6 +14,7 @@ export class InputHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private subscription: Subscription = new Subscription();
   private terminalInputDisposable?: IXtermDisposable;
+  private _domPasteCleanup?: () => void;
 
   constructor(
     private _bus: AppBus,
@@ -24,6 +25,8 @@ export class InputHandler implements ITerminalHandler {
   ) {}
 
   dispose(): void {
+    this._domPasteCleanup?.();
+    this._domPasteCleanup = undefined;
     this.terminalInputDisposable?.dispose();
     this.terminalInputDisposable = undefined;
     if (!this.subscription) return;
@@ -32,6 +35,10 @@ export class InputHandler implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    const pasteHandler = (event: ClipboardEvent) => void this.handleDomPaste(event);
+    terminal.element?.addEventListener("paste", pasteHandler, { capture: true });
+    this._domPasteCleanup = () =>
+      terminal.element?.removeEventListener("paste", pasteHandler, { capture: true });
     this.subscription.add(
       this._bus.on$({ path: ["app", "terminal"], type: "ClearBuffer" }).subscribe((event) => {
         if (event.payload !== this._terminalId) return;
@@ -59,6 +66,27 @@ export class InputHandler implements ITerminalHandler {
       this.stateManager.clearUnreadNotification();
     });
     return this;
+  }
+
+  private async handleDomPaste(event: ClipboardEvent): Promise<void> {
+    const hasImage = Array.from(event.clipboardData?.items ?? []).some((item) =>
+      item.type.startsWith("image/"),
+    );
+
+    if (!hasImage) return;
+
+    // Synchronously prevent xterm from processing this paste event
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      const filePath = await Clipboard.readImageFromPasteEvent(event.clipboardData);
+      if (filePath) {
+        this.pty.write(filePath);
+      }
+    } catch {
+      // Image paste failed silently — user can paste the path manually
+    }
   }
 
   private async pasteClipboardText(): Promise<void> {

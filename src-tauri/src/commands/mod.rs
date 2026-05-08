@@ -1,3 +1,4 @@
+pub mod clipboard_image;
 pub mod command_runner;
 pub mod config;
 pub mod crypto;
