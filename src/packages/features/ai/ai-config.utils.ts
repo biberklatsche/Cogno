@@ -7,10 +7,11 @@ export type AiProviderConfigValue = {
   readonly api_key?: string;
   readonly headers?: Readonly<Record<string, string>>;
   readonly enabled?: boolean;
+  readonly auto_detected?: boolean;
 };
 
 export type AiFeatureConfigValue = {
-  readonly mode?: "off" | "hidden" | "visible";
+  readonly mode?: "off" | "hidden" | "visible" | "auto";
   readonly active_provider?: string;
   readonly providers?: Readonly<Record<string, AiProviderConfigValue>>;
   readonly request?: {
@@ -126,6 +127,7 @@ function normalizeProviders(
       api_key: asNonEmptyString(providerValue["api_key"]),
       headers,
       enabled: asBoolean(providerValue["enabled"]),
+      auto_detected: asBoolean(providerValue["auto_detected"]),
     };
   }
 
@@ -137,7 +139,9 @@ function normalizeProviderType(value: unknown): AiProviderTypeConfigValue | unde
 }
 
 function normalizeMode(value: unknown): AiFeatureConfigValue["mode"] | undefined {
-  return value === "off" || value === "hidden" || value === "visible" ? value : undefined;
+  return value === "off" || value === "hidden" || value === "visible" || value === "auto"
+    ? value
+    : undefined;
 }
 
 function asNonEmptyString(value: unknown): string | undefined {

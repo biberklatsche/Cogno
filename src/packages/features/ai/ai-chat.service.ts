@@ -16,6 +16,7 @@ import {
 } from "./ai.models";
 import { AiCommandExtractionService } from "./ai-command-extraction.service";
 import { getAiFeatureConfig } from "./ai-config.utils";
+import { AiDetectionStore } from "./ai-detection-store.service";
 import { AiProviderRegistryService } from "./ai-provider-registry.service";
 
 type ThreadMessageWithProviderMessage = AiChatThreadMessage & {
@@ -49,6 +50,7 @@ export class AiChatService {
     private readonly terminalGateway: TerminalGateway,
     private readonly aiCommandExtractionService: AiCommandExtractionService,
     private readonly providerRegistryService: AiProviderRegistryService,
+    private readonly detectionStore: AiDetectionStore,
     destroyRef: DestroyRef,
   ) {
     this.focusedTerminalIdSignal.set(this.terminalGateway.getFocusedTerminalId());
@@ -98,8 +100,16 @@ export class AiChatService {
     this.refreshProviderStatus();
   }
 
-  async selectProvider(providerId: string): Promise<void> {
-    await this.providerRegistryService.selectActiveProvider(providerId);
+  async selectProvider(syntheticId: string): Promise<void> {
+    const sep = syntheticId.indexOf("::");
+    if (sep === -1) {
+      await this.providerRegistryService.selectActiveProvider(syntheticId);
+    } else {
+      this.providerRegistryService.selectActiveProviderWithModel(
+        syntheticId.slice(0, sep),
+        syntheticId.slice(sep + 2),
+      );
+    }
     this.refreshProviderStatus();
   }
 
@@ -184,9 +194,15 @@ export class AiChatService {
   }
 
   formatStatusMessage(providerStatus: AiProviderStatus | undefined): string | undefined {
-    return providerStatus
-      ? `${providerStatus.providerId} (${providerStatus.providerModel})`
-      : undefined;
+    if (!providerStatus) return undefined;
+    const sep = providerStatus.providerId.indexOf("::");
+    if (sep !== -1) {
+      const baseId = providerStatus.providerId.slice(0, sep);
+      const displayName =
+        this.detectionStore.detectedProviders().find((d) => d.id === baseId)?.displayName ?? baseId;
+      return `${providerStatus.providerModel} (${displayName})`;
+    }
+    return `${providerStatus.providerId} (${providerStatus.providerModel})`;
   }
 
   private async sendPrompt(
@@ -312,17 +328,37 @@ export class AiChatService {
   }
 
   private refreshProviderStatus(): void {
-    this.providerStatusesSignal.set(this.providerRegistryService.listEnabledProviderStatuses());
-    const resolvedProvider = this.providerRegistryService.resolveActiveProvider();
-    this.providerStatusSignal.set(
-      resolvedProvider
-        ? {
-            providerId: resolvedProvider.providerId,
-            providerType: resolvedProvider.config.type,
-            providerModel: resolvedProvider.config.model || "",
-          }
-        : undefined,
+    const detected = this.detectionStore.detectedProviders();
+    const detectedIds = new Set(detected.map((d) => d.id));
+
+    const configStatuses = this.providerRegistryService
+      .listEnabledProviderStatuses()
+      .filter((s) => !detectedIds.has(s.providerId));
+
+    const detectedStatuses: AiProviderStatus[] = detected.flatMap((d) =>
+      d.models.map((model) => ({
+        providerId: `${d.id}::${model}`,
+        providerType: d.type,
+        providerModel: model,
+      })),
     );
+
+    this.providerStatusesSignal.set([...configStatuses, ...detectedStatuses]);
+
+    const resolvedProvider = this.providerRegistryService.resolveActiveProvider();
+    if (resolvedProvider) {
+      const model = resolvedProvider.config.model || "";
+      const syntheticId = detectedIds.has(resolvedProvider.providerId)
+        ? `${resolvedProvider.providerId}::${model}`
+        : resolvedProvider.providerId;
+      this.providerStatusSignal.set({
+        providerId: syntheticId,
+        providerType: resolvedProvider.config.type,
+        providerModel: model,
+      });
+    } else {
+      this.providerStatusSignal.set(undefined);
+    }
   }
 
   private createSystemMessage(): AiChatMessage {

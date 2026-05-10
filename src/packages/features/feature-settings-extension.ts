@@ -39,17 +39,7 @@ export const defaultFeatureSettingsExtension = {
       },
     },
     ai: {
-      mode: "off",
-      active_provider: "",
-      providers: {
-        default: {
-          type: "openai_compatible",
-          base_url: "",
-          model: "",
-          api_key: "",
-          enabled: false,
-        },
-      },
+      mode: "auto",
       request: {
         include_process_tree: false,
         max_commands: 8,

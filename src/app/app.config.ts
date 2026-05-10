@@ -10,6 +10,7 @@ import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-k
 import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
+
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
@@ -51,6 +52,9 @@ import {
   TerminalSearchHostPort,
   WorkspaceHostPort,
 } from "@cogno/core-api";
+import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
+import { aiDetectableProviderDefinitions } from "../products/ai-detectable-provider-definitions";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
 import { productDefinition } from "../products/product-definition.instance";
@@ -69,6 +73,10 @@ export const appConfig: ApplicationConfig = {
     {
       provide: ApplicationConfigurationPort,
       useExisting: ApplicationConfigurationPortAdapterService,
+    },
+    {
+      provide: AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
+      useValue: aiDetectableProviderDefinitions,
     },
     { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
     { provide: HttpClientPort, useExisting: HttpClientPortAdapterService },
@@ -100,6 +108,7 @@ export const appConfig: ApplicationConfig = {
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);
       inject(WorkspaceShortcutActionService);
+      inject(AiProviderDetectionService);
     }),
   ],
 };

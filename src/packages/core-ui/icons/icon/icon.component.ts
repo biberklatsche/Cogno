@@ -58,7 +58,7 @@ import {
   mdiPlus,
   mdiPowershell,
   mdiReddit,
-  mdiRefreshAuto,
+  mdiRefresh,
   mdiRegex,
   mdiRobot,
   mdiRobotOff,
@@ -119,8 +119,8 @@ export class IconComponent {
       case "mdiSpiderThread":
         this.icon = mdiSpiderThread;
         break;
-      case "mdiRefreshAuto":
-        this.icon = mdiRefreshAuto;
+      case "mdiRefresh":
+        this.icon = mdiRefresh;
         break;
       case "mdiBookmark":
         this.icon = mdiBookmark;

@@ -19,6 +19,7 @@ export type ResolvedAiProvider = {
 export class AiProviderRegistryService {
   private readonly adapterByType = new Map<string, AiProviderAdapter>();
   private selectedProviderId?: string;
+  private selectedModel?: string;
 
   constructor(
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
@@ -46,9 +47,13 @@ export class AiProviderRegistryService {
       return undefined;
     }
 
+    const config = this.selectedModel
+      ? { ...activeProvider.providerConfig, model: this.selectedModel }
+      : activeProvider.providerConfig;
+
     return {
       providerId: activeProvider.providerId,
-      config: activeProvider.providerConfig,
+      config,
       adapter,
     };
   }
@@ -106,6 +111,19 @@ export class AiProviderRegistryService {
     }
 
     this.selectedProviderId = providerId;
+    this.selectedModel = undefined;
+  }
+
+  selectActiveProviderWithModel(providerId: string, model: string): void {
+    const configuration = this.applicationConfigurationPort.getConfiguration();
+    if (!configuration) return;
+
+    const aiConfig = getAiFeatureConfig(configuration);
+    const providerConfig = aiConfig?.providers?.[providerId];
+    if (!providerConfig) return;
+
+    this.selectedProviderId = providerId;
+    this.selectedModel = model;
   }
 
   private registerAdapter(adapter: AiProviderAdapter): void {

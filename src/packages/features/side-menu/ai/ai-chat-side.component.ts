@@ -23,11 +23,15 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
   template: `
     <div class="chat-shell">
       <div class="chat-toolbar">
-
         <button type="button" class="toolbar-button" (click)="clearConversation()">Clear</button>
       </div>
 
       <div #messageListElement class="message-list">
+        @if (threadMessages().length === 0 && providerStatuses().length === 0) {
+          <div class="empty-state">
+            <span>No local AI providers detected.</span>
+          </div>
+        }
         @for (message of threadMessages(); track message.id) {
           <article class="message-card" [class.assistant]="message.role === 'assistant'" [class.system]="message.role === 'system'">
             <header class="message-header">
@@ -135,7 +139,8 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
       }
       .toolbar-button, .send-button { min-height: 2rem; padding: 0.45rem 0.8rem; }
       .message-list { display: flex; flex-direction: column; gap: 0.75rem; overflow: auto; min-height: 0; }
-      .empty-state { padding: 0.75rem; border-radius: 8px; background: var(--background-color-10l); font-size: 0.9rem; opacity: 0.75; }
+      .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem 1rem; border-radius: 8px; background: var(--background-color-10l); font-size: 0.9rem; opacity: 0.75; text-align: center; }
+
       .message-card { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: 10px; background: var(--background-color-10l); }
       .message-card.assistant { background: var(--background-color-20l); }
       .message-card.system { border: 1px solid var(--background-color-20l); }
@@ -240,6 +245,7 @@ export class AiChatSideComponent {
   readonly canSend = this.aiChatService.canSend;
   readonly providerStatuses = this.aiChatService.providerStatuses;
   readonly focusedTerminalId = this.aiChatService.focusedTerminalId;
+
   readonly statusLabel: Signal<string | undefined> = computed(() =>
     this.aiChatService.getStatusMessage(),
   );

@@ -70,7 +70,7 @@ export type Icon =
   | "mdiDotsVertical"
   | "mdiBookmark"
   | "mdiLoading"
-  | "mdiRefreshAuto"
+  | "mdiRefresh"
   | "mdiSpiderThread"
   | "mdiPin"
   | "mdiPinOff"
