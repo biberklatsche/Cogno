@@ -101,7 +101,7 @@ export class AiChatService {
   }
 
   async selectProvider(syntheticId: string): Promise<void> {
-    const parsed = parseSyntheticProviderId(syntheticId);
+    const parsed = AiChatService.parseSyntheticProviderId(syntheticId);
     if (!parsed) {
       await this.providerRegistryService.selectActiveProvider(syntheticId);
     } else {
@@ -192,7 +192,7 @@ export class AiChatService {
 
   formatStatusMessage(providerStatus: AiProviderStatus | undefined): string | undefined {
     if (!providerStatus) return undefined;
-    const parsed = parseSyntheticProviderId(providerStatus.providerId);
+    const parsed = AiChatService.parseSyntheticProviderId(providerStatus.providerId);
     if (parsed) {
       const displayName =
         this.detectionStore.detectedProviders().find((d) => d.id === parsed.providerId)
@@ -234,8 +234,8 @@ export class AiChatService {
     const target: ChatTurnTargetTerminalReference = {
       terminalId: contextSnapshot?.terminalId,
     };
-    const userMessageId = newMessageId();
-    const assistantMessageId = newMessageId();
+    const userMessageId = AiChatService.newMessageId();
+    const assistantMessageId = AiChatService.newMessageId();
     const providerUserMessage = this.createProviderUserMessage(prompt, contextSnapshot);
     const userThreadMessage: ThreadMessageWithProviderMessage = {
       id: userMessageId,
@@ -334,7 +334,7 @@ export class AiChatService {
 
     const detectedStatuses: AiProviderStatus[] = detected.flatMap((d) =>
       d.models.map((model) => ({
-        providerId: makeSyntheticProviderId(d.id, model),
+        providerId: AiChatService.makeSyntheticProviderId(d.id, model),
         providerType: d.type,
         providerModel: model,
       })),
@@ -346,7 +346,7 @@ export class AiChatService {
     if (resolvedProvider) {
       const model = resolvedProvider.config.model || "";
       const syntheticId = detectedIds.has(resolvedProvider.providerId)
-        ? makeSyntheticProviderId(resolvedProvider.providerId, model)
+        ? AiChatService.makeSyntheticProviderId(resolvedProvider.providerId, model)
         : resolvedProvider.providerId;
       this.providerStatusSignal.set({
         providerId: syntheticId,
@@ -468,7 +468,7 @@ export class AiChatService {
     this.threadMessagesSignal.set([
       ...this.threadMessagesSignal(),
       {
-        id: newMessageId(),
+        id: AiChatService.newMessageId(),
         role: "system",
         text,
         targetTerminalId: undefined,
@@ -518,21 +518,22 @@ export class AiChatService {
       includeProcessSummary: aiFeatureConfig?.request?.include_process_tree ?? false,
     };
   }
+
+  private static newMessageId(): string {
+    return `MSG-${crypto.randomUUID()}`;
+  }
+
+  private static makeSyntheticProviderId(providerId: string, model: string): string {
+    return `${providerId}::${model}`;
+  }
+
+  private static parseSyntheticProviderId(
+    syntheticId: string,
+  ): { readonly providerId: string; readonly model: string } | undefined {
+    const sep = syntheticId.indexOf("::");
+    return sep === -1
+      ? undefined
+      : { providerId: syntheticId.slice(0, sep), model: syntheticId.slice(sep + 2) };
+  }
 }
 
-function newMessageId(): string {
-  return `MSG-${crypto.randomUUID()}`;
-}
-
-function makeSyntheticProviderId(providerId: string, model: string): string {
-  return `${providerId}::${model}`;
-}
-
-function parseSyntheticProviderId(
-  syntheticId: string,
-): { readonly providerId: string; readonly model: string } | undefined {
-  const sep = syntheticId.indexOf("::");
-  return sep === -1
-    ? undefined
-    : { providerId: syntheticId.slice(0, sep), model: syntheticId.slice(sep + 2) };
-}

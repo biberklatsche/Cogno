@@ -1,3 +1,5 @@
+import { DetectedAiProvider } from "./ai-detection.models";
+
 export type AiProviderTypeConfigValue = "openai_compatible" | "ollama_native";
 
 export type AiProviderConfigValue = {
@@ -158,4 +160,51 @@ function asNumber(value: unknown): number | undefined {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function getRawProviderOverrides(
+  configuration: ConfigLike,
+): Readonly<Record<string, { readonly base_url?: string; readonly enabled?: boolean }>> {
+  const ai = configuration["ai"];
+  if (!isPlainObject(ai)) return {};
+  const providers = ai["providers"];
+  if (!isPlainObject(providers)) return {};
+
+  const result: Record<string, { base_url?: string; enabled?: boolean }> = {};
+  for (const [id, config] of Object.entries(providers)) {
+    if (!isPlainObject(config)) continue;
+    result[id] = {
+      base_url: typeof config["base_url"] === "string" ? config["base_url"] : undefined,
+      enabled: typeof config["enabled"] === "boolean" ? config["enabled"] : undefined,
+    };
+  }
+  return result;
+}
+
+export function mergeDetectedProviders(
+  config: ConfigLike,
+  detected: ReadonlyArray<DetectedAiProvider>,
+): ConfigLike {
+  if (detected.length === 0) return config;
+
+  const ai = config["ai"];
+  if (!isPlainObject(ai)) return config;
+
+  const existingProviders = isPlainObject(ai["providers"])
+    ? { ...(ai["providers"] as Record<string, unknown>) }
+    : ({} as Record<string, unknown>);
+
+  for (const provider of detected) {
+    if (!existingProviders[provider.id]) {
+      existingProviders[provider.id] = {
+        type: provider.type,
+        base_url: provider.baseUrl,
+        model: provider.models[0],
+        enabled: true,
+        auto_detected: true,
+      };
+    }
+  }
+
+  return { ...config, ai: { ...(ai as Record<string, unknown>), providers: existingProviders } };
 }

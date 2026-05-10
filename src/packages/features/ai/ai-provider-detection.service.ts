@@ -1,7 +1,7 @@
-import { inject, Injectable, signal } from "@angular/core";
+import { Inject, Injectable, signal } from "@angular/core";
 import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
 import { take } from "rxjs";
-import { getAiFeatureConfig } from "./ai-config.utils";
+import { getAiFeatureConfig, getRawProviderOverrides } from "./ai-config.utils";
 import { AiDetectionStore } from "./ai-detection-store.service";
 import {
   AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
@@ -11,14 +11,15 @@ import {
 
 @Injectable({ providedIn: "root" })
 export class AiProviderDetectionService {
-  private readonly definitions = inject(AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN);
-  private readonly configPort = inject(ApplicationConfigurationPort);
-  private readonly httpClient = inject(HttpClientPort);
-  private readonly store = inject(AiDetectionStore);
-
   private readonly isDetecting = signal(false);
 
-  constructor() {
+  constructor(
+    @Inject(AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN)
+    private readonly definitions: readonly AiDetectableProviderDefinition[],
+    private readonly configPort: ApplicationConfigurationPort,
+    private readonly httpClient: HttpClientPort,
+    private readonly store: AiDetectionStore,
+  ) {
     this.configPort.configuration$
       .pipe(take(1))
       .subscribe(() => void this.detect());
@@ -32,10 +33,12 @@ export class AiProviderDetectionService {
 
     if (aiConfig?.mode === "off") return;
 
+    const rawOverrides = getRawProviderOverrides(config ?? {});
+
     this.isDetecting.set(true);
     try {
       const results = await Promise.all(
-        this.definitions.map((def) => this.probe(def, aiConfig?.providers ?? {})),
+        this.definitions.map((def) => this.probe(def, rawOverrides)),
       );
       this.store.setDetected(results.filter((r): r is DetectedAiProvider => r !== null));
     } finally {

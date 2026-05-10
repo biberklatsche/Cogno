@@ -66,12 +66,22 @@ describe("AiChatService", () => {
       validateActiveProvider: vi.fn().mockReturnValue([]),
       listEnabledProviderStatuses: vi.fn().mockReturnValue([]),
       selectActiveProvider: vi.fn().mockResolvedValue(undefined),
+      selectActiveProviderWithModel: vi.fn(),
     } as unknown as AiProviderRegistryService;
     const destroyRef = {
       onDestroy: vi.fn(),
     } as unknown as DestroyRef;
 
     const aiDetectionStore = new AiDetectionStore();
+    aiDetectionStore.setDetected([
+      {
+        id: "ollama",
+        displayName: "Ollama",
+        type: "ollama_native",
+        baseUrl: "http://localhost:11434",
+        models: ["llama3", "mistral"],
+      },
+    ]);
 
     aiChatService = new AiChatService(
       applicationConfigurationPort,
@@ -103,13 +113,38 @@ describe("AiChatService", () => {
     expect(aiChatService.composerText()).toBe("list files");
   });
 
-  it("formats provider statuses consistently", () => {
+  it("formats config-only provider as 'id (model)'", () => {
     expect(
       aiChatService.formatStatusMessage({
-        providerId: "provider-2",
-        providerType: "ollama_native",
-        providerModel: "llama3.1",
+        providerId: "myapi",
+        providerType: "openai_compatible",
+        providerModel: "gpt-4o",
       }),
-    ).toBe("provider-2 (llama3.1)");
+    ).toBe("myapi (gpt-4o)");
+  });
+
+  it("formats detected provider as 'model (displayName)'", () => {
+    expect(
+      aiChatService.formatStatusMessage({
+        providerId: "ollama::llama3",
+        providerType: "ollama_native",
+        providerModel: "llama3",
+      }),
+    ).toBe("llama3 (Ollama)");
+  });
+
+  it("selectProvider with '::' calls selectActiveProviderWithModel", async () => {
+    await aiChatService.selectProvider("ollama::mistral");
+    expect(aiProviderRegistryService.selectActiveProviderWithModel).toHaveBeenCalledWith(
+      "ollama",
+      "mistral",
+    );
+    expect(aiProviderRegistryService.selectActiveProvider).not.toHaveBeenCalled();
+  });
+
+  it("selectProvider without '::' calls selectActiveProvider", async () => {
+    await aiChatService.selectProvider("myapi");
+    expect(aiProviderRegistryService.selectActiveProvider).toHaveBeenCalledWith("myapi");
+    expect(aiProviderRegistryService.selectActiveProviderWithModel).not.toHaveBeenCalled();
   });
 });
