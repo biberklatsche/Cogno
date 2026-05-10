@@ -11,7 +11,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
     <section class="notification-header">
       <div></div>
       <button class="button" type="button" [disabled]="notifications().length === 0" (click)="clearAll()">
-        Clear all
+        Clear
       </button>
     </section>
 

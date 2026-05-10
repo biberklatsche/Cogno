@@ -23,23 +23,11 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
   template: `
     <div class="chat-shell">
       <div class="chat-toolbar">
-        <div class="status">
-          @if (statusLabel()) {
-            <span>{{ statusLabel() }}</span>
-          } @else {
-            <span>No provider configured</span>
-          }
-        </div>
+
         <button type="button" class="toolbar-button" (click)="clearConversation()">Clear</button>
       </div>
 
       <div #messageListElement class="message-list">
-        @if (threadMessages().length === 0) {
-          <div class="empty-state">
-            Ask for commands, explanations, or troubleshooting help for the current terminal.
-          </div>
-        }
-
         @for (message of threadMessages(); track message.id) {
           <article class="message-card" [class.assistant]="message.role === 'assistant'" [class.system]="message.role === 'system'">
             <header class="message-header">
@@ -107,7 +95,7 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
           autocorrect="off"
           data-private="off"
           rows="5"
-          placeholder="Ask the configured AI assistant about the current terminal session..."
+          placeholder="Ask for commands, explanations, or troubleshooting help for the current terminal..."
           [value]="composerText()"
           (input)="updateComposerText($event)"
           (keydown)="handleComposerKeydown($event)"></textarea>
@@ -140,7 +128,7 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
       }
 
       .chat-shell { display: grid; grid-template-rows: auto 1fr auto; gap: .75rem; height: 100%; min-height: 0; }
-      .chat-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+      .chat-toolbar { display: flex; align-items: center; justify-content: right; gap: 0.5rem; }
       .status { font-size: 0.8rem; opacity: 0.75; }
       .toolbar-button, .send-button, .command-button {
         border: 1px solid var(--background-color-20l); border-radius: 6px; background: var(--background-color-10l); color: inherit; cursor: pointer;
