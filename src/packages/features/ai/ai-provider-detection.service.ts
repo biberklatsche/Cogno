@@ -1,5 +1,4 @@
-import { DestroyRef, inject, Injectable, signal } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { inject, Injectable, signal } from "@angular/core";
 import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
 import { take } from "rxjs";
 import { getAiFeatureConfig } from "./ai-config.utils";
@@ -16,13 +15,12 @@ export class AiProviderDetectionService {
   private readonly configPort = inject(ApplicationConfigurationPort);
   private readonly httpClient = inject(HttpClientPort);
   private readonly store = inject(AiDetectionStore);
-  private readonly destroyRef = inject(DestroyRef);
 
-  readonly isDetecting = signal(false);
+  private readonly isDetecting = signal(false);
 
   constructor() {
     this.configPort.configuration$
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .pipe(take(1))
       .subscribe(() => void this.detect());
   }
 

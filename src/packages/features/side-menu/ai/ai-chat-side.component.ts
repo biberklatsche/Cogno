@@ -72,12 +72,12 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
                     </div>
                     @if (isCommandSuggestionFromDifferentTerminal(command)) {
                       <div class="command-context-note">
-                        <span>Erzeugt auf Grundlage einer anderen Terminal-ID.</span>
+                        <span>Suggested from a different terminal.</span>
                         <button
                           type="button"
                           class="command-context-link"
                           (click)="openCommandSuggestionTerminal(command)">
-                          Terminal öffnen
+                          Open terminal
                         </button>
                       </div>
                     }

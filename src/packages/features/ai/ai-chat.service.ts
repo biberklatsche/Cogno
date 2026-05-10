@@ -101,14 +101,11 @@ export class AiChatService {
   }
 
   async selectProvider(syntheticId: string): Promise<void> {
-    const sep = syntheticId.indexOf("::");
-    if (sep === -1) {
+    const parsed = parseSyntheticProviderId(syntheticId);
+    if (!parsed) {
       await this.providerRegistryService.selectActiveProvider(syntheticId);
     } else {
-      this.providerRegistryService.selectActiveProviderWithModel(
-        syntheticId.slice(0, sep),
-        syntheticId.slice(sep + 2),
-      );
+      this.providerRegistryService.selectActiveProviderWithModel(parsed.providerId, parsed.model);
     }
     this.refreshProviderStatus();
   }
@@ -195,11 +192,11 @@ export class AiChatService {
 
   formatStatusMessage(providerStatus: AiProviderStatus | undefined): string | undefined {
     if (!providerStatus) return undefined;
-    const sep = providerStatus.providerId.indexOf("::");
-    if (sep !== -1) {
-      const baseId = providerStatus.providerId.slice(0, sep);
+    const parsed = parseSyntheticProviderId(providerStatus.providerId);
+    if (parsed) {
       const displayName =
-        this.detectionStore.detectedProviders().find((d) => d.id === baseId)?.displayName ?? baseId;
+        this.detectionStore.detectedProviders().find((d) => d.id === parsed.providerId)
+          ?.displayName ?? parsed.providerId;
       return `${providerStatus.providerModel} (${displayName})`;
     }
     return `${providerStatus.providerId} (${providerStatus.providerModel})`;
@@ -337,7 +334,7 @@ export class AiChatService {
 
     const detectedStatuses: AiProviderStatus[] = detected.flatMap((d) =>
       d.models.map((model) => ({
-        providerId: `${d.id}::${model}`,
+        providerId: makeSyntheticProviderId(d.id, model),
         providerType: d.type,
         providerModel: model,
       })),
@@ -349,7 +346,7 @@ export class AiChatService {
     if (resolvedProvider) {
       const model = resolvedProvider.config.model || "";
       const syntheticId = detectedIds.has(resolvedProvider.providerId)
-        ? `${resolvedProvider.providerId}::${model}`
+        ? makeSyntheticProviderId(resolvedProvider.providerId, model)
         : resolvedProvider.providerId;
       this.providerStatusSignal.set({
         providerId: syntheticId,
@@ -525,4 +522,17 @@ export class AiChatService {
 
 function newMessageId(): string {
   return `MSG-${crypto.randomUUID()}`;
+}
+
+function makeSyntheticProviderId(providerId: string, model: string): string {
+  return `${providerId}::${model}`;
+}
+
+function parseSyntheticProviderId(
+  syntheticId: string,
+): { readonly providerId: string; readonly model: string } | undefined {
+  const sep = syntheticId.indexOf("::");
+  return sep === -1
+    ? undefined
+    : { providerId: syntheticId.slice(0, sep), model: syntheticId.slice(sep + 2) };
 }
