@@ -1,8 +1,8 @@
 import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AiDetectionStore } from "./ai-detection-store.service";
 import { AiDetectableProviderDefinition } from "./ai-detection.models";
+import { AiDetectionStore } from "./ai-detection-store.service";
 import { AiProviderDetectionService } from "./ai-provider-detection.service";
 
 const ollamaDefinition: AiDetectableProviderDefinition = {
@@ -195,7 +195,8 @@ describe("AiProviderDetectionService", () => {
     let resolveRequest!: () => void;
     vi.mocked(httpClient.request).mockReturnValue(
       new Promise<{ status: number; body: string }>((resolve) => {
-        resolveRequest = () => resolve({ status: 200, body: JSON.stringify({ models: [{ name: "llama3" }] }) });
+        resolveRequest = () =>
+          resolve({ status: 200, body: JSON.stringify({ models: [{ name: "llama3" }] }) });
       }),
     );
 

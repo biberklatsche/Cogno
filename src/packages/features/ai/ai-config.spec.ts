@@ -131,13 +131,23 @@ describe("mergeDetectedProviders", () => {
     const config = {
       ai: {
         providers: {
-          ollama: { type: "ollama_native", base_url: "http://custom:11434", model: "qwen3", enabled: true },
+          ollama: {
+            type: "ollama_native",
+            base_url: "http://custom:11434",
+            model: "qwen3",
+            enabled: true,
+          },
         },
       },
     };
     const result = mergeDetectedProviders(config, [detectedOllama]) as Record<string, unknown>;
-    const providers = ((result["ai"] as Record<string, unknown>)["providers"]) as Record<string, unknown>;
-    expect((providers["ollama"] as Record<string, unknown>)["base_url"]).toBe("http://custom:11434");
+    const providers = (result["ai"] as Record<string, unknown>)["providers"] as Record<
+      string,
+      unknown
+    >;
+    expect((providers["ollama"] as Record<string, unknown>)["base_url"]).toBe(
+      "http://custom:11434",
+    );
     expect((providers["ollama"] as Record<string, unknown>)["model"]).toBe("qwen3");
   });
 

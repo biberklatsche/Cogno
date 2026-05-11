@@ -536,4 +536,3 @@ export class AiChatService {
       : { providerId: syntheticId.slice(0, sep), model: syntheticId.slice(sep + 2) };
   }
 }
-

@@ -2,12 +2,12 @@ import { Inject, Injectable, signal } from "@angular/core";
 import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
 import { take } from "rxjs";
 import { getAiFeatureConfig, getRawProviderOverrides } from "./ai-config.utils";
-import { AiDetectionStore } from "./ai-detection-store.service";
 import {
   AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
   AiDetectableProviderDefinition,
   DetectedAiProvider,
 } from "./ai-detection.models";
+import { AiDetectionStore } from "./ai-detection-store.service";
 
 @Injectable({ providedIn: "root" })
 export class AiProviderDetectionService {
@@ -20,9 +20,7 @@ export class AiProviderDetectionService {
     private readonly httpClient: HttpClientPort,
     private readonly store: AiDetectionStore,
   ) {
-    this.configPort.configuration$
-      .pipe(take(1))
-      .subscribe(() => void this.detect());
+    this.configPort.configuration$.pipe(take(1)).subscribe(() => void this.detect());
   }
 
   async detect(): Promise<void> {
@@ -48,7 +46,9 @@ export class AiProviderDetectionService {
 
   private async probe(
     definition: AiDetectableProviderDefinition,
-    existingProviders: Readonly<Record<string, { base_url?: string; model?: string; enabled?: boolean }>>,
+    existingProviders: Readonly<
+      Record<string, { base_url?: string; model?: string; enabled?: boolean }>
+    >,
   ): Promise<DetectedAiProvider | null> {
     const existing = existingProviders[definition.id];
 

@@ -1,10 +1,10 @@
-import { Injectable } from "@angular/core";
-import { toObservable } from "@angular/core/rxjs-interop";
-import { ApplicationConfigurationContract, ApplicationConfigurationPort } from "@cogno/core-api";
-import { mergeDetectedProviders } from "@cogno/features/ai/ai-config.utils";
-import { AiDetectionStore } from "@cogno/features/ai/ai-detection-store.service";
-import { combineLatest, map, Observable } from "rxjs";
-import { Config } from "../config/+models/config";
+import { Inject, Injectable } from "@angular/core";
+import {
+  ApplicationConfigurationContract,
+  ApplicationConfigurationPort,
+  ConfigurationTransformer,
+} from "@cogno/core-api";
+import { combineLatest, map, merge, Observable, of, startWith } from "rxjs";
 import { ConfigService } from "../config/+state/config.service";
 
 @Injectable({ providedIn: "root" })
@@ -13,23 +13,29 @@ export class ApplicationConfigurationPortAdapterService extends ApplicationConfi
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly detectionStore: AiDetectionStore,
+    @Inject(ConfigurationTransformer)
+    private readonly transformers: readonly ConfigurationTransformer[],
   ) {
     super();
-    this.configuration$ = combineLatest([
-      configService.config$,
-      toObservable(detectionStore.detectedProviders),
-    ]).pipe(map(([config, detected]) => mergeDetectedProviders(config, detected)));
+    const transformerChanges$ =
+      this.transformers.length > 0
+        ? merge(...this.transformers.map((t) => t.changes$)).pipe(startWith(undefined))
+        : of(undefined);
+
+    this.configuration$ = combineLatest([configService.config$, transformerChanges$]).pipe(
+      map(([config]) => this.applyTransformers(config)),
+    );
   }
 
   getConfiguration(): ApplicationConfigurationContract | undefined {
     try {
-      return mergeDetectedProviders(
-        this.configService.config,
-        this.detectionStore.detectedProviders(),
-      );
+      return this.applyTransformers(this.configService.config);
     } catch {
       return undefined;
     }
+  }
+
+  private applyTransformers(config: Record<string, unknown>): Record<string, unknown> {
+    return this.transformers.reduce((c, t) => t.transform(c), config);
   }
 }

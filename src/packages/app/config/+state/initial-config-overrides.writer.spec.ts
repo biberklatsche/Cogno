@@ -218,15 +218,12 @@ describe("InitialConfigOverridesWriter", () => {
     expect(text).toContain("terminal.progress_bar.enabled = false");
   });
 
-  it("renders ai defaults with empty placeholders", () => {
+  it("renders ai defaults", () => {
     const text = InitialConfigOverridesWriter.toDotString(DEFAULTS, { asComments: false });
 
-    expect(text).toContain("ai.mode = off");
-    expect(text).toContain("ai.active_provider = ");
-    expect(text).toContain("ai.providers.default.type = openai_compatible");
-    expect(text).toContain("ai.providers.default.base_url = ");
-    expect(text).toContain("ai.providers.default.model = ");
-    expect(text).toContain("ai.providers.default.api_key = ");
-    expect(text).toContain("ai.providers.default.enabled = false");
+    expect(text).toContain("ai.mode = auto");
+    expect(text).toContain("ai.request.include_process_tree = false");
+    expect(text).toContain("ai.request.max_commands = 8");
+    expect(text).toContain("ai.request.max_output_chars = 4000");
   });
 });

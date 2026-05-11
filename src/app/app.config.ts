@@ -44,6 +44,7 @@ import {
   ApplicationConfigurationPort,
   ApplicationProduct,
   CommandRunner,
+  ConfigurationTransformer,
   DatabaseAccess,
   Filesystem,
   HttpClientPort,
@@ -52,11 +53,12 @@ import {
   TerminalSearchHostPort,
   WorkspaceHostPort,
 } from "@cogno/core-api";
-import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
-import { aiDetectableProviderDefinitions } from "../products/ai-detectable-provider-definitions";
+import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
+import { aiDetectableProviderDefinitions } from "../products/ai-detectable-provider-definitions";
 import { productDefinition } from "../products/product-definition.instance";
 
 export const appConfig: ApplicationConfig = {
@@ -77,6 +79,11 @@ export const appConfig: ApplicationConfig = {
     {
       provide: AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
       useValue: aiDetectableProviderDefinitions,
+    },
+    {
+      provide: ConfigurationTransformer,
+      useExisting: AiConfigurationTransformerService,
+      multi: true,
     },
     { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
     { provide: HttpClientPort, useExisting: HttpClientPortAdapterService },
