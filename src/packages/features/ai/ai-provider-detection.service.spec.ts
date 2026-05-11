@@ -2,8 +2,8 @@ import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiDetectableProviderDefinition } from "./ai-detection.models";
-import { AiDetectionStore } from "./ai-detection-store.service";
 import { AiProviderDetectionService } from "./ai-provider-detection.service";
+import { DetectedAiProvidersStore } from "./detected-ai-providers-store.service";
 
 const ollamaDefinition: AiDetectableProviderDefinition = {
   id: "ollama",
@@ -32,7 +32,7 @@ const lmStudioDefinition: AiDetectableProviderDefinition = {
 describe("AiProviderDetectionService", () => {
   let configPort: ApplicationConfigurationPort;
   let httpClient: HttpClientPort;
-  let store: AiDetectionStore;
+  let store: DetectedAiProvidersStore;
 
   beforeEach(() => {
     configPort = {
@@ -45,7 +45,7 @@ describe("AiProviderDetectionService", () => {
       streamRequest: vi.fn(),
     } as unknown as HttpClientPort;
 
-    store = new AiDetectionStore();
+    store = new DetectedAiProvidersStore();
   });
 
   it("adds detected provider with all models when probe succeeds", async () => {
@@ -213,5 +213,31 @@ describe("AiProviderDetectionService", () => {
     await Promise.all([first, second]);
 
     expect(httpClient.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries startup detection until a provider becomes available", async () => {
+    vi.useFakeTimers();
+    vi.mocked(httpClient.request)
+      .mockRejectedValueOnce(new Error("ECONNREFUSED"))
+      .mockResolvedValueOnce({
+        status: 200,
+        body: JSON.stringify({ models: [{ name: "llama3" }] }),
+      });
+
+    const configurationSubject = new Subject<Readonly<Record<string, unknown>>>();
+    configPort = {
+      configuration$: configurationSubject,
+      getConfiguration: vi.fn().mockReturnValue({ ai: { mode: "auto" } }),
+    } as unknown as ApplicationConfigurationPort;
+
+    new AiProviderDetectionService([ollamaDefinition], configPort, httpClient, store);
+
+    configurationSubject.next({ ai: { mode: "auto" } });
+    await vi.runAllTimersAsync();
+
+    expect(httpClient.request).toHaveBeenCalledTimes(2);
+    expect(store.detectedProviders()).toHaveLength(1);
+
+    vi.useRealTimers();
   });
 });

@@ -16,8 +16,8 @@ import {
 } from "./ai.models";
 import { AiCommandExtractionService } from "./ai-command-extraction.service";
 import { getAiFeatureConfig } from "./ai-config.utils";
-import { AiDetectionStore } from "./ai-detection-store.service";
 import { AiProviderRegistryService } from "./ai-provider-registry.service";
+import { DetectedAiProvidersStore } from "./detected-ai-providers-store.service";
 
 type ThreadMessageWithProviderMessage = AiChatThreadMessage & {
   readonly providerMessage?: AiChatMessage;
@@ -50,7 +50,7 @@ export class AiChatService {
     private readonly terminalGateway: TerminalGateway,
     private readonly aiCommandExtractionService: AiCommandExtractionService,
     private readonly providerRegistryService: AiProviderRegistryService,
-    private readonly detectionStore: AiDetectionStore,
+    private readonly detectionStore: DetectedAiProvidersStore,
     destroyRef: DestroyRef,
   ) {
     this.focusedTerminalIdSignal.set(this.terminalGateway.getFocusedTerminalId());

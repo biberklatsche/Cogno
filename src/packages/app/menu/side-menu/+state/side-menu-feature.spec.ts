@@ -1,8 +1,8 @@
 import type { DestroyRef } from "@angular/core";
+import { ApplicationConfigurationPort } from "@cogno/core-api";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ConfigService } from "../../../config/+state/config.service";
 import { KeybindService } from "../../../keybinding/keybind.service";
 import { SideMenuService } from "./side-menu.service";
 import { SideMenuFeature } from "./side-menu-feature";
@@ -13,7 +13,7 @@ class DummyComponent {}
 describe("SideMenuFeature", () => {
   let appBus: AppBus;
   let configSubject: BehaviorSubject<Record<string, unknown>>;
-  let configService: ConfigService;
+  let applicationConfigurationPort: ApplicationConfigurationPort;
   let sideMenuService: {
     addMenuItem: ReturnType<typeof vi.fn>;
     removeMenuItem: ReturnType<typeof vi.fn>;
@@ -44,18 +44,10 @@ describe("SideMenuFeature", () => {
     configSubject = new BehaviorSubject<Record<string, unknown>>({
       workspace: { mode: "visible" },
     });
-    configService = {
-      get config() {
-        return configSubject.value as never;
-      },
-      get config$() {
-        return configSubject.asObservable() as never;
-      },
-      getShellProfileOrDefault: vi.fn(),
-      getOrderedShellProfiles: vi.fn(),
-      getShellProfileByShortcutIndex: vi.fn(),
-      getPromptSegments: vi.fn(),
-    };
+    applicationConfigurationPort = {
+      configuration$: configSubject.asObservable(),
+      getConfiguration: vi.fn(() => configSubject.value),
+    } as unknown as ApplicationConfigurationPort;
     sideMenuService = {
       addMenuItem: vi.fn(),
       removeMenuItem: vi.fn(),
@@ -90,7 +82,7 @@ describe("SideMenuFeature", () => {
       lifecycle,
       sideMenuService as unknown as SideMenuService,
       appBus,
-      configService,
+      applicationConfigurationPort,
       keybindService as unknown as KeybindService,
       destroyRef,
     );
@@ -126,7 +118,7 @@ describe("SideMenuFeature", () => {
       lifecycle,
       sideMenuService as unknown as SideMenuService,
       appBus,
-      configService,
+      applicationConfigurationPort,
       keybindService as unknown as KeybindService,
       destroyRef,
     );

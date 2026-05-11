@@ -2,13 +2,13 @@ import { Injectable } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { map, Observable } from "rxjs";
 import { mergeDetectedProviders } from "./ai-config.utils";
-import { AiDetectionStore } from "./ai-detection-store.service";
+import { DetectedAiProvidersStore } from "./detected-ai-providers-store.service";
 
 @Injectable({ providedIn: "root" })
 export class AiConfigurationTransformerService {
   readonly changes$: Observable<void>;
 
-  constructor(private readonly store: AiDetectionStore) {
+  constructor(private readonly store: DetectedAiProvidersStore) {
     this.changes$ = toObservable(store.detectedProviders).pipe(map(() => undefined));
   }
 

@@ -8,8 +8,8 @@ import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatService } from "./ai-chat.service";
 import { AiCommandExtractionService } from "./ai-command-extraction.service";
-import { AiDetectionStore } from "./ai-detection-store.service";
 import { AiProviderRegistryService } from "./ai-provider-registry.service";
+import { DetectedAiProvidersStore } from "./detected-ai-providers-store.service";
 
 describe("AiChatService", () => {
   let applicationConfigurationPort: ApplicationConfigurationPort;
@@ -72,7 +72,7 @@ describe("AiChatService", () => {
       onDestroy: vi.fn(),
     } as unknown as DestroyRef;
 
-    const aiDetectionStore = new AiDetectionStore();
+    const aiDetectionStore = new DetectedAiProvidersStore();
     aiDetectionStore.setDetected([
       {
         id: "ollama",

@@ -1,5 +1,6 @@
 import { DestroyRef } from "@angular/core";
 import {
+  ApplicationConfigurationPort,
   FeatureModeContract,
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
@@ -7,7 +8,6 @@ import {
 import { Icon } from "@cogno/core-ui";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ConfigService } from "../../../config/+state/config.service";
 import { KeybindService } from "../../../keybinding/keybind.service";
 import { SideMenuItem, SideMenuService } from "./side-menu.service";
 import { SideMenuFeatureDefinition } from "./side-menu-feature-definitions";
@@ -26,7 +26,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     private readonly lifecycle: SideMenuFeatureLifecycleContract,
     private readonly sideMenuService: SideMenuService,
     private readonly bus: AppBus,
-    private readonly configService: ConfigService,
+    private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     private readonly keybinds: KeybindService,
     destroyRef: DestroyRef,
   ) {
@@ -48,9 +48,10 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
   }
 
   private setupConfigListener(): void {
-    const sub = this.configService.config$.subscribe((cfg) => {
-      const mode = this.getFeatureMode(cfg as Record<string, unknown>);
-      const isAvailable = this.config.isAvailable?.(cfg as Record<string, unknown>) ?? true;
+    const sub = this.applicationConfigurationPort.configuration$.subscribe((configuration) => {
+      const mode = this.getFeatureMode(configuration);
+      const isAvailable =
+        this.config.isAvailable?.(configuration as Record<string, unknown>) ?? true;
       this.handleModeChange(mode, isAvailable);
     });
     this.subscriptions.add(sub);
@@ -176,7 +177,7 @@ export function createSideMenuFeature(
   deps: {
     sideMenuService: SideMenuService;
     bus: AppBus;
-    configService: ConfigService;
+    applicationConfigurationPort: ApplicationConfigurationPort;
     keybinds: KeybindService;
     destroyRef: DestroyRef;
   },
@@ -186,7 +187,7 @@ export function createSideMenuFeature(
     lifecycle,
     deps.sideMenuService,
     deps.bus,
-    deps.configService,
+    deps.applicationConfigurationPort,
     deps.keybinds,
     deps.destroyRef,
   );

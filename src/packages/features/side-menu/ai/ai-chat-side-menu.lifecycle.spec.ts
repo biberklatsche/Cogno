@@ -1,5 +1,6 @@
 import type { SideMenuFeatureHandleContract } from "@cogno/core-api";
 import { describe, expect, it, vi } from "vitest";
+import { AiProviderDetectionService } from "../../ai/ai-provider-detection.service";
 import { AiChatSideMenuLifecycle } from "./ai-chat-side-menu.lifecycle";
 
 vi.mock("../focus-side-menu-autofocus-element", () => ({
@@ -15,7 +16,13 @@ describe("AiChatSideMenuLifecycle", () => {
       updateIcon: vi.fn(),
     };
 
-    const lifecycle = new AiChatSideMenuLifecycle().create(sideMenuFeatureHandle);
+    const aiProviderDetectionService = {
+      detect: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AiProviderDetectionService;
+
+    const lifecycle = new AiChatSideMenuLifecycle(aiProviderDetectionService).create(
+      sideMenuFeatureHandle,
+    );
 
     lifecycle.onOpen?.();
     lifecycle.onFocus?.();
@@ -29,5 +36,6 @@ describe("AiChatSideMenuLifecycle", () => {
 
     expect(sideMenuFeatureHandle.close).toHaveBeenCalledTimes(1);
     expect(sideMenuFeatureHandle.unregisterKeybindListener).toHaveBeenCalledTimes(1);
+    expect(aiProviderDetectionService.detect).toHaveBeenCalledTimes(1);
   });
 });

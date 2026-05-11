@@ -2,7 +2,7 @@ import { Injectable, signal } from "@angular/core";
 import { DetectedAiProvider } from "./ai-detection.models";
 
 @Injectable({ providedIn: "root" })
-export class AiDetectionStore {
+export class DetectedAiProvidersStore {
   readonly detectedProviders = signal<ReadonlyArray<DetectedAiProvider>>([]);
 
   setDetected(providers: ReadonlyArray<DetectedAiProvider>): void {
