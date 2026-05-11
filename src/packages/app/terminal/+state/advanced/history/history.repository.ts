@@ -1,6 +1,7 @@
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 import { DB, IDatabase } from "@cogno/app-tauri/db";
 import { IPathAdapter } from "@cogno/core-api";
+import { sleep } from "@cogno/core-support";
 import { Hash } from "../../../../common/hash/hash";
 import { isWslContext, ShellContext } from "../model/models";
 import {
@@ -98,10 +99,6 @@ function isLockError(e: unknown): boolean {
   const message = e instanceof Error ? e.message : undefined;
   const msg = String(message ?? e ?? "");
   return /database is locked|SQLITE_BUSY|SQLITE_LOCKED|busy|locked/i.test(msg);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 async function withRetry<T>(operation: () => Promise<T>): Promise<T> {

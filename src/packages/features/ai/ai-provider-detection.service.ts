@@ -1,5 +1,6 @@
 import { Inject, Injectable, signal } from "@angular/core";
 import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
+import { sleep } from "@cogno/core-support";
 import { take } from "rxjs";
 import { getAiFeatureConfig, getRawProviderOverrides } from "./ai-config.utils";
 import {
@@ -63,7 +64,7 @@ export class AiProviderDetectionService {
         return;
       }
 
-      await this.delay(AiProviderDetectionService.initialRetryDelayInMilliseconds);
+      await sleep(AiProviderDetectionService.initialRetryDelayInMilliseconds);
     }
   }
 
@@ -102,11 +103,5 @@ export class AiProviderDetectionService {
     } catch {
       return null;
     }
-  }
-
-  private async delay(durationInMilliseconds: number): Promise<void> {
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, durationInMilliseconds);
-    });
   }
 }
