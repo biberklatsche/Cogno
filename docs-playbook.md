@@ -364,12 +364,178 @@ Include a full working example for:
 
 ---
 
-## What goes in `astro.config.mjs` if new pages are added
+### Page 2 — CLI
 
-If future pages beyond `config.md` are added to `../cogno-webseite/src/content/docs/docs/`,
-update the `sidebar` array in `../cogno-webseite/astro.config.mjs` to include the new slugs.
+**Write to:** `../meetcogno/src/content/docs/docs/cli.md`
 
-Current sidebar entry for reference (in `../meetcogno/astro.config.mjs`):
+**Purpose:** All Cogno CLI commands and launch flags in one place.
+
+**Source files:**
+- `README.md` — full CLI synopsis
+
+**Required sections:**
+- Launch flags: `--config <path>`, `--set key=value` — with examples
+- `cogno config` subcommands: `show`, `show --defaults`, `get <key>`, `path`
+- `cogno action` subcommands: `list`, `run <name> [args...]`
+
+---
+
+### Page 3 — Actions
+
+**Write to:** `../meetcogno/src/content/docs/docs/actions.md`
+
+**Purpose:** Complete table of every callable action with a description. Also explains the
+two-source architecture (core list + side-menu features).
+
+**Source files:**
+- `src/packages/app/action/core-action-names.ts` — core actions
+- All `src/packages/features/side-menu/*/feature-definition.ts` — side-menu actions (one `actionName` each)
+
+**Important:** Side-menu feature actions must NOT be in `core-action-names.ts` — each feature
+defines its own action and is fully self-contained. Do not add new feature actions to the core list.
+
+**Required sections:**
+- Short explanation of the two-source catalog
+- Full grouped table: Clipboard, Buffer, Cursor movement, Text selection, Tabs, Panes,
+  Shell profiles, Window, Workspaces, Autocomplete, Features (side-menu)
+- CLI usage: `cogno action list` and `cogno action run <name>`
+
+---
+
+### Page 4 — Autocomplete
+
+**Write to:** `../meetcogno/src/content/docs/docs/autocomplete.md`
+
+**Purpose:** Explain how autocomplete works and how to configure it.
+
+**Source files:**
+- `src/packages/app/terminal/+state/advanced/autocomplete/terminal-autocomplete.service.ts` — constants (MAX_SUGGESTIONS, PANEL_MAX_VISIBLE_ITEMS, MAX_TOP_HISTORY_SUGGESTIONS, debounce ms, filter modes)
+- `src/packages/app/terminal/+state/advanced/autocomplete/suggestors/history-command.suggestor.ts`
+- `src/packages/app/terminal/+state/advanced/autocomplete/suggestors/history-command-pattern.suggestor.ts`
+- `src/packages/app/terminal/+state/advanced/autocomplete/suggestors/history-directory.suggestor.ts`
+- `src/packages/features/autocomplete/terminal-autocomplete-suggestor-definitions.ts` — spec suggestor
+- `src/packages/core-api/feature-settings.contract.ts` — `FeatureAutocompleteSchema`
+
+**Required sections:**
+- How suggestions appear (debounced, panel above/below cursor, max 6 visible, up to 100 ranked)
+- Four suggestion sources: history commands, history patterns, history directories, spec commands (1000+ CLI tools)
+- Top 3 history suggestions always shown first
+- Filter modes: `all`, `history-only`, `context-only` — cycled with `cycle_completion_mode`, persists across sessions
+- Keyboard: Tab/↓ next, ↑ previous, Enter accept, Escape dismiss, trigger_autocomplete, cycle_completion_mode
+- Config: `autocomplete.provider.timeout_ms`
+
+---
+
+### Page 5 — Notifications
+
+**Write to:** `../meetcogno/src/content/docs/docs/notifications.md`
+
+**Purpose:** Explain what events Cogno notifies about and how to configure them.
+
+**Source files:**
+- `src/packages/features/side-menu/notification/notification-center-state.service.ts`
+- `src/packages/features/side-menu/notification/notification-side-menu.lifecycle.ts`
+- `src/packages/features/side-menu/notification/notification.feature-definition.ts`
+- `src/packages/core-api/feature-settings.contract.ts` — `FeatureNotificationSchema`, `FeatureNotificationsSchema`
+- `src-tauri/src/default_macos.config` — defaults
+
+**Required sections:**
+- Event types: long-running commands, handled exceptions, unhandled exceptions, OSC 9 messages
+- Bell icon badge behavior (set on new notification, cleared when panel opens)
+- Delivery channels: in-app (auto-dismiss) and OS notifications
+- Full config table for `notification.*` and `notifications.*`
+- Action: `open_notification`
+
+---
+
+### Page 6 — Command Palette
+
+**Write to:** `../meetcogno/src/content/docs/docs/command-palette.md`
+
+**Purpose:** Explain what the command palette does and how to use it.
+
+**Source files:**
+- `src/packages/features/side-menu/command-palette/command-palette.service.ts`
+- `src/packages/features/side-menu/command-palette/command-palette.feature-definition.ts`
+- `src/packages/core-api/feature-settings.contract.ts` — `FeatureCommandPaletteSchema`
+
+**Required sections:**
+- What it shows: all registered actions with their keybindings, filterable, keyboard-navigable
+- List is built dynamically from all registered actions and updates when config changes
+- Keyboard: type to filter, ↓/↑ navigate, Enter run, Escape close
+- Config: `command_palette.mode`
+- Action: `open_command_palette`
+
+---
+
+### Page 7 — Search
+
+**Write to:** `../meetcogno/src/content/docs/docs/search.md`
+
+**Purpose:** Explain terminal search and how to configure match colors.
+
+**Source files:**
+- `src/packages/features/side-menu/terminal-search/terminal-search.service.ts`
+- `src/packages/features/side-menu/terminal-search/terminal-search.feature-definition.ts`
+- `src/packages/core-api/feature-settings.contract.ts` — `FeatureSearchSchema`
+- `src-tauri/src/default_macos.config` — default colors
+
+**Required sections:**
+- Searches the full scrollback buffer of the active terminal
+- 120 ms debounce after typing stops
+- Results show matching lines with line numbers; selecting a result scrolls the terminal
+- Pagination: 200 lines per page, "load more" for additional results
+- Options: case-sensitive, regular expression, block search (restrict to buffer range)
+- Keyboard: ↓/↑ between results, Enter jump, Escape close and clear highlights
+- Full config table for `search.*` (mode + all color settings)
+- Action: `open_terminal_search`
+
+---
+
+### Page 8 — AI
+
+**Write to:** `../meetcogno/src/content/docs/docs/ai.md`
+
+**Purpose:** Explain the AI assistant, how context is built, and how to connect a provider.
+
+**Source files:**
+- `src/packages/features/side-menu/ai/ai-chat.feature-definition.ts`
+- `src/packages/core-api/feature-settings.contract.ts` — `FeatureAiSchema`
+- `src/packages/features/ai/ai.models.ts`
+- `src/products/ai-detectable-provider-definitions.ts` — Ollama and LM Studio URLs
+- `src-tauri/src/default_macos.config` — AI defaults
+
+**Required sections:**
+- What it does: sends terminal context (recent commands + output + optional process tree) to a model
+- Responses stream token by token; suggested commands can be run directly
+- Provider types: `openai_compatible`, `ollama_native`
+- Auto-detection: probes Ollama (`http://localhost:11434`) and LM Studio (`http://localhost:1234`) on startup
+- Link to Config page for full provider setup (`ai.providers.*`)
+- Config table: `ai.mode`, `ai.active_provider`, `ai.request.*`
+- Action: `open_ai_chat`
+
+---
+
+## Sidebar (`../meetcogno/astro.config.mjs`)
+
+After generating all pages, ensure the sidebar contains these entries in order:
+
 ```js
-{ label: 'Config', slug: 'docs/config' }
+sidebar: [
+  { label: 'Getting started', slug: 'docs/getting-started' },
+  { label: 'Workspaces',      slug: 'docs/workspaces' },
+  { label: 'Autocomplete',    slug: 'docs/autocomplete' },
+  { label: 'Notifications',   slug: 'docs/notifications' },
+  { label: 'Search',          slug: 'docs/search' },
+  { label: 'Command Palette', slug: 'docs/command-palette' },
+  { label: 'AI',              slug: 'docs/ai' },
+  { label: 'Config',          slug: 'docs/config' },
+  { label: 'CLI',             slug: 'docs/cli' },
+  { label: 'Actions',         slug: 'docs/actions' },
+],
 ```
+
+When a new feature page is added:
+1. Create `../meetcogno/src/content/docs/docs/<slug>.md`
+2. Add a new entry to the sidebar above
+3. Add a new Page section to this playbook with sources and required sections
