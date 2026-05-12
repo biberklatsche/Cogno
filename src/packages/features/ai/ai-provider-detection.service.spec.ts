@@ -37,7 +37,7 @@ describe("AiProviderDetectionService", () => {
   beforeEach(() => {
     configPort = {
       configuration$: new Subject(),
-      getConfiguration: vi.fn().mockReturnValue({ ai: { mode: "auto" } }),
+      getConfiguration: vi.fn().mockReturnValue({ ai: { mode: "visible" } }),
     } as unknown as ApplicationConfigurationPort;
 
     httpClient = {
@@ -119,7 +119,7 @@ describe("AiProviderDetectionService", () => {
 
   it("skips provider when user has explicitly disabled it in config", async () => {
     vi.mocked(configPort.getConfiguration).mockReturnValue({
-      ai: { mode: "auto", providers: { ollama: { enabled: false } } },
+      ai: { mode: "visible", providers: { ollama: { enabled: false } } },
     });
 
     const service = new AiProviderDetectionService(
@@ -136,7 +136,7 @@ describe("AiProviderDetectionService", () => {
 
   it("uses user-configured base_url instead of default", async () => {
     vi.mocked(configPort.getConfiguration).mockReturnValue({
-      ai: { mode: "auto", providers: { ollama: { base_url: "http://custom-host:11434" } } },
+      ai: { mode: "visible", providers: { ollama: { base_url: "http://custom-host:11434" } } },
     });
     vi.mocked(httpClient.request).mockResolvedValue({
       status: 200,
@@ -215,29 +215,31 @@ describe("AiProviderDetectionService", () => {
     expect(httpClient.request).toHaveBeenCalledTimes(1);
   });
 
-  it("retries startup detection until a provider becomes available", async () => {
-    vi.useFakeTimers();
-    vi.mocked(httpClient.request)
-      .mockRejectedValueOnce(new Error("ECONNREFUSED"))
-      .mockResolvedValueOnce({
-        status: 200,
-        body: JSON.stringify({ models: [{ name: "llama3" }] }),
-      });
+  it("tracks the detection state while probing providers", async () => {
+    let resolveRequest!: (value: { status: number; body: string }) => void;
+    vi.mocked(httpClient.request).mockReturnValue(
+      new Promise<{ status: number; body: string }>((resolve) => {
+        resolveRequest = resolve;
+      }),
+    );
 
-    const configurationSubject = new Subject<Readonly<Record<string, unknown>>>();
-    configPort = {
-      configuration$: configurationSubject,
-      getConfiguration: vi.fn().mockReturnValue({ ai: { mode: "auto" } }),
-    } as unknown as ApplicationConfigurationPort;
+    const service = new AiProviderDetectionService(
+      [ollamaDefinition],
+      configPort,
+      httpClient,
+      store,
+    );
 
-    new AiProviderDetectionService([ollamaDefinition], configPort, httpClient, store);
+    const detectionPromise = service.detect();
+    expect(store.isDetecting()).toBe(true);
 
-    configurationSubject.next({ ai: { mode: "auto" } });
-    await vi.runAllTimersAsync();
+    resolveRequest({
+      status: 200,
+      body: JSON.stringify({ models: [{ name: "llama3" }] }),
+    });
+    await detectionPromise;
 
-    expect(httpClient.request).toHaveBeenCalledTimes(2);
+    expect(store.isDetecting()).toBe(false);
     expect(store.detectedProviders()).toHaveLength(1);
-
-    vi.useRealTimers();
   });
 });

@@ -39,7 +39,7 @@ export const defaultFeatureSettingsExtension = {
       },
     },
     ai: {
-      mode: "auto",
+      mode: "visible",
       request: {
         include_process_tree: false,
         max_commands: 8,

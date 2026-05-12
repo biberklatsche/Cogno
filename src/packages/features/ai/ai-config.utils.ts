@@ -13,7 +13,7 @@ export type AiProviderConfigValue = {
 };
 
 export type AiFeatureConfigValue = {
-  readonly mode?: "off" | "hidden" | "visible" | "auto";
+  readonly mode?: "off" | "hidden" | "visible";
   readonly active_provider?: string;
   readonly providers?: Readonly<Record<string, AiProviderConfigValue>>;
   readonly request?: {
@@ -141,9 +141,7 @@ function normalizeProviderType(value: unknown): AiProviderTypeConfigValue | unde
 }
 
 function normalizeMode(value: unknown): AiFeatureConfigValue["mode"] | undefined {
-  return value === "off" || value === "hidden" || value === "visible" || value === "auto"
-    ? value
-    : undefined;
+  return value === "off" || value === "hidden" || value === "visible" ? value : undefined;
 }
 
 function asNonEmptyString(value: unknown): string | undefined {

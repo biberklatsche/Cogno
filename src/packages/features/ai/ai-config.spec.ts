@@ -83,11 +83,11 @@ describe("ai-config", () => {
     expect(resolveActiveProvider(configuration)).toBeUndefined();
   });
 
-  it("should treat auto mode as active — returns true when providers are configured", () => {
+  it("should treat visible mode as active when providers are configured", () => {
     expect(
       hasUsableAiProvider({
         ai: {
-          mode: "auto",
+          mode: "visible",
           providers: {
             ollama: {
               type: "ollama_native",
@@ -112,7 +112,7 @@ describe("mergeDetectedProviders", () => {
   };
 
   it("adds detected provider to config using first model as default", () => {
-    const config = { ai: { mode: "auto" } };
+    const config = { ai: { mode: "visible" } };
     const result = mergeDetectedProviders(config, [detectedOllama]);
     expect((result as Record<string, unknown>)["ai"]).toMatchObject({
       providers: {
@@ -152,7 +152,7 @@ describe("mergeDetectedProviders", () => {
   });
 
   it("returns the same config reference when no providers are detected", () => {
-    const config = { ai: { mode: "auto" } };
+    const config = { ai: { mode: "visible" } };
     expect(mergeDetectedProviders(config, [])).toBe(config);
   });
 

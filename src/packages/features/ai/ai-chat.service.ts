@@ -54,11 +54,11 @@ export class AiChatService {
     destroyRef: DestroyRef,
   ) {
     this.focusedTerminalIdSignal.set(this.terminalGateway.getFocusedTerminalId());
-    this.refreshProviderStatus();
+    this.refreshProviderStatuses();
     this.applicationConfigurationPort.configuration$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => {
-        this.refreshProviderStatus();
+        this.refreshProviderStatuses();
       });
     this.terminalGateway.focusedTerminalId$
       .pipe(takeUntilDestroyed(destroyRef))
@@ -97,7 +97,7 @@ export class AiChatService {
     this.activeAbortController = undefined;
     this.pendingSignal.set(false);
     this.threadMessagesSignal.set([]);
-    this.refreshProviderStatus();
+    this.refreshProviderStatuses();
   }
 
   async selectProvider(syntheticId: string): Promise<void> {
@@ -107,7 +107,7 @@ export class AiChatService {
     } else {
       this.providerRegistryService.selectActiveProviderWithModel(parsed.providerId, parsed.model);
     }
-    this.refreshProviderStatus();
+    this.refreshProviderStatuses();
   }
 
   canApplyCommandSuggestion(commandSuggestion: AiCommandSuggestion): boolean {
@@ -210,14 +210,14 @@ export class AiChatService {
     const resolvedProvider = this.providerRegistryService.resolveActiveProvider();
     if (!resolvedProvider) {
       this.appendSystemMessage("No usable AI provider is configured.", true);
-      this.refreshProviderStatus();
+      this.refreshProviderStatuses();
       return;
     }
 
     const validationErrors = this.providerRegistryService.validateActiveProvider();
     if (validationErrors.length > 0) {
       this.appendSystemMessage(validationErrors.join(" "), true);
-      this.refreshProviderStatus();
+      this.refreshProviderStatuses();
       return;
     }
 
@@ -319,12 +319,12 @@ export class AiChatService {
       if (this.activeRequestId === requestId) {
         this.pendingSignal.set(false);
         this.activeAbortController = undefined;
-        this.refreshProviderStatus();
+        this.refreshProviderStatuses();
       }
     }
   }
 
-  private refreshProviderStatus(): void {
+  refreshProviderStatuses(): void {
     const detected = this.detectionStore.detectedProviders();
     const detectedIds = new Set(detected.map((d) => d.id));
 

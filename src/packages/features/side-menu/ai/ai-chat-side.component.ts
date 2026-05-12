@@ -14,6 +14,8 @@ import {
   AiProviderStatus,
 } from "@cogno/features/ai/ai.models";
 import { AiChatService } from "@cogno/features/ai/ai-chat.service";
+import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-providers-store.service";
 
 @Component({
   selector: "app-ai-chat-side",
@@ -27,9 +29,13 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
       </div>
 
       <div #messageListElement class="message-list">
-        @if (threadMessages().length === 0 && providerStatuses().length === 0) {
+        @if (isDetecting() && providerStatuses().length === 0 && threadMessages().length === 0) {
           <div class="empty-state">
-            <span>No local AI providers detected.</span>
+            <span>Detecting local AI providers...</span>
+          </div>
+        } @else if (providerStatuses().length === 0) {
+          <div class="empty-state">
+            <span>No AI provider was found. Start a local provider or configure one in Settings.</span>
           </div>
         }
         @for (message of threadMessages(); track message.id) {
@@ -112,6 +118,14 @@ import { AiChatService } from "@cogno/features/ai/ai-chat.service";
             [disabled]="providerDropdownItems().length === 0"
             (valueChange)="selectProvider($event)">
           </app-dropdown>
+          <button
+            type="button"
+            class="send-button icon-send-button"
+            aria-label="Refresh providers"
+            [disabled]="isDetecting()"
+            (click)="refreshProviders()">
+            <app-icon [name]="isDetecting() ? 'mdiLoading' : 'mdiRefresh'" [class.spinner-icon]="isDetecting()"></app-icon>
+          </button>
           <button
             type="button"
             class="send-button icon-send-button"
@@ -245,6 +259,7 @@ export class AiChatSideComponent {
   readonly canSend = this.aiChatService.canSend;
   readonly providerStatuses = this.aiChatService.providerStatuses;
   readonly focusedTerminalId = this.aiChatService.focusedTerminalId;
+  readonly isDetecting = this.detectedAiProvidersStore.isDetecting.asReadonly();
 
   readonly statusLabel: Signal<string | undefined> = computed(() =>
     this.aiChatService.getStatusMessage(),
@@ -262,7 +277,11 @@ export class AiChatSideComponent {
   private readonly messageListElement = viewChild<ElementRef<HTMLDivElement>>("messageListElement");
   private readonly composerElement = viewChild<ElementRef<HTMLTextAreaElement>>("composerElement");
 
-  constructor(private readonly aiChatService: AiChatService) {
+  constructor(
+    private readonly aiChatService: AiChatService,
+    private readonly aiProviderDetectionService: AiProviderDetectionService,
+    private readonly detectedAiProvidersStore: DetectedAiProvidersStore,
+  ) {
     effect(() => {
       this.threadMessages();
       queueMicrotask(() => {
@@ -272,6 +291,11 @@ export class AiChatSideComponent {
         }
         messageListElement.scrollTop = messageListElement.scrollHeight;
       });
+    });
+
+    effect(() => {
+      this.detectedAiProvidersStore.detectedProviders();
+      this.aiChatService.refreshProviderStatuses();
     });
   }
 
@@ -330,6 +354,10 @@ export class AiChatSideComponent {
 
   async selectProvider(providerId: string): Promise<void> {
     await this.aiChatService.selectProvider(providerId);
+  }
+
+  async refreshProviders(): Promise<void> {
+    await this.aiProviderDetectionService.detect();
   }
 
   getRunButtonLabel(commandSuggestion: AiCommandSuggestion): string {

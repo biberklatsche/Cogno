@@ -140,7 +140,7 @@ export const FeatureSearchSchema = z.object({
 
 const aiProviderTypeSchema = z.enum(["openai_compatible", "ollama_native"] as const);
 
-const aiFeatureModeSchema = z.enum(["off", "hidden", "visible", "auto"]);
+const aiFeatureModeSchema = z.enum(["off", "hidden", "visible"]);
 
 const aiProviderSchema = z.object({
   type: aiProviderTypeSchema,
