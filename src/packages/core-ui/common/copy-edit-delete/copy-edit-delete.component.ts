@@ -28,8 +28,6 @@ import { IconComponent } from "../../icons/icon/icon.component";
           outline: none;
           cursor: default;
           color: var(--foreground-color-10t);
-          width: 20px;
-          height: 20px;
 
           &:hover {
             color: var(--foreground-color);
@@ -42,20 +40,20 @@ import { IconComponent } from "../../icons/icon/icon.component";
     @if (!isInDeleteMode()) {
       <div class="buttons">
         @if (!enableEdit() && enableDelete() && !enableCopy()) {
-          <button class="icon-placeholder"></button>
+          <button class="button icon-button icon-placeholder"></button>
         }
         @if (enableEdit()) {
-          <button title="Edit" (click)="onEvent.emit('edit'); $event.stopPropagation()">
+          <button class="button icon-button" title="Edit" (click)="onEvent.emit('edit'); $event.stopPropagation()">
             <app-icon name="mdiSquareEditOutline"></app-icon>
           </button>
         }
         @if (enableCopy()) {
-          <button title="Copy" (click)="onEvent.emit('copy'); $event.stopPropagation()">
+          <button class="button icon-button" title="Copy" (click)="onEvent.emit('copy'); $event.stopPropagation()">
             <app-icon name="mdiContentCopy"></app-icon>
           </button>
         }
         @if (enableDelete()) {
-          <button title="Delete" (click)="isInDeleteMode.set(true); $event.stopPropagation()">
+          <button class="button icon-button" title="Delete" (click)="isInDeleteMode.set(true); $event.stopPropagation()">
             <app-icon name="mdiTrashCanOutline"></app-icon>
           </button>
         }
@@ -63,12 +61,12 @@ import { IconComponent } from "../../icons/icon/icon.component";
     } @else {
       <div class="buttons" (mouseleave)="isInDeleteMode.set(false)">
         @if (enableEdit() && enableDelete() && enableCopy()) {
-          <button class="icon-placeholder"></button>
+          <button class="button icon-button icon-placeholder"></button>
         }
-        <button (click)="onEvent.emit('delete'); isInDeleteMode.set(false); $event.stopPropagation()">
+        <button class="button icon-button" (click)="onEvent.emit('delete'); isInDeleteMode.set(false); $event.stopPropagation()">
           <app-icon name="mdiCheck"></app-icon>
         </button>
-        <button (click)="isInDeleteMode.set(false); $event.stopPropagation()">
+        <button class="button icon-button" (click)="isInDeleteMode.set(false); $event.stopPropagation()">
           <app-icon name="mdiClose"></app-icon>
         </button>
       </div>
