@@ -1,4 +1,5 @@
 import { Opener } from "@cogno/app-tauri/opener";
+import { OS } from "@cogno/app-tauri/os";
 import { Terminal } from "@xterm/xterm";
 import { IDisposable } from "../../../common/models/models";
 import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";
@@ -15,7 +16,6 @@ type LinkMatch = {
 export class LinkHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
-  private readonly _hoverHint = "Ctrl + Click to open";
 
   constructor(
     private readonly _stateManager: TerminalStateManager,
@@ -45,13 +45,13 @@ export class LinkHandler implements ITerminalHandler {
             text: match.text,
             decorations: { underline: true, pointerCursor: true },
             hover: () => {
-              this._terminal?.element?.setAttribute("title", this._hoverHint);
+              this._terminal?.element?.setAttribute("title", this.hoverHint);
             },
             leave: () => {
               this._terminal?.element?.removeAttribute("title");
             },
             activate: (event: MouseEvent, text: string) => {
-              if (!event.ctrlKey) return;
+              if (!this.isOpenModifierPressed(event)) return;
               event.preventDefault();
               if (match.kind === "url") {
                 void Opener.openUrl(text);
@@ -141,5 +141,17 @@ export class LinkHandler implements ITerminalHandler {
 
   private overlaps(a: LinkMatch, b: LinkMatch): boolean {
     return a.startIndex < b.endIndexExclusive && b.startIndex < a.endIndexExclusive;
+  }
+
+  private get hoverHint(): string {
+    return `${this.openModifierLabel} + Click to open`;
+  }
+
+  private get openModifierLabel(): string {
+    return OS.platform() === "macos" ? "Cmd" : "Ctrl";
+  }
+
+  private isOpenModifierPressed(event: MouseEvent): boolean {
+    return OS.platform() === "macos" ? event.metaKey : event.ctrlKey;
   }
 }
