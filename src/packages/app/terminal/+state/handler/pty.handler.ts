@@ -63,7 +63,7 @@ export class PtyHandler implements ITerminalHandler {
         }),
       );
       this._disposables.push(
-        this._pty?.onExit((_data) => {
+        this._pty?.onExit((_) => {
           this._bus.publish({
             path: ["app", "terminal"],
             type: "RemovePane",

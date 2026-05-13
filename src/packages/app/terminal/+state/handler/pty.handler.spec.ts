@@ -12,7 +12,13 @@ describe("PtyHandler", () => {
   let mockBus: AppBus;
   let mockPty: IPty;
   const terminalId = "test-terminal-id";
-  const shellConfig: ShellProfile = { path: "bash", shell_type: "Bash" };
+  const shellConfig: ShellProfile = {
+    path: "bash",
+    shell_type: "Bash",
+    inject_cogno_cli: false,
+    enable_shell_integration: false,
+    load_user_rc: true,
+  };
 
   beforeEach(() => {
     mockBus = new AppBus();
@@ -114,6 +120,32 @@ describe("PtyHandler", () => {
           payload: terminalId,
         }),
       );
+    });
+
+    it("should publish RemovePane when PowerShell exits abnormally", async () => {
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const powerShellProfile: ShellProfile = {
+        path: "powershell.exe",
+        shell_type: "PowerShell",
+        inject_cogno_cli: false,
+        enable_shell_integration: false,
+        load_user_rc: true,
+      };
+      handler = new PtyHandler(terminalId, mockPty, powerShellProfile, mockBus);
+
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
+
+      const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
+      onExitCallback({ exitCode: -2146232797 });
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "RemovePane",
+          payload: terminalId,
+        }),
+      );
+      expect(mockPty.spawn).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -785,6 +785,7 @@ dependencies = [
  "font-kit",
  "futures-util",
  "hex",
+ "log",
  "portable-pty",
  "rand 0.8.5",
  "reqwest 0.12.28",

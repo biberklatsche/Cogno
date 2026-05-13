@@ -106,12 +106,12 @@ impl ShellSpawner {
             }
         }
 
-        // Debug logging
-        println!(
-            "Shell spawn - Type: {}, Path: {}",
+        log::debug!(
+            target: "shell_spawner",
+            "shell spawn type={} path={}",
             profile.shell_type, shell_path
         );
-        println!("Shell spawn - Args: {:?}", argv);
+        log::debug!(target: "shell_spawner", "shell spawn args={:?}", argv);
 
         Ok((shell_path, argv, shell_env.env, working_dir))
     }
