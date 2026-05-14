@@ -2,31 +2,49 @@
 
 # Cogno
 
-Cogno is a lightweight, customizable terminal designed to support your daily workflow.
-It helps you spend less time searching and more time doing with fast,
-context-aware autocomplete and a clean, focused experience. Cogno is
-local-first, open source, and built to stay out of your way. It works on
-Windows, Linux, and MacOS with PowerShell, Bash, and Zsh.
+The terminal, without the extra work.
+
+Cogno is a terminal for modern developers. It remembers commands,
+keeps projects organized, and gives you familiar shortcuts out of the box.
+Less mental load. More doing.
+
+Cogno is local-first, open source, and built to stay close to the way you
+already work. It runs on Windows, Linux, and macOS with PowerShell, Bash, and
+Zsh.
 
 ## Highlights
 
-- Autocomplete for 1000+ CLI commands
-- Multiple tabs and split panes
-- Reusable workspaces for recurring setups
-- Editor-like input behavior
-- Command palette and terminal search
-- Notifications for long-running commands and OSC 9 messages
+- Context-aware command suggestions based on command history, current
+  directory, and project context
+- 1000+ CLI integrations, powered entirely on-device
+- Editor-like input behavior with familiar shortcuts for cursor movement,
+  selection, and replacement
+- In-terminal AI that works with local model runners such as Ollama and LM
+  Studio, or any OpenAI-compatible API
+- Reusable workspaces with saved tabs, panes, and project layouts
+- Notifications for long-running commands, including OSC 9 support
+- Search and filtering for the current command output or the full terminal
+  buffer
+- Fast command palette for actions
 - Windows, Linux, and macOS support
 - PowerShell, Bash, and Zsh support
 - Process information for active shells and commands
 - CLI access for automation and scripting
-- Tiny executable, typically under 50 MB
+- Single self-contained binary, typically under 40 MB
 
 ## Why Cogno?
 
-Terminals are often where development, debugging, deployment, and daily automation meet. Cogno is built around that reality: keep the speed and flexibility of the shell, add structure where long-running work benefits from it, and make powerful commands easier to find when you need them.
+Terminal work is where development, debugging, deployment, and automation
+happen, but the experience often comes with unnecessary repetition: hunting for
+old commands, rebuilding pane layouts, scrolling through noisy output, or
+switching tools for input and AI help.
 
-The project is actively shaped as a community-friendly workspace for modern terminal use. Feedback, issue reports, ideas, and focused contributions are welcome.
+Cogno keeps the speed and flexibility of the shell, then adds the structure
+that recurring work benefits from: command memory, workspace persistence,
+editor-like input, focused search, and local-first AI directly in the terminal.
+
+The project is actively shaped as a community-friendly terminal workspace.
+Feedback, issue reports, ideas, and focused contributions are welcome.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, checks, and contribution
 guidelines. Please also read the [Code of Conduct](./CODE_OF_CONDUCT.md)
