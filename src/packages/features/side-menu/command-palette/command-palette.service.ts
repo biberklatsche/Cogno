@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { CommandPaletteHostPort } from "@cogno/core-api";
+import { ActionCatalog, ActionDispatcher } from "@cogno/core-api";
 import {
   CommandDiscoveryState,
   CommandDiscoveryUseCase,
@@ -25,10 +25,11 @@ export class CommandPaletteService {
   readonly filteredCommandList = this.filteredCommandListSignal.asReadonly();
 
   constructor(
-    private readonly commandPaletteHostPort: CommandPaletteHostPort,
+    private readonly actionCatalog: ActionCatalog,
+    private readonly actionDispatcher: ActionDispatcher,
     destroyRef: DestroyRef,
   ) {
-    this.commandPaletteHostPort.commandEntries$
+    this.actionCatalog.actionEntries$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((commandEntries) => {
         this.applyState(
@@ -60,7 +61,7 @@ export class CommandPaletteService {
       return;
     }
 
-    this.commandPaletteHostPort.publishAction(selectedCommandEntry.actionDefinition);
+    this.actionDispatcher.dispatchAction(selectedCommandEntry.actionDefinition);
   }
 
   filterCommands(query: string): void {

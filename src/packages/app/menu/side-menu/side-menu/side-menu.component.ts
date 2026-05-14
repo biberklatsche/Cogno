@@ -14,6 +14,21 @@ import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { ActionKeybindingPipe } from "../../../keybinding/pipe/keybinding.pipe";
 import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
 
+export function isSelectedSideMenuItem(
+  selectedItem: SideMenuItem | undefined,
+  menuItem: SideMenuItem,
+): boolean {
+  if (!selectedItem) {
+    return false;
+  }
+
+  if (selectedItem.id && menuItem.id) {
+    return selectedItem.id === menuItem.id;
+  }
+
+  return selectedItem.label === menuItem.label;
+}
+
 @Component({
   selector: "app-side-menu",
   imports: [IconComponent, NgComponentOutlet, TooltipDirective, ActionKeybindingPipe],
@@ -22,7 +37,7 @@ import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <aside #overlayAside class="base-overlay"
+        <aside #overlayAside class="base-overlay flat"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
                [class.shift-left]="visibleItems().length > 0"
@@ -54,9 +69,9 @@ import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
             </main>
         </aside>
         <menu #menuCol [class.hidden]="visibleItems().length === 0">
-            @for (menuItem of visibleItems(); track menuItem) {
+            @for (menuItem of visibleItems(); track menuItem.id ?? menuItem.label) {
                 <button class="button icon-button" (click)="open(menuItem)"
-                        [class.selected]="selectedItem() === menuItem" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
+                        [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                     @if (menuItem.badgeColor) {
                         <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
@@ -76,6 +91,7 @@ import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
         h3 {
             font-weight: normal;
             opacity: 0.7;
+            padding-left: 0.5rem;
         }
 
         menu {
@@ -261,6 +277,10 @@ export class SideMenuComponent implements OnDestroy {
 
   open(menuItem: SideMenuItem) {
     this.menuItemService.open(menuItem.label);
+  }
+
+  isMenuItemSelected(menuItem: SideMenuItem): boolean {
+    return isSelectedSideMenuItem(this.selectedItem(), menuItem);
   }
 
   close() {

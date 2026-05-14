@@ -17,3 +17,7 @@ export interface CommandRunnerResultContract {
 export interface CommandRunnerContract {
   run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract>;
 }
+
+export abstract class CommandRunner implements CommandRunnerContract {
+  abstract run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract>;
+}

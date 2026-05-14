@@ -127,8 +127,8 @@ type SearchTextSegment = {
             .search-input {
                 padding: 6px 8px;
                 border-radius: 6px;
-                border: 1px solid rgba(255, 255, 255, 0.12);
-                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid var(--background-color-20l);
+                background: var(--background-color-10l);
                 color: inherit;
                 outline: none;
                 box-sizing: border-box;
@@ -137,8 +137,8 @@ type SearchTextSegment = {
             }
 
             .search-option-button {
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--background-color-20l);
+                background: var(--background-color-10l);
                 color: inherit;
                 border-radius: 6px;
                 height: 2rem;
@@ -222,8 +222,8 @@ type SearchTextSegment = {
             }
 
             .load-more-button {
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--background-color-20l);
+                background: var(--background-color-10l);
                 color: inherit;
                 border-radius: 6px;
                 min-height: 2rem;

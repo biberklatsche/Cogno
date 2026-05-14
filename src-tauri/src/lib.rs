@@ -1,4 +1,3 @@
-use clap::Parser;
 use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
@@ -26,11 +25,10 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            // Parse CLI arguments when a second instance is launched.
+            use clap::Parser;
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(action_payload) = cli.action_payload() {
                     let _ = app.emit("cli-action", &action_payload);
@@ -44,6 +42,8 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::fonts::list_fonts,
             cogno_tauri_core::commands::shells::list_shells,
             cogno_tauri_core::commands::keyboard::get_keyboard_layout,
+            cogno_tauri_core::commands::ai_http::ai_http_request,
+            cogno_tauri_core::commands::ai_http::ai_http_request_stream,
             cogno_tauri_core::commands::crypto::decrypt,
             cogno_tauri_core::commands::crypto::encrypt,
             cogno_tauri_core::commands::pty::pty_spawn,
@@ -61,7 +61,8 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::environment::get_cogno_db_file_path,
             cogno_tauri_core::commands::environment::get_system_path,
             cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
-            cogno_tauri_core::commands::window::new_window
+            cogno_tauri_core::commands::window::new_window,
+            cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file
         ])
         .setup(move |app| {
             let webview_window_builder =

@@ -1,6 +1,7 @@
 import type {
-  CommandPaletteCommandEntryContract,
-  CommandPaletteHostPortContract,
+  ActionCatalogContract,
+  ActionDispatcherContract,
+  ActionEntryContract,
 } from "@cogno/core-api";
 import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
 import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
@@ -10,12 +11,12 @@ import { getDestroyRef } from "../../__test__/destroy-ref";
 
 describe("CommandPaletteService", () => {
   let service: CommandPaletteService;
-  let publishActionMock: ReturnType<typeof vi.fn>;
-  let commandEntriesSubject: BehaviorSubject<ReadonlyArray<CommandPaletteCommandEntryContract>>;
+  let dispatchActionMock: ReturnType<typeof vi.fn>;
+  let actionEntriesSubject: BehaviorSubject<ReadonlyArray<ActionEntryContract>>;
 
   beforeEach(() => {
-    publishActionMock = vi.fn();
-    commandEntriesSubject = new BehaviorSubject<ReadonlyArray<CommandPaletteCommandEntryContract>>([
+    dispatchActionMock = vi.fn();
+    actionEntriesSubject = new BehaviorSubject<ReadonlyArray<ActionEntryContract>>([
       {
         actionDefinition: { actionName: "open_command_palette" },
         keybinding: "ctrl+p",
@@ -30,12 +31,18 @@ describe("CommandPaletteService", () => {
       },
     ]);
 
-    const commandPaletteHostPort: CommandPaletteHostPortContract = {
-      commandEntries$: commandEntriesSubject.asObservable(),
-      publishAction: publishActionMock,
+    const actionCatalog: ActionCatalogContract = {
+      actionEntries$: actionEntriesSubject.asObservable(),
+    };
+    const actionDispatcher: ActionDispatcherContract = {
+      dispatchAction: dispatchActionMock,
     };
 
-    service = new CommandPaletteService(commandPaletteHostPort, getDestroyRef());
+    service = new CommandPaletteService(
+      actionCatalog as any,
+      actionDispatcher as any,
+      getDestroyRef(),
+    );
     service.handleSideMenuOpen();
   });
 
@@ -76,11 +83,13 @@ describe("CommandPaletteService", () => {
   it("publishes selected action", () => {
     service.fireSelectedAction();
 
-    expect(publishActionMock).toHaveBeenCalledWith(expect.objectContaining({ actionName: "copy" }));
+    expect(dispatchActionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ actionName: "copy" }),
+    );
   });
 
   it("updates command list when host port emits new entries", () => {
-    commandEntriesSubject.next([
+    actionEntriesSubject.next([
       {
         actionDefinition: { actionName: "new_tab" },
         keybinding: "ctrl+alt+t",

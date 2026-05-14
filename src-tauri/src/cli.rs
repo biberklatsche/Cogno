@@ -24,6 +24,7 @@ pub const COGNO_ACTION_NAMES: &[&str] = &[
     "open_command_palette",
     "open_terminal_search",
     "open_notification",
+    "open_ai_chat",
     "quit",
     "new_window",
     "close_window",

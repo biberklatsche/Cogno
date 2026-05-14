@@ -62,7 +62,7 @@ export class SideMenuService {
     this._menuItems.update((s) => {
       const index = s.findIndex((s) => s.label === item.label);
       if (index > -1) {
-        s[index] = { ...s[index], ...item };
+        s[index] = { ...s[index], ...item, pinned: s[index].pinned };
         return [...s];
       }
       return [...s, item];
@@ -78,6 +78,10 @@ export class SideMenuService {
       s.splice(index, 1);
       return [...s];
     });
+  }
+
+  isSelected(label: string): boolean {
+    return this._selectedItem()?.label === label;
   }
 
   open(label: string): void {

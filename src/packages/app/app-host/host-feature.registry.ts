@@ -8,7 +8,7 @@ import {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
-import { PathFactory } from "./path/path.factory";
+import { PathFactory } from "./path.factory";
 import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 
 export class HostFeatureRegistry<

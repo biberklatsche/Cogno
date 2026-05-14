@@ -19,7 +19,7 @@ export class KeybindExecutor implements IDisposable {
         })
         .subscribe(async (event) => {
           if (event.performed) return;
-          if (!this._stateManager.isFocused && !event.trigger?.all) return;
+          if (!this._stateManager.isFocused && !event.trigger?.broadcast) return;
           switch (event.payload) {
             case "split_right": {
               this._bus.publish({

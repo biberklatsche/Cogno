@@ -3,18 +3,16 @@ import {
   Component,
   computed,
   DestroyRef,
-  Inject,
   Signal,
   signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { workspaceHostPortToken } from "@cogno/app/app-host/app-host.tokens";
 import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
 import {
   defaultWorkspaceIdContract,
   WorkspaceEntryContract,
-  WorkspaceHostPortContract,
+  WorkspaceHostPort,
 } from "@cogno/core-api";
 import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 
@@ -141,8 +139,7 @@ export class SelectedWorkspaceHeaderComponent {
   protected readonly hasWorkspaceMenu: Signal<boolean>;
 
   constructor(
-    @Inject(workspaceHostPortToken)
-    private readonly workspaceHostPort: WorkspaceHostPortContract,
+    private readonly workspaceHostPort: WorkspaceHostPort,
     private readonly contextMenuOverlayService: ContextMenuOverlayService,
     destroyRef: DestroyRef,
   ) {

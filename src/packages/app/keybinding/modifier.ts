@@ -12,30 +12,22 @@ export const Modifier = {
   },
 
   normalize: (modifier: string): string => {
-    switch (modifier) {
-      case "Alt":
+    switch (modifier.toLowerCase()) {
+      case "alt":
+      case "opt":
+      case "option":
         return "Alt";
-      case "Opt":
-        return "Alt";
-      case "Option":
-        return "Alt";
-      case "Meta":
+      case "meta":
+      case "super":
+      case "win":
+      case "windows":
+      case "cmd":
+      case "command":
         return "Meta";
-      case "Super":
-        return "Meta";
-      case "Win":
-        return "Meta";
-      case "Windows":
-        return "Meta";
-      case "Cmd":
-        return "Meta";
-      case "Command":
-        return "Meta";
-      case "Ctrl":
+      case "ctrl":
+      case "control":
         return "Ctrl";
-      case "Control":
-        return "Ctrl";
-      case "Shift":
+      case "shift":
         return "Shift";
     }
     return modifier;

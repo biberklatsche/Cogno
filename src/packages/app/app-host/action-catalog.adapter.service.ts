@@ -1,11 +1,12 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
-  CommandPaletteActionDefinitionContract,
-  CommandPaletteCommandEntryContract,
-  CommandPaletteHostPortContract,
+  ActionCatalog,
+  ActionDefinitionContract,
+  ActionDispatcher,
+  ActionEntryContract,
 } from "@cogno/core-api";
-import { map, Observable } from "rxjs";
+import { filter, map, Observable, share, tap } from "rxjs";
 import { ActionFired } from "../action/action.models";
 import { coreActionNames } from "../action/core-action-names";
 import { AppBus } from "../app-bus/app-bus";
@@ -13,8 +14,9 @@ import { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "../keybinding/keybind.service";
 
 @Injectable({ providedIn: "root" })
-export class CommandPaletteHostPortAdapterService implements CommandPaletteHostPortContract {
-  readonly commandEntries$: Observable<ReadonlyArray<CommandPaletteCommandEntryContract>>;
+export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatcher {
+  readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
+  private readonly actionStreams = new Map<string, Observable<void>>();
 
   constructor(
     private readonly appBus: AppBus,
@@ -22,20 +24,37 @@ export class CommandPaletteHostPortAdapterService implements CommandPaletteHostP
     private readonly keybindService: KeybindService,
     private readonly wiringService: AppWiringService,
   ) {
-    this.commandEntries$ = configService.config$.pipe(map(() => this.buildCommandEntries()));
+    this.actionEntries$ = configService.config$.pipe(map(() => this.buildActionEntries()));
   }
 
-  publishAction(commandPaletteActionDefinition: CommandPaletteActionDefinitionContract): void {
+  dispatchAction(actionDefinition: ActionDefinitionContract): void {
     this.appBus.publish(
       ActionFired.create(
-        commandPaletteActionDefinition.actionName,
-        commandPaletteActionDefinition.trigger,
-        commandPaletteActionDefinition.args ? [...commandPaletteActionDefinition.args] : undefined,
+        actionDefinition.actionName,
+        actionDefinition.trigger,
+        actionDefinition.args ? [...actionDefinition.args] : undefined,
       ),
     );
   }
 
-  private buildCommandEntries(): ReadonlyArray<CommandPaletteCommandEntryContract> {
+  onAction$(actionName: string): Observable<void> {
+    const cached = this.actionStreams.get(actionName);
+    if (cached) return cached;
+
+    const stream = this.appBus.on$(ActionFired.listener()).pipe(
+      filter((event) => event.payload === actionName),
+      tap((event) => {
+        event.performed = !event.trigger?.broadcast;
+        event.defaultPrevented = true;
+      }),
+      map(() => undefined),
+      share(),
+    );
+    this.actionStreams.set(actionName, stream);
+    return stream;
+  }
+
+  private buildActionEntries(): ReadonlyArray<ActionEntryContract> {
     const sideMenuActionNames = this.wiringService
       .getSideMenuFeatureDefinitions()
       .map((sideMenuFeatureDefinition) => sideMenuFeatureDefinition.actionName);

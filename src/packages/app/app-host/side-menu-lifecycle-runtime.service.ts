@@ -1,9 +1,12 @@
 import { DestroyRef, Injectable, Injector } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
+import {
+  ApplicationConfigurationPort,
+  SideMenuFeatureHandleContract,
+  SideMenuFeatureLifecycleContract,
+} from "@cogno/core-api";
 import { Icon } from "@cogno/core-ui";
 import { AppBus } from "../app-bus/app-bus";
-import { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "../keybinding/keybind.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
 import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";
@@ -17,7 +20,7 @@ export class SideMenuLifecycleRuntimeService {
     private readonly injector: Injector,
     private readonly sideMenuService: SideMenuService,
     private readonly appBus: AppBus,
-    private readonly configService: ConfigService,
+    private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     private readonly keybindService: KeybindService,
     private readonly destroyRef: DestroyRef,
   ) {
@@ -47,7 +50,7 @@ export class SideMenuLifecycleRuntimeService {
         {
           sideMenuService: this.sideMenuService,
           bus: this.appBus,
-          configService: this.configService,
+          applicationConfigurationPort: this.applicationConfigurationPort,
           keybinds: this.keybindService,
           destroyRef: this.destroyRef,
         },

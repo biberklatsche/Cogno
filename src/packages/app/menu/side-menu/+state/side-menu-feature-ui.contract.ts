@@ -16,6 +16,7 @@ export interface SideMenuFeatureDefinition
   extends SideMenuFeatureDefinitionContract<Icon, ActionName> {
   readonly targetComponent: Type<unknown>;
   readonly createLifecycle?: SideMenuFeatureLifecycleFactory;
+  readonly isAvailable?: (configuration: Record<string, unknown>) => boolean;
 }
 
 export const sideMenuFeatureDefinitionsToken = new InjectionToken<

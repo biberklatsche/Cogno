@@ -69,7 +69,8 @@ export type Icon =
   | "mdiAccountHeart"
   | "mdiDotsVertical"
   | "mdiBookmark"
-  | "mdiRefreshAuto"
+  | "mdiLoading"
+  | "mdiRefresh"
   | "mdiSpiderThread"
   | "mdiPin"
   | "mdiPinOff"
@@ -80,4 +81,5 @@ export type Icon =
   | "mdiBell"
   | "mdiBellBadge"
   | "mdiFilter"
+  | "mdiSend"
   | "mdiContentSaveOutline";

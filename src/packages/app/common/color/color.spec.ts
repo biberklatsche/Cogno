@@ -59,6 +59,11 @@ describe("Color", () => {
     expect(Color.isLight("#ffffff")).toBeTruthy();
   });
 
+  it("should return brightness between 0 and 1", () => {
+    expect(Color.getBrightness("#000000")).toEqual(0);
+    expect(Color.getBrightness("#ffffff")).toEqual(1);
+  });
+
   it("should return isValid false if color is undefined", () => {
     expect(Color.isValid(undefined)).toBeFalsy();
   });
@@ -81,5 +86,30 @@ describe("Color", () => {
 
   it("should return isValid true if color is valid", () => {
     expect(Color.isValid("#000000")).toBeTruthy();
+  });
+
+  it("should return a deterministic color name from text", () => {
+    const firstColorName = Color.fromText("alpha");
+    const secondColorName = Color.fromText("alpha");
+
+    expect(secondColorName).toEqual(firstColorName);
+    expect(["red", "green", "yellow", "blue", "magenta", "cyan", "grey"]).toContain(firstColorName);
+  });
+
+  it("should map text to multiple stable color buckets", () => {
+    const discoveredColorNames = new Set<string>();
+
+    for (let index = 0; index < 200; index++) {
+      discoveredColorNames.add(Color.fromText(`value-${index}`));
+    }
+
+    expect(discoveredColorNames).toEqual(
+      new Set(["red", "green", "yellow", "blue", "magenta", "cyan"]),
+    );
+  });
+
+  it("should convert config colors to hex colors", () => {
+    expect(Color.toHexColor(undefined)).toEqual("#000");
+    expect(Color.toHexColor("ffffff")).toEqual("#ffffff");
   });
 });

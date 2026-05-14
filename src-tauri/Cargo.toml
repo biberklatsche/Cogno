@@ -31,7 +31,7 @@ tauri-plugin-fs = { version = "2.4.2", features = ["watch"] }
 tauri-plugin-log = "2.7.0"
 tauri-plugin-os = "2.3.1"
 tauri-plugin-window-state = "2.4.0"
-tauri-plugin-sql = { version = "2.3.0", features = ["sqlite"] }
+tauri-plugin-sql = { version = "2.4.0", features = ["sqlite"] }
 portable-pty = "0.8"
 which = "5"
 font-kit = "0.11"

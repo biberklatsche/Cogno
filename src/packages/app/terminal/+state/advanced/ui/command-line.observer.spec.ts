@@ -238,6 +238,22 @@ describe("CommandLineObserver", () => {
     expect(stateManager.commands[0].user).toBe("larswolfram");
   });
 
+  it("should publish cursor restore request when OSC 733 is received", () => {
+    observer.registerTerminal(mockTerminal);
+    const publishSpy = vi.spyOn(mockBus, "publish");
+
+    publishSpy.mockClear();
+    const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
+    oscHandler("COGNO:PROMPT;returnCode=0;id=1;command=fresh;");
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: ["app", "terminal", terminalId],
+        type: "TerminalCursorRestoreRequested",
+      }),
+    );
+  });
+
   it("should dispose registered OSC handler", () => {
     const disposeSpy = vi.fn();
     vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });

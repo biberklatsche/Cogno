@@ -1,4 +1,7 @@
 import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { aiChatSideMenuFeatureDefinition } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
+import { AiChatSideComponent } from "@cogno/features/side-menu/ai/ai-chat-side.component";
+import { AiChatSideMenuLifecycle } from "@cogno/features/side-menu/ai/ai-chat-side-menu.lifecycle";
 import { CommandPaletteComponent } from "@cogno/features/side-menu/command-palette/command-palette.component";
 import { commandPaletteSideMenuFeatureDefinition } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
 import { CommandPaletteSideMenuLifecycle } from "@cogno/features/side-menu/command-palette/command-palette-side-menu.lifecycle";
@@ -24,6 +27,12 @@ export const productSideMenuFeatureDefinitions = [
     targetComponent: CommandPaletteComponent,
     createLifecycle: (injector, sideMenuFeatureHandle) =>
       injector.get(CommandPaletteSideMenuLifecycle).create(sideMenuFeatureHandle),
+  },
+  {
+    ...aiChatSideMenuFeatureDefinition,
+    targetComponent: AiChatSideComponent,
+    createLifecycle: (injector, sideMenuFeatureHandle) =>
+      injector.get(AiChatSideMenuLifecycle).create(sideMenuFeatureHandle),
   },
   {
     ...notificationSideMenuFeatureDefinition,

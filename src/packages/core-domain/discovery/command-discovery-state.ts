@@ -1,10 +1,10 @@
-import { CommandPaletteActionDefinitionContract } from "@cogno/core-api";
+import { ActionDefinitionContract } from "@cogno/core-api";
 import { SelectableItemState } from "../selection";
 
 export interface CommandDiscoveryEntryState extends SelectableItemState<string> {
   readonly label: string;
   readonly keybinding: string;
-  readonly actionDefinition: CommandPaletteActionDefinitionContract;
+  readonly actionDefinition: ActionDefinitionContract;
 }
 
 export interface CommandDiscoveryState {

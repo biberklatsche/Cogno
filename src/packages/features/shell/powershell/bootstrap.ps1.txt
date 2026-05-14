@@ -1,11 +1,13 @@
 # Cogno Bootstrap Script for PowerShell
 # Provides shell startup, prompt hooks, and shell integration features
 
-# Guard against double loading
-if ($env:COGNO_PWSH_BOOTSTRAPPED -eq "1") {
+# Guard against double loading within the same session.
+# Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
+# terminal does not suppress integration in a freshly spawned session.
+if ($env:COGNO_SESSION_ID -and $env:COGNO_PWSH_BOOTSTRAPPED -eq $env:COGNO_SESSION_ID) {
     return
 }
-$env:COGNO_PWSH_BOOTSTRAPPED = "1"
+$env:COGNO_PWSH_BOOTSTRAPPED = if ($env:COGNO_SESSION_ID) { $env:COGNO_SESSION_ID } else { "1" }
 
 # Logging function
 function Write-CognoLog {
@@ -22,10 +24,19 @@ Write-CognoLog "PowerShell bootstrap started"
 
 # Optionally load user's profile (only if COGNO_ALLOW_USER_RC=1)
 if ($env:COGNO_ALLOW_USER_RC -eq "1") {
-    $userProfile = $PROFILE.CurrentUserAllHosts
-    if (Test-Path $userProfile) {
-        Write-CognoLog "Loading user profile: $userProfile"
-        . $userProfile
+    $profilePaths = @(
+        @{ Label = "AllUsersAllHosts"; Path = $PROFILE.AllUsersAllHosts },
+        @{ Label = "AllUsersCurrentHost"; Path = $PROFILE.AllUsersCurrentHost },
+        @{ Label = "CurrentUserAllHosts"; Path = $PROFILE.CurrentUserAllHosts },
+        @{ Label = "CurrentUserCurrentHost"; Path = $PROFILE.CurrentUserCurrentHost }
+    )
+
+    foreach ($profileEntry in $profilePaths) {
+        $profilePath = $profileEntry.Path
+        if ($profilePath -and (Test-Path $profilePath)) {
+            Write-CognoLog "Loading $($profileEntry.Label): $profilePath"
+            . $profilePath
+        }
     }
 }
 

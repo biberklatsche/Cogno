@@ -117,4 +117,18 @@ describe("SideMenuService", () => {
     service.setPanelWidthInPixels(999);
     expect(service.panelWidthInPixels()).toBe(640);
   });
+
+  it("preserves runtime pin state when a menu item is re-registered", () => {
+    service.open("Workspace");
+    service.togglePin();
+
+    service.addMenuItem({
+      ...menuItem,
+      icon: "mdiRobot",
+      pinned: false,
+    });
+
+    expect(service.menu().find((item) => item.label === "Workspace")?.pinned).toBe(true);
+    expect(service.selectedItem()?.pinned).toBe(true);
+  });
 });

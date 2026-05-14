@@ -53,6 +53,7 @@ describe("WorkspaceHostApplicationService", () => {
           grids: [{ tabId: "T-1", pane: { workingDir: "C:\\repo" } }],
         },
       ]),
+      updateWorkspace: vi.fn(),
     } as unknown as WorkspaceRepository;
 
     service = new WorkspaceHostApplicationService(
@@ -115,6 +116,25 @@ describe("WorkspaceHostApplicationService", () => {
     });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(true);
+  });
+
+  it("creates a workspace draft with an empty id and one tab", () => {
+    const draft = service.createWorkspaceDraft();
+
+    expect(draft.id).toBe("");
+    expect(draft.tabs).toHaveLength(1);
+    expect(draft.grids).toHaveLength(1);
+    expect(draft.isActive).toBe(true);
+    expect(draft.isSelected).toBe(true);
+  });
+
+  it("ignores saveWorkspace for the default workspace or missing workspaces", async () => {
+    const updateWorkspaceSpy = workspaceRepository.updateWorkspace as ReturnType<typeof vi.fn>;
+
+    await service.saveWorkspace("default");
+    await service.saveWorkspace("missing");
+
+    expect(updateWorkspaceSpy).not.toHaveBeenCalled();
   });
 });
 

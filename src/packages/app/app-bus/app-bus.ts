@@ -24,11 +24,11 @@ export type MessageBase<T extends string = string, P = unknown> = {
   phase?: Phase;
 };
 
-export const validTriggers = ["all", "unconsumed", "performable"] as const;
+export const validTriggers = ["broadcast", "unconsumed", "performable", "always"] as const;
 export type ActionTrigger = (typeof validTriggers)[number];
 
 export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
-  trigger?: { all: boolean; unconsumed: boolean; performable: boolean };
+  trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
   args?: string[];
 };
 

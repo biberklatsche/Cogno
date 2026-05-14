@@ -2,11 +2,13 @@
 # Cogno Bootstrap Script for Zsh
 # This script is loaded as .zshrc in the custom ZDOTDIR
 
-# Guard against double loading
-if [[ -n "${COGNO_ZSH_BOOTSTRAPPED}" ]]; then
+# Guard against double loading within the same session.
+# Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
+# terminal does not suppress integration in a freshly spawned session.
+if [[ -n "${COGNO_SESSION_ID}" && "${COGNO_ZSH_BOOTSTRAPPED}" == "${COGNO_SESSION_ID}" ]]; then
     return 0
 fi
-export COGNO_ZSH_BOOTSTRAPPED=1
+export COGNO_ZSH_BOOTSTRAPPED="${COGNO_SESSION_ID:-1}"
 
 # Logging function
 _cogno_log() {
@@ -27,17 +29,37 @@ fi
 # Optionally load user's Zsh startup files (only if COGNO_ALLOW_USER_RC=1)
 # We run with custom ZDOTDIR, so ~/.zshenv/.zprofile are not loaded automatically.
 if [[ "${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    if [[ -f "/etc/zshenv" ]]; then
+        _cogno_log "Loading /etc/zshenv"
+        source "/etc/zshenv"
+    fi
     if [[ -f "${HOME}/.zshenv" ]]; then
         _cogno_log "Loading user .zshenv"
         source "${HOME}/.zshenv"
+    fi
+    if [[ -f "/etc/zprofile" ]]; then
+        _cogno_log "Loading /etc/zprofile"
+        source "/etc/zprofile"
     fi
     if [[ -f "${HOME}/.zprofile" ]]; then
         _cogno_log "Loading user .zprofile"
         source "${HOME}/.zprofile"
     fi
+    if [[ -f "/etc/zshrc" ]]; then
+        _cogno_log "Loading /etc/zshrc"
+        source "/etc/zshrc"
+    fi
     if [[ -f "${HOME}/.zshrc" ]]; then
         _cogno_log "Loading user .zshrc"
         source "${HOME}/.zshrc"
+    fi
+    if [[ -f "/etc/zlogin" ]]; then
+        _cogno_log "Loading /etc/zlogin"
+        source "/etc/zlogin"
+    fi
+    if [[ -f "${HOME}/.zlogin" ]]; then
+        _cogno_log "Loading user .zlogin"
+        source "${HOME}/.zlogin"
     fi
 fi
 

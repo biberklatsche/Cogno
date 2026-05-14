@@ -1,5 +1,6 @@
-import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
+import { ApplicationSettingsExtensionContract } from "@cogno/core-api";
 import {
+  FeatureAiSchema,
   FeatureAutocompleteSchema,
   FeatureCommandPaletteSchema,
   FeatureNotificationSchema,
@@ -7,7 +8,7 @@ import {
   FeatureSearchSchema,
   FeatureTerminalSchema,
   FeatureWorkspaceSchema,
-} from "./feature-settings.contract";
+} from "./feature-settings.schemas";
 
 const featureSettingsSchemaShape = {
   workspace: FeatureWorkspaceSchema.optional(),
@@ -17,6 +18,7 @@ const featureSettingsSchemaShape = {
   terminal: FeatureTerminalSchema.optional(),
   autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
+  ai: FeatureAiSchema.optional(),
 } as const;
 
 export const defaultFeatureSettingsExtension = {
@@ -36,6 +38,14 @@ export const defaultFeatureSettingsExtension = {
         timeout_ms: 160,
       },
     },
+    ai: {
+      mode: "visible",
+      request: {
+        include_process_tree: false,
+        max_commands: 8,
+        max_output_chars: 4000,
+      },
+    },
   },
   schemaShape: featureSettingsSchemaShape,
   settingsSections: [
@@ -46,5 +56,6 @@ export const defaultFeatureSettingsExtension = {
     { id: "terminal", title: "Terminal", order: 500 },
     { id: "autocomplete", title: "Autocomplete", order: 600 },
     { id: "search", title: "Search", order: 700 },
+    { id: "ai", title: "AI", order: 800 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;

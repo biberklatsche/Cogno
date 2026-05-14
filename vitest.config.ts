@@ -16,7 +16,6 @@ export default defineConfig({
     include: [
       "src/packages/app/**/*.spec.ts",
       "src/packages/core-domain/**/*.spec.ts",
-      "src/packages/core-host/**/*.spec.ts",
       "src/packages/features/**/*.spec.ts",
     ],
     exclude: [
@@ -28,7 +27,6 @@ export default defineConfig({
       include: [
         "src/packages/app/**/*.ts",
         "src/packages/core-domain/**/*.ts",
-        "src/packages/core-host/**/*.ts",
         "src/packages/features/**/*.ts",
       ],
       exclude: [

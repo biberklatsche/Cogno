@@ -5,30 +5,22 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
+import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
-import {
-  actionKeybindingToken,
-  additionalNotificationChannelsToken,
-  commandPaletteHostPortToken,
-  commandRunnerToken,
-  databaseAccessToken,
-  filesystemToken,
-  notificationCenterPortToken,
-  terminalSearchHostPortToken,
-  workspaceCloseGuardToken,
-  workspaceHostPortToken,
-} from "@cogno/app/app-host/app-host.tokens";
+import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { CommandPaletteHostPortAdapterService } from "@cogno/app/app-host/command-palette-host-port.adapter.service";
+import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
+
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
+import { HttpClientPortAdapterService } from "@cogno/app/app-host/http-client-port.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
+import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
-import { WorkspaceShortcutActionService } from "@cogno/app/app-host/workspace-shortcut-action.service";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
@@ -46,38 +38,61 @@ import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
 import { Logger } from "@cogno/app-tauri/logger";
 import {
+  ActionCatalog,
+  ActionDispatcher,
   ActionKeybindingPort,
+  ApplicationConfigurationPort,
   ApplicationProduct,
-  CommandPaletteHostPort,
+  CommandRunner,
+  ConfigurationTransformer,
+  DatabaseAccess,
+  Filesystem,
+  HttpClientPort,
   NotificationCenterPort,
+  TerminalGateway,
   TerminalSearchHostPort,
-  WorkspaceCloseGuard,
   WorkspaceHostPort,
 } from "@cogno/core-api";
+import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
+import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
+import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
+import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
+import { aiDetectableProviderDefinitions } from "../products/ai-detectable-provider-definitions";
 import { productDefinition } from "../products/product-definition.instance";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
-    { provide: commandRunnerToken, useExisting: CommandRunnerHostService },
-    { provide: commandPaletteHostPortToken, useExisting: CommandPaletteHostPortAdapterService },
-    { provide: actionKeybindingToken, useExisting: ActionKeybindingPortAdapterService },
-    { provide: databaseAccessToken, useExisting: DatabaseAccessHostService },
-    { provide: filesystemToken, useExisting: FilesystemHostService },
-    { provide: additionalNotificationChannelsToken, useValue: [] },
-    { provide: notificationCenterPortToken, useExisting: NotificationCenterPortAdapterService },
-    { provide: terminalSearchHostPortToken, useExisting: TerminalSearchHostPortAdapterService },
-    { provide: workspaceCloseGuardToken, useExisting: WorkspaceCloseGuardAdapterService },
-    { provide: workspaceHostPortToken, useExisting: WorkspaceHostPortAdapterService },
+    { provide: CommandRunner, useExisting: CommandRunnerHostService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
+    { provide: DatabaseAccess, useExisting: DatabaseAccessHostService },
+    { provide: Filesystem, useExisting: FilesystemHostService },
+    { provide: additionalNotificationChannelsToken, useValue: [] },
+    { provide: ActionCatalog, useExisting: ActionCatalogAdapterService },
+    { provide: ActionDispatcher, useExisting: ActionCatalogAdapterService },
+    {
+      provide: ApplicationConfigurationPort,
+      useExisting: ApplicationConfigurationPortAdapterService,
+    },
+    {
+      provide: AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
+      useValue: aiDetectableProviderDefinitions,
+    },
+    {
+      provide: ConfigurationTransformer,
+      useExisting: AiConfigurationTransformerService,
+      multi: true,
+    },
     { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
-    { provide: CommandPaletteHostPort, useExisting: CommandPaletteHostPortAdapterService },
+    { provide: HttpClientPort, useExisting: HttpClientPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     {
       provide: sideMenuFeatureDefinitionsToken,
       useValue: [...sideMenuFeatureDefinitions, ...productDefinition.sideMenuFeatureDefinitions],
     },
+    { provide: TerminalGateway, useExisting: TerminalGatewayAdapterService },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },
     { provide: WorkspaceHostPort, useExisting: WorkspaceHostPortAdapterService },
@@ -95,11 +110,12 @@ export const appConfig: ApplicationConfig = {
       inject(WindowService);
       inject(AppWiringService);
       inject(SideMenuLifecycleRuntimeService);
+      inject(ActionCatalogAdapterService);
       inject(ActionKeybindingPortAdapterService);
-      inject(CommandPaletteHostPortAdapterService);
       inject(TerminalSearchHostPortAdapterService);
       inject(WorkspaceHostPortAdapterService);
       inject(WorkspaceShortcutActionService);
+      inject(AiProviderDetectionService);
     }),
   ],
 };

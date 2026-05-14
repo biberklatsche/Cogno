@@ -1,3 +1,4 @@
+import { OS } from "@cogno/app-tauri/os";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
@@ -42,6 +43,8 @@ describe("KeybindService", () => {
   afterEach(() => {
     service.unregisterListener("test-listener");
     document.body.innerHTML = "";
+    config$.next({ keybind: [] });
+    vi.restoreAllMocks();
   });
 
   it("handles registered arrow key listeners outside dialogs", () => {
@@ -100,5 +103,118 @@ describe("KeybindService", () => {
 
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
+  });
+
+  it("fires always: keybindings while the focused selected terminal is in fullscreen mode", () => {
+    config$.next({ keybind: ["always:ctrl+shift+k=test_always_action"] as never[] });
+
+    bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
+    bus.publish({ type: "TerminalFocused", payload: "terminal-1" });
+    bus.publish({
+      path: ["app", "terminal", "terminal-1"],
+      type: "FullScreenAppEntered",
+      payload: "terminal-1",
+    });
+
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    const event = new KeyboardEvent("keydown", {
+      key: "k",
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = window.dispatchEvent(event);
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: "test_always_action" }),
+    );
+    expect(dispatchResult).toBe(false);
+  });
+
+  it("does not route registered listeners when the event target is an editable field", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["v"], handler);
+
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "v",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("keeps native macOS copy/paste shortcuts in editable fields", () => {
+    vi.spyOn(OS, "platform").mockReturnValue("macos");
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["c"], handler);
+
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "c",
+      metaKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("does not treat the xterm helper textarea as a native editable field", () => {
+    const terminalElement = document.createElement("div");
+    terminalElement.className = "terminal xterm";
+    const helperTextareaElement = document.createElement("textarea");
+    helperTextareaElement.className = "xterm-helper-textarea";
+    terminalElement.appendChild(helperTextareaElement);
+    document.body.appendChild(terminalElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowLeft",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    const result = (
+      service as unknown as {
+        shouldUseNativeEditableFieldHandling: (keyboardEvent: KeyboardEvent) => boolean;
+      }
+    ).shouldUseNativeEditableFieldHandling(event);
+
+    expect(result).toBe(false);
+  });
+
+  it("does not treat non-editing shortcuts as native editable field shortcuts", () => {
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "1",
+      code: "Digit1",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    inputElement.dispatchEvent(event);
+
+    const result = (
+      service as unknown as {
+        shouldUseNativeEditableFieldHandling: (keyboardEvent: KeyboardEvent) => boolean;
+      }
+    ).shouldUseNativeEditableFieldHandling(event);
+
+    expect(result).toBe(false);
   });
 });

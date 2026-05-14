@@ -21,6 +21,7 @@ struct Session {
     master: Box<dyn portable_pty::MasterPty + Send>,
     writer: Box<dyn Write + Send>,
     should_exit: Arc<AtomicBool>,
+    exit_notified: Arc<AtomicBool>,
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
@@ -113,11 +114,15 @@ pub async fn pty_spawn(
         .map_err(|e| format!("Failed to take writer: {}", e))?;
 
     let should_exit = Arc::new(AtomicBool::new(false));
+    let exit_notified = Arc::new(AtomicBool::new(false));
+    let exit_notified_for_child = exit_notified.clone();
+    let exit_notified_for_reader = exit_notified.clone();
 
     let session = Session {
         master: pair.master,
         writer,
         should_exit: should_exit.clone(),
+        exit_notified,
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
         line_editor_pipe_name,
@@ -139,23 +144,36 @@ pub async fn pty_spawn(
             Err(_) => 1,
         };
 
-        println!("Child process ended with code: {}", exit_code);
-
-        let _ = app_for_child.emit(
-            &format!("pty-exit:{}", terminal_id_for_child),
-            serde_json::json!({
-                "exitCode": exit_code
-            }),
+        log::info!(
+            target: "pty",
+            "child process exited terminal_id={} shell_pid={:?} exit_code={}",
+            terminal_id_for_child,
+            shell_process_id,
+            exit_code
         );
 
         let mut sessions = sessions_for_child.lock().unwrap();
         sessions.remove(&terminal_id_for_child);
+        drop(sessions);
+
+        if exit_notified_for_child
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
+            .is_ok()
+        {
+            let _ = app_for_child.emit(
+                &format!("pty-exit:{}", terminal_id_for_child),
+                serde_json::json!({
+                    "exitCode": exit_code
+                }),
+            );
+        }
     });
 
     // Thread that reads PTY output
     let terminal_id_clone = terminal_id.clone();
     let app_clone = app.clone();
     let should_exit_clone = should_exit.clone();
+    let sessions_for_reader = state.sessions.clone();
 
     std::thread::spawn(move || {
         let mut reader = reader;
@@ -213,10 +231,27 @@ pub async fn pty_spawn(
                         }
                     }
                 }
-                Err(_e) => {
+                Err(_) => {
                     break;
                 }
             }
+        }
+
+        // PTY died unexpectedly (EOF or read error, not an intentional kill).
+        // Emit exit immediately so the tab closes without waiting for child.wait().
+        if !should_exit_clone.load(Ordering::Relaxed)
+            && exit_notified_for_reader
+                .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
+                .is_ok()
+        {
+            let mut sessions = sessions_for_reader.lock().unwrap();
+            sessions.remove(&terminal_id_clone);
+            drop(sessions);
+
+            let _ = app_clone.emit(
+                &format!("pty-exit:{}", terminal_id_clone),
+                serde_json::json!({ "exitCode": -1 }),
+            );
         }
     });
 
@@ -225,27 +260,55 @@ pub async fn pty_spawn(
 
 #[tauri::command]
 pub fn pty_write(
+    app: AppHandle,
     state: State<'_, PtyState>,
     terminal_id: String,
     data: String,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().unwrap();
+    let write_result = {
+        let mut sessions = state.sessions.lock().unwrap();
+        if let Some(session) = sessions.get_mut(&terminal_id) {
+            session
+                .writer
+                .write_all(data.as_bytes())
+                .and_then(|_| session.writer.flush())
+        } else {
+            return Err(format!("Session not found: {}", terminal_id));
+        }
+    };
 
-    if let Some(session) = sessions.get_mut(&terminal_id) {
-        session
-            .writer
-            .write_all(data.as_bytes())
-            .map_err(|e| format!("Failed to write to PTY: {}", e))?;
+    if let Err(ref e) = write_result {
+        // os error 232 = ERROR_NO_DATA ("The pipe is being closed.") on Windows
+        // os error 109 = ERROR_BROKEN_PIPE
+        let is_broken_pipe = e
+            .raw_os_error()
+            .map(|code| code == 109 || code == 232)
+            .unwrap_or(false);
 
-        session
-            .writer
-            .flush()
-            .map_err(|e| format!("Failed to flush PTY: {}", e))?;
-
-        Ok(())
-    } else {
-        Err(format!("Session not found: {}", terminal_id))
+        if is_broken_pipe {
+            let (emit_exit, _dead_master) = {
+                let mut sessions = state.sessions.lock().unwrap();
+                if let Some(session) = sessions.remove(&terminal_id) {
+                    session.should_exit.store(true, Ordering::Relaxed);
+                    let emit = session
+                        .exit_notified
+                        .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
+                        .is_ok();
+                    (emit, Some(session.master))
+                } else {
+                    (false, None)
+                }
+            }; // lock released; _dead_master drops here, after the lock
+            if emit_exit {
+                let _ = app.emit(
+                    &format!("pty-exit:{}", terminal_id),
+                    serde_json::json!({ "exitCode": -1 }),
+                );
+            }
+        }
     }
+
+    write_result.map_err(|e| format!("Failed to write to PTY: {}", e))
 }
 
 #[tauri::command]
