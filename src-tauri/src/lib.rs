@@ -38,6 +38,7 @@ pub fn run(cli: Cli) {
         .manage(PtyState::new())
         .invoke_handler(tauri::generate_handler![
             cogno_tauri_core::commands::command_runner::command_runner_execute,
+            cogno_tauri_core::commands::git_blob::git_read_blob,
             cogno_tauri_core::commands::config::get_default_config,
             cogno_tauri_core::commands::fonts::list_fonts,
             cogno_tauri_core::commands::shells::list_shells,

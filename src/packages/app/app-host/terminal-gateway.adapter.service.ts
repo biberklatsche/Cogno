@@ -109,6 +109,7 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
       tabId: this.gridListService.findTabIdByTerminalId(terminalId),
       workspaceId: this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId),
       shellType: terminalState.shellContext.shellType,
+      shellContext: terminalState.shellContext,
       cwd: terminalState.cwd,
       input: terminalState.input.text,
       isCommandRunning: terminalState.isCommandRunning,

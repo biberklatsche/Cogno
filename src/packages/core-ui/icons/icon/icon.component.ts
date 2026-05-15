@@ -21,6 +21,7 @@ import {
   mdiCheckboxBlankCircle,
   mdiCheckCircle,
   mdiChevronDown,
+  mdiChevronRight,
   mdiClose,
   mdiCloseBoxMultipleOutline,
   mdiCloseBoxOutline,
@@ -175,6 +176,9 @@ export class IconComponent {
         break;
       case "mdiChevronDown":
         this.icon = mdiChevronDown;
+        break;
+      case "mdiChevronRight":
+        this.icon = mdiChevronRight;
         break;
       case "mdiCog":
         this.icon = mdiCog;

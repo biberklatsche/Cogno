@@ -1,4 +1,5 @@
 import { Observable } from "rxjs";
+import { ShellContextContract } from "./filesystem.contract";
 
 export type TerminalIdentifierContract = string;
 
@@ -21,6 +22,7 @@ export interface TerminalSnapshotContract {
   readonly tabId?: string;
   readonly workspaceId?: string;
   readonly shellType?: string;
+  readonly shellContext?: ShellContextContract;
   readonly cwd?: string;
   readonly input?: string;
   readonly isCommandRunning: boolean;

@@ -3,6 +3,7 @@ export * from "./cli-action";
 export * from "./cli-config-overrides";
 export * from "./clipboard";
 export * from "./command-runner";
+export * from "./git-blob-reader";
 export * from "./db";
 export * from "./default-config";
 export * from "./fs";

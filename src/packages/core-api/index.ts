@@ -7,6 +7,7 @@ export * from "./application-settings-extension.contract";
 export * from "./application-settings-section-definition.contract";
 export * from "./base-path.adapter";
 export * from "./command-runner.contract";
+export * from "./git-blob-reader.contract";
 export * from "./configuration-transformer.contract";
 export * from "./database-access.contract";
 export * from "./database-migration.contract";

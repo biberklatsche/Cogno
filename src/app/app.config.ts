@@ -14,6 +14,7 @@ import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
+import { GitBlobReaderHostService } from "@cogno/app/app-host/git-blob-reader-host.service";
 import { HttpClientPortAdapterService } from "@cogno/app/app-host/http-client-port.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
@@ -47,6 +48,7 @@ import {
   ConfigurationTransformer,
   DatabaseAccess,
   Filesystem,
+  GitBlobReader,
   HttpClientPort,
   NotificationCenterPort,
   TerminalGateway,
@@ -66,6 +68,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
     { provide: CommandRunner, useExisting: CommandRunnerHostService },
+    { provide: GitBlobReader, useExisting: GitBlobReaderHostService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
     { provide: DatabaseAccess, useExisting: DatabaseAccessHostService },
     { provide: Filesystem, useExisting: FilesystemHostService },

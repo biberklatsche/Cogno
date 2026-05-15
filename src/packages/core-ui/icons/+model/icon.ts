@@ -9,6 +9,7 @@ export type Icon =
   | "mdiSpeedometer"
   | "mdiPlus"
   | "mdiChevronDown"
+  | "mdiChevronRight"
   | "mdiCog"
   | "mdiCogs"
   | "mdiCodeBracesBox"

@@ -35,6 +35,7 @@ export interface FilesystemContract {
     options?: FilesystemListOptionsContract,
   ): Promise<ReadonlyArray<FilesystemEntryContract>>;
   exists(path: string, shellContext: ShellContextContract): Promise<boolean>;
+  getFileSize(path: string, shellContext: ShellContextContract): Promise<number | null>;
   readTextFile(path: string, shellContext: ShellContextContract): Promise<string>;
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string;
   appendPathSeparator(path: string, shellContext: ShellContextContract): string;
@@ -54,6 +55,7 @@ export abstract class Filesystem implements FilesystemContract {
     options?: FilesystemListOptionsContract,
   ): Promise<ReadonlyArray<FilesystemEntryContract>>;
   abstract exists(path: string, shellContext: ShellContextContract): Promise<boolean>;
+  abstract getFileSize(path: string, shellContext: ShellContextContract): Promise<number | null>;
   abstract readTextFile(path: string, shellContext: ShellContextContract): Promise<string>;
   abstract toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string;
   abstract appendPathSeparator(path: string, shellContext: ShellContextContract): string;
