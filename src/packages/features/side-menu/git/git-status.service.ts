@@ -6,6 +6,7 @@ import {
   ShellContextContract,
   TerminalGateway,
 } from "@cogno/core-api";
+import { merge } from "rxjs";
 
 export type GitFileStatus = "M" | "A" | "D" | "R" | "?";
 
@@ -39,7 +40,11 @@ export class GitStatusService {
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private currentGitRoot: string | null = null;
-  currentShellContext: ShellContextContract | null = null;
+  private _currentShellContext: ShellContextContract | null = null;
+
+  get currentShellContext(): ShellContextContract | null {
+    return this._currentShellContext;
+  }
 
   constructor(
     private readonly terminalGateway: TerminalGateway,
@@ -47,13 +52,11 @@ export class GitStatusService {
     private readonly notificationCenterPort: NotificationCenterPort,
     destroyRef: DestroyRef,
   ) {
-    this.terminalGateway.focusedTerminalId$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
-      void this.refreshContext();
-    });
-
-    this.terminalGateway.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
-      void this.refreshContext();
-    });
+    merge(this.terminalGateway.focusedTerminalId$, this.terminalGateway.cwdChanges$)
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => {
+        void this.refreshContext();
+      });
 
     destroyRef.onDestroy(() => this.stopPolling());
   }
@@ -87,6 +90,43 @@ export class GitStatusService {
 
   async unstageAll(): Promise<void> {
     await this.runGitCommand(["restore", "--staged", "."], "Unstage all failed");
+  }
+
+  async discardFileChanges(filePath: string): Promise<void> {
+    await this.runGitCommand(["restore", "--", filePath], "Discard failed");
+  }
+
+  async loadBranches(): Promise<{ local: string[]; remote: string[] }> {
+    if (!this.currentGitRoot || !this.currentShellContext) return { local: [], remote: [] };
+    const [localResult, remoteResult] = await Promise.all([
+      this.commandRunner.run({
+        cwd: this.currentGitRoot,
+        shellContext: this.currentShellContext,
+        program: "git",
+        args: ["branch", "--format=%(refname:short)"],
+        timeoutMs: 5_000,
+      }),
+      this.commandRunner.run({
+        cwd: this.currentGitRoot,
+        shellContext: this.currentShellContext,
+        program: "git",
+        args: ["branch", "-r", "--format=%(refname:short)"],
+        timeoutMs: 5_000,
+      }),
+    ]);
+    const local = localResult.stdout
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const remote = remoteResult.stdout
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => Boolean(s) && !s.includes("HEAD"));
+    return { local, remote };
+  }
+
+  async checkoutBranch(branchName: string): Promise<void> {
+    await this.runGitCommand(["switch", branchName], "Checkout failed");
   }
 
   async commit(message: string): Promise<void> {
@@ -128,11 +168,11 @@ export class GitStatusService {
       this.gitStatusSignal.set(null);
       this.gitErrorSignal.set(null);
       this.currentGitRoot = null;
-      this.currentShellContext = null;
+      this._currentShellContext = null;
       return;
     }
 
-    this.currentShellContext = snapshot.shellContext;
+    this._currentShellContext = snapshot.shellContext;
     const result = await this.detectGitRoot(snapshot.cwd, snapshot.shellContext);
     this.currentGitRoot = result.gitRoot;
 
@@ -228,44 +268,39 @@ export class GitStatusService {
   }
 
   private parseStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {
-    const staged: GitFile[] = [];
-    const unstaged: GitFile[] = [];
-    const untracked: GitFile[] = [];
+    return parseGitStatus(raw);
+  }
+}
 
-    for (const line of raw.split("\n")) {
-      if (line.length < 3) continue;
-      const x = line[0];
-      const y = line[1];
-      const path = line.slice(3);
+export function parseGitStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {
+  const staged: GitFile[] = [];
+  const unstaged: GitFile[] = [];
+  const untracked: GitFile[] = [];
 
-      if (x === "?" && y === "?") {
-        untracked.push({ path, status: "?" });
-        continue;
-      }
+  for (const line of raw.split("\n")) {
+    if (line.length < 3) continue;
+    const x = line[0];
+    const y = line[1];
+    // porcelain v1 rename lines are "R new\told" — take only the new path
+    const path = line.slice(3).split("\t")[0];
 
-      if (x && x !== " " && x !== "?") {
-        staged.push({ path, status: this.toStatus(x) });
-      }
-      if (y && y !== " " && y !== "?") {
-        unstaged.push({ path, status: this.toStatus(y) });
-      }
+    if (x === "?" && y === "?") {
+      untracked.push({ path, status: "?" });
+      continue;
     }
 
-    return { staged, unstaged, untracked };
-  }
-
-  private toStatus(char: string): GitFileStatus {
-    switch (char) {
-      case "A":
-        return "A";
-      case "D":
-        return "D";
-      case "R":
-        return "R";
-      case "M":
-        return "M";
-      default:
-        return "M";
+    if (x && x !== " " && x !== "?") {
+      staged.push({ path, status: toStatus(x) });
+    }
+    if (y && y !== " " && y !== "?") {
+      unstaged.push({ path, status: toStatus(y) });
     }
   }
+
+  return { staged, unstaged, untracked };
+}
+
+function toStatus(char: string): GitFileStatus {
+  const known: Record<string, GitFileStatus> = { A: "A", D: "D", R: "R" };
+  return known[char] ?? "M";
 }

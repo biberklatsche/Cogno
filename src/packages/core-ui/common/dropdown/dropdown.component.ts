@@ -34,7 +34,7 @@ export type DropdownItem<TValue extends string = string> = {
       </button>
 
       @if (isOpen()) {
-        <div class="dropdown__menu" role="menu">
+        <div class="dropdown__menu" [class.dropdown__menu--below]="placement === 'below'" role="menu">
           @for (item of items; track item.value) {
             <button
               type="button"
@@ -68,10 +68,11 @@ export type DropdownItem<TValue extends string = string> = {
         transform: translateY(-0.1rem) rotate(45deg); opacity: 0.8;
       }
       .dropdown__menu {
-        position: absolute; right: 0; bottom: calc(100% + 0.35rem); min-width: 14rem; max-width: 20rem; padding: 0.35rem;
+        position: absolute; right: 0; bottom: calc(100% + 0.35rem); min-width: 14rem; max-width: 20rem; max-height: 20rem; overflow-y: auto; padding: 0.35rem;
         border: 1px solid var(--background-color-20l); border-radius: 0.6rem; background: var(--background-color);
         box-shadow: 0 0.5rem 1.4rem rgb(0 0 0 / 18%); z-index: 20;
       }
+      .dropdown__menu--below { bottom: unset; top: calc(100% + 0.35rem); right: unset; left: 0; }
       .dropdown__item {
         display: block; width: 100%; border: 0; border-radius: 0.4rem; background: transparent; color: inherit; cursor: pointer;
         font: inherit; text-align: left; padding: 0.45rem 0.6rem;
@@ -88,18 +89,25 @@ export class DropdownComponent<TValue extends string = string> {
   @Input() value?: TValue;
   @Input() items: ReadonlyArray<DropdownItem<TValue>> = [];
   @Input() disabled = false;
+  @Input() placement: "above" | "below" = "above";
   @Output() readonly valueChange = new EventEmitter<TValue>();
+  @Output() readonly opened = new EventEmitter<void>();
 
   protected readonly isOpen = signal(false);
 
   constructor(private readonly elementRef: ElementRef<HTMLElement>) {}
 
   protected toggle(): void {
-    if (this.disabled || this.items.length === 0) {
+    if (this.disabled) {
       return;
     }
 
-    this.isOpen.update((isOpen) => !isOpen);
+    if (this.isOpen()) {
+      this.isOpen.set(false);
+    } else {
+      this.isOpen.set(true);
+      this.opened.emit();
+    }
   }
 
   protected selectItem(value: TValue): void {

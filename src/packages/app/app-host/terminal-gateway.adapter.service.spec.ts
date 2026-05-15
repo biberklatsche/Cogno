@@ -115,6 +115,7 @@ describe("TerminalGatewayAdapterService", () => {
       tabId: "tab-1",
       workspaceId: "workspace-1",
       shellType: "Bash",
+      shellContext: { shellType: "Bash" },
       cwd: "/workspace",
       input: "pwd",
       isCommandRunning: true,

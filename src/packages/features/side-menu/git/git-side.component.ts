@@ -1,12 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  signal,
-} from "@angular/core";
-import { IconComponent } from "@cogno/core-ui";
+import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
+import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { GitFile, GitStatusService } from "./git-status.service";
@@ -19,22 +12,25 @@ type SelectedFile = {
 @Component({
   selector: "app-git-side",
   standalone: true,
-  imports: [IconComponent, GitDiffViewComponent],
+  imports: [IconComponent, GitDiffViewComponent, DropdownComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="git-panel">
       <!-- Header -->
       <header class="git-header">
-        @if (status()) {
-          <span class="branch">
-            <app-icon name="mdiGit"></app-icon>
-            {{ status()!.branch }}
-          </span>
-        } @else {
-          <span class="branch">
-            <app-icon name="mdiGit"></app-icon>
-          </span>
-        }
+        <span class="branch">
+          <app-icon name="mdiGit"></app-icon>
+          @if (status()) {
+            <app-dropdown
+              [label]="status()!.branch"
+              [value]="status()!.branch"
+              [items]="branchItems()"
+              placement="below"
+              (opened)="onBranchDropdownOpened()"
+              (valueChange)="onBranchSelected($event)"
+            ></app-dropdown>
+          }
+        </span>
         <button
           type="button"
           class="icon-button"
@@ -81,7 +77,7 @@ type SelectedFile = {
                       <li
                         class="file-item staged"
                         [class.selected]="isSelected(file, true)"
-                        (click)="selectFile(file, true, $event)"
+                        (click)="selectFile(file, true)"
                       >
                         <span class="status-badge staged">{{ file.status }}</span>
                         <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
@@ -128,7 +124,7 @@ type SelectedFile = {
                       <li
                         class="file-item unstaged"
                         [class.selected]="isSelected(file, false)"
-                        (click)="selectFile(file, false, $event)"
+                        (click)="selectFile(file, false)"
                       >
                         <span
                           class="status-badge"
@@ -139,6 +135,14 @@ type SelectedFile = {
                         </span>
                         <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
                         <span class="file-dir">{{ fileDir(file.path) }}</span>
+                        @if (file.status !== '?') {
+                          <button
+                            type="button"
+                            class="action-btn discard-btn"
+                            title="Discard changes"
+                            (click)="$event.stopPropagation(); discardFile(file.path)"
+                          >↺</button>
+                        }
                         <button
                           type="button"
                           class="action-btn"
@@ -172,7 +176,7 @@ type SelectedFile = {
                     <span>Loading diff...</span>
                   </div>
                 } @else if (diff()) {
-                  <app-git-diff-view [diff]="diff()" [isDark]="true"></app-git-diff-view>
+                  <app-git-diff-view [diff]="diff()"></app-git-diff-view>
                 }
               </div>
             </section>
@@ -230,9 +234,7 @@ type SelectedFile = {
         gap: 0.25rem;
         font-weight: 500;
         color: var(--foreground-color);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        min-width: 0;
       }
 
       .git-unavailable {
@@ -440,6 +442,11 @@ type SelectedFile = {
         border-color: var(--foreground-color-10t);
       }
 
+      .action-btn.discard-btn:hover {
+        color: var(--color-red);
+        border-color: var(--color-red);
+      }
+
       .icon-button {
         background: none;
         border: none;
@@ -539,7 +546,7 @@ export class GitSideComponent {
   readonly loading = this.gitStatusService.loading;
   readonly stagedCount = this.gitStatusService.stagedCount;
 
-  readonly commitMessageSignal = signal("");
+  private readonly commitMessageSignal = signal("");
   readonly commitMessage = this.commitMessageSignal.asReadonly();
 
   readonly canCommit = computed(
@@ -561,18 +568,29 @@ export class GitSideComponent {
       (this.status()?.untracked.length ?? 0),
   );
 
-  readonly selectedFileSignal = signal<SelectedFile | null>(null);
+  private readonly selectedFileSignal = signal<SelectedFile | null>(null);
   readonly selectedFile = this.selectedFileSignal.asReadonly();
 
-  readonly diffLoadingSignal = signal(false);
+  private readonly diffLoadingSignal = signal(false);
   readonly diffLoading = this.diffLoadingSignal.asReadonly();
-  readonly diffSignal = signal<GitDiffContent | null>(null);
+  private readonly diffSignal = signal<GitDiffContent | null>(null);
   readonly diff = this.diffSignal.asReadonly();
+
+  private readonly branchesSignal = signal<{ local: string[]; remote: string[] } | null>(null);
+  private readonly currentGitRoot = computed(() => this.status()?.gitRoot ?? null);
+
+  readonly branchItems = computed<ReadonlyArray<DropdownItem>>(() => {
+    const branches = this.branchesSignal();
+    if (!branches) return [];
+    return [
+      ...branches.local.map((b) => ({ value: b, label: b })),
+      ...branches.remote.map((b) => ({ value: b, label: b })),
+    ];
+  });
 
   constructor(
     private readonly gitStatusService: GitStatusService,
     private readonly gitDiffService: GitDiffService,
-    _destroyRef: DestroyRef,
   ) {
     effect(() => {
       const status = this.status();
@@ -582,10 +600,29 @@ export class GitSideComponent {
       const stillExists = allFiles.some((f) => f.path === sel.file.path);
       if (!stillExists) this.closeDiff();
     });
+
+    // clear cached branches when the git repo changes
+    effect(() => {
+      const gitRoot = this.currentGitRoot();
+      if (!gitRoot) this.branchesSignal.set(null);
+    });
   }
 
   refresh(): void {
     void this.gitStatusService.refreshStatus();
+  }
+
+  onBranchDropdownOpened(): void {
+    if (this.branchesSignal() !== null) return;
+    void this.gitStatusService.loadBranches().then((b) => this.branchesSignal.set(b));
+  }
+
+  onBranchSelected(value: string): void {
+    const remote = this.branchesSignal()?.remote ?? [];
+    const isRemote = remote.includes(value);
+    // strip "origin/" prefix for remote branches so git switch finds the local tracking name
+    const branchName = isRemote ? value.replace(/^[^/]+\//, "") : value;
+    void this.gitStatusService.checkoutBranch(branchName);
   }
 
   onCommitInput(event: Event): void {
@@ -600,6 +637,11 @@ export class GitSideComponent {
       this.selectedFileSignal.set(null);
       this.diffSignal.set(null);
     });
+  }
+
+  discardFile(path: string): void {
+    if (!confirm(`Discard changes in ${this.fileName(path)}? This cannot be undone.`)) return;
+    void this.gitStatusService.discardFileChanges(path);
   }
 
   stageFile(path: string): void {
@@ -630,7 +672,7 @@ export class GitSideComponent {
     return sel?.file.path === file.path && sel?.isStaged === isStaged;
   }
 
-  selectFile(file: GitFile, isStaged: boolean, _event: MouseEvent): void {
+  selectFile(file: GitFile, isStaged: boolean): void {
     if (this.isSelected(file, isStaged)) {
       this.selectedFileSignal.set(null);
       this.diffLoadingSignal.set(false);
@@ -667,7 +709,7 @@ export class GitSideComponent {
       return;
     }
 
-    const snapshot = this.getSnapshotContext();
+    const snapshot = this.gitStatusService.currentShellContext;
     if (!snapshot) {
       this.diffLoadingSignal.set(false);
       return;
@@ -687,9 +729,5 @@ export class GitSideComponent {
     if (!this.isSelected(file, isStaged)) return;
     this.diffLoadingSignal.set(false);
     this.diffSignal.set(diff);
-  }
-
-  private getSnapshotContext() {
-    return this.gitStatusService.currentShellContext;
   }
 }

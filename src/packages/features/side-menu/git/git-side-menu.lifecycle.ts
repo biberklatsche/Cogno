@@ -22,11 +22,9 @@ export class GitSideMenuLifecycle {
             sideMenuFeatureHandle.close();
           }
         });
-        this.gitStatusService.startPolling();
       },
       onBlur: () => {
         sideMenuFeatureHandle.unregisterKeybindListener();
-        this.gitStatusService.stopPolling();
       },
     };
   }

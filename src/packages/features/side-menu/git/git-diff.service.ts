@@ -53,35 +53,30 @@ export class GitDiffService {
   }
 
   private detectLanguage(filePath: string): string {
-    const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
-    const map: Record<string, string> = {
-      ts: "typescript",
-      tsx: "typescript",
-      js: "javascript",
-      jsx: "javascript",
-      py: "python",
-      rs: "rust",
-      go: "go",
-      java: "java",
-      kt: "kotlin",
-      swift: "swift",
-      cpp: "cpp",
-      c: "c",
-      cs: "csharp",
-      rb: "ruby",
-      sh: "shell",
-      bash: "shell",
-      zsh: "shell",
-      json: "json",
-      yaml: "yaml",
-      yml: "yaml",
-      toml: "toml",
-      md: "markdown",
-      html: "html",
-      css: "css",
-      scss: "scss",
-      sql: "sql",
-    };
-    return map[ext] ?? "text";
+    return detectGitDiffLanguage(filePath);
   }
+}
+
+export function detectGitDiffLanguage(filePath: string): string {
+  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    ts: "typescript",
+    tsx: "typescript",
+    js: "javascript",
+    jsx: "javascript",
+    py: "python",
+    rs: "rust",
+    go: "go",
+    java: "java",
+    cpp: "cpp",
+    json: "json",
+    yaml: "yaml",
+    yml: "yaml",
+    md: "markdown",
+    html: "html",
+    css: "css",
+    scss: "scss",
+    sql: "sql",
+  };
+  return map[ext] ?? "text";
 }

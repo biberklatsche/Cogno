@@ -22,58 +22,106 @@ import { rust } from "@codemirror/lang-rust";
 import { sass } from "@codemirror/lang-sass";
 import { sql } from "@codemirror/lang-sql";
 import { yaml } from "@codemirror/lang-yaml";
-import { LanguageSupport } from "@codemirror/language";
+import { HighlightStyle, LanguageSupport, syntaxHighlighting } from "@codemirror/language";
 import { MergeView } from "@codemirror/merge";
 import { EditorState, Extension } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
+import { tags } from "@lezer/highlight";
 import { GitDiffContent } from "./git-diff.service";
 
+const cognoTheme = EditorView.theme(
+  {
+    "&": {
+      fontSize: "12px",
+      fontFamily: "var(--font-mono, monospace)",
+      background: "var(--background-color)",
+      color: "var(--foreground-color)",
+    },
+    ".cm-content": { caretColor: "var(--foreground-color)" },
+    ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--foreground-color)" },
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection":
+      { background: "var(--highlight-color-ct2)" },
+    ".cm-gutters": {
+      background: "var(--background-color-10l)",
+      color: "var(--foreground-color-10t)",
+      border: "none",
+      minWidth: "40px",
+    },
+    ".cm-activeLineGutter": { background: "var(--background-color-20l)" },
+    ".cm-activeLine": { background: "var(--background-color-10l)" },
+  },
+  { dark: true },
+);
+
+const cognoHighlightStyle = HighlightStyle.define([
+  {
+    tag: [tags.keyword, tags.controlKeyword, tags.definitionKeyword, tags.moduleKeyword],
+    color: "var(--color-magenta)",
+  },
+  { tag: [tags.string, tags.character, tags.docString], color: "var(--color-green)" },
+  {
+    tag: [tags.comment, tags.lineComment, tags.blockComment, tags.docComment],
+    color: "var(--foreground-color-10t)",
+    fontStyle: "italic",
+  },
+  { tag: [tags.number, tags.integer, tags.float], color: "var(--color-cyan)" },
+  { tag: [tags.bool, tags.null, tags.atom, tags.self], color: "var(--color-magenta)" },
+  { tag: [tags.typeName, tags.className, tags.namespace], color: "var(--color-blue)" },
+  {
+    tag: [tags.function(tags.variableName), tags.function(tags.propertyName)],
+    color: "var(--color-yellow)",
+  },
+  { tag: tags.propertyName, color: "var(--color-cyan)" },
+  { tag: tags.regexp, color: "var(--color-red)" },
+  { tag: tags.escape, color: "var(--color-cyan)" },
+  {
+    tag: [
+      tags.heading,
+      tags.heading1,
+      tags.heading2,
+      tags.heading3,
+      tags.heading4,
+      tags.heading5,
+      tags.heading6,
+    ],
+    color: "var(--highlight-color)",
+    fontWeight: "bold",
+  },
+  { tag: tags.strong, fontWeight: "bold" },
+  { tag: tags.emphasis, fontStyle: "italic" },
+  { tag: tags.strikethrough, textDecoration: "line-through" },
+  { tag: [tags.link, tags.url], color: "var(--color-blue)", textDecoration: "underline" },
+  { tag: tags.invalid, color: "var(--color-red)", textDecoration: "underline wavy" },
+  { tag: tags.meta, color: "var(--foreground-color-10t)" },
+]);
+
+const LANGUAGE_FACTORIES: Record<string, () => LanguageSupport> = {
+  typescript: () => javascript({ typescript: true }),
+  javascript: () => javascript(),
+  python: () => python(),
+  rust: () => rust(),
+  cpp: () => cpp(),
+  java: () => java(),
+  json: () => json(),
+  html: () => html(),
+  css: () => css(),
+  go: () => go(),
+  scss: () => sass(),
+  yaml: () => yaml(),
+  markdown: () => markdown(),
+  sql: () => sql(),
+};
+
 function languageExtension(language: string): LanguageSupport | null {
-  switch (language) {
-    case "typescript":
-      return javascript({ typescript: true });
-    case "javascript":
-      return javascript();
-    case "python":
-      return python();
-    case "rust":
-      return rust();
-    case "cpp":
-      return cpp();
-    case "java":
-      return java();
-    case "json":
-      return json();
-    case "html":
-      return html();
-    case "css":
-      return css();
-    case "go":
-      return go();
-    case "scss":
-      return sass();
-    case "yaml":
-      return yaml();
-    case "markdown":
-      return markdown();
-    case "sql":
-      return sql();
-    default:
-      return null;
-  }
+  return LANGUAGE_FACTORIES[language]?.() ?? null;
 }
 
-function buildExtensions(isDark: boolean, language: string): Extension[] {
+function buildExtensions(language: string): Extension[] {
   const lang = languageExtension(language);
   return [
     EditorState.readOnly.of(true),
-    EditorView.theme(
-      {
-        "&": { fontSize: "12px", fontFamily: "var(--font-mono, monospace)" },
-        ".cm-gutters": { minWidth: "40px" },
-      },
-      { dark: isDark },
-    ),
+    cognoTheme,
+    syntaxHighlighting(cognoHighlightStyle),
     lineNumbers(),
     ...(lang ? [lang] : []),
   ];
@@ -135,12 +183,29 @@ function nextFrame(): Promise<void> {
         overflow: auto !important;
         min-height: 0;
       }
+
+      app-git-diff-view .cm-deletedChunk {
+        background: var(--color-red-ct2);
+      }
+
+      app-git-diff-view .cm-changedLine {
+        background: var(--color-green-ct2);
+      }
+
+      app-git-diff-view .cm-deletedText {
+        background: var(--color-red);
+        opacity: 0.5;
+      }
+
+      app-git-diff-view .cm-changedText {
+        background: var(--color-green);
+        opacity: 0.5;
+      }
     `,
   ],
 })
 export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() diff: GitDiffContent | null = null;
-  @Input() isDark = true;
 
   private readonly editorHost = viewChild<ElementRef<HTMLElement>>("editorHost");
   private mergeView: MergeView | null = null;
@@ -179,51 +244,19 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     if (!host || !this.diff || this.generation !== gen) return;
 
     const { original, modified, language } = this.diff;
-    const extensions = buildExtensions(this.isDark, language);
+    const extensions = buildExtensions(language);
 
     await nextFrame();
     if (this.generation !== gen) return;
     this.mergeView = new MergeView({
       parent: host,
       orientation: "a-b",
-      revertControls: undefined,
       highlightChanges: true,
       gutter: true,
       a: { doc: original, extensions },
       b: { doc: modified, extensions },
     });
-    this.applyLayoutStyles();
     this.setupScrollSync();
-  }
-
-  private applyLayoutStyles(): void {
-    if (!this.mergeView) return;
-
-    this.mergeView.dom.style.flex = "1";
-    this.mergeView.dom.style.display = "flex";
-    this.mergeView.dom.style.flexDirection = "column";
-    this.mergeView.dom.style.overflow = "hidden";
-
-    const editorsEl = this.mergeView.dom.querySelector<HTMLElement>(".cm-mergeViewEditors");
-    if (editorsEl) {
-      editorsEl.style.flex = "1";
-      editorsEl.style.display = "flex";
-      editorsEl.style.minHeight = "0";
-    }
-
-    this.mergeView.dom.querySelectorAll<HTMLElement>(".cm-mergeViewEditor").forEach((el) => {
-      el.style.flex = "1";
-      el.style.display = "flex";
-      el.style.flexDirection = "column";
-      el.style.minWidth = "0";
-      el.style.minHeight = "0";
-    });
-
-    [this.mergeView.a, this.mergeView.b].forEach((view) => {
-      view.dom.style.flex = "1";
-      view.dom.style.minHeight = "0";
-      view.scrollDOM.style.overflow = "auto";
-    });
   }
 
   private setupScrollSync(): void {
