@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
-import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
+import { IconComponent } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { GitFile, GitStatusService } from "./git-status.service";
@@ -12,7 +12,7 @@ type SelectedFile = {
 @Component({
   selector: "app-git-side",
   standalone: true,
-  imports: [IconComponent, GitDiffViewComponent, DropdownComponent],
+  imports: [IconComponent, GitDiffViewComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="git-panel">
@@ -21,14 +21,7 @@ type SelectedFile = {
         <span class="branch">
           <app-icon name="mdiGit"></app-icon>
           @if (status()) {
-            <app-dropdown
-              [label]="status()!.branch"
-              [value]="status()!.branch"
-              [items]="branchItems()"
-              placement="below"
-              (opened)="onBranchDropdownOpened()"
-              (valueChange)="onBranchSelected($event)"
-            ></app-dropdown>
+            <span>{{ status()!.branch }}</span>
           }
         </span>
         <button
@@ -576,18 +569,6 @@ export class GitSideComponent {
   private readonly diffSignal = signal<GitDiffContent | null>(null);
   readonly diff = this.diffSignal.asReadonly();
 
-  private readonly branchesSignal = signal<{ local: string[]; remote: string[] } | null>(null);
-  private readonly currentGitRoot = computed(() => this.status()?.gitRoot ?? null);
-
-  readonly branchItems = computed<ReadonlyArray<DropdownItem>>(() => {
-    const branches = this.branchesSignal();
-    if (!branches) return [];
-    return [
-      ...branches.local.map((b) => ({ value: b, label: b })),
-      ...branches.remote.map((b) => ({ value: b, label: b })),
-    ];
-  });
-
   constructor(
     private readonly gitStatusService: GitStatusService,
     private readonly gitDiffService: GitDiffService,
@@ -601,28 +582,10 @@ export class GitSideComponent {
       if (!stillExists) this.closeDiff();
     });
 
-    // clear cached branches when the git repo changes
-    effect(() => {
-      const gitRoot = this.currentGitRoot();
-      if (!gitRoot) this.branchesSignal.set(null);
-    });
   }
 
   refresh(): void {
     void this.gitStatusService.refreshStatus();
-  }
-
-  onBranchDropdownOpened(): void {
-    if (this.branchesSignal() !== null) return;
-    void this.gitStatusService.loadBranches().then((b) => this.branchesSignal.set(b));
-  }
-
-  onBranchSelected(value: string): void {
-    const remote = this.branchesSignal()?.remote ?? [];
-    const isRemote = remote.includes(value);
-    // strip "origin/" prefix for remote branches so git switch finds the local tracking name
-    const branchName = isRemote ? value.replace(/^[^/]+\//, "") : value;
-    void this.gitStatusService.checkoutBranch(branchName);
   }
 
   onCommitInput(event: Event): void {

@@ -96,39 +96,6 @@ export class GitStatusService {
     await this.runGitCommand(["restore", "--", filePath], "Discard failed");
   }
 
-  async loadBranches(): Promise<{ local: string[]; remote: string[] }> {
-    if (!this.currentGitRoot || !this.currentShellContext) return { local: [], remote: [] };
-    const [localResult, remoteResult] = await Promise.all([
-      this.commandRunner.run({
-        cwd: this.currentGitRoot,
-        shellContext: this.currentShellContext,
-        program: "git",
-        args: ["branch", "--format=%(refname:short)"],
-        timeoutMs: 5_000,
-      }),
-      this.commandRunner.run({
-        cwd: this.currentGitRoot,
-        shellContext: this.currentShellContext,
-        program: "git",
-        args: ["branch", "-r", "--format=%(refname:short)"],
-        timeoutMs: 5_000,
-      }),
-    ]);
-    const local = localResult.stdout
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const remote = remoteResult.stdout
-      .split("\n")
-      .map((s) => s.trim())
-      .filter((s) => Boolean(s) && !s.includes("HEAD"));
-    return { local, remote };
-  }
-
-  async checkoutBranch(branchName: string): Promise<void> {
-    await this.runGitCommand(["switch", branchName], "Checkout failed");
-  }
-
   async commit(message: string): Promise<void> {
     if (!this.currentGitRoot || !this.currentShellContext) return;
     const result = await this.commandRunner.run({
