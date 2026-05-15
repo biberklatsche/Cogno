@@ -9,12 +9,62 @@ import {
   ViewEncapsulation,
   viewChild,
 } from "@angular/core";
+import { cpp } from "@codemirror/lang-cpp";
+import { css } from "@codemirror/lang-css";
+import { go } from "@codemirror/lang-go";
+import { html } from "@codemirror/lang-html";
+import { java } from "@codemirror/lang-java";
+import { javascript } from "@codemirror/lang-javascript";
+import { json } from "@codemirror/lang-json";
+import { markdown } from "@codemirror/lang-markdown";
+import { python } from "@codemirror/lang-python";
+import { rust } from "@codemirror/lang-rust";
+import { sass } from "@codemirror/lang-sass";
+import { sql } from "@codemirror/lang-sql";
+import { yaml } from "@codemirror/lang-yaml";
+import { LanguageSupport } from "@codemirror/language";
 import { MergeView } from "@codemirror/merge";
-import { EditorState } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import { EditorState, Extension } from "@codemirror/state";
+import { EditorView, lineNumbers } from "@codemirror/view";
 import { GitDiffContent } from "./git-diff.service";
 
-function buildExtensions(isDark: boolean) {
+function languageExtension(language: string): LanguageSupport | null {
+  switch (language) {
+    case "typescript":
+      return javascript({ typescript: true });
+    case "javascript":
+      return javascript();
+    case "python":
+      return python();
+    case "rust":
+      return rust();
+    case "cpp":
+      return cpp();
+    case "java":
+      return java();
+    case "json":
+      return json();
+    case "html":
+      return html();
+    case "css":
+      return css();
+    case "go":
+      return go();
+    case "scss":
+      return sass();
+    case "yaml":
+      return yaml();
+    case "markdown":
+      return markdown();
+    case "sql":
+      return sql();
+    default:
+      return null;
+  }
+}
+
+function buildExtensions(isDark: boolean, language: string): Extension[] {
+  const lang = languageExtension(language);
   return [
     EditorState.readOnly.of(true),
     EditorView.theme(
@@ -24,6 +74,8 @@ function buildExtensions(isDark: boolean) {
       },
       { dark: isDark },
     ),
+    lineNumbers(),
+    ...(lang ? [lang] : []),
   ];
 }
 
@@ -126,8 +178,8 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     const host = this.editorHost()?.nativeElement;
     if (!host || !this.diff || this.generation !== gen) return;
 
-    const { original, modified } = this.diff;
-    const extensions = buildExtensions(this.isDark);
+    const { original, modified, language } = this.diff;
+    const extensions = buildExtensions(this.isDark, language);
 
     await nextFrame();
     if (this.generation !== gen) return;

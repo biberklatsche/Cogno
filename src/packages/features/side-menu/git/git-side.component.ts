@@ -214,8 +214,7 @@ type SelectedFile = {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.4rem 0.75rem;
-        border-bottom: 1px solid var(--color-border, #333);
+        padding: 0.4rem 0;
         gap: 0.5rem;
       }
 
@@ -224,15 +223,10 @@ type SelectedFile = {
         align-items: center;
         gap: 0.25rem;
         font-weight: 500;
-        color: var(--color-text-primary, #ccc);
+        color: var(--foreground-color);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-      }
-
-      .no-repo {
-        color: var(--color-text-muted, #666);
-        font-style: italic;
       }
 
       .git-unavailable {
@@ -242,7 +236,7 @@ type SelectedFile = {
         justify-content: center;
         gap: 0.5rem;
         flex: 1;
-        color: var(--color-text-muted, #666);
+        color: var(--foreground-color-10t);
         font-style: italic;
         text-align: center;
         padding: 1rem;
@@ -259,8 +253,7 @@ type SelectedFile = {
         display: flex;
         flex-direction: column;
         gap: 0.4rem;
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--color-border, #333);
+        padding: 0.5rem 0;
       }
 
       .commit-message {
@@ -268,10 +261,10 @@ type SelectedFile = {
         min-height: 56px;
         max-height: 120px;
         resize: vertical;
-        background: var(--color-input-bg, #1e1e1e);
-        color: var(--color-text-primary, #ccc);
-        border: 1px solid var(--color-border, #444);
-        border-radius: 4px;
+        background: var(--background-color);
+        color: var(--foreground-color);
+        border: 1px solid var(--background-color-20l);
+        border-radius: var(--button-border-radius);
         padding: 0.4rem 0.5rem;
         font-family: inherit;
         font-size: inherit;
@@ -280,16 +273,16 @@ type SelectedFile = {
 
       .commit-message:focus {
         outline: none;
-        border-color: var(--color-accent, #4a9eff);
+        border-color: var(--highlight-color);
       }
 
       .commit-button {
         align-self: flex-end;
         padding: 0.3rem 0.75rem;
-        background: var(--color-accent, #4a9eff);
-        color: #fff;
+        background: var(--highlight-color);
+        color: var(--background-color);
         border: none;
-        border-radius: 4px;
+        border-radius: var(--button-border-radius);
         cursor: pointer;
         font-size: inherit;
         font-weight: 500;
@@ -309,17 +302,18 @@ type SelectedFile = {
         display: flex;
         flex-direction: column;
         min-height: 0;
+        gap: 0.75rem;
       }
 
       .file-sections-scroll-area {
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
-        border-bottom: 1px solid var(--color-border, #333);
       }
 
       .git-main-content.with-diff .file-sections-scroll-area {
-        flex: 0 1 45%;
+        flex: 0 0 auto;
+        max-height: 55%;
       }
 
       .section-header {
@@ -327,8 +321,7 @@ type SelectedFile = {
         align-items: center;
         justify-content: space-between;
         padding: 0.2rem 0.5rem 0.2rem 0.25rem;
-        background: var(--color-surface-2, #1a1a1a);
-        border-bottom: 1px solid var(--color-border, #2a2a2a);
+        background: var(--background-color);
       }
 
       .section-toggle {
@@ -337,7 +330,7 @@ type SelectedFile = {
         gap: 0.2rem;
         background: none;
         border: none;
-        color: var(--color-text-muted, #888);
+        color: var(--foreground-color-10t);
         cursor: pointer;
         font-size: 0.75rem;
         font-weight: 600;
@@ -369,7 +362,7 @@ type SelectedFile = {
       }
 
       .section-toggle:hover {
-        color: var(--color-text-primary, #ccc);
+        color: var(--foreground-color);
       }
 
       .file-list {
@@ -384,15 +377,14 @@ type SelectedFile = {
         gap: 0.4rem;
         padding: 0.2rem 0.5rem 0.2rem 0.75rem;
         cursor: pointer;
-        border-bottom: 1px solid var(--color-border, #2a2a2a);
       }
 
       .file-item:hover {
-        background: var(--color-hover, #252525);
+        background: var(--background-color-10l);
       }
 
       .file-item.selected {
-        background: var(--color-selected, #1e3a5f);
+        background: var(--highlight-color-ct2);
       }
 
       .status-badge {
@@ -403,16 +395,16 @@ type SelectedFile = {
         text-align: center;
       }
 
-      .status-badge.staged { color: #4ec94e; }
-      .status-badge.unstaged { color: #e06c75; }
-      .status-badge.untracked { color: #888; }
+      .status-badge.staged { color: var(--color-green); }
+      .status-badge.unstaged { color: var(--color-red); }
+      .status-badge.untracked { color: var(--foreground-color-10t); }
 
       .file-path {
         flex: 1;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--color-text-primary, #ccc);
+        color: var(--foreground-color);
       }
 
       .file-dir {
@@ -420,7 +412,7 @@ type SelectedFile = {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--color-text-muted, #666);
+        color: var(--foreground-color-10t);
         font-size: 0.75rem;
         max-width: 40%;
       }
@@ -428,8 +420,8 @@ type SelectedFile = {
       .action-btn {
         flex: 0 0 auto;
         background: none;
-        border: 1px solid var(--color-border, #444);
-        color: var(--color-text-muted, #888);
+        border: 1px solid var(--background-color-20l);
+        color: var(--foreground-color-10t);
         border-radius: 3px;
         padding: 0 0.3rem;
         cursor: pointer;
@@ -438,34 +430,40 @@ type SelectedFile = {
       }
 
       .action-btn:hover {
-        color: var(--color-text-primary, #ccc);
-        border-color: var(--color-text-muted, #888);
+        color: var(--foreground-color);
+        border-color: var(--foreground-color-10t);
       }
 
       .icon-button {
         background: none;
         border: none;
-        color: var(--color-text-muted, #888);
+        color: var(--foreground-color);
         cursor: pointer;
         display: flex;
         align-items: center;
         padding: 0.2rem;
         border-radius: 3px;
+        opacity: 0.6;
+      }
+
+      .icon-button app-icon {
+        width: 1rem;
+        height: 1rem;
       }
 
       .icon-button:hover {
-        color: var(--color-text-primary, #ccc);
-        background: var(--color-hover, #252525);
+        opacity: 1;
+        background: var(--background-color-10l);
       }
 
       .icon-button:disabled {
-        opacity: 0.4;
+        opacity: 0.2;
         cursor: not-allowed;
       }
 
       .empty-state {
         padding: 1rem 0.75rem;
-        color: var(--color-text-muted, #666);
+        color: var(--foreground-color-10t);
         font-style: italic;
         text-align: center;
       }
@@ -483,15 +481,14 @@ type SelectedFile = {
         align-items: center;
         justify-content: space-between;
         padding: 0.3rem 0.5rem;
-        background: var(--color-surface-2, #1a1a1a);
-        border-bottom: 1px solid var(--color-border, #333);
+        background: var(--background-color);
       }
 
       .diff-file-name {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--color-text-muted, #888);
+        color: var(--foreground-color-10t);
         font-size: 0.8rem;
       }
 
@@ -509,7 +506,7 @@ type SelectedFile = {
         justify-content: center;
         gap: 0.6rem;
         height: 100%;
-        color: var(--color-text-muted, #888);
+        color: var(--foreground-color-10t);
       }
 
       .diff-loading-state app-icon {
