@@ -349,7 +349,7 @@ export class BinaryNode<Data> {
     if (node?._right !== undefined) {
       this.flattenRecursive(node._right, merge);
     }
-    if (node?.isLeaf && node.parent !== undefined && node.parent._right?.isLeaf) {
+    if (node?.isLeaf && node.parent?._right?.isLeaf) {
       node.parent._data = merge(node.parent._left?.data, node.parent._right?.data);
       node.parent._right = undefined;
       node.parent._left = undefined;
