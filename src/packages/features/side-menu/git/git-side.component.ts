@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  signal,
+} from "@angular/core";
 import { IconComponent } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
@@ -26,7 +33,6 @@ type SelectedFile = {
         } @else {
           <span class="branch">
             <app-icon name="mdiGit"></app-icon>
-            Git
           </span>
         }
         <button
@@ -313,7 +319,7 @@ type SelectedFile = {
 
       .git-main-content.with-diff .file-sections-scroll-area {
         flex: 0 0 auto;
-        max-height: 55%;
+        max-height: 50%;
       }
 
       .section-header {
@@ -567,7 +573,16 @@ export class GitSideComponent {
     private readonly gitStatusService: GitStatusService,
     private readonly gitDiffService: GitDiffService,
     _destroyRef: DestroyRef,
-  ) {}
+  ) {
+    effect(() => {
+      const status = this.status();
+      const sel = this.selectedFileSignal();
+      if (!sel || !status) return;
+      const allFiles = [...status.staged, ...status.unstaged, ...status.untracked];
+      const stillExists = allFiles.some((f) => f.path === sel.file.path);
+      if (!stillExists) this.closeDiff();
+    });
+  }
 
   refresh(): void {
     void this.gitStatusService.refreshStatus();

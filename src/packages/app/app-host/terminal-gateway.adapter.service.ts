@@ -19,6 +19,7 @@ import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.reg
 export class TerminalGatewayAdapterService extends TerminalGateway {
   readonly focusedTerminalId$: Observable<TerminalIdentifierContract | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
+  readonly cwdChanges$: Observable<void>;
 
   constructor(
     private readonly appBus: AppBus,
@@ -37,6 +38,9 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
           isBusy: event.payload?.isBusy ?? false,
         })),
       );
+    this.cwdChanges$ = this.appBus
+      .onType$("TerminalCwdChanged", { path: ["app", "terminal"] })
+      .pipe(map(() => undefined));
   }
 
   getFocusedTerminalId(): TerminalIdentifierContract | undefined {

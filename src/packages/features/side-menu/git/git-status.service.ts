@@ -51,6 +51,10 @@ export class GitStatusService {
       void this.refreshContext();
     });
 
+    this.terminalGateway.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      void this.refreshContext();
+    });
+
     destroyRef.onDestroy(() => this.stopPolling());
   }
 
@@ -58,7 +62,7 @@ export class GitStatusService {
     if (this.pollTimer !== null) return;
     void this.refreshContext();
     this.pollTimer = setInterval(() => {
-      void this.refreshStatus();
+      void this.refreshContext();
     }, GitStatusService.POLL_INTERVAL_MS);
   }
 
