@@ -581,7 +581,6 @@ export class GitSideComponent {
       const stillExists = allFiles.some((f) => f.path === sel.file.path);
       if (!stillExists) this.closeDiff();
     });
-
   }
 
   refresh(): void {
