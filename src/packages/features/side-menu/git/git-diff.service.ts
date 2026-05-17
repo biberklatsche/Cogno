@@ -24,7 +24,7 @@ export class GitDiffService {
     gitRoot: string,
     shellContext: ShellContextContract,
   ): Promise<GitDiffContent> {
-    const language = this.detectLanguage(filePath);
+    const language = detectGitDiffLanguage(filePath);
     const absolutePath = this.buildAbsolutePath(gitRoot, filePath);
 
     // Always read HEAD as original. If the file is genuinely new (doesn't exist
@@ -52,9 +52,6 @@ export class GitDiffService {
     return `${gitRoot}/${filePath}`;
   }
 
-  private detectLanguage(filePath: string): string {
-    return detectGitDiffLanguage(filePath);
-  }
 }
 
 export function detectGitDiffLanguage(filePath: string): string {

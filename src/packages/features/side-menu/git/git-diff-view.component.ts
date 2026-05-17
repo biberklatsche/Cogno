@@ -136,7 +136,10 @@ function nextFrame(): Promise<void> {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  template: `<div #editorHost class="diff-host"></div>`,
+  template: `
+    <div #editorHost class="diff-host"></div>
+    <div #ruler class="change-ruler" aria-hidden="true"></div>
+  `,
   styles: [
     `
       app-git-diff-view {
@@ -201,6 +204,34 @@ function nextFrame(): Promise<void> {
         background: var(--color-green);
         opacity: 0.5;
       }
+
+      app-git-diff-view .change-ruler {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 6px;
+        pointer-events: none;
+        z-index: 10;
+        overflow: hidden;
+      }
+
+      app-git-diff-view .change-ruler .ruler-mark {
+        position: absolute;
+        left: 1px;
+        right: 1px;
+        min-height: 2px;
+        border-radius: 1px;
+        opacity: 0.75;
+      }
+
+      app-git-diff-view .change-ruler .ruler-mark-change {
+        background: var(--color-green);
+      }
+
+      app-git-diff-view .change-ruler .ruler-mark-delete {
+        background: var(--color-red);
+      }
     `,
   ],
 })
@@ -208,6 +239,7 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
   @Input() diff: GitDiffContent | null = null;
 
   private readonly editorHost = viewChild<ElementRef<HTMLElement>>("editorHost");
+  private readonly ruler = viewChild<ElementRef<HTMLElement>>("ruler");
   private mergeView: MergeView | null = null;
   private buildTimer: ReturnType<typeof setTimeout> | null = null;
   private generation = 0;
@@ -257,6 +289,7 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
       b: { doc: modified, extensions },
     });
     this.setupScrollSync();
+    this.buildRuler();
   }
 
   private setupScrollSync(): void {
@@ -296,6 +329,35 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     };
   }
 
+  private buildRuler(): void {
+    const ruler = this.ruler()?.nativeElement;
+    if (!ruler || !this.mergeView) return;
+
+    ruler.innerHTML = "";
+    const chunks = this.mergeView.chunks;
+    if (!chunks.length) return;
+
+    const docB = this.mergeView.b.state.doc;
+    const totalLines = docB.lines;
+
+    const fragment = document.createDocumentFragment();
+    for (const chunk of chunks) {
+      const isDeletion = chunk.toB === chunk.fromB;
+      const fromLine = docB.lineAt(chunk.fromB).number - 1;
+      const toLine = isDeletion
+        ? fromLine
+        : docB.lineAt(Math.min(chunk.toB, docB.length)).number - 1;
+      const lineSpan = isDeletion ? 1 : Math.max(toLine - fromLine + 1, 1);
+
+      const mark = document.createElement("div");
+      mark.className = `ruler-mark ${isDeletion ? "ruler-mark-delete" : "ruler-mark-change"}`;
+      mark.style.top = `${(fromLine / totalLines) * 100}%`;
+      mark.style.height = `${Math.max((lineSpan / totalLines) * 100, 0.5)}%`;
+      fragment.appendChild(mark);
+    }
+    ruler.appendChild(fragment);
+  }
+
   private destroyMergeView(): void {
     this.unsubscribeScrollSync?.();
     this.unsubscribeScrollSync = null;
@@ -303,5 +365,7 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     this.mergeView = null;
     const host = this.editorHost()?.nativeElement;
     if (host) host.innerHTML = "";
+    const ruler = this.ruler()?.nativeElement;
+    if (ruler) ruler.innerHTML = "";
   }
 }

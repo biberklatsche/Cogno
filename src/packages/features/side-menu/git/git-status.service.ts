@@ -41,6 +41,7 @@ export class GitStatusService {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private currentGitRoot: string | null = null;
   private _currentShellContext: ShellContextContract | null = null;
+  private refreshContextInFlight = false;
 
   get currentShellContext(): ShellContextContract | null {
     return this._currentShellContext;
@@ -55,7 +56,7 @@ export class GitStatusService {
     merge(this.terminalGateway.focusedTerminalId$, this.terminalGateway.cwdChanges$)
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => {
-        void this.refreshContext();
+        if (this.pollTimer !== null) void this.refreshContext();
       });
 
     destroyRef.onDestroy(() => this.stopPolling());
@@ -130,27 +131,33 @@ export class GitStatusService {
   }
 
   private async refreshContext(): Promise<void> {
-    const snapshot = await this.terminalGateway.captureFocusedSnapshot();
-    if (!snapshot?.cwd || !snapshot.shellContext) {
-      this.gitStatusSignal.set(null);
+    if (this.refreshContextInFlight) return;
+    this.refreshContextInFlight = true;
+    try {
+      const snapshot = await this.terminalGateway.captureFocusedSnapshot();
+      if (!snapshot?.cwd || !snapshot.shellContext) {
+        this.gitStatusSignal.set(null);
+        this.gitErrorSignal.set(null);
+        this.currentGitRoot = null;
+        this._currentShellContext = null;
+        return;
+      }
+
+      this._currentShellContext = snapshot.shellContext;
+      const result = await this.detectGitRoot(snapshot.cwd, snapshot.shellContext);
+      this.currentGitRoot = result.gitRoot;
+
+      if (!result.gitRoot) {
+        this.gitStatusSignal.set(null);
+        this.gitErrorSignal.set(result.error);
+        return;
+      }
+
       this.gitErrorSignal.set(null);
-      this.currentGitRoot = null;
-      this._currentShellContext = null;
-      return;
+      await this.refreshStatus();
+    } finally {
+      this.refreshContextInFlight = false;
     }
-
-    this._currentShellContext = snapshot.shellContext;
-    const result = await this.detectGitRoot(snapshot.cwd, snapshot.shellContext);
-    this.currentGitRoot = result.gitRoot;
-
-    if (!result.gitRoot) {
-      this.gitStatusSignal.set(null);
-      this.gitErrorSignal.set(result.error);
-      return;
-    }
-
-    this.gitErrorSignal.set(null);
-    await this.refreshStatus();
   }
 
   async refreshStatus(): Promise<void> {
@@ -179,7 +186,7 @@ export class GitStatusService {
         return;
       }
 
-      const parsed = this.parseStatus(statusResult.stdout);
+      const parsed = parseGitStatus(statusResult.stdout);
       this.gitStatusSignal.set({
         gitRoot: this.currentGitRoot,
         branch: branchResult.stdout.trim() || "HEAD",
@@ -234,9 +241,6 @@ export class GitStatusService {
     await this.refreshStatus();
   }
 
-  private parseStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {
-    return parseGitStatus(raw);
-  }
 }
 
 export function parseGitStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {

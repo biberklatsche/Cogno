@@ -17,10 +17,8 @@ export class GitSideMenuLifecycle {
         this.gitStatusService.stopPolling();
       },
       onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], (keyboardEvent) => {
-          if (keyboardEvent.key === "Escape") {
-            sideMenuFeatureHandle.close();
-          }
+        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
+          sideMenuFeatureHandle.close();
         });
       },
       onBlur: () => {

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
+import { Opener } from "@cogno/app-tauri/opener";
 import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
@@ -80,7 +81,19 @@ type SelectedFile = {
                         (click)="selectFile(file, true)"
                       >
                         <span class="status-badge staged">{{ file.status }}</span>
-                        <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
+                        <div class="file-name-group">
+                          <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
+                          @if (file.status !== 'D') {
+                            <button
+                              type="button"
+                              class="button icon-button file-action-button open-in-editor-btn"
+                              appTooltip="Open in editor"
+                              (click)="$event.stopPropagation(); openInEditor(file)"
+                            >
+                              <app-icon name="mdiOpenInNew"></app-icon>
+                            </button>
+                          }
+                        </div>
                         <span class="file-dir">{{ fileDir(file.path) }}</span>
                         <button
                           type="button"
@@ -142,7 +155,17 @@ type SelectedFile = {
                         >
                           {{ file.status }}
                         </span>
-                        <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
+                        <div class="file-name-group">
+                          <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
+                          <button
+                            type="button"
+                            class="button icon-button file-action-button open-in-editor-btn"
+                            appTooltip="Open in editor"
+                            (click)="$event.stopPropagation(); openInEditor(file)"
+                          >
+                            <app-icon name="mdiOpenInNew"></app-icon>
+                          </button>
+                        </div>
                         <span class="file-dir">{{ fileDir(file.path) }}</span>
                         @if (file.status !== '?') {
                           @if (isDiscardConfirmationPending(file.path)) {
@@ -446,8 +469,17 @@ type SelectedFile = {
       .status-badge.unstaged { color: var(--color-red); }
       .status-badge.untracked { color: var(--foreground-color-10t); }
 
-      .file-path {
+      .file-name-group {
         flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .file-path {
+        flex: 0 1 auto;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -486,6 +518,15 @@ type SelectedFile = {
 
       .file-action-button:hover {
         color: var(--foreground-color);
+      }
+
+      .open-in-editor-btn {
+        visibility: hidden;
+        flex-shrink: 0;
+      }
+
+      .file-name-group:hover .open-in-editor-btn {
+        visibility: visible;
       }
 
       .icon-button {
@@ -667,6 +708,12 @@ export class GitSideComponent {
     void this.gitStatusService.discardFileChanges(path);
   }
 
+  openInEditor(file: GitFile): void {
+    const status = this.status();
+    if (!status) return;
+    void Opener.openPath(`${status.gitRoot}/${file.path}`);
+  }
+
   stageFile(path: string): void {
     void this.gitStatusService.stageFile(path);
   }
@@ -742,15 +789,20 @@ export class GitSideComponent {
       requestAnimationFrame(() => resolve());
     });
 
-    const diff = await this.gitDiffService.loadDiff(
-      file.path,
-      isStaged,
-      file.status === "D",
-      status.gitRoot,
-      snapshot,
-    );
-    if (!this.isSelected(file, isStaged)) return;
-    this.diffLoadingSignal.set(false);
-    this.diffSignal.set(diff);
+    try {
+      const diff = await this.gitDiffService.loadDiff(
+        file.path,
+        isStaged,
+        file.status === "D",
+        status.gitRoot,
+        snapshot,
+      );
+      if (!this.isSelected(file, isStaged)) return;
+      this.diffSignal.set(diff);
+    } finally {
+      if (this.isSelected(file, isStaged)) {
+        this.diffLoadingSignal.set(false);
+      }
+    }
   }
 }
