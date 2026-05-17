@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
-import { IconComponent } from "@cogno/core-ui";
+import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { GitFile, GitStatusService } from "./git-status.service";
@@ -12,7 +12,7 @@ type SelectedFile = {
 @Component({
   selector: "app-git-side",
   standalone: true,
-  imports: [IconComponent, GitDiffViewComponent],
+  imports: [IconComponent, TooltipDirective, GitDiffViewComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="git-panel">
@@ -27,7 +27,7 @@ type SelectedFile = {
         <button
           type="button"
           class="icon-button"
-          title="Refresh"
+          appTooltip="Refresh"
           [disabled]="loading()"
           (click)="refresh()"
         >
@@ -50,7 +50,7 @@ type SelectedFile = {
               [disabled]="!canCommit()"
               (click)="commit()"
             >
-              Commit ({{ stagedCount() }})
+              Commit
             </button>
           </section>
 
@@ -62,7 +62,14 @@ type SelectedFile = {
                     <app-icon [name]="stagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
                     <span>STAGED ({{ status()!.staged.length }})</span>
                   </button>
-                  <button type="button" class="action-btn" title="Unstage all" (click)="unstageAll()">−all</button>
+                  <button
+                    type="button"
+                    class="button icon-button file-action-button"
+                    appTooltip="Unstage all"
+                    (click)="unstageAll()"
+                  >
+                    <app-icon name="mdiMinus"></app-icon>
+                  </button>
                 </div>
                 @if (stagedExpanded()) {
                   <ul class="file-list">
@@ -77,10 +84,12 @@ type SelectedFile = {
                         <span class="file-dir">{{ fileDir(file.path) }}</span>
                         <button
                           type="button"
-                          class="action-btn"
-                          title="Unstage"
+                          class="button icon-button file-action-button"
+                          appTooltip="Unstage"
                           (click)="$event.stopPropagation(); unstageFile(file.path)"
-                        >−</button>
+                        >
+                          <app-icon name="mdiMinus"></app-icon>
+                        </button>
                       </li>
                     }
                   </ul>
@@ -109,7 +118,14 @@ type SelectedFile = {
                       </span>
                     </span>
                   </button>
-                  <button type="button" class="action-btn" title="Stage all" (click)="stageAll()">+all</button>
+                  <button
+                    type="button"
+                    class="button icon-button file-action-button"
+                    appTooltip="Stage all"
+                    (click)="stageAll()"
+                  >
+                    <app-icon name="mdiPlus"></app-icon>
+                  </button>
                 </div>
                 @if (unstagedExpanded()) {
                   <ul class="file-list">
@@ -129,19 +145,47 @@ type SelectedFile = {
                         <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
                         <span class="file-dir">{{ fileDir(file.path) }}</span>
                         @if (file.status !== '?') {
-                          <button
-                            type="button"
-                            class="action-btn discard-btn"
-                            title="Discard changes"
-                            (click)="$event.stopPropagation(); discardFile(file.path)"
-                          >↺</button>
+                          @if (isDiscardConfirmationPending(file.path)) {
+                            <div
+                              class="file-action-group"
+                              (mouseleave)="cancelDiscardConfirmation()"
+                            >
+                              <button
+                                type="button"
+                                class="button icon-button file-action-button"
+                                appTooltip="Confirm discard changes"
+                                (click)="$event.stopPropagation(); confirmDiscardFile(file.path)"
+                              >
+                                <app-icon name="mdiCheck"></app-icon>
+                              </button>
+                              <button
+                                type="button"
+                                class="button icon-button file-action-button"
+                                appTooltip="Cancel discard changes"
+                                (click)="$event.stopPropagation(); cancelDiscardConfirmation()"
+                              >
+                                <app-icon name="mdiClose"></app-icon>
+                              </button>
+                            </div>
+                          } @else {
+                            <button
+                              type="button"
+                              class="button icon-button file-action-button discard-button"
+                              appTooltip="Discard changes"
+                              (click)="$event.stopPropagation(); requestDiscardConfirmation(file.path)"
+                            >
+                              <app-icon name="mdiUndoVariant"></app-icon>
+                            </button>
+                          }
                         }
                         <button
                           type="button"
-                          class="action-btn"
-                          title="Stage"
+                          class="button icon-button file-action-button"
+                          appTooltip="Stage"
                           (click)="$event.stopPropagation(); stageFile(file.path)"
-                        >+</button>
+                        >
+                          <app-icon name="mdiPlus"></app-icon>
+                        </button>
                       </li>
                     }
                   </ul>
@@ -158,7 +202,7 @@ type SelectedFile = {
             <section class="diff-section">
               <div class="diff-header">
                 <span class="diff-file-name">{{ selectedFile()!.file.path }}</span>
-                <button type="button" class="icon-button" (click)="closeDiff()">
+                <button type="button" class="icon-button" appTooltip="Close diff" (click)="closeDiff()">
                   <app-icon name="mdiClose"></app-icon>
                 </button>
               </div>
@@ -196,12 +240,14 @@ type SelectedFile = {
   styles: [
     `
       :host {
+        --git-primary-font-size: 1em;
+        --git-secondary-font-size: 0.875em;
         display: flex;
         flex-direction: column;
         height: 100%;
         min-height: 0;
         overflow: hidden;
-        font-size: 0.85rem;
+        font-size: inherit;
       }
 
       .git-panel {
@@ -333,7 +379,7 @@ type SelectedFile = {
         border: none;
         color: var(--foreground-color-10t);
         cursor: pointer;
-        font-size: 0.75rem;
+        font-size: var(--git-secondary-font-size);
         font-weight: 600;
         letter-spacing: 0.05em;
         padding: 0;
@@ -392,7 +438,7 @@ type SelectedFile = {
         flex: 0 0 auto;
         width: 14px;
         font-weight: 700;
-        font-size: 0.8rem;
+        font-size: var(--git-primary-font-size);
         text-align: center;
       }
 
@@ -406,6 +452,7 @@ type SelectedFile = {
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--foreground-color);
+        font-size: var(--git-primary-font-size);
       }
 
       .file-dir {
@@ -414,30 +461,31 @@ type SelectedFile = {
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--foreground-color-10t);
-        font-size: 0.75rem;
+        font-size: var(--git-primary-font-size);
         max-width: 40%;
       }
 
-      .action-btn {
+      .file-action-button {
         flex: 0 0 auto;
-        background: none;
-        border: 1px solid var(--background-color-20l);
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0.25rem;
         color: var(--foreground-color-10t);
-        border-radius: 3px;
-        padding: 0 0.3rem;
-        cursor: pointer;
-        font-size: 0.8rem;
-        line-height: 1.4;
       }
 
-      .action-btn:hover {
+      .file-action-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.1rem;
+      }
+
+      .file-action-button app-icon {
+        width: 1.15rem;
+        height: 1.15rem;
+      }
+
+      .file-action-button:hover {
         color: var(--foreground-color);
-        border-color: var(--foreground-color-10t);
-      }
-
-      .action-btn.discard-btn:hover {
-        color: var(--color-red);
-        border-color: var(--color-red);
       }
 
       .icon-button {
@@ -495,7 +543,7 @@ type SelectedFile = {
         text-overflow: ellipsis;
         white-space: nowrap;
         color: var(--foreground-color-10t);
-        font-size: 0.8rem;
+        font-size: var(--git-primary-font-size);
       }
 
       .diff-view-wrapper {
@@ -563,6 +611,7 @@ export class GitSideComponent {
 
   private readonly selectedFileSignal = signal<SelectedFile | null>(null);
   readonly selectedFile = this.selectedFileSignal.asReadonly();
+  private readonly discardConfirmationFilePathSignal = signal<string | null>(null);
 
   private readonly diffLoadingSignal = signal(false);
   readonly diffLoading = this.diffLoadingSignal.asReadonly();
@@ -601,8 +650,20 @@ export class GitSideComponent {
     });
   }
 
-  discardFile(path: string): void {
-    if (!confirm(`Discard changes in ${this.fileName(path)}? This cannot be undone.`)) return;
+  requestDiscardConfirmation(path: string): void {
+    this.discardConfirmationFilePathSignal.set(path);
+  }
+
+  cancelDiscardConfirmation(): void {
+    this.discardConfirmationFilePathSignal.set(null);
+  }
+
+  isDiscardConfirmationPending(path: string): boolean {
+    return this.discardConfirmationFilePathSignal() === path;
+  }
+
+  confirmDiscardFile(path: string): void {
+    this.discardConfirmationFilePathSignal.set(null);
     void this.gitStatusService.discardFileChanges(path);
   }
 

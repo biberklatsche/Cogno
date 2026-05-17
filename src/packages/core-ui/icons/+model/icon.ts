@@ -8,6 +8,7 @@ export type Icon =
   | "mdiAbTesting"
   | "mdiSpeedometer"
   | "mdiPlus"
+  | "mdiMinus"
   | "mdiChevronDown"
   | "mdiChevronRight"
   | "mdiCog"
@@ -83,4 +84,5 @@ export type Icon =
   | "mdiBellBadge"
   | "mdiFilter"
   | "mdiSend"
-  | "mdiContentSaveOutline";
+  | "mdiContentSaveOutline"
+  | "mdiUndoVariant";

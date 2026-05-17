@@ -48,6 +48,7 @@ import {
   mdiLanConnect,
   mdiLiquidSpot,
   mdiLoading,
+  mdiMinus,
   mdiMonitor,
   mdiNuke,
   mdiOpenInNew,
@@ -78,6 +79,7 @@ import {
   mdiThumbUp,
   mdiToyBrick,
   mdiTrashCanOutline,
+  mdiUndoVariant,
   mdiViewCarousel,
   mdiViewDashboard,
   mdiWeatherNight,
@@ -173,6 +175,9 @@ export class IconComponent {
         break;
       case "mdiPlus":
         this.icon = mdiPlus;
+        break;
+      case "mdiMinus":
+        this.icon = mdiMinus;
         break;
       case "mdiChevronDown":
         this.icon = mdiChevronDown;
@@ -368,6 +373,9 @@ export class IconComponent {
         break;
       case "mdiSend":
         this.icon = mdiSend;
+        break;
+      case "mdiUndoVariant":
+        this.icon = mdiUndoVariant;
         break;
       default:
         this.icon = mdiAbTesting;
