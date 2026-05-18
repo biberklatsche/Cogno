@@ -1,45 +1,50 @@
-import { describe, expect, it } from "vitest";
-import { detectGitDiffLanguage } from "./git-diff.service";
+import { Filesystem, ShellContextContract } from "@cogno/core-api";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GitBlobReader } from "./git-blob-reader.port";
+import { GitDiffService } from "./git-diff.service";
 
-describe("detectGitDiffLanguage", () => {
-  it.each([
-    ["src/app/main.ts", "typescript"],
-    ["src/app/main.tsx", "typescript"],
-    ["src/app/main.js", "javascript"],
-    ["src/app/main.jsx", "javascript"],
-    ["main.py", "python"],
-    ["main.rs", "rust"],
-    ["main.go", "go"],
-    ["Main.java", "java"],
-    ["main.cpp", "cpp"],
-    ["config.json", "json"],
-    ["config.yaml", "yaml"],
-    ["config.yml", "yaml"],
-    ["README.md", "markdown"],
-    ["index.html", "html"],
-    ["styles.css", "css"],
-    ["styles.scss", "scss"],
-    ["schema.sql", "sql"],
-  ])("detects %s as %s", (filePath, expected) => {
-    expect(detectGitDiffLanguage(filePath)).toBe(expected);
+describe("GitDiffService", () => {
+  const shellContext: ShellContextContract = { backendOs: "windows", shellType: "Bash" };
+  let gitBlobReader: GitBlobReader;
+  let filesystem: Filesystem;
+  let service: GitDiffService;
+
+  beforeEach(() => {
+    gitBlobReader = {
+      readBlob: vi.fn().mockResolvedValue("head content"),
+    };
+    filesystem = {
+      normalizePath: vi.fn((path: string) => `/normalized${path}`),
+      readTextFile: vi.fn().mockResolvedValue("working tree content"),
+    } as unknown as Filesystem;
+    service = new GitDiffService(gitBlobReader, filesystem);
   });
 
-  it("returns text for unknown extensions", () => {
-    expect(detectGitDiffLanguage("binary.wasm")).toBe("text");
-    expect(detectGitDiffLanguage("Makefile")).toBe("text");
+  it("normalizes the working tree path before loading unstaged content", async () => {
+    const diff = await service.loadDiff("src/file.ts", false, false, "/c/repo", shellContext);
+
+    expect(filesystem.normalizePath).toHaveBeenCalledWith("/c/repo/src/file.ts", shellContext);
+    expect(filesystem.readTextFile).toHaveBeenCalledWith(
+      "/normalized/c/repo/src/file.ts",
+      shellContext,
+    );
+    expect(diff).toEqual({
+      original: "head content",
+      modified: "working tree content",
+      language: "typescript",
+    });
   });
 
-  it("returns text for files without extension", () => {
-    expect(detectGitDiffLanguage("Dockerfile")).toBe("text");
-  });
+  it("loads staged content from the git index", async () => {
+    vi.mocked(gitBlobReader.readBlob)
+      .mockResolvedValueOnce("head content")
+      .mockResolvedValueOnce("index content");
 
-  it("uses the last extension for dotfiles", () => {
-    expect(detectGitDiffLanguage(".gitignore")).toBe("text");
-    expect(detectGitDiffLanguage("archive.tar.gz")).toBe("text");
-  });
+    const diff = await service.loadDiff("src/file.ts", true, false, "/c/repo", shellContext);
 
-  it("is case-insensitive for extensions", () => {
-    expect(detectGitDiffLanguage("Main.TS")).toBe("typescript");
-    expect(detectGitDiffLanguage("Main.PY")).toBe("python");
+    expect(filesystem.readTextFile).not.toHaveBeenCalled();
+    expect(gitBlobReader.readBlob).toHaveBeenNthCalledWith(1, "/c/repo", "HEAD:src/file.ts");
+    expect(gitBlobReader.readBlob).toHaveBeenNthCalledWith(2, "/c/repo", ":0:src/file.ts");
+    expect(diff.modified).toBe("index content");
   });
 });

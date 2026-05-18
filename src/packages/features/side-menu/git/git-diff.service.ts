@@ -26,7 +26,10 @@ export class GitDiffService {
     shellContext: ShellContextContract,
   ): Promise<GitDiffContent> {
     const language = detectGitDiffLanguage(filePath);
-    const absolutePath = this.buildAbsolutePath(gitRoot, filePath);
+    const absolutePath = this.filesystem.normalizePath(
+      this.buildAbsolutePath(gitRoot, filePath),
+      shellContext,
+    );
 
     // Always read HEAD as original. If the file is genuinely new (doesn't exist
     // in HEAD), git cat-file returns nothing and readBlob resolves to "".

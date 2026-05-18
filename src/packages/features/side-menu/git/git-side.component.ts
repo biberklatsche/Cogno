@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
 import { Opener } from "@cogno/core-api";
-import { IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { GitFile, GitStatusService } from "./git-status.service";
@@ -80,7 +80,14 @@ type SelectedFile = {
                         [class.selected]="isSelected(file, true)"
                         (click)="selectFile(file, true)"
                       >
-                        <span class="status-badge staged">{{ file.status }}</span>
+                        <span
+                          class="status-badge"
+                          [class.status-edited]="isEditedStatus(file)"
+                          [class.status-added]="isAddedStatus(file)"
+                          [class.status-removed]="isRemovedStatus(file)"
+                        >
+                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
+                        </span>
                         <div class="file-name-group">
                           <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
                           @if (file.status !== 'D') {
@@ -150,10 +157,11 @@ type SelectedFile = {
                       >
                         <span
                           class="status-badge"
-                          [class.unstaged]="file.status !== '?'"
-                          [class.untracked]="file.status === '?'"
+                          [class.status-edited]="isEditedStatus(file)"
+                          [class.status-added]="isAddedStatus(file)"
+                          [class.status-removed]="isRemovedStatus(file)"
                         >
-                          {{ file.status }}
+                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
                         </span>
                         <div class="file-name-group">
                           <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
@@ -197,7 +205,7 @@ type SelectedFile = {
                               appTooltip="Discard changes"
                               (click)="$event.stopPropagation(); requestDiscardConfirmation(file.path)"
                             >
-                              <app-icon name="mdiUndoVariant"></app-icon>
+                              <app-icon name="mdiTrashCanOutline"></app-icon>
                             </button>
                           }
                         }
@@ -462,14 +470,20 @@ type SelectedFile = {
       .status-badge {
         flex: 0 0 auto;
         width: 14px;
-        font-weight: 700;
-        font-size: var(--git-primary-font-size);
-        text-align: center;
+        height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .status-badge.staged { color: var(--color-green); }
-      .status-badge.unstaged { color: var(--color-red); }
-      .status-badge.untracked { color: var(--foreground-color-10t); }
+      .status-badge app-icon {
+        width: 14px;
+        height: 14px;
+      }
+
+      .status-edited { color: var(--color-yellow); }
+      .status-added { color: var(--color-green); }
+      .status-removed { color: var(--color-red); }
 
       .file-name-group {
         flex: 1;
@@ -743,6 +757,24 @@ export class GitSideComponent {
   isSelected(file: GitFile, isStaged: boolean): boolean {
     const sel = this.selectedFileSignal();
     return sel?.file.path === file.path && sel?.isStaged === isStaged;
+  }
+
+  fileStatusIcon(file: GitFile): Icon {
+    if (file.status === "A" || file.status === "?") return "mdiPlus";
+    if (file.status === "D") return "mdiMinus";
+    return "mdiPencil";
+  }
+
+  isEditedStatus(file: GitFile): boolean {
+    return !this.isAddedStatus(file) && !this.isRemovedStatus(file);
+  }
+
+  isAddedStatus(file: GitFile): boolean {
+    return file.status === "A" || file.status === "?";
+  }
+
+  isRemovedStatus(file: GitFile): boolean {
+    return file.status === "D";
   }
 
   selectFile(file: GitFile, isStaged: boolean): void {

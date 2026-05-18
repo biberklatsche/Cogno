@@ -23,6 +23,7 @@ import {
   mdiMinus,
   mdiOpenInNew,
   mdiPaletteSwatch,
+  mdiPencil,
   mdiPin,
   mdiPinOff,
   mdiPlus,
@@ -134,6 +135,9 @@ export class IconComponent {
         break;
       case "mdiPaletteSwatch":
         this.icon = mdiPaletteSwatch;
+        break;
+      case "mdiPencil":
+        this.icon = mdiPencil;
         break;
       case "mdiPin":
         this.icon = mdiPin;

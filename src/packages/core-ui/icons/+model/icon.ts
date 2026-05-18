@@ -22,6 +22,7 @@ export type Icon =
   | "mdiMinus"
   | "mdiOpenInNew"
   | "mdiPaletteSwatch"
+  | "mdiPencil"
   | "mdiPin"
   | "mdiPinOff"
   | "mdiPlus"
