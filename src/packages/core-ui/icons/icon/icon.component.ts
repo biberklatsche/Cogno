@@ -21,6 +21,7 @@ import {
   mdiCheckboxBlankCircle,
   mdiCheckCircle,
   mdiChevronDown,
+  mdiChevronRight,
   mdiClose,
   mdiCloseBoxMultipleOutline,
   mdiCloseBoxOutline,
@@ -47,6 +48,7 @@ import {
   mdiLanConnect,
   mdiLiquidSpot,
   mdiLoading,
+  mdiMinus,
   mdiMonitor,
   mdiNuke,
   mdiOpenInNew,
@@ -77,6 +79,7 @@ import {
   mdiThumbUp,
   mdiToyBrick,
   mdiTrashCanOutline,
+  mdiUndoVariant,
   mdiViewCarousel,
   mdiViewDashboard,
   mdiWeatherNight,
@@ -173,8 +176,14 @@ export class IconComponent {
       case "mdiPlus":
         this.icon = mdiPlus;
         break;
+      case "mdiMinus":
+        this.icon = mdiMinus;
+        break;
       case "mdiChevronDown":
         this.icon = mdiChevronDown;
+        break;
+      case "mdiChevronRight":
+        this.icon = mdiChevronRight;
         break;
       case "mdiCog":
         this.icon = mdiCog;
@@ -364,6 +373,9 @@ export class IconComponent {
         break;
       case "mdiSend":
         this.icon = mdiSend;
+        break;
+      case "mdiUndoVariant":
+        this.icon = mdiUndoVariant;
         break;
       default:
         this.icon = mdiAbTesting;

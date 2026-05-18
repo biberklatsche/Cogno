@@ -24,18 +24,18 @@ import { FeatureMode, HexColor } from "./shared";
 import { ShellConfig, ShellConfigSchema, ShellType } from "./shell-config";
 
 export {
-  HexColor,
-  FeatureMode,
-  Font,
+  ClipboardConfig,
   Color,
   Cursor,
+  FeatureMode,
+  Font,
+  HexColor,
+  Keybinding,
   Padding,
+  Scrollbar,
+  Selection,
   ShellConfig,
   ShellType,
-  Selection,
-  Scrollbar,
-  Keybinding,
-  ClipboardConfig,
 };
 
 export const baseConfigSchemaShape = {

@@ -1,5 +1,5 @@
-import { Opener } from "@cogno/app-tauri/opener";
 import { OS } from "@cogno/app-tauri/os";
+import { Opener } from "@cogno/core-api";
 import { Terminal } from "@xterm/xterm";
 import { IDisposable } from "../../../common/models/models";
 import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";
@@ -19,6 +19,7 @@ export class LinkHandler implements ITerminalHandler {
 
   constructor(
     private readonly _stateManager: TerminalStateManager,
+    private readonly _opener: Opener,
     private readonly _pathResolver: TerminalPathResolver = new TerminalPathResolver(),
   ) {}
 
@@ -54,7 +55,7 @@ export class LinkHandler implements ITerminalHandler {
               if (!this.isOpenModifierPressed(event)) return;
               event.preventDefault();
               if (match.kind === "url") {
-                void Opener.openUrl(text);
+                void this._opener.openUrl(text);
                 return;
               }
               const backendPath = this._pathResolver.resolvePathForOpen(
@@ -63,7 +64,7 @@ export class LinkHandler implements ITerminalHandler {
                 this._stateManager.pathAdapter,
               );
               if (!backendPath) return;
-              void Opener.openPath(backendPath);
+              void this._opener.openPath(backendPath);
             },
           })),
         );

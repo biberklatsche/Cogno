@@ -6,6 +6,7 @@ export * from "./command-runner";
 export * from "./db";
 export * from "./default-config";
 export * from "./fs";
+export * from "./git-blob-reader";
 export * from "./keyboard-layout";
 export * from "./logger";
 export * from "./native-menu";

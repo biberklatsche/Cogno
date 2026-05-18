@@ -5,6 +5,9 @@ import { AiChatSideMenuLifecycle } from "@cogno/features/side-menu/ai/ai-chat-si
 import { CommandPaletteComponent } from "@cogno/features/side-menu/command-palette/command-palette.component";
 import { commandPaletteSideMenuFeatureDefinition } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
 import { CommandPaletteSideMenuLifecycle } from "@cogno/features/side-menu/command-palette/command-palette-side-menu.lifecycle";
+import { gitSideMenuFeatureDefinition } from "@cogno/features/side-menu/git/git.feature-definition";
+import { GitSideComponent } from "@cogno/features/side-menu/git/git-side.component";
+import { GitSideMenuLifecycle } from "@cogno/features/side-menu/git/git-side-menu.lifecycle";
 import { notificationSideMenuFeatureDefinition } from "@cogno/features/side-menu/notification/notification.feature-definition";
 import { NotificationSideComponent } from "@cogno/features/side-menu/notification/notification-side.component";
 import { NotificationSideMenuLifecycle } from "@cogno/features/side-menu/notification/notification-side-menu.lifecycle";
@@ -45,5 +48,11 @@ export const productSideMenuFeatureDefinitions = [
     targetComponent: TerminalSearchSideComponent,
     createLifecycle: (injector, sideMenuFeatureHandle) =>
       injector.get(TerminalSearchSideMenuLifecycle).create(sideMenuFeatureHandle),
+  },
+  {
+    ...gitSideMenuFeatureDefinition,
+    targetComponent: GitSideComponent,
+    createLifecycle: (injector, sideMenuFeatureHandle) =>
+      injector.get(GitSideMenuLifecycle).create(sideMenuFeatureHandle),
   },
 ] as const satisfies ReadonlyArray<SideMenuFeatureDefinition>;

@@ -1,4 +1,5 @@
 import { Observable } from "rxjs";
+import { ShellContextContract } from "./filesystem.contract";
 
 export type TerminalIdentifierContract = string;
 
@@ -21,6 +22,7 @@ export interface TerminalSnapshotContract {
   readonly tabId?: string;
   readonly workspaceId?: string;
   readonly shellType?: string;
+  readonly shellContext?: ShellContextContract;
   readonly cwd?: string;
   readonly input?: string;
   readonly isCommandRunning: boolean;
@@ -50,6 +52,7 @@ export interface TerminalBusyStateChangeContract {
 export interface TerminalGatewayContract {
   readonly focusedTerminalId$: Observable<TerminalIdentifierContract | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
+  readonly cwdChanges$: Observable<void>;
   getFocusedTerminalId(): TerminalIdentifierContract | undefined;
   hasTerminal(terminalId: TerminalIdentifierContract | undefined): boolean;
   focusTerminal(terminalId: TerminalIdentifierContract): void;
@@ -66,6 +69,7 @@ export interface TerminalGatewayContract {
 export abstract class TerminalGateway implements TerminalGatewayContract {
   abstract readonly focusedTerminalId$: Observable<TerminalIdentifierContract | undefined>;
   abstract readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
+  abstract readonly cwdChanges$: Observable<void>;
   abstract getFocusedTerminalId(): TerminalIdentifierContract | undefined;
   abstract hasTerminal(terminalId: TerminalIdentifierContract | undefined): boolean;
   abstract focusTerminal(terminalId: TerminalIdentifierContract): void;

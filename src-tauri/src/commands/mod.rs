@@ -1,5 +1,6 @@
 pub mod clipboard_image;
 pub mod command_runner;
+pub mod git_blob;
 pub mod config;
 pub mod crypto;
 pub mod environment;

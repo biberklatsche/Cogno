@@ -143,7 +143,7 @@ export class HistoryCommandScorer {
 
     const rowCommandToken = HistoryCommandScorer.firstToken(row.command);
     const sameCommandBonus =
-      !!inputCommandToken && rowCommandToken === inputCommandToken ? SCORING.sameCommandBonus : 0;
+      inputCommandToken && rowCommandToken === inputCommandToken ? SCORING.sameCommandBonus : 0;
     const currentCwdRecency = Math.max(row.cwdLastSelectAt || 0, row.cwdLastExecAt || 0);
     const currentCwdRecencyBonus =
       row.cwdExecCount > 0

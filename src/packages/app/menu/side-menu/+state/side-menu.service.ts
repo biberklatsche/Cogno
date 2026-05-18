@@ -23,7 +23,6 @@ export type SideMenuItem = {
 export class SideMenuService {
   private static readonly defaultPanelWidthInPixels = 360;
   private static readonly minimumPanelWidthInPixels = 280;
-  private static readonly maximumPanelWidthInPixels = 640;
 
   private _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
   private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<
@@ -194,9 +193,6 @@ export class SideMenuService {
   }
 
   private clampPanelWidthInPixels(panelWidthInPixels: number): number {
-    return Math.max(
-      SideMenuService.minimumPanelWidthInPixels,
-      Math.min(SideMenuService.maximumPanelWidthInPixels, Math.round(panelWidthInPixels)),
-    );
+    return Math.max(SideMenuService.minimumPanelWidthInPixels, Math.round(panelWidthInPixels));
   }
 }

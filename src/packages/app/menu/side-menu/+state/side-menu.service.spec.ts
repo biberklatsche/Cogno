@@ -115,7 +115,7 @@ describe("SideMenuService", () => {
     expect(service.panelWidthInPixels()).toBe(280);
 
     service.setPanelWidthInPixels(999);
-    expect(service.panelWidthInPixels()).toBe(640);
+    expect(service.panelWidthInPixels()).toBe(999);
   });
 
   it("preserves runtime pin state when a menu item is re-registered", () => {

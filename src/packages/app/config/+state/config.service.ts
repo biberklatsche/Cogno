@@ -66,7 +66,7 @@ export class RealConfigService extends ConfigService {
     if (!config) throw new Error("Config is not loaded!");
 
     const shell = config.shell;
-    if (!shell || !shell.profiles) {
+    if (!shell?.profiles) {
       throw new Error("No shell configuration defined!");
     }
 
@@ -138,7 +138,7 @@ export class RealConfigService extends ConfigService {
     if (!config) throw new Error("Config is not loaded!");
 
     const prompt = config.prompt;
-    if (!prompt || !prompt.profile) {
+    if (!prompt?.profile) {
       throw new Error("No prompt configuration defined!");
     }
 

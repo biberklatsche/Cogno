@@ -39,4 +39,12 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
       payload: target,
     });
   }
+
+  dispatch(payload: NotificationEventPayloadContract): void {
+    this.appBus.publish({
+      path: ["notification"],
+      type: "Notification",
+      payload,
+    });
+  }
 }

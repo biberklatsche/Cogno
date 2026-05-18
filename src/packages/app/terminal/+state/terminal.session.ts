@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
+import { NotificationChannelContract, Opener, ShellDefinitionContract } from "@cogno/core-api";
 import { Observable, Subscription } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
@@ -74,6 +74,7 @@ export class TerminalSession {
     private wiringService: AppWiringService,
     private contextMenuOverlayService: ContextMenuOverlayService,
     private notificationTargetResolverService: NotificationTargetResolverService,
+    private readonly opener: Opener,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.renderer = new Renderer(this.configService.config);
@@ -168,7 +169,7 @@ export class TerminalSession {
     );
     this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
-    this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager)));
+    this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager, this.opener)));
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
     const shellDefinition = this.shellProfile.enable_shell_integration

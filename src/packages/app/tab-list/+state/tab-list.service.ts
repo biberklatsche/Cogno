@@ -338,7 +338,7 @@ export class TabListService {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
     const tabList = this.cloneTabList(this._tabList.value);
     const tab = tabList.find((tab) => tab.id === tabId);
-    if (!tab || !tab.userTitle) return;
+    if (!tab?.userTitle) return;
     tab.userTitle = undefined;
     this.setTabListForWorkspace(workspaceIdentifier, tabList);
     this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, userTitle: tab.userTitle } });

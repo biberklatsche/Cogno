@@ -14,7 +14,9 @@ import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
+import { GitBlobReaderHostService } from "@cogno/app/app-host/git-blob-reader-host.service";
 import { HttpClientPortAdapterService } from "@cogno/app/app-host/http-client-port.adapter.service";
+import { OpenerAdapterService } from "@cogno/app/app-host/opener.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
@@ -49,6 +51,7 @@ import {
   Filesystem,
   HttpClientPort,
   NotificationCenterPort,
+  Opener,
   TerminalGateway,
   TerminalSearchHostPort,
   WorkspaceHostPort,
@@ -56,6 +59,7 @@ import {
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import { GitBlobReader } from "@cogno/features/side-menu/git/git-blob-reader.port";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
 import { aiDetectableProviderDefinitions } from "../products/ai-detectable-provider-definitions";
@@ -66,6 +70,8 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
     { provide: CommandRunner, useExisting: CommandRunnerHostService },
+    { provide: GitBlobReader, useExisting: GitBlobReaderHostService },
+    { provide: Opener, useExisting: OpenerAdapterService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
     { provide: DatabaseAccess, useExisting: DatabaseAccessHostService },
     { provide: Filesystem, useExisting: FilesystemHostService },
