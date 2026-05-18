@@ -61,7 +61,6 @@ export class TerminalSession {
   private sessionNotificationChannels?: NotificationChannels;
   private readonly completedCommandNotificationHandler: CompletedCommandNotificationHandler;
   private readonly commandBlockResolver: CommandBlockResolver;
-  private readonly opener: Opener;
 
   private terminalId?: TerminalId;
   private shellProfile?: ShellProfile;
@@ -75,10 +74,9 @@ export class TerminalSession {
     private wiringService: AppWiringService,
     private contextMenuOverlayService: ContextMenuOverlayService,
     private notificationTargetResolverService: NotificationTargetResolverService,
-    opener: Opener,
+    private readonly opener: Opener,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
-    this.opener = opener;
     this.renderer = new Renderer(this.configService.config);
     this.disposables = [this.renderer, this.pty];
     this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(
