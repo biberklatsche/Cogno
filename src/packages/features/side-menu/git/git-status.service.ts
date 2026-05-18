@@ -18,6 +18,7 @@ export type GitFile = {
 export type GitStatus = {
   readonly gitRoot: string;
   readonly branch: string;
+  readonly shellContext: ShellContextContract;
   readonly staged: ReadonlyArray<GitFile>;
   readonly unstaged: ReadonlyArray<GitFile>;
   readonly untracked: ReadonlyArray<GitFile>;
@@ -40,12 +41,10 @@ export class GitStatusService {
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private currentGitRoot: string | null = null;
-  private _currentShellContext: ShellContextContract | null = null;
+  private currentShellContext: ShellContextContract | null = null;
   private refreshContextInFlight = false;
-
-  get currentShellContext(): ShellContextContract | null {
-    return this._currentShellContext;
-  }
+  private refreshStatusInFlight = false;
+  private refreshStatusPending = false;
 
   constructor(
     private readonly terminalGateway: TerminalGateway,
@@ -98,36 +97,11 @@ export class GitStatusService {
   }
 
   async commit(message: string): Promise<void> {
-    if (!this.currentGitRoot || !this.currentShellContext) return;
-    const result = await this.commandRunner.run({
-      cwd: this.currentGitRoot,
-      shellContext: this.currentShellContext,
-      program: "git",
-      args: ["commit", "-m", message],
+    await this.runGitCommand(["commit", "-m", message], "Commit failed", {
       timeoutMs: 15_000,
+      successHeader: "Committed",
+      successBody: (stdout) => stdout.split("\n")[0]?.trim() ?? "",
     });
-
-    if (result.exitCode !== 0) {
-      this.notificationCenterPort.dispatch({
-        header: "Commit failed",
-        body: result.stderr.trim() || result.stdout.trim(),
-        type: "error",
-        source: "git",
-        channels: { toast: true },
-      });
-      return;
-    }
-
-    const firstLine = result.stdout.split("\n")[0]?.trim() ?? "";
-    this.notificationCenterPort.dispatch({
-      header: "Committed",
-      body: firstLine,
-      type: "success",
-      source: "git",
-      channels: { toast: true },
-    });
-
-    await this.refreshStatus();
   }
 
   private async refreshContext(): Promise<void> {
@@ -139,11 +113,11 @@ export class GitStatusService {
         this.gitStatusSignal.set(null);
         this.gitErrorSignal.set(null);
         this.currentGitRoot = null;
-        this._currentShellContext = null;
+        this.currentShellContext = null;
         return;
       }
 
-      this._currentShellContext = snapshot.shellContext;
+      this.currentShellContext = snapshot.shellContext;
       const result = await this.detectGitRoot(snapshot.cwd, snapshot.shellContext);
       this.currentGitRoot = result.gitRoot;
 
@@ -161,6 +135,23 @@ export class GitStatusService {
   }
 
   async refreshStatus(): Promise<void> {
+    if (this.refreshStatusInFlight) {
+      this.refreshStatusPending = true;
+      return;
+    }
+    this.refreshStatusInFlight = true;
+    try {
+      await this.doRefreshStatus();
+    } finally {
+      this.refreshStatusInFlight = false;
+      if (this.refreshStatusPending) {
+        this.refreshStatusPending = false;
+        void this.refreshStatus();
+      }
+    }
+  }
+
+  private async doRefreshStatus(): Promise<void> {
     if (!this.currentGitRoot || !this.currentShellContext) return;
     this.loadingSignal.set(true);
     try {
@@ -190,6 +181,7 @@ export class GitStatusService {
       this.gitStatusSignal.set({
         gitRoot: this.currentGitRoot,
         branch: branchResult.stdout.trim() || "HEAD",
+        shellContext: this.currentShellContext,
         ...parsed,
       });
     } finally {
@@ -214,19 +206,28 @@ export class GitStatusService {
       return root ? { gitRoot: root, error: null } : { gitRoot: null, error: "no_repo" };
     }
 
-    const combined = `${result.stdout} ${result.stderr}`.toLowerCase();
-    const error: GitError = combined.includes("not a git repository") ? "no_repo" : "not_installed";
+    // exit 128 = git's "not a git repository"; anything else means git itself isn't usable
+    const error: GitError = result.exitCode === 128 ? "no_repo" : "not_installed";
     return { gitRoot: null, error };
   }
 
-  private async runGitCommand(args: string[], errorHeader: string): Promise<void> {
+  private async runGitCommand(
+    args: string[],
+    errorHeader: string,
+    options: {
+      timeoutMs?: number;
+      successHeader?: string;
+      successBody?: (stdout: string) => string;
+    } = {},
+  ): Promise<void> {
     if (!this.currentGitRoot || !this.currentShellContext) return;
+    const { timeoutMs = 10_000, successHeader, successBody } = options;
     const result = await this.commandRunner.run({
       cwd: this.currentGitRoot,
       shellContext: this.currentShellContext,
       program: "git",
       args,
-      timeoutMs: 10_000,
+      timeoutMs,
     });
     if (result.exitCode !== 0) {
       this.notificationCenterPort.dispatch({
@@ -238,9 +239,17 @@ export class GitStatusService {
       });
       return;
     }
+    if (successHeader) {
+      this.notificationCenterPort.dispatch({
+        header: successHeader,
+        body: successBody?.(result.stdout) ?? "",
+        type: "success",
+        source: "git",
+        channels: { toast: true },
+      });
+    }
     await this.refreshStatus();
   }
-
 }
 
 export function parseGitStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {

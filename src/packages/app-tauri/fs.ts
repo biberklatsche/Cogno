@@ -5,7 +5,6 @@ import {
   mkdir as tauriMkdir,
   readDir as tauriReadDir,
   readTextFile as tauriReadTextFile,
-  stat as tauriStat,
   watch as tauriWatch,
   writeTextFile as tauriWriteTextFile,
   WatchEvent,
@@ -59,10 +58,6 @@ export const Fs = {
   },
   exists(path: string): Promise<boolean> {
     return tauriExists(path);
-  },
-  async getFileSize(path: string): Promise<number | null> {
-    const info = await tauriStat(path);
-    return typeof info.size === "number" ? info.size : null;
   },
   convertFileSrc(path: string): string {
     return tauriConvertFileSrc(path);

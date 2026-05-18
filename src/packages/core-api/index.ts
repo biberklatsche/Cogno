@@ -18,6 +18,7 @@ export * from "./grid-layout.contract";
 export * from "./http-client.contract";
 export * from "./notification.contract";
 export * from "./notification-center.contract";
+export * from "./opener.contract";
 export * from "./path-adapter.contract";
 export * from "./shell-context.contract";
 export * from "./shell-definition.contract";

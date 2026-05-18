@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { Opener } from "@cogno/app-tauri/opener";
 import { OS, type OsType } from "@cogno/app-tauri/os";
+import { Opener } from "@cogno/core-api";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
@@ -14,14 +14,16 @@ describe("LinkHandler", () => {
   let stateManager: TerminalStateManager;
   let terminal: ReturnType<typeof TerminalMockFactory.createTerminal>;
   let provider: any;
-  let openUrlSpy: ReturnType<typeof vi.spyOn>;
-  let openPathSpy: ReturnType<typeof vi.spyOn>;
+  let opener: Opener;
+  let openUrlSpy: ReturnType<typeof vi.fn>;
+  let openPathSpy: ReturnType<typeof vi.fn>;
   let _osPlatformSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
-    openUrlSpy = vi.spyOn(Opener, "openUrl").mockResolvedValue();
-    openPathSpy = vi.spyOn(Opener, "openPath").mockResolvedValue();
+    openUrlSpy = vi.fn().mockResolvedValue(undefined);
+    openPathSpy = vi.fn().mockResolvedValue(undefined);
+    opener = { openUrl: openUrlSpy, openPath: openPathSpy } as unknown as Opener;
   });
 
   function createScenario(shellType: ShellType, backendOs: OsType, cwd: string): void {
@@ -31,7 +33,7 @@ describe("LinkHandler", () => {
     stateManager.initialize("term-1", shellType);
     stateManager.updateCwd(cwd);
     terminal = TerminalMockFactory.createTerminal();
-    handler = new LinkHandler(stateManager);
+    handler = new LinkHandler(stateManager, opener);
     handler.registerTerminal(terminal);
     provider = vi.mocked(terminal.registerLinkProvider).mock.calls[0]?.[0];
   }

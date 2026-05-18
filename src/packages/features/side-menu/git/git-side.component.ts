@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
-import { Opener } from "@cogno/app-tauri/opener";
+import { Opener } from "@cogno/core-api";
 import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
@@ -662,6 +662,7 @@ export class GitSideComponent {
   constructor(
     private readonly gitStatusService: GitStatusService,
     private readonly gitDiffService: GitDiffService,
+    private readonly opener: Opener,
   ) {
     effect(() => {
       const status = this.status();
@@ -711,7 +712,7 @@ export class GitSideComponent {
   openInEditor(file: GitFile): void {
     const status = this.status();
     if (!status) return;
-    void Opener.openPath(`${status.gitRoot}/${file.path}`);
+    void this.opener.openPath(`${status.gitRoot}/${file.path}`);
   }
 
   stageFile(path: string): void {
@@ -779,11 +780,7 @@ export class GitSideComponent {
       return;
     }
 
-    const snapshot = this.gitStatusService.currentShellContext;
-    if (!snapshot) {
-      this.diffLoadingSignal.set(false);
-      return;
-    }
+    const snapshot = status.shellContext;
 
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => resolve());

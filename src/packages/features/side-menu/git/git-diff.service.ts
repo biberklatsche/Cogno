@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
-import { Filesystem, GitBlobReader, ShellContextContract } from "@cogno/core-api";
+import { Filesystem, ShellContextContract } from "@cogno/core-api";
+import { GitBlobReader } from "./git-blob-reader.port";
 
 export type GitDiffContent = {
   readonly original: string;
@@ -51,7 +52,6 @@ export class GitDiffService {
     // BasePathAdapter.normalize() handles both C:/path and /unix/path forms
     return `${gitRoot}/${filePath}`;
   }
-
 }
 
 export function detectGitDiffLanguage(filePath: string): string {

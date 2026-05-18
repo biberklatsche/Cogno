@@ -109,20 +109,6 @@ export class FilesystemHostService extends Filesystem {
     return backendPath ? Fs.exists(backendPath) : false;
   }
 
-  async getFileSize(path: string, shellContext: ShellContextContract): Promise<number | null> {
-    const backendPath = PathFactory.createAdapter(shellContext).render(path, {
-      purpose: "backend_fs",
-    });
-    if (!backendPath) {
-      return null;
-    }
-    try {
-      return await Fs.getFileSize(backendPath);
-    } catch {
-      return null;
-    }
-  }
-
   async readTextFile(path: string, shellContext: ShellContextContract): Promise<string> {
     const backendPath = PathFactory.createAdapter(shellContext).render(path, {
       purpose: "backend_fs",
