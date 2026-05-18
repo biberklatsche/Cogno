@@ -33,7 +33,7 @@ export type Icon =
   | "mdiSend"
   | "mdiSpeedometer"
   | "mdiSquareEditOutline"
-  | "mdiTable"
-  | "mdiTableEdit"
   | "mdiTrashCanOutline"
-  | "mdiUndoVariant";
+  | "mdiUndoVariant"
+  | "mdiViewDashboard"
+  | "mdiViewDashboardEdit";

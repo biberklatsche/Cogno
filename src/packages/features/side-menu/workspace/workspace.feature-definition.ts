@@ -5,7 +5,7 @@ export const workspaceFeatureId = "workspace";
 export const workspaceSideMenuFeatureDefinition = {
   id: workspaceFeatureId,
   title: "Workspace",
-  icon: "mdiTable",
+  icon: "mdiViewDashboard",
   order: 10,
   actionName: "open_workspace",
   configPath: "workspace",

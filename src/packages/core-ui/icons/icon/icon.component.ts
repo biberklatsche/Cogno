@@ -34,10 +34,10 @@ import {
   mdiSend,
   mdiSpeedometer,
   mdiSquareEditOutline,
-  mdiTable,
-  mdiTableEdit,
   mdiTrashCanOutline,
   mdiUndoVariant,
+  mdiViewDashboard,
+  mdiViewDashboardEdit,
 } from "@mdi/js";
 import { Icon } from "../+model/icon";
 
@@ -169,17 +169,17 @@ export class IconComponent {
       case "mdiSquareEditOutline":
         this.icon = mdiSquareEditOutline;
         break;
-      case "mdiTable":
-        this.icon = mdiTable;
-        break;
-      case "mdiTableEdit":
-        this.icon = mdiTableEdit;
-        break;
       case "mdiTrashCanOutline":
         this.icon = mdiTrashCanOutline;
         break;
       case "mdiUndoVariant":
         this.icon = mdiUndoVariant;
+        break;
+      case "mdiViewDashboard":
+        this.icon = mdiViewDashboard;
+        break;
+      case "mdiViewDashboardEdit":
+        this.icon = mdiViewDashboardEdit;
         break;
       default:
         this.icon = mdiAbTesting;
