@@ -1,4 +1,4 @@
-import { DestroyRef } from "@angular/core";
+import { DestroyRef, Type } from "@angular/core";
 import {
   ApplicationConfigurationPort,
   FeatureModeContract,
@@ -30,6 +30,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     private readonly keybinds: KeybindService,
     destroyRef: DestroyRef,
   ) {
+    const isLazy = typeof config.targetComponent === "function" && !config.targetComponent.prototype;
     this.menuItem = {
       id: config.id,
       label: config.title,
@@ -37,9 +38,15 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
       pinned: config.pinned ?? false,
       icon: config.icon,
       order: config.order,
-      component: config.targetComponent,
+      component: isLazy ? null : (config.targetComponent as Type<unknown>),
       actionName: config.actionName,
     };
+
+    if (isLazy) {
+      void (config.targetComponent as () => Promise<Type<unknown>>)().then((component) => {
+        sideMenuService.resolveComponent(config.title, component);
+      });
+    }
 
     this.setupConfigListener();
     this.setupSideMenuListeners();

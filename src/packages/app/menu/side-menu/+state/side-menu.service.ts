@@ -14,7 +14,7 @@ export type SideMenuItem = {
   actionName: ActionName;
   separator?: boolean;
   // Optional component to render in the side "aside" area when this item is active
-  component: Type<unknown>;
+  component: Type<unknown> | null;
   // Optional badge color indicator
   badgeColor?: string;
 };
@@ -66,6 +66,15 @@ export class SideMenuService {
       }
       return [...s, item];
     });
+  }
+
+  resolveComponent(label: string, component: Type<unknown>): void {
+    this._menuItems.update((items) =>
+      items.map((item) => (item.label === label ? { ...item, component } : item)),
+    );
+    this._selectedItem.update((item) =>
+      item?.label === label ? { ...item, component } : item,
+    );
   }
 
   removeMenuItem(label: string) {

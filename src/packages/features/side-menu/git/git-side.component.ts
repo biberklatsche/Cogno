@@ -236,7 +236,9 @@ type SelectedFile = {
                     <span>Loading diff...</span>
                   </div>
                 } @else if (diff()) {
-                  <app-git-diff-view [diff]="diff()"></app-git-diff-view>
+                  @defer (when diff() !== null) {
+                    <app-git-diff-view [diff]="diff()"></app-git-diff-view>
+                  }
                 }
               </div>
             </section>
