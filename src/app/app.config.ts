@@ -1,6 +1,7 @@
 import {
   ApplicationConfig,
   ErrorHandler,
+  Injector,
   inject,
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
@@ -106,22 +107,26 @@ export const appConfig: ApplicationConfig = {
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
       inject(StyleService);
-      inject(NotificationDispatchService);
-      inject(NotificationTargetRuntimeService);
-      inject(ErrorReportingRuntimeService).initialize();
-      inject(WorkspaceHostApplicationService);
-      inject(KeybindService);
-      inject(CliActionService);
-      inject(NativeMenuService);
-      inject(WindowService);
       inject(AppWiringService);
-      inject(SideMenuLifecycleRuntimeService);
-      inject(ActionCatalogAdapterService);
-      inject(ActionKeybindingPortAdapterService);
-      inject(TerminalSearchHostPortAdapterService);
-      inject(WorkspaceHostPortAdapterService);
-      inject(WorkspaceShortcutActionService);
-      inject(AiProviderDetectionService);
+      inject(ErrorReportingRuntimeService).initialize();
+
+      const injector = inject(Injector);
+      setTimeout(() => {
+        injector.get(NotificationDispatchService);
+        injector.get(NotificationTargetRuntimeService);
+        injector.get(WorkspaceHostApplicationService);
+        injector.get(KeybindService);
+        injector.get(CliActionService);
+        injector.get(NativeMenuService);
+        injector.get(WindowService);
+        injector.get(SideMenuLifecycleRuntimeService);
+        injector.get(ActionCatalogAdapterService);
+        injector.get(ActionKeybindingPortAdapterService);
+        injector.get(TerminalSearchHostPortAdapterService);
+        injector.get(WorkspaceHostPortAdapterService);
+        injector.get(WorkspaceShortcutActionService);
+        injector.get(AiProviderDetectionService);
+      }, 0);
     }),
   ],
 };
