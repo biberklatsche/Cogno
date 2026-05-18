@@ -17,6 +17,8 @@ button, a {
     border: 1px solid var(--background-color-20l);
     background: var(--background-color-10l);
     color: var(--foreground-color);
+    font: inherit;
+    font-size: 0.9rem;
 
     &.icon-button {
         border: none;
@@ -39,8 +41,12 @@ button, a {
         background: var(--background-color-20l);
     }
 
-    &:hover {
+    &:hover(not:disabled) {
         background: var(--background-color-30l);
+    }
+
+    &:disabled {
+        opacity: 0.3;
     }
 }
 

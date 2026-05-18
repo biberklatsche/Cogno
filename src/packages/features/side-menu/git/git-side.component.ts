@@ -27,7 +27,7 @@ type SelectedFile = {
         </span>
         <button
           type="button"
-          class="icon-button"
+          class="button icon-button"
           appTooltip="Refresh"
           [disabled]="loading()"
           (click)="refresh()"
@@ -47,7 +47,7 @@ type SelectedFile = {
             ></textarea>
             <button
               type="button"
-              class="commit-button"
+              class="button"
               [disabled]="!canCommit()"
               (click)="commit()"
             >
@@ -233,7 +233,7 @@ type SelectedFile = {
             <section class="diff-section">
               <div class="diff-header">
                 <span class="diff-file-name">{{ selectedFile()!.file.path }}</span>
-                <button type="button" class="icon-button" appTooltip="Close diff" (click)="closeDiff()">
+                <button type="button" class="button icon-button" appTooltip="Close diff" (click)="closeDiff()">
                   <app-icon name="mdiClose"></app-icon>
                 </button>
               </div>
@@ -355,24 +355,7 @@ type SelectedFile = {
         outline: none;
         border-color: var(--highlight-color);
       }
-
-      .commit-button {
-        align-self: flex-end;
-        padding: 0.3rem 0.75rem;
-        background: var(--highlight-color);
-        color: var(--background-color);
-        border: none;
-        border-radius: var(--button-border-radius);
-        cursor: pointer;
-        font-size: inherit;
-        font-weight: 500;
-      }
-
-      .commit-button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-
+      
       .file-section {
         flex: 0 0 auto;
       }
@@ -545,26 +528,9 @@ type SelectedFile = {
         visibility: visible;
       }
 
-      .icon-button {
-        background: none;
-        border: none;
-        color: var(--foreground-color);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        padding: 0.2rem;
-        border-radius: 3px;
-        opacity: 0.6;
-      }
-
       .icon-button app-icon {
         width: 1rem;
         height: 1rem;
-      }
-
-      .icon-button:hover {
-        opacity: 1;
-        background: var(--background-color-10l);
       }
 
       .icon-button:disabled {

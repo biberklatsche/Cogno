@@ -53,8 +53,8 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
   styles: [
     `
       :host {
+        padding: 0.25rem 0 0;
         margin: 0;
-        padding: 0;
         font-size: 0.9rem;
         width: 100%;
         overflow: hidden;
