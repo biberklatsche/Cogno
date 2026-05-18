@@ -61,9 +61,7 @@ export const productSideMenuFeatureDefinitions = [
   {
     ...gitSideMenuFeatureDefinition,
     targetComponent: () =>
-      import("@cogno/features/side-menu/git/git-side.component").then(
-        (m) => m.GitSideComponent,
-      ),
+      import("@cogno/features/side-menu/git/git-side.component").then((m) => m.GitSideComponent),
     createLifecycle: (injector, sideMenuFeatureHandle) =>
       injector.get(GitSideMenuLifecycle).create(sideMenuFeatureHandle),
   },

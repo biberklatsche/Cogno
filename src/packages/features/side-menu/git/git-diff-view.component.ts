@@ -83,7 +83,8 @@ const cognoHighlightStyle = HighlightStyle.define([
 ]);
 
 const LANGUAGE_IMPORTS: Record<string, () => Promise<LanguageSupport>> = {
-  typescript: () => import("@codemirror/lang-javascript").then((m) => m.javascript({ typescript: true })),
+  typescript: () =>
+    import("@codemirror/lang-javascript").then((m) => m.javascript({ typescript: true })),
   javascript: () => import("@codemirror/lang-javascript").then((m) => m.javascript()),
   python: () => import("@codemirror/lang-python").then((m) => m.python()),
   rust: () => import("@codemirror/lang-rust").then((m) => m.rust()),

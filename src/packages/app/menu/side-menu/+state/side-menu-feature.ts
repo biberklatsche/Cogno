@@ -30,7 +30,8 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     private readonly keybinds: KeybindService,
     destroyRef: DestroyRef,
   ) {
-    const isLazy = typeof config.targetComponent === "function" && !config.targetComponent.prototype;
+    const isLazy =
+      typeof config.targetComponent === "function" && !config.targetComponent.prototype;
     this.menuItem = {
       id: config.id,
       label: config.title,

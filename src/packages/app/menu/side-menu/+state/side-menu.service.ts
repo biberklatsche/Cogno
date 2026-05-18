@@ -72,9 +72,7 @@ export class SideMenuService {
     this._menuItems.update((items) =>
       items.map((item) => (item.label === label ? { ...item, component } : item)),
     );
-    this._selectedItem.update((item) =>
-      item?.label === label ? { ...item, component } : item,
-    );
+    this._selectedItem.update((item) => (item?.label === label ? { ...item, component } : item));
   }
 
   removeMenuItem(label: string) {
