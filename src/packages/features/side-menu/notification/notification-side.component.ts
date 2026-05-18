@@ -120,7 +120,6 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
       }
 
       .icon-button {
-        transform: scale(0.8);
         position: absolute;
         top: 3px;
         right: 3px;

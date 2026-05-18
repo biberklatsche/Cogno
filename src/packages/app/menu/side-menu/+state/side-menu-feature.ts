@@ -17,7 +17,7 @@ import { SideMenuFeatureDefinition } from "./side-menu-feature-definitions";
  * Handles configuration, keybindings, and lifecycle automatically.
  */
 export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
-  private readonly menuItem: SideMenuItem;
+  private menuItem: SideMenuItem;
   private keybindSubscription?: Subscription;
   private readonly subscriptions = new Subscription();
 
@@ -44,6 +44,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
 
     if (isLazy) {
       void (config.targetComponent as () => Promise<Type<unknown>>)().then((component) => {
+        this.menuItem = { ...this.menuItem, component };
         sideMenuService.resolveComponent(config.title, component);
       });
     }
