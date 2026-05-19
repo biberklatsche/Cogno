@@ -63,7 +63,6 @@ type ProcessTreeNode = {
       border-radius: 6px;
       font-size: 0.85rem;
       opacity: 0.7;
-      cursor: pointer;
     }
 
     .tab.is-active {
@@ -128,7 +127,6 @@ type ProcessTreeNode = {
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
       padding: 0;
       width: 14px;
       text-align: center;

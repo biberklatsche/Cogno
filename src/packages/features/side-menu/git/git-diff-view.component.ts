@@ -9,7 +9,7 @@ import {
   ViewEncapsulation,
   viewChild,
 } from "@angular/core";
-import { HighlightStyle, LanguageSupport, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { MergeView } from "@codemirror/merge";
 import { EditorState, Extension } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
@@ -82,7 +82,8 @@ const cognoHighlightStyle = HighlightStyle.define([
   { tag: tags.meta, color: "var(--foreground-color-10t)" },
 ]);
 
-const LANGUAGE_IMPORTS: Record<string, () => Promise<LanguageSupport>> = {
+const LANGUAGE_IMPORTS: Record<string, () => Promise<Extension>> = {
+  // Official @codemirror language packages
   typescript: () =>
     import("@codemirror/lang-javascript").then((m) => m.javascript({ typescript: true })),
   javascript: () => import("@codemirror/lang-javascript").then((m) => m.javascript()),
@@ -98,6 +99,111 @@ const LANGUAGE_IMPORTS: Record<string, () => Promise<LanguageSupport>> = {
   yaml: () => import("@codemirror/lang-yaml").then((m) => m.yaml()),
   markdown: () => import("@codemirror/lang-markdown").then((m) => m.markdown()),
   sql: () => import("@codemirror/lang-sql").then((m) => m.sql()),
+  php: () => import("@codemirror/lang-php").then((m) => m.php()),
+  vue: () => import("@codemirror/lang-vue").then((m) => m.vue()),
+  xml: () => import("@codemirror/lang-xml").then((m) => m.xml()),
+  // C-like family via legacy-modes
+  csharp: () =>
+    import("@codemirror/legacy-modes/mode/clike").then((m) =>
+      StreamLanguage.define(m.csharp),
+    ),
+  kotlin: () =>
+    import("@codemirror/legacy-modes/mode/clike").then((m) =>
+      StreamLanguage.define(m.kotlin),
+    ),
+  scala: () =>
+    import("@codemirror/legacy-modes/mode/clike").then((m) =>
+      StreamLanguage.define(m.scala),
+    ),
+  objectivec: () =>
+    import("@codemirror/legacy-modes/mode/clike").then((m) =>
+      StreamLanguage.define(m.objectiveC),
+    ),
+  objectivecpp: () =>
+    import("@codemirror/legacy-modes/mode/clike").then((m) =>
+      StreamLanguage.define(m.objectiveCpp),
+    ),
+  // Scripting via legacy-modes
+  ruby: () =>
+    import("@codemirror/legacy-modes/mode/ruby").then((m) =>
+      StreamLanguage.define(m.ruby),
+    ),
+  lua: () =>
+    import("@codemirror/legacy-modes/mode/lua").then((m) => StreamLanguage.define(m.lua)),
+  perl: () =>
+    import("@codemirror/legacy-modes/mode/perl").then((m) =>
+      StreamLanguage.define(m.perl),
+    ),
+  coffeescript: () =>
+    import("@codemirror/legacy-modes/mode/coffeescript").then((m) =>
+      StreamLanguage.define(m.coffeeScript),
+    ),
+  // Shell / Config
+  shell: () =>
+    import("@codemirror/legacy-modes/mode/shell").then((m) =>
+      StreamLanguage.define(m.shell),
+    ),
+  powershell: () =>
+    import("@codemirror/legacy-modes/mode/powershell").then((m) =>
+      StreamLanguage.define(m.powerShell),
+    ),
+  dockerfile: () =>
+    import("@codemirror/legacy-modes/mode/dockerfile").then((m) =>
+      StreamLanguage.define(m.dockerFile),
+    ),
+  nginx: () =>
+    import("@codemirror/legacy-modes/mode/nginx").then((m) =>
+      StreamLanguage.define(m.nginx),
+    ),
+  toml: () =>
+    import("@codemirror/legacy-modes/mode/toml").then((m) =>
+      StreamLanguage.define(m.toml),
+    ),
+  // Systems / Functional
+  swift: () =>
+    import("@codemirror/legacy-modes/mode/swift").then((m) =>
+      StreamLanguage.define(m.swift),
+    ),
+  dart: () =>
+    import("@codemirror/legacy-modes/mode/clike").then((m) =>
+      StreamLanguage.define(m.dart),
+    ),
+  haskell: () =>
+    import("@codemirror/legacy-modes/mode/haskell").then((m) =>
+      StreamLanguage.define(m.haskell),
+    ),
+  r: () =>
+    import("@codemirror/legacy-modes/mode/r").then((m) => StreamLanguage.define(m.r)),
+  julia: () =>
+    import("@codemirror/legacy-modes/mode/julia").then((m) =>
+      StreamLanguage.define(m.julia),
+    ),
+  elm: () =>
+    import("@codemirror/legacy-modes/mode/elm").then((m) => StreamLanguage.define(m.elm)),
+  clojure: () =>
+    import("@codemirror/legacy-modes/mode/clojure").then((m) =>
+      StreamLanguage.define(m.clojure),
+    ),
+  erlang: () =>
+    import("@codemirror/legacy-modes/mode/erlang").then((m) =>
+      StreamLanguage.define(m.erlang),
+    ),
+  ocaml: () =>
+    import("@codemirror/legacy-modes/mode/mllike").then((m) =>
+      StreamLanguage.define(m.oCaml),
+    ),
+  groovy: () =>
+    import("@codemirror/legacy-modes/mode/groovy").then((m) =>
+      StreamLanguage.define(m.groovy),
+    ),
+  crystal: () =>
+    import("@codemirror/legacy-modes/mode/crystal").then((m) =>
+      StreamLanguage.define(m.crystal),
+    ),
+  protobuf: () =>
+    import("@codemirror/legacy-modes/mode/protobuf").then((m) =>
+      StreamLanguage.define(m.protobuf),
+    ),
 };
 
 async function buildExtensions(language: string): Promise<Extension[]> {

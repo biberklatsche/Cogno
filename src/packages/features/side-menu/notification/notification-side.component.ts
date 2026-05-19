@@ -115,7 +115,6 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         background: transparent;
         color: var(--color-blue);
         text-decoration: underline;
-        cursor: pointer;
         font: inherit;
       }
 

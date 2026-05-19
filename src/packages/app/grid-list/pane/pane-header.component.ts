@@ -41,10 +41,6 @@ import { GridListService } from "../+state/grid-list.service";
       &:hover .close {
         opacity: 1;
       }
-
-      &:active {
-        cursor: pointer;
-      }
     }
 
     .title {

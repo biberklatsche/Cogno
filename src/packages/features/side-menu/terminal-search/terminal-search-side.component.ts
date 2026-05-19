@@ -145,7 +145,6 @@ type SearchTextSegment = {
                 min-width: 2.25rem;
                 padding: 0 0.5rem;
                 font-size: 0.8rem;
-                cursor: pointer;
             }
 
             .search-option-button.is-active {
@@ -182,7 +181,6 @@ type SearchTextSegment = {
                 padding: 0;
                 font-size: 0.75rem;
                 font-weight: 700;
-                cursor: pointer;
                 flex-shrink: 0;
                 text-decoration: underline;
             }
@@ -201,7 +199,6 @@ type SearchTextSegment = {
                 display: block;
                 padding: 0.35rem 0.25rem;
                 border-radius: 4px;
-                cursor: pointer;
 
                 &:hover,
                 &.selected {
@@ -228,7 +225,6 @@ type SearchTextSegment = {
                 border-radius: 6px;
                 min-height: 2rem;
                 padding: 0.35rem 0.75rem;
-                cursor: pointer;
             }
         `,
   ],

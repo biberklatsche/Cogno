@@ -95,7 +95,6 @@ import {
             background: transparent;
             color: var(--color-blue);
             text-decoration: underline;
-            cursor: pointer;
             font: inherit;
             text-align: left;
         }

@@ -58,25 +58,109 @@ export class GitDiffService {
 }
 
 export function detectGitDiffLanguage(filePath: string): string {
-  const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+  const filename = (filePath.split("/").pop() ?? filePath).toLowerCase();
+
+  const filenameMap: Record<string, string> = {
+    dockerfile: "dockerfile",
+    "nginx.conf": "nginx",
+    gemfile: "ruby",
+    rakefile: "ruby",
+    vagrantfile: "ruby",
+    ".bashrc": "shell",
+    ".zshrc": "shell",
+    ".bash_profile": "shell",
+    ".zprofile": "shell",
+    ".profile": "shell",
+  };
+  if (filenameMap[filename]) return filenameMap[filename];
+
+  const ext = filename.split(".").pop() ?? "";
   const map: Record<string, string> = {
+    // TypeScript / JavaScript
     ts: "typescript",
     tsx: "typescript",
+    mts: "typescript",
+    cts: "typescript",
     js: "javascript",
     jsx: "javascript",
-    py: "python",
-    rs: "rust",
-    go: "go",
-    java: "java",
-    cpp: "cpp",
+    mjs: "javascript",
+    cjs: "javascript",
+    // Web
+    html: "html",
+    htm: "html",
+    css: "css",
+    scss: "scss",
+    less: "css",
+    vue: "vue",
+    xml: "xml",
+    svg: "xml",
+    xhtml: "xml",
+    xsd: "xml",
+    // Data / Config
     json: "json",
     yaml: "yaml",
     yml: "yaml",
-    md: "markdown",
-    html: "html",
-    css: "css",
-    scss: "scss",
+    toml: "toml",
     sql: "sql",
+    // Docs
+    md: "markdown",
+    mdx: "markdown",
+    // Systems
+    rs: "rust",
+    go: "go",
+    cpp: "cpp",
+    cc: "cpp",
+    cxx: "cpp",
+    c: "cpp",
+    h: "cpp",
+    hpp: "cpp",
+    hxx: "cpp",
+    cs: "csharp",
+    java: "java",
+    kt: "kotlin",
+    kts: "kotlin",
+    scala: "scala",
+    sc: "scala",
+    swift: "swift",
+    m: "objectivec",
+    mm: "objectivecpp",
+    // Scripting
+    py: "python",
+    rb: "ruby",
+    rake: "ruby",
+    gemspec: "ruby",
+    lua: "lua",
+    pl: "perl",
+    pm: "perl",
+    php: "php",
+    phtml: "php",
+    // Shell
+    sh: "shell",
+    bash: "shell",
+    zsh: "shell",
+    fish: "shell",
+    ps1: "powershell",
+    psm1: "powershell",
+    psd1: "powershell",
+    // Functional / Other
+    hs: "haskell",
+    lhs: "haskell",
+    dart: "dart",
+    r: "r",
+    jl: "julia",
+    elm: "elm",
+    clj: "clojure",
+    cljs: "clojure",
+    cljc: "clojure",
+    erl: "erlang",
+    hrl: "erlang",
+    ml: "ocaml",
+    mli: "ocaml",
+    groovy: "groovy",
+    gradle: "groovy",
+    coffee: "coffeescript",
+    cr: "crystal",
+    proto: "protobuf",
   };
   return map[ext] ?? "text";
 }

@@ -29,6 +29,8 @@ interface DirtyTrackingPaneSignature {
 interface DirtyTrackingWorkspaceSignature {
   readonly tabs: ReadonlyArray<{
     readonly tabId: string;
+    readonly color?: string;
+    readonly userTitle?: string;
   }>;
   readonly grids: ReadonlyArray<{
     readonly tabId: string;
@@ -345,7 +347,7 @@ export class WorkspaceHostApplicationService {
     grids: WorkspaceConfiguration["grids"],
   ): string {
     const signature: DirtyTrackingWorkspaceSignature = {
-      tabs: tabs.map((tab) => ({ tabId: tab.tabId })),
+      tabs: tabs.map((tab) => ({ tabId: tab.tabId, color: tab.color, userTitle: tab.userTitle })),
       grids: grids.map((grid) => ({
         tabId: grid.tabId,
         pane: this.createDirtyTrackingPaneSignature(grid.pane),

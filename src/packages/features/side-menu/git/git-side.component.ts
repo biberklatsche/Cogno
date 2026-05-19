@@ -332,8 +332,13 @@ type SelectedFile = {
         flex: 0 0 auto;
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         gap: 0.4rem;
         padding: 0.5rem 0;
+      }
+
+      .commit-area .commit-message {
+        align-self: stretch;
       }
 
       .commit-message {
@@ -394,7 +399,6 @@ type SelectedFile = {
         background: none;
         border: none;
         color: var(--foreground-color-10t);
-        cursor: pointer;
         font-size: var(--git-secondary-font-size);
         font-weight: 600;
         letter-spacing: 0.05em;
@@ -520,12 +524,11 @@ type SelectedFile = {
       }
 
       .open-in-editor-btn {
-        visibility: hidden;
-        flex-shrink: 0;
+        opacity: 0.4;
       }
 
       .file-name-group:hover .open-in-editor-btn {
-        visibility: visible;
+        opacity: 1;
       }
 
       .icon-button app-icon {
