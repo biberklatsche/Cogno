@@ -394,7 +394,6 @@ type SelectedFile = {
         background: none;
         border: none;
         color: var(--foreground-color-10t);
-        cursor: pointer;
         font-size: var(--git-secondary-font-size);
         font-weight: 600;
         letter-spacing: 0.05em;
@@ -520,12 +519,11 @@ type SelectedFile = {
       }
 
       .open-in-editor-btn {
-        visibility: hidden;
-        flex-shrink: 0;
+        opacity: 0.4;
       }
 
       .file-name-group:hover .open-in-editor-btn {
-        visibility: visible;
+        opacity: 1;
       }
 
       .icon-button app-icon {
