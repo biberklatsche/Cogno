@@ -158,10 +158,6 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         opacity: 1;
       }
 
-      .workspace-tile:active {
-        cursor: pointer;
-      }
-
       .workspace-tile.is-fixed {
         cursor: default;
       }

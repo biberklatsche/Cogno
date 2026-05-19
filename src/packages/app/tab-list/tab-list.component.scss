@@ -67,10 +67,6 @@
     }
   }
 
-  &:active {
-    cursor: pointer;
-  }
-
   &.is-dragging {
     border-style: dashed;
   }

@@ -332,8 +332,13 @@ type SelectedFile = {
         flex: 0 0 auto;
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         gap: 0.4rem;
         padding: 0.5rem 0;
+      }
+
+      .commit-area .commit-message {
+        align-self: stretch;
       }
 
       .commit-message {

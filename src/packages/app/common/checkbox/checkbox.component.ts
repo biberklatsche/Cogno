@@ -20,7 +20,6 @@ import { Component, input, model } from "@angular/core";
       .checkbox-container {
           position: relative;
           padding-left: 1.6rem;
-          /*cursor: pointer;*/
           user-select: none;
           display: flex;
           flex-direction: column;
