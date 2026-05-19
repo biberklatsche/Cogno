@@ -59,7 +59,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin: 0.25rem 0.25rem 0.5rem;
+        
       }
 
       .notification-list {
@@ -120,7 +120,6 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
       }
 
       .icon-button {
-        transform: scale(0.8);
         position: absolute;
         top: 3px;
         right: 3px;

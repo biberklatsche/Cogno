@@ -1,6 +1,6 @@
 import { OS } from "@cogno/app-tauri/os";
 import { FitAddon } from "@xterm/addon-fit";
-import { LigaturesAddon } from "@xterm/addon-ligatures";
+import type { LigaturesAddon } from "@xterm/addon-ligatures";
 import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
@@ -106,12 +106,13 @@ export class Renderer implements IRenderer, IDisposable {
   public open(terminalContainer: HTMLDivElement, enableLigatures: boolean) {
     this._terminal.open(terminalContainer);
     if (enableLigatures) {
-      this.useLigatures();
+      void this.useLigatures();
     }
   }
 
-  private useLigatures() {
+  private async useLigatures() {
     if (!this._ligaturesAddon) {
+      const { LigaturesAddon } = await import("@xterm/addon-ligatures");
       this._ligaturesAddon = new LigaturesAddon();
     }
     this._terminal.loadAddon(this._ligaturesAddon);

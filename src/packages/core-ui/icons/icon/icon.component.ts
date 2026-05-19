@@ -1,92 +1,43 @@
 import { Component, Input } from "@angular/core";
 import {
   mdiAbTesting,
-  mdiAccount,
-  mdiAccountHeart,
   mdiAlert,
-  mdiAlphaIBox,
   mdiArrowDown,
-  mdiArrowSplitHorizontal,
-  mdiArrowSplitVertical,
-  mdiArrowUp,
   mdiBell,
   mdiBellBadge,
-  mdiBomb,
-  mdiBookmark,
-  mdiBug,
-  mdiCallMerge,
-  mdiCallSplit,
-  mdiCardsHeart,
   mdiCheck,
-  mdiCheckboxBlankCircle,
   mdiCheckCircle,
   mdiChevronDown,
   mdiChevronRight,
   mdiClose,
-  mdiCloseBoxMultipleOutline,
-  mdiCloseBoxOutline,
-  mdiCloseNetworkOutline,
-  mdiCodeBracesBox,
-  mdiCog,
-  mdiCogs,
   mdiConsole,
   mdiContentCopy,
   mdiContentSaveOutline,
   mdiCropSquare,
-  mdiDesktopClassic,
   mdiDotsSquare,
   mdiDotsVertical,
   mdiFilter,
-  mdiFolderMove,
-  mdiFormatLetterCase,
-  mdiFormatLetterMatches,
   mdiGit,
-  mdiGithub,
   mdiInformation,
-  mdiKeyboard,
-  mdiKeyboardOff,
-  mdiLanConnect,
-  mdiLiquidSpot,
   mdiLoading,
   mdiMinus,
-  mdiMonitor,
-  mdiNuke,
   mdiOpenInNew,
-  mdiPalette,
   mdiPaletteSwatch,
-  mdiPercentBoxOutline,
+  mdiPencil,
   mdiPin,
   mdiPinOff,
   mdiPlus,
   mdiPowershell,
-  mdiReddit,
   mdiRefresh,
-  mdiRegex,
   mdiRobot,
-  mdiRobotOff,
   mdiRocketLaunch,
-  mdiScanHelper,
   mdiSend,
   mdiSpeedometer,
-  mdiSpiderThread,
   mdiSquareEditOutline,
-  mdiStar,
-  mdiStarOutline,
-  mdiSwapHorizontal,
-  mdiTable,
-  mdiTableEdit,
-  mdiThemeLightDark,
-  mdiThumbUp,
-  mdiToyBrick,
   mdiTrashCanOutline,
   mdiUndoVariant,
-  mdiViewCarousel,
   mdiViewDashboard,
-  mdiWeatherNight,
-  mdiWeatherSunny,
-  mdiWindowMaximize,
-  mdiWindowMinimize,
-  mdiWindowRestore,
+  mdiViewDashboardEdit,
 } from "@mdi/js";
 import { Icon } from "../+model/icon";
 
@@ -119,245 +70,11 @@ export class IconComponent {
   @Input()
   set name(icon: Icon) {
     switch (icon) {
-      case "mdiSpiderThread":
-        this.icon = mdiSpiderThread;
-        break;
-      case "mdiRefresh":
-        this.icon = mdiRefresh;
-        break;
-      case "mdiBookmark":
-        this.icon = mdiBookmark;
-        break;
-      case "mdiLoading":
-        this.icon = mdiLoading;
-        break;
-      case "mdiDotsVertical":
-        this.icon = mdiDotsVertical;
-        break;
-      case "mdiLiquidSpot":
-        this.icon = mdiLiquidSpot;
-        break;
-      case "mdiThemeLightDark":
-        this.icon = mdiThemeLightDark;
-        break;
-      case "mdiViewCarousel":
-        this.icon = mdiViewCarousel;
-        break;
-      case "mdiCallMerge":
-        this.icon = mdiCallMerge;
-        break;
-      case "mdiCallSplit":
-        this.icon = mdiCallSplit;
-        break;
-      case "mdiSwapHorizontal":
-        this.icon = mdiSwapHorizontal;
-        break;
-      case "mdiConsole":
-        this.icon = mdiConsole;
-        break;
-      case "mdiGit":
-        this.icon = mdiGit;
-        break;
-      case "mdiPowershell":
-        this.icon = mdiPowershell;
-        break;
-      case "mdiInformation":
-        this.icon = mdiInformation;
-        break;
-      case "mdiPalette":
-        this.icon = mdiPalette;
-        break;
-      case "mdiClose":
-        this.icon = mdiClose;
-        break;
-      case "mdiSpeedometer":
-        this.icon = mdiSpeedometer;
-        break;
-      case "mdiPlus":
-        this.icon = mdiPlus;
-        break;
-      case "mdiMinus":
-        this.icon = mdiMinus;
-        break;
-      case "mdiChevronDown":
-        this.icon = mdiChevronDown;
-        break;
-      case "mdiChevronRight":
-        this.icon = mdiChevronRight;
-        break;
-      case "mdiCog":
-        this.icon = mdiCog;
-        break;
-      case "mdiCogs":
-        this.icon = mdiCogs;
-        break;
-      case "mdiKeyboard":
-        this.icon = mdiKeyboard;
-        break;
-      case "mdiCodeBracesBox":
-        this.icon = mdiCodeBracesBox;
-        break;
-      case "mdiWindowMinimize":
-        this.icon = mdiWindowMinimize;
-        break;
-      case "mdiWindowRestore":
-        this.icon = mdiWindowRestore;
-        break;
-      case "mdiWindowMaximize":
-        this.icon = mdiWindowMaximize;
-        break;
-      case "mdiGithub":
-        this.icon = mdiGithub;
-        break;
-      case "mdiBug":
-        this.icon = mdiBug;
-        break;
-      case "mdiWeatherNight":
-        this.icon = mdiWeatherNight;
-        break;
-      case "mdiArrowSplitHorizontal":
-        this.icon = mdiArrowSplitHorizontal;
-        break;
-      case "mdiFolderMove":
-        this.icon = mdiFolderMove;
-        break;
-      case "mdiArrowSplitVertical":
-        this.icon = mdiArrowSplitVertical;
-        break;
-      case "mdiStar":
-        this.icon = mdiStar;
-        break;
-      case "mdiDesktopClassic":
-        this.icon = mdiDesktopClassic;
-        break;
-      case "mdiMonitor":
-        this.icon = mdiMonitor;
-        break;
-      case "mdiAccount":
-        this.icon = mdiAccount;
-        break;
-      case "mdiArrowUp":
-        this.icon = mdiArrowUp;
-        break;
-      case "mdiArrowDown":
-        this.icon = mdiArrowDown;
-        break;
-      case "mdiFormatLetterCase":
-        this.icon = mdiFormatLetterCase;
-        break;
-      case "mdiFormatLetterMatches":
-        this.icon = mdiFormatLetterMatches;
-        break;
-      case "mdiRegex":
-        this.icon = mdiRegex;
-        break;
-      case "mdiRocketLaunch":
-        this.icon = mdiRocketLaunch;
-        break;
-      case "mdiThumbUp":
-        this.icon = mdiThumbUp;
-        break;
-      case "mdiBomb":
-        this.icon = mdiBomb;
-        break;
-      case "mdiNuke":
-        this.icon = mdiNuke;
-        break;
-      case "mdiCheck":
-        this.icon = mdiCheck;
-        break;
       case "mdiAlert":
         this.icon = mdiAlert;
         break;
-      case "mdiTrashCanOutline":
-        this.icon = mdiTrashCanOutline;
-        break;
-      case "mdiViewDashboard":
-        this.icon = mdiViewDashboard;
-        break;
-      case "mdiTable":
-        this.icon = mdiTable;
-        break;
-      case "mdiTableEdit":
-        this.icon = mdiTableEdit;
-        break;
-      case "mdiSquareEditOutline":
-        this.icon = mdiSquareEditOutline;
-        break;
-      case "mdiCloseBoxMultipleOutline":
-        this.icon = mdiCloseBoxMultipleOutline;
-        break;
-      case "mdiCloseBoxOutline":
-        this.icon = mdiCloseBoxOutline;
-        break;
-      case "mdiCloseNetworkOutline":
-        this.icon = mdiCloseNetworkOutline;
-        break;
-      case "mdiContentCopy":
-        this.icon = mdiContentCopy;
-        break;
-      case "mdiCheckCircle":
-        this.icon = mdiCheckCircle;
-        break;
-      case "mdiContentSaveOutline":
-        this.icon = mdiContentSaveOutline;
-        break;
-      case "mdiCheckboxBlankCircle":
-        this.icon = mdiCheckboxBlankCircle;
-        break;
-      case "mdiOpenInNew":
-        this.icon = mdiOpenInNew;
-        break;
-      case "mdiCardsHeart":
-        this.icon = mdiCardsHeart;
-        break;
-      case "mdiPercentBoxOutline":
-        this.icon = mdiPercentBoxOutline;
-        break;
-      case "mdiScanHelper":
-        this.icon = mdiScanHelper;
-        break;
-      case "mdiStarOutline":
-        this.icon = mdiStarOutline;
-        break;
-      case "mdiWeatherSunny":
-        this.icon = mdiWeatherSunny;
-        break;
-      case "mdiLanConnect":
-        this.icon = mdiLanConnect;
-        break;
-      case "mdiRobot":
-        this.icon = mdiRobot;
-        break;
-      case "mdiRobotOff":
-        this.icon = mdiRobotOff;
-        break;
-      case "mdiReddit":
-        this.icon = mdiReddit;
-        break;
-      case "mdiToyBrick":
-        this.icon = mdiToyBrick;
-        break;
-      case "mdiKeyboardOff":
-        this.icon = mdiKeyboardOff;
-        break;
-      case "mdiAccountHeart":
-        this.icon = mdiAccountHeart;
-        break;
-      case "mdiPin":
-        this.icon = mdiPin;
-        break;
-      case "mdiPinOff":
-        this.icon = mdiPinOff;
-        break;
-      case "mdiDotsSquare":
-        this.icon = mdiDotsSquare;
-        break;
-      case "mdiCropSquare":
-        this.icon = mdiCropSquare;
-        break;
-      case "mdiAlphaIBox":
-        this.icon = mdiAlphaIBox;
+      case "mdiArrowDown":
+        this.icon = mdiArrowDown;
         break;
       case "mdiBell":
         this.icon = mdiBell;
@@ -365,17 +82,104 @@ export class IconComponent {
       case "mdiBellBadge":
         this.icon = mdiBellBadge;
         break;
-      case "mdiPaletteSwatch":
-        this.icon = mdiPaletteSwatch;
+      case "mdiCheck":
+        this.icon = mdiCheck;
+        break;
+      case "mdiCheckCircle":
+        this.icon = mdiCheckCircle;
+        break;
+      case "mdiChevronDown":
+        this.icon = mdiChevronDown;
+        break;
+      case "mdiChevronRight":
+        this.icon = mdiChevronRight;
+        break;
+      case "mdiClose":
+        this.icon = mdiClose;
+        break;
+      case "mdiConsole":
+        this.icon = mdiConsole;
+        break;
+      case "mdiContentCopy":
+        this.icon = mdiContentCopy;
+        break;
+      case "mdiContentSaveOutline":
+        this.icon = mdiContentSaveOutline;
+        break;
+      case "mdiCropSquare":
+        this.icon = mdiCropSquare;
+        break;
+      case "mdiDotsSquare":
+        this.icon = mdiDotsSquare;
+        break;
+      case "mdiDotsVertical":
+        this.icon = mdiDotsVertical;
         break;
       case "mdiFilter":
         this.icon = mdiFilter;
         break;
+      case "mdiGit":
+        this.icon = mdiGit;
+        break;
+      case "mdiInformation":
+        this.icon = mdiInformation;
+        break;
+      case "mdiLoading":
+        this.icon = mdiLoading;
+        break;
+      case "mdiMinus":
+        this.icon = mdiMinus;
+        break;
+      case "mdiOpenInNew":
+        this.icon = mdiOpenInNew;
+        break;
+      case "mdiPaletteSwatch":
+        this.icon = mdiPaletteSwatch;
+        break;
+      case "mdiPencil":
+        this.icon = mdiPencil;
+        break;
+      case "mdiPin":
+        this.icon = mdiPin;
+        break;
+      case "mdiPinOff":
+        this.icon = mdiPinOff;
+        break;
+      case "mdiPlus":
+        this.icon = mdiPlus;
+        break;
+      case "mdiPowershell":
+        this.icon = mdiPowershell;
+        break;
+      case "mdiRefresh":
+        this.icon = mdiRefresh;
+        break;
+      case "mdiRobot":
+        this.icon = mdiRobot;
+        break;
+      case "mdiRocketLaunch":
+        this.icon = mdiRocketLaunch;
+        break;
       case "mdiSend":
         this.icon = mdiSend;
         break;
+      case "mdiSpeedometer":
+        this.icon = mdiSpeedometer;
+        break;
+      case "mdiSquareEditOutline":
+        this.icon = mdiSquareEditOutline;
+        break;
+      case "mdiTrashCanOutline":
+        this.icon = mdiTrashCanOutline;
+        break;
       case "mdiUndoVariant":
         this.icon = mdiUndoVariant;
+        break;
+      case "mdiViewDashboard":
+        this.icon = mdiViewDashboard;
+        break;
+      case "mdiViewDashboardEdit":
+        this.icon = mdiViewDashboardEdit;
         break;
       default:
         this.icon = mdiAbTesting;

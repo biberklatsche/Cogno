@@ -101,7 +101,6 @@ import {
         }
 
         .icon-button {
-            transform: scale(0.7);
             margin-top: -6px;
             margin-right: -6px;
         }

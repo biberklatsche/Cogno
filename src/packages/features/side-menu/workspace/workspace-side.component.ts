@@ -43,7 +43,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                 {{ (workspaceEntry.name || "")[0] || "?" }}
                 @if (workspaceEntry.isDirty) {
                   <span class="workspace-dirty-indicator" aria-hidden="true">
-                    <app-icon name="mdiTableEdit"></app-icon>
+                    <app-icon name="mdiViewDashboardEdit"></app-icon>
                   </span>
                 }
               </div>

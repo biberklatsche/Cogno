@@ -9,19 +9,6 @@ import {
   ViewEncapsulation,
   viewChild,
 } from "@angular/core";
-import { cpp } from "@codemirror/lang-cpp";
-import { css } from "@codemirror/lang-css";
-import { go } from "@codemirror/lang-go";
-import { html } from "@codemirror/lang-html";
-import { java } from "@codemirror/lang-java";
-import { javascript } from "@codemirror/lang-javascript";
-import { json } from "@codemirror/lang-json";
-import { markdown } from "@codemirror/lang-markdown";
-import { python } from "@codemirror/lang-python";
-import { rust } from "@codemirror/lang-rust";
-import { sass } from "@codemirror/lang-sass";
-import { sql } from "@codemirror/lang-sql";
-import { yaml } from "@codemirror/lang-yaml";
 import { HighlightStyle, LanguageSupport, syntaxHighlighting } from "@codemirror/language";
 import { MergeView } from "@codemirror/merge";
 import { EditorState, Extension } from "@codemirror/state";
@@ -95,29 +82,26 @@ const cognoHighlightStyle = HighlightStyle.define([
   { tag: tags.meta, color: "var(--foreground-color-10t)" },
 ]);
 
-const LANGUAGE_FACTORIES: Record<string, () => LanguageSupport> = {
-  typescript: () => javascript({ typescript: true }),
-  javascript: () => javascript(),
-  python: () => python(),
-  rust: () => rust(),
-  cpp: () => cpp(),
-  java: () => java(),
-  json: () => json(),
-  html: () => html(),
-  css: () => css(),
-  go: () => go(),
-  scss: () => sass(),
-  yaml: () => yaml(),
-  markdown: () => markdown(),
-  sql: () => sql(),
+const LANGUAGE_IMPORTS: Record<string, () => Promise<LanguageSupport>> = {
+  typescript: () =>
+    import("@codemirror/lang-javascript").then((m) => m.javascript({ typescript: true })),
+  javascript: () => import("@codemirror/lang-javascript").then((m) => m.javascript()),
+  python: () => import("@codemirror/lang-python").then((m) => m.python()),
+  rust: () => import("@codemirror/lang-rust").then((m) => m.rust()),
+  cpp: () => import("@codemirror/lang-cpp").then((m) => m.cpp()),
+  java: () => import("@codemirror/lang-java").then((m) => m.java()),
+  json: () => import("@codemirror/lang-json").then((m) => m.json()),
+  html: () => import("@codemirror/lang-html").then((m) => m.html()),
+  css: () => import("@codemirror/lang-css").then((m) => m.css()),
+  go: () => import("@codemirror/lang-go").then((m) => m.go()),
+  scss: () => import("@codemirror/lang-sass").then((m) => m.sass()),
+  yaml: () => import("@codemirror/lang-yaml").then((m) => m.yaml()),
+  markdown: () => import("@codemirror/lang-markdown").then((m) => m.markdown()),
+  sql: () => import("@codemirror/lang-sql").then((m) => m.sql()),
 };
 
-function languageExtension(language: string): LanguageSupport | null {
-  return LANGUAGE_FACTORIES[language]?.() ?? null;
-}
-
-function buildExtensions(language: string): Extension[] {
-  const lang = languageExtension(language);
+async function buildExtensions(language: string): Promise<Extension[]> {
+  const lang = (await LANGUAGE_IMPORTS[language]?.()) ?? null;
   return [
     EditorState.readOnly.of(true),
     cognoTheme,
@@ -276,9 +260,7 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     if (!host || !this.diff || this.generation !== gen) return;
 
     const { original, modified, language } = this.diff;
-    const extensions = buildExtensions(language);
-
-    await nextFrame();
+    const [extensions] = await Promise.all([buildExtensions(language), nextFrame()]);
     if (this.generation !== gen) return;
     this.mergeView = new MergeView({
       parent: host,

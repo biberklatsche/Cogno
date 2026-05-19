@@ -25,7 +25,14 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
   template: `
     <div class="chat-shell">
       <div class="chat-toolbar">
-        <button type="button" class="toolbar-button" (click)="clearConversation()">Clear</button>
+        <button
+          type="button"
+          class="button"
+          [disabled]="threadMessages().length === 0"
+          (click)="clearConversation()"
+        >
+          Clear
+        </button>
       </div>
 
       <div #messageListElement class="message-list">
@@ -61,7 +68,7 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
                     <div class="command-actions">
                       <button
                         type="button"
-                        class="command-button"
+                        class="button command-button"
                         [disabled]="!canApplyCommandSuggestion(command)"
                         (click)="applyCommandSuggestion(command)">
                         <app-icon name="mdiConsole"></app-icon>
@@ -69,7 +76,7 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
                       </button>
                       <button
                         type="button"
-                        class="command-button run-button"
+                        class="button command-button run-button"
                         [disabled]="!canApplyCommandSuggestion(command)"
                         (click)="runCommandSuggestion(command)">
                         <app-icon name="mdiRocketLaunch"></app-icon>
@@ -120,7 +127,7 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
           </app-dropdown>
           <button
             type="button"
-            class="send-button icon-send-button"
+            class="button icon-button icon-send-button"
             aria-label="Refresh providers"
             [disabled]="isDetecting()"
             (click)="refreshProviders()">
@@ -128,7 +135,7 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
           </button>
           <button
             type="button"
-            class="send-button icon-send-button"
+            class="button icon-button icon-send-button"
             aria-label="Send"
             [disabled]="!canSend()"
             (click)="sendCurrentPrompt()">
@@ -143,15 +150,12 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
       :host {
         display: block;
         height: 100%;
+        padding: 0.25rem 0 0;
       }
 
       .chat-shell { display: grid; grid-template-rows: auto 1fr auto; gap: .75rem; height: 100%; min-height: 0; }
       .chat-toolbar { display: flex; align-items: center; justify-content: right; gap: 0.5rem; }
       .status { font-size: 0.8rem; opacity: 0.75; }
-      .toolbar-button, .send-button, .command-button {
-        border: 1px solid var(--background-color-20l); border-radius: 6px; background: var(--background-color-10l); color: inherit; cursor: pointer;
-      }
-      .toolbar-button, .send-button { min-height: 2rem; padding: 0.45rem 0.8rem; }
       .message-list { display: flex; flex-direction: column; gap: 0.75rem; overflow: auto; min-height: 0; }
       .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem 1rem; border-radius: 8px; background: var(--background-color-10l); font-size: 0.9rem; opacity: 0.75; text-align: center; }
 
@@ -214,7 +218,6 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
         align-items: center;
         gap: 0.35rem;
         min-height: 2rem;
-        padding: 0.35rem 0.6rem;
       }
 
       .command-actions {
@@ -239,14 +242,7 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
       .composer-actions { display: flex; align-items: center; gap: 0.35rem; justify-content: flex-end; }
 
       .icon-send-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 1.5rem;
-        min-height: 1.5rem;
-        padding: 0;
-        border: 0;
-        background: transparent;
+        flex: 0 0 auto;
       }
 
       .icon-send-button app-icon { width: 1rem; height: 1rem; }

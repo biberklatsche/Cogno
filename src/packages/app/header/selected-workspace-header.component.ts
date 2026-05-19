@@ -26,14 +26,14 @@ import { IconComponent, TooltipDirective } from "@cogno/core-ui";
           class="selected-workspace-header selected-workspace-header--interactive"
           type="button"
           [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
-          [appTooltip]="activeWorkspaceEntry.name"
+          [appTooltip]="workspaceTooltip(activeWorkspaceEntry)"
           aria-haspopup="menu"
           aria-label="Select open workspace"
           (click)="openWorkspaceMenu($event)"
         >
           @if (activeWorkspaceEntry.isDirty) {
             <span class="selected-workspace-header__dirty" aria-hidden="true">
-              <app-icon name="mdiTableEdit"></app-icon>
+              <app-icon name="mdiViewDashboardEdit"></app-icon>
             </span>
           }
           <span class="selected-workspace-header__label">
@@ -45,11 +45,11 @@ import { IconComponent, TooltipDirective } from "@cogno/core-ui";
         <div
           class="selected-workspace-header"
           [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
-          [appTooltip]="activeWorkspaceEntry.name"
+          [appTooltip]="workspaceTooltip(activeWorkspaceEntry)"
         >
           @if (activeWorkspaceEntry.isDirty) {
             <span class="selected-workspace-header__dirty" aria-hidden="true">
-              <app-icon name="mdiTableEdit"></app-icon>
+              <app-icon name="mdiViewDashboardEdit"></app-icon>
             </span>
           }
           <span class="selected-workspace-header__label">
@@ -179,6 +179,12 @@ export class SelectedWorkspaceHeaderComponent {
     this.contextMenuOverlayService.openContextForElement(event.currentTarget as HTMLElement, {
       items: this.buildWorkspaceMenuItems(),
     });
+  }
+
+  protected workspaceTooltip(workspaceEntry: WorkspaceEntryContract): string {
+    return workspaceEntry.isDirty
+      ? `${workspaceEntry.name} has unsaved workspace edits`
+      : workspaceEntry.name;
   }
 
   private buildWorkspaceMenuItems(): ContextMenuItem[] {

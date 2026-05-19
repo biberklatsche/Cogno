@@ -156,7 +156,7 @@ type HeaderCommandViewModel = {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: var(--color-yellow);
+      color: var(--foreground-color-10t);
       width: 15px;
       height: 15px;
     }

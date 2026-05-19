@@ -14,7 +14,7 @@ export type SideMenuFeatureLifecycleFactory = (
 
 export interface SideMenuFeatureDefinition
   extends SideMenuFeatureDefinitionContract<Icon, ActionName> {
-  readonly targetComponent: Type<unknown>;
+  readonly targetComponent: Type<unknown> | (() => Promise<Type<unknown>>);
   readonly createLifecycle?: SideMenuFeatureLifecycleFactory;
   readonly isAvailable?: (configuration: Record<string, unknown>) => boolean;
 }

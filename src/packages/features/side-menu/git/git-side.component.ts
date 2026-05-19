@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
 import { Opener } from "@cogno/core-api";
-import { IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { GitFile, GitStatusService } from "./git-status.service";
@@ -27,7 +27,7 @@ type SelectedFile = {
         </span>
         <button
           type="button"
-          class="icon-button"
+          class="button icon-button"
           appTooltip="Refresh"
           [disabled]="loading()"
           (click)="refresh()"
@@ -47,7 +47,7 @@ type SelectedFile = {
             ></textarea>
             <button
               type="button"
-              class="commit-button"
+              class="button"
               [disabled]="!canCommit()"
               (click)="commit()"
             >
@@ -80,7 +80,14 @@ type SelectedFile = {
                         [class.selected]="isSelected(file, true)"
                         (click)="selectFile(file, true)"
                       >
-                        <span class="status-badge staged">{{ file.status }}</span>
+                        <span
+                          class="status-badge"
+                          [class.status-edited]="isEditedStatus(file)"
+                          [class.status-added]="isAddedStatus(file)"
+                          [class.status-removed]="isRemovedStatus(file)"
+                        >
+                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
+                        </span>
                         <div class="file-name-group">
                           <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
                           @if (file.status !== 'D') {
@@ -150,10 +157,11 @@ type SelectedFile = {
                       >
                         <span
                           class="status-badge"
-                          [class.unstaged]="file.status !== '?'"
-                          [class.untracked]="file.status === '?'"
+                          [class.status-edited]="isEditedStatus(file)"
+                          [class.status-added]="isAddedStatus(file)"
+                          [class.status-removed]="isRemovedStatus(file)"
                         >
-                          {{ file.status }}
+                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
                         </span>
                         <div class="file-name-group">
                           <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
@@ -197,7 +205,7 @@ type SelectedFile = {
                               appTooltip="Discard changes"
                               (click)="$event.stopPropagation(); requestDiscardConfirmation(file.path)"
                             >
-                              <app-icon name="mdiUndoVariant"></app-icon>
+                              <app-icon name="mdiTrashCanOutline"></app-icon>
                             </button>
                           }
                         }
@@ -225,7 +233,7 @@ type SelectedFile = {
             <section class="diff-section">
               <div class="diff-header">
                 <span class="diff-file-name">{{ selectedFile()!.file.path }}</span>
-                <button type="button" class="icon-button" appTooltip="Close diff" (click)="closeDiff()">
+                <button type="button" class="button icon-button" appTooltip="Close diff" (click)="closeDiff()">
                   <app-icon name="mdiClose"></app-icon>
                 </button>
               </div>
@@ -236,7 +244,9 @@ type SelectedFile = {
                     <span>Loading diff...</span>
                   </div>
                 } @else if (diff()) {
-                  <app-git-diff-view [diff]="diff()"></app-git-diff-view>
+                  @defer (when diff() !== null) {
+                    <app-git-diff-view [diff]="diff()"></app-git-diff-view>
+                  }
                 }
               </div>
             </section>
@@ -345,24 +355,7 @@ type SelectedFile = {
         outline: none;
         border-color: var(--highlight-color);
       }
-
-      .commit-button {
-        align-self: flex-end;
-        padding: 0.3rem 0.75rem;
-        background: var(--highlight-color);
-        color: var(--background-color);
-        border: none;
-        border-radius: var(--button-border-radius);
-        cursor: pointer;
-        font-size: inherit;
-        font-weight: 500;
-      }
-
-      .commit-button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-
+      
       .file-section {
         flex: 0 0 auto;
       }
@@ -460,14 +453,20 @@ type SelectedFile = {
       .status-badge {
         flex: 0 0 auto;
         width: 14px;
-        font-weight: 700;
-        font-size: var(--git-primary-font-size);
-        text-align: center;
+        height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .status-badge.staged { color: var(--color-green); }
-      .status-badge.unstaged { color: var(--color-red); }
-      .status-badge.untracked { color: var(--foreground-color-10t); }
+      .status-badge app-icon {
+        width: 14px;
+        height: 14px;
+      }
+
+      .status-edited { color: var(--color-yellow); }
+      .status-added { color: var(--color-green); }
+      .status-removed { color: var(--color-red); }
 
       .file-name-group {
         flex: 1;
@@ -529,26 +528,9 @@ type SelectedFile = {
         visibility: visible;
       }
 
-      .icon-button {
-        background: none;
-        border: none;
-        color: var(--foreground-color);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        padding: 0.2rem;
-        border-radius: 3px;
-        opacity: 0.6;
-      }
-
       .icon-button app-icon {
         width: 1rem;
         height: 1rem;
-      }
-
-      .icon-button:hover {
-        opacity: 1;
-        background: var(--background-color-10l);
       }
 
       .icon-button:disabled {
@@ -741,6 +723,24 @@ export class GitSideComponent {
   isSelected(file: GitFile, isStaged: boolean): boolean {
     const sel = this.selectedFileSignal();
     return sel?.file.path === file.path && sel?.isStaged === isStaged;
+  }
+
+  fileStatusIcon(file: GitFile): Icon {
+    if (file.status === "A" || file.status === "?") return "mdiPlus";
+    if (file.status === "D") return "mdiMinus";
+    return "mdiPencil";
+  }
+
+  isEditedStatus(file: GitFile): boolean {
+    return !this.isAddedStatus(file) && !this.isRemovedStatus(file);
+  }
+
+  isAddedStatus(file: GitFile): boolean {
+    return file.status === "A" || file.status === "?";
+  }
+
+  isRemovedStatus(file: GitFile): boolean {
+    return file.status === "D";
   }
 
   selectFile(file: GitFile, isStaged: boolean): void {
