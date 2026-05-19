@@ -10,6 +10,7 @@ import {
   viewChildren,
 } from "@angular/core";
 import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
+import { ToggleButtonComponent } from "@cogno/core-ui";
 import {
   collectDirectionalNavigationItems,
   scrollSelectedListItemIntoView,
@@ -25,6 +26,7 @@ type SearchTextSegment = {
 @Component({
   selector: "app-terminal-search-side",
   standalone: true,
+  imports: [ToggleButtonComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         <div class="search-controls">
@@ -41,28 +43,16 @@ type SearchTextSegment = {
                 (input)="updateSearchQuery($event)"
                 (click)="$event.stopPropagation()"
             />
-            <button
-                type="button"
-                class="search-option-button"
-                [class.is-active]="caseSensitive()"
-                [style.background-color]="caseSensitive() ? matchBackgroundColor() : null"
-                [style.border-color]="caseSensitive() ? matchBorderColor() : null"
+            <app-toggle-button
+                [active]="caseSensitive()"
                 title="Case sensitive"
                 (click)="$event.stopPropagation(); toggleCaseSensitive()"
-            >
-                Aa
-            </button>
-            <button
-                type="button"
-                class="search-option-button"
-                [class.is-active]="regularExpression()"
-                [style.background-color]="regularExpression() ? matchBackgroundColor() : null"
-                [style.border-color]="regularExpression() ? matchBorderColor() : null"
+            >Aa</app-toggle-button>
+            <app-toggle-button
+                [active]="regularExpression()"
                 title="Regular expression"
                 (click)="$event.stopPropagation(); toggleRegularExpression()"
-            >
-                .*
-            </button>
+            >.*</app-toggle-button>
         </div>
         @if (isBlockSearchActive()) {
             <div class="block-search-banner">
@@ -136,20 +126,6 @@ type SearchTextSegment = {
                 min-width: 0;
             }
 
-            .search-option-button {
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
-                color: inherit;
-                border-radius: 6px;
-                height: 2rem;
-                min-width: 2.25rem;
-                padding: 0 0.5rem;
-                font-size: 0.8rem;
-            }
-
-            .search-option-button.is-active {
-                font-weight: 600;
-            }
 
             .result-header,
             .helper-text {

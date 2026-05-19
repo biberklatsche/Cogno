@@ -45,6 +45,21 @@ export class GitDiffService {
     return { original: this.truncate(original), modified: this.truncate(modified), language };
   }
 
+  async loadCommitFileDiff(
+    hash: string,
+    filePath: string,
+    originalPath: string,
+    isDeletedFile: boolean,
+    gitRoot: string,
+  ): Promise<GitDiffContent> {
+    const language = detectGitDiffLanguage(filePath);
+    const original = await this.gitBlobReader.readBlob(gitRoot, `${hash}^:${originalPath}`);
+    const modified = isDeletedFile
+      ? ""
+      : await this.gitBlobReader.readBlob(gitRoot, `${hash}:${filePath}`);
+    return { original: this.truncate(original), modified: this.truncate(modified), language };
+  }
+
   private truncate(content: string): string {
     if (content.length <= TRUNCATE_THRESHOLD_BYTES) return content;
     return `${content.slice(0, TRUNCATE_THRESHOLD_BYTES)}\n\n[... truncated — file too large ...]`;

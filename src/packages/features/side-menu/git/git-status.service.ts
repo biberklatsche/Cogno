@@ -28,12 +28,11 @@ export type GitError = "not_installed" | "no_repo";
 
 @Injectable({ providedIn: "root" })
 export class GitStatusService {
-  private static readonly POLL_INTERVAL_MS = 2500;
+  private static readonly POLL_INTERVAL_MS = 5_000;
 
   private readonly gitStatusSignal = signal<GitStatus | null>(null);
   private readonly gitErrorSignal = signal<GitError | null>(null);
   private readonly loadingSignal = signal(false);
-
   readonly status = this.gitStatusSignal.asReadonly();
   readonly gitError = this.gitErrorSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
@@ -128,32 +127,32 @@ export class GitStatusService {
       }
 
       this.gitErrorSignal.set(null);
-      await this.refreshStatus();
+      await this.refreshStatus(false);
     } finally {
       this.refreshContextInFlight = false;
     }
   }
 
-  async refreshStatus(): Promise<void> {
+  async refreshStatus(showLoading = true): Promise<void> {
     if (this.refreshStatusInFlight) {
       this.refreshStatusPending = true;
       return;
     }
     this.refreshStatusInFlight = true;
     try {
-      await this.doRefreshStatus();
+      await this.doRefreshStatus(showLoading);
     } finally {
       this.refreshStatusInFlight = false;
       if (this.refreshStatusPending) {
         this.refreshStatusPending = false;
-        void this.refreshStatus();
+        void this.refreshStatus(false);
       }
     }
   }
 
-  private async doRefreshStatus(): Promise<void> {
+  private async doRefreshStatus(showLoading: boolean): Promise<void> {
     if (!this.currentGitRoot || !this.currentShellContext) return;
-    this.loadingSignal.set(true);
+    if (showLoading) this.loadingSignal.set(true);
     try {
       const [statusResult, branchResult] = await Promise.all([
         this.commandRunner.run({
@@ -185,7 +184,7 @@ export class GitStatusService {
         ...parsed,
       });
     } finally {
-      this.loadingSignal.set(false);
+      if (showLoading) this.loadingSignal.set(false);
     }
   }
 

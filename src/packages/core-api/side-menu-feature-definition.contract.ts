@@ -6,4 +6,5 @@ export interface SideMenuFeatureDefinitionContract<TIcon = string, TActionName =
   readonly actionName: TActionName;
   readonly configPath: string;
   readonly pinned?: boolean;
+  readonly defaultWidth?: number;
 }

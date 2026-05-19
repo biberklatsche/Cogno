@@ -1,25 +1,52 @@
-import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  signal,
+} from "@angular/core";
 import { Opener } from "@cogno/core-api";
-import { Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { Icon, IconComponent, ToggleButtonComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
+import { GitGraphComponent } from "./git-graph.component";
+import { CommitFile, GitGraphService } from "./git-graph.service";
 import { GitFile, GitStatusService } from "./git-status.service";
 
 type SelectedFile = {
   file: GitFile;
   isStaged: boolean;
+  commitHash?: string;
+  originalPath?: string;
 };
 
 @Component({
   selector: "app-git-side",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, GitDiffViewComponent],
+  imports: [
+    IconComponent,
+    ToggleButtonComponent,
+    TooltipDirective,
+    GitDiffViewComponent,
+    GitGraphComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="git-panel">
       <!-- Header -->
       <header class="git-header">
         <span class="branch">
+          @if (status()) {
+            <app-toggle-button
+              [active]="showGraph()"
+              title="Toggle graph"
+              (click)="toggleGraph()"
+              class="graph-toggle"
+            >
+              <app-icon name="mdiSourceBranch"></app-icon>
+            </app-toggle-button>
+          }
           <app-icon name="mdiGit"></app-icon>
           @if (status()) {
             <span>{{ status()!.branch }}</span>
@@ -36,8 +63,23 @@ type SelectedFile = {
         </button>
       </header>
 
+      <div class="git-panel-body">
       @if (status()) {
-        <div class="git-main-content" [class.with-diff]="selectedFile() && (diff() || diffLoading())">
+        @if (showGraph()) {
+          <div class="git-graph-pane" [style.width]="graphPaneWidthPx() != null ? graphPaneWidthPx() + 'px' : '50%'">
+            <div class="graph-resize-handle" (pointerdown)="startGraphResize($event)"></div>
+            <app-git-graph
+              [commits]="graphCommits()"
+              [hasUncommittedChanges]="hasUncommittedChanges()"
+              [selectedHash]="selectedCommitHash() ?? 'WIP'"
+              [loading]="graphLoading()"
+              (commitClick)="selectCommit($event)"
+              (loadMore)="loadMoreGraph()"
+            />
+          </div>
+        }
+        <div class="git-main-content" [class.with-diff]="selectedFile() && (diff() || diffLoading())"
+          [class.graph-visible]="showGraph()">
           <section class="commit-area">
             <textarea
               class="commit-message"
@@ -56,41 +98,166 @@ type SelectedFile = {
           </section>
 
           <div class="file-sections-scroll-area">
-            @if (status()!.staged.length > 0) {
+            @if (selectedCommitHash()) {
               <section class="file-section">
                 <div class="section-header">
-                  <button type="button" class="section-toggle" (click)="toggleStaged()">
-                    <app-icon [name]="stagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-                    <span>STAGED ({{ status()!.staged.length }})</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="button icon-button file-action-button"
-                    appTooltip="Unstage all"
-                    (click)="unstageAll()"
-                  >
-                    <app-icon name="mdiMinus"></app-icon>
-                  </button>
+                  <span class="section-toggle commit-section-label">
+                    <app-icon name="mdiSourceBranch"></app-icon>
+                    <div class="commit-label-body">
+                      <div class="commit-label-main">
+                        <span class="commit-hash-label">{{ selectedCommitHash()!.slice(0, 7) }}</span>
+                        @if (selectedCommitNode()) {
+                          <span class="commit-subject-label">{{ selectedCommitNode()!.subject }}</span>
+                        }
+                      </div>
+                      @if (selectedCommitNode()?.author) {
+                        <span class="commit-author-line">{{ selectedCommitNode()!.author }} · {{ selectedCommitNode()!.date }}</span>
+                      }
+                    </div>
+                  </span>
                 </div>
-                @if (stagedExpanded()) {
+                @if (commitFilesLoading()) {
+                  <div class="diff-loading-state commit-files-loading">
+                    <app-icon name="mdiLoading"></app-icon>
+                    <span>Loading...</span>
+                  </div>
+                } @else if (commitFiles().length === 0) {
+                  <div class="empty-state">No files changed</div>
+                } @else {
                   <ul class="file-list">
-                    @for (file of status()!.staged; track file.path) {
+                    @for (file of commitFiles(); track file.path) {
                       <li
-                        class="file-item staged"
-                        [class.selected]="isSelected(file, true)"
-                        (click)="selectFile(file, true)"
+                        class="file-item"
+                        [class.selected]="isCommitFileSelected(file)"
+                        (click)="selectCommitFile(file)"
                       >
                         <span
                           class="status-badge"
-                          [class.status-edited]="isEditedStatus(file)"
-                          [class.status-added]="isAddedStatus(file)"
-                          [class.status-removed]="isRemovedStatus(file)"
+                          [class.status-edited]="file.status === 'M' || file.status === 'R'"
+                          [class.status-added]="file.status === 'A'"
+                          [class.status-removed]="file.status === 'D'"
                         >
-                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
+                          <app-icon [name]="commitFileStatusIcon(file)"></app-icon>
                         </span>
                         <div class="file-name-group">
                           <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
-                          @if (file.status !== 'D') {
+                        </div>
+                        <span class="file-dir">{{ fileDir(file.path) }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </section>
+            } @else {
+              @if (status()!.staged.length > 0) {
+                <section class="file-section">
+                  <div class="section-header">
+                    <button type="button" class="section-toggle" (click)="toggleStaged()">
+                      <app-icon [name]="stagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
+                      <span>STAGED ({{ status()!.staged.length }})</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="button icon-button file-action-button"
+                      appTooltip="Unstage all"
+                      (click)="unstageAll()"
+                    >
+                      <app-icon name="mdiMinus"></app-icon>
+                    </button>
+                  </div>
+                  @if (stagedExpanded()) {
+                    <ul class="file-list">
+                      @for (file of status()!.staged; track file.path) {
+                        <li
+                          class="file-item staged"
+                          [class.selected]="isSelected(file, true)"
+                          (click)="selectFile(file, true)"
+                        >
+                          <span
+                            class="status-badge"
+                            [class.status-edited]="isEditedStatus(file)"
+                            [class.status-added]="isAddedStatus(file)"
+                            [class.status-removed]="isRemovedStatus(file)"
+                          >
+                            <app-icon [name]="fileStatusIcon(file)"></app-icon>
+                          </span>
+                          <div class="file-name-group">
+                            <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
+                            @if (file.status !== 'D') {
+                              <button
+                                type="button"
+                                class="button icon-button file-action-button open-in-editor-btn"
+                                appTooltip="Open in editor"
+                                (click)="$event.stopPropagation(); openInEditor(file)"
+                              >
+                                <app-icon name="mdiOpenInNew"></app-icon>
+                              </button>
+                            }
+                          </div>
+                          <span class="file-dir">{{ fileDir(file.path) }}</span>
+                          <button
+                            type="button"
+                            class="button icon-button file-action-button"
+                            appTooltip="Unstage"
+                            (click)="$event.stopPropagation(); unstageFile(file.path)"
+                          >
+                            <app-icon name="mdiMinus"></app-icon>
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+              }
+
+              @if (changeFiles().length > 0) {
+                <section class="file-section">
+                  <div class="section-header">
+                    <button type="button" class="section-toggle" (click)="toggleUnstaged()">
+                      <app-icon [name]="unstagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
+                      <span class="changes-summary">
+                        <span>CHANGES</span>
+                        <span class="changes-counts">
+                          (
+                          <span class="changes-count-item">
+                            <app-icon name="mdiSquareEditOutline"></app-icon>
+                            <span>{{ modifiedUnstagedCount() }}</span>
+                          </span>
+                          <span class="changes-count-item">
+                            <app-icon name="mdiPlus"></app-icon>
+                            <span>{{ addedUnstagedCount() }}</span>
+                          </span>
+                          )
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="button icon-button file-action-button"
+                      appTooltip="Stage all"
+                      (click)="stageAll()"
+                    >
+                      <app-icon name="mdiPlus"></app-icon>
+                    </button>
+                  </div>
+                  @if (unstagedExpanded()) {
+                    <ul class="file-list">
+                      @for (file of changeFiles(); track file.path) {
+                        <li
+                          class="file-item unstaged"
+                          [class.selected]="isSelected(file, false)"
+                          (click)="selectFile(file, false)"
+                        >
+                          <span
+                            class="status-badge"
+                            [class.status-edited]="isEditedStatus(file)"
+                            [class.status-added]="isAddedStatus(file)"
+                            [class.status-removed]="isRemovedStatus(file)"
+                          >
+                            <app-icon [name]="fileStatusIcon(file)"></app-icon>
+                          </span>
+                          <div class="file-name-group">
+                            <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
                             <button
                               type="button"
                               class="button icon-button file-action-button open-in-editor-btn"
@@ -99,133 +266,60 @@ type SelectedFile = {
                             >
                               <app-icon name="mdiOpenInNew"></app-icon>
                             </button>
+                          </div>
+                          <span class="file-dir">{{ fileDir(file.path) }}</span>
+                          @if (file.status !== '?') {
+                            @if (isDiscardConfirmationPending(file.path)) {
+                              <div
+                                class="file-action-group"
+                                (mouseleave)="cancelDiscardConfirmation()"
+                              >
+                                <button
+                                  type="button"
+                                  class="button icon-button file-action-button"
+                                  appTooltip="Confirm discard changes"
+                                  (click)="$event.stopPropagation(); confirmDiscardFile(file.path)"
+                                >
+                                  <app-icon name="mdiCheck"></app-icon>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="button icon-button file-action-button"
+                                  appTooltip="Cancel discard changes"
+                                  (click)="$event.stopPropagation(); cancelDiscardConfirmation()"
+                                >
+                                  <app-icon name="mdiClose"></app-icon>
+                                </button>
+                              </div>
+                            } @else {
+                              <button
+                                type="button"
+                                class="button icon-button file-action-button discard-button"
+                                appTooltip="Discard changes"
+                                (click)="$event.stopPropagation(); requestDiscardConfirmation(file.path)"
+                              >
+                                <app-icon name="mdiTrashCanOutline"></app-icon>
+                              </button>
+                            }
                           }
-                        </div>
-                        <span class="file-dir">{{ fileDir(file.path) }}</span>
-                        <button
-                          type="button"
-                          class="button icon-button file-action-button"
-                          appTooltip="Unstage"
-                          (click)="$event.stopPropagation(); unstageFile(file.path)"
-                        >
-                          <app-icon name="mdiMinus"></app-icon>
-                        </button>
-                      </li>
-                    }
-                  </ul>
-                }
-              </section>
-            }
-
-            @if (changeFiles().length > 0) {
-              <section class="file-section">
-                <div class="section-header">
-                  <button type="button" class="section-toggle" (click)="toggleUnstaged()">
-                    <app-icon [name]="unstagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-                    <span class="changes-summary">
-                      <span>CHANGES</span>
-                      <span class="changes-counts">
-                        (
-                        <span class="changes-count-item">
-                          <app-icon name="mdiSquareEditOutline"></app-icon>
-                          <span>{{ modifiedUnstagedCount() }}</span>
-                        </span>
-                        <span class="changes-count-item">
-                          <app-icon name="mdiPlus"></app-icon>
-                          <span>{{ addedUnstagedCount() }}</span>
-                        </span>
-                        )
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class="button icon-button file-action-button"
-                    appTooltip="Stage all"
-                    (click)="stageAll()"
-                  >
-                    <app-icon name="mdiPlus"></app-icon>
-                  </button>
-                </div>
-                @if (unstagedExpanded()) {
-                  <ul class="file-list">
-                    @for (file of changeFiles(); track file.path) {
-                      <li
-                        class="file-item unstaged"
-                        [class.selected]="isSelected(file, false)"
-                        (click)="selectFile(file, false)"
-                      >
-                        <span
-                          class="status-badge"
-                          [class.status-edited]="isEditedStatus(file)"
-                          [class.status-added]="isAddedStatus(file)"
-                          [class.status-removed]="isRemovedStatus(file)"
-                        >
-                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
-                        </span>
-                        <div class="file-name-group">
-                          <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
                           <button
                             type="button"
-                            class="button icon-button file-action-button open-in-editor-btn"
-                            appTooltip="Open in editor"
-                            (click)="$event.stopPropagation(); openInEditor(file)"
+                            class="button icon-button file-action-button"
+                            appTooltip="Stage"
+                            (click)="$event.stopPropagation(); stageFile(file.path)"
                           >
-                            <app-icon name="mdiOpenInNew"></app-icon>
+                            <app-icon name="mdiPlus"></app-icon>
                           </button>
-                        </div>
-                        <span class="file-dir">{{ fileDir(file.path) }}</span>
-                        @if (file.status !== '?') {
-                          @if (isDiscardConfirmationPending(file.path)) {
-                            <div
-                              class="file-action-group"
-                              (mouseleave)="cancelDiscardConfirmation()"
-                            >
-                              <button
-                                type="button"
-                                class="button icon-button file-action-button"
-                                appTooltip="Confirm discard changes"
-                                (click)="$event.stopPropagation(); confirmDiscardFile(file.path)"
-                              >
-                                <app-icon name="mdiCheck"></app-icon>
-                              </button>
-                              <button
-                                type="button"
-                                class="button icon-button file-action-button"
-                                appTooltip="Cancel discard changes"
-                                (click)="$event.stopPropagation(); cancelDiscardConfirmation()"
-                              >
-                                <app-icon name="mdiClose"></app-icon>
-                              </button>
-                            </div>
-                          } @else {
-                            <button
-                              type="button"
-                              class="button icon-button file-action-button discard-button"
-                              appTooltip="Discard changes"
-                              (click)="$event.stopPropagation(); requestDiscardConfirmation(file.path)"
-                            >
-                              <app-icon name="mdiTrashCanOutline"></app-icon>
-                            </button>
-                          }
-                        }
-                        <button
-                          type="button"
-                          class="button icon-button file-action-button"
-                          appTooltip="Stage"
-                          (click)="$event.stopPropagation(); stageFile(file.path)"
-                        >
-                          <app-icon name="mdiPlus"></app-icon>
-                        </button>
-                      </li>
-                    }
-                  </ul>
-                }
-              </section>
-            }
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+              }
 
-            @if (status()!.staged.length === 0 && changeFiles().length === 0) {
-              <div class="empty-state">No changes</div>
+              @if (status()!.staged.length === 0 && changeFiles().length === 0) {
+                <div class="empty-state">No changes</div>
+              }
             }
           </div>
 
@@ -268,6 +362,7 @@ type SelectedFile = {
           <span>No terminal focused</span>
         </div>
       }
+      </div>
     </div>
   `,
   styles: [
@@ -300,6 +395,8 @@ type SelectedFile = {
         gap: 0.5rem;
       }
 
+
+
       .branch {
         display: flex;
         align-items: center;
@@ -307,6 +404,11 @@ type SelectedFile = {
         font-weight: 500;
         color: var(--foreground-color);
         min-width: 0;
+      }
+
+      .graph-toggle app-icon {
+        width: 1rem;
+        height: 1rem;
       }
 
       .git-unavailable {
@@ -334,7 +436,7 @@ type SelectedFile = {
         flex-direction: column;
         align-items: flex-end;
         gap: 0.4rem;
-        padding: 0.5rem 0;
+        padding: 0 0.5rem;
       }
 
       .commit-area .commit-message {
@@ -365,12 +467,40 @@ type SelectedFile = {
         flex: 0 0 auto;
       }
 
+      .git-panel-body {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .git-graph-pane {
+        flex: 0 0 auto;
+        border-right: 1px solid var(--background-color-20l);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .graph-resize-handle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: -4px;
+        width: 8px;
+        cursor: ew-resize;
+        z-index: 3;
+      }
+
       .git-main-content {
         flex: 1;
         display: flex;
         flex-direction: column;
         min-height: 0;
         gap: 0.75rem;
+        min-width: 200px;
       }
 
       .file-sections-scroll-area {
@@ -403,6 +533,74 @@ type SelectedFile = {
         font-weight: 600;
         letter-spacing: 0.05em;
         padding: 0;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .commit-section-label {
+        gap: 0.35rem;
+        overflow: hidden;
+      }
+
+      .commit-section-label app-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+        flex: 0 0 auto;
+      }
+
+      .commit-hash-label {
+        flex: 0 0 auto;
+        font-family: var(--font-mono, monospace);
+        color: var(--highlight-color);
+      }
+
+      .commit-subject-label {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 400;
+        letter-spacing: normal;
+        color: var(--foreground-color-10t);
+      }
+
+      .commit-label-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .commit-label-main {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .commit-author-line {
+        font-size: 0.75em;
+        font-weight: 400;
+        letter-spacing: normal;
+        color: var(--foreground-color-10t);
+        opacity: 0.7;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .commit-files-loading {
+        height: 48px;
+        flex-direction: row;
+        font-size: var(--git-secondary-font-size);
+      }
+
+      .commit-files-loading app-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+        animation: git-diff-spin 1s linear infinite;
       }
 
       .changes-summary {
@@ -613,6 +811,22 @@ export class GitSideComponent {
   readonly loading = this.gitStatusService.loading;
   readonly stagedCount = this.gitStatusService.stagedCount;
 
+  readonly showGraph = signal(true);
+  readonly graphLoading = this.gitGraphService.loading;
+  readonly graphPaneWidthPx = signal<number | null>(null);
+  readonly hasUncommittedChanges = computed(() => {
+    const s = this.status();
+    if (!s) return false;
+    return s.staged.length > 0 || s.unstaged.length > 0 || s.untracked.length > 0;
+  });
+  get graphCommits() {
+    return this.gitGraphService.commits;
+  }
+  private lastGraphRoot: string | null = null;
+  private graphResizeStartX = 0;
+  private graphResizeStartWidth = 0;
+  private graphResizeContainerWidth = 0;
+
   private readonly commitMessageSignal = signal("");
   readonly commitMessage = this.commitMessageSignal.asReadonly();
 
@@ -635,6 +849,18 @@ export class GitSideComponent {
       (this.status()?.untracked.length ?? 0),
   );
 
+  private readonly selectedCommitHashSignal = signal<string | null>(null);
+  readonly selectedCommitHash = this.selectedCommitHashSignal.asReadonly();
+  private readonly commitFilesSignal = signal<CommitFile[]>([]);
+  readonly commitFiles = this.commitFilesSignal.asReadonly();
+  private readonly commitFilesLoadingSignal = signal(false);
+  readonly commitFilesLoading = this.commitFilesLoadingSignal.asReadonly();
+  readonly selectedCommitNode = computed(() => {
+    const hash = this.selectedCommitHashSignal();
+    if (!hash) return null;
+    return this.gitGraphService.commits()?.find((c) => c.hash === hash) ?? null;
+  });
+
   private readonly selectedFileSignal = signal<SelectedFile | null>(null);
   readonly selectedFile = this.selectedFileSignal.asReadonly();
   private readonly discardConfirmationFilePathSignal = signal<string | null>(null);
@@ -647,21 +873,71 @@ export class GitSideComponent {
   constructor(
     private readonly gitStatusService: GitStatusService,
     private readonly gitDiffService: GitDiffService,
+    private readonly gitGraphService: GitGraphService,
     private readonly opener: Opener,
+    destroyRef: DestroyRef,
   ) {
+    destroyRef.onDestroy(() => {
+      window.removeEventListener("pointermove", this.onGraphResizeMove, true);
+      window.removeEventListener("pointerup", this.onGraphResizeUp, true);
+    });
     effect(() => {
       const status = this.status();
       const sel = this.selectedFileSignal();
-      if (!sel || !status) return;
+      if (!sel || !status || sel.commitHash) return;
       const allFiles = [...status.staged, ...status.unstaged, ...status.untracked];
       const stillExists = allFiles.some((f) => f.path === sel.file.path);
       if (!stillExists) this.closeDiff();
+    });
+
+    effect(() => {
+      const show = this.showGraph();
+      const status = this.status();
+      if (show && status) {
+        if (status.gitRoot !== this.lastGraphRoot) {
+          this.lastGraphRoot = status.gitRoot;
+          void this.gitGraphService.load(status.gitRoot, status.shellContext);
+        }
+      } else if (!show) {
+        this.lastGraphRoot = null;
+        this.gitGraphService.clear();
+      }
     });
   }
 
   refresh(): void {
     void this.gitStatusService.refreshStatus();
   }
+
+  loadMoreGraph(): void {
+    void this.gitGraphService.loadMore();
+  }
+
+  toggleGraph(): void {
+    this.showGraph.update((v) => !v);
+  }
+
+  startGraphResize(e: PointerEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    const pane = (e.currentTarget as HTMLElement).parentElement!;
+    this.graphResizeStartX = e.clientX;
+    this.graphResizeStartWidth = pane.offsetWidth;
+    this.graphResizeContainerWidth = pane.parentElement!.offsetWidth;
+    window.addEventListener("pointermove", this.onGraphResizeMove, true);
+    window.addEventListener("pointerup", this.onGraphResizeUp, true);
+  }
+
+  private readonly onGraphResizeMove = (e: PointerEvent): void => {
+    const delta = e.clientX - this.graphResizeStartX;
+    const max = this.graphResizeContainerWidth - 200;
+    this.graphPaneWidthPx.set(Math.max(180, Math.min(max, this.graphResizeStartWidth + delta)));
+  };
+
+  private readonly onGraphResizeUp = (): void => {
+    window.removeEventListener("pointermove", this.onGraphResizeMove, true);
+    window.removeEventListener("pointerup", this.onGraphResizeUp, true);
+  };
 
   onCommitInput(event: Event): void {
     this.commitMessageSignal.set((event.target as HTMLTextAreaElement).value);
@@ -725,7 +1001,7 @@ export class GitSideComponent {
 
   isSelected(file: GitFile, isStaged: boolean): boolean {
     const sel = this.selectedFileSignal();
-    return sel?.file.path === file.path && sel?.isStaged === isStaged;
+    return !sel?.commitHash && sel?.file.path === file.path && sel?.isStaged === isStaged;
   }
 
   fileStatusIcon(file: GitFile): Icon {
@@ -766,6 +1042,75 @@ export class GitSideComponent {
     this.diffSignal.set(null);
   }
 
+  selectCommit(hash: string | null): void {
+    const current = this.selectedCommitHashSignal();
+    const next = hash && hash !== current ? hash : null;
+    this.selectedCommitHashSignal.set(next);
+    this.commitFilesSignal.set([]);
+    this.closeDiff();
+    if (next) {
+      this.commitFilesLoadingSignal.set(true);
+      void this.loadCommitFilesData(next);
+    }
+  }
+
+  private async loadCommitFilesData(hash: string): Promise<void> {
+    const status = this.status();
+    if (!status) {
+      this.commitFilesLoadingSignal.set(false);
+      return;
+    }
+    try {
+      const files = await this.gitGraphService.loadCommitFiles(
+        hash,
+        status.gitRoot,
+        status.shellContext,
+      );
+      if (this.selectedCommitHashSignal() !== hash) return;
+      this.commitFilesSignal.set(files);
+    } finally {
+      if (this.selectedCommitHashSignal() === hash) {
+        this.commitFilesLoadingSignal.set(false);
+      }
+    }
+  }
+
+  isCommitFileSelected(file: CommitFile): boolean {
+    const sel = this.selectedFileSignal();
+    return (
+      !!sel?.commitHash &&
+      sel.commitHash === this.selectedCommitHashSignal() &&
+      sel.file.path === file.path
+    );
+  }
+
+  commitFileStatusIcon(file: CommitFile): Icon {
+    if (file.status === "A") return "mdiPlus";
+    if (file.status === "D") return "mdiMinus";
+    return "mdiPencil";
+  }
+
+  selectCommitFile(file: CommitFile): void {
+    if (this.isCommitFileSelected(file)) {
+      this.closeDiff();
+      return;
+    }
+    const hash = this.selectedCommitHashSignal();
+    if (!hash) {
+      return;
+    }
+    const gitFile: GitFile = { path: file.path, status: file.status === "R" ? "M" : file.status };
+    this.selectedFileSignal.set({
+      file: gitFile,
+      isStaged: false,
+      commitHash: hash,
+      originalPath: file.originalPath,
+    });
+    this.diffLoadingSignal.set(true);
+    this.diffSignal.set(null);
+    void this.loadDiff(gitFile, false, hash, file.originalPath);
+  }
+
   fileName(path: string): string {
     return path.split("/").pop() ?? path;
   }
@@ -776,7 +1121,12 @@ export class GitSideComponent {
     return parts.slice(0, -1).join("/");
   }
 
-  private async loadDiff(file: GitFile, isStaged: boolean): Promise<void> {
+  private async loadDiff(
+    file: GitFile,
+    isStaged: boolean,
+    commitHash?: string,
+    originalPath?: string,
+  ): Promise<void> {
     const status = this.status();
     if (!status) {
       this.diffLoadingSignal.set(false);
@@ -789,18 +1139,37 @@ export class GitSideComponent {
       requestAnimationFrame(() => resolve());
     });
 
+    const checkSelected = (): boolean => {
+      const sel = this.selectedFileSignal();
+      if (!sel || sel.file.path !== file.path) return false;
+      return commitHash
+        ? sel.commitHash === commitHash
+        : !sel.commitHash && sel.isStaged === isStaged;
+    };
+
     try {
-      const diff = await this.gitDiffService.loadDiff(
-        file.path,
-        isStaged,
-        file.status === "D",
-        status.gitRoot,
-        snapshot,
-      );
-      if (!this.isSelected(file, isStaged)) return;
+      let diff: GitDiffContent;
+      if (commitHash) {
+        diff = await this.gitDiffService.loadCommitFileDiff(
+          commitHash,
+          file.path,
+          originalPath ?? file.path,
+          file.status === "D",
+          status.gitRoot,
+        );
+      } else {
+        diff = await this.gitDiffService.loadDiff(
+          file.path,
+          isStaged,
+          file.status === "D",
+          status.gitRoot,
+          snapshot,
+        );
+      }
+      if (!checkSelected()) return;
       this.diffSignal.set(diff);
     } finally {
-      if (this.isSelected(file, isStaged)) {
+      if (checkSelected()) {
         this.diffLoadingSignal.set(false);
       }
     }

@@ -34,6 +34,8 @@ export class SideMenuService {
     SideMenuService.defaultPanelWidthInPixels,
   );
   private _pinnedStack: string[] = [];
+  private readonly _featureWidths = new Map<string, number>();
+  private readonly _featureDefaultWidths = new Map<string, number>();
 
   get menu(): Signal<SideMenuItem[]> {
     return this._menuItems.asReadonly();
@@ -98,6 +100,7 @@ export class SideMenuService {
     }
 
     if (current) {
+      this._featureWidths.set(current.label, this._panelWidthInPixels());
       this.bus.publish({ type: "SideMenuViewClosed", payload: { label: current.label } });
     }
 
@@ -105,6 +108,10 @@ export class SideMenuService {
     this._selectedItem.set(item);
 
     if (item) {
+      const savedWidth = this._featureWidths.get(label);
+      const defaultWidth =
+        this._featureDefaultWidths.get(label) ?? SideMenuService.defaultPanelWidthInPixels;
+      this._panelWidthInPixels.set(this.clampPanelWidthInPixels(savedWidth ?? defaultWidth));
       this.bus.publish({ type: "SideMenuViewOpened", payload: { label: item.label } });
       this.focus();
     } else {
@@ -195,11 +202,24 @@ export class SideMenuService {
     this._selectedItem.update((s) => (s?.label === label ? { ...s, badgeColor: color } : s));
   }
 
+  registerFeatureDefaultWidth(label: string, defaultWidth: number): void {
+    this._featureDefaultWidths.set(label, defaultWidth);
+  }
+
   setPanelWidthInPixels(panelWidthInPixels: number): void {
-    this._panelWidthInPixels.set(this.clampPanelWidthInPixels(panelWidthInPixels));
+    const clamped = this.clampPanelWidthInPixels(panelWidthInPixels);
+    this._panelWidthInPixels.set(clamped);
+    const current = this._selectedItem();
+    if (current) {
+      this._featureWidths.set(current.label, clamped);
+    }
   }
 
   private clampPanelWidthInPixels(panelWidthInPixels: number): number {
-    return Math.max(SideMenuService.minimumPanelWidthInPixels, Math.round(panelWidthInPixels));
+    const max = typeof window !== "undefined" ? window.innerWidth : Infinity;
+    return Math.min(
+      max,
+      Math.max(SideMenuService.minimumPanelWidthInPixels, Math.round(panelWidthInPixels)),
+    );
   }
 }

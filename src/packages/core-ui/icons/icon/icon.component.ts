@@ -32,6 +32,7 @@ import {
   mdiRobot,
   mdiRocketLaunch,
   mdiSend,
+  mdiSourceBranch,
   mdiSpeedometer,
   mdiSquareEditOutline,
   mdiTrashCanOutline,
@@ -153,6 +154,9 @@ export class IconComponent {
         break;
       case "mdiRefresh":
         this.icon = mdiRefresh;
+        break;
+      case "mdiSourceBranch":
+        this.icon = mdiSourceBranch;
         break;
       case "mdiRobot":
         this.icon = mdiRobot;

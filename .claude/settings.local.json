@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(Get-Content *)",
+      "PowerShell(cd \"C:\\\\_dev\\\\projects\\\\Second\"; $log = git log --all --date-order --pretty=format:\"%h %P %s\"; $lines = $log -split \"`n\"; $idx06 = \\($lines | Select-String \"^06bbf41\"\\).LineNumber - 1; $lines[\\([Math]::Max\\(0,$idx06-3\\)..\\([Math]::Min\\($lines.Count-1,$idx06+8\\)\\)\\)])",
+      "PowerShell(cd \"C:\\\\_dev\\\\projects\\\\Second\"; git log --pretty=format:\"%h %P %s\" stash@{2} -1; git cat-file -p stash@{2})"
+    ]
+  }
+}

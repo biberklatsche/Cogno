@@ -50,6 +50,10 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
       });
     }
 
+    if (config.defaultWidth != null) {
+      sideMenuService.registerFeatureDefaultWidth(config.title, config.defaultWidth);
+    }
+
     this.setupConfigListener();
     this.setupSideMenuListeners();
 

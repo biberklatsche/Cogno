@@ -28,6 +28,7 @@ export type Icon =
   | "mdiPlus"
   | "mdiPowershell"
   | "mdiRefresh"
+  | "mdiSourceBranch"
   | "mdiRobot"
   | "mdiRocketLaunch"
   | "mdiSend"
