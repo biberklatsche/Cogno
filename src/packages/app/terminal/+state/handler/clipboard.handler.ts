@@ -147,7 +147,7 @@ export class ClipboardHandler implements ITerminalHandler {
         input.text.slice(0, selectionRange.startIndex) +
         replacementText +
         input.text.slice(selectionRange.endIndex);
-      this.pty.executeShellAction("replaceCurrentInput", {
+      this.pty.executeLineEditorAction("replaceCurrentInput", {
         text: nextText,
         cursorIndex: selectionRange.startIndex + replacementText.length,
       });

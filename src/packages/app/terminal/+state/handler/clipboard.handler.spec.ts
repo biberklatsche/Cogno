@@ -61,7 +61,7 @@ describe("ClipboardHandler", () => {
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   let mockStateManager: Pick<TerminalStateManager, "isCommandRunning" | "input">;
-  let mockPty: Pick<IPty, "write" | "executeShellAction">;
+  let mockPty: Pick<IPty, "write" | "executeLineEditorAction">;
   let mockConfigService: ConfigService;
   let mockSelectionHandler: SelectionHandler;
   const terminalId = "test-terminal-id";
@@ -73,7 +73,7 @@ describe("ClipboardHandler", () => {
       isCommandRunning: false,
       input: { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 },
     };
-    mockPty = { write: vi.fn(), executeShellAction: vi.fn() };
+    mockPty = { write: vi.fn(), executeLineEditorAction: vi.fn() };
     mockConfigService = makeConfigService();
     mockSelectionHandler = makeMockSelectionHandler();
     handler = new ClipboardHandler(
@@ -181,7 +181,7 @@ describe("ClipboardHandler", () => {
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
       await vi.waitFor(() =>
-        expect(mockPty.executeShellAction).toHaveBeenCalledWith("replaceCurrentInput", {
+        expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
           text: "aaa ccc ccc",
           cursorIndex: 7,
         }),

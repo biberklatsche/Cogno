@@ -23,6 +23,7 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { AiAgentResumeActionHandler } from "./handler/ai-agent-resume-action.handler";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { CursorHandler } from "./handler/cursor.handler";
@@ -30,7 +31,6 @@ import { FocusHandler } from "./handler/focus.handler";
 import { FullScreenAppHandler } from "./handler/full-screen-app.handler";
 import { InputHandler } from "./handler/input.handler";
 import { LinkHandler } from "./handler/link.handler";
-import { ResumeActionHandler } from "./handler/resume-action.handler";
 import { MouseHandler } from "./handler/mouse.handler";
 import { PtyHandler } from "./handler/pty.handler";
 import { ResizeHandler } from "./handler/resize.handler";
@@ -173,7 +173,7 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager, this.opener)));
     this.disposables.push(
       this.renderer.register(
-        new ResumeActionHandler(this.pty, this.configService.config.ai?.resume_pattern),
+        new AiAgentResumeActionHandler(this.pty, this.configService.config.ai?.resume_pattern),
       ),
     );
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));

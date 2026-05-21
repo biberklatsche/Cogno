@@ -90,8 +90,8 @@ export const TauriPty = {
     });
   },
 
-  executeShellAction(terminalId: TerminalId, action: string, payload?: object) {
-    return invoke("pty_execute_shell_action", {
+  executeLineEditorAction(terminalId: TerminalId, action: string, payload?: object) {
+    return invoke("pty_execute_line_editor_action", {
       terminalId,
       action,
       payloadJson: payload ? JSON.stringify(payload) : null,

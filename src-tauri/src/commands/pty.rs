@@ -312,7 +312,7 @@ pub fn pty_write(
 }
 
 #[tauri::command]
-pub fn pty_execute_shell_action(
+pub fn pty_execute_line_editor_action(
     state: State<'_, PtyState>,
     terminal_id: String,
     action: String,

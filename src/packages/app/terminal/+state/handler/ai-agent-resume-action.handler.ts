@@ -8,7 +8,7 @@ import { ITerminalHandler } from "./handler";
 const DEFAULT_RESUME_PATTERN =
   /\b([a-zA-Z][\w-]*)\s+(resume|--resume|-r)\s+([a-zA-Z0-9][a-zA-Z0-9_-]{7,})/gi;
 
-export class ResumeActionHandler implements ITerminalHandler {
+export class AiAgentResumeActionHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
   private readonly _patternSource: string;
@@ -51,7 +51,7 @@ export class ResumeActionHandler implements ITerminalHandler {
             activate: (event: MouseEvent, text: string) => {
               event.preventDefault();
               if (this.isExecuteModifierPressed(event)) {
-                this._pty.write(text + "\r");
+                this._pty.write(`${text}\r`);
               } else {
                 void Clipboard.writeText(text);
               }
