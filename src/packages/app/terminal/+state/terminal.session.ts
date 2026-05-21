@@ -30,6 +30,7 @@ import { FocusHandler } from "./handler/focus.handler";
 import { FullScreenAppHandler } from "./handler/full-screen-app.handler";
 import { InputHandler } from "./handler/input.handler";
 import { LinkHandler } from "./handler/link.handler";
+import { ResumeActionHandler } from "./handler/resume-action.handler";
 import { MouseHandler } from "./handler/mouse.handler";
 import { PtyHandler } from "./handler/pty.handler";
 import { ResizeHandler } from "./handler/resize.handler";
@@ -170,6 +171,11 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager, this.opener)));
+    this.disposables.push(
+      this.renderer.register(
+        new ResumeActionHandler(this.pty, this.configService.config.ai?.resume_pattern),
+      ),
+    );
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
     const shellDefinition = this.shellProfile.enable_shell_integration

@@ -1,3 +1,4 @@
+import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { OS } from "@cogno/app-tauri/os";
 import { Opener } from "@cogno/core-api";
 import { Terminal } from "@xterm/xterm";
@@ -52,19 +53,22 @@ export class LinkHandler implements ITerminalHandler {
               this._terminal?.element?.removeAttribute("title");
             },
             activate: (event: MouseEvent, text: string) => {
-              if (!this.isOpenModifierPressed(event)) return;
               event.preventDefault();
-              if (match.kind === "url") {
-                void this._opener.openUrl(text);
-                return;
+              if (this.isOpenModifierPressed(event)) {
+                if (match.kind === "url") {
+                  void this._opener.openUrl(text);
+                  return;
+                }
+                const backendPath = this._pathResolver.resolvePathForOpen(
+                  text,
+                  this._stateManager.state.cwd,
+                  this._stateManager.pathAdapter,
+                );
+                if (!backendPath) return;
+                void this._opener.openPath(backendPath);
+              } else {
+                void Clipboard.writeText(text);
               }
-              const backendPath = this._pathResolver.resolvePathForOpen(
-                text,
-                this._stateManager.state.cwd,
-                this._stateManager.pathAdapter,
-              );
-              if (!backendPath) return;
-              void this._opener.openPath(backendPath);
             },
           })),
         );
@@ -145,7 +149,7 @@ export class LinkHandler implements ITerminalHandler {
   }
 
   private get hoverHint(): string {
-    return `${this.openModifierLabel} + Click to open`;
+    return `Click to copy · ${this.openModifierLabel}+Click to open`;
   }
 
   private get openModifierLabel(): string {
