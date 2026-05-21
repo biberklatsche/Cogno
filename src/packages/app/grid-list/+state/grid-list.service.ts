@@ -563,6 +563,9 @@ export class GridListService {
       this.componentFactory.destroy(terminalId);
     }
     this.setActiveWorkspaceGridList(gridList);
+    if (this._activeTabId.value === tab) {
+      this.setActiveWorkspaceTabIdentifier(undefined);
+    }
   }
 
   selectGrid(tab?: TabId) {
