@@ -92,15 +92,12 @@
   position: absolute;
   left: 8px;
   top: 50%;
-  flex: 0 0 16px;
-  padding: 2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 12px;
   pointer-events: none;
-  background: transparent;
   color: color-mix(in srgb, var(--foreground-color-40d) 60%, transparent);
   transform: translateY(-50%);
 }
@@ -162,7 +159,6 @@
 @keyframes slide-in {
   from {
     opacity: 0;
-    width: 0;
     transform: translateX(-20px);
   }
 

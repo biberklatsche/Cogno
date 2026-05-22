@@ -3,6 +3,7 @@ import { Component, ElementRef, effect, OnDestroy, Signal, ViewChild } from "@an
 import { TabId } from "@cogno/core-api";
 import { DragPreviewService, Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { Observable } from "rxjs";
+import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
 import { IdCreator } from "../common/id-creator/id-creator";
 import { StartEllipsisDirective } from "../common/text/start-ellipsis.directive";
 import { ShellType } from "../config/+models/config";
@@ -23,6 +24,7 @@ import { TabListService } from "./+state/tab-list.service";
     TooltipDirective,
     ActionKeybindingPipe,
     StartEllipsisDirective,
+    BusyIndicatorComponent,
   ],
   templateUrl: "./tab-list.component.html",
   styleUrl: "./tab-list.component.scss",

@@ -1,4 +1,5 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
+import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { OS, type OsType } from "@cogno/app-tauri/os";
 import { Opener } from "@cogno/core-api";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
@@ -24,6 +25,7 @@ describe("LinkHandler", () => {
     openUrlSpy = vi.fn().mockResolvedValue(undefined);
     openPathSpy = vi.fn().mockResolvedValue(undefined);
     opener = { openUrl: openUrlSpy, openPath: openPathSpy } as unknown as Opener;
+    vi.spyOn(Clipboard, "writeText").mockResolvedValue(undefined);
   });
 
   function createScenario(shellType: ShellType, backendOs: OsType, cwd: string): void {
@@ -160,6 +162,26 @@ describe("LinkHandler", () => {
     expect(openPathSpy).toHaveBeenCalledWith("/Users/lars/project/file.txt");
   });
 
+  it("resolves POSIX-style Windows paths with spaces on Windows", () => {
+    createScenario("PowerShell", "windows", "C:\\work");
+    const line = TerminalMockFactory.createLine(
+      "/C:/_dev/projects/Business Data Migration/src/frontend/packages/api/src/pipeline/hooks.ts",
+    );
+    vi.mocked(terminal.buffer.active.getLine).mockReturnValue(line);
+
+    let links: any[] | undefined;
+    provider.provideLinks(1, (result: any[] | undefined) => {
+      links = result;
+    });
+
+    expect(links).toHaveLength(1);
+    links?.[0].activate(new MouseEvent("click", { ctrlKey: true }), links?.[0].text);
+
+    expect(openPathSpy).toHaveBeenCalledWith(
+      "C:\\_dev\\projects\\Business Data Migration\\src\\frontend\\packages\\api\\src\\pipeline\\hooks.ts",
+    );
+  });
+
   it("shows hover hint for ctrl+click on Windows links", () => {
     createScenario("PowerShell", "windows", "C:\\work");
     const line = TerminalMockFactory.createLine("Open C:\\temp\\file.txt");
@@ -172,7 +194,7 @@ describe("LinkHandler", () => {
 
     expect(links).toHaveLength(1);
     links?.[0].hover?.(new MouseEvent("mousemove"), links?.[0].text);
-    expect(terminal.element?.getAttribute("title")).toBe("Ctrl + Click to open");
+    expect(terminal.element?.getAttribute("title")).toBe("Click to copy · Ctrl+Click to open");
 
     links?.[0].leave?.(new MouseEvent("mouseleave"), links?.[0].text);
     expect(terminal.element?.hasAttribute("title")).toBe(false);
@@ -190,7 +212,7 @@ describe("LinkHandler", () => {
 
     expect(links).toHaveLength(1);
     links?.[0].hover?.(new MouseEvent("mousemove"), links?.[0].text);
-    expect(terminal.element?.getAttribute("title")).toBe("Cmd + Click to open");
+    expect(terminal.element?.getAttribute("title")).toBe("Click to copy · Cmd+Click to open");
 
     links?.[0].leave?.(new MouseEvent("mouseleave"), links?.[0].text);
     expect(terminal.element?.hasAttribute("title")).toBe(false);

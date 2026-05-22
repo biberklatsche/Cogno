@@ -6,6 +6,7 @@ import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { DialogRef, DialogService } from "../../common/dialog";
 import { IDisposable } from "../../common/models/models";
+import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
 import { PaneMaximizedChangedEvent } from "../../grid-list/+bus/events";
@@ -76,6 +77,7 @@ export class TerminalSession {
     private contextMenuOverlayService: ContextMenuOverlayService,
     private notificationTargetResolverService: NotificationTargetResolverService,
     private readonly opener: Opener,
+    private readonly terminalActivity: TerminalActivityService,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.renderer = new Renderer(this.configService.config);
@@ -129,7 +131,13 @@ export class TerminalSession {
     );
     this.disposables.push(
       this.renderer.register(
-        new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus),
+        new PtyHandler(
+          this.terminalId,
+          this.pty,
+          this.shellProfile,
+          this.bus,
+          this.terminalActivity,
+        ),
       ),
     );
     this.disposables.push(

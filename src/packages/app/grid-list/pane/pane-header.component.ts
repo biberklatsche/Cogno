@@ -2,19 +2,20 @@ import { DOCUMENT } from "@angular/common";
 import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { DragPreviewService, IconComponent } from "@cogno/core-ui";
+import { BusyIndicatorComponent } from "../../common/busy-indicator/busy-indicator.component";
 import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
 
 @Component({
   selector: "app-pane-header",
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, BusyIndicatorComponent],
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
         @if (isBusy()) {
           <span class="busy-indicator">
-            <app-icon name="mdiSpeedometer"></app-icon>
+            <app-busy-indicator [terminalIds]="terminalIdAsArray()"></app-busy-indicator>
           </span>
         }
         <span class="title">{{ title() }}</span>
@@ -55,22 +56,14 @@ import { GridListService } from "../+state/grid-list.service";
       position: absolute;
       left: 8px;
       top: 50%;
-      padding: 2px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 2px;
-      width: 20px;
-      height: 20px;
+      width: 14px;
+      height: 12px;
       pointer-events: none;
       color: color-mix(in srgb, var(--foreground-color) 60%, transparent);
-      background: transparent;
       transform: translateY(-50%);
-
-      app-icon {
-        width: 16px;
-        height: 16px;
-      }
     }
 
     .close {
@@ -110,6 +103,7 @@ export class PaneHeaderComponent implements OnDestroy {
   title = input.required<string>();
   terminalId = input.required<string>();
   isBusy = input.required<boolean>();
+  protected readonly terminalIdAsArray = computed(() => [this.terminalId()]);
 
   private readonly activeGridIsSplit = toSignal(this.gridListService.activeGridIsSplit$, {
     initialValue: false,

@@ -10,6 +10,7 @@ import type { AppBus } from "../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import type { DialogService } from "../../common/dialog";
 import { DialogRef } from "../../common/dialog/dialog-ref";
+import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../config/+models/shell-config";
 import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
@@ -134,6 +135,8 @@ describe("TerminalSession", () => {
       wiringService,
       contextMenuOverlayService,
       notificationTargetResolverService as NotificationTargetResolverService,
+      {} as any,
+      new TerminalActivityService(),
     );
   });
 
@@ -148,6 +151,8 @@ describe("TerminalSession", () => {
       wiringService,
       { openContextForElement: vi.fn() },
       notificationTargetResolverService as NotificationTargetResolverService,
+      {} as any,
+      new TerminalActivityService(),
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
@@ -161,7 +166,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
     expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-    expect(rendererInstance.register).toHaveBeenCalledTimes(15);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(16);
   });
 
   it("should enable shell integration features if configured", () => {
@@ -173,7 +178,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance =
       vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-    expect(rendererInstance.register).toHaveBeenCalledTimes(17);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(18);
     expect(preloadForShellIntegrationMock).toHaveBeenCalledWith("Bash");
   });
 
