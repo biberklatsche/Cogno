@@ -1,4 +1,5 @@
-import { Component, effect, input, signal } from "@angular/core";
+import { DOCUMENT } from "@angular/common";
+import { ChangeDetectionStrategy, Component, effect, Inject, input, signal } from "@angular/core";
 import { merge } from "rxjs";
 import { TerminalId } from "../../grid-list/+model/model";
 import { TerminalActivityService } from "../terminal-activity/terminal-activity.service";
@@ -14,6 +15,7 @@ const RANDOM_FLIP_CHANCE = 0.2;
 @Component({
   selector: "app-busy-indicator",
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @for (h of barHeights(); track $index) {
       <div class="col">
@@ -47,6 +49,7 @@ const RANDOM_FLIP_CHANCE = 0.2;
 })
 export class BusyIndicatorComponent {
   terminalIds = input.required<TerminalId[]>();
+  pauseInBackground = input(false);
   readonly blockIndices = BLOCK_INDICES;
   private heights = [2, 4, 1, 3, 2];
   private directions = [1, -1, 1, -1, 1];
@@ -55,21 +58,52 @@ export class BusyIndicatorComponent {
   private lastActivityTime = 0;
   private isSettling = false;
   private animationInterval: ReturnType<typeof setInterval> | undefined;
+  private isPausedForBackground = false;
+  private visibilityHandler: (() => void) | undefined;
 
-  constructor(private readonly activity: TerminalActivityService) {
+  constructor(
+    private readonly activity: TerminalActivityService,
+    @Inject(DOCUMENT) private readonly doc: Document,
+  ) {
     effect((onCleanup) => {
       const ids = this.terminalIds();
+      const pauseWhenHidden = this.pauseInBackground();
       if (ids.length === 0) return;
+
       const sub = merge(...ids.map((id) => this.activity.activity$(id))).subscribe(() => {
         this.lastActivityTime = Date.now();
         this.isSettling = false;
-        if (!this.animationInterval) {
+        if (!this.animationInterval && !this.isPausedForBackground) {
           this.startAnimation();
         }
       });
+
+      if (pauseWhenHidden) {
+        this.visibilityHandler = () => {
+          if (this.doc.hidden) {
+            this.stopAnimation();
+            this.isPausedForBackground = true;
+          } else {
+            this.isPausedForBackground = false;
+            if (!this.animationInterval) {
+              const timeSinceActivity = Date.now() - this.lastActivityTime;
+              if (timeSinceActivity < IDLE_TIMEOUT_MS || this.heights.some((h) => h > MIN_HEIGHT)) {
+                this.startAnimation();
+              }
+            }
+          }
+        };
+        this.doc.addEventListener("visibilitychange", this.visibilityHandler);
+      }
+
       onCleanup(() => {
         sub.unsubscribe();
         this.stopAnimation();
+        if (this.visibilityHandler) {
+          this.doc.removeEventListener("visibilitychange", this.visibilityHandler);
+          this.visibilityHandler = undefined;
+        }
+        this.isPausedForBackground = false;
       });
     });
   }

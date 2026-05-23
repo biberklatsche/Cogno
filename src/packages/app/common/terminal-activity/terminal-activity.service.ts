@@ -1,6 +1,9 @@
 import { Injectable } from "@angular/core";
 import { Observable, Subject } from "rxjs";
+import { throttleTime } from "rxjs/operators";
 import { TerminalId } from "../../grid-list/+model/model";
+
+const ACTIVITY_THROTTLE_MS = 100;
 
 @Injectable({ providedIn: "root" })
 export class TerminalActivityService {
@@ -11,7 +14,7 @@ export class TerminalActivityService {
   }
 
   activity$(terminalId: TerminalId): Observable<void> {
-    return this.getSubject(terminalId).asObservable();
+    return this.getSubject(terminalId).pipe(throttleTime(ACTIVITY_THROTTLE_MS));
   }
 
   dispose(terminalId: TerminalId): void {
