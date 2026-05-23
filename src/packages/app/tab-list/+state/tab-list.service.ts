@@ -490,7 +490,9 @@ export class TabListService {
   private applyTabBusyState(workspaceIdentifier: string, tabId: TabId): void {
     const tabList = this.getTabListForWorkspace(workspaceIdentifier);
     const busyTerminalIds = Array.from(this.busyTerminalStateByTerminalId.entries())
-      .filter(([, state]) => state.workspaceIdentifier === workspaceIdentifier && state.tabId === tabId)
+      .filter(
+        ([, state]) => state.workspaceIdentifier === workspaceIdentifier && state.tabId === tabId,
+      )
       .map(([terminalId]) => terminalId);
     const updatedTabList = tabList.map((tab) =>
       tab.id === tabId ? { ...tab, busyTerminalIds } : tab,
