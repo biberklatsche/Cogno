@@ -330,6 +330,10 @@ export class TerminalSession {
         actionName: "clear_buffer",
       },
       {
+        label: "Process Info",
+        action: () => this.openProcessInfoDialog(),
+      },
+      {
         label: "Close",
         action: () => {
           this.bus.publish({
@@ -356,12 +360,7 @@ export class TerminalSession {
   }
 
   buildHeaderMenu(): ContextMenuItem[] {
-    const items: ContextMenuItem[] = this.buildNotificationContextMenuItems();
-    items.push({
-      label: "Process Info",
-      action: () => this.openProcessInfoDialog(),
-    });
-    return items;
+    return this.buildNotificationContextMenuItems();
   }
 
   buildHeaderCommandMenu(): ContextMenuItem[] {

@@ -64,8 +64,9 @@ type HeaderCommandViewModel = {
         <button
           class="button icon-button terminal-menu-button"
           type="button"
+          aria-label="Open notification settings"
           (click)="openMenu($event)">
-            <app-icon name="mdiDotsVertical"></app-icon>
+            <app-icon name="mdiBellBadge"></app-icon>
         </button>
       </span>
     </div>

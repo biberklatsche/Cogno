@@ -188,7 +188,7 @@ describe("TerminalSession", () => {
     expect(items.length).toBeGreaterThan(0);
     expect(items.find((i) => i.label === "Paste")).toBeDefined();
     expect(items.find((i) => i.label === "Maximize")).toBeDefined();
-    expect(items.find((i) => i.label === "Process Info")).toBeUndefined();
+    expect(items.find((i) => i.label === "Process Info")).toBeDefined();
     expect(items.find((i) => i.label?.includes("Notifications"))).toBeUndefined();
   });
 
@@ -223,9 +223,6 @@ describe("TerminalSession", () => {
     expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Command Alerts" }));
     const longRunningCommandToggle = items.find((i) => i.label === "Long Commands");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
-    expect(items[items.findIndex((i) => i.label === "Process Info") - 1]).toEqual(
-      expect.objectContaining({ separator: true }),
-    );
     const appToggle = items.find((i) => i.label === "App");
     expect(longRunningCommandToggle).toBeDefined();
     expect(longRunningCommandToggle?.toggle).toBe(true);
@@ -254,7 +251,6 @@ describe("TerminalSession", () => {
     expect(items.find((item) => item.label === "Scroll to Top")).toBeUndefined();
     expect(items.find((item) => item.label === "Scroll to Bottom")).toBeUndefined();
     expect(items.find((item) => item.label === "Filter Block")).toBeUndefined();
-    expect(items[items.length - 1]).toEqual(expect.objectContaining({ label: "Process Info" }));
   });
 
   it("should include command menu items in the header menu for the first command out of view", () => {
@@ -402,7 +398,9 @@ describe("TerminalSession", () => {
 
   it("should close process info dialog when terminal session is disposed", () => {
     session.initialize(terminalId, shellProfile);
-    const processInfoItem = session.buildHeaderMenu().find((item) => item.label === "Process Info");
+    const processInfoItem = session
+      .buildContextMenu()
+      .find((item) => item.label === "Process Info");
 
     processInfoItem?.action?.();
     expect(openDialogMock).toHaveBeenCalledTimes(1);
