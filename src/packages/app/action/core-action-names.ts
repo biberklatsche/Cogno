@@ -70,4 +70,5 @@ export const coreActionNames: ReadonlyArray<string> = [
   "select_workspace_8",
   "select_workspace_9",
   "select_workspace_default",
+  "open_documentation",
 ] as const;

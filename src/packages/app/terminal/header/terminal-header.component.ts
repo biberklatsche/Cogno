@@ -1,6 +1,6 @@
 import { Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { IconComponent } from "@cogno/core-ui";
 import { map } from "rxjs";
 import { timespan } from "../../common/timespan/timespan";
 import { ConfigService } from "../../config/+state/config.service";
@@ -18,7 +18,7 @@ type HeaderCommandViewModel = {
 @Component({
   selector: "app-terminal-header",
   standalone: true,
-  imports: [IconComponent, TooltipDirective],
+  imports: [IconComponent],
   template: `
     <div class="terminal-header">
       @if (visibleProgress(); as currentProgress) {

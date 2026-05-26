@@ -536,9 +536,6 @@ export class TerminalSession {
           this.toggleSessionNotificationChannel(notificationChannel.id, item),
       });
     }
-
-    items.push({ separator: true });
-
     return items;
   }
 

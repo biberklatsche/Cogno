@@ -87,7 +87,21 @@ export class NativeMenuService {
       items: viewMenuItems,
     });
 
-    const menu = await TauriMenu.new({ items: [appSubmenu, fileSubmenu, viewSubmenu] });
+    const helpSubmenu = await TauriMenu.newSubmenu({
+      text: "Help",
+      items: [
+        await TauriMenu.newItem({
+          id: "open_documentation",
+          text: "Documentation",
+          enabled: true,
+          action: () => {
+            this.bus.publish(ActionFired.create("open_documentation"));
+          },
+        }),
+      ],
+    });
+
+    const menu = await TauriMenu.new({ items: [appSubmenu, fileSubmenu, viewSubmenu, helpSubmenu] });
     await menu.setAsAppMenu();
   }
 
