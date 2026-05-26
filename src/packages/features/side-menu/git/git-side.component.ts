@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, signal, untracked } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  signal,
+  untracked,
+} from "@angular/core";
 import { Opener } from "@cogno/core-api";
 import { Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
@@ -10,7 +17,7 @@ type SelectedFile = {
   isStaged: boolean;
 };
 
-type ChangeItem = { kind: 'file' | 'dir' | 'dir-child'; file: GitFile };
+type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
 
 @Component({
   selector: "app-git-side",
@@ -705,10 +712,10 @@ export class GitSideComponent {
     const expanded = this.expandedDirsSignal();
     const children = this.dirChildrenSignal();
     for (const file of this.changeFiles()) {
-      items.push({ kind: file.isDirectory ? 'dir' : 'file', file });
+      items.push({ kind: file.isDirectory ? "dir" : "file", file });
       if (file.isDirectory && expanded.has(file.path)) {
         for (const child of children.get(file.path) ?? []) {
-          items.push({ kind: 'dir-child', file: child });
+          items.push({ kind: "dir-child", file: child });
         }
       }
     }
