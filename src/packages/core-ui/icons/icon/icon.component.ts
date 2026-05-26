@@ -18,6 +18,7 @@ import {
   mdiDotsSquare,
   mdiDotsVertical,
   mdiFilter,
+  mdiFolder,
   mdiGit,
   mdiInformation,
   mdiLoading,
@@ -121,6 +122,9 @@ export class IconComponent {
         break;
       case "mdiFilter":
         this.icon = mdiFilter;
+        break;
+      case "mdiFolder":
+        this.icon = mdiFolder;
         break;
       case "mdiGit":
         this.icon = mdiGit;

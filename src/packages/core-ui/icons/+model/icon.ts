@@ -17,6 +17,7 @@ export type Icon =
   | "mdiDotsSquare"
   | "mdiDotsVertical"
   | "mdiFilter"
+  | "mdiFolder"
   | "mdiGit"
   | "mdiInformation"
   | "mdiLoading"

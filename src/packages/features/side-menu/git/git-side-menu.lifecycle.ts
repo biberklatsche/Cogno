@@ -11,10 +11,10 @@ export class GitSideMenuLifecycle {
   ): SideMenuFeatureLifecycleContract {
     return {
       onOpen: () => {
-        this.gitStatusService.startPolling();
+        this.gitStatusService.start();
       },
       onClose: () => {
-        this.gitStatusService.stopPolling();
+        this.gitStatusService.stop();
       },
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
