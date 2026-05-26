@@ -5,6 +5,7 @@ import {
   mdiArrowDown,
   mdiBell,
   mdiBellBadge,
+  mdiBellCog,
   mdiCheck,
   mdiCheckCircle,
   mdiChevronDown,
@@ -81,6 +82,9 @@ export class IconComponent {
         break;
       case "mdiBellBadge":
         this.icon = mdiBellBadge;
+        break;
+      case "mdiBellCog":
+        this.icon = mdiBellCog;
         break;
       case "mdiCheck":
         this.icon = mdiCheck;

@@ -4,6 +4,7 @@ export type Icon =
   | "mdiArrowDown"
   | "mdiBell"
   | "mdiBellBadge"
+  | "mdiBellCog"
   | "mdiCheck"
   | "mdiCheckCircle"
   | "mdiChevronDown"

@@ -1,4 +1,4 @@
-import { ApplicationSettingsExtensionContract } from "@cogno/core-api";
+import {ApplicationSettingsExtensionContract, FeatureGitSchema} from "@cogno/core-api";
 import {
   FeatureAiSchema,
   FeatureAutocompleteSchema,
@@ -19,6 +19,7 @@ const featureSettingsSchemaShape = {
   autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
   ai: FeatureAiSchema.optional(),
+  git: FeatureGitSchema.optional(),
 } as const;
 
 export const defaultFeatureSettingsExtension = {
@@ -46,6 +47,9 @@ export const defaultFeatureSettingsExtension = {
         max_output_chars: 4000,
       },
     },
+    git: {
+      mode: "visible",
+    },
   },
   schemaShape: featureSettingsSchemaShape,
   settingsSections: [
@@ -57,5 +61,6 @@ export const defaultFeatureSettingsExtension = {
     { id: "autocomplete", title: "Autocomplete", order: 600 },
     { id: "search", title: "Search", order: 700 },
     { id: "ai", title: "AI", order: 800 },
+    { id: "git", title: "Git", order: 900 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;

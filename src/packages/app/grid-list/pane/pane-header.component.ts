@@ -19,7 +19,7 @@ import { GridListService } from "../+state/grid-list.service";
           </span>
         }
         <span class="title">{{ title() }}</span>
-        <button class="close" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
+        <button class="close button icon-button" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
           <app-icon name="mdiClose"></app-icon>
         </button>
       </div>
@@ -77,11 +77,10 @@ import { GridListService } from "../+state/grid-list.service";
       width: 20px;
       height: 20px;
       cursor: default;
-      color: var(--foreground-color);
-      background-color: var(--background-color-20l-ct);
       transition: opacity 120ms ease;
-      opacity: 0;
       border: none;
+      opacity: 0.5;
+      background-color: rgba(0,0,0,0);
 
       &:hover {
         opacity: 1 !important;
