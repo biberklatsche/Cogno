@@ -32,7 +32,7 @@ export class AppMenuService {
     }
 
     items.push(this.buildMenuItem("new_window", "New Window"));
-    items.push(this.buildMenuItem("open_config", "Settings..."));
+    items.push(this.buildMenuItem("open_config", "Settings"));
     items.push({ separator: true });
     items.push({
       label: "Documentation",

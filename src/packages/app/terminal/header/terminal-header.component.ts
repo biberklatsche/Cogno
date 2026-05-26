@@ -73,7 +73,7 @@ type HeaderCommandViewModel = {
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 4px 8px 2px 8px;
+      padding: 4px 2px 2px 8px;
       background: #00000000;
       font-family: var(--font-family);
       position: relative;
@@ -142,6 +142,9 @@ type HeaderCommandViewModel = {
 
     .terminal-menu-button {
       flex: 0 0 auto;
+
+      width: 1.6rem;
+      height: 1.6rem;
 
       opacity: 0.5;
       &:hover {

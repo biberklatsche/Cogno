@@ -1,4 +1,4 @@
-import {ApplicationSettingsExtensionContract, FeatureGitSchema} from "@cogno/core-api";
+import { ApplicationSettingsExtensionContract, FeatureGitSchema } from "@cogno/core-api";
 import {
   FeatureAiSchema,
   FeatureAutocompleteSchema,

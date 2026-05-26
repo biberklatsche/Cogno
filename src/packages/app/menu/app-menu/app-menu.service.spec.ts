@@ -55,7 +55,7 @@ describe("AppMenuService", () => {
       expect.objectContaining({ label: "New Window", actionName: "new_window" }),
     );
     expect(menu[4]).toEqual(
-      expect.objectContaining({ label: "Settings...", actionName: "open_config" }),
+      expect.objectContaining({ label: "Settings", actionName: "open_config" }),
     );
   });
 

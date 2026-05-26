@@ -10,7 +10,7 @@ import { ActionKeybindingPipe } from "../../keybinding/pipe/keybinding.pipe";
           <span class="keybinding">{{ 'new_tab' | actionkeybinding }}</span>
           <span class="name">New Window</span>
           <span class="keybinding">{{ 'new_window' | actionkeybinding }}</span>
-          <span class="name">Open Settings...</span>
+          <span class="name">Open Settings</span>
           <span class="keybinding">{{ 'open_config' | actionkeybinding }}</span>
       </div>
   `,

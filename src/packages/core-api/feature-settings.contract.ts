@@ -152,8 +152,8 @@ const aiProviderSchema = z.object({
   auto_detected: z.boolean().optional(),
 });
 
-export const FeatureGitSchema= z.object({
-    mode: aiFeatureModeSchema.optional()
+export const FeatureGitSchema = z.object({
+  mode: aiFeatureModeSchema.optional(),
 });
 
 export const FeatureAiSchema = z.object({
