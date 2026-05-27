@@ -330,10 +330,6 @@ export class TerminalSession {
         actionName: "clear_buffer",
       },
       {
-        label: "Process Info",
-        action: () => this.openProcessInfoDialog(),
-      },
-      {
         label: "Close",
         action: () => {
           this.bus.publish({
@@ -343,6 +339,11 @@ export class TerminalSession {
           });
         },
         actionName: "close_terminal",
+      },
+      { separator: true },
+      {
+        label: "Process Info",
+        action: () => this.openProcessInfoDialog(),
       },
     ];
 
@@ -508,7 +509,7 @@ export class TerminalSession {
     const availableNotificationChannels = this.getAvailableNotificationChannels();
     const items: ContextMenuItem[] = [];
 
-    items.push({ header: true, label: "Command Alerts" });
+    items.push({ header: true, label: "Alerts" });
     items.push({
       label: "Long Commands",
       toggle: true,

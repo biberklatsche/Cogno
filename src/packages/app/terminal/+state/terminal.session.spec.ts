@@ -220,7 +220,7 @@ describe("TerminalSession", () => {
     session.initialize(terminalId, shellProfile);
 
     const items = session.buildHeaderMenu();
-    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Command Alerts" }));
+    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Alerts" }));
     const longRunningCommandToggle = items.find((i) => i.label === "Long Commands");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
     const appToggle = items.find((i) => i.label === "App");
