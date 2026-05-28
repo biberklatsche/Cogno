@@ -511,7 +511,7 @@ export class TerminalSession {
 
     items.push({ header: true, label: "Alerts" });
     items.push({
-      label: "Long Commands",
+      label: "Long Running Commands",
       toggle: true,
       toggled: this.completedCommandNotificationHandler.isLongRunningCommandNotificationEnabled(),
       closeOnSelect: false,

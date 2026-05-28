@@ -221,7 +221,7 @@ describe("TerminalSession", () => {
 
     const items = session.buildHeaderMenu();
     expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Alerts" }));
-    const longRunningCommandToggle = items.find((i) => i.label === "Long Commands");
+    const longRunningCommandToggle = items.find((i) => i.label === "Long Running Commands");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
     const appToggle = items.find((i) => i.label === "App");
     expect(longRunningCommandToggle).toBeDefined();
@@ -307,7 +307,9 @@ describe("TerminalSession", () => {
     } as any);
     session.initialize(terminalId, shellProfile);
 
-    const toggleItem = session.buildHeaderMenu().find((item) => item.label === "Long Commands");
+    const toggleItem = session
+      .buildHeaderMenu()
+      .find((item) => item.label === "Long Running Commands");
     expect(toggleItem?.toggled).toBe(true);
 
     toggleItem?.action?.(toggleItem);
