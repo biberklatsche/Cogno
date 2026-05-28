@@ -49,7 +49,7 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::crypto::encrypt,
             cogno_tauri_core::commands::pty::pty_spawn,
             cogno_tauri_core::commands::pty::pty_write,
-            cogno_tauri_core::commands::pty::pty_execute_shell_action,
+            cogno_tauri_core::commands::pty::pty_execute_line_editor_action,
             cogno_tauri_core::commands::pty::pty_resize,
             cogno_tauri_core::commands::pty::pty_kill,
             cogno_tauri_core::commands::processes::pty_get_process_tree_by_pid,

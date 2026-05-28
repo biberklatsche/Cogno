@@ -13,6 +13,7 @@ export type GitFileStatus = "M" | "A" | "D" | "R" | "?";
 export type GitFile = {
   readonly path: string;
   readonly status: GitFileStatus;
+  readonly isDirectory: boolean;
 };
 
 export type GitStatus = {
@@ -24,12 +25,10 @@ export type GitStatus = {
   readonly untracked: ReadonlyArray<GitFile>;
 };
 
-export type GitError = "not_installed" | "no_repo";
+export type GitError = "not_installed" | "no_repo" | "status_failed" | "no_commits";
 
 @Injectable({ providedIn: "root" })
 export class GitStatusService {
-  private static readonly POLL_INTERVAL_MS = 2500;
-
   private readonly gitStatusSignal = signal<GitStatus | null>(null);
   private readonly gitErrorSignal = signal<GitError | null>(null);
   private readonly loadingSignal = signal(false);
@@ -39,7 +38,6 @@ export class GitStatusService {
   readonly loading = this.loadingSignal.asReadonly();
   readonly stagedCount = computed(() => this.gitStatusSignal()?.staged.length ?? 0);
 
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
   private currentGitRoot: string | null = null;
   private currentShellContext: ShellContextContract | null = null;
   private refreshContextInFlight = false;
@@ -55,29 +53,40 @@ export class GitStatusService {
     merge(this.terminalGateway.focusedTerminalId$, this.terminalGateway.cwdChanges$)
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => {
-        if (this.pollTimer !== null) void this.refreshContext();
+        if (this.active) void this.refreshContext();
       });
 
-    destroyRef.onDestroy(() => this.stopPolling());
+    destroyRef.onDestroy(() => this.stop());
   }
 
-  startPolling(): void {
-    if (this.pollTimer !== null) return;
+  private active = false;
+
+  start(): void {
+    if (this.active) return;
+    this.active = true;
     void this.refreshContext();
-    this.pollTimer = setInterval(() => {
-      void this.refreshContext();
-    }, GitStatusService.POLL_INTERVAL_MS);
   }
 
-  stopPolling(): void {
-    if (this.pollTimer !== null) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
+  stop(): void {
+    this.active = false;
   }
 
   async stageFile(filePath: string): Promise<void> {
     await this.runGitCommand(["add", "--", filePath], "Stage failed");
+  }
+
+  async listFilesInDir(dirPath: string): Promise<GitFile[]> {
+    if (!this.currentGitRoot || !this.currentShellContext) return [];
+    const result = await this.commandRunner.run({
+      cwd: this.currentGitRoot,
+      shellContext: this.currentShellContext,
+      program: "git",
+      args: ["status", "--porcelain=v1", "-uall", "--", dirPath],
+      timeoutMs: 5_000,
+    });
+    if (result.exitCode !== 0) return [];
+    const { unstaged, untracked } = parseGitStatus(result.stdout);
+    return [...unstaged, ...untracked];
   }
 
   async unstageFile(filePath: string): Promise<void> {
@@ -160,7 +169,7 @@ export class GitStatusService {
           cwd: this.currentGitRoot,
           shellContext: this.currentShellContext,
           program: "git",
-          args: ["status", "--porcelain=v1", "--untracked-files=all"],
+          args: ["status", "--porcelain=v1"],
           timeoutMs: 5_000,
         }),
         this.commandRunner.run({
@@ -174,9 +183,17 @@ export class GitStatusService {
 
       if (statusResult.exitCode !== 0) {
         this.gitStatusSignal.set(null);
+        this.gitErrorSignal.set("status_failed");
         return;
       }
 
+      if (branchResult.exitCode !== 0) {
+        this.gitStatusSignal.set(null);
+        this.gitErrorSignal.set("no_commits");
+        return;
+      }
+
+      this.gitErrorSignal.set(null);
       const parsed = parseGitStatus(statusResult.stdout);
       this.gitStatusSignal.set({
         gitRoot: this.currentGitRoot,
@@ -265,15 +282,16 @@ export function parseGitStatus(raw: string): Pick<GitStatus, "staged" | "unstage
     const path = line.slice(3).split("\t")[0];
 
     if (x === "?" && y === "?") {
-      untracked.push({ path, status: "?" });
+      const isDirectory = path.endsWith("/");
+      untracked.push({ path: isDirectory ? path.slice(0, -1) : path, status: "?", isDirectory });
       continue;
     }
 
     if (x && x !== " " && x !== "?") {
-      staged.push({ path, status: toStatus(x) });
+      staged.push({ path, status: toStatus(x), isDirectory: false });
     }
     if (y && y !== " " && y !== "?") {
-      unstaged.push({ path, status: toStatus(y) });
+      unstaged.push({ path, status: toStatus(y), isDirectory: false });
     }
   }
 

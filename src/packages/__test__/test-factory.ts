@@ -3,6 +3,7 @@ import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { vi } from "vitest";
 import { AppBus } from "../app/app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
+import { TerminalActivityService } from "../app/common/terminal-activity/terminal-activity.service";
 import type { TerminalId } from "../app/grid-list/+model/model";
 import { GridListService } from "../app/grid-list/+state/grid-list.service";
 import type { TerminalComponentFactory } from "../app/grid-list/+state/terminal-component.factory";
@@ -90,6 +91,8 @@ export function getTerminalSession(): TerminalSession {
       getAppWiringService(),
       getContextMenuOverlayService(),
       getNotificationTargetResolverService() as any,
+      {} as any,
+      new TerminalActivityService(),
     );
   }
   return terminalSession;

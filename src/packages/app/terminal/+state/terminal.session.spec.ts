@@ -10,6 +10,7 @@ import type { AppBus } from "../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import type { DialogService } from "../../common/dialog";
 import { DialogRef } from "../../common/dialog/dialog-ref";
+import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../config/+models/shell-config";
 import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
@@ -134,6 +135,8 @@ describe("TerminalSession", () => {
       wiringService,
       contextMenuOverlayService,
       notificationTargetResolverService as NotificationTargetResolverService,
+      {} as any,
+      new TerminalActivityService(),
     );
   });
 
@@ -148,6 +151,8 @@ describe("TerminalSession", () => {
       wiringService,
       { openContextForElement: vi.fn() },
       notificationTargetResolverService as NotificationTargetResolverService,
+      {} as any,
+      new TerminalActivityService(),
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
@@ -161,7 +166,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
     expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-    expect(rendererInstance.register).toHaveBeenCalledTimes(15);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(16);
   });
 
   it("should enable shell integration features if configured", () => {
@@ -173,7 +178,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance =
       vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-    expect(rendererInstance.register).toHaveBeenCalledTimes(17);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(18);
     expect(preloadForShellIntegrationMock).toHaveBeenCalledWith("Bash");
   });
 
@@ -183,7 +188,7 @@ describe("TerminalSession", () => {
     expect(items.length).toBeGreaterThan(0);
     expect(items.find((i) => i.label === "Paste")).toBeDefined();
     expect(items.find((i) => i.label === "Maximize")).toBeDefined();
-    expect(items.find((i) => i.label === "Process Info")).toBeUndefined();
+    expect(items.find((i) => i.label === "Process Info")).toBeDefined();
     expect(items.find((i) => i.label?.includes("Notifications"))).toBeUndefined();
   });
 
@@ -215,12 +220,9 @@ describe("TerminalSession", () => {
     session.initialize(terminalId, shellProfile);
 
     const items = session.buildHeaderMenu();
-    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Command Alerts" }));
-    const longRunningCommandToggle = items.find((i) => i.label === "Long Commands");
+    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Alerts" }));
+    const longRunningCommandToggle = items.find((i) => i.label === "Long Running Commands");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
-    expect(items[items.findIndex((i) => i.label === "Process Info") - 1]).toEqual(
-      expect.objectContaining({ separator: true }),
-    );
     const appToggle = items.find((i) => i.label === "App");
     expect(longRunningCommandToggle).toBeDefined();
     expect(longRunningCommandToggle?.toggle).toBe(true);
@@ -249,7 +251,6 @@ describe("TerminalSession", () => {
     expect(items.find((item) => item.label === "Scroll to Top")).toBeUndefined();
     expect(items.find((item) => item.label === "Scroll to Bottom")).toBeUndefined();
     expect(items.find((item) => item.label === "Filter Block")).toBeUndefined();
-    expect(items[items.length - 1]).toEqual(expect.objectContaining({ label: "Process Info" }));
   });
 
   it("should include command menu items in the header menu for the first command out of view", () => {
@@ -306,7 +307,9 @@ describe("TerminalSession", () => {
     } as any);
     session.initialize(terminalId, shellProfile);
 
-    const toggleItem = session.buildHeaderMenu().find((item) => item.label === "Long Commands");
+    const toggleItem = session
+      .buildHeaderMenu()
+      .find((item) => item.label === "Long Running Commands");
     expect(toggleItem?.toggled).toBe(true);
 
     toggleItem?.action?.(toggleItem);
@@ -397,7 +400,9 @@ describe("TerminalSession", () => {
 
   it("should close process info dialog when terminal session is disposed", () => {
     session.initialize(terminalId, shellProfile);
-    const processInfoItem = session.buildHeaderMenu().find((item) => item.label === "Process Info");
+    const processInfoItem = session
+      .buildContextMenu()
+      .find((item) => item.label === "Process Info");
 
     processInfoItem?.action?.();
     expect(openDialogMock).toHaveBeenCalledTimes(1);

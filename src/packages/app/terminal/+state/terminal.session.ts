@@ -6,6 +6,7 @@ import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { DialogRef, DialogService } from "../../common/dialog";
 import { IDisposable } from "../../common/models/models";
+import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
 import { PaneMaximizedChangedEvent } from "../../grid-list/+bus/events";
@@ -23,6 +24,7 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { AiAgentResumeActionHandler } from "./handler/ai-agent-resume-action.handler";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { CursorHandler } from "./handler/cursor.handler";
@@ -75,6 +77,7 @@ export class TerminalSession {
     private contextMenuOverlayService: ContextMenuOverlayService,
     private notificationTargetResolverService: NotificationTargetResolverService,
     private readonly opener: Opener,
+    private readonly terminalActivity: TerminalActivityService,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.renderer = new Renderer(this.configService.config);
@@ -128,7 +131,13 @@ export class TerminalSession {
     );
     this.disposables.push(
       this.renderer.register(
-        new PtyHandler(this.terminalId, this.pty, this.shellProfile, this.bus),
+        new PtyHandler(
+          this.terminalId,
+          this.pty,
+          this.shellProfile,
+          this.bus,
+          this.terminalActivity,
+        ),
       ),
     );
     this.disposables.push(
@@ -170,6 +179,11 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager, this.opener)));
+    this.disposables.push(
+      this.renderer.register(
+        new AiAgentResumeActionHandler(this.pty, this.configService.config.ai?.resume_pattern),
+      ),
+    );
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
     const shellDefinition = this.shellProfile.enable_shell_integration
@@ -326,6 +340,11 @@ export class TerminalSession {
         },
         actionName: "close_terminal",
       },
+      { separator: true },
+      {
+        label: "Process Info",
+        action: () => this.openProcessInfoDialog(),
+      },
     ];
 
     if (this.stateManager.hasSelection) {
@@ -342,12 +361,7 @@ export class TerminalSession {
   }
 
   buildHeaderMenu(): ContextMenuItem[] {
-    const items: ContextMenuItem[] = this.buildNotificationContextMenuItems();
-    items.push({
-      label: "Process Info",
-      action: () => this.openProcessInfoDialog(),
-    });
-    return items;
+    return this.buildNotificationContextMenuItems();
   }
 
   buildHeaderCommandMenu(): ContextMenuItem[] {
@@ -495,9 +509,9 @@ export class TerminalSession {
     const availableNotificationChannels = this.getAvailableNotificationChannels();
     const items: ContextMenuItem[] = [];
 
-    items.push({ header: true, label: "Command Alerts" });
+    items.push({ header: true, label: "Alerts" });
     items.push({
-      label: "Long Commands",
+      label: "Long Running Commands",
       toggle: true,
       toggled: this.completedCommandNotificationHandler.isLongRunningCommandNotificationEnabled(),
       closeOnSelect: false,
@@ -523,9 +537,6 @@ export class TerminalSession {
           this.toggleSessionNotificationChannel(notificationChannel.id, item),
       });
     }
-
-    items.push({ separator: true });
-
     return items;
   }
 

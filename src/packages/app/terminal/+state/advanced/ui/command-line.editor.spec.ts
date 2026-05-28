@@ -24,7 +24,7 @@ describe("CommandLineEditor", () => {
     mockBus = new AppBus();
     mockPty = {
       write: vi.fn(),
-      executeShellAction: vi.fn(),
+      executeLineEditorAction: vi.fn(),
       resize: vi.fn(),
       kill: vi.fn(),
       onData: vi.fn(),
@@ -74,7 +74,7 @@ describe("CommandLineEditor", () => {
 
     mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
 
-    expect(mockPty.executeShellAction).toHaveBeenCalledWith("clearLineToEnd");
+    expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("clearLineToEnd");
   });
 
   it("should use native shell action for autocomplete replacement when defined", () => {
@@ -89,7 +89,7 @@ describe("CommandLineEditor", () => {
       path: ["app", "terminal"],
     });
 
-    expect(mockPty.executeShellAction).toHaveBeenCalledWith("replaceCurrentInput", {
+    expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
       text: "pnpm run build",
       cursorIndex: 4,
     });
@@ -368,7 +368,7 @@ describe("CommandLineEditor", () => {
       const result = customKeyHandler(event);
 
       expect(result).toBe(false);
-      expect(mockPty.executeShellAction).toHaveBeenCalledWith("replaceCurrentInput", {
+      expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
         text: " world",
         cursorIndex: 0,
       });
@@ -488,7 +488,7 @@ describe("CommandLineEditor", () => {
       const result = customKeyHandler(event);
 
       expect(result).toBe(false);
-      expect(mockPty.executeShellAction).toHaveBeenCalledWith("replaceCurrentInput", {
+      expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
         text: "hello x",
         cursorIndex: 7,
       });

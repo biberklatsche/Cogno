@@ -362,7 +362,6 @@ export class TabListService {
         systemTitle: config.systemTitle ?? "Shell",
         userTitle: config.userTitle,
         isActive: config.isActive ?? false,
-        isBusy: false,
         activeShellType: "unknown",
       };
       return tab;
@@ -490,13 +489,13 @@ export class TabListService {
 
   private applyTabBusyState(workspaceIdentifier: string, tabId: TabId): void {
     const tabList = this.getTabListForWorkspace(workspaceIdentifier);
-    const hasBusyTerminalInTab = Array.from(this.busyTerminalStateByTerminalId.values()).some(
-      (busyTerminalState) =>
-        busyTerminalState.workspaceIdentifier === workspaceIdentifier &&
-        busyTerminalState.tabId === tabId,
-    );
+    const busyTerminalIds = Array.from(this.busyTerminalStateByTerminalId.entries())
+      .filter(
+        ([, state]) => state.workspaceIdentifier === workspaceIdentifier && state.tabId === tabId,
+      )
+      .map(([terminalId]) => terminalId);
     const updatedTabList = tabList.map((tab) =>
-      tab.id === tabId ? { ...tab, isBusy: hasBusyTerminalInTab } : tab,
+      tab.id === tabId ? { ...tab, busyTerminalIds } : tab,
     );
     this.setTabListForWorkspace(workspaceIdentifier, updatedTabList);
   }

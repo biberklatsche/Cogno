@@ -1,6 +1,6 @@
 import { Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { IconComponent } from "@cogno/core-ui";
 import { map } from "rxjs";
 import { timespan } from "../../common/timespan/timespan";
 import { ConfigService } from "../../config/+state/config.service";
@@ -18,7 +18,7 @@ type HeaderCommandViewModel = {
 @Component({
   selector: "app-terminal-header",
   standalone: true,
-  imports: [IconComponent, TooltipDirective],
+  imports: [IconComponent],
   template: `
     <div class="terminal-header">
       @if (visibleProgress(); as currentProgress) {
@@ -55,17 +55,14 @@ type HeaderCommandViewModel = {
           <span class="command">&nbsp;</span>
         }
       </span>
-      <span class="header-actions">
-        @if (isNotificationBadgeVisible()) {
-          <span class="notification-indicator" appTooltip="New terminal notification">
-            <app-icon name="mdiBell"></app-icon>
-          </span>
-        }
+      <span class="header-actions" >
         <button
           class="button icon-button terminal-menu-button"
           type="button"
+          aria-label="Open notification settings"
+          [class.hasNotification]="isNotificationBadgeVisible()"
           (click)="openMenu($event)">
-            <app-icon name="mdiDotsVertical"></app-icon>
+            <app-icon [name]="isNotificationBadgeVisible() ? 'mdiBellBadge' : 'mdiBellCog'"></app-icon>
         </button>
       </span>
     </div>
@@ -76,7 +73,7 @@ type HeaderCommandViewModel = {
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 4px 8px 2px 8px;
+      padding: 4px 2px 2px 8px;
       background: #00000000;
       font-family: var(--font-family);
       position: relative;
@@ -112,12 +109,6 @@ type HeaderCommandViewModel = {
       flex: 1;
     }
     
-    .cwd {
-      font-size: .8rem;
-      color: var(--foreground-color);
-      opacity: 0.8;
-    }
-    
     .command {
       color: var(--foreground-color);
       font-size: 1rem;
@@ -133,6 +124,7 @@ type HeaderCommandViewModel = {
       align-items: center;
       gap: 4px;
       margin-left: auto;
+     
     }
 
     .command-menu-button {
@@ -150,15 +142,18 @@ type HeaderCommandViewModel = {
 
     .terminal-menu-button {
       flex: 0 0 auto;
-    }
 
-    .notification-indicator {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--foreground-color-10t);
-      width: 15px;
-      height: 15px;
+      width: 1.6rem;
+      height: 1.6rem;
+
+      opacity: 0.5;
+      &:hover {
+        opacity: 1;
+      }
+
+      &.hasNotification {
+        opacity: 1;
+      }
     }
 
     .meta {

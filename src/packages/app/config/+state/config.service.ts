@@ -171,6 +171,9 @@ export class RealConfigService extends ConfigService {
       if (event.payload === "open_config") {
         await Opener.openPath(Environment.configFilePath());
       }
+      if (event.payload === "open_documentation") {
+        await Opener.openUrl("https://cogno.rocks/docs/getting-started/");
+      }
     });
 
     this.appBus.on$(ActionFired.listener()).subscribe(async (event) => {

@@ -1,6 +1,7 @@
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { IDisposable } from "../../../common/models/models";
+import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
 import { ShellProfile } from "../../../config/+models/shell-config";
 import { TerminalId } from "../../../grid-list/+model/model";
 import { IPty } from "../pty/pty";
@@ -18,6 +19,7 @@ export class PtyHandler implements ITerminalHandler {
     private _pty: IPty,
     private _shellProfile: ShellProfile,
     private _bus: AppBus,
+    private _terminalActivity?: TerminalActivityService,
   ) {}
 
   dispose(): void {
@@ -34,6 +36,7 @@ export class PtyHandler implements ITerminalHandler {
       this._disposables.push(terminal.onData((data) => this._pty?.write(data)));
       this._disposables.push(
         this._pty?.onData((data) => {
+          this._terminalActivity?.emit(this._terminalId);
           const isFirst = !this._firstWriteEvent;
           if (isFirst) {
             this._firstWriteEvent = true;

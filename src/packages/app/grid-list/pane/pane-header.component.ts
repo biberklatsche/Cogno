@@ -2,23 +2,24 @@ import { DOCUMENT } from "@angular/common";
 import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { DragPreviewService, IconComponent } from "@cogno/core-ui";
+import { BusyIndicatorComponent } from "../../common/busy-indicator/busy-indicator.component";
 import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
 
 @Component({
   selector: "app-pane-header",
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, BusyIndicatorComponent],
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
         @if (isBusy()) {
           <span class="busy-indicator">
-            <app-icon name="mdiSpeedometer"></app-icon>
+            <app-busy-indicator [terminalIds]="terminalIdAsArray()" [pauseInBackground]="true"></app-busy-indicator>
           </span>
         }
         <span class="title">{{ title() }}</span>
-        <button class="close" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
+        <button class="close button icon-button" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
           <app-icon name="mdiClose"></app-icon>
         </button>
       </div>
@@ -55,22 +56,14 @@ import { GridListService } from "../+state/grid-list.service";
       position: absolute;
       left: 8px;
       top: 50%;
-      padding: 2px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 2px;
-      width: 20px;
-      height: 20px;
+      width: 14px;
+      height: 12px;
       pointer-events: none;
       color: color-mix(in srgb, var(--foreground-color) 60%, transparent);
-      background: transparent;
       transform: translateY(-50%);
-
-      app-icon {
-        width: 16px;
-        height: 16px;
-      }
     }
 
     .close {
@@ -84,11 +77,10 @@ import { GridListService } from "../+state/grid-list.service";
       width: 20px;
       height: 20px;
       cursor: default;
-      color: var(--foreground-color);
-      background-color: var(--background-color-20l-ct);
       transition: opacity 120ms ease;
-      opacity: 0;
       border: none;
+      opacity: 0.5;
+      background-color: rgba(0,0,0,0);
 
       &:hover {
         opacity: 1 !important;
@@ -110,6 +102,7 @@ export class PaneHeaderComponent implements OnDestroy {
   title = input.required<string>();
   terminalId = input.required<string>();
   isBusy = input.required<boolean>();
+  protected readonly terminalIdAsArray = computed(() => [this.terminalId()]);
 
   private readonly activeGridIsSplit = toSignal(this.gridListService.activeGridIsSplit$, {
     initialValue: false,

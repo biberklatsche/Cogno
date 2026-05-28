@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  signal,
+  untracked,
+} from "@angular/core";
 import { Opener } from "@cogno/core-api";
 import { Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
@@ -9,6 +16,8 @@ type SelectedFile = {
   file: GitFile;
   isStaged: boolean;
 };
+
+type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
 
 @Component({
   selector: "app-git-side",
@@ -89,7 +98,7 @@ type SelectedFile = {
                           <app-icon [name]="fileStatusIcon(file)"></app-icon>
                         </span>
                         <div class="file-name-group">
-                          <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
+                          <span class="file-path" [appTooltip]="file.path">{{ fileName(file.path) }}</span>
                           @if (file.status !== 'D') {
                             <button
                               type="button"
@@ -149,75 +158,116 @@ type SelectedFile = {
                 </div>
                 @if (unstagedExpanded()) {
                   <ul class="file-list">
-                    @for (file of changeFiles(); track file.path) {
-                      <li
-                        class="file-item unstaged"
-                        [class.selected]="isSelected(file, false)"
-                        (click)="selectFile(file, false)"
-                      >
-                        <span
-                          class="status-badge"
-                          [class.status-edited]="isEditedStatus(file)"
-                          [class.status-added]="isAddedStatus(file)"
-                          [class.status-removed]="isRemovedStatus(file)"
+                    @for (item of displayChangeItems(); track item.file.path) {
+                      @if (item.kind === 'dir') {
+                        <li
+                          class="file-item unstaged"
+                          [class.selected]="isSelected(item.file, false)"
+                          (click)="selectFile(item.file, false)"
                         >
-                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
-                        </span>
-                        <div class="file-name-group">
-                          <span class="file-path" [title]="file.path">{{ fileName(file.path) }}</span>
-                          <button
-                            type="button"
-                            class="button icon-button file-action-button open-in-editor-btn"
-                            appTooltip="Open in editor"
-                            (click)="$event.stopPropagation(); openInEditor(file)"
-                          >
-                            <app-icon name="mdiOpenInNew"></app-icon>
-                          </button>
-                        </div>
-                        <span class="file-dir">{{ fileDir(file.path) }}</span>
-                        @if (file.status !== '?') {
-                          @if (isDiscardConfirmationPending(file.path)) {
-                            <div
-                              class="file-action-group"
-                              (mouseleave)="cancelDiscardConfirmation()"
-                            >
-                              <button
-                                type="button"
-                                class="button icon-button file-action-button"
-                                appTooltip="Confirm discard changes"
-                                (click)="$event.stopPropagation(); confirmDiscardFile(file.path)"
-                              >
-                                <app-icon name="mdiCheck"></app-icon>
-                              </button>
-                              <button
-                                type="button"
-                                class="button icon-button file-action-button"
-                                appTooltip="Cancel discard changes"
-                                (click)="$event.stopPropagation(); cancelDiscardConfirmation()"
-                              >
-                                <app-icon name="mdiClose"></app-icon>
-                              </button>
-                            </div>
+                          <span class="status-badge status-added">
+                            <app-icon name="mdiFolder"></app-icon>
+                          </span>
+                          <div class="file-name-group">
+                            <span class="file-path" [appTooltip]="item.file.path">{{ fileName(item.file.path) }}</span>
+                          </div>
+                          <span class="file-dir">{{ fileDir(item.file.path) }}</span>
+                          @if (isDirLoading(item.file.path)) {
+                            <span class="file-action-button loading-icon">
+                              <app-icon name="mdiLoading"></app-icon>
+                            </span>
                           } @else {
                             <button
                               type="button"
-                              class="button icon-button file-action-button discard-button"
-                              appTooltip="Discard changes"
-                              (click)="$event.stopPropagation(); requestDiscardConfirmation(file.path)"
+                              class="button icon-button file-action-button"
+                              [appTooltip]="isDirExpanded(item.file.path) ? 'Collapse' : 'Show files'"
+                              (click)="$event.stopPropagation(); toggleDirExpand(item.file)"
                             >
-                              <app-icon name="mdiTrashCanOutline"></app-icon>
+                              <app-icon [name]="isDirExpanded(item.file.path) ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
                             </button>
                           }
-                        }
-                        <button
-                          type="button"
-                          class="button icon-button file-action-button"
-                          appTooltip="Stage"
-                          (click)="$event.stopPropagation(); stageFile(file.path)"
+                          <button
+                            type="button"
+                            class="button icon-button file-action-button"
+                            appTooltip="Stage directory"
+                            (click)="$event.stopPropagation(); stageFile(item.file.path)"
+                          >
+                            <app-icon name="mdiPlus"></app-icon>
+                          </button>
+                        </li>
+                      } @else {
+                        <li
+                          class="file-item unstaged"
+                          [class.dir-child]="item.kind === 'dir-child'"
+                          [class.selected]="isSelected(item.file, false)"
+                          (click)="selectFile(item.file, false)"
                         >
-                          <app-icon name="mdiPlus"></app-icon>
-                        </button>
-                      </li>
+                          <span
+                            class="status-badge"
+                            [class.status-edited]="isEditedStatus(item.file)"
+                            [class.status-added]="isAddedStatus(item.file)"
+                            [class.status-removed]="isRemovedStatus(item.file)"
+                          >
+                            <app-icon [name]="fileStatusIcon(item.file)"></app-icon>
+                          </span>
+                          <div class="file-name-group">
+                            <span class="file-path" [appTooltip]="item.file.path">{{ fileName(item.file.path) }}</span>
+                            @if (!item.file.isDirectory) {
+                              <button
+                                type="button"
+                                class="button icon-button file-action-button open-in-editor-btn"
+                                appTooltip="Open in editor"
+                                (click)="$event.stopPropagation(); openInEditor(item.file)"
+                              >
+                                <app-icon name="mdiOpenInNew"></app-icon>
+                              </button>
+                            }
+                          </div>
+                          <span class="file-dir">{{ fileDir(item.file.path) }}</span>
+                          @if (item.file.status !== '?') {
+                            @if (isDiscardConfirmationPending(item.file.path)) {
+                              <div
+                                class="file-action-group"
+                                (mouseleave)="cancelDiscardConfirmation()"
+                              >
+                                <button
+                                  type="button"
+                                  class="button icon-button file-action-button"
+                                  appTooltip="Confirm discard changes"
+                                  (click)="$event.stopPropagation(); confirmDiscardFile(item.file.path)"
+                                >
+                                  <app-icon name="mdiCheck"></app-icon>
+                                </button>
+                                <button
+                                  type="button"
+                                  class="button icon-button file-action-button"
+                                  appTooltip="Cancel discard changes"
+                                  (click)="$event.stopPropagation(); cancelDiscardConfirmation()"
+                                >
+                                  <app-icon name="mdiClose"></app-icon>
+                                </button>
+                              </div>
+                            } @else {
+                              <button
+                                type="button"
+                                class="button icon-button file-action-button discard-button"
+                                appTooltip="Discard changes"
+                                (click)="$event.stopPropagation(); requestDiscardConfirmation(item.file.path)"
+                              >
+                                <app-icon name="mdiTrashCanOutline"></app-icon>
+                              </button>
+                            }
+                          }
+                          <button
+                            type="button"
+                            class="button icon-button file-action-button"
+                            appTooltip="Stage"
+                            (click)="$event.stopPropagation(); stageFile(item.file.path)"
+                          >
+                            <app-icon name="mdiPlus"></app-icon>
+                          </button>
+                        </li>
+                      }
                     }
                   </ul>
                 }
@@ -252,6 +302,11 @@ type SelectedFile = {
             </section>
           }
         </div>
+      } @else if (gitError() === 'no_commits') {
+        <div class="git-unavailable">
+          <app-icon name="mdiGit"></app-icon>
+          <span>No commits yet</span>
+        </div>
       } @else if (gitError() === 'not_installed') {
         <div class="git-unavailable">
           <app-icon name="mdiAlert"></app-icon>
@@ -261,6 +316,11 @@ type SelectedFile = {
         <div class="git-unavailable">
           <app-icon name="mdiGit"></app-icon>
           <span>Not a git repository</span>
+        </div>
+      } @else if (gitError() === 'status_failed') {
+        <div class="git-unavailable">
+          <app-icon name="mdiAlert"></app-icon>
+          <span>Git status failed</span>
         </div>
       } @else {
         <div class="git-unavailable">
@@ -443,7 +503,6 @@ type SelectedFile = {
         align-items: center;
         gap: 0.4rem;
         padding: 0.2rem 0.5rem 0.2rem 0.75rem;
-        cursor: pointer;
       }
 
       .file-item:hover {
@@ -506,6 +565,23 @@ type SelectedFile = {
         height: 1.75rem;
         padding: 0.25rem;
         color: var(--foreground-color-10t);
+      }
+
+      .dir-child {
+        padding-left: 1.5rem;
+      }
+
+      .loading-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--foreground-color-10t);
+      }
+
+      .loading-icon app-icon {
+        width: 1.15rem;
+        height: 1.15rem;
+        animation: git-diff-spin 1s linear infinite;
       }
 
       .file-action-group {
@@ -626,6 +702,25 @@ export class GitSideComponent {
     ...(this.status()?.unstaged ?? []),
     ...(this.status()?.untracked ?? []),
   ]);
+
+  private readonly expandedDirsSignal = signal<ReadonlySet<string>>(new Set());
+  private readonly dirChildrenSignal = signal<ReadonlyMap<string, readonly GitFile[]>>(new Map());
+  private readonly dirLoadingSignal = signal<ReadonlySet<string>>(new Set());
+
+  readonly displayChangeItems = computed((): ChangeItem[] => {
+    const items: ChangeItem[] = [];
+    const expanded = this.expandedDirsSignal();
+    const children = this.dirChildrenSignal();
+    for (const file of this.changeFiles()) {
+      items.push({ kind: file.isDirectory ? "dir" : "file", file });
+      if (file.isDirectory && expanded.has(file.path)) {
+        for (const child of children.get(file.path) ?? []) {
+          items.push({ kind: "dir-child", file: child });
+        }
+      }
+    }
+    return items;
+  });
   readonly modifiedUnstagedCount = computed(
     () => this.status()?.unstaged.filter((file) => file.status !== "A").length ?? 0,
   );
@@ -656,6 +751,16 @@ export class GitSideComponent {
       const allFiles = [...status.staged, ...status.unstaged, ...status.untracked];
       const stillExists = allFiles.some((f) => f.path === sel.file.path);
       if (!stillExists) this.closeDiff();
+    });
+
+    effect(() => {
+      const status = this.status();
+      if (!status) return;
+      untracked(() => {
+        for (const dirPath of this.expandedDirsSignal()) {
+          void this.fetchDirChildren(dirPath);
+        }
+      });
     });
   }
 
@@ -729,6 +834,7 @@ export class GitSideComponent {
   }
 
   fileStatusIcon(file: GitFile): Icon {
+    if (file.isDirectory) return "mdiFolder";
     if (file.status === "A" || file.status === "?") return "mdiPlus";
     if (file.status === "D") return "mdiMinus";
     return "mdiPencil";
@@ -755,6 +861,13 @@ export class GitSideComponent {
     }
 
     this.selectedFileSignal.set({ file, isStaged });
+
+    if (file.isDirectory) {
+      this.diffLoadingSignal.set(false);
+      this.diffSignal.set(null);
+      return;
+    }
+
     this.diffLoadingSignal.set(true);
     this.diffSignal.set(null);
     void this.loadDiff(file, isStaged);
@@ -774,6 +887,42 @@ export class GitSideComponent {
     const parts = path.split("/");
     if (parts.length <= 1) return "";
     return parts.slice(0, -1).join("/");
+  }
+
+  isDirExpanded(path: string): boolean {
+    return this.expandedDirsSignal().has(path);
+  }
+
+  isDirLoading(path: string): boolean {
+    return this.dirLoadingSignal().has(path);
+  }
+
+  toggleDirExpand(file: GitFile): void {
+    const expanded = new Set(this.expandedDirsSignal());
+    if (expanded.has(file.path)) {
+      expanded.delete(file.path);
+      this.expandedDirsSignal.set(expanded);
+    } else {
+      expanded.add(file.path);
+      this.expandedDirsSignal.set(expanded);
+      void this.fetchDirChildren(file.path);
+    }
+  }
+
+  private async fetchDirChildren(dirPath: string): Promise<void> {
+    const loading = new Set(this.dirLoadingSignal());
+    loading.add(dirPath);
+    this.dirLoadingSignal.set(loading);
+    try {
+      const children = await this.gitStatusService.listFilesInDir(dirPath);
+      const childMap = new Map(this.dirChildrenSignal());
+      childMap.set(dirPath, children);
+      this.dirChildrenSignal.set(childMap);
+    } finally {
+      const loading2 = new Set(this.dirLoadingSignal());
+      loading2.delete(dirPath);
+      this.dirLoadingSignal.set(loading2);
+    }
   }
 
   private async loadDiff(file: GitFile, isStaged: boolean): Promise<void> {

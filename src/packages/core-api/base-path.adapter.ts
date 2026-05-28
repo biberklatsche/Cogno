@@ -32,6 +32,14 @@ export abstract class BasePathAdapter implements IPathAdapter {
       return this.normalizeCognoAbs(`/${drive}/${mWslMount[2] ?? ""}`);
     }
 
+    // POSIX-style Windows path: /C:/path (e.g. output from Git Bash or AI agents on Windows)
+    const mPosixDrive = /^\/([A-Za-z]):(?:\/(.*))?$/.exec(s);
+    if (mPosixDrive) {
+      const drive = mPosixDrive[1].toLowerCase();
+      const rest = (mPosixDrive[2] ?? "").replace(/\\/g, "/");
+      return this.normalizeCognoAbs(`/${drive}/${rest}`);
+    }
+
     if (s.startsWith("/")) {
       return this.normalizeUnixPath(s);
     }

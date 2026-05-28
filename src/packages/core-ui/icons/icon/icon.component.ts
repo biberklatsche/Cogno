@@ -5,6 +5,7 @@ import {
   mdiArrowDown,
   mdiBell,
   mdiBellBadge,
+  mdiBellCog,
   mdiCheck,
   mdiCheckCircle,
   mdiChevronDown,
@@ -17,6 +18,7 @@ import {
   mdiDotsSquare,
   mdiDotsVertical,
   mdiFilter,
+  mdiFolder,
   mdiGit,
   mdiInformation,
   mdiLoading,
@@ -82,6 +84,9 @@ export class IconComponent {
       case "mdiBellBadge":
         this.icon = mdiBellBadge;
         break;
+      case "mdiBellCog":
+        this.icon = mdiBellCog;
+        break;
       case "mdiCheck":
         this.icon = mdiCheck;
         break;
@@ -117,6 +122,9 @@ export class IconComponent {
         break;
       case "mdiFilter":
         this.icon = mdiFilter;
+        break;
+      case "mdiFolder":
+        this.icon = mdiFolder;
         break;
       case "mdiGit":
         this.icon = mdiGit;

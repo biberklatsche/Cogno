@@ -89,8 +89,8 @@ export class ConfigReader {
     applicationSettingsDefinition: ApplicationSettingsDefinition,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
     const defaultConfigWithExtensions = mergeConfigObjects(
-      defaultConfig ?? {},
       applicationSettingsDefinition.defaults,
+      defaultConfig ?? {},
     );
     const mergedConfig = ConfigReader.mergeConfigValues(
       defaultConfigWithExtensions,

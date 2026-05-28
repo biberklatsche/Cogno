@@ -147,7 +147,7 @@ describe("TabListService", () => {
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
-      expect(currentTabs[0].isBusy).toBe(true);
+      expect(currentTabs[0].busyTerminalIds).toContain("terminal-1");
 
       bus.publish({
         path: ["app", "terminal"],
@@ -158,7 +158,7 @@ describe("TabListService", () => {
         },
       });
 
-      expect(currentTabs[0].isBusy).toBe(false);
+      expect(currentTabs[0].busyTerminalIds).toHaveLength(0);
     });
   });
 

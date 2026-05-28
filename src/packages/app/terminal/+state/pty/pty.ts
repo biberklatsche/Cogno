@@ -13,7 +13,7 @@ export interface IPty extends IDisposable {
   resize(dimensions: TerminalDimensions): void;
   onData(listener: (e: string) => void): IDisposable;
   write(data: string): void;
-  executeShellAction(action: string, payload?: object): void;
+  executeLineEditorAction(action: string, payload?: object): void;
   onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable;
   kill(signal?: string): void;
 }
@@ -105,16 +105,16 @@ export class Pty implements IPty {
     );
   }
 
-  executeShellAction(action: string, payload?: object) {
-    if (!this._terminalId) throw Error("Please spawn Pty before executing shell actions.");
-    TauriPty.executeShellAction(this._terminalId, action, payload).catch((error) =>
+  executeLineEditorAction(action: string, payload?: object) {
+    if (!this._terminalId) throw Error("Please spawn Pty before executing line editor actions.");
+    TauriPty.executeLineEditorAction(this._terminalId, action, payload).catch((error) =>
       ErrorReporter.reportException({
         error,
         handled: true,
         source: "Pty",
         context: {
           action,
-          operation: "executeShellAction",
+          operation: "executeLineEditorAction",
           terminalId: this._terminalId,
         },
       }),

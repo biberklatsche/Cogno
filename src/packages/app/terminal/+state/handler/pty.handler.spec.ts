@@ -2,6 +2,7 @@ import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
+import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../../config/+models/shell-config";
 import type { IPty } from "../pty/pty";
 import { PtyHandler } from "./pty.handler";
@@ -31,7 +32,13 @@ describe("PtyHandler", () => {
       kill: vi.fn(),
     } as unknown as IPty;
 
-    handler = new PtyHandler(terminalId, mockPty, shellConfig, mockBus);
+    handler = new PtyHandler(
+      terminalId,
+      mockPty,
+      shellConfig,
+      mockBus,
+      new TerminalActivityService(),
+    );
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
@@ -131,7 +138,13 @@ describe("PtyHandler", () => {
         enable_shell_integration: false,
         load_user_rc: true,
       };
-      handler = new PtyHandler(terminalId, mockPty, powerShellProfile, mockBus);
+      handler = new PtyHandler(
+        terminalId,
+        mockPty,
+        powerShellProfile,
+        mockBus,
+        new TerminalActivityService(),
+      );
 
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());

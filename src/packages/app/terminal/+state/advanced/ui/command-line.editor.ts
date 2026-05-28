@@ -143,7 +143,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
     if (this.lineEditor?.nativeActionsViaShellIntegration?.includes(actionId)) {
-      this._pty.executeShellAction(actionId);
+      this._pty.executeLineEditorAction(actionId);
       return true;
     }
 
@@ -341,7 +341,7 @@ export class CommandLineEditor implements ITerminalHandler {
   private applyAutocompleteSuggestion(inputText: string, cursorIndex: number) {
     if (!this._terminal) return;
     if (this.supportsNativeShellAction("replaceCurrentInput")) {
-      this._pty.executeShellAction("replaceCurrentInput", {
+      this._pty.executeLineEditorAction("replaceCurrentInput", {
         text: inputText,
         cursorIndex,
       });
@@ -405,7 +405,7 @@ export class CommandLineEditor implements ITerminalHandler {
     }
 
     if (this.supportsNativeShellAction("deleteSelection")) {
-      this._pty.executeShellAction("deleteSelection", {
+      this._pty.executeLineEditorAction("deleteSelection", {
         start: range.startIdx,
         length: deleteLength,
       });
@@ -466,7 +466,7 @@ export class CommandLineEditor implements ITerminalHandler {
       input.text.slice(0, range.startIdx) + replacementText + input.text.slice(range.endIdx);
     const nextCursorIndex = range.startIdx + replacementText.length;
 
-    this._pty.executeShellAction("replaceCurrentInput", {
+    this._pty.executeLineEditorAction("replaceCurrentInput", {
       text: nextText,
       cursorIndex: nextCursorIndex,
     });

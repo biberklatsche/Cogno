@@ -1,3 +1,4 @@
+import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { OS } from "@cogno/app-tauri/os";
 import { Opener } from "@cogno/core-api";
 import { Terminal } from "@xterm/xterm";
@@ -14,6 +15,24 @@ type LinkMatch = {
 };
 
 export class LinkHandler implements ITerminalHandler {
+  private static readonly URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`]+/gi;
+  private static readonly PATH_PATTERN =
+    /(?:[A-Za-z]:(?:\\|\/)[^\s<>"'`]+|(?:\\\\|\/\/)[^\s<>"'`]+|\/[A-Za-z]:(?:\/[^\n<>"'`]+)+|\/[^\s<>"'`]+|(?:\.\.?(?:\\|\/))[^\s<>"'`]+|(?:[^/\\\s<>"'`:()[\]{},;=]+(?:[\\/][^\s<>"'`:()[\]{},;=]+)+))/g;
+  private static readonly LEADING_STRIP = new Set(["'", '"', "`", "(", "["]);
+  private static readonly TRAILING_STRIP = new Set([
+    ".",
+    ",",
+    ";",
+    ":",
+    "!",
+    "?",
+    "'",
+    '"',
+    "`",
+    "]",
+    ")",
+  ]);
+
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
 
@@ -24,6 +43,7 @@ export class LinkHandler implements ITerminalHandler {
   ) {}
 
   registerTerminal(terminal: Terminal): IDisposable {
+    this._linkProviderDisposable?.dispose();
     this._terminal = terminal;
     this._linkProviderDisposable = terminal.registerLinkProvider({
       provideLinks: (bufferLineNumber, callback) => {
@@ -52,19 +72,22 @@ export class LinkHandler implements ITerminalHandler {
               this._terminal?.element?.removeAttribute("title");
             },
             activate: (event: MouseEvent, text: string) => {
-              if (!this.isOpenModifierPressed(event)) return;
               event.preventDefault();
-              if (match.kind === "url") {
-                void this._opener.openUrl(text);
-                return;
+              if (this.isOpenModifierPressed(event)) {
+                if (match.kind === "url") {
+                  void this._opener.openUrl(text);
+                  return;
+                }
+                const backendPath = this._pathResolver.resolvePathForOpen(
+                  text,
+                  this._stateManager.state.cwd,
+                  this._stateManager.pathAdapter,
+                );
+                if (!backendPath) return;
+                void this._opener.openPath(backendPath);
+              } else {
+                void Clipboard.writeText(text);
               }
-              const backendPath = this._pathResolver.resolvePathForOpen(
-                text,
-                this._stateManager.state.cwd,
-                this._stateManager.pathAdapter,
-              );
-              if (!backendPath) return;
-              void this._opener.openPath(backendPath);
             },
           })),
         );
@@ -87,14 +110,11 @@ export class LinkHandler implements ITerminalHandler {
 
   private extractMatches(lineText: string): LinkMatch[] {
     const matches: LinkMatch[] = [];
-    const urlPattern = /\bhttps?:\/\/[^\s<>"'`]+/gi;
-    for (const candidate of this.collect(urlPattern, lineText, "url")) {
+    for (const candidate of this.collect(LinkHandler.URL_PATTERN, lineText, "url")) {
       matches.push(candidate);
     }
 
-    const pathPattern =
-      /(?:[A-Za-z]:(?:\\|\/)[^\s<>"'`]+|(?:\\\\|\/\/)[^\s<>"'`]+|\/[^\s<>"'`]+|(?:\.\.?(?:\\|\/))[^\s<>"'`]+|(?:[^/\\\s<>"'`:()[\]{},;=]+(?:[\\/][^\s<>"'`:()[\]{},;=]+)+))/g;
-    for (const candidate of this.collect(pathPattern, lineText, "path")) {
+    for (const candidate of this.collect(LinkHandler.PATH_PATTERN, lineText, "path")) {
       if (matches.some((existing) => this.overlaps(existing, candidate))) continue;
       if (
         !this._pathResolver.resolvePathForOpen(
@@ -131,8 +151,8 @@ export class LinkHandler implements ITerminalHandler {
   private trimToken(token: string): { text: string; leadingTrim: number; trailingTrim: number } {
     let start = 0;
     let end = token.length;
-    while (start < end && /['"`([]/.test(token[start])) start++;
-    while (end > start && /[.,;:!?'"`\])]/.test(token[end - 1])) end--;
+    while (start < end && LinkHandler.LEADING_STRIP.has(token[start])) start++;
+    while (end > start && LinkHandler.TRAILING_STRIP.has(token[end - 1])) end--;
     return {
       text: token.slice(start, end),
       leadingTrim: start,
@@ -145,7 +165,7 @@ export class LinkHandler implements ITerminalHandler {
   }
 
   private get hoverHint(): string {
-    return `${this.openModifierLabel} + Click to open`;
+    return `Click to copy · ${this.openModifierLabel}+Click to open`;
   }
 
   private get openModifierLabel(): string {

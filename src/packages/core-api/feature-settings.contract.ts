@@ -152,9 +152,19 @@ const aiProviderSchema = z.object({
   auto_detected: z.boolean().optional(),
 });
 
+export const FeatureGitSchema = z.object({
+  mode: aiFeatureModeSchema.optional(),
+});
+
 export const FeatureAiSchema = z.object({
   mode: aiFeatureModeSchema.optional(),
   active_provider: z.string().optional(),
+  resume_pattern: z
+    .string()
+    .optional()
+    .describe(
+      "Regex pattern (source only, no flags) to detect AI CLI resume commands in terminal output.",
+    ),
   providers: z.record(z.string(), aiProviderSchema).optional(),
   request: z
     .object({

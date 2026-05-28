@@ -93,8 +93,10 @@ describe("Pty", () => {
 
   it("should execute shell action if spawned", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions);
-    pty.executeShellAction("clearLine", { start: 0 });
-    expect(TauriPty.executeShellAction).toHaveBeenCalledWith(terminalId, "clearLine", { start: 0 });
+    pty.executeLineEditorAction("clearLine", { start: 0 });
+    expect(TauriPty.executeLineEditorAction).toHaveBeenCalledWith(terminalId, "clearLine", {
+      start: 0,
+    });
   });
 
   it("should listen to data", async () => {
