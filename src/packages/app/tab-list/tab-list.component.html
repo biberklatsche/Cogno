@@ -1,6 +1,6 @@
 <nav class="tab-list" data-tauri-drag-region>
     @for (tab of tabs | async; track tab.id) {
-        @let tabAnimationCount = (busyIndicatorService.forTab$(tab.id) | async)?.length ?? 0;
+        @let tabAnimationCount = (getTabAnimationCount$(tab.id) | async) ?? 0;
         <button
                 type="button"
                 class="tab"

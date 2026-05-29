@@ -1,10 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { BAR_COUNT, MAX_HEIGHT, MIN_HEIGHT } from "../common/busy-indicator/busy-indicator.constants";
 import { AppBus } from "../app-bus/app-bus";
 
-const BAR_COUNT = 5;
-const MIN_HEIGHT = 1;
-const MAX_HEIGHT = 4;
 const FRAME_COUNT = 6;
 
 function generateSineKeyframes(): number[][] {

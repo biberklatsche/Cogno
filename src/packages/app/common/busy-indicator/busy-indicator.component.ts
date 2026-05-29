@@ -2,13 +2,11 @@ import { DOCUMENT } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, Inject, input, signal } from "@angular/core";
 import { TabId } from "@cogno/core-api";
 import { TerminalId } from "../../grid-list/+model/model";
+import { BAR_COUNT, MAX_HEIGHT, MIN_HEIGHT } from "./busy-indicator.constants";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
 const FRAME_INTERVAL_MS = 50;
 const KEYFRAME_DURATION_MS = 300;
-const MAX_HEIGHT = 4;
-const MIN_HEIGHT = 1;
-const BAR_COUNT = 5;
 const BLOCK_INDICES = Array.from({ length: MAX_HEIGHT }, (_, i) => i);
 const LERP_FACTOR = 0.18;
 const IDLE_CONVERGE_THRESHOLD = 0.04;
@@ -109,7 +107,7 @@ export class BusyIndicatorComponent {
     });
   }
 
-  blockOpacity(colHeight: number, blockIndex: number): number {
+  protected blockOpacity(colHeight: number, blockIndex: number): number {
     return Math.max(0, Math.min(1, colHeight - blockIndex));
   }
 

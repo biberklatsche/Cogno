@@ -1,7 +1,8 @@
-import { AsyncPipe, DOCUMENT } from "@angular/common";
+import { DOCUMENT } from "@angular/common";
 import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
-import { toSignal } from "@angular/core/rxjs-interop";
+import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { DragPreviewService, IconComponent } from "@cogno/core-ui";
+import { switchMap } from "rxjs";
 import { BusyIndicatorComponent } from "../../common/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "../../common/busy-indicator/busy-indicator.service";
 import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
@@ -10,16 +11,14 @@ import { GridListService } from "../+state/grid-list.service";
 @Component({
   selector: "app-pane-header",
   standalone: true,
-  imports: [IconComponent, BusyIndicatorComponent, AsyncPipe],
+  imports: [IconComponent, BusyIndicatorComponent],
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
-        @if (busyIndicatorService.forTerminal$(terminalId()) | async; as regs) {
-          @if (regs.length > 0) {
-            <span class="busy-indicator">
-              <app-busy-indicator targetKind="terminal" [targetId]="terminalId()" [pauseInBackground]="true"></app-busy-indicator>
-            </span>
-          }
+        @if (hasBusyRegistrations()) {
+          <span class="busy-indicator">
+            <app-busy-indicator targetKind="terminal" [targetId]="terminalId()" [pauseInBackground]="true"></app-busy-indicator>
+          </span>
         }
         <span class="title">{{ title() }}</span>
         <button class="close button icon-button" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
@@ -113,11 +112,19 @@ export class PaneHeaderComponent implements OnDestroy {
   );
   shouldShow = computed(() => this.activeGridIsSplit() && !this.isInFullScreenMode());
 
+  private readonly busyRegistrations = toSignal(
+    toObservable(this.terminalId).pipe(
+      switchMap((id) => this.busyIndicatorService.forTerminal$(id)),
+    ),
+    { initialValue: [] },
+  );
+  readonly hasBusyRegistrations = computed(() => this.busyRegistrations().length > 0);
+
   constructor(
     private gridListService: GridListService,
     private terminalFullscreenService: TerminalFullscreenService,
     private dragPreviewService: DragPreviewService,
-    readonly busyIndicatorService: BusyIndicatorService,
+    private readonly busyIndicatorService: BusyIndicatorService,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 

@@ -2,7 +2,7 @@ import { CommonModule } from "@angular/common";
 import { Component, ElementRef, effect, OnDestroy, Signal, ViewChild } from "@angular/core";
 import { TabId } from "@cogno/core-api";
 import { DragPreviewService, Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
-import { Observable } from "rxjs";
+import { map, Observable, Subscription } from "rxjs";
 import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
 import { IdCreator } from "../common/id-creator/id-creator";
@@ -33,6 +33,9 @@ import { TabListService } from "./+state/tab-list.service";
 export class TabListComponent implements OnDestroy {
   private static readonly minimumDragStartDistanceInPixels = 4;
 
+  private readonly tabAnimationCountCache = new Map<TabId, Observable<number>>();
+  private readonly tabCacheCleanupSub: Subscription;
+
   tabs: Observable<Tab[]>;
   readonly showRename: Signal<TabId | undefined>;
   isDraggingTab = false;
@@ -57,6 +60,13 @@ export class TabListComponent implements OnDestroy {
     this.tabs = this.tabListService.tabs$;
     this.showRename = this.tabListService.showRename$;
 
+    this.tabCacheCleanupSub = this.tabListService.tabs$.subscribe((tabs) => {
+      const currentIds = new Set(tabs.map((t) => t.id));
+      for (const id of this.tabAnimationCountCache.keys()) {
+        if (!currentIds.has(id)) this.tabAnimationCountCache.delete(id);
+      }
+    });
+
     // Focus the rename input when it appears
     effect(() => {
       const show = this.showRename();
@@ -78,6 +88,7 @@ export class TabListComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.tabCacheCleanupSub.unsubscribe();
     this.removeWindowPointerListeners();
     this.dragPreviewService.stopDragPreview();
   }
@@ -93,6 +104,15 @@ export class TabListComponent implements OnDestroy {
       default:
         return "mdiConsole";
     }
+  }
+
+  getTabAnimationCount$(tabId: TabId): Observable<number> {
+    let obs = this.tabAnimationCountCache.get(tabId);
+    if (!obs) {
+      obs = this.busyIndicatorService.forTab$(tabId).pipe(map((regs) => regs.length));
+      this.tabAnimationCountCache.set(tabId, obs);
+    }
+    return obs;
   }
 
   addTab() {
