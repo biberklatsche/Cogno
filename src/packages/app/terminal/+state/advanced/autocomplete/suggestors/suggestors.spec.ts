@@ -4,8 +4,8 @@ import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import type { QueryContext } from "../autocomplete.types";
+import { CommandPatternSuggestor } from "./command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
-import { HistoryCommandPatternSuggestor } from "./history-command-pattern.suggestor";
 import { HistoryDirectorySuggestor } from "./history-directory.suggestor";
 
 const shellContext: ShellContextContract = { shellType: "Bash", backendOs: "macos" };
@@ -494,7 +494,7 @@ describe("Autocomplete History Suggestors", () => {
     expect(result[0].description).toBe("executed in current directory");
   });
 
-  it("HistoryCommandPatternSuggestor returns learned pattern suggestions", async () => {
+  it("CommandPatternSuggestor returns confirmed pattern suggestions", async () => {
     const persistence = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
@@ -512,9 +512,7 @@ describe("Autocomplete History Suggestors", () => {
           nonOptionStableTokenCount: 2,
           variableSlotCount: 1,
           lastSeenAt: Date.now(),
-          shownCount: 0,
-          selectedCount: 0,
-          lastShownAt: undefined,
+          selectedCount: 1,
           lastSelectedAt: undefined,
           slotStatistics: [
             {
@@ -529,7 +527,7 @@ describe("Autocomplete History Suggestors", () => {
       ]),
     } as unknown as TerminalHistoryPersistenceService;
 
-    const suggestor = new HistoryCommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(persistence);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git comm",
@@ -551,7 +549,7 @@ describe("Autocomplete History Suggestors", () => {
     });
   });
 
-  it("HistoryCommandPatternSuggestor rejects overly generic patterns", async () => {
+  it("CommandPatternSuggestor rejects overly generic patterns", async () => {
     const persistence = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
@@ -567,9 +565,7 @@ describe("Autocomplete History Suggestors", () => {
           nonOptionStableTokenCount: 1,
           variableSlotCount: 1,
           lastSeenAt: Date.now(),
-          shownCount: 0,
           selectedCount: 0,
-          lastShownAt: undefined,
           lastSelectedAt: undefined,
           slotStatistics: [
             {
@@ -584,7 +580,7 @@ describe("Autocomplete History Suggestors", () => {
       ]),
     } as unknown as TerminalHistoryPersistenceService;
 
-    const suggestor = new HistoryCommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(persistence);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git",
@@ -600,7 +596,7 @@ describe("Autocomplete History Suggestors", () => {
     expect(result).toEqual([]);
   });
 
-  it("HistoryCommandPatternSuggestor suppresses patterns that were shown often but never selected", async () => {
+  it("CommandPatternSuggestor suppresses patterns that were shown often but never selected", async () => {
     const persistence = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
@@ -618,9 +614,7 @@ describe("Autocomplete History Suggestors", () => {
           nonOptionStableTokenCount: 2,
           variableSlotCount: 1,
           lastSeenAt: Date.now(),
-          shownCount: 8,
           selectedCount: 0,
-          lastShownAt: Date.now(),
           lastSelectedAt: undefined,
           slotStatistics: [
             {
@@ -635,7 +629,7 @@ describe("Autocomplete History Suggestors", () => {
       ]),
     } as unknown as TerminalHistoryPersistenceService;
 
-    const suggestor = new HistoryCommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(persistence);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git commit",
@@ -651,7 +645,7 @@ describe("Autocomplete History Suggestors", () => {
     expect(result).toEqual([]);
   });
 
-  it("HistoryCommandPatternSuggestor ages out stale unselected patterns", async () => {
+  it("CommandPatternSuggestor ages out stale unselected patterns", async () => {
     const now = Date.now();
     const persistence = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
@@ -670,9 +664,7 @@ describe("Autocomplete History Suggestors", () => {
           nonOptionStableTokenCount: 2,
           variableSlotCount: 1,
           lastSeenAt: now - 90 * 24 * 60 * 60 * 1000,
-          shownCount: 1,
           selectedCount: 0,
-          lastShownAt: now - 60 * 24 * 60 * 60 * 1000,
           lastSelectedAt: undefined,
           slotStatistics: [
             {
@@ -687,7 +679,7 @@ describe("Autocomplete History Suggestors", () => {
       ]),
     } as unknown as TerminalHistoryPersistenceService;
 
-    const suggestor = new HistoryCommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(persistence);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git commit",
@@ -703,7 +695,7 @@ describe("Autocomplete History Suggestors", () => {
     expect(result).toEqual([]);
   });
 
-  it("HistoryCommandPatternSuggestor keeps selected patterns visible despite age", async () => {
+  it("CommandPatternSuggestor keeps selected patterns visible despite age", async () => {
     const now = Date.now();
     const persistence = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
@@ -722,9 +714,7 @@ describe("Autocomplete History Suggestors", () => {
           nonOptionStableTokenCount: 2,
           variableSlotCount: 1,
           lastSeenAt: now - 30 * 24 * 60 * 60 * 1000,
-          shownCount: 12,
           selectedCount: 4,
-          lastShownAt: now - 3 * 24 * 60 * 60 * 1000,
           lastSelectedAt: now - 2 * 24 * 60 * 60 * 1000,
           slotStatistics: [
             {
@@ -739,7 +729,7 @@ describe("Autocomplete History Suggestors", () => {
       ]),
     } as unknown as TerminalHistoryPersistenceService;
 
-    const suggestor = new HistoryCommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(persistence);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git commit",

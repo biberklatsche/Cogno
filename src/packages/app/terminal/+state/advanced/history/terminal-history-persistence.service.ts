@@ -4,7 +4,7 @@ import { IPathAdapter } from "@cogno/core-api";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { ShellContext } from "../model/models";
-import { LearnedCommandPattern } from "./command-pattern.models";
+import { CommandPattern } from "./command-pattern.models";
 import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
 import { ExecutedCommand } from "./terminal-command-history.store";
 
@@ -150,18 +150,10 @@ export class TerminalHistoryPersistenceService {
     return repo.searchCommands(fragment, cwdRaw, this.getRecentTransitionSourceCommand(), limit);
   }
 
-  async searchCommandPatterns(
-    fragment: string,
-    limit: number = 50,
-  ): Promise<LearnedCommandPattern[]> {
+  async searchCommandPatterns(fragment: string, limit: number = 50): Promise<CommandPattern[]> {
     const repo = this._repo$.value;
     if (!repo) return [];
     return repo.searchCommandPatterns(fragment, limit);
-  }
-
-  markCommandPatternsShown(signatureKeys: readonly string[]): void {
-    if (signatureKeys.length === 0) return;
-    this.enqueue((repo) => repo.markCommandPatternsShown(signatureKeys));
   }
 
   markDirectorySelected(pathRaw: string): void {
@@ -172,6 +164,11 @@ export class TerminalHistoryPersistenceService {
   markCommandSelected(commandRaw: string, cwdRaw: string): void {
     if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
     this.enqueue((repo) => repo.markCommandSelected(commandRaw, cwdRaw));
+  }
+
+  confirmLivePattern(originalCommands: string[]): void {
+    if (originalCommands.length === 0) return;
+    this.enqueue((repo) => repo.confirmLivePattern(originalCommands));
   }
 
   markCommandPatternSelected(signatureKey: string): void {

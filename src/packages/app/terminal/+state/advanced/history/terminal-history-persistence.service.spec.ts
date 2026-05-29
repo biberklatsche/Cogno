@@ -33,7 +33,6 @@ type HistoryRepositoryDouble = {
   >;
   deleteCommandExecution: ReturnType<typeof vi.fn<HistoryRepository["deleteCommandExecution"]>>;
   searchCommandPatterns: ReturnType<typeof vi.fn<HistoryRepository["searchCommandPatterns"]>>;
-  markCommandPatternsShown: ReturnType<typeof vi.fn<HistoryRepository["markCommandPatternsShown"]>>;
   markCommandPatternSelected: ReturnType<
     typeof vi.fn<HistoryRepository["markCommandPatternSelected"]>
   >;
@@ -48,7 +47,6 @@ function createRepositoryDouble(): HistoryRepositoryDouble {
     deleteCommandPatternExecution: vi.fn().mockResolvedValue(undefined),
     deleteCommandExecution: vi.fn().mockResolvedValue(undefined),
     searchCommandPatterns: vi.fn().mockResolvedValue([]),
-    markCommandPatternsShown: vi.fn().mockResolvedValue(undefined),
     markCommandPatternSelected: vi.fn().mockResolvedValue(undefined),
   };
 }
@@ -192,9 +190,7 @@ describe("TerminalHistoryPersistenceService", () => {
         nonOptionStableTokenCount: 2,
         variableSlotCount: 1,
         lastSeenAt: 123,
-        shownCount: 0,
         selectedCount: 0,
-        lastShownAt: undefined,
         lastSelectedAt: undefined,
         slotStatistics: [
           {
@@ -237,19 +233,13 @@ describe("TerminalHistoryPersistenceService", () => {
     });
   });
 
-  it("tracks shown and selected pattern feedback through the repository", async () => {
+  it("tracks selected pattern feedback through the repository", async () => {
     const repositoryDouble = createRepositoryDouble();
     const service = await createService(repositoryDouble);
 
-    service.markCommandPatternsShown(["pattern-a", "pattern-b", "pattern-a"]);
     service.markCommandPatternSelected("pattern-a");
     await flushActions();
 
-    expect(repositoryDouble.markCommandPatternsShown).toHaveBeenCalledWith([
-      "pattern-a",
-      "pattern-b",
-      "pattern-a",
-    ]);
     expect(repositoryDouble.markCommandPatternSelected).toHaveBeenCalledWith("pattern-a");
   });
 

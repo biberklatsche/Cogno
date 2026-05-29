@@ -5,11 +5,11 @@ import { sleep } from "@cogno/core-support";
 import { Hash } from "../../../../common/hash/hash";
 import { isWslContext, ShellContext } from "../model/models";
 import {
+  CommandPattern,
   CommandPatternSlotStatistics,
   CommandSignaturePart,
-  LearnedCommandPattern,
 } from "./command-pattern.models";
-import { CommandPatternLearner } from "./command-pattern-learner";
+import { CommandPatternAnalyzer } from "./command-pattern-analyzer";
 import { CommandSignatureBuilder } from "./command-signature-builder";
 import { CommandTokenClassifier } from "./command-token-classifier";
 import { CommandTokenizer } from "./command-tokenizer";
@@ -54,9 +54,7 @@ type CommandPatternStatRow = {
   variableSlotCount: number;
   totalCount: number;
   lastSeenAt: number;
-  shownCount: number;
   selectedCount: number;
-  lastShownAt?: number;
   lastSelectedAt?: number;
 };
 type CommandPatternSlotStatRow = {
@@ -139,7 +137,7 @@ export class HistoryRepository {
   private activeDatabase: Pick<IDatabase, "execute" | "select"> | undefined;
   private readonly _pathCache = new Map<string, { id: number; parentId: number | null }>();
   private readonly _commandCache = new Map<string, number>();
-  private readonly commandPatternLearner = new CommandPatternLearner(
+  private readonly commandPatternAnalyzer = new CommandPatternAnalyzer(
     new CommandTokenizer(),
     new CommandTokenClassifier(),
     new CommandSignatureBuilder(),
@@ -266,7 +264,7 @@ export class HistoryRepository {
   }
 
   async upsertCommandPatternExecution(commandRaw: string): Promise<void> {
-    const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
+    const commandPatternOccurrence = this.commandPatternAnalyzer.analyzeCommand(commandRaw.trim());
     if (commandPatternOccurrence === undefined) {
       return;
     }
@@ -285,13 +283,11 @@ export class HistoryRepository {
                     variable_slot_count,
                     total_count,
                     last_seen_at,
-                    shown_count,
                     selected_count,
-                    last_shown_at,
                     last_selected_at,
                     created_at,
                     deleted_at
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, 1, ?, 0, 0, NULL, NULL, ?, NULL)
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, 1, ?, 0, NULL, ?, NULL)
                 ON CONFLICT(context_id, signature_key) DO UPDATE SET
                     signature_parts_json = excluded.signature_parts_json,
                     pattern_text = excluded.pattern_text,
@@ -399,7 +395,7 @@ export class HistoryRepository {
   }
 
   async deleteCommandPatternExecution(commandRaw: string): Promise<void> {
-    const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
+    const commandPatternOccurrence = this.commandPatternAnalyzer.analyzeCommand(commandRaw.trim());
     if (commandPatternOccurrence === undefined) {
       return;
     }
@@ -551,10 +547,7 @@ export class HistoryRepository {
     );
   }
 
-  async searchCommandPatterns(
-    fragmentRaw: string,
-    limit: number = 50,
-  ): Promise<LearnedCommandPattern[]> {
+  async searchCommandPatterns(fragmentRaw: string, limit: number = 50): Promise<CommandPattern[]> {
     const fragment = fragmentRaw.trim().toLowerCase();
     if (!fragment) {
       return [];
@@ -572,13 +565,12 @@ export class HistoryRepository {
                 variable_slot_count AS variableSlotCount,
                 total_count AS totalCount,
                 last_seen_at AS lastSeenAt
-                ,shown_count AS shownCount
                 ,selected_count AS selectedCount
-                ,last_shown_at AS lastShownAt
                 ,last_selected_at AS lastSelectedAt
             FROM command_pattern_stat
             WHERE context_id = ?
               AND deleted_at IS NULL
+              AND selected_count > 0
               AND LOWER(pattern_text) LIKE ?
             ORDER BY total_count DESC, last_seen_at DESC
             LIMIT ?`,
@@ -630,34 +622,25 @@ export class HistoryRepository {
       nonOptionStableTokenCount: patternRow.nonOptionStableTokenCount,
       variableSlotCount: patternRow.variableSlotCount,
       lastSeenAt: patternRow.lastSeenAt,
-      shownCount: patternRow.shownCount,
       selectedCount: patternRow.selectedCount,
-      lastShownAt: patternRow.lastShownAt ?? undefined,
       lastSelectedAt: patternRow.lastSelectedAt ?? undefined,
       slotStatistics: slotRowsBySignatureKey.get(patternRow.signatureKey) ?? [],
     }));
   }
 
-  async markCommandPatternsShown(signatureKeys: readonly string[]): Promise<void> {
-    const uniqueSignatureKeys = [
-      ...new Set(signatureKeys.map((signatureKey) => signatureKey.trim()).filter(Boolean)),
-    ];
-    if (uniqueSignatureKeys.length === 0) {
-      return;
+  async confirmLivePattern(originalCommands: string[]): Promise<void> {
+    // Persist each original command as a pattern execution, then mark the pattern as
+    // user-selected once. This bootstraps slot statistics and signals user intent.
+    for (const command of originalCommands) {
+      await this.upsertCommandPatternExecution(command);
     }
 
-    const timestamp = nowMs();
-    const placeholders = uniqueSignatureKeys.map(() => "?").join(", ");
-    await this.exec(
-      `UPDATE command_pattern_stat
-             SET shown_count = shown_count + 1,
-                 last_shown_at = ?,
-                 deleted_at = NULL
-             WHERE context_id = ?
-               AND signature_key IN (${placeholders})
-               AND deleted_at IS NULL`,
-      [timestamp, this.contextId, ...uniqueSignatureKeys],
+    const firstOccurrence = this.commandPatternAnalyzer.analyzeCommand(
+      originalCommands[0]?.trim() ?? "",
     );
+    if (firstOccurrence) {
+      await this.markCommandPatternSelected(firstOccurrence.signature.key);
+    }
   }
 
   async markCommandPatternSelected(signatureKeyRaw: string): Promise<void> {

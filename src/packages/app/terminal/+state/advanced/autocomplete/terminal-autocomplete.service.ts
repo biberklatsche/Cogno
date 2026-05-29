@@ -9,9 +9,10 @@ import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
+import { SuggestionCollapser } from "./suggestion-collapser";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
+import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
-import { HistoryCommandPatternSuggestor } from "./suggestors/history-command-pattern.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 
@@ -67,6 +68,7 @@ type SuggestorRunResult =
 export class TerminalAutocompleteService implements OnDestroy {
   private static visibleOwner: TerminalAutocompleteService | null = null;
   private readonly suggestionHighlighter = new SuggestionHighlighter();
+  private readonly suggestionCollapser = new SuggestionCollapser();
 
   private readonly _viewState = new BehaviorSubject<AutocompleteViewState>(INITIAL_VIEW_STATE);
   private readonly _subscription = new Subscription();
@@ -137,7 +139,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
   private registerDefaultSuggestors(): void {
     this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
-    this.registerSuggestor(new HistoryCommandPatternSuggestor(this.persistence));
+    this.registerSuggestor(new CommandPatternSuggestor(this.persistence));
     this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
     for (const suggestor of this.featureSuggestorService.getSharedSuggestors()) {
       this.registerSuggestor(suggestor);
@@ -284,7 +286,8 @@ export class TerminalAutocompleteService implements OnDestroy {
       return;
     }
 
-    const suggestions = this.rankSuggestions(settled, state);
+    const ranked = this.rankSuggestions(settled, state);
+    const suggestions = this.suggestionCollapser.collapse(ranked);
     this._latestSuggestions = suggestions;
     this._latestContext = context;
 
@@ -296,14 +299,6 @@ export class TerminalAutocompleteService implements OnDestroy {
       this.hide();
       return;
     }
-
-    this.persistence.markCommandPatternsShown(
-      visibleSuggestions
-        .map((suggestion) => suggestion.selectedPatternSignature)
-        .filter(
-          (signature): signature is string => typeof signature === "string" && signature.length > 0,
-        ),
-    );
 
     const position = this.computePanelPosition(
       state,
@@ -490,6 +485,9 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
     if (suggestion.selectedPatternSignature) {
       this.persistence.markCommandPatternSelected(suggestion.selectedPatternSignature);
+    }
+    if (suggestion.liveCollapsedFrom && suggestion.liveCollapsedFrom.length > 0) {
+      this.persistence.confirmLivePattern(suggestion.liveCollapsedFrom);
     }
 
     this.bus.publish({

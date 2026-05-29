@@ -122,7 +122,7 @@ describe("HistoryRepository", () => {
     );
   });
 
-  it("returns parsed command patterns and updates shown and selected counters", async () => {
+  it("returns parsed command patterns and updates selected counter", async () => {
     const selectSpy = vi
       .spyOn(DB, "select")
       .mockResolvedValueOnce([
@@ -135,7 +135,6 @@ describe("HistoryRepository", () => {
           variableSlotCount: 1,
           totalCount: 4,
           lastSeenAt: 100,
-          shownCount: 2,
           selectedCount: 1,
         },
       ] as never)
@@ -169,9 +168,7 @@ describe("HistoryRepository", () => {
         nonOptionStableTokenCount: 1,
         variableSlotCount: 1,
         lastSeenAt: 100,
-        shownCount: 2,
         selectedCount: 1,
-        lastShownAt: undefined,
         lastSelectedAt: undefined,
         slotStatistics: [
           {
@@ -185,7 +182,6 @@ describe("HistoryRepository", () => {
       },
     ]);
 
-    await repository.markCommandPatternsShown(["sig-1", "sig-1", "  "]);
     await repository.markCommandPatternSelected("sig-1");
 
     expect(selectSpy).toHaveBeenCalledTimes(2);
