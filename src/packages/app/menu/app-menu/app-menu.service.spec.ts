@@ -47,7 +47,7 @@ describe("AppMenuService", () => {
   it("builds terminal items, separator and default actions", () => {
     const menu = service.buildMenu();
 
-    expect(menu).toHaveLength(5);
+    expect(menu).toHaveLength(7);
     expect(menu[0]).toEqual(expect.objectContaining({ label: "zsh", actionName: "open_shell_1" }));
     expect(menu[1]).toEqual(expect.objectContaining({ label: "bash", actionName: "open_shell_2" }));
     expect(menu[2]).toEqual({ separator: true });
@@ -56,6 +56,10 @@ describe("AppMenuService", () => {
     );
     expect(menu[4]).toEqual(
       expect.objectContaining({ label: "Settings", actionName: "open_config" }),
+    );
+    expect(menu[5]).toEqual({ separator: true });
+    expect(menu[6]).toEqual(
+      expect.objectContaining({ label: "Documentation", actionName: "open_documentation" }),
     );
   });
 
@@ -76,13 +80,22 @@ describe("AppMenuService", () => {
     );
   });
 
-  it("omits the separator when no shell profiles exist", () => {
+  it("omits the shell separator when no shell profiles exist", () => {
     vi.mocked(configService.getOrderedShellProfiles).mockReturnValue([]);
 
     const menu = service.buildMenu();
 
-    expect(menu).toHaveLength(2);
-    expect(menu.some((item) => item.separator)).toBe(false);
+    expect(menu).toHaveLength(4);
+    expect(menu[0]).toEqual(
+      expect.objectContaining({ label: "New Window", actionName: "new_window" }),
+    );
+    expect(menu[1]).toEqual(
+      expect.objectContaining({ label: "Settings", actionName: "open_config" }),
+    );
+    expect(menu[2]).toEqual({ separator: true });
+    expect(menu[3]).toEqual(
+      expect.objectContaining({ label: "Documentation", actionName: "open_documentation" }),
+    );
   });
 
   it("throws when a standard menu item lacks an action definition", () => {
