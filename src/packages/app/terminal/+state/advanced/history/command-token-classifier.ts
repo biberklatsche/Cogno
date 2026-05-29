@@ -2,60 +2,36 @@ import { ClassifiedCommandToken, CommandToken } from "./command-pattern.models";
 
 export class CommandTokenClassifier {
   classify(commandTokens: CommandToken[]): ClassifiedCommandToken[] {
-    const stableValues = commandTokens.map((commandToken) => commandToken.value);
-
     return commandTokens.map((commandToken, tokenIndex) => ({
       ...commandToken,
-      kind: this.resolveKind(commandToken, tokenIndex, stableValues),
+      kind: this.resolveKind(commandToken, tokenIndex),
     }));
   }
 
   private resolveKind(
     commandToken: CommandToken,
     tokenIndex: number,
-    stableValues: string[],
   ): ClassifiedCommandToken["kind"] {
-    if (tokenIndex <= 1 || commandToken.value.startsWith("-")) {
+    // The command name (index 0) and option flags are always stable.
+    if (tokenIndex === 0 || commandToken.value.startsWith("-")) {
       return "stable";
     }
 
-    const previousOptionToken = this.findPreviousOptionToken(tokenIndex, stableValues);
-    if (this.isVariableToken(commandToken, previousOptionToken)) {
-      return "variable";
+    // Index 1 is stable for subcommand-like tokens (pure alphabetic words like "commit",
+    // "push", "run") but variable for value-like tokens (paths, hosts, URLs, filenames).
+    if (tokenIndex === 1) {
+      return this.looksLikeValue(commandToken) ? "variable" : "stable";
     }
 
-    return "stable";
+    // All other positional arguments are variable. Tokens that consistently take the same
+    // value (e.g. a subcommand at position 2) are filtered out by the slot variance checks
+    // in SuggestionPatternReducer.isHelpfulPattern before they ever surface as suggestions.
+    return "variable";
   }
 
-  private findPreviousOptionToken(tokenIndex: number, stableValues: string[]): string | undefined {
-    for (let currentIndex = tokenIndex - 1; currentIndex >= 0; currentIndex -= 1) {
-      const currentValue = stableValues[currentIndex];
-      if (currentValue.startsWith("-")) {
-        return currentValue.toLowerCase();
-      }
-      if (!currentValue.startsWith("-") && currentIndex > 1) {
-        break;
-      }
-    }
-
-    return undefined;
-  }
-
-  private isVariableToken(commandToken: CommandToken, previousOptionToken?: string): boolean {
-    if (commandToken.wasQuoted) {
-      return true;
-    }
-
-    if (previousOptionToken !== undefined) {
-      return true;
-    }
-
-    return (
-      commandToken.value.startsWith("./") ||
-      commandToken.value.startsWith("../") ||
-      commandToken.value.startsWith("~/") ||
-      commandToken.value.startsWith("/") ||
-      commandToken.value.includes("/")
-    );
+  private looksLikeValue(token: CommandToken): boolean {
+    if (token.wasQuoted) return true;
+    // Paths, hostnames, URLs, filenames contain these characters
+    return /[./\-@:~]/.test(token.value) || /\d/.test(token.value);
   }
 }

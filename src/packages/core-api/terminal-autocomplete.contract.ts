@@ -19,6 +19,7 @@ export type AutocompleteSuggestionContract = {
   selectedCommand?: string;
   selectedPatternSignature?: string;
   completionBehavior?: "final" | "continue";
+  liveCollapsedFrom?: string[];
 };
 
 export type BaseAutocompleteQueryContextContract = {

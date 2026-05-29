@@ -1,64 +1,52 @@
-import { LearnedCommandPattern } from "../../../history/command-pattern.models";
+import {
+  CommandPattern,
+  CommandPatternSlotStatistics,
+} from "../../../history/command-pattern.models";
 import { AutocompleteSuggestion, QueryContext } from "../../autocomplete.types";
 import { HistoryCommandScorer } from "./history-command.scorer";
 
 const PATTERN_RULES = {
   minimumPatternCount: 2,
   minimumSlotCount: 1,
-  minimumStableTokenCount: 3,
-  minimumNonOptionStableTokenCount: 2,
+  minimumStableTokenCount: 2,
+  minimumNonOptionStableTokenCount: 1,
   minimumSlotDistinctValueCount: 2,
-  minimumSlotVarianceRatio: 0.45,
-  maximumTopValueDominanceRatio: 0.8,
+  maximumTopValueDominanceRatio: 0.9,
   minimumScore: 55,
   genericPenalty: 24,
-  staleExposurePenaltyThreshold: 4,
-  rejectionPenaltyWeight: 28,
-  maximumRejectionPenalty: 42,
   selectionBonusWeight: 18,
   patternAgeHalfLifeMs: 14 * 24 * 60 * 60 * 1000,
   stalePatternMaxPenalty: 42,
-  staleUnselectedPatternGracePeriodMs: 3 * 24 * 60 * 60 * 1000,
-  staleUnselectedPatternHalfLifeMs: 7 * 24 * 60 * 60 * 1000,
-  staleUnselectedPatternMaxPenalty: 36,
 } as const;
 
 export class SuggestionPatternReducer {
-  reduce(
-    learnedCommandPatterns: LearnedCommandPattern[],
-    context: QueryContext,
-  ): AutocompleteSuggestion[] {
+  reduce(patterns: CommandPattern[], context: QueryContext): AutocompleteSuggestion[] {
     const query = context.mode === "command" ? context.query : "";
     const queryTokens = HistoryCommandScorer.uniqueTokens(query);
     const inputCommandToken = HistoryCommandScorer.firstToken(context.inputText);
 
-    return learnedCommandPatterns.flatMap((learnedCommandPattern) => {
-      const reducedSuggestion = this.toSuggestion(
-        learnedCommandPattern,
-        context,
-        queryTokens,
-        inputCommandToken,
-      );
+    return patterns.flatMap((pattern) => {
+      const reducedSuggestion = this.toSuggestion(pattern, context, queryTokens, inputCommandToken);
       return reducedSuggestion === undefined ? [] : [reducedSuggestion];
     });
   }
 
   private toSuggestion(
-    learnedCommandPattern: LearnedCommandPattern,
+    pattern: CommandPattern,
     context: QueryContext,
     queryTokens: string[],
     inputCommandToken: string,
   ): AutocompleteSuggestion | undefined {
-    if (!this.isHelpfulPattern(learnedCommandPattern)) {
+    if (!this.isHelpfulPattern(pattern)) {
       return undefined;
     }
 
-    const patternLabel = this.createPatternLabel(learnedCommandPattern);
+    const patternLabel = this.createPatternLabel(pattern);
     const rowLikePattern = {
       command: patternLabel,
-      execCount: learnedCommandPattern.totalCount,
+      execCount: pattern.totalCount,
       selectCount: 0,
-      lastExecAt: learnedCommandPattern.lastSeenAt,
+      lastExecAt: pattern.lastSeenAt,
       lastSelectAt: 0,
       cwdExecCount: 0,
       cwdSelectCount: 0,
@@ -83,153 +71,103 @@ export class SuggestionPatternReducer {
       return undefined;
     }
 
-    const slotVarietyScore = learnedCommandPattern.slotStatistics.reduce(
-      (score, slotStatistics) => {
-        const varianceRatio =
-          slotStatistics.totalCount === 0
-            ? 0
-            : slotStatistics.distinctValueCount / slotStatistics.totalCount;
-        return score + varianceRatio;
-      },
-      0,
-    );
+    const slotVarietyScore = pattern.slotStatistics.reduce((score, slotStatistics) => {
+      const varianceRatio =
+        slotStatistics.totalCount === 0
+          ? 0
+          : slotStatistics.distinctValueCount / slotStatistics.totalCount;
+      return score + varianceRatio;
+    }, 0);
 
     const genericPenalty =
-      learnedCommandPattern.stableTokenCount < PATTERN_RULES.minimumStableTokenCount
+      pattern.stableTokenCount < PATTERN_RULES.minimumStableTokenCount
         ? PATTERN_RULES.genericPenalty
         : 0;
-    const shownCount = learnedCommandPattern.shownCount;
-    const selectedCount = learnedCommandPattern.selectedCount;
-    const acceptanceRatio = shownCount <= 0 ? 0 : selectedCount / shownCount;
-    const unselectedExposureCount = Math.max(0, shownCount - selectedCount);
-    const rejectionPenalty =
-      shownCount >= PATTERN_RULES.staleExposurePenaltyThreshold && selectedCount === 0
-        ? Math.min(
-            PATTERN_RULES.maximumRejectionPenalty,
-            unselectedExposureCount * PATTERN_RULES.rejectionPenaltyWeight * (1 - acceptanceRatio),
-          )
-        : 0;
-    const selectionBonus = selectedCount * PATTERN_RULES.selectionBonusWeight;
-    const patternAgePenalty = this.calculatePatternAgePenalty(learnedCommandPattern, Date.now());
-    const unselectedAgePenalty = this.calculateUnselectedAgePenalty(
-      learnedCommandPattern,
-      Date.now(),
-    );
+    const selectionBonus = pattern.selectedCount * PATTERN_RULES.selectionBonusWeight;
+    const patternAgePenalty = this.calculatePatternAgePenalty(pattern, Date.now());
     const score =
       baseScore +
       slotVarietyScore * 14 +
-      learnedCommandPattern.totalCount * 2 +
+      pattern.totalCount * 2 +
       selectionBonus -
       genericPenalty -
-      rejectionPenalty -
-      patternAgePenalty -
-      unselectedAgePenalty;
+      patternAgePenalty;
 
     if (score < PATTERN_RULES.minimumScore) {
       return undefined;
     }
 
-    const _dominantSlotStatistics = learnedCommandPattern.slotStatistics[0];
     return {
       label: patternLabel,
       description: "Learned command pattern",
-      insertText: patternLabel,
+      insertText: patternLabel.split(/{arg\d+}/)[0],
       score,
       source: "history-pattern",
       replaceStart: 0,
       replaceEnd: context.inputText.length,
-      selectedPatternSignature: learnedCommandPattern.signature.key,
+      selectedPatternSignature: pattern.signature.key,
       completionBehavior: "continue",
     };
   }
 
-  private isHelpfulPattern(learnedCommandPattern: LearnedCommandPattern): boolean {
-    if (learnedCommandPattern.totalCount < PATTERN_RULES.minimumPatternCount) {
+  private isHelpfulPattern(pattern: CommandPattern): boolean {
+    if (pattern.selectedCount < 1) {
       return false;
     }
-    if (learnedCommandPattern.variableSlotCount < PATTERN_RULES.minimumSlotCount) {
+    if (pattern.totalCount < PATTERN_RULES.minimumPatternCount) {
       return false;
     }
-    if (learnedCommandPattern.stableTokenCount < PATTERN_RULES.minimumStableTokenCount) {
+    if (pattern.variableSlotCount < PATTERN_RULES.minimumSlotCount) {
       return false;
     }
-    if (
-      learnedCommandPattern.nonOptionStableTokenCount <
-      PATTERN_RULES.minimumNonOptionStableTokenCount
-    ) {
+    if (pattern.stableTokenCount < PATTERN_RULES.minimumStableTokenCount) {
       return false;
     }
-
-    const hasHelpfulSlot = learnedCommandPattern.slotStatistics.every((slotStatistics) => {
-      const varianceRatio =
-        slotStatistics.totalCount === 0
-          ? 0
-          : slotStatistics.distinctValueCount / slotStatistics.totalCount;
-      const topValueDominanceRatio =
-        slotStatistics.totalCount === 0
-          ? 1
-          : slotStatistics.topValueCount / slotStatistics.totalCount;
-
-      return (
-        slotStatistics.totalCount >= PATTERN_RULES.minimumPatternCount &&
-        slotStatistics.distinctValueCount >= PATTERN_RULES.minimumSlotDistinctValueCount &&
-        varianceRatio >= PATTERN_RULES.minimumSlotVarianceRatio &&
-        topValueDominanceRatio <= PATTERN_RULES.maximumTopValueDominanceRatio
-      );
-    });
-
-    if (!hasHelpfulSlot) {
+    if (pattern.nonOptionStableTokenCount < PATTERN_RULES.minimumNonOptionStableTokenCount) {
       return false;
     }
 
-    const firstTwoParts = learnedCommandPattern.signature.parts.slice(0, 2);
-    return firstTwoParts.every((part) => part?.kind === "stable");
+    const hasAtLeastOneVariableSlot = pattern.slotStatistics.some((stat) =>
+      this.isGenuinelyVariableSlot(stat),
+    );
+
+    if (!hasAtLeastOneVariableSlot) {
+      return false;
+    }
+
+    const firstPart = pattern.signature.parts[0];
+    return firstPart?.kind === "stable";
   }
 
-  private createPatternLabel(learnedCommandPattern: LearnedCommandPattern): string {
-    return learnedCommandPattern.signature.parts
-      .map((part) => (part.kind === "stable" ? part.value : `{arg${part.slotIndex + 1}}`))
+  private isGenuinelyVariableSlot(stat: CommandPatternSlotStatistics): boolean {
+    return (
+      stat.totalCount >= PATTERN_RULES.minimumPatternCount &&
+      stat.distinctValueCount >= PATTERN_RULES.minimumSlotDistinctValueCount &&
+      stat.topValueCount / stat.totalCount <= PATTERN_RULES.maximumTopValueDominanceRatio
+    );
+  }
+
+  private createPatternLabel(pattern: CommandPattern): string {
+    const slotStatsMap = new Map(pattern.slotStatistics.map((s) => [s.slotIndex, s]));
+    let displayArgCounter = 1;
+    return pattern.signature.parts
+      .map((part) => {
+        if (part.kind === "stable") return part.value;
+        const stat = slotStatsMap.get(part.slotIndex);
+        if (stat && !this.isGenuinelyVariableSlot(stat)) return stat.topValue;
+        return `{arg${displayArgCounter++}}`;
+      })
       .join(" ");
   }
 
-  private calculatePatternAgePenalty(
-    learnedCommandPattern: LearnedCommandPattern,
-    now: number,
-  ): number {
-    const patternAgeInMilliseconds = this.safeAge(now, learnedCommandPattern.lastSeenAt);
+  private calculatePatternAgePenalty(pattern: CommandPattern, now: number): number {
+    const patternAgeInMilliseconds = this.safeAge(now, pattern.lastSeenAt);
     const freshness = this.calculateHalfLifeDecay(
       patternAgeInMilliseconds,
       PATTERN_RULES.patternAgeHalfLifeMs,
     );
 
     return (1 - freshness) * PATTERN_RULES.stalePatternMaxPenalty;
-  }
-
-  private calculateUnselectedAgePenalty(
-    learnedCommandPattern: LearnedCommandPattern,
-    now: number,
-  ): number {
-    if (learnedCommandPattern.selectedCount > 0) {
-      return 0;
-    }
-
-    const mostRecentInteractionTimestamp = Math.max(
-      learnedCommandPattern.lastShownAt ?? 0,
-      learnedCommandPattern.lastSeenAt,
-    );
-    const ageSinceInteractionInMilliseconds = this.safeAge(now, mostRecentInteractionTimestamp);
-    if (ageSinceInteractionInMilliseconds <= PATTERN_RULES.staleUnselectedPatternGracePeriodMs) {
-      return 0;
-    }
-
-    const decayAgeInMilliseconds =
-      ageSinceInteractionInMilliseconds - PATTERN_RULES.staleUnselectedPatternGracePeriodMs;
-    const freshness = this.calculateHalfLifeDecay(
-      decayAgeInMilliseconds,
-      PATTERN_RULES.staleUnselectedPatternHalfLifeMs,
-    );
-
-    return (1 - freshness) * PATTERN_RULES.staleUnselectedPatternMaxPenalty;
   }
 
   private calculateHalfLifeDecay(

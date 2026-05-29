@@ -5,11 +5,11 @@ import { sleep } from "@cogno/core-support";
 import { Hash } from "../../../../common/hash/hash";
 import { isWslContext, ShellContext } from "../model/models";
 import {
+  CommandPattern,
   CommandPatternSlotStatistics,
   CommandSignaturePart,
-  LearnedCommandPattern,
 } from "./command-pattern.models";
-import { CommandPatternLearner } from "./command-pattern-learner";
+import { CommandPatternAnalyzer } from "./command-pattern-analyzer";
 import { CommandSignatureBuilder } from "./command-signature-builder";
 import { CommandTokenClassifier } from "./command-token-classifier";
 import { CommandTokenizer } from "./command-tokenizer";
@@ -54,9 +54,7 @@ type CommandPatternStatRow = {
   variableSlotCount: number;
   totalCount: number;
   lastSeenAt: number;
-  shownCount: number;
   selectedCount: number;
-  lastShownAt?: number;
   lastSelectedAt?: number;
 };
 type CommandPatternSlotStatRow = {
@@ -75,13 +73,6 @@ type CommandPatternSlotStatExistingRow = {
   distinctValueCount: number;
   topValue: string;
   topValueCount: number;
-};
-type CommandPatternStatCountRow = {
-  totalCount: number;
-};
-type CommandPatternSlotValueStatRow = {
-  slotValue: string;
-  valueCount: number;
 };
 
 function nowMs(): number {
@@ -139,7 +130,7 @@ export class HistoryRepository {
   private activeDatabase: Pick<IDatabase, "execute" | "select"> | undefined;
   private readonly _pathCache = new Map<string, { id: number; parentId: number | null }>();
   private readonly _commandCache = new Map<string, number>();
-  private readonly commandPatternLearner = new CommandPatternLearner(
+  private readonly commandPatternAnalyzer = new CommandPatternAnalyzer(
     new CommandTokenizer(),
     new CommandTokenClassifier(),
     new CommandSignatureBuilder(),
@@ -265,65 +256,6 @@ export class HistoryRepository {
     });
   }
 
-  async upsertCommandPatternExecution(commandRaw: string): Promise<void> {
-    const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
-    if (commandPatternOccurrence === undefined) {
-      return;
-    }
-
-    const timestamp = nowMs();
-
-    await this.tx(async () => {
-      await this.exec(
-        `INSERT INTO command_pattern_stat(
-                    context_id,
-                    signature_key,
-                    signature_parts_json,
-                    pattern_text,
-                    stable_token_count,
-                    non_option_stable_token_count,
-                    variable_slot_count,
-                    total_count,
-                    last_seen_at,
-                    shown_count,
-                    selected_count,
-                    last_shown_at,
-                    last_selected_at,
-                    created_at,
-                    deleted_at
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, 1, ?, 0, 0, NULL, NULL, ?, NULL)
-                ON CONFLICT(context_id, signature_key) DO UPDATE SET
-                    signature_parts_json = excluded.signature_parts_json,
-                    pattern_text = excluded.pattern_text,
-                    stable_token_count = excluded.stable_token_count,
-                    non_option_stable_token_count = excluded.non_option_stable_token_count,
-                    variable_slot_count = excluded.variable_slot_count,
-                    total_count = command_pattern_stat.total_count + 1,
-                    last_seen_at = excluded.last_seen_at,
-                    deleted_at = NULL`,
-        [
-          this.contextId,
-          commandPatternOccurrence.signature.key,
-          JSON.stringify(commandPatternOccurrence.signature.parts),
-          commandPatternOccurrence.patternText,
-          commandPatternOccurrence.stableTokenCount,
-          commandPatternOccurrence.nonOptionStableTokenCount,
-          commandPatternOccurrence.variableSlotCount,
-          timestamp,
-          timestamp,
-        ],
-      );
-
-      for (const slotValue of commandPatternOccurrence.slotValues) {
-        await this.upsertCommandPatternSlotValue(
-          commandPatternOccurrence.signature.key,
-          slotValue.slotIndex,
-          slotValue.value,
-          timestamp,
-        );
-      }
-    });
-  }
 
   async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {
     const previousCommand = previousCommandRaw.trim();
@@ -398,85 +330,6 @@ export class HistoryRepository {
     });
   }
 
-  async deleteCommandPatternExecution(commandRaw: string): Promise<void> {
-    const commandPatternOccurrence = this.commandPatternLearner.analyzeCommand(commandRaw.trim());
-    if (commandPatternOccurrence === undefined) {
-      return;
-    }
-
-    const timestamp = nowMs();
-
-    await this.tx(async () => {
-      const existingPatternRows = await this.sel<CommandPatternStatCountRow[]>(
-        `SELECT total_count AS totalCount
-                 FROM command_pattern_stat
-                 WHERE context_id = ?
-                   AND signature_key = ?
-                   AND deleted_at IS NULL
-                 LIMIT 1`,
-        [this.contextId, commandPatternOccurrence.signature.key],
-      );
-      const existingPattern = existingPatternRows[0];
-      if (existingPattern === undefined) {
-        return;
-      }
-
-      for (const slotValue of commandPatternOccurrence.slotValues) {
-        await this.decrementCommandPatternSlotValue(
-          commandPatternOccurrence.signature.key,
-          slotValue.slotIndex,
-          slotValue.value,
-          timestamp,
-        );
-      }
-
-      if (existingPattern.totalCount <= 1) {
-        await this.exec(
-          `UPDATE command_pattern_stat
-                     SET total_count = 0,
-                         deleted_at = ?
-                     WHERE context_id = ?
-                       AND signature_key = ?
-                       AND deleted_at IS NULL`,
-          [timestamp, this.contextId, commandPatternOccurrence.signature.key],
-        );
-
-        await this.exec(
-          `UPDATE command_pattern_slot_stat
-                     SET total_count = 0,
-                         distinct_value_count = 0,
-                         top_value = '',
-                         top_value_count = 0,
-                         deleted_at = ?
-                     WHERE context_id = ?
-                       AND signature_key = ?
-                       AND deleted_at IS NULL`,
-          [timestamp, this.contextId, commandPatternOccurrence.signature.key],
-        );
-
-        await this.exec(
-          `UPDATE command_pattern_slot_value_stat
-                     SET value_count = 0,
-                         deleted_at = ?
-                     WHERE context_id = ?
-                       AND signature_key = ?
-                       AND deleted_at IS NULL`,
-          [timestamp, this.contextId, commandPatternOccurrence.signature.key],
-        );
-
-        return;
-      }
-
-      await this.exec(
-        `UPDATE command_pattern_stat
-                 SET total_count = total_count - 1
-                 WHERE context_id = ?
-                   AND signature_key = ?
-                   AND deleted_at IS NULL`,
-        [this.contextId, commandPatternOccurrence.signature.key],
-      );
-    });
-  }
 
   async searchDirectories(fragmentRaw: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
     const fragment = fragmentRaw.trim().toLowerCase();
@@ -551,10 +404,7 @@ export class HistoryRepository {
     );
   }
 
-  async searchCommandPatterns(
-    fragmentRaw: string,
-    limit: number = 50,
-  ): Promise<LearnedCommandPattern[]> {
+  async searchCommandPatterns(fragmentRaw: string, limit: number = 50): Promise<CommandPattern[]> {
     const fragment = fragmentRaw.trim().toLowerCase();
     if (!fragment) {
       return [];
@@ -572,13 +422,12 @@ export class HistoryRepository {
                 variable_slot_count AS variableSlotCount,
                 total_count AS totalCount,
                 last_seen_at AS lastSeenAt
-                ,shown_count AS shownCount
                 ,selected_count AS selectedCount
-                ,last_shown_at AS lastShownAt
                 ,last_selected_at AS lastSelectedAt
             FROM command_pattern_stat
             WHERE context_id = ?
               AND deleted_at IS NULL
+              AND selected_count > 0
               AND LOWER(pattern_text) LIKE ?
             ORDER BY total_count DESC, last_seen_at DESC
             LIMIT ?`,
@@ -630,34 +479,68 @@ export class HistoryRepository {
       nonOptionStableTokenCount: patternRow.nonOptionStableTokenCount,
       variableSlotCount: patternRow.variableSlotCount,
       lastSeenAt: patternRow.lastSeenAt,
-      shownCount: patternRow.shownCount,
       selectedCount: patternRow.selectedCount,
-      lastShownAt: patternRow.lastShownAt ?? undefined,
       lastSelectedAt: patternRow.lastSelectedAt ?? undefined,
       slotStatistics: slotRowsBySignatureKey.get(patternRow.signatureKey) ?? [],
     }));
   }
 
-  async markCommandPatternsShown(signatureKeys: readonly string[]): Promise<void> {
-    const uniqueSignatureKeys = [
-      ...new Set(signatureKeys.map((signatureKey) => signatureKey.trim()).filter(Boolean)),
-    ];
-    if (uniqueSignatureKeys.length === 0) {
-      return;
-    }
+  async confirmLivePattern(originalCommands: string[]): Promise<void> {
+    const representative = originalCommands[0]?.trim() ?? "";
+    const occurrence = this.commandPatternAnalyzer.analyzeCommand(representative);
+    if (!occurrence) return;
 
     const timestamp = nowMs();
-    const placeholders = uniqueSignatureKeys.map(() => "?").join(", ");
-    await this.exec(
-      `UPDATE command_pattern_stat
-             SET shown_count = shown_count + 1,
-                 last_shown_at = ?,
-                 deleted_at = NULL
-             WHERE context_id = ?
-               AND signature_key IN (${placeholders})
-               AND deleted_at IS NULL`,
-      [timestamp, this.contextId, ...uniqueSignatureKeys],
-    );
+    await this.tx(async () => {
+      await this.exec(
+        `INSERT INTO command_pattern_stat(
+                    context_id,
+                    signature_key,
+                    signature_parts_json,
+                    pattern_text,
+                    stable_token_count,
+                    non_option_stable_token_count,
+                    variable_slot_count,
+                    total_count,
+                    last_seen_at,
+                    selected_count,
+                    last_selected_at,
+                    created_at,
+                    deleted_at
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, NULL)
+                ON CONFLICT(context_id, signature_key) DO UPDATE SET
+                    total_count = command_pattern_stat.total_count + 1,
+                    selected_count = command_pattern_stat.selected_count + 1,
+                    last_seen_at = excluded.last_seen_at,
+                    last_selected_at = excluded.last_selected_at,
+                    deleted_at = NULL`,
+        [
+          this.contextId,
+          occurrence.signature.key,
+          JSON.stringify(occurrence.signature.parts),
+          occurrence.patternText,
+          occurrence.stableTokenCount,
+          occurrence.nonOptionStableTokenCount,
+          occurrence.variableSlotCount,
+          timestamp,
+          timestamp,
+          timestamp,
+        ],
+      );
+
+      for (const cmd of originalCommands) {
+        const cmdOccurrence = this.commandPatternAnalyzer.analyzeCommand(cmd.trim());
+        if (!cmdOccurrence || cmdOccurrence.signature.key !== occurrence.signature.key) continue;
+        for (const slotValue of cmdOccurrence.slotValues) {
+          await this.upsertCommandPatternSlotValue(
+            occurrence.signature.key,
+            slotValue.slotIndex,
+            slotValue.value,
+            timestamp,
+          );
+        }
+      }
+    });
   }
 
   async markCommandPatternSelected(signatureKeyRaw: string): Promise<void> {
@@ -966,107 +849,6 @@ export class HistoryRepository {
     );
   }
 
-  private async decrementCommandPatternSlotValue(
-    signatureKey: string,
-    slotIndex: number,
-    slotValue: string,
-    timestamp: number,
-  ): Promise<void> {
-    const existingSlotValueRows = await this.sel<CommandPatternSlotValueCountRow[]>(
-      `SELECT value_count AS valueCount
-             FROM command_pattern_slot_value_stat
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?
-               AND slot_value = ?
-               AND deleted_at IS NULL
-             LIMIT 1`,
-      [this.contextId, signatureKey, slotIndex, slotValue],
-    );
-    const existingSlotValueCount = existingSlotValueRows[0]?.valueCount;
-    if (existingSlotValueCount === undefined) {
-      return;
-    }
-
-    const nextSlotValueCount = Math.max(0, existingSlotValueCount - 1);
-    await this.exec(
-      `UPDATE command_pattern_slot_value_stat
-             SET value_count = ?,
-                 deleted_at = CASE WHEN ? <= 0 THEN ? ELSE NULL END
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?
-               AND slot_value = ?
-               AND deleted_at IS NULL`,
-      [
-        nextSlotValueCount,
-        nextSlotValueCount,
-        timestamp,
-        this.contextId,
-        signatureKey,
-        slotIndex,
-        slotValue,
-      ],
-    );
-
-    const remainingSlotValueRows = await this.sel<CommandPatternSlotValueStatRow[]>(
-      `SELECT
-                slot_value AS slotValue,
-                value_count AS valueCount
-             FROM command_pattern_slot_value_stat
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?
-               AND deleted_at IS NULL
-               AND value_count > 0
-             ORDER BY value_count DESC, slot_value ASC`,
-      [this.contextId, signatureKey, slotIndex],
-    );
-
-    if (remainingSlotValueRows.length === 0) {
-      await this.exec(
-        `UPDATE command_pattern_slot_stat
-                 SET total_count = 0,
-                     distinct_value_count = 0,
-                     top_value = '',
-                     top_value_count = 0,
-                     deleted_at = ?
-                 WHERE context_id = ?
-                   AND signature_key = ?
-                   AND slot_index = ?
-                   AND deleted_at IS NULL`,
-        [timestamp, this.contextId, signatureKey, slotIndex],
-      );
-      return;
-    }
-
-    const nextTotalCount = remainingSlotValueRows.reduce(
-      (totalCount, currentRow) => totalCount + currentRow.valueCount,
-      0,
-    );
-    const topSlotValueRow = remainingSlotValueRows[0];
-
-    await this.exec(
-      `UPDATE command_pattern_slot_stat
-             SET total_count = ?,
-                 distinct_value_count = ?,
-                 top_value = ?,
-                 top_value_count = ?,
-                 deleted_at = NULL
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?`,
-      [
-        nextTotalCount,
-        remainingSlotValueRows.length,
-        topSlotValueRow.slotValue,
-        topSlotValueRow.valueCount,
-        this.contextId,
-        signatureKey,
-        slotIndex,
-      ],
-    );
-  }
 
   // ---- DB wrappers with retry + tx ----
 

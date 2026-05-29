@@ -33,16 +33,14 @@ export type CommandPatternSlotStatistics = {
   readonly topValueCount: number;
 };
 
-export type LearnedCommandPattern = {
+export type CommandPattern = {
   readonly signature: CommandSignature;
   readonly totalCount: number;
   readonly stableTokenCount: number;
   readonly nonOptionStableTokenCount: number;
   readonly variableSlotCount: number;
   readonly lastSeenAt: number;
-  readonly shownCount: number;
   readonly selectedCount: number;
-  readonly lastShownAt?: number;
   readonly lastSelectedAt?: number;
   readonly slotStatistics: CommandPatternSlotStatistics[];
 };

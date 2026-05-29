@@ -3,7 +3,7 @@ import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { SuggestionPatternReducer } from "./scoring/suggestion-pattern.reducer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
 
-export class HistoryCommandPatternSuggestor implements TerminalAutocompleteSuggestor {
+export class CommandPatternSuggestor implements TerminalAutocompleteSuggestor {
   readonly id = "history-command-pattern";
   readonly inputPattern = /.+/;
 
@@ -22,7 +22,7 @@ export class HistoryCommandPatternSuggestor implements TerminalAutocompleteSugge
       return [];
     }
 
-    const learnedCommandPatterns = await this.persistence.searchCommandPatterns(query, 100);
-    return this.suggestionPatternReducer.reduce(learnedCommandPatterns, context);
+    const patterns = await this.persistence.searchCommandPatterns(query, 100);
+    return this.suggestionPatternReducer.reduce(patterns, context);
   }
 }

@@ -117,7 +117,6 @@ describe("TerminalAutocompleteService", () => {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
       searchCommandPatterns: vi.fn().mockResolvedValue([]),
-      markCommandPatternsShown: vi.fn(),
       markCommandPatternSelected: vi.fn(),
       markDirectorySelected: vi.fn(),
       markCommandSelected: vi.fn(),
@@ -290,10 +289,6 @@ describe("TerminalAutocompleteService", () => {
     });
     await vi.advanceTimersByTimeAsync(400);
 
-    expect(persistence.markCommandPatternsShown).toHaveBeenCalledWith([
-      "stable:git|stable:commit|stable:-am|slot:0",
-    ]);
-
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
     );
@@ -395,7 +390,6 @@ describe("TerminalAutocompleteService", () => {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
       searchCommandPatterns: vi.fn().mockResolvedValue([]),
-      markCommandPatternsShown: vi.fn(),
       markCommandPatternSelected: vi.fn(),
       markDirectorySelected: vi.fn(),
       markCommandSelected: vi.fn(),
