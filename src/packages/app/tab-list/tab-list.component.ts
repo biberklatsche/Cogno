@@ -4,6 +4,7 @@ import { TabId } from "@cogno/core-api";
 import { DragPreviewService, Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { Observable } from "rxjs";
 import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
+import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
 import { IdCreator } from "../common/id-creator/id-creator";
 import { StartEllipsisDirective } from "../common/text/start-ellipsis.directive";
 import { ShellType } from "../config/+models/config";
@@ -51,6 +52,7 @@ export class TabListComponent implements OnDestroy {
     private tabListService: TabListService,
     private menu: ContextMenuOverlayService,
     private dragPreviewService: DragPreviewService,
+    readonly busyIndicatorService: BusyIndicatorService,
   ) {
     this.tabs = this.tabListService.tabs$;
     this.showRename = this.tabListService.showRename$;

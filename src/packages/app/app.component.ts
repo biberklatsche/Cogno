@@ -4,12 +4,14 @@ import { OS } from "@cogno/app-tauri/os";
 import { AppBus } from "./app-bus/app-bus";
 import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
 import { DatabaseMigrationService } from "./app-host/database-migration.service";
+import { BusyIndicatorService } from "./common/busy-indicator/busy-indicator.service";
 import { Environment } from "./common/environment/environment";
 import { GridListComponent } from "./grid-list/grid-list.component";
 import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
 import { appDatabaseMigrations } from "./migrations/migrate";
 import { AppNotificationToastStackComponent } from "./notification/app-notification-toast-stack.component";
 import { TabListComponent } from "./tab-list/tab-list.component";
+import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-indicator-adapter.service";
 
 @Component({
   selector: "app-root",
@@ -70,6 +72,8 @@ export class AppComponent {
   constructor(
     bus: AppBus,
     private readonly databaseMigrationService: DatabaseMigrationService,
+    _busyIndicatorService: BusyIndicatorService,
+    _terminalBusyIndicatorAdapter: TerminalBusyIndicatorAdapterService,
   ) {
     window.addEventListener("contextmenu", (event) => {
       event.preventDefault();

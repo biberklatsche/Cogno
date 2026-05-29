@@ -1,22 +1,25 @@
-import { DOCUMENT } from "@angular/common";
+import { AsyncPipe, DOCUMENT } from "@angular/common";
 import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { DragPreviewService, IconComponent } from "@cogno/core-ui";
 import { BusyIndicatorComponent } from "../../common/busy-indicator/busy-indicator.component";
+import { BusyIndicatorService } from "../../common/busy-indicator/busy-indicator.service";
 import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
 
 @Component({
   selector: "app-pane-header",
   standalone: true,
-  imports: [IconComponent, BusyIndicatorComponent],
+  imports: [IconComponent, BusyIndicatorComponent, AsyncPipe],
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
-        @if (isBusy()) {
-          <span class="busy-indicator">
-            <app-busy-indicator [terminalIds]="terminalIdAsArray()" [pauseInBackground]="true"></app-busy-indicator>
-          </span>
+        @if (busyIndicatorService.forTerminal$(terminalId()) | async; as regs) {
+          @if (regs.length > 0) {
+            <span class="busy-indicator">
+              <app-busy-indicator targetKind="terminal" [targetId]="terminalId()" [pauseInBackground]="true"></app-busy-indicator>
+            </span>
+          }
         }
         <span class="title">{{ title() }}</span>
         <button class="close button icon-button" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
@@ -101,8 +104,6 @@ export class PaneHeaderComponent implements OnDestroy {
 
   title = input.required<string>();
   terminalId = input.required<string>();
-  isBusy = input.required<boolean>();
-  protected readonly terminalIdAsArray = computed(() => [this.terminalId()]);
 
   private readonly activeGridIsSplit = toSignal(this.gridListService.activeGridIsSplit$, {
     initialValue: false,
@@ -116,6 +117,7 @@ export class PaneHeaderComponent implements OnDestroy {
     private gridListService: GridListService,
     private terminalFullscreenService: TerminalFullscreenService,
     private dragPreviewService: DragPreviewService,
+    readonly busyIndicatorService: BusyIndicatorService,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 

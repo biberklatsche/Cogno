@@ -1,4 +1,8 @@
 import { ActionFiredEvent } from "../action/action.models";
+import {
+  BusyIndicatorRegisterEvent,
+  BusyIndicatorUnregisterEvent,
+} from "../common/busy-indicator/+bus/events";
 import { InitConfigAction } from "../config/+bus/actions";
 import { ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent } from "../config/+bus/events";
 import {
@@ -79,6 +83,8 @@ import {
 export type TerminalCommandType = AppMessage["type"];
 
 export type AppMessage =
+  | BusyIndicatorRegisterEvent
+  | BusyIndicatorUnregisterEvent
   | TabRemovedEvent
   | RemoveTabAction
   | CreateTabAction

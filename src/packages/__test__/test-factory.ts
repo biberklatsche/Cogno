@@ -155,7 +155,6 @@ export function getTabListService(): TabListService {
     tabListService = new TabListService(
       getAppBus(),
       getConfigService(),
-      getGridListService(),
       getDestroyRef(),
     );
   }

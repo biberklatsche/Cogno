@@ -8,8 +8,6 @@ import { ColorName } from "../../common/color/color";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import { ConfigService } from "../../config/+state/config.service";
 import { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
-import { TerminalId } from "../../grid-list/+model/model";
-import { GridListService } from "../../grid-list/+state/grid-list.service";
 import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import { Tab, TabList } from "../+model/tab";
@@ -21,10 +19,6 @@ export class TabListService {
   private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
   private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
   private readonly tabListByWorkspaceIdentifier = new Map<string, TabList>();
-  private readonly busyTerminalStateByTerminalId = new Map<
-    TerminalId,
-    { workspaceIdentifier: string; tabId: TabId }
-  >();
   private activeWorkspaceIdentifier: string | undefined = defaultWorkspaceIdContract;
 
   get tabs$(): Observable<Tab[]> {
@@ -72,7 +66,6 @@ export class TabListService {
   constructor(
     private bus: AppBus,
     private readonly configService: ConfigService,
-    private readonly gridListService: GridListService,
     destroyRef: DestroyRef,
   ) {
     this.bus
@@ -118,21 +111,6 @@ export class TabListService {
         tab.systemTitle = event.payload.title;
         this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
         event.propagationStopped = true;
-      });
-    this.bus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        this.updateBusyTabState(payload.terminalId, payload.isBusy);
-      });
-    this.bus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.updateBusyTabState(event.payload, false);
       });
     this.bus
       .on$(ActionFired.listener())
@@ -456,47 +434,4 @@ export class TabListService {
     return tabList.map((tab) => ({ ...tab }));
   }
 
-  private updateBusyTabState(terminalId: TerminalId, isBusy: boolean): void {
-    const previousBusyState = this.busyTerminalStateByTerminalId.get(terminalId);
-    if (isBusy) {
-      const resolvedBusyState = this.resolveBusyTabState(terminalId);
-      if (!resolvedBusyState) return;
-      this.busyTerminalStateByTerminalId.set(terminalId, resolvedBusyState);
-      this.applyTabBusyState(resolvedBusyState.workspaceIdentifier, resolvedBusyState.tabId);
-      return;
-    }
-
-    this.busyTerminalStateByTerminalId.delete(terminalId);
-    if (previousBusyState) {
-      this.applyTabBusyState(previousBusyState.workspaceIdentifier, previousBusyState.tabId);
-      return;
-    }
-
-    const resolvedBusyState = this.resolveBusyTabState(terminalId);
-    if (!resolvedBusyState) return;
-    this.applyTabBusyState(resolvedBusyState.workspaceIdentifier, resolvedBusyState.tabId);
-  }
-
-  private resolveBusyTabState(
-    terminalId: TerminalId,
-  ): { workspaceIdentifier: string; tabId: TabId } | undefined {
-    const workspaceIdentifier =
-      this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId);
-    const tabId = this.gridListService.findTabIdByTerminalId(terminalId);
-    if (!workspaceIdentifier || !tabId) return;
-    return { workspaceIdentifier, tabId };
-  }
-
-  private applyTabBusyState(workspaceIdentifier: string, tabId: TabId): void {
-    const tabList = this.getTabListForWorkspace(workspaceIdentifier);
-    const busyTerminalIds = Array.from(this.busyTerminalStateByTerminalId.entries())
-      .filter(
-        ([, state]) => state.workspaceIdentifier === workspaceIdentifier && state.tabId === tabId,
-      )
-      .map(([terminalId]) => terminalId);
-    const updatedTabList = tabList.map((tab) =>
-      tab.id === tabId ? { ...tab, busyTerminalIds } : tab,
-    );
-    this.setTabListForWorkspace(workspaceIdentifier, updatedTabList);
-  }
 }

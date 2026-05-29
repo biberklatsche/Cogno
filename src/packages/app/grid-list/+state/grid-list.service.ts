@@ -195,22 +195,6 @@ export class GridListService {
         }
       });
     this.bus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        this.updateBusyPaneState(payload.terminalId, payload.isBusy);
-      });
-    this.bus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.updateBusyPaneState(event.payload, false);
-      });
-
-    this.bus
       .onType$("FocusActiveTerminal")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((_event: FocusActiveTerminalAction) => {
@@ -751,22 +735,6 @@ export class GridListService {
         if (!terminalId) continue;
         this.componentFactory.destroy(terminalId);
       }
-    }
-  }
-
-  private updateBusyPaneState(terminalId: TerminalId, isBusy: boolean): void {
-    let activeWorkspaceChanged = false;
-    for (const [workspaceIdentifier, gridList] of this.gridListByWorkspaceIdentifier.entries()) {
-      const gridAndNode = this.determineGrid(gridList, terminalId);
-      if (!gridAndNode?.node.data) continue;
-      gridAndNode.node.data = { ...gridAndNode.node.data, isBusy };
-      if (workspaceIdentifier === this.activeWorkspaceIdentifier) {
-        activeWorkspaceChanged = true;
-      }
-    }
-
-    if (activeWorkspaceChanged) {
-      this._gridList.next({ ...this.getActiveWorkspaceGridList() });
     }
   }
 

@@ -74,6 +74,10 @@
   &.is-busy {
     padding-left: 28px;
   }
+
+  &.is-busy:has(.busy-count) {
+    padding-left: 38px;
+  }
 }
 
 .inline-input {
@@ -94,12 +98,16 @@
   top: 50%;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 12px;
+  gap: 3px;
   pointer-events: none;
   color: color-mix(in srgb, var(--foreground-color-40d) 60%, transparent);
   transform: translateY(-50%);
+}
+
+.busy-count {
+  font-size: 0.65rem;
+  font-family: var(--app-font-family), Roboto, sans-serif;
+  line-height: 1;
 }
 
 .close {
