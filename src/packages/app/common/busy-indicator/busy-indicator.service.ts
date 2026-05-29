@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { BehaviorSubject, map, Observable } from "rxjs";
-import { AppBus } from "../../app-bus/app-bus";
 import { TabId } from "@cogno/core-api";
+import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
+import { AppBus } from "../../app-bus/app-bus";
 import { TerminalId } from "../../grid-list/+model/model";
 import { GridListService } from "../../grid-list/+state/grid-list.service";
 import { BusyIndicatorTarget } from "./+bus/events";
@@ -58,6 +58,7 @@ export class BusyIndicatorService {
   forTerminal$(terminalId: TerminalId): Observable<BusyIndicatorRegistration[]> {
     return this._registrations$.pipe(
       map((regs) => regs.filter((r) => r.target.kind === "terminal" && r.target.id === terminalId)),
+      distinctUntilChanged(sameRegistrations),
     );
   }
 
@@ -69,10 +70,19 @@ export class BusyIndicatorService {
           return this.gridListService.findTabIdByTerminalId(r.target.id) === tabId;
         }),
       ),
+      distinctUntilChanged(sameRegistrations),
     );
   }
 
   hasAnimation$(tabId: TabId): Observable<boolean> {
-    return this.forTab$(tabId).pipe(map((regs) => regs.length > 0));
+    return this.forTab$(tabId).pipe(
+      map((regs) => regs.length > 0),
+      distinctUntilChanged(),
+    );
   }
+}
+
+function sameRegistrations(a: BusyIndicatorRegistration[], b: BusyIndicatorRegistration[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((r, i) => r.registrationId === b[i].registrationId && r.priority === b[i].priority);
 }

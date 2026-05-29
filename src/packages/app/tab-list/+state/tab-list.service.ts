@@ -433,5 +433,4 @@ export class TabListService {
   private cloneTabList(tabList: TabList): TabList {
     return tabList.map((tab) => ({ ...tab }));
   }
-
 }

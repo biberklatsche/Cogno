@@ -12,9 +12,7 @@ function generateSineKeyframes(): number[][] {
     Array.from({ length: BAR_COUNT }, (_, bi) => {
       const phase = (bi / BAR_COUNT) * Math.PI * 2;
       const t = (fi / FRAME_COUNT) * Math.PI * 2;
-      return Math.round(
-        MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * (0.5 + 0.5 * Math.sin(t + phase)),
-      );
+      return Math.round(MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * (0.5 + 0.5 * Math.sin(t + phase)));
     }),
   );
 }
