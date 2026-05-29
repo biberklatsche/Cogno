@@ -82,7 +82,10 @@ export class BusyIndicatorService {
   }
 }
 
-function sameRegistrations(a: BusyIndicatorRegistration[], b: BusyIndicatorRegistration[]): boolean {
+function sameRegistrations(
+  a: BusyIndicatorRegistration[],
+  b: BusyIndicatorRegistration[],
+): boolean {
   if (a.length !== b.length) return false;
   return a.every(
     (r, i) =>
