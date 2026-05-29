@@ -95,7 +95,6 @@ export class TerminalHistoryPersistenceService {
     const recentPreviousCommand = this.getRecentTransitionSourceCommand();
 
     this.enqueue(async (repo) => {
-      await repo.upsertCommandPatternExecution(persistedCommand);
       await repo.upsertCommandExecution(persistedCommand, executedCommand.directory);
 
       if (recentPreviousCommand) {
@@ -128,10 +127,7 @@ export class TerminalHistoryPersistenceService {
 
   deleteCommandExecution(commandRaw: string, cwdRaw: string): void {
     if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
-    this.enqueue(async (repo) => {
-      await repo.deleteCommandPatternExecution(commandRaw);
-      await repo.deleteCommandExecution(commandRaw, cwdRaw);
-    });
+    this.enqueue((repo) => repo.deleteCommandExecution(commandRaw, cwdRaw));
   }
 
   async searchDirectories(fragment: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {

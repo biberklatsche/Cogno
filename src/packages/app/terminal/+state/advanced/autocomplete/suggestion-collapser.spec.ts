@@ -119,6 +119,20 @@ describe("SuggestionCollapser", () => {
     expect(collapsed[0].label).toBe("git push {arg1}");
   });
 
+  it("collapses 2-token commands like 'echo a', 'echo b', 'echo c'", () => {
+    const suggestions = [
+      historySuggestion("echo a"),
+      historySuggestion("echo b"),
+      historySuggestion("echo c"),
+    ];
+
+    const result = collapser.collapse(suggestions);
+    const collapsed = result.filter((s) => s.source === "history-collapse");
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].label).toBe("echo {arg1}");
+    expect(collapsed[0].insertText).toBe("echo ");
+  });
+
   it("does not collapse when all suggestions have identical variable positions (no variance)", () => {
     const suggestions = [
       historySuggestion("codex resume abc123"),

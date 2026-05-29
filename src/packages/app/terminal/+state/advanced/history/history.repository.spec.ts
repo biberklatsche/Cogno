@@ -122,6 +122,51 @@ describe("HistoryRepository", () => {
     );
   });
 
+  it("confirmLivePattern seeds slot values from all original commands, not just the first", async () => {
+    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        // command 1 ("npm install express"): slot value check → none; slot stat check → none
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        // command 2 ("npm install react"): slot value check → none; slot stat → exists
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          { totalCount: 1, distinctValueCount: 1, topValue: "express", topValueCount: 1 },
+        ])
+        // command 3 ("npm install lodash"): slot value check → none; slot stat → exists
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          { totalCount: 2, distinctValueCount: 2, topValue: "express", topValueCount: 1 },
+        ]),
+    };
+    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
+      handler(transactionDatabase as IDatabase),
+    );
+
+    const repository = new (
+      HistoryRepository as unknown as new (
+        contextId: number,
+        adapter: IPathAdapter,
+      ) => HistoryRepository
+    )(7, pathAdapter);
+
+    await repository.confirmLivePattern([
+      "npm install express",
+      "npm install react",
+      "npm install lodash",
+    ]);
+
+    const executeCalls = (
+      transactionDatabase.execute as ReturnType<typeof vi.fn>
+    ).mock.calls as [string, unknown[]][];
+    const slotValueInserts = executeCalls.filter(([sql]) =>
+      sql.includes("command_pattern_slot_value_stat"),
+    );
+    expect(slotValueInserts).toHaveLength(3);
+  });
+
   it("returns parsed command patterns and updates selected counter", async () => {
     const selectSpy = vi
       .spyOn(DB, "select")

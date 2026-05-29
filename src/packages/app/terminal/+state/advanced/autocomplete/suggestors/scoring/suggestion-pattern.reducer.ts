@@ -12,7 +12,6 @@ const PATTERN_RULES = {
   minimumNonOptionStableTokenCount: 1,
   minimumSlotDistinctValueCount: 2,
   maximumTopValueDominanceRatio: 0.9,
-  effectivelyStableSlotThreshold: 0.95,
   minimumScore: 55,
   genericPenalty: 24,
   selectionBonusWeight: 18,
@@ -101,7 +100,7 @@ export class SuggestionPatternReducer {
     return {
       label: patternLabel,
       description: "Learned command pattern",
-      insertText: patternLabel,
+      insertText: patternLabel.split(/{arg\d+}/)[0],
       score,
       source: "history-pattern",
       replaceStart: 0,
@@ -128,14 +127,9 @@ export class SuggestionPatternReducer {
       return false;
     }
 
-    const hasAtLeastOneVariableSlot = pattern.slotStatistics.some((stat) => {
-      if (this.isEffectivelyStableSlot(stat)) return false;
-      return (
-        stat.totalCount >= PATTERN_RULES.minimumPatternCount &&
-        stat.distinctValueCount >= PATTERN_RULES.minimumSlotDistinctValueCount &&
-        stat.topValueCount / stat.totalCount <= PATTERN_RULES.maximumTopValueDominanceRatio
-      );
-    });
+    const hasAtLeastOneVariableSlot = pattern.slotStatistics.some((stat) =>
+      this.isGenuinelyVariableSlot(stat),
+    );
 
     if (!hasAtLeastOneVariableSlot) {
       return false;
@@ -145,9 +139,12 @@ export class SuggestionPatternReducer {
     return firstPart?.kind === "stable";
   }
 
-  private isEffectivelyStableSlot(stat: CommandPatternSlotStatistics): boolean {
-    if (stat.totalCount === 0) return false;
-    return stat.topValueCount / stat.totalCount > PATTERN_RULES.effectivelyStableSlotThreshold;
+  private isGenuinelyVariableSlot(stat: CommandPatternSlotStatistics): boolean {
+    return (
+      stat.totalCount >= PATTERN_RULES.minimumPatternCount &&
+      stat.distinctValueCount >= PATTERN_RULES.minimumSlotDistinctValueCount &&
+      stat.topValueCount / stat.totalCount <= PATTERN_RULES.maximumTopValueDominanceRatio
+    );
   }
 
   private createPatternLabel(pattern: CommandPattern): string {
@@ -157,7 +154,7 @@ export class SuggestionPatternReducer {
       .map((part) => {
         if (part.kind === "stable") return part.value;
         const stat = slotStatsMap.get(part.slotIndex);
-        if (stat && this.isEffectivelyStableSlot(stat)) return stat.topValue;
+        if (stat && !this.isGenuinelyVariableSlot(stat)) return stat.topValue;
         return `{arg${displayArgCounter++}}`;
       })
       .join(" ");

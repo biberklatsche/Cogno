@@ -23,16 +23,11 @@ const pathAdapter: IPathAdapter = {
 
 type HistoryRepositoryDouble = {
   upsertWorkingDirectory: ReturnType<typeof vi.fn<HistoryRepository["upsertWorkingDirectory"]>>;
-  upsertCommandPatternExecution: ReturnType<
-    typeof vi.fn<HistoryRepository["upsertCommandPatternExecution"]>
-  >;
   upsertCommandExecution: ReturnType<typeof vi.fn<HistoryRepository["upsertCommandExecution"]>>;
   upsertCommandTransition: ReturnType<typeof vi.fn<HistoryRepository["upsertCommandTransition"]>>;
-  deleteCommandPatternExecution: ReturnType<
-    typeof vi.fn<HistoryRepository["deleteCommandPatternExecution"]>
-  >;
   deleteCommandExecution: ReturnType<typeof vi.fn<HistoryRepository["deleteCommandExecution"]>>;
   searchCommandPatterns: ReturnType<typeof vi.fn<HistoryRepository["searchCommandPatterns"]>>;
+  confirmLivePattern: ReturnType<typeof vi.fn<HistoryRepository["confirmLivePattern"]>>;
   markCommandPatternSelected: ReturnType<
     typeof vi.fn<HistoryRepository["markCommandPatternSelected"]>
   >;
@@ -41,12 +36,11 @@ type HistoryRepositoryDouble = {
 function createRepositoryDouble(): HistoryRepositoryDouble {
   return {
     upsertWorkingDirectory: vi.fn().mockResolvedValue(undefined),
-    upsertCommandPatternExecution: vi.fn().mockResolvedValue(undefined),
     upsertCommandExecution: vi.fn().mockResolvedValue(undefined),
     upsertCommandTransition: vi.fn().mockResolvedValue(undefined),
-    deleteCommandPatternExecution: vi.fn().mockResolvedValue(undefined),
     deleteCommandExecution: vi.fn().mockResolvedValue(undefined),
     searchCommandPatterns: vi.fn().mockResolvedValue([]),
+    confirmLivePattern: vi.fn().mockResolvedValue(undefined),
     markCommandPatternSelected: vi.fn().mockResolvedValue(undefined),
   };
 }
@@ -90,8 +84,6 @@ describe("TerminalHistoryPersistenceService", () => {
     });
     await flushActions();
 
-    expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenCalledTimes(1);
-    expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenCalledWith("npm test");
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledTimes(1);
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith("npm test", "/tmp");
     expect(repositoryDouble.upsertCommandTransition).not.toHaveBeenCalled();
@@ -109,7 +101,6 @@ describe("TerminalHistoryPersistenceService", () => {
     });
     await flushActions();
 
-    expect(repositoryDouble.upsertCommandPatternExecution).not.toHaveBeenCalled();
     expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
   });
 
@@ -152,11 +143,6 @@ describe("TerminalHistoryPersistenceService", () => {
     });
     await flushActions();
 
-    expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenNthCalledWith(1, "git pull");
-    expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenNthCalledWith(
-      2,
-      "docker compose build",
-    );
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenNthCalledWith(1, "git pull", "/tmp");
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenNthCalledWith(
       2,
@@ -170,39 +156,9 @@ describe("TerminalHistoryPersistenceService", () => {
     );
   });
 
-  it("learns command patterns during command ingest", async () => {
+  it("does not write pattern rows during command ingest — patterns are only created on confirmation", async () => {
     const repositoryDouble = createRepositoryDouble();
     const service = await createService(repositoryDouble);
-
-    repositoryDouble.searchCommandPatterns.mockResolvedValue([
-      {
-        signature: {
-          key: "stable:git|stable:commit|stable:-am|slot:0",
-          parts: [
-            { kind: "stable", value: "git" },
-            { kind: "stable", value: "commit" },
-            { kind: "stable", value: "-am" },
-            { kind: "slot", slotIndex: 0 },
-          ],
-        },
-        totalCount: 2,
-        stableTokenCount: 3,
-        nonOptionStableTokenCount: 2,
-        variableSlotCount: 1,
-        lastSeenAt: 123,
-        selectedCount: 0,
-        lastSelectedAt: undefined,
-        slotStatistics: [
-          {
-            slotIndex: 0,
-            totalCount: 2,
-            distinctValueCount: 2,
-            topValue: "fix bug",
-            topValueCount: 1,
-          },
-        ],
-      },
-    ]);
 
     service.onCommandExecuted({
       command: 'git commit -am "fix bug"',
@@ -216,21 +172,8 @@ describe("TerminalHistoryPersistenceService", () => {
     });
     await flushActions();
 
-    const learnedPatterns = await service.searchCommandPatterns("git commit", 10);
-
-    expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenNthCalledWith(
-      1,
-      'git commit -am "fix bug"',
-    );
-    expect(repositoryDouble.upsertCommandPatternExecution).toHaveBeenNthCalledWith(
-      2,
-      'git commit -am "update readme"',
-    );
-    expect(learnedPatterns).toHaveLength(1);
-    expect(learnedPatterns[0].slotStatistics[0]).toMatchObject({
-      totalCount: 2,
-      distinctValueCount: 2,
-    });
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledTimes(2);
+    expect(repositoryDouble.confirmLivePattern).not.toHaveBeenCalled();
   });
 
   it("tracks selected pattern feedback through the repository", async () => {
@@ -243,16 +186,13 @@ describe("TerminalHistoryPersistenceService", () => {
     expect(repositoryDouble.markCommandPatternSelected).toHaveBeenCalledWith("pattern-a");
   });
 
-  it("reduces learned command patterns when command executions are deleted", async () => {
+  it("deletes command executions from history without touching pattern rows", async () => {
     const repositoryDouble = createRepositoryDouble();
     const service = await createService(repositoryDouble);
 
     service.deleteCommandExecution('git commit -am "fix bug"', "/tmp");
     await flushActions();
 
-    expect(repositoryDouble.deleteCommandPatternExecution).toHaveBeenCalledWith(
-      'git commit -am "fix bug"',
-    );
     expect(repositoryDouble.deleteCommandExecution).toHaveBeenCalledWith(
       'git commit -am "fix bug"',
       "/tmp",

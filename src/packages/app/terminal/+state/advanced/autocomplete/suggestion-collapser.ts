@@ -72,9 +72,9 @@ export class SuggestionCollapser {
     const groups: CollapseGroup[] = [];
 
     for (const [tokenCount, sameCountItems] of byTokenCount) {
-      if (tokenCount < 3) continue;
+      if (tokenCount < 2) continue;
 
-      for (let varPos = 2; varPos < tokenCount; varPos++) {
+      for (let varPos = 1; varPos < tokenCount; varPos++) {
         const byTemplate = new Map<string, TokenizedItem[]>();
         for (const item of sameCountItems) {
           const key = item.tokens.filter((_, i) => i !== varPos).join("\x00");
@@ -91,7 +91,7 @@ export class SuggestionCollapser {
       }
     }
 
-    // Largest groups first to prefer more specific collapses
+    // Largest groups first — most evidence wins when groups overlap
     return groups.sort((a, b) => b.members.length - a.members.length);
   }
 
