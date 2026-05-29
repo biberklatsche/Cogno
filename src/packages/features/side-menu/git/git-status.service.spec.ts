@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GitFile, GitFileStatus, parseGitStatus } from "./git-status.service";
 
-function expectedGitFile(
-  path: string,
-  status: GitFileStatus,
-  isDirectory = false,
-): GitFile {
+function expectedGitFile(path: string, status: GitFileStatus, isDirectory = false): GitFile {
   return { path, status, isDirectory };
 }
 
