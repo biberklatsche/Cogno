@@ -1,10 +1,9 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/core-ui";
 import { AppBus } from "../app-bus/app-bus";
-import { DialogService } from "../common/dialog";
 import { TerminalId } from "../grid-list/+model/model";
 import { GridListService } from "../grid-list/+state/grid-list.service";
-import { TerminalBusyConfirmationDialogComponent } from "./terminal-busy-confirmation-dialog.component";
 
 @Injectable({ providedIn: "root" })
 export class TerminalBusyStateService {
@@ -72,11 +71,15 @@ export class TerminalBusyStateService {
       return true;
     }
 
-    const dialogRef = this.dialogService.open(TerminalBusyConfirmationDialogComponent, {
+    const count = this.getBusyTerminalCount();
+    const countText =
+      count === 1 ? "1 terminal is still busy" : `${count} terminals are still busy`;
+    const dialogRef = this.dialogService.open<ConfirmDialogData, boolean>(ConfirmDialogComponent, {
       title: "Running Processes",
       data: {
-        actionLabel,
-        busyTerminalCount: this.getBusyTerminalCount(),
+        message: `${countText}. Do you really want to ${actionLabel}?`,
+        confirmLabel: "Yes",
+        cancelLabel: "No",
       },
       hasBackdrop: true,
       showCloseButton: false,

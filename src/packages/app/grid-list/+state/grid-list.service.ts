@@ -1,10 +1,10 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { defaultWorkspaceIdContract, GridConfig, PaneConfig, TabId } from "@cogno/core-api";
+import { BinaryNode, BinaryTree } from "@cogno/core-domain";
 import { BehaviorSubject, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import { BinaryNode, BinaryTree } from "../../common/tree/binary-tree";
 import { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
 import { TerminalCwdChangedEvent, TerminalTitleChangedEvent } from "../../terminal/+bus/events";
 import { TerminalFocusedEvent } from "../../terminal/+state/handler/focus.handler";

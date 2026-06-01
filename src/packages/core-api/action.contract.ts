@@ -22,9 +22,15 @@ export interface ActionCatalogContract {
   readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
 }
 
+export type ActionContextContract = {
+  readonly args?: ReadonlyArray<string>;
+  readonly terminalId?: string;
+};
+
 export interface ActionDispatcherContract {
   dispatchAction(actionDefinition: ActionDefinitionContract): void;
   onAction$(actionName: string): Observable<void>;
+  onActionWithContext$(actionName: string): Observable<ActionContextContract>;
 }
 
 export abstract class ActionCatalog implements ActionCatalogContract {
@@ -34,4 +40,5 @@ export abstract class ActionCatalog implements ActionCatalogContract {
 export abstract class ActionDispatcher implements ActionDispatcherContract {
   abstract dispatchAction(actionDefinition: ActionDefinitionContract): void;
   abstract onAction$(actionName: string): Observable<void>;
+  abstract onActionWithContext$(actionName: string): Observable<ActionContextContract>;
 }

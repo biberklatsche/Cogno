@@ -1,6 +1,6 @@
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
-import { IDisposable } from "../../../common/models/models";
 import { TerminalId } from "../../../grid-list/+model/model";
 import { ITerminalHandler } from "./handler";
 

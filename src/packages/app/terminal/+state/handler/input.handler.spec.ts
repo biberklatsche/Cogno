@@ -1,8 +1,8 @@
+import { Char } from "@cogno/core-support";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import { Char } from "../../../common/chars/chars";
 import type { IPty } from "../pty/pty";
 import type { TerminalStateManager } from "../state";
 import { InputHandler } from "./input.handler";

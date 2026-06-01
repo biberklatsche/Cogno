@@ -10,7 +10,7 @@ import {
   Type,
   viewChild,
 } from "@angular/core";
-import { IconComponent } from "@cogno/core-ui";
+import { IconComponent } from "../icons/icon/icon.component";
 import { DIALOG_DATA } from "./dialog.tokens";
 import { DialogConfig } from "./dialog-config";
 import { DialogRef } from "./dialog-ref";

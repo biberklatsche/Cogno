@@ -72,7 +72,6 @@ export class HistoryDirectoryScorer {
     );
   }
 
-
   private static countOccurrences(haystack: string, needle: string): number {
     if (!needle) return 0;
     let count = 0;

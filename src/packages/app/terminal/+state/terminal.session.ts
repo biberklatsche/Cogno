@@ -1,11 +1,17 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { NotificationChannelContract, Opener, ShellDefinitionContract } from "@cogno/core-api";
+import {
+  NotificationChannelContract,
+  Opener,
+  ShellDefinitionContract,
+  TerminalLinkPatternPort,
+} from "@cogno/core-api";
+import { IDisposable } from "@cogno/core-support";
+import { DialogRef, DialogService } from "@cogno/core-ui";
 import { Observable, Subscription } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { DialogRef, DialogService } from "../../common/dialog";
-import { IDisposable } from "../../common/models/models";
+import { ResumeLinkHandler } from "../../coding-agent/resume-link/resume-link.handler";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
@@ -24,7 +30,6 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
-import { AiAgentResumeActionHandler } from "./handler/ai-agent-resume-action.handler";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { CursorHandler } from "./handler/cursor.handler";
@@ -66,6 +71,7 @@ export class TerminalSession {
 
   private terminalId?: TerminalId;
   private shellProfile?: ShellProfile;
+  private resumeLinkDisposable?: IDisposable;
 
   constructor(
     private configService: ConfigService,
@@ -78,6 +84,7 @@ export class TerminalSession {
     private notificationTargetResolverService: NotificationTargetResolverService,
     private readonly opener: Opener,
     private readonly terminalActivity: TerminalActivityService,
+    private readonly linkPatternPort: TerminalLinkPatternPort,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.renderer = new Renderer(this.configService.config);
@@ -179,10 +186,13 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager, this.opener)));
-    this.disposables.push(
-      this.renderer.register(
-        new AiAgentResumeActionHandler(this.pty, this.configService.config.ai?.resume_pattern),
-      ),
+    this.subscription.add(
+      this.linkPatternPort.pattern$(this.terminalId).subscribe((pattern) => {
+        this.resumeLinkDisposable?.dispose();
+        this.resumeLinkDisposable = pattern
+          ? this.renderer.register(new ResumeLinkHandler(this.pty, pattern))
+          : undefined;
+      }),
     );
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
@@ -384,6 +394,7 @@ export class TerminalSession {
     this.disposables.forEach((disposable) => {
       disposable.dispose();
     });
+    this.resumeLinkDisposable?.dispose();
     this.subscription.unsubscribe();
   }
 

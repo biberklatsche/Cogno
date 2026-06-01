@@ -1,14 +1,16 @@
+// Lives in app/ rather than features/ because it depends on xterm Terminal,
+// ITerminalHandler, and IPty — which are app-layer types.
 import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { OS } from "@cogno/app-tauri/os";
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
-import { IDisposable } from "../../../common/models/models";
-import { IPty } from "../pty/pty";
-import { ITerminalHandler } from "./handler";
+import { ITerminalHandler } from "../../terminal/+state/handler/handler";
+import { IPty } from "../../terminal/+state/pty/pty";
 
 const DEFAULT_RESUME_PATTERN =
   /\b([a-zA-Z][\w-]*)\s+(resume|--resume|-r)\s+([a-zA-Z0-9][a-zA-Z0-9_-]{7,})/gi;
 
-export class AiAgentResumeActionHandler implements ITerminalHandler {
+export class ResumeLinkHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
   private readonly _patternSource: string;

@@ -1,7 +1,7 @@
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus, MessageBase } from "../../../app-bus/app-bus";
-import { IDisposable } from "../../../common/models/models";
 import { Config } from "../../../config/+models/config";
 import { ConfigService } from "../../../config/+state/config.service";
 import { TerminalId } from "../../../grid-list/+model/model";

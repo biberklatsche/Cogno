@@ -6,7 +6,14 @@
       "Bash(Format-Table -Property FullName)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(npx tsc *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(pnpm lint:code)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm lint:architecture)",
+      "Bash(grep *)"
     ]
   }
 }

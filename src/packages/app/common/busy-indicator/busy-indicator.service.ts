@@ -29,9 +29,7 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const payload = event.payload;
         if (!payload) return;
-        const existing = this._registrations$.value.filter(
-          (r) => r.registrationId !== payload.registrationId,
-        );
+        const existing = this.getRegistrationsRetainedFor(payload.registrationId, payload.target);
         this._registrations$.next([
           ...existing,
           {
@@ -53,6 +51,17 @@ export class BusyIndicatorService {
           this._registrations$.value.filter((r) => r.registrationId !== registrationId),
         );
       });
+  }
+
+  private getRegistrationsRetainedFor(
+    registrationId: string,
+    target: BusyIndicatorTarget,
+  ): BusyIndicatorRegistration[] {
+    return this._registrations$.value.filter((registration) => {
+      if (registration.registrationId === registrationId) return false;
+      if (target.kind !== "terminal") return true;
+      return registration.target.kind !== "terminal" || registration.target.id !== target.id;
+    });
   }
 
   forTerminal$(terminalId: TerminalId): Observable<BusyIndicatorRegistration[]> {
@@ -90,6 +99,8 @@ function sameRegistrations(
   return a.every(
     (r, i) =>
       r.registrationId === b[i].registrationId &&
+      r.target.kind === b[i].target.kind &&
+      r.target.id === b[i].target.id &&
       r.priority === b[i].priority &&
       r.keyframes === b[i].keyframes,
   );

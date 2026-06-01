@@ -1,6 +1,6 @@
+import { IDisposable } from "@cogno/core-support";
 import { IDecoration, IMarker, Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { IDisposable } from "../../../../common/models/models";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { TerminalStateManager } from "../../state";

@@ -1,7 +1,7 @@
 import { NotificationTargetContract } from "@cogno/core-api";
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
-import { IDisposable } from "../../../common/models/models";
 import { NotificationChannels } from "../../../notification/+bus/events";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";

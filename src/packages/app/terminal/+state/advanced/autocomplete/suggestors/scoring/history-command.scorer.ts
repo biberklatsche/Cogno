@@ -165,7 +165,6 @@ export class HistoryCommandScorer {
     );
   }
 
-
   private static sat(value: number, k: number): number {
     if (value <= 0) return 0;
     return value / (value + k);

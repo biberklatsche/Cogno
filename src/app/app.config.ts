@@ -11,15 +11,21 @@ import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-k
 import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
-
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
+import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
 import { GitBlobReaderHostService } from "@cogno/app/app-host/git-blob-reader-host.service";
 import { HttpClientPortAdapterService } from "@cogno/app/app-host/http-client-port.adapter.service";
 import { OpenerAdapterService } from "@cogno/app/app-host/opener.adapter.service";
+import { OsPlatformAdapterService } from "@cogno/app/app-host/os-platform.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
+import { SimpleFileAccessAdapterService } from "@cogno/app/app-host/simple-file-access.adapter.service";
+import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
+import { TerminalLinkPatternAdapterService } from "@cogno/app/app-host/terminal-link-pattern.adapter.service";
+import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
+import { TerminalProcessAdapterService } from "@cogno/app/app-host/terminal-process.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
@@ -49,18 +55,30 @@ import {
   ApplicationProduct,
   CommandRunner,
   ConfigurationTransformer,
+  ConfirmDialogPort,
   DatabaseAccess,
   Filesystem,
   HttpClientPort,
   NotificationCenterPort,
   Opener,
+  OsPlatformPort,
+  SimpleFileAccess,
+  TerminalAnimationPort,
   TerminalGateway,
+  TerminalLinkPatternPort,
+  TerminalMonitorPort,
+  TerminalProcessPort,
   TerminalSearchHostPort,
   WorkspaceHostPort,
 } from "@cogno/core-api";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import {
+  CodingAgentActivationService,
+  CodingAgentDetectionService,
+  CodingAgentStatusService,
+} from "@cogno/features/coding-agent";
 import { GitBlobReader } from "@cogno/features/side-menu/git/git-blob-reader.port";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
@@ -104,6 +122,13 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },
     { provide: WorkspaceHostPort, useExisting: WorkspaceHostPortAdapterService },
+    { provide: SimpleFileAccess, useExisting: SimpleFileAccessAdapterService },
+    { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
+    { provide: OsPlatformPort, useExisting: OsPlatformAdapterService },
+    { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
+    { provide: TerminalLinkPatternPort, useExisting: TerminalLinkPatternAdapterService },
+    { provide: TerminalProcessPort, useExisting: TerminalProcessAdapterService },
+    { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
@@ -128,6 +153,9 @@ export const appConfig: ApplicationConfig = {
         injector.get(WorkspaceHostPortAdapterService);
         injector.get(WorkspaceShortcutActionService);
         injector.get(AiProviderDetectionService);
+        injector.get(CodingAgentStatusService);
+        injector.get(CodingAgentDetectionService);
+        injector.get(CodingAgentActivationService);
       }, 0);
     }),
   ],

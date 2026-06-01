@@ -1,6 +1,6 @@
 import { CommandTokenizer } from "../history/command-tokenizer";
-import { tokenMatchQuality } from "./token-match";
 import { AutocompleteSuggestion } from "./autocomplete.types";
+import { tokenMatchQuality } from "./token-match";
 
 const COLLAPSE_THRESHOLD = 3;
 const MAX_KEPT_FROM_GROUP = 2;

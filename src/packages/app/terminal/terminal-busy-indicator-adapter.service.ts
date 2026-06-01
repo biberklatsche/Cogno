@@ -1,11 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { BAR_COUNT, MAX_HEIGHT, MIN_HEIGHT } from "@cogno/core-ui";
 import { AppBus } from "../app-bus/app-bus";
-import {
-  BAR_COUNT,
-  MAX_HEIGHT,
-  MIN_HEIGHT,
-} from "../common/busy-indicator/busy-indicator.constants";
 
 const FRAME_COUNT = 6;
 

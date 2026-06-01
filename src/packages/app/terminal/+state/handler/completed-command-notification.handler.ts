@@ -1,6 +1,6 @@
 import { NotificationTargetContract } from "@cogno/core-api";
+import { timespan } from "@cogno/core-support";
 import { AppBus } from "../../../app-bus/app-bus";
-import { timespan } from "../../../common/timespan/timespan";
 import { ConfigService } from "../../../config/+state/config.service";
 import { TerminalId } from "../../../grid-list/+model/model";
 import { ContextMenuItem } from "../../../menu/context-menu-overlay/context-menu-overlay.types";

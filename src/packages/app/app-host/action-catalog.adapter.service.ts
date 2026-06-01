@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   ActionCatalog,
+  ActionContextContract,
   ActionDefinitionContract,
   ActionDispatcher,
   ActionEntryContract,
@@ -17,6 +18,7 @@ import { KeybindService } from "../keybinding/keybind.service";
 export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatcher {
   readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
   private readonly actionStreams = new Map<string, Observable<void>>();
+  private readonly contextStreams = new Map<string, Observable<ActionContextContract>>();
 
   constructor(
     private readonly appBus: AppBus,
@@ -51,6 +53,22 @@ export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatc
       share(),
     );
     this.actionStreams.set(actionName, stream);
+    return stream;
+  }
+
+  onActionWithContext$(actionName: string): Observable<ActionContextContract> {
+    const cached = this.contextStreams.get(actionName);
+    if (cached) return cached;
+
+    const stream = this.appBus.on$(ActionFired.listener()).pipe(
+      filter((event) => event.payload === actionName),
+      map((event) => ({
+        args: event.args ? [...event.args] : undefined,
+        terminalId: event.terminalId,
+      })),
+      share(),
+    );
+    this.contextStreams.set(actionName, stream);
     return stream;
   }
 

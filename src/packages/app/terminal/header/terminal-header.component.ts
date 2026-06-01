@@ -1,8 +1,8 @@
 import { Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { timespan } from "@cogno/core-support";
 import { IconComponent } from "@cogno/core-ui";
 import { map } from "rxjs";
-import { timespan } from "../../common/timespan/timespan";
 import { ConfigService } from "../../config/+state/config.service";
 import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";

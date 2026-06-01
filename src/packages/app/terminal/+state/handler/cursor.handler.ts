@@ -1,5 +1,5 @@
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
-import { IDisposable } from "../../../common/models/models";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";
 

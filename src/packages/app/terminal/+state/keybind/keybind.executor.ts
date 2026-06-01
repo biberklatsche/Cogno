@@ -1,6 +1,6 @@
+import { IDisposable } from "@cogno/core-support";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { IDisposable } from "../../../common/models/models";
 import { TerminalStateManager } from "../state";
 
 export class KeybindExecutor implements IDisposable {
