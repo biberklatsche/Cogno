@@ -12,12 +12,14 @@ export class AiAgentResumeActionHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
   private readonly _patternSource: string;
+  private readonly _isMac: boolean;
 
   constructor(
     private readonly _pty: IPty,
     patternSource?: string,
   ) {
     this._patternSource = patternSource ?? DEFAULT_RESUME_PATTERN.source;
+    this._isMac = OS.platform() === "macos";
   }
 
   registerTerminal(terminal: Terminal): IDisposable {
@@ -93,10 +95,10 @@ export class AiAgentResumeActionHandler implements ITerminalHandler {
   }
 
   private get executeModifierLabel(): string {
-    return OS.platform() === "macos" ? "Cmd" : "Ctrl";
+    return this._isMac ? "Cmd" : "Ctrl";
   }
 
   private isExecuteModifierPressed(event: MouseEvent): boolean {
-    return OS.platform() === "macos" ? event.metaKey : event.ctrlKey;
+    return this._isMac ? event.metaKey : event.ctrlKey;
   }
 }

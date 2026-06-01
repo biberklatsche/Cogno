@@ -25,6 +25,7 @@ import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
+import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
@@ -117,6 +118,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(WorkspaceHostApplicationService);
         injector.get(KeybindService);
         injector.get(CliActionService);
+        injector.get(HttpMessageAdapterService);
         injector.get(NativeMenuService);
         injector.get(WindowService);
         injector.get(SideMenuLifecycleRuntimeService);

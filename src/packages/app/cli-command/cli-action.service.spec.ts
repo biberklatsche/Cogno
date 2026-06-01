@@ -1,29 +1,31 @@
 import type { DestroyRef } from "@angular/core";
 import { CliActionListener } from "@cogno/app-tauri/cli-action";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AppBus } from "../app-bus/app-bus";
 import {
   type ActionDefinition,
   KeybindActionInterpreter,
 } from "../keybinding/keybind-action.interpreter";
+import type { CognoMessageDispatcher } from "../cogno-message/cogno-message-dispatcher.service";
 import { CliActionService } from "./cli-action.service";
 
-type BusPort = Pick<AppBus, "publish">;
+type DispatcherPort = Pick<CognoMessageDispatcher, "dispatch">;
 type DestroyRefPort = Pick<DestroyRef, "onDestroy">;
 
 describe("CliActionService", () => {
   let _service: CliActionService;
-  let busMock: BusPort;
+  let dispatcherMock: DispatcherPort;
   let destroyRefMock: DestroyRefPort;
   let registerSpy: ReturnType<typeof vi.spyOn>;
   let unlistenMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     unlistenMock = vi.fn();
-    registerSpy = vi.spyOn(CliActionListener, "register").mockResolvedValue(unlistenMock);
+    registerSpy = vi.spyOn(CliActionListener, "register").mockResolvedValue(
+      unlistenMock as unknown as () => void,
+    );
 
-    busMock = {
-      publish: vi.fn(),
+    dispatcherMock = {
+      dispatch: vi.fn(),
     };
 
     destroyRefMock = {
@@ -32,14 +34,19 @@ describe("CliActionService", () => {
   });
 
   it("should register a listener on initialization", () => {
-    _service = new CliActionService(busMock, destroyRefMock);
+    _service = new CliActionService(
+      dispatcherMock as CognoMessageDispatcher,
+      destroyRefMock as unknown as DestroyRef,
+    );
     expect(registerSpy).toHaveBeenCalled();
   });
 
-  it("should parse and publish action when listener is triggered", async () => {
-    _service = new CliActionService(busMock, destroyRefMock);
+  it("should parse and dispatch action when listener is triggered", async () => {
+    _service = new CliActionService(
+      dispatcherMock as CognoMessageDispatcher,
+      destroyRefMock as unknown as DestroyRef,
+    );
 
-    // Get the callback passed to register
     const callback = registerSpy.mock.calls[0][0];
 
     const testAction = "test-action";
@@ -53,24 +60,25 @@ describe("CliActionService", () => {
     callback(testAction);
 
     expect(parseSpy).toHaveBeenCalledWith(testAction);
-    expect(busMock.publish).toHaveBeenCalledWith(
+    expect(dispatcherMock.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: "ActionFired",
-        payload: "test-action",
+        action: "test-action",
+        args: [],
       }),
     );
   });
 
   it("should call unlisten when DestroyRef.onDestroy is triggered", async () => {
-    _service = new CliActionService(busMock, destroyRefMock);
+    _service = new CliActionService(
+      dispatcherMock as CognoMessageDispatcher,
+      destroyRefMock as unknown as DestroyRef,
+    );
 
-    // Wait for the register promise to resolve
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(destroyRefMock.onDestroy).toHaveBeenCalled();
 
-    // Get the cleanup function passed to onDestroy
-    const cleanup = destroyRefMock.onDestroy.mock.calls[0][0];
+    const cleanup = (destroyRefMock.onDestroy as ReturnType<typeof vi.fn>).mock.calls[0][0];
     cleanup();
 
     expect(unlistenMock).toHaveBeenCalled();

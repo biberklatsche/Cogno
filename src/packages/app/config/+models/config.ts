@@ -38,6 +38,20 @@ export {
   ShellType,
 };
 
+export const HTTP_SERVER_DEFAULTS = {
+  enabled: true,
+  port: 9000,
+  auto_next_port: true,
+} as const;
+
+export const HttpServerSchema = z.object({
+  enabled: z.boolean().optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  auto_next_port: z.boolean().optional(),
+});
+
+export type HttpServerConfig = z.infer<typeof HttpServerSchema>;
+
 export const baseConfigSchemaShape = {
   keybind: KeybindsSchema.optional(),
   enable_watch_config: z.boolean().optional(),
@@ -52,6 +66,7 @@ export const baseConfigSchemaShape = {
   menu: MenuSchema.optional(),
   scrollbar: ScrollbarSchema.optional(),
   prompt: PromptConfigSchema.optional(),
+  http_server: HttpServerSchema.optional(),
 } satisfies z.ZodRawShape;
 
 export const featureConfigSchemaShape = {

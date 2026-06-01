@@ -26,6 +26,8 @@ sysinfo = "0.33"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 futures-util = "0.3"
 log = "0.4"
+axum = "0.7"
+tokio = { version = "1", features = ["net"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

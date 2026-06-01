@@ -55,7 +55,7 @@ type HeaderCommandViewModel = {
           <span class="command">&nbsp;</span>
         }
       </span>
-      <span class="header-actions" >
+      <span class="header-actions">
         <button
           class="button icon-button terminal-menu-button"
           type="button"
@@ -124,7 +124,6 @@ type HeaderCommandViewModel = {
       align-items: center;
       gap: 4px;
       margin-left: auto;
-     
     }
 
     .command-menu-button {

@@ -1,5 +1,7 @@
 export * from "./ai-http";
 export * from "./cli-action";
+export * from "./cogno-message";
+export * from "./http-server";
 export * from "./cli-config-overrides";
 export * from "./clipboard";
 export * from "./command-runner";

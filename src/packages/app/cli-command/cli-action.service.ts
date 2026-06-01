@@ -1,17 +1,16 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { CliActionListener } from "@cogno/app-tauri/cli-action";
-import { ActionFired } from "../action/action.models";
-import { AppBus } from "../app-bus/app-bus";
 import { KeybindActionInterpreter } from "../keybinding/keybind-action.interpreter";
+import { CognoMessageDispatcher } from "../cogno-message/cogno-message-dispatcher.service";
 
 @Injectable({
   providedIn: "root",
 })
 export class CliActionService {
-  constructor(bus: AppBus, ref: DestroyRef) {
+  constructor(dispatcher: CognoMessageDispatcher, ref: DestroyRef) {
     CliActionListener.register((action) => {
       const actionDef = KeybindActionInterpreter.parse(action);
-      bus.publish(ActionFired.createFromDefinition(actionDef));
+      dispatcher.dispatch({ action: actionDef.actionName, args: actionDef.args });
     }).then((unlisten) => {
       ref.onDestroy(() => unlisten());
     });
