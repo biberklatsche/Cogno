@@ -1,4 +1,5 @@
 import { DirectoryHistoryRow } from "../../../history/history.repository";
+import { tokenMatchQuality } from "../../token-match";
 
 const DIR_SCORING = {
   weights: {
@@ -35,7 +36,7 @@ export class HistoryDirectoryScorer {
     for (const token of tokens) {
       let best = 0;
       for (const candidate of candidates) {
-        best = Math.max(best, HistoryDirectoryScorer.tokenMatchQuality(token, candidate));
+        best = Math.max(best, tokenMatchQuality(token, candidate));
       }
       if (best <= 0) {
         return null;
@@ -71,21 +72,6 @@ export class HistoryDirectoryScorer {
     );
   }
 
-  private static tokenMatchQuality(queryToken: string, candidateToken: string): number {
-    if (!queryToken || !candidateToken) return 0;
-    if (candidateToken.startsWith(queryToken)) return 1.0;
-    if (candidateToken.includes(queryToken)) return 0.7;
-    if (HistoryDirectoryScorer.isSubsequence(queryToken, candidateToken)) return 0.5;
-    return 0;
-  }
-
-  private static isSubsequence(needle: string, haystack: string): boolean {
-    let j = 0;
-    for (let i = 0; i < haystack.length && j < needle.length; i++) {
-      if (haystack[i] === needle[j]) j++;
-    }
-    return j === needle.length;
-  }
 
   private static countOccurrences(haystack: string, needle: string): number {
     if (!needle) return 0;

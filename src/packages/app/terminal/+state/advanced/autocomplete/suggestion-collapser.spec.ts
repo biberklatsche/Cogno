@@ -47,6 +47,46 @@ describe("SuggestionCollapser", () => {
     expect(collapsed[0].completionBehavior).toBe("continue");
   });
 
+  it("scores the collapsed suggestion below the max member score", () => {
+    const suggestions = [
+      historySuggestion("codex resume abc123", 100),
+      historySuggestion("codex resume def456", 90),
+      historySuggestion("codex resume ghi789", 80),
+    ];
+
+    const result = collapser.collapse(suggestions);
+    const collapsed = result.find((s) => s.source === "history-collapse");
+    expect(collapsed).toBeDefined();
+    expect(collapsed!.score).toBeLessThan(100);
+  });
+
+  it("suppresses collapsed suggestion when query only matches the collapsed argument", () => {
+    // "st" matches "start"/"stop"/etc. but not the stable prefix "yarn"
+    const suggestions = [
+      historySuggestion("yarn start", 95),
+      historySuggestion("yarn stop", 90),
+      historySuggestion("yarn storybook", 85),
+    ];
+
+    const result = collapser.collapse(suggestions, "st");
+    const collapsed = result.filter((s) => s.source === "history-collapse");
+    expect(collapsed).toHaveLength(0);
+  });
+
+  it("keeps collapsed suggestion when query matches the stable prefix", () => {
+    const suggestions = [
+      historySuggestion("yarn start", 95),
+      historySuggestion("yarn stop", 90),
+      historySuggestion("yarn storybook", 85),
+    ];
+
+    const result = collapser.collapse(suggestions, "ya");
+    const collapsed = result.filter((s) => s.source === "history-collapse");
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].label).toBe("yarn {arg1}");
+    expect(collapsed[0].score).toBeLessThan(95);
+  });
+
   it("does not collapse fewer than 3 similar suggestions (below threshold)", () => {
     const suggestions = [
       historySuggestion("codex resume abc123"),
@@ -81,7 +121,7 @@ describe("SuggestionCollapser", () => {
     expect(result.filter((s) => s.source === "history-collapse")).toHaveLength(0);
   });
 
-  it("places the collapsed suggestion before originals", () => {
+  it("scores the collapsed suggestion below the top originals so it appears after them", () => {
     const suggestions = [
       historySuggestion("codex resume abc123"),
       historySuggestion("codex resume def456"),
@@ -89,7 +129,11 @@ describe("SuggestionCollapser", () => {
     ];
 
     const result = collapser.collapse(suggestions);
-    expect(result[0].source).toBe("history-collapse");
+    const collapsedIdx = result.findIndex((s) => s.source === "history-collapse");
+    expect(collapsedIdx).toBeGreaterThan(-1);
+    // Top originals (score 100) should rank above collapsed (score 90)
+    const originalsBefore = result.slice(0, collapsedIdx).filter((s) => s.source === "history-cmd");
+    expect(originalsBefore.length).toBeGreaterThan(0);
   });
 
   it("places context suggestions after all history suggestions", () => {
