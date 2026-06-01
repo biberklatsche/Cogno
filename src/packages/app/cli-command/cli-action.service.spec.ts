@@ -1,11 +1,11 @@
 import type { DestroyRef } from "@angular/core";
 import { CliActionListener } from "@cogno/app-tauri/cli-action";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { CognoMessageDispatcher } from "../cogno-message/cogno-message-dispatcher.service";
 import {
   type ActionDefinition,
   KeybindActionInterpreter,
 } from "../keybinding/keybind-action.interpreter";
-import type { CognoMessageDispatcher } from "../cogno-message/cogno-message-dispatcher.service";
 import { CliActionService } from "./cli-action.service";
 
 type DispatcherPort = Pick<CognoMessageDispatcher, "dispatch">;
@@ -20,9 +20,9 @@ describe("CliActionService", () => {
 
   beforeEach(() => {
     unlistenMock = vi.fn();
-    registerSpy = vi.spyOn(CliActionListener, "register").mockResolvedValue(
-      unlistenMock as unknown as () => void,
-    );
+    registerSpy = vi
+      .spyOn(CliActionListener, "register")
+      .mockResolvedValue(unlistenMock as unknown as () => void);
 
     dispatcherMock = {
       dispatch: vi.fn(),
