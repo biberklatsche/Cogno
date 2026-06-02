@@ -1,25 +1,36 @@
 import { DOCUMENT } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, Inject, input, signal } from "@angular/core";
 import { TabId } from "@cogno/core-api";
-import { BAR_COUNT, MAX_HEIGHT, MIN_HEIGHT } from "@cogno/core-ui";
+import { BAR_COUNT, MAX_HEIGHT } from "@cogno/core-ui";
 import { TerminalId } from "../../grid-list/+model/model";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
 const FRAME_INTERVAL_MS = 50;
 const KEYFRAME_DURATION_MS = 300;
-const BLOCK_INDICES = Array.from({ length: MAX_HEIGHT }, (_, i) => i);
 const LERP_FACTOR = 0.18;
 const IDLE_CONVERGE_THRESHOLD = 0.04;
+
+// Column indices for template iteration (left → right).
+const COL_INDICES = Array.from({ length: BAR_COUNT }, (_, i) => i);
+// Row indices iterated bottom-first: column uses flex-direction:column-reverse,
+// so the first DOM child renders at the bottom.
+const ROW_INDICES_FROM_BOTTOM = Array.from({ length: MAX_HEIGHT }, (_, i) => MAX_HEIGHT - 1 - i);
+
+const IDLE_GRID: number[][] = Array.from({ length: MAX_HEIGHT }, () => Array(BAR_COUNT).fill(0));
+
+function makeIdleGrid(): number[][] {
+  return IDLE_GRID.map((row) => [...row]);
+}
 
 @Component({
   selector: "app-busy-indicator",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @for (h of barHeights(); track $index) {
+    @for (col of colIndices; track col) {
       <div class="col">
-        @for (b of blockIndices; track b) {
-          <div class="block" [style.opacity]="blockOpacity(h, b)"></div>
+        @for (row of rowIndicesFromBottom; track row) {
+          <div class="block" [style.opacity]="grid()[row][col]"></div>
         }
       </div>
     }
@@ -47,10 +58,11 @@ export class BusyIndicatorComponent {
   targetKind = input.required<"terminal" | "tab">();
   pauseInBackground = input(false);
 
-  readonly blockIndices = BLOCK_INDICES;
+  readonly colIndices = COL_INDICES;
+  readonly rowIndicesFromBottom = ROW_INDICES_FROM_BOTTOM;
 
-  private currentHeights: number[] = Array(BAR_COUNT).fill(MIN_HEIGHT);
-  private activeKeyframes: number[][] = [];
+  private currentGrid: number[][] = makeIdleGrid();
+  private activeKeyframes: number[][][] = [];
   private currentKeyframeIndex = 0;
   private keyframeElapsed = 0;
   private activeRegistrationId: string | undefined;
@@ -59,8 +71,8 @@ export class BusyIndicatorComponent {
   private isPausedForBackground = false;
   private visibilityHandler: (() => void) | undefined;
 
-  private readonly _barHeights = signal<number[]>(this.currentHeights.slice());
-  protected readonly barHeights = this._barHeights.asReadonly();
+  private readonly _grid = signal<number[][]>(makeIdleGrid());
+  protected readonly grid = this._grid.asReadonly();
 
   constructor(
     private readonly busyIndicatorService: BusyIndicatorService,
@@ -107,14 +119,10 @@ export class BusyIndicatorComponent {
     });
   }
 
-  protected blockOpacity(colHeight: number, blockIndex: number): number {
-    return Math.max(0, Math.min(1, colHeight - blockIndex));
-  }
-
   private onRegistrationsChanged(regs: BusyIndicatorRegistration[]): void {
     if (regs.length === 0) {
       if (!this.isIdle) {
-        this.activeKeyframes = [Array(BAR_COUNT).fill(MIN_HEIGHT)];
+        this.activeKeyframes = [IDLE_GRID];
         this.currentKeyframeIndex = 0;
         this.keyframeElapsed = 0;
         this.activeRegistrationId = undefined;
@@ -149,10 +157,13 @@ export class BusyIndicatorComponent {
     const target = this.activeKeyframes[this.currentKeyframeIndex];
     if (!target) return;
 
-    for (let i = 0; i < BAR_COUNT; i++) {
-      this.currentHeights[i] += (target[i] - this.currentHeights[i]) * LERP_FACTOR;
+    for (let row = 0; row < MAX_HEIGHT; row++) {
+      for (let col = 0; col < BAR_COUNT; col++) {
+        this.currentGrid[row][col] +=
+          (target[row][col] - this.currentGrid[row][col]) * LERP_FACTOR;
+      }
     }
-    this._barHeights.set(this.currentHeights.slice());
+    this._grid.set(this.currentGrid.map((row) => [...row]));
 
     if (!this.isIdle) {
       this.keyframeElapsed += FRAME_INTERVAL_MS;
@@ -161,9 +172,9 @@ export class BusyIndicatorComponent {
         this.keyframeElapsed = 0;
       }
     } else {
-      if (this.currentHeights.every((h) => Math.abs(h - MIN_HEIGHT) < IDLE_CONVERGE_THRESHOLD)) {
-        this.currentHeights.fill(MIN_HEIGHT);
-        this._barHeights.set(this.currentHeights.slice());
+      if (this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))) {
+        this.currentGrid = makeIdleGrid();
+        this._grid.set(makeIdleGrid());
         this.stopInterval();
       }
     }

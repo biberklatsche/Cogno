@@ -4,9 +4,9 @@ import { AppBus } from "../../app-bus/app-bus";
 import type { GridListService } from "../../grid-list/+state/grid-list.service";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
-const defaultKeyframes = [[1, 2, 3, 2, 1]];
-const providerKeyframes = [[4, 3, 2, 3, 4]];
-const highPriorityKeyframes = [[4, 4, 4, 4, 4]];
+const defaultKeyframes = [[[0,0,0,0,0],[0,1,1,1,0],[1,1,1,1,1],[1,1,1,1,1]]];
+const providerKeyframes = [[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1]]];
+const highPriorityKeyframes = [[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]];
 
 describe("BusyIndicatorService", () => {
   let bus: AppBus;
@@ -121,7 +121,7 @@ describe("BusyIndicatorService", () => {
   function registerTerminalAnimation(
     registrationId: string,
     terminalId: string,
-    keyframes: number[][],
+    keyframes: number[][][],
     priority: number,
   ): void {
     bus.publish({

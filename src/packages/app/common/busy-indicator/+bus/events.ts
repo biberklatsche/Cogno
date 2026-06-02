@@ -9,8 +9,8 @@ export type BusyIndicatorTarget = { kind: "terminal"; id: string } | { kind: "ta
  *   - `{ kind: "terminal", id }` — shows in the pane header AND the tab of that terminal
  *   - `{ kind: "tab", id }` — shows only on the tab
  *
- * `keyframes`: array of frames; each frame has exactly BAR_COUNT (5) height values
- *   in the range [MIN_HEIGHT, MAX_HEIGHT] (1–4). 1 frame = static, N frames = animated loop.
+ * `keyframes`: array of frames; each frame is a MAX_HEIGHT×BAR_COUNT grid (number[][][]).
+ *   grid[row][col], row 0 = top, values 0 (off) to 1 (full on). 1 frame = static, N = loop.
  *   Use BusyIndicatorHelper.register() to manage the lifecycle automatically.
  *
  * `priority`: when multiple registrations target the same display, the highest priority wins.
@@ -22,7 +22,7 @@ export type BusyIndicatorRegisterEvent = MessageBase<
   {
     registrationId: string;
     target: BusyIndicatorTarget;
-    keyframes: number[][];
+    keyframes: number[][][];
     priority: number;
   }
 >;

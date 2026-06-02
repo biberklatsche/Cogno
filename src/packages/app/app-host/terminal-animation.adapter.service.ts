@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AnimationSpec, TerminalAnimationPort, TerminalMonitorPort } from "@cogno/core-api";
-import { filter } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAnimationAdapterService extends TerminalAnimationPort {
   private readonly activeIds = new Map<string, Set<string>>();
+  private readonly idleTerminals = new Set<string>();
 
   constructor(
     private readonly bus: AppBus,
@@ -16,18 +16,22 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
     super();
 
     monitor.terminated$.pipe(takeUntilDestroyed(destroyRef)).subscribe((terminalId) => {
+      this.idleTerminals.delete(terminalId);
       this.clearAllForTerminal(terminalId);
     });
 
-    monitor.activity$
-      .pipe(
-        filter((e) => !e.isBusy),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe((e) => this.clearAllForTerminal(e.terminalId));
+    monitor.activity$.pipe(takeUntilDestroyed(destroyRef)).subscribe((e) => {
+      if (e.isBusy) {
+        this.idleTerminals.delete(e.terminalId);
+      } else {
+        this.idleTerminals.add(e.terminalId);
+        this.clearAllForTerminal(e.terminalId);
+      }
+    });
   }
 
   register(terminalId: string, registrationKey: string, spec: AnimationSpec): void {
+    if (this.idleTerminals.has(terminalId)) return;
     const registrationId = `${registrationKey}-${terminalId}`;
     let ids = this.activeIds.get(terminalId);
     if (!ids) {

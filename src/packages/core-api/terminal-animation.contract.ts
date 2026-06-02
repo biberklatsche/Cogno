@@ -1,5 +1,6 @@
 export type AnimationSpec = {
-  readonly keyframes: number[][];
+  /** Grid keyframes: keyframes[frame][row][col], row 0 = top, values 0–1. */
+  readonly keyframes: number[][][];
   readonly priority: number;
 };
 

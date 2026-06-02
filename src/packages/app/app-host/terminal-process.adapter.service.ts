@@ -6,6 +6,7 @@ import { TerminalProcessPort } from "@cogno/core-api";
 export class TerminalProcessAdapterService extends TerminalProcessPort {
   async getDescendantProcessNames(terminalId: string): Promise<ReadonlySet<string>> {
     const snapshot = await TauriPty.getProcessTreeByTerminalId(terminalId);
-    return new Set(snapshot.descendants.map((p) => p.name.toLowerCase()));
+    // Strip file extension for cross-platform name matching (Windows: "codex.exe" → "codex", Linux/macOS: no-op)
+    return new Set(snapshot.descendants.map((p) => p.name.toLowerCase().replace(/\.[^.]+$/, "")));
   }
 }

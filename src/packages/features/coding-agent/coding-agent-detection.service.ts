@@ -30,6 +30,13 @@ export class CodingAgentDetectionService {
       )
       .subscribe((event) => void this.scan(event.terminalId));
 
+    monitor.activity$
+      .pipe(
+        filter((e) => !e.isBusy),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe((e) => this.scannedTerminals.delete(e.terminalId));
+
     monitor.terminated$.pipe(takeUntilDestroyed(destroyRef)).subscribe((terminalId) => {
       this.scannedTerminals.delete(terminalId);
     });
@@ -42,7 +49,9 @@ export class CodingAgentDetectionService {
     let descendantNames: ReadonlySet<string>;
     try {
       descendantNames = await this.processPort.getDescendantProcessNames(terminalId);
+      console.log(`Scanned terminal ${terminalId} for coding agents`, descendantNames);
     } catch {
+      console.error(`Failed to scan terminal ${terminalId} for coding agents`);
       return;
     }
 

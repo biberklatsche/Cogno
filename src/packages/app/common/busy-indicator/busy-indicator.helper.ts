@@ -9,7 +9,7 @@ export interface BusyIndicatorHandle {
 export interface BusyIndicatorRegistrationOptions {
   registrationId: string;
   target: BusyIndicatorTarget;
-  keyframes: number[][];
+  keyframes: number[][][];
   priority: number;
   /** When provided, the registration is automatically removed when the ref is destroyed. */
   destroyRef?: DestroyRef;

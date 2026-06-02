@@ -10,7 +10,7 @@ import { BusyIndicatorTarget } from "./+bus/events";
 export type BusyIndicatorRegistration = {
   registrationId: string;
   target: BusyIndicatorTarget;
-  keyframes: number[][];
+  keyframes: number[][][];
   priority: number;
 };
 
