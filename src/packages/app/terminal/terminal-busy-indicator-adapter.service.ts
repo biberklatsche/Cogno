@@ -7,10 +7,13 @@ import { TerminalActivityService } from "../common/terminal-activity/terminal-ac
 import { TerminalId } from "../grid-list/+model/model";
 
 const ACTIVE_FRAME_COUNT = 6;
-const IDLE_FRAME_COUNT = 10;
-const IDLE_WAVE_MIN = 2.5;
-const IDLE_WAVE_MAX = 4.5;
+const IDLE_FRAME_COUNT = 20;
+const IDLE_WAVE_MIN = 1.5;
+const IDLE_WAVE_MAX = 2.5;
 const IDLE_WAVE_DELAY_MS = 2000;
+
+const PRIORITY_TERMINAL_ACTIVE = 2;
+const PRIORITY_TERMINAL_IDLE = 1;
 
 function generateActiveKeyframes(): number[][][] {
   return Array.from({ length: ACTIVE_FRAME_COUNT }, (_, fi) => {
@@ -55,15 +58,12 @@ export class TerminalBusyIndicatorAdapterService {
         const payload = event.payload;
         if (!payload) return;
         if (payload.isBusy) {
-          this.registerWave(payload.terminalId, TERMINAL_BUSY_FRAMES);
+          this.registerActive(payload.terminalId);
           this.waveStates.set(payload.terminalId, "active");
           this.startActivityTracking(payload.terminalId);
         } else {
           this.stopActivityTracking(payload.terminalId);
-          this.bus.publish({
-            type: "BusyIndicatorUnregister",
-            payload: { registrationId: `terminal-busy-${payload.terminalId}` },
-          });
+          this.unregisterBoth(payload.terminalId);
         }
       });
 
@@ -73,22 +73,42 @@ export class TerminalBusyIndicatorAdapterService {
       .subscribe((event) => {
         if (!event.payload) return;
         this.stopActivityTracking(event.payload);
-        this.bus.publish({
-          type: "BusyIndicatorUnregister",
-          payload: { registrationId: `terminal-busy-${event.payload}` },
-        });
+        this.unregisterBoth(event.payload);
       });
   }
 
-  private registerWave(terminalId: TerminalId, keyframes: number[][][]): void {
+  private registerActive(terminalId: TerminalId): void {
     this.bus.publish({
       type: "BusyIndicatorRegister",
       payload: {
-        registrationId: `terminal-busy-${terminalId}`,
+        registrationId: `terminal-busy-active-${terminalId}`,
         target: { kind: "terminal", id: terminalId },
-        keyframes,
-        priority: 1,
+        keyframes: TERMINAL_BUSY_FRAMES,
+        priority: PRIORITY_TERMINAL_ACTIVE,
       },
+    });
+  }
+
+  private registerIdle(terminalId: TerminalId): void {
+    this.bus.publish({
+      type: "BusyIndicatorRegister",
+      payload: {
+        registrationId: `terminal-busy-idle-${terminalId}`,
+        target: { kind: "terminal", id: terminalId },
+        keyframes: TERMINAL_IDLE_FRAMES,
+        priority: PRIORITY_TERMINAL_IDLE,
+      },
+    });
+  }
+
+  private unregisterBoth(terminalId: TerminalId): void {
+    this.bus.publish({
+      type: "BusyIndicatorUnregister",
+      payload: { registrationId: `terminal-busy-active-${terminalId}` },
+    });
+    this.bus.publish({
+      type: "BusyIndicatorUnregister",
+      payload: { registrationId: `terminal-busy-idle-${terminalId}` },
     });
   }
 
@@ -98,7 +118,11 @@ export class TerminalBusyIndicatorAdapterService {
     const sub = this.terminalActivity.activity$(terminalId).subscribe(() => {
       this.scheduleIdleTransition(terminalId);
       if (this.waveStates.get(terminalId) !== "active") {
-        this.registerWave(terminalId, TERMINAL_BUSY_FRAMES);
+        this.bus.publish({
+          type: "BusyIndicatorUnregister",
+          payload: { registrationId: `terminal-busy-idle-${terminalId}` },
+        });
+        this.registerActive(terminalId);
         this.waveStates.set(terminalId, "active");
       }
     });
@@ -116,7 +140,11 @@ export class TerminalBusyIndicatorAdapterService {
   private scheduleIdleTransition(terminalId: TerminalId): void {
     clearTimeout(this.idleTimers.get(terminalId));
     const timer = setTimeout(() => {
-      this.registerWave(terminalId, TERMINAL_IDLE_FRAMES);
+      this.bus.publish({
+        type: "BusyIndicatorUnregister",
+        payload: { registrationId: `terminal-busy-active-${terminalId}` },
+      });
+      this.registerIdle(terminalId);
       this.waveStates.set(terminalId, "idle");
     }, IDLE_WAVE_DELAY_MS);
     this.idleTimers.set(terminalId, timer);

@@ -1,15 +1,15 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
+import { DialogRef, type DialogService } from "@cogno/core-ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { getAppBus, getStateManager } from "../../../__test__/test-factory";
 import type { AppBus } from "../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import type { DialogService } from "../../common/dialog";
-import { DialogRef } from "../../common/dialog/dialog-ref";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../config/+models/shell-config";
 import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
@@ -137,6 +137,7 @@ describe("TerminalSession", () => {
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
+      { pattern$: vi.fn().mockReturnValue(of(undefined)) } as any,
     );
   });
 
@@ -153,6 +154,7 @@ describe("TerminalSession", () => {
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
+      { pattern$: vi.fn().mockReturnValue(of(undefined)) } as any,
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
@@ -166,7 +168,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
     expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-    expect(rendererInstance.register).toHaveBeenCalledTimes(16);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(15);
   });
 
   it("should enable shell integration features if configured", () => {
@@ -178,7 +180,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance =
       vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-    expect(rendererInstance.register).toHaveBeenCalledTimes(18);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(17);
     expect(preloadForShellIntegrationMock).toHaveBeenCalledWith("Bash");
   });
 

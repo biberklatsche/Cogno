@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BinaryTree } from "./binary-tree";
+import { BinaryTree } from "@cogno/core-domain";
 
 describe("BinaryTree", () => {
   it("should add left child on root", () => {

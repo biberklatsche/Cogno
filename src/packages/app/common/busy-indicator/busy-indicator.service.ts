@@ -30,7 +30,9 @@ export class BusyIndicatorService {
         const payload = event.payload;
         if (!payload) return;
         const retained = this._registrations$.value.filter(
-          (r) => r.registrationId !== payload.registrationId,
+          (r) =>
+            r.registrationId !== payload.registrationId &&
+            !sameTarget(r.target, payload.target),
         );
         this._registrations$.next([
           ...retained,
@@ -95,4 +97,8 @@ function sameRegistrations(
       r.priority === b[i].priority &&
       r.keyframes === b[i].keyframes,
   );
+}
+
+function sameTarget(left: BusyIndicatorTarget, right: BusyIndicatorTarget): boolean {
+  return left.kind === right.kind && left.id === right.id;
 }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DialogRef, type DialogService } from "@cogno/core-ui";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
 import { AppBus } from "../app-bus/app-bus";
-import { DialogRef, type DialogService } from "../common/dialog";
 import type { GridListService } from "../grid-list/+state/grid-list.service";
 import { TerminalBusyStateService } from "./terminal-busy-state.service";
 
@@ -86,8 +86,9 @@ describe("TerminalBusyStateService", () => {
       expect.anything(),
       expect.objectContaining({
         data: expect.objectContaining({
-          actionLabel: "quit the application",
-          busyTerminalCount: 1,
+          message: "1 terminal is still busy. Do you really want to quit the application?",
+          confirmLabel: "Yes",
+          cancelLabel: "No",
         }),
       }),
     );
