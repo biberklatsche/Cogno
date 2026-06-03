@@ -50,7 +50,10 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
         .filter((group) => group.hooks.length > 0);
       settings.hooks[entry.eventName] = [
         ...withoutCogno,
-        { ...(entry.matcher ? { matcher: entry.matcher } : {}), hooks: [{ type: "command", command, shell }] },
+        {
+          ...(entry.matcher ? { matcher: entry.matcher } : {}),
+          hooks: [{ type: "command", command, shell }],
+        },
       ];
     }
 
