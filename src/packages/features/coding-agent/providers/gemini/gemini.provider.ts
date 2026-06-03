@@ -1,70 +1,77 @@
 import { Injectable } from "@angular/core";
-import { BackendOsContract, ICodingAgentProvider } from "@cogno/core-api";
+import { ICodingAgentProvider } from "@cogno/core-api";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand } from "../_shared/hook-command.builder";
-import { GEMINI_CONFIG, GeminiSettings } from "./gemini.config";
-
-type CognoManifest = { installedAt: string };
+import { GEMINI_CONFIG, GeminiHookGroup, GeminiSettings } from "./gemini.config";
 
 @Injectable({ providedIn: "root" })
 export class GeminiProvider implements ICodingAgentProvider {
   readonly id = GEMINI_CONFIG.id;
   readonly name = GEMINI_CONFIG.name;
-  readonly processNames = GEMINI_CONFIG.processNames;
-  readonly resumeLinkPattern = GEMINI_CONFIG.resumeLinkPattern;
 
   constructor(private readonly configFile: ConfigFileService) {}
 
-  async isHookInstalled(): Promise<boolean> {
-    const manifest = await this.configFile.readJson<CognoManifest | null>(
-      await this.manifestPath(),
-      null,
-    );
-    return manifest !== null && "installedAt" in manifest;
+  async isAgentInstalled(): Promise<boolean> {
+    return this.configFile.exists(await this.configDir());
   }
 
-  async installHook(platform: BackendOsContract): Promise<void> {
+  async isHookInstalled(): Promise<boolean> {
+    const configPath = await this.configFile.joinPath(await this.configDir(), GEMINI_CONFIG.configFileName);
+    const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
+    return GEMINI_CONFIG.hookEvents.every(({ eventName }) =>
+      (settings.hooks?.[eventName] ?? []).some((group) =>
+        group.hooks.some((h) => GEMINI_CONFIG.isCognoCommand(h.command)),
+      ),
+    );
+  }
+
+  async installHook(shellType?: string): Promise<void> {
     const configDir = await this.configDir();
     await this.configFile.ensureDir(configDir);
     const configPath = await this.configFile.joinPath(configDir, GEMINI_CONFIG.configFileName);
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     settings.hooks = settings.hooks ?? {};
+
     for (const entry of GEMINI_CONFIG.hookEvents) {
-      const command = buildHookCommand(entry.status, platform);
-      const withoutCogno = (settings.hooks[entry.eventName] ?? []).filter(
-        (g) => !GEMINI_CONFIG.isCognoCommand(g.command),
-      );
-      settings.hooks[entry.eventName] = [...withoutCogno, { matcher: "*", command }];
+      const command = buildHookCommand(entry.status, shellType);
+      const existing: GeminiHookGroup[] = settings.hooks[entry.eventName] ?? [];
+      const withoutCogno = existing
+        .map((group) => ({
+          ...group,
+          hooks: group.hooks.filter((h) => !GEMINI_CONFIG.isCognoCommand(h.command)),
+        }))
+        .filter((group) => group.hooks.length > 0);
+      settings.hooks[entry.eventName] = [
+        ...withoutCogno,
+        { hooks: [{ type: "command", command }] },
+      ];
     }
+
     await this.configFile.writeJson(configPath, settings);
-    await this.configFile.writeJson(await this.manifestPath(), {
-      installedAt: new Date().toISOString(),
-    });
   }
 
   async removeHook(): Promise<void> {
-    const configPath = await this.configFile.joinPath(
-      await this.configDir(),
-      GEMINI_CONFIG.configFileName,
-    );
+    const configPath = await this.configFile.joinPath(await this.configDir(), GEMINI_CONFIG.configFileName);
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
-    if (settings.hooks) {
-      for (const entry of GEMINI_CONFIG.hookEvents) {
-        const cleaned = (settings.hooks[entry.eventName] ?? []).filter(
-          (g) => !GEMINI_CONFIG.isCognoCommand(g.command),
-        );
-        if (cleaned.length === 0) delete settings.hooks[entry.eventName];
-        else settings.hooks[entry.eventName] = cleaned;
-      }
-      await this.configFile.writeJson(configPath, settings);
+    if (!settings.hooks) return;
+
+    for (const { eventName } of GEMINI_CONFIG.hookEvents) {
+      const existing = settings.hooks[eventName];
+      if (!existing) continue;
+      const cleaned = existing
+        .map((group) => ({
+          ...group,
+          hooks: group.hooks.filter((h) => !GEMINI_CONFIG.isCognoCommand(h.command)),
+        }))
+        .filter((group) => group.hooks.length > 0);
+      if (cleaned.length === 0) delete settings.hooks[eventName];
+      else settings.hooks[eventName] = cleaned;
     }
-    await this.configFile.writeJson(await this.manifestPath(), { uninstalled: true });
+
+    await this.configFile.writeJson(configPath, settings);
   }
 
   private async configDir(): Promise<string> {
     return this.configFile.joinPath(await this.configFile.homeDir(), GEMINI_CONFIG.configSubDir);
-  }
-  private async manifestPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), GEMINI_CONFIG.manifestFileName);
   }
 }

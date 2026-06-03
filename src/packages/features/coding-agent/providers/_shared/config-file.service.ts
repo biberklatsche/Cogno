@@ -59,6 +59,10 @@ export class ConfigFileService {
     });
   }
 
+  exists(path: string): Promise<boolean> {
+    return this.fs.exists(path);
+  }
+
   async ensureDir(path: string): Promise<void> {
     if (!(await this.fs.exists(path))) {
       await this.fs.makeDir(path, { recursive: true });

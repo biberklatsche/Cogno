@@ -1,12 +1,10 @@
-import { BackendOsContract } from "./filesystem.contract";
-
 export interface ICodingAgentProvider {
   readonly id: string;
   readonly name: string;
-  readonly processNames: ReadonlyArray<string>;
-  readonly resumeLinkPattern: string | undefined;
 
+  isAgentInstalled(): Promise<boolean>;
   isHookInstalled(): Promise<boolean>;
-  installHook(platform: BackendOsContract): Promise<void>;
+  /** @param shellType The Cogno shell profile type (e.g. "PowerShell", "Bash"). Determines which hook command syntax to write. */
+  installHook(shellType?: string): Promise<void>;
   removeHook(): Promise<void>;
 }

@@ -16,7 +16,9 @@ export class HttpMessageAdapterService {
         enabled: cfg.http_server?.enabled ?? HTTP_SERVER_DEFAULTS.enabled,
         port: cfg.http_server?.port ?? HTTP_SERVER_DEFAULTS.port,
         autoNextPort: cfg.http_server?.auto_next_port ?? HTTP_SERVER_DEFAULTS.auto_next_port,
-      }).catch((err) => console.error("[http-server] Failed to start:", err));
+      })
+        .then((port) => console.log(`[http-server] listening on port ${port}`))
+        .catch((err) => console.error("[http-server] Failed to start:", err));
     });
 
     CognoMessageListener.register((message) => {

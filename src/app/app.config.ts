@@ -25,7 +25,6 @@ import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-an
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalLinkPatternAdapterService } from "@cogno/app/app-host/terminal-link-pattern.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
-import { TerminalProcessAdapterService } from "@cogno/app/app-host/terminal-process.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
@@ -67,7 +66,6 @@ import {
   TerminalGateway,
   TerminalLinkPatternPort,
   TerminalMonitorPort,
-  TerminalProcessPort,
   TerminalSearchHostPort,
   WorkspaceHostPort,
 } from "@cogno/core-api";
@@ -75,8 +73,7 @@ import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configu
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
 import {
-  CodingAgentActivationService,
-  CodingAgentDetectionService,
+  CodingAgentStartupService,
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
 import { GitBlobReader } from "@cogno/features/side-menu/git/git-blob-reader.port";
@@ -127,7 +124,6 @@ export const appConfig: ApplicationConfig = {
     { provide: OsPlatformPort, useExisting: OsPlatformAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalLinkPatternPort, useExisting: TerminalLinkPatternAdapterService },
-    { provide: TerminalProcessPort, useExisting: TerminalProcessAdapterService },
     { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
@@ -154,8 +150,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(WorkspaceShortcutActionService);
         injector.get(AiProviderDetectionService);
         injector.get(CodingAgentStatusService);
-        injector.get(CodingAgentDetectionService);
-        injector.get(CodingAgentActivationService);
+        injector.get(CodingAgentStartupService);
       }, 0);
     }),
   ],

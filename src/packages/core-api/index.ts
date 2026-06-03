@@ -38,7 +38,6 @@ export * from "./terminal-autocomplete.contract";
 export * from "./terminal-gateway.contract";
 export * from "./terminal-link-pattern.contract";
 export * from "./terminal-monitor.contract";
-export * from "./terminal-process.contract";
 export * from "./terminal-search.contract";
 export * from "./workspace.contract";
 export * from "./workspace-close-guard.contract";

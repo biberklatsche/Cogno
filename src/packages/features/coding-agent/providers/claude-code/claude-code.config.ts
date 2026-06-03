@@ -8,6 +8,7 @@ export type ClaudeHookEntry = {
 export type ClaudeHookItem = {
   type: "command";
   command: string;
+  shell?: "bash" | "powershell";
   timeout?: number;
 };
 
@@ -28,22 +29,28 @@ export type CognoManifest = {
 export const CLAUDE_CODE_CONFIG = {
   id: "claude-code",
   name: "Claude Code",
-  // Covers Claude Code and its forks — all read from ~/.claude/settings.json
-  processNames: ["claude", "qoder", "qwen-code", "factory", "codebuddy"],
-  resumeLinkPattern: /\b([a-zA-Z][\w-]*)\s+(resume|--resume|-r)\s+([a-zA-Z0-9][a-zA-Z0-9_-]{7,})/gi
-    .source,
   configSubDir: ".claude",
   configFileName: "settings.json",
   manifestFileName: "cogno-hooks.json",
   hookEvents: [
-    { eventName: "PreToolUse", status: "working" as AgentStatus },
-    { eventName: "Stop", status: "ready" as AgentStatus },
-    { eventName: "Notification", status: "question" as AgentStatus },
+    { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
+    { eventName: "SessionStart",     status: "ready"   as AgentStatus },
+    { eventName: "SessionEnd",       status: "error"   as AgentStatus },
+    { eventName: "SubagentStart",    status: "working" as AgentStatus },
+    { eventName: "SubagentStop",     status: "working" as AgentStatus },
+    { eventName: "PreToolUse",       status: "working" as AgentStatus },
+    { eventName: "PostToolUse",      status: "working" as AgentStatus },
+    { eventName: "PostToolUseFailure", status: "error" as AgentStatus },
+    { eventName: "Notification",     status: "question" as AgentStatus },
     { eventName: "PermissionRequest", status: "question" as AgentStatus },
-    { eventName: "StopFailure", status: "error" as AgentStatus },
+    { eventName: "PermissionDenied", status: "error"   as AgentStatus },
+    { eventName: "Stop",             status: "ready"   as AgentStatus },
+    { eventName: "StopFailure",      status: "error"   as AgentStatus },
+    { eventName: "PreCompact",        status: "working" as AgentStatus },
+    { eventName: "PostCompact",       status: "working" as AgentStatus },
   ] as ReadonlyArray<ClaudeHookEntry>,
 
   isCognoCommand(command: string): boolean {
-    return command.includes("coding_agent_status") && command.includes("COGNO_PORT");
+    return command.includes("COGNO_PORT") && command.includes("coding_agent_status");
   },
 } as const;

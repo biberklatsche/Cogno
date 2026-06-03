@@ -1,63 +1,105 @@
 import { Injectable } from "@angular/core";
-import { BackendOsContract, ICodingAgentProvider } from "@cogno/core-api";
+import { ICodingAgentProvider } from "@cogno/core-api";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand } from "../_shared/hook-command.builder";
-import { CODEX_CONFIG, CodexHooks } from "./codex.config";
-
-type CognoManifest = { installedAt: string };
+import { buildHookCommands } from "../_shared/hook-command.builder";
+import { CODEX_CONFIG, CodexHookGroup, CodexHooksFile } from "./codex.config";
 
 @Injectable({ providedIn: "root" })
 export class CodexProvider implements ICodingAgentProvider {
   readonly id = CODEX_CONFIG.id;
   readonly name = CODEX_CONFIG.name;
-  readonly processNames = CODEX_CONFIG.processNames;
-  readonly resumeLinkPattern = CODEX_CONFIG.resumeLinkPattern;
 
   constructor(private readonly configFile: ConfigFileService) {}
 
-  async isHookInstalled(): Promise<boolean> {
-    const manifest = await this.configFile.readJson<CognoManifest | null>(
-      await this.manifestPath(),
-      null,
-    );
-    return manifest !== null && "installedAt" in manifest;
+  async isAgentInstalled(): Promise<boolean> {
+    return this.configFile.exists(await this.configDir());
   }
 
-  async installHook(platform: BackendOsContract): Promise<void> {
+  async isHookInstalled(): Promise<boolean> {
+    const configPath = await this.configPath();
+    const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
+    return CODEX_CONFIG.hookEvents.every(({ eventName }) =>
+      (file.hooks?.[eventName] ?? []).some((group) =>
+        group.hooks.some((h) => CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows)),
+      ),
+    );
+  }
+
+  async installHook(_shellType?: string): Promise<void> {
     const configDir = await this.configDir();
     await this.configFile.ensureDir(configDir);
-    const configPath = await this.configFile.joinPath(configDir, CODEX_CONFIG.configFileName);
-    const hooks = await this.configFile.readJson<CodexHooks>(configPath, {});
+    const configPath = await this.configPath();
+    const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
+
+    file.hooks = file.hooks ?? {};
+
     for (const entry of CODEX_CONFIG.hookEvents) {
-      hooks[entry.eventName] = {
-        type: "command",
-        command: buildHookCommand(entry.status, platform),
-      };
+      const { command, commandWindows } = buildHookCommands(entry.status);
+      const existing: CodexHookGroup[] = file.hooks[entry.eventName] ?? [];
+      const withoutCogno = existing
+        .map((group) => ({
+          ...group,
+          hooks: group.hooks.filter(
+            (h) => !CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
+          ),
+        }))
+        .filter((group) => group.hooks.length > 0);
+
+      file.hooks[entry.eventName] = [
+        ...withoutCogno,
+        { hooks: [{ type: "command", command, commandWindows }] },
+      ];
     }
-    await this.configFile.writeJson(configPath, hooks);
-    await this.configFile.writeJson(await this.manifestPath(), {
-      installedAt: new Date().toISOString(),
-    });
+
+    await this.configFile.writeJson(configPath, file);
+    await this.enableHooksInAppConfig();
   }
 
   async removeHook(): Promise<void> {
-    const configPath = await this.configFile.joinPath(
-      await this.configDir(),
-      CODEX_CONFIG.configFileName,
-    );
-    const hooks = await this.configFile.readJson<CodexHooks>(configPath, {});
-    for (const entry of CODEX_CONFIG.hookEvents) {
-      const h = hooks[entry.eventName];
-      if (h && CODEX_CONFIG.isCognoCommand(h.command)) delete hooks[entry.eventName];
+    const configPath = await this.configPath();
+    const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
+    if (!file.hooks) return;
+
+    for (const { eventName } of CODEX_CONFIG.hookEvents) {
+      const existing = file.hooks[eventName];
+      if (!existing) continue;
+      const cleaned = existing
+        .map((group) => ({
+          ...group,
+          hooks: group.hooks.filter(
+            (h) => !CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
+          ),
+        }))
+        .filter((group) => group.hooks.length > 0);
+
+      if (cleaned.length === 0) {
+        delete file.hooks[eventName];
+      } else {
+        file.hooks[eventName] = cleaned;
+      }
     }
-    await this.configFile.writeJson(configPath, hooks);
-    await this.configFile.writeJson(await this.manifestPath(), { uninstalled: true });
+
+    await this.configFile.writeJson(configPath, file);
+  }
+
+  private async enableHooksInAppConfig(): Promise<void> {
+    const appConfigPath = await this.configFile.joinPath(
+      await this.configDir(),
+      CODEX_CONFIG.appConfigFileName,
+    );
+    const cfg = await this.configFile.readToml<Record<string, unknown>>(appConfigPath, {});
+    const features = (cfg["features"] ?? {}) as Record<string, unknown>;
+    if (features["hooks"] === true) return;
+    features["hooks"] = true;
+    cfg["features"] = features;
+    await this.configFile.writeToml(appConfigPath, cfg);
   }
 
   private async configDir(): Promise<string> {
     return this.configFile.joinPath(await this.configFile.homeDir(), CODEX_CONFIG.configSubDir);
   }
-  private async manifestPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), CODEX_CONFIG.manifestFileName);
+
+  private async configPath(): Promise<string> {
+    return this.configFile.joinPath(await this.configDir(), CODEX_CONFIG.configFileName);
   }
 }

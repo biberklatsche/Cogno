@@ -5,26 +5,44 @@ export type CodexHookEntry = {
   readonly status: AgentStatus;
 };
 
-// Codex hooks.json format: flat object mapping event name to command descriptor
-// Verify against: https://github.com/openai/codex — schema may change
-export type CodexHooks = {
-  [eventName: string]: { type: "command"; command: string };
+export type CodexHookCommand = {
+  type: "command";
+  command: string;
+  commandWindows?: string;
+  timeout?: number;
+};
+
+export type CodexHookGroup = {
+  matcher?: string;
+  hooks: CodexHookCommand[];
+};
+
+export type CodexHooksFile = {
+  hooks?: Record<string, CodexHookGroup[]>;
 };
 
 export const CODEX_CONFIG = {
   id: "codex",
   name: "Codex",
-  processNames: ["codex"],
-  resumeLinkPattern: undefined,
   configSubDir: ".codex",
   configFileName: "hooks.json",
-  manifestFileName: "cogno-hooks.json",
+  appConfigFileName: "config.toml",
   hookEvents: [
-    { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
-    { eventName: "Stop", status: "ready" as AgentStatus },
+    { eventName: "SessionStart",     status: "ready"    as AgentStatus },
+    { eventName: "UserPromptSubmit", status: "working"  as AgentStatus },
+    { eventName: "SubagentStart",    status: "working"  as AgentStatus },
+    { eventName: "SubagentStop",     status: "working"  as AgentStatus },
+    { eventName: "PreToolUse",       status: "working"  as AgentStatus },
+    { eventName: "PostToolUse",      status: "working"  as AgentStatus },
+    { eventName: "PermissionRequest", status: "question" as AgentStatus },
+    { eventName: "PreCompact",       status: "working"  as AgentStatus },
+    { eventName: "PostCompact",      status: "working"  as AgentStatus },
+    { eventName: "Stop",             status: "ready"    as AgentStatus },
   ] as ReadonlyArray<CodexHookEntry>,
 
-  isCognoCommand(command: string): boolean {
-    return command.includes("coding_agent_status") && command.includes("COGNO_PORT");
+  isCognoCommand(command?: string, commandWindows?: string): boolean {
+    const check = (cmd: string) =>
+      cmd.includes("COGNO_PORT") && cmd.includes("coding_agent_status");
+    return (command ? check(command) : false) || (commandWindows ? check(commandWindows) : false);
   },
 } as const;

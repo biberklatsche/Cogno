@@ -14,6 +14,8 @@ export class CodingAgentStatusService {
       .onActionWithContext$("coding_agent_status")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(({ args, terminalId }) => {
+        console.log('#################!!!!!!!!!!!!!!' ,args, terminalId);
+
         if (!terminalId) return;
         const status = parseAgentStatus(args?.[0]);
         if (!status) return;

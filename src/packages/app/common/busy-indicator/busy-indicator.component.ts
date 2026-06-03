@@ -130,7 +130,7 @@ export class BusyIndicatorComponent {
       }
     } else {
       const top = regs.reduce((a, b) => (b.priority > a.priority ? b : a));
-      if (top.registrationId !== this.activeRegistrationId) {
+      if (top.registrationId !== this.activeRegistrationId || top.keyframes !== this.activeKeyframes) {
         this.activeKeyframes = top.keyframes;
         this.currentKeyframeIndex = 0;
         this.keyframeElapsed = 0;

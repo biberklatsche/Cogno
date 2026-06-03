@@ -47,7 +47,8 @@ impl HttpServerState {
 pub struct CognoMessagePayload {
     pub action: String,
     pub args: Option<Vec<String>>,
-    // Accept both snake_case (curl hooks) and camelCase (TypeScript/JSON)
+    // rename_all makes this serialize as "terminalId" (matches CognoMessage TypeScript interface).
+    // The alias keeps accepting "terminal_id" from curl/PowerShell hooks.
     #[serde(alias = "terminal_id")]
     pub terminal_id: Option<String>,
 }

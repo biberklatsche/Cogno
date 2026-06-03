@@ -1,9 +1,5 @@
 import { Injectable } from "@angular/core";
-import {
-  ApplicationConfigurationPort,
-  BackendOsContract,
-  ICodingAgentProvider,
-} from "@cogno/core-api";
+import { ICodingAgentProvider } from "@cogno/core-api";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand } from "../_shared/hook-command.builder";
 import { CLAUDE_CODE_CONFIG, ClaudeSettings, CognoManifest } from "./claude-code.config";
@@ -12,26 +8,24 @@ import { CLAUDE_CODE_CONFIG, ClaudeSettings, CognoManifest } from "./claude-code
 export class ClaudeCodeProvider implements ICodingAgentProvider {
   readonly id = CLAUDE_CODE_CONFIG.id;
   readonly name = CLAUDE_CODE_CONFIG.name;
-  readonly processNames = CLAUDE_CODE_CONFIG.processNames;
 
-  get resumeLinkPattern(): string | undefined {
-    const config = this.configPort.getConfiguration();
-    const override = (config as { ai?: { resume_pattern?: string } } | null)?.ai?.resume_pattern;
-    return override ?? CLAUDE_CODE_CONFIG.resumeLinkPattern;
+  constructor(private readonly configFile: ConfigFileService) {}
+
+  async isAgentInstalled(): Promise<boolean> {
+    return this.configFile.exists(await this.configDir());
   }
-
-  constructor(
-    private readonly configFile: ConfigFileService,
-    private readonly configPort: ApplicationConfigurationPort,
-  ) {}
 
   async isHookInstalled(): Promise<boolean> {
-    const manifestPath = await this.manifestPath();
-    const manifest = await this.configFile.readJson<CognoManifest | null>(manifestPath, null);
-    return manifest !== null && "installedAt" in manifest;
+    const configPath = await this.configFile.joinPath(await this.configDir(), CLAUDE_CODE_CONFIG.configFileName);
+    const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
+    return CLAUDE_CODE_CONFIG.hookEvents.every(({ eventName }) =>
+      (settings.hooks?.[eventName] ?? []).some((group) =>
+        group.hooks.some((h) => CLAUDE_CODE_CONFIG.isCognoCommand(h.command)),
+      ),
+    );
   }
 
-  async installHook(platform: BackendOsContract): Promise<void> {
+  async installHook(shellType?: string): Promise<void> {
     const configDir = await this.configDir();
     const configPath = await this.configFile.joinPath(configDir, CLAUDE_CODE_CONFIG.configFileName);
     const manifestPath = await this.manifestPath();
@@ -41,8 +35,9 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
     settings.hooks = settings.hooks ?? {};
 
+    const shell = shellType === "PowerShell" ? "powershell" : "bash";
     for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
-      const command = buildHookCommand(entry.status, platform);
+      const command = buildHookCommand(entry.status, shellType);
       const existing = settings.hooks[entry.eventName] ?? [];
       const withoutCogno = existing
         .map((group) => ({
@@ -52,7 +47,7 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
         .filter((group) => group.hooks.length > 0);
       settings.hooks[entry.eventName] = [
         ...withoutCogno,
-        { hooks: [{ type: "command", command }] },
+        { hooks: [{ type: "command", command, shell }] },
       ];
     }
 
