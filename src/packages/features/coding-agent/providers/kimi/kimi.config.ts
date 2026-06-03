@@ -25,7 +25,7 @@ export const KIMI_CONFIG = {
     { eventName: "PostToolUse", status: "working" as AgentStatus },
     { eventName: "PostToolUseFailure", status: "error" as AgentStatus },
     { eventName: "PreCompact", status: "working" as AgentStatus },
-    { eventName: "PostCompact", status: "working" as AgentStatus },
+    { eventName: "PostCompact", status: "ready" as AgentStatus },
     { eventName: "Notification", status: "question" as AgentStatus },
     { eventName: "Stop", status: "ready" as AgentStatus },
     { eventName: "StopFailure", status: "error" as AgentStatus },

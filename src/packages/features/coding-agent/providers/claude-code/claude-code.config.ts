@@ -3,6 +3,7 @@ import { AgentStatus } from "@cogno/core-api";
 export type ClaudeHookEntry = {
   readonly eventName: string;
   readonly status: AgentStatus;
+  readonly matcher?: string;
 };
 
 export type ClaudeHookItem = {
@@ -41,13 +42,13 @@ export const CLAUDE_CODE_CONFIG = {
     { eventName: "PreToolUse", status: "working" as AgentStatus },
     { eventName: "PostToolUse", status: "working" as AgentStatus },
     { eventName: "PostToolUseFailure", status: "error" as AgentStatus },
-    { eventName: "Notification", status: "question" as AgentStatus },
+    { eventName: "Notification", status: "question" as AgentStatus, matcher: "idle_prompt" },
     { eventName: "PermissionRequest", status: "question" as AgentStatus },
     { eventName: "PermissionDenied", status: "error" as AgentStatus },
     { eventName: "Stop", status: "ready" as AgentStatus },
     { eventName: "StopFailure", status: "error" as AgentStatus },
     { eventName: "PreCompact", status: "working" as AgentStatus },
-    { eventName: "PostCompact", status: "working" as AgentStatus },
+    { eventName: "PostCompact", status: "ready" as AgentStatus },
   ] as ReadonlyArray<ClaudeHookEntry>,
 
   isCognoCommand(command: string): boolean {

@@ -36,7 +36,7 @@ export const CODEX_CONFIG = {
     { eventName: "PostToolUse", status: "working" as AgentStatus },
     { eventName: "PermissionRequest", status: "question" as AgentStatus },
     { eventName: "PreCompact", status: "working" as AgentStatus },
-    { eventName: "PostCompact", status: "working" as AgentStatus },
+    { eventName: "PostCompact", status: "ready" as AgentStatus },
     { eventName: "Stop", status: "ready" as AgentStatus },
   ] as ReadonlyArray<CodexHookEntry>,
 
