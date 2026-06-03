@@ -31,8 +31,7 @@ export class BusyIndicatorService {
         if (!payload) return;
         const retained = this._registrations$.value.filter(
           (r) =>
-            r.registrationId !== payload.registrationId &&
-            !sameTarget(r.target, payload.target),
+            r.registrationId !== payload.registrationId && !sameTarget(r.target, payload.target),
         );
         this._registrations$.next([
           ...retained,

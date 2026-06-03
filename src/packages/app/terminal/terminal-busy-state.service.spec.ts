@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DialogRef, type DialogService } from "@cogno/core-ui";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
 import { AppBus } from "../app-bus/app-bus";
 import type { GridListService } from "../grid-list/+state/grid-list.service";
