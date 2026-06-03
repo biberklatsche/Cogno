@@ -16,7 +16,10 @@ export class GeminiProvider implements ICodingAgentProvider {
   }
 
   async isHookInstalled(): Promise<boolean> {
-    const configPath = await this.configFile.joinPath(await this.configDir(), GEMINI_CONFIG.configFileName);
+    const configPath = await this.configFile.joinPath(
+      await this.configDir(),
+      GEMINI_CONFIG.configFileName,
+    );
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     return GEMINI_CONFIG.hookEvents.every(({ eventName }) =>
       (settings.hooks?.[eventName] ?? []).some((group) =>
@@ -51,7 +54,10 @@ export class GeminiProvider implements ICodingAgentProvider {
   }
 
   async removeHook(): Promise<void> {
-    const configPath = await this.configFile.joinPath(await this.configDir(), GEMINI_CONFIG.configFileName);
+    const configPath = await this.configFile.joinPath(
+      await this.configDir(),
+      GEMINI_CONFIG.configFileName,
+    );
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     if (!settings.hooks) return;
 

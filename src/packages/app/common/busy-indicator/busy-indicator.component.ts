@@ -37,18 +37,20 @@ function makeIdleGrid(): number[][] {
   `,
   styles: `
     :host {
-      display: flex;
+      display: inline-flex;
       align-items: flex-end;
-      gap: 1px;
+      flex-shrink: 0;
     }
     .col {
       display: flex;
       flex-direction: column-reverse;
-      gap: 1px;
+      width: 2px;
+      flex-shrink: 0;
     }
     .block {
       width: 2px;
       height: 2px;
+      flex-shrink: 0;
       background: currentColor;
     }
   `,
@@ -130,7 +132,10 @@ export class BusyIndicatorComponent {
       }
     } else {
       const top = regs.reduce((a, b) => (b.priority > a.priority ? b : a));
-      if (top.registrationId !== this.activeRegistrationId || top.keyframes !== this.activeKeyframes) {
+      if (
+        top.registrationId !== this.activeRegistrationId ||
+        top.keyframes !== this.activeKeyframes
+      ) {
         this.activeKeyframes = top.keyframes;
         this.currentKeyframeIndex = 0;
         this.keyframeElapsed = 0;
@@ -159,8 +164,7 @@ export class BusyIndicatorComponent {
 
     for (let row = 0; row < MAX_HEIGHT; row++) {
       for (let col = 0; col < BAR_COUNT; col++) {
-        this.currentGrid[row][col] +=
-          (target[row][col] - this.currentGrid[row][col]) * LERP_FACTOR;
+        this.currentGrid[row][col] += (target[row][col] - this.currentGrid[row][col]) * LERP_FACTOR;
       }
     }
     this._grid.set(this.currentGrid.map((row) => [...row]));
@@ -172,7 +176,9 @@ export class BusyIndicatorComponent {
         this.keyframeElapsed = 0;
       }
     } else {
-      if (this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))) {
+      if (
+        this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))
+      ) {
         this.currentGrid = makeIdleGrid();
         this._grid.set(makeIdleGrid());
         this.stopInterval();

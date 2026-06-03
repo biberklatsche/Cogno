@@ -13,7 +13,11 @@
       "Bash(pnpm lint:code)",
       "Bash(pnpm lint:fix)",
       "Bash(pnpm lint:architecture)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(cd /tmp)",
+      "Bash(gh repo *)"
     ]
   }
 }

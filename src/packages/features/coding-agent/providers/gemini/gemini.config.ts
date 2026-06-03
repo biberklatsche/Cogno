@@ -25,14 +25,14 @@ export const GEMINI_CONFIG = {
   configSubDir: ".gemini",
   configFileName: "settings.json",
   hookEvents: [
-    { eventName: "SessionStart",  status: "ready"    as AgentStatus },
-    { eventName: "BeforeAgent",   status: "working"  as AgentStatus },
-    { eventName: "BeforeModel",   status: "working"  as AgentStatus },
-    { eventName: "BeforeTool",    status: "working"  as AgentStatus },
-    { eventName: "AfterTool",     status: "working"  as AgentStatus },
-    { eventName: "AfterAgent",    status: "ready"    as AgentStatus },
-    { eventName: "PreCompress",   status: "working"  as AgentStatus },
-    { eventName: "Notification",  status: "question" as AgentStatus },
+    { eventName: "SessionStart", status: "ready" as AgentStatus },
+    { eventName: "BeforeAgent", status: "working" as AgentStatus },
+    { eventName: "BeforeModel", status: "working" as AgentStatus },
+    { eventName: "BeforeTool", status: "working" as AgentStatus },
+    { eventName: "AfterTool", status: "working" as AgentStatus },
+    { eventName: "AfterAgent", status: "ready" as AgentStatus },
+    { eventName: "PreCompress", status: "working" as AgentStatus },
+    { eventName: "Notification", status: "question" as AgentStatus },
   ] as ReadonlyArray<GeminiHookEntry>,
 
   isCognoCommand(command: string): boolean {

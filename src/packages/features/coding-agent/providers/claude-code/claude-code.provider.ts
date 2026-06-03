@@ -16,7 +16,10 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
   }
 
   async isHookInstalled(): Promise<boolean> {
-    const configPath = await this.configFile.joinPath(await this.configDir(), CLAUDE_CODE_CONFIG.configFileName);
+    const configPath = await this.configFile.joinPath(
+      await this.configDir(),
+      CLAUDE_CODE_CONFIG.configFileName,
+    );
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
     return CLAUDE_CODE_CONFIG.hookEvents.every(({ eventName }) =>
       (settings.hooks?.[eventName] ?? []).some((group) =>

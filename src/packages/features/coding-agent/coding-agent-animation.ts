@@ -2,105 +2,140 @@ import { AnimationSpec } from "@cogno/core-api";
 
 export const AGENT_STATUS_REGISTRATION_KEY = "coding-agent-status";
 
-// Grid convention: row 0 = top, row 3 = bottom, col 0 = left, col 4 = right.
-// Values: 1 = on, 0 = off. Fractional values produce partial opacity (used for dim frames).
-// LERP interpolation between keyframes creates smooth transitions automatically.
+// Grid: 7 cols × 7 rows → 14×14px at 2px/block, no gap. Row 0 = top, row 6 = bottom.
+// Values: 1 = on, 0 = off. Fractional values produce partial opacity.
 
-// ─── ready: full ghost floating up and down ───────────────────────────────
+// ─── ready: ghost standing still ──────────────────────────────────────────
+//
+//   .#####.
+//   #######
+//   #..#..#   ← eye sockets at col 1-2 and col 4-5
+//   #######
+//   #.#.#.#   ← wavy skirt
+//   .#.#.#.
+//   .......
 
-//  .###.    head arc
-//  #####    body
-//  #.#.#    three-bump feet
-//  .....
-const GHOST_HIGH: number[][] = [
-  [0,1,1,1,0],
-  [1,0,1,0,1],
-  [1,1,1,1,1],
-  [1,0,1,0,1]
+const R = 0.3; // dim ring
+const B = 1.0; // bright spot
+
+const GHOST1: number[][] = [
+  [0, 0, 0, B, 0, 0, 0],
+  [0, 0, 0, B, 0, 0, 0],
+  [R, B, B, B, B, B, R],
+  [B, B, 0, B, 0, B, B],
+  [B, B, 0, B, 0, B, B],
+  [B, B, B, B, B, B, B],
+  [R, B, B, B, B, B, R],
 ];
 
-//  .....
-//  .###.
-//  #####
-//  #.#.#
-const GHOST_LOW: number[][] = [
-  [0,0,0,0,0],
-  [0,1,1,1,0],
-  [1,1,1,1,1],
-  [1,0,1,0,1],
+// ─── working: spinning circle ──────────────────────────────────────────────
+//
+// 7×7 circle ring. Bright spot rotates clockwise: top → right → bottom → left.
+const CIRCLE_TOP: number[][] = [
+  [0, 0, B, B, B, 0, 0],
+  [0, 0, 0, B, 0, 0, 0],
+  [R, B, B, B, B, B, R],
+  [B, B, B, B, B, B, B],
+  [B, B, 0, B, 0, B, B],
+  [B, B, 0, B, 0, B, B],
+  [R, B, B, B, B, B, R],
 ];
 
-// ─── working: small ghost sliding left → center → right ───────────────────
-
-//  .#...    head
-//  ###..    body
-//  #.#..    two-bump feet
-//  .....
-const GHOST_LEFT: number[][] = [
-  [0,1,0,0,0],
-  [1,1,1,0,0],
-  [1,0,1,0,0],
-  [0,0,0,0,0],
+const CIRCLE_RIGHT: number[][] = [
+  [0, B, R, B, R, B, 0],
+  [0, 0, 0, B, 0, 0, 0],
+  [R, B, B, B, B, B, R],
+  [B, B, B, B, B, B, B],
+  [B, B, 0, B, 0, B, B],
+  [B, B, 0, B, 0, B, B],
+  [R, B, B, B, B, B, R],
 ];
 
-//  ..#..
-//  .###.
-//  .#.#.
-//  .....
-const GHOST_CENTER: number[][] = [
-  [0,1,1,1,0],
-  [1,0,1,0,1],
-  [1,1,1,1,1],
-  [1,0,1,0,1]
+const CIRCLE_BOTTOM: number[][] = [
+  [B, R, 0, B, 0, R, B],
+  [0, 0, 0, B, 0, 0, 0],
+  [R, B, B, B, B, B, R],
+  [B, B, B, B, B, B, B],
+  [B, B, 0, B, 0, B, B],
+  [B, B, 0, B, 0, B, B],
+  [R, B, B, B, B, B, R],
 ];
 
-//  ...#.
-//  ..###
-//  ..#.#
-//  .....
-const GHOST_RIGHT: number[][] = [
-  [0,0,0,1,0],
-  [0,0,1,1,1],
-  [0,0,1,0,1],
-  [0,0,0,0,0],
+const CIRCLE_LEFT: number[][] = [
+  [R, 0, 0, B, 0, 0, R],
+  [0, 0, 0, B, 0, 0, 0],
+  [R, B, B, B, B, B, R],
+  [B, B, B, B, B, B, B],
+  [B, B, 0, B, 0, B, B],
+  [B, B, 0, B, 0, B, B],
+  [R, B, B, B, B, B, R],
 ];
 
 // ─── question: question mark pulsing ──────────────────────────────────────
+//
+//   .####.
+//   .#..#.
+//   ...#..
+//   ..#...
+//   ..#...
+//   ......
+//   ..##..
 
-//  ..##.    top of arc curving right
-//  ...#.    right side down
-//  ..#..    bump / stem
-//  ..#..    dot
-const QUESTION_MARK: number[][] = [
-  [0,0,1,1,0],
-  [0,0,0,1,0],
-  [0,0,1,0,0],
-  [0,0,1,0,0],
+const QUESTION_MARK_1: number[][] = [
+  [0, 0, 0, 0, 0, 1, 0],
+  [0, 0, 0, 0, 1, 0, 1],
+  [0, 0, 0, 0, 0, 0, 1],
+  [0, B, B, 0, 0, 1, 0],
+  [0, B, 0, 0, 0, 0, 0],
+  [B, B, B, B, R, 1, 0],
+  [B, B, B, B, B, 0, 0],
 ];
 
-const QUESTION_DIM: number[][] = QUESTION_MARK.map((row) => row.map((v) => v * 0.15));
-
-// ─── error: dead ghost (upside-down), flashing ────────────────────────────
-
-//  #.#.#    feet at top — visually "fallen over"
-//  #####
-//  #####
-//  .###.    head at bottom
-const DEAD_GHOST: number[][] = [
-  [1,0,1,0,1],
-  [1,1,1,1,1],
-  [1,1,1,1,1],
-  [0,1,1,1,0],
+const QUESTION_MARK_2: number[][] = [
+  [0, 0, 0, 0, 0, 1, 0],
+  [0, 0, 0, 0, 1, 0, 1],
+  [0, 0, 0, 0, 0, 0, 1],
+  [0, B, R, B, 0, 1, 0],
+  [0, B, 0, 0, 0, 0, 0],
+  [B, B, B, B, R, 1, 0],
+  [B, B, B, B, B, 0, 0],
 ];
 
-const DEAD_GHOST_DIM: number[][] = DEAD_GHOST.map((row) => row.map((v) => v * 0.25));
+const QUESTION_MARK_3: number[][] = [
+  [0, 0, 0, 0, 0, 1, 0],
+  [0, 0, 0, 0, 1, 0, 1],
+  [0, 0, 0, 0, 0, 0, 1],
+  [0, B, 0, R, B, 1, 0],
+  [0, B, 0, 0, 0, 0, 0],
+  [B, B, B, B, R, 1, 0],
+  [B, B, B, B, B, 0, 0],
+];
+
+// ─── error: gravestone ────────────────────────────────────────────────────
+//
+//   ...#...
+//   ..###..
+//   ..###..
+//   ..###..
+//   ..###..
+//   #######
+//   .......
+
+const SLEEPING: number[][] = [
+  [0, 0, R, B, R, 0, 0],
+  [0, 0, 0, B, 0, 0, 0],
+  [R, B, B, B, B, B, R],
+  [B, B, B, B, B, B, B],
+  [B, R, R, B, R, R, B],
+  [B, B, B, B, B, B, B],
+  [R, B, B, B, B, B, R],
+];
 
 // ─── specs ────────────────────────────────────────────────────────────────
 
 export const AGENT_STATUS_SPECS = {
-  // Two held frames each so LERP has time to reach the target before switching.
-  ready:    { keyframes: [GHOST_HIGH, GHOST_HIGH, GHOST_LOW, GHOST_LOW], priority: 25 },
-  working:  { keyframes: [GHOST_LEFT, GHOST_CENTER, GHOST_RIGHT, GHOST_CENTER], priority: 50 },
-  question: { keyframes: [QUESTION_MARK, QUESTION_DIM], priority: 75 },
-  error:    { keyframes: [DEAD_GHOST, DEAD_GHOST_DIM], priority: 100 },
+  ready: { keyframes: [GHOST1], priority: 25 },
+  working: { keyframes: [CIRCLE_TOP, CIRCLE_RIGHT, CIRCLE_BOTTOM, CIRCLE_LEFT], priority: 50 },
+  question: { keyframes: [QUESTION_MARK_1, QUESTION_MARK_2, QUESTION_MARK_3], priority: 75 },
+  error: { keyframes: [SLEEPING], priority: 100 },
 } satisfies Record<string, AnimationSpec>;

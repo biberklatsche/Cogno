@@ -16,7 +16,10 @@ export class KimiProvider implements ICodingAgentProvider {
   }
 
   async isHookInstalled(): Promise<boolean> {
-    const configPath = await this.configFile.joinPath(await this.configDir(), KIMI_CONFIG.configFileName);
+    const configPath = await this.configFile.joinPath(
+      await this.configDir(),
+      KIMI_CONFIG.configFileName,
+    );
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
     return KIMI_CONFIG.hookEvents.every(({ eventName }) =>
@@ -43,7 +46,10 @@ export class KimiProvider implements ICodingAgentProvider {
   }
 
   async removeHook(): Promise<void> {
-    const configPath = await this.configFile.joinPath(await this.configDir(), KIMI_CONFIG.configFileName);
+    const configPath = await this.configFile.joinPath(
+      await this.configDir(),
+      KIMI_CONFIG.configFileName,
+    );
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     if (Array.isArray(config.hooks)) {
       config.hooks = config.hooks.filter((h) => !KIMI_CONFIG.isCognoCommand(h.command));

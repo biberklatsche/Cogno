@@ -4,9 +4,30 @@ import { AppBus } from "../../app-bus/app-bus";
 import type { GridListService } from "../../grid-list/+state/grid-list.service";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
-const defaultKeyframes = [[[0,0,0,0,0],[0,1,1,1,0],[1,1,1,1,1],[1,1,1,1,1]]];
-const providerKeyframes = [[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1]]];
-const highPriorityKeyframes = [[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]];
+const defaultKeyframes = [
+  [
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+  ],
+];
+const providerKeyframes = [
+  [
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1],
+  ],
+];
+const highPriorityKeyframes = [
+  [
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+  ],
+];
 
 describe("BusyIndicatorService", () => {
   let bus: AppBus;

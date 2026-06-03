@@ -1,7 +1,7 @@
 import { AgentStatus } from "@cogno/core-api";
 
 export type HookCommands = {
-  command: string;        // Unix/macOS: bash + curl
+  command: string; // Unix/macOS: bash + curl
   commandWindows: string; // Windows: PowerShell + Invoke-WebRequest
 };
 

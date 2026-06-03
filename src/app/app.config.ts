@@ -72,10 +72,7 @@ import {
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
-import {
-  CodingAgentStartupService,
-  CodingAgentStatusService,
-} from "@cogno/features/coding-agent";
+import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
 import { GitBlobReader } from "@cogno/features/side-menu/git/git-blob-reader.port";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
