@@ -8,8 +8,8 @@ import { TerminalId } from "../grid-list/+model/model";
 
 const ACTIVE_FRAME_COUNT = 6;
 const IDLE_FRAME_COUNT = 20;
-const IDLE_WAVE_MIN = 1.5;
-const IDLE_WAVE_MAX = 2.5;
+const IDLE_WAVE_MIN = 1;
+const IDLE_WAVE_MAX = 3;
 const IDLE_WAVE_DELAY_MS = 2000;
 
 const PRIORITY_TERMINAL_ACTIVE = 2;
