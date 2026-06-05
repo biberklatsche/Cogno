@@ -39,7 +39,7 @@ import { AgentAnimationComponent } from "./agent-animation.component";
               class="hook-icon"
               [class.hook-ok]="entry.hasHook"
               [class.hook-missing]="!entry.hasHook"
-              [name]="entry.hasHook ? 'mdiCheck' : 'mdiAlertCircleOutline'"
+              [name]="entry.hasHook ? 'mdiCheck' : 'mdiAlert'"
               [appTooltip]="entry.hasHook ? 'Hook installed' : 'Hook not installed'"
             ></app-icon>
           </div>
