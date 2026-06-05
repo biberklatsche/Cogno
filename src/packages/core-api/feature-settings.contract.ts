@@ -156,6 +156,10 @@ export const FeatureGitSchema = z.object({
   mode: aiFeatureModeSchema.optional(),
 });
 
+export const FeatureCodingAgentsSchema = z.object({
+  mode: featureModeSchema.optional(),
+});
+
 export const FeatureAiSchema = z.object({
   mode: aiFeatureModeSchema.optional(),
   active_provider: z.string().optional(),

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, Signal, signal } from "@angular/core";
 import {
   ApplicationConfigurationPort,
   ConfirmDialogPort,
@@ -7,31 +7,57 @@ import {
 } from "@cogno/core-api";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 
+export type InstalledProviderEntry = {
+  readonly provider: ICodingAgentProvider;
+  readonly hasHook: boolean;
+};
+
 @Injectable({ providedIn: "root" })
 export class CodingAgentStartupService {
+  private readonly _installedProviders = signal<ReadonlyArray<InstalledProviderEntry>>([]);
+  private readonly _isScanning = signal(false);
+
+  readonly installedProviders: Signal<ReadonlyArray<InstalledProviderEntry>> =
+    this._installedProviders.asReadonly();
+  readonly isScanning: Signal<boolean> = this._isScanning.asReadonly();
+
   constructor(
     private readonly registry: CodingAgentProviderRegistry,
     private readonly confirmDialog: ConfirmDialogPort,
     private readonly configPort: ApplicationConfigurationPort,
     private readonly osPort: OsPlatformPort,
   ) {
-    void this.checkAndOfferInstallation();
+    if (!this.isEnabled()) return;
+    void this.rescan();
   }
 
-  private async checkAndOfferInstallation(): Promise<void> {
+  async rescan(): Promise<void> {
+    if (this._isScanning()) return;
+    this._isScanning.set(true);
+
     const needsHooks: ICodingAgentProvider[] = [];
+    const installed: InstalledProviderEntry[] = [];
 
     for (const provider of this.registry.providers) {
       try {
         if (!(await provider.isAgentInstalled())) continue;
-        if (!(await provider.isHookInstalled())) needsHooks.push(provider);
+        const hasHook = await provider.isHookInstalled();
+        installed.push({ provider, hasHook });
+        if (!hasHook) needsHooks.push(provider);
       } catch {
         // Provider config inaccessible — skip silently
       }
     }
 
-    if (needsHooks.length === 0) return;
+    this._installedProviders.set(installed);
+    this._isScanning.set(false);
 
+    if (needsHooks.length > 0) {
+      await this.offerHookInstallation(needsHooks);
+    }
+  }
+
+  private async offerHookInstallation(needsHooks: ICodingAgentProvider[]): Promise<void> {
     const names = needsHooks.map((p) => p.name).join(", ");
     const confirmed = await this.confirmDialog
       .confirm(
@@ -50,6 +76,13 @@ export class CodingAgentStartupService {
         console.error(`[coding-agent] Failed to install hook for ${provider.name}:`, err);
       }
     }
+
+    await this.rescan();
+  }
+
+  private isEnabled(): boolean {
+    const config = this.configPort.getConfiguration() as { coding_agents?: { mode?: string } };
+    return config?.coding_agents?.mode !== "off";
   }
 
   private resolveDefaultShellType(): string {
@@ -60,7 +93,6 @@ export class CodingAgentStartupService {
     const defaultName = shell?.default;
     const configured = defaultName ? shell?.profiles?.[defaultName]?.shell_type : undefined;
     if (configured) return configured;
-    // No shell configured — fall back to OS: Windows defaults to PowerShell, others to Bash.
     return this.osPort.platform() === "windows" ? "PowerShell" : "Bash";
   }
 }

@@ -34,7 +34,7 @@ export class CodexProvider implements ICodingAgentProvider {
     file.hooks = file.hooks ?? {};
 
     for (const entry of CODEX_CONFIG.hookEvents) {
-      const { command, commandWindows } = buildHookCommands(entry.status);
+      const { command, commandWindows } = buildHookCommands(entry.status, this.id);
       const existing: CodexHookGroup[] = file.hooks[entry.eventName] ?? [];
       const withoutCogno = existing
         .map((group) => ({

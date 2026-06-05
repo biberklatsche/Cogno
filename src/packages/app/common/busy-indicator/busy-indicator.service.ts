@@ -16,6 +16,7 @@ export type BusyIndicatorRegistration = {
 
 @Injectable({ providedIn: "root" })
 export class BusyIndicatorService {
+  private readonly _map = new Map<string, BusyIndicatorRegistration>();
   private readonly _registrations$ = new BehaviorSubject<BusyIndicatorRegistration[]>([]);
 
   constructor(
@@ -29,19 +30,8 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const payload = event.payload;
         if (!payload) return;
-        const retained = this._registrations$.value.filter(
-          (r) =>
-            r.registrationId !== payload.registrationId && !sameTarget(r.target, payload.target),
-        );
-        this._registrations$.next([
-          ...retained,
-          {
-            registrationId: payload.registrationId,
-            target: payload.target,
-            keyframes: payload.keyframes,
-            priority: payload.priority,
-          },
-        ]);
+        this._map.set(payload.registrationId, payload);
+        this.emit();
       });
 
     this.bus
@@ -50,10 +40,13 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const registrationId = event.payload?.registrationId;
         if (!registrationId) return;
-        this._registrations$.next(
-          this._registrations$.value.filter((r) => r.registrationId !== registrationId),
-        );
+        this._map.delete(registrationId);
+        this.emit();
       });
+  }
+
+  private emit(): void {
+    this._registrations$.next([...this._map.values()]);
   }
 
   forTerminal$(terminalId: TerminalId): Observable<BusyIndicatorRegistration[]> {
@@ -96,8 +89,4 @@ function sameRegistrations(
       r.priority === b[i].priority &&
       r.keyframes === b[i].keyframes,
   );
-}
-
-function sameTarget(left: BusyIndicatorTarget, right: BusyIndicatorTarget): boolean {
-  return left.kind === right.kind && left.id === right.id;
 }

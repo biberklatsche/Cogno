@@ -1,7 +1,9 @@
 import {
   FeatureAiSchema,
   FeatureAutocompleteSchema,
+  FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
+  FeatureGitSchema,
   FeatureNotificationSchema,
   FeatureNotificationsSchema,
   FeatureSearchSchema,
@@ -78,6 +80,8 @@ export const featureConfigSchemaShape = {
   autocomplete: FeatureAutocompleteSchema.optional(),
   search: FeatureSearchSchema.optional(),
   ai: FeatureAiSchema.optional(),
+  git: FeatureGitSchema.optional(),
+  coding_agents: FeatureCodingAgentsSchema.optional(),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z

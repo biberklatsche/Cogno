@@ -36,7 +36,7 @@ export class GeminiProvider implements ICodingAgentProvider {
     settings.hooks = settings.hooks ?? {};
 
     for (const entry of GEMINI_CONFIG.hookEvents) {
-      const command = buildHookCommand(entry.status, shellType);
+      const command = buildHookCommand(entry.status, shellType, this.id);
       const existing: GeminiHookGroup[] = settings.hooks[entry.eventName] ?? [];
       const withoutCogno = existing
         .map((group) => ({

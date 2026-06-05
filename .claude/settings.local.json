@@ -17,7 +17,9 @@
       "WebFetch(domain:developers.openai.com)",
       "WebFetch(domain:github.com)",
       "Bash(cd /tmp)",
-      "Bash(gh repo *)"
+      "Bash(gh repo *)",
+      "Bash(npx eslint *)",
+      "Bash(npx ng *)"
     ]
   }
 }

@@ -39,7 +39,7 @@ export class KimiProvider implements ICodingAgentProvider {
       ...withoutCogno,
       ...KIMI_CONFIG.hookEvents.map((entry) => ({
         event: entry.eventName,
-        command: buildHookCommand(entry.status, shellType),
+        command: buildHookCommand(entry.status, shellType, this.id),
       })),
     ];
     await this.configFile.writeToml(configPath, config);

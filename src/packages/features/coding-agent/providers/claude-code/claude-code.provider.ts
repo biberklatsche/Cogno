@@ -40,7 +40,7 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
 
     const shell = shellType === "PowerShell" ? "powershell" : "bash";
     for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
-      const command = buildHookCommand(entry.status, shellType);
+      const command = buildHookCommand(entry.status, shellType, this.id);
       const existing = settings.hooks[entry.eventName] ?? [];
       const withoutCogno = existing
         .map((group) => ({

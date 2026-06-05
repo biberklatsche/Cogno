@@ -7,6 +7,7 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
+import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
 import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
@@ -66,6 +67,7 @@ import {
   TerminalGateway,
   TerminalLinkPatternPort,
   TerminalMonitorPort,
+  TerminalNavigator,
   TerminalSearchHostPort,
   WorkspaceHostPort,
 } from "@cogno/core-api";
@@ -121,6 +123,7 @@ export const appConfig: ApplicationConfig = {
     { provide: OsPlatformPort, useExisting: OsPlatformAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalLinkPatternPort, useExisting: TerminalLinkPatternAdapterService },
+    { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {

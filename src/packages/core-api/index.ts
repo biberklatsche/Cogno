@@ -35,6 +35,7 @@ export * from "./side-menu-feature-registry.contract";
 export * from "./simple-file-access.contract";
 export * from "./terminal-animation.contract";
 export * from "./terminal-autocomplete.contract";
+export * from "./terminal-navigator.contract";
 export * from "./terminal-gateway.contract";
 export * from "./terminal-link-pattern.contract";
 export * from "./terminal-monitor.contract";
