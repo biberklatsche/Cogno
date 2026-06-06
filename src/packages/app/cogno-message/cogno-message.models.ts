@@ -1,5 +1,5 @@
 export interface CognoMessage {
-  action: string;
+  command: string;
   args?: string[];
   terminalId?: string;
 }

@@ -45,7 +45,7 @@ impl HttpServerState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CognoMessagePayload {
-    pub action: String,
+    pub command: String,
     pub args: Option<Vec<String>>,
     // rename_all makes this serialize as "terminalId" (matches CognoMessage TypeScript interface).
     // The alias keeps accepting "terminal_id" from curl/PowerShell hooks.
@@ -93,6 +93,7 @@ pub fn start_http_server(
     state.set_port(actual_port);
 
     tauri::async_runtime::spawn(async move {
+        use axum::extract::rejection::JsonRejection;
         use axum::extract::Json;
         use axum::http::StatusCode;
         use axum::routing::post;
@@ -116,11 +117,20 @@ pub fn start_http_server(
         let app_emit = app.clone();
         let router = Router::new().route(
             "/action",
-            post(move |Json(payload): Json<CognoMessagePayload>| {
+            post(move |result: Result<Json<CognoMessagePayload>, JsonRejection>| {
                 let app = app_emit.clone();
                 async move {
-                    let _ = app.emit("cogno-message", payload);
-                    StatusCode::NO_CONTENT
+                    match result {
+                        Ok(Json(payload)) => {
+                            log::info!(target: "http_server", "POST /action: command={} terminal_id={:?}", payload.command, payload.terminal_id);
+                            let _ = app.emit("cogno-message", payload);
+                            StatusCode::NO_CONTENT
+                        }
+                        Err(e) => {
+                            log::error!(target: "http_server", "POST /action parse error: {}", e);
+                            StatusCode::BAD_REQUEST
+                        }
+                    }
                 }
             }),
         );

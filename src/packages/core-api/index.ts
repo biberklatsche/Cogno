@@ -8,6 +8,7 @@ export * from "./application-settings-extension.contract";
 export * from "./application-settings-section-definition.contract";
 export * from "./base-path.adapter";
 export * from "./coding-agent-provider.contract";
+export * from "./terminal-ipc.contract";
 export * from "./command-runner.contract";
 export * from "./configuration-transformer.contract";
 export * from "./confirm-dialog.contract";

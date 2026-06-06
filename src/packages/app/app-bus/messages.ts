@@ -1,4 +1,5 @@
 import { ActionFiredEvent } from "../action/action.models";
+import { TerminalIpcMessageEvent } from "../cogno-message/+bus/events";
 import {
   BusyIndicatorRegisterEvent,
   BusyIndicatorUnregisterEvent,
@@ -152,4 +153,5 @@ export type AppMessage =
   | OpenNotificationTargetAction
   | SideMenuEvent
   | ChangeTabTitleEvent
-  | PaneMaximizedChangedEvent;
+  | PaneMaximizedChangedEvent
+  | TerminalIpcMessageEvent;

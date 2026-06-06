@@ -1,5 +1,7 @@
 import { AgentStatus } from "@cogno/core-api";
 
+export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
+
 export type HookCommands = {
   command: string; // Unix/macOS: bash + curl
   commandWindows: string; // Windows: PowerShell + Invoke-WebRequest
@@ -20,10 +22,10 @@ export function buildHookCommand(status: AgentStatus, shellType: string | undefi
 }
 
 function buildCurlCommand(status: AgentStatus, providerId: string): string {
-  const body = `{"action":"coding_agent_status","args":["${status}","${providerId}"],"terminal_id":"$COGNO_TERMINAL_ID"}`;
-  return `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H "Content-Type: application/json" -d "${body.replace(/"/g, '\\"')}"`;
+  const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"`;
+  return `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d '${prefix}'"$COGNO_TERMINAL_ID"'"}'`;
 }
 
 function buildWindowsCommand(status: AgentStatus, providerId: string): string {
-  return `$b='{"action":"coding_agent_status","args":["${status}","${providerId}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}';Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
+  return `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}';Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
 }

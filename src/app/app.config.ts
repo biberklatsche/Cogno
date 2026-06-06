@@ -31,6 +31,7 @@ import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
+import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
 import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
@@ -53,6 +54,7 @@ import {
   ActionKeybindingPort,
   ApplicationConfigurationPort,
   ApplicationProduct,
+  TerminalIpcPort,
   CommandRunner,
   ConfigurationTransformer,
   ConfirmDialogPort,
@@ -125,6 +127,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalLinkPatternPort, useExisting: TerminalLinkPatternAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
+    { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
