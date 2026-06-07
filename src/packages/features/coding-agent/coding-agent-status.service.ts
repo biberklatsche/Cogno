@@ -16,7 +16,7 @@ export type ActiveAgent = {
   readonly terminalId: string;
   readonly providerId: string;
   readonly providerName: string;
-  readonly status: "working" | "question" | "error";
+  readonly status: "ready" | "working" | "question" | "error";
 };
 
 @Injectable({ providedIn: "root" })
@@ -46,12 +46,8 @@ export class CodingAgentStatusService {
 
       animation.register(terminalId!, AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS[status]);
 
-      if (status === "ready") {
-        this.agentsMap.delete(terminalId!);
-      } else {
-        const providerName = registry.providers.find((p) => p.id === providerId)?.name ?? providerId;
-        this.agentsMap.set(terminalId!, { terminalId: terminalId!, providerId, providerName, status });
-      }
+      const providerName = registry.providers.find((p) => p.id === providerId)?.name ?? providerId;
+      this.agentsMap.set(terminalId!, { terminalId: terminalId!, providerId, providerName, status });
       this.syncActiveAgents();
     });
 

@@ -255,6 +255,7 @@ export class CodingAgentsSideComponent {
   }
 
   statusLabel(status: ActiveAgent["status"]): string {
+    if (status === "ready") return "Ready";
     if (status === "working") return "Working";
     if (status === "question") return "Waiting for input";
     return "Error";
