@@ -18,11 +18,14 @@ export class CodexProvider implements ICodingAgentProvider {
   async isHookInstalled(): Promise<boolean> {
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
-    return CODEX_CONFIG.hookEvents.every(({ eventName }) =>
-      (file.hooks?.[eventName] ?? []).some((group) =>
-        group.hooks.some((h) => CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows)),
-      ),
-    );
+    return CODEX_CONFIG.hookEvents.every(({ eventName, status }) => {
+      const expected = buildHookCommands(status, this.id);
+      return (file.hooks?.[eventName] ?? []).some((group) =>
+        group.hooks.some(
+          (h) => h.command === expected.command && h.commandWindows === expected.commandWindows,
+        ),
+      );
+    });
   }
 
   async installHook(_shellType?: string): Promise<void> {

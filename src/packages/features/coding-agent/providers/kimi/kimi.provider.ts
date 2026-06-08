@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ICodingAgentProvider } from "@cogno/core-api";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand } from "../_shared/hook-command.builder";
+import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
 
 @Injectable({ providedIn: "root" })
@@ -22,8 +22,8 @@ export class KimiProvider implements ICodingAgentProvider {
     );
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
-    return KIMI_CONFIG.hookEvents.every(({ eventName }) =>
-      hooks.some((h) => h.event === eventName && KIMI_CONFIG.isCognoCommand(h.command)),
+    return KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
+      hooks.some((h) => h.event === eventName && isCurrentHookCommand(h.command, status, this.id)),
     );
   }
 

@@ -19,7 +19,8 @@
       "Bash(cd /tmp)",
       "Bash(gh repo *)",
       "Bash(npx eslint *)",
-      "Bash(npx ng *)"
+      "Bash(npx ng *)",
+      "Bash(pnpm test *)"
     ]
   }
 }

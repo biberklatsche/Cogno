@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ICodingAgentProvider } from "@cogno/core-api";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand } from "../_shared/hook-command.builder";
+import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
 import { CLAUDE_CODE_CONFIG, ClaudeSettings, CognoManifest } from "./claude-code.config";
 
 @Injectable({ providedIn: "root" })
@@ -21,9 +21,9 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
       CLAUDE_CODE_CONFIG.configFileName,
     );
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
-    return CLAUDE_CODE_CONFIG.hookEvents.every(({ eventName }) =>
+    return CLAUDE_CODE_CONFIG.hookEvents.every(({ eventName, status }) =>
       (settings.hooks?.[eventName] ?? []).some((group) =>
-        group.hooks.some((h) => CLAUDE_CODE_CONFIG.isCognoCommand(h.command)),
+        group.hooks.some((h) => isCurrentHookCommand(h.command, status, this.id)),
       ),
     );
   }
