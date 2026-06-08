@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ICodingAgentProvider } from "@cogno/core-api";
+import { AntigravityProvider } from "./providers/antigravity/antigravity.provider";
 import { ClaudeCodeProvider } from "./providers/claude-code/claude-code.provider";
 import { CodexProvider } from "./providers/codex/codex.provider";
 import { GeminiProvider } from "./providers/gemini/gemini.provider";
@@ -14,7 +15,8 @@ export class CodingAgentProviderRegistry {
     codex: CodexProvider,
     gemini: GeminiProvider,
     kimi: KimiProvider,
+    antigravity: AntigravityProvider,
   ) {
-    this.providers = [claudeCode, codex, gemini, kimi];
+    this.providers = [claudeCode, codex, gemini, kimi, antigravity];
   }
 }

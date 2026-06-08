@@ -14,22 +14,30 @@ export function buildHookCommands(status: AgentStatus, providerId: string): Hook
   };
 }
 
-/** Returns the command for the given Cogno shell type (e.g. "PowerShell" → IWR, else curl). */
+/**
+ * Returns the command for the given Cogno shell type (e.g. "PowerShell" → IWR, else curl).
+ * @param stdout When set, the command's own output is suppressed and this string is written to
+ * stdout instead — needed for agents (e.g. Antigravity) whose hooks must return specific JSON.
+ */
 export function buildHookCommand(
   status: AgentStatus,
   shellType: string | undefined,
   providerId: string,
+  stdout?: string,
 ): string {
   return shellType === "PowerShell"
-    ? buildWindowsCommand(status, providerId)
-    : buildCurlCommand(status, providerId);
+    ? buildWindowsCommand(status, providerId, stdout)
+    : buildCurlCommand(status, providerId, stdout);
 }
 
-function buildCurlCommand(status: AgentStatus, providerId: string): string {
+function buildCurlCommand(status: AgentStatus, providerId: string, stdout?: string): string {
   const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"`;
-  return `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d '${prefix}'"$COGNO_TERMINAL_ID"'"}'`;
+  const out = stdout ? "-o /dev/null " : "";
+  const post = `curl -s ${out}-X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d '${prefix}'"$COGNO_TERMINAL_ID"'"}'`;
+  return stdout ? `${post}; echo '${stdout}'` : post;
 }
 
-function buildWindowsCommand(status: AgentStatus, providerId: string): string {
-  return `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}';Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
+function buildWindowsCommand(status: AgentStatus, providerId: string, stdout?: string): string {
+  const post = `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}';Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
+  return stdout ? `${post};Write-Output '${stdout}'` : post;
 }
