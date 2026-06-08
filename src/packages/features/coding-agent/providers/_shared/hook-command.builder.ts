@@ -15,7 +15,11 @@ export function buildHookCommands(status: AgentStatus, providerId: string): Hook
 }
 
 /** Returns the command for the given Cogno shell type (e.g. "PowerShell" → IWR, else curl). */
-export function buildHookCommand(status: AgentStatus, shellType: string | undefined, providerId: string): string {
+export function buildHookCommand(
+  status: AgentStatus,
+  shellType: string | undefined,
+  providerId: string,
+): string {
   return shellType === "PowerShell"
     ? buildWindowsCommand(status, providerId)
     : buildCurlCommand(status, providerId);

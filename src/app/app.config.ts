@@ -7,7 +7,6 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
-import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
 import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
@@ -26,13 +25,14 @@ import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-an
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalLinkPatternAdapterService } from "@cogno/app/app-host/terminal-link-pattern.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
+import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
-import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
 import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
+import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
@@ -54,7 +54,6 @@ import {
   ActionKeybindingPort,
   ApplicationConfigurationPort,
   ApplicationProduct,
-  TerminalIpcPort,
   CommandRunner,
   ConfigurationTransformer,
   ConfirmDialogPort,
@@ -67,6 +66,7 @@ import {
   SimpleFileAccess,
   TerminalAnimationPort,
   TerminalGateway,
+  TerminalIpcPort,
   TerminalLinkPatternPort,
   TerminalMonitorPort,
   TerminalNavigator,

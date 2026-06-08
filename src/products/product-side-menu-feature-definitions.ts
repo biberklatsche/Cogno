@@ -70,9 +70,9 @@ export const productSideMenuFeatureDefinitions = [
   {
     ...codingAgentsSideMenuFeatureDefinition,
     targetComponent: () =>
-      import(
-        "@cogno/features/side-menu/coding-agents/coding-agents-side.component"
-      ).then((m) => m.CodingAgentsSideComponent),
+      import("@cogno/features/side-menu/coding-agents/coding-agents-side.component").then(
+        (m) => m.CodingAgentsSideComponent,
+      ),
     createLifecycle: (injector, sideMenuFeatureHandle) =>
       injector.get(CodingAgentsSideMenuLifecycle).create(sideMenuFeatureHandle),
   },

@@ -38,4 +38,6 @@ export type Icon =
   | "mdiTrashCanOutline"
   | "mdiUndoVariant"
   | "mdiViewDashboard"
-  | "mdiViewDashboardEdit";
+  | "mdiViewDashboardEdit"
+  | "mdiCog"
+  | "mdiArrowLeft";

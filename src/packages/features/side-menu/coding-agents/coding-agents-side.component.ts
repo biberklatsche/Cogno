@@ -1,7 +1,11 @@
-import { ChangeDetectionStrategy, Component } from "@angular/core";
+import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import { TerminalNavigator } from "@cogno/core-api";
 import { IconComponent, TooltipDirective } from "@cogno/core-ui";
-import { ActiveAgent, CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
+import {
+  ActiveAgent,
+  CodingAgentStartupService,
+  CodingAgentStatusService,
+} from "@cogno/features/coding-agent";
 import { AgentAnimationComponent } from "./agent-animation.component";
 
 @Component({
@@ -11,69 +15,88 @@ import { AgentAnimationComponent } from "./agent-animation.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="agents-panel">
-      <header class="panel-header">
-        <span class="panel-title">Installed Agents</span>
-        <button
-          type="button"
-          class="button icon-button"
-          appTooltip="Rescan for agents"
-          [disabled]="isScanning()"
-          (click)="rescan()"
-        >
-          <app-icon
-            name="mdiRefresh"
-            [class.spinning]="isScanning()"
-          ></app-icon>
-        </button>
-      </header>
-
-      <div class="installed-list">
-        @if (installedProviders().length === 0 && !isScanning()) {
-          <span class="installed-empty">No agents found</span>
-        }
-        @for (entry of installedProviders(); track entry.provider.id) {
-          <div class="installed-entry">
-            <app-icon class="installed-icon" name="mdiRobot"></app-icon>
-            <span class="installed-name">{{ entry.provider.name }}</span>
-            <app-icon
-              class="hook-icon"
-              [class.hook-ok]="entry.hasHook"
-              [class.hook-missing]="!entry.hasHook"
-              [name]="entry.hasHook ? 'mdiCheck' : 'mdiAlert'"
-              [appTooltip]="entry.hasHook ? 'Hook installed' : 'Hook not installed'"
-            ></app-icon>
-          </div>
-        }
-      </div>
-
-      <div class="divider"></div>
-
-      <header class="panel-header">
-        <span class="panel-title">Active Agents</span>
-      </header>
-
-      <div class="active-list">
-        @if (activeAgents().length === 0) {
-          <div class="empty-state">
-            <span>No agents currently active</span>
-          </div>
-        }
-        @for (agent of activeAgents(); track agent.terminalId) {
+      @if (view() === "active") {
+        <header class="panel-header">
+          <span class="panel-title">Active Agents</span>
           <button
             type="button"
-            class="agent-card"
-            (click)="navigateTo(agent)"
+            class="button icon-button"
+            appTooltip="Detected agents"
+            (click)="showDetected()"
           >
-            <div class="agent-animation">
-              <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
-            </div>
-            <div class="agent-info">
-              <span class="agent-name">{{ agent.providerName }}</span>
-              <span class="agent-status">{{ statusLabel(agent.status) }}</span>
-            </div>
+            <app-icon name="mdiCog"></app-icon>
           </button>
-        }
-      </div>
+        </header>
+
+        <div class="active-list">
+          @if (activeAgents().length === 0) {
+            <div class="empty-state">
+              <span>No agents currently active</span>
+            </div>
+          }
+          @for (agent of activeAgents(); track agent.terminalId) {
+            <button
+              type="button"
+              class="agent-card"
+              (click)="navigateTo(agent)"
+            >
+              <div class="agent-animation">
+                <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
+              </div>
+              <div class="agent-info">
+                <span class="agent-name">{{ agent.providerName }}</span>
+                <span class="agent-status">{{ statusLabel(agent.status) }}</span>
+                @if (agent.cwd) {
+                  <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      } @else {
+        <header class="panel-header">
+          <span class="panel-title">Detected Agents</span>
+          <button
+            type="button"
+            class="button icon-button"
+            appTooltip="Back to active agents"
+            (click)="showActive()"
+          >
+            <app-icon name="mdiArrowLeft"></app-icon>
+          </button>
+        </header>
+
+        <div class="detected-list">
+          @if (installedProviders().length === 0 && !isScanning()) {
+            <span class="detected-empty">No agents found</span>
+          }
+          @for (entry of installedProviders(); track entry.provider.id) {
+            <div class="detected-entry">
+              <app-icon class="detected-icon" name="mdiRobot"></app-icon>
+              <span class="detected-name">{{ entry.provider.name }}</span>
+              <app-icon
+                class="hook-icon"
+                [class.hook-ok]="entry.hasHook"
+                [class.hook-missing]="!entry.hasHook"
+                [name]="entry.hasHook ? 'mdiCheck' : 'mdiAlert'"
+                [appTooltip]="entry.hasHook ? 'Hook installed' : 'Hook not installed'"
+              ></app-icon>
+            </div>
+          }
+        </div>
+        <button
+            type="button"
+            class="button detect-button"
+            [disabled]="isScanning()"
+            (click)="rescan()"
+        >
+          <app-icon
+              name="mdiRefresh"
+              [class.spinning]="isScanning()"
+          ></app-icon>
+          <span>Detect Agents</span>
+        </button>
+      }
     </div>
   `,
   styles: `
@@ -94,7 +117,7 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.25rem 0.5rem 0.25rem 0;
+      padding: 0.25rem 0;
     }
 
     .panel-title {
@@ -104,20 +127,20 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       opacity: 0.55;
     }
 
-    .installed-list {
+    .detected-list {
       display: flex;
       flex-direction: column;
       gap: 0.15rem;
       padding-bottom: 0.5rem;
     }
 
-    .installed-empty {
+    .detected-empty {
       font-size: 0.8rem;
       opacity: 0.5;
       padding: 0.25rem 0;
     }
 
-    .installed-entry {
+    .detected-entry {
       display: flex;
       align-items: center;
       gap: 0.4rem;
@@ -125,14 +148,14 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       font-size: 0.85rem;
     }
 
-    .installed-icon {
+    .detected-icon {
       width: 0.9rem;
       height: 0.9rem;
       opacity: 0.6;
       flex-shrink: 0;
     }
 
-    .installed-name {
+    .detected-name {
       flex: 1;
     }
 
@@ -142,24 +165,26 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       flex-shrink: 0;
     }
 
-    .hook-ok {
-      color: var(--color-success, #4caf50);
-    }
-
     .hook-missing {
       color: var(--color-warning, #ff9800);
       opacity: 0.8;
     }
 
-    .divider {
-      height: 1px;
-      background: var(--background-color-20l);
-      margin: 0.5rem 0;
+    .detect-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      width: 100%;
+      padding: 0.4rem 0.75rem;
+      margin: 0.25rem 0 0.5rem;
+      font-size: 0.8rem;
     }
 
     .active-list {
       display: flex;
-      flex-direction: column;
+      flex-flow: row wrap;
+      align-content: flex-start;
       gap: 0.5rem;
       flex: 1;
       overflow-y: auto;
@@ -188,7 +213,8 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       color: inherit;
       cursor: pointer;
       text-align: left;
-      width: 100%;
+      flex: 1 1 160px;
+      min-width: 160px;
       transition: background 0.1s;
     }
 
@@ -201,8 +227,8 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      width: 21px;
-      height: 21px;
+      width: 14px;
+      height: 14px;
     }
 
     .agent-info {
@@ -225,6 +251,16 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       opacity: 0.65;
     }
 
+    .agent-cwd {
+      font-size: 0.7rem;
+      opacity: 0.45;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      direction: rtl;
+      text-align: left;
+    }
+
     .spinning {
       animation: spin 0.9s linear infinite;
     }
@@ -239,12 +275,21 @@ export class CodingAgentsSideComponent {
   readonly installedProviders = this.startupService.installedProviders;
   readonly isScanning = this.startupService.isScanning;
   readonly activeAgents = this.statusService.activeAgents;
+  readonly view = signal<"active" | "detected">("active");
 
   constructor(
     private readonly startupService: CodingAgentStartupService,
     private readonly statusService: CodingAgentStatusService,
     private readonly navigator: TerminalNavigator,
   ) {}
+
+  showDetected(): void {
+    this.view.set("detected");
+  }
+
+  showActive(): void {
+    this.view.set("active");
+  }
 
   rescan(): void {
     void this.startupService.rescan();
