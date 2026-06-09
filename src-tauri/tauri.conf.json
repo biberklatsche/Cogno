@@ -44,6 +44,10 @@
       "src/default_windows.config",
       "src/default_linux.config",
       "src/default_macos.config"
-    ]
+    ],
+    "macOS": {
+      "entitlements": "entitlements.plist",
+      "infoPlist": "Info.plist"
+    }
   }
 }
