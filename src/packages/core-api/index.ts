@@ -1,4 +1,5 @@
 export * from "./action.contract";
+export * from "./icon.contract";
 export * from "./action-keybinding.contract";
 export * from "./agent-status.contract";
 export * from "./application-configuration.contract";

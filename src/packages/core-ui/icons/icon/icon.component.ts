@@ -38,10 +38,11 @@ import {
   mdiSend,
   mdiSpeedometer,
   mdiSquareEditOutline,
+  mdiTooltipQuestion,
   mdiTrashCanOutline,
   mdiUndoVariant,
   mdiViewDashboard,
-  mdiViewDashboardEdit,
+  mdiViewDashboardEdit
 } from "@mdi/js";
 import { Icon } from "../+model/icon";
 
@@ -196,6 +197,9 @@ export class IconComponent {
         break;
       case "mdiArrowLeft":
         this.icon = mdiArrowLeft;
+        break;
+      case "mdiTooltipQuestion":
+        this.icon = mdiTooltipQuestion;
         break;
       default:
         this.icon = mdiAbTesting;

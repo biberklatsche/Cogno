@@ -9,4 +9,4 @@ export const notificationSideMenuFeatureDefinition = {
   order: 20,
   actionName: "open_notification",
   configPath: "notification",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

@@ -9,4 +9,4 @@ export const codingAgentsSideMenuFeatureDefinition = {
   order: 65,
   actionName: "open_coding_agents",
   configPath: "coding_agents",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

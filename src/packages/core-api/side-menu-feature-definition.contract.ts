@@ -1,4 +1,6 @@
-export interface SideMenuFeatureDefinitionContract<TIcon = string, TActionName = string> {
+import { Icon } from "./icon.contract";
+
+export interface SideMenuFeatureDefinitionContract<TIcon = Icon, TActionName = string> {
   readonly id: string;
   readonly title: string;
   readonly icon: TIcon;
