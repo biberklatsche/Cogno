@@ -38,18 +38,21 @@ import { AgentAnimationComponent } from "./agent-animation.component";
             <button
               type="button"
               class="agent-card"
+              [class]="agent.status"
               (click)="navigateTo(agent)"
             >
               <div class="agent-animation">
                 <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
               </div>
               <div class="agent-info">
-                <span class="agent-name">{{ agent.providerName }}</span>
                 <span class="agent-status">{{ statusLabel(agent.status) }}</span>
                 @if (agent.cwd) {
                   <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
                 }
               </div>
+              @if (agent.providerName) {
+                <span class="agent-badge">{{ agent.providerName }}</span>
+              }
             </button>
           }
         </div>
@@ -208,19 +211,26 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       gap: 0.75rem;
       padding: 0.65rem 0.75rem;
       border: 1px solid var(--background-color-20l);
+      border-left-width: 3px;
+      border-left-color: var(--agent-status-color, var(--background-color-20l));
       border-radius: 8px;
       background: var(--background-color-10l);
       color: inherit;
-      cursor: pointer;
+      cursor: default;
       text-align: left;
-      flex: 1 1 160px;
-      min-width: 160px;
+      flex: 1 1 190px;
+      min-width: 190px;
       transition: background 0.1s;
     }
 
     .agent-card:hover {
       background: var(--background-color-20l);
     }
+
+    .agent-card.working { --agent-status-color: var(--color-blue); }
+    .agent-card.ready { --agent-status-color: var(--color-green); }
+    .agent-card.question { --agent-status-color: var(--color-yellow); }
+    .agent-card.error { --agent-status-color: var(--color-red); }
 
     .agent-animation {
       display: flex;
@@ -236,19 +246,15 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       flex-direction: column;
       gap: 0.15rem;
       min-width: 0;
+      flex: 1;
     }
 
-    .agent-name {
+    .agent-status {
       font-size: 0.85rem;
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    .agent-status {
-      font-size: 0.75rem;
-      opacity: 0.65;
     }
 
     .agent-cwd {
@@ -259,6 +265,20 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       text-overflow: ellipsis;
       direction: rtl;
       text-align: left;
+    }
+
+    .agent-badge {
+      flex-shrink: 0;
+      align-self: flex-start;
+      font-size: 0.7rem;
+      padding: 0 6px;
+      line-height: 18px;
+      min-width: 18px;
+      text-align: center;
+      border-radius: 9px;
+      background-color: var(--color-black);
+      color: var(--color-white);
+      white-space: nowrap;
     }
 
     .spinning {

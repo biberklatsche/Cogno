@@ -44,8 +44,8 @@ describe("TabListService", () => {
     return ActionFired.create(
       actionName,
       options?.triggerAll
-        ? { all: true, unconsumed: false, performable: false }
-        : { all: false, unconsumed: false, performable: false },
+        ? { broadcast: true, unconsumed: false, performable: false, always: false }
+        : { broadcast: false, unconsumed: false, performable: false, always: false },
       options?.args,
     );
   }

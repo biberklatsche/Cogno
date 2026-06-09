@@ -17,23 +17,22 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
 
     <section class="notification-list">
       @for (notification of notifications(); track notification.id) {
-        <section class="notification" [class]="notification.type">
+        <section
+          class="notification"
+          [class]="notification.type"
+          (click)="openTarget(notification)"
+        >
           <div class="content">
             <header class="title">{{ notification.header }}</header>
             @if (notification.body) {
               <main class="message">{{ notification.body }}</main>
-            }
-            @if (notification.target) {
-              <button class="target-link" type="button" (click)="openTarget(notification)">
-                Open tab
-              </button>
             }
             <small class="timestamp">{{ toRelativeTime(notification.timestamp) }}</small>
           </div>
           @if (notification.count > 1) {
             <div class="count" title="Occurrences">{{ notification.count }}</div>
           }
-          <button class="button icon-button" type="button" (click)="remove(notification.id)">
+          <button class="button icon-button" type="button" (click)="remove(notification.id); $event.stopPropagation()">
             <app-icon name="mdiClose"></app-icon>
           </button>
         </section>
@@ -49,9 +48,10 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         min-height: 0;
         margin: 0;
         padding: 0.25rem 0 0;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         overflow: hidden;
         width: 100%;
+        gap: 1rem;
       }
 
       .notification-header {
@@ -59,14 +59,12 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         display: flex;
         align-items: center;
         justify-content: space-between;
-        
       }
 
       .notification-list {
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
-        padding: 0 0.25rem 0.25rem;
       }
 
       .notification {
@@ -76,8 +74,13 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         position: relative;
         padding: 0.5rem 0.75rem 0.5rem 0.5rem;
         margin: 0 0 0.25rem;
+        border: 1px solid var(--background-color-20l);
         border-left: 3px solid transparent;
         border-radius: 4px;
+        transition: background 0.1s;
+      }
+
+      .notification:hover {
         background-color: var(--background-color-20l);
       }
 
@@ -96,7 +99,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
       .title {
         font-weight: 600;
         line-height: 1.2;
-        font-size: 1.2rem;
+        font-size: 1rem;
         margin-bottom: 2px;
         color: var(--accent, var(--color-foreground));
       }
@@ -105,17 +108,6 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         opacity: 0.9;
         line-height: 1.3;
         white-space: pre-wrap;
-      }
-
-      .target-link {
-        width: fit-content;
-        margin: 0.35rem 0 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        color: var(--color-blue);
-        text-decoration: underline;
-        font: inherit;
       }
 
       .icon-button {

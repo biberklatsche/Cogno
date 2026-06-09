@@ -42,7 +42,7 @@ import {
   mdiTrashCanOutline,
   mdiUndoVariant,
   mdiViewDashboard,
-  mdiViewDashboardEdit
+  mdiViewDashboardEdit,
 } from "@mdi/js";
 import { Icon } from "../+model/icon";
 

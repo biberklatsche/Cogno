@@ -20,6 +20,7 @@ import { HttpClientPortAdapterService } from "@cogno/app/app-host/http-client-po
 import { OpenerAdapterService } from "@cogno/app/app-host/opener.adapter.service";
 import { OsPlatformAdapterService } from "@cogno/app/app-host/os-platform.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
+import { SideMenuStatePersistenceService } from "@cogno/app/app-host/side-menu-state-persistence.service";
 import { SimpleFileAccessAdapterService } from "@cogno/app/app-host/simple-file-access.adapter.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
@@ -146,6 +147,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(NativeMenuService);
         injector.get(WindowService);
         injector.get(SideMenuLifecycleRuntimeService);
+        injector.get(SideMenuStatePersistenceService);
         injector.get(ActionCatalogAdapterService);
         injector.get(ActionKeybindingPortAdapterService);
         injector.get(TerminalSearchHostPortAdapterService);

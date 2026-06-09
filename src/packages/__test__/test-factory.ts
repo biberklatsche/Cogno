@@ -1,5 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { of } from "rxjs";
 import { vi } from "vitest";
 import { AppBus } from "../app/app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
@@ -93,6 +94,7 @@ export function getTerminalSession(): TerminalSession {
       getNotificationTargetResolverService() as any,
       {} as any,
       new TerminalActivityService(),
+      { pattern$: vi.fn().mockReturnValue(of(undefined)), setPattern: vi.fn(), clearPattern: vi.fn() } as any,
     );
   }
   return terminalSession;

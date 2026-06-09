@@ -1,5 +1,4 @@
 export * from "./action.contract";
-export * from "./icon.contract";
 export * from "./action-keybinding.contract";
 export * from "./agent-status.contract";
 export * from "./application-configuration.contract";
@@ -20,6 +19,7 @@ export * from "./filesystem.contract";
 export * from "./git-blob-reader.contract";
 export * from "./grid-layout.contract";
 export * from "./http-client.contract";
+export * from "./icon.contract";
 export * from "./notification.contract";
 export * from "./notification-center.contract";
 export * from "./opener.contract";
