@@ -23,7 +23,9 @@ export class KimiProvider implements ICodingAgentProvider {
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
     return KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
-      hooks.some((h) => h.event === eventName && isCurrentHookCommand(h.command, status, this.id)),
+      hooks.some(
+        (h) => h.event === eventName && isCurrentHookCommand(h.command, status, this.id, eventName),
+      ),
     );
   }
 
@@ -39,7 +41,7 @@ export class KimiProvider implements ICodingAgentProvider {
       ...withoutCogno,
       ...KIMI_CONFIG.hookEvents.map((entry) => ({
         event: entry.eventName,
-        command: buildHookCommand(entry.status, shellType, this.id),
+        command: buildHookCommand(entry.status, shellType, this.id, entry.eventName),
       })),
     ];
     await this.configFile.writeToml(configPath, config);

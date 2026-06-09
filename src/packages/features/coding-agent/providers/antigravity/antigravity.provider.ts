@@ -40,7 +40,13 @@ export class AntigravityProvider implements ICodingAgentProvider {
 
     const hook: AntigravityHookDefinition = {};
     for (const entry of ANTIGRAVITY_CONFIG.hookEvents) {
-      const command = buildHookCommand(entry.status, shellType, this.id, entry.stdout);
+      const command = buildHookCommand(
+        entry.status,
+        shellType,
+        this.id,
+        entry.eventName,
+        entry.stdout,
+      );
       if (entry.kind === "tool") {
         hook[entry.eventName] = [{ matcher: entry.matcher, hooks: [{ type: "command", command }] }];
       } else {

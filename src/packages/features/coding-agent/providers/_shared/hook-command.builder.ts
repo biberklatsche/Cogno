@@ -7,10 +7,14 @@ export type HookCommands = {
   commandWindows: string; // Windows: PowerShell + Invoke-WebRequest
 };
 
-export function buildHookCommands(status: AgentStatus, providerId: string): HookCommands {
+export function buildHookCommands(
+  status: AgentStatus,
+  providerId: string,
+  hookEvent: string,
+): HookCommands {
   return {
-    command: buildCurlCommand(status, providerId),
-    commandWindows: buildWindowsCommand(status, providerId),
+    command: buildCurlCommand(status, providerId, hookEvent),
+    commandWindows: buildWindowsCommand(status, providerId, hookEvent),
   };
 }
 
@@ -23,11 +27,12 @@ export function buildHookCommand(
   status: AgentStatus,
   shellType: string | undefined,
   providerId: string,
+  hookEvent: string,
   stdout?: string,
 ): string {
   return shellType === "PowerShell"
-    ? buildWindowsCommand(status, providerId, stdout)
-    : buildCurlCommand(status, providerId, stdout);
+    ? buildWindowsCommand(status, providerId, hookEvent, stdout)
+    : buildCurlCommand(status, providerId, hookEvent, stdout);
 }
 
 /**
@@ -40,14 +45,20 @@ export function isCurrentHookCommand(
   command: string | undefined,
   status: AgentStatus,
   providerId: string,
+  hookEvent: string,
 ): boolean {
   if (!command) return false;
-  const { command: bash, commandWindows } = buildHookCommands(status, providerId);
+  const { command: bash, commandWindows } = buildHookCommands(status, providerId, hookEvent);
   return command === bash || command === commandWindows;
 }
 
-function buildCurlCommand(status: AgentStatus, providerId: string, stdout?: string): string {
-  const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"`;
+function buildCurlCommand(
+  status: AgentStatus,
+  providerId: string,
+  hookEvent: string,
+  stdout?: string,
+): string {
+  const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"`;
   const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d '${prefix}'"$COGNO_TERMINAL_ID"'"}'`;
   const guardedCurl = `[ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
@@ -57,8 +68,13 @@ function buildCurlCommand(status: AgentStatus, providerId: string, stdout?: stri
   return stdout ? `${guardedCurl}; echo '${stdout}'` : `${guardedCurl}; true`;
 }
 
-function buildWindowsCommand(status: AgentStatus, providerId: string, stdout?: string): string {
-  const body = `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}'`;
+function buildWindowsCommand(
+  status: AgentStatus,
+  providerId: string,
+  hookEvent: string,
+  stdout?: string,
+): string {
+  const body = `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}'`;
   const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
   const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch {}`;
 

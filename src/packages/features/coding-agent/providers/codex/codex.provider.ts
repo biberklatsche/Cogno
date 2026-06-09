@@ -19,7 +19,7 @@ export class CodexProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
     return CODEX_CONFIG.hookEvents.every(({ eventName, status }) => {
-      const expected = buildHookCommands(status, this.id);
+      const expected = buildHookCommands(status, this.id, eventName);
       return (file.hooks?.[eventName] ?? []).some((group) =>
         group.hooks.some(
           (h) => h.command === expected.command && h.commandWindows === expected.commandWindows,
@@ -37,7 +37,7 @@ export class CodexProvider implements ICodingAgentProvider {
     file.hooks = file.hooks ?? {};
 
     for (const entry of CODEX_CONFIG.hookEvents) {
-      const { command, commandWindows } = buildHookCommands(entry.status, this.id);
+      const { command, commandWindows } = buildHookCommands(entry.status, this.id, entry.eventName);
       const existing: CodexHookGroup[] = file.hooks[entry.eventName] ?? [];
       const withoutCogno = existing
         .map((group) => ({

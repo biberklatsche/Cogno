@@ -94,7 +94,11 @@ export function getTerminalSession(): TerminalSession {
       getNotificationTargetResolverService() as any,
       {} as any,
       new TerminalActivityService(),
-      { pattern$: vi.fn().mockReturnValue(of(undefined)), setPattern: vi.fn(), clearPattern: vi.fn() } as any,
+      {
+        pattern$: vi.fn().mockReturnValue(of(undefined)),
+        setPattern: vi.fn(),
+        clearPattern: vi.fn(),
+      } as any,
     );
   }
   return terminalSession;

@@ -19,6 +19,7 @@ export type ActiveAgent = {
   readonly providerName: string;
   readonly status: "ready" | "working" | "question" | "error";
   readonly cwd?: string;
+  readonly lastHook?: string;
 };
 
 @Injectable({ providedIn: "root" })
@@ -52,6 +53,7 @@ export class CodingAgentStatusService {
       .subscribe(({ terminalId, args }) => {
         const status = parseAgentStatus(args?.[0] ?? "") ?? "ready";
         const providerId = args?.[1] ?? "";
+        const lastHook = args?.[2] || undefined;
 
         animation.register(terminalId, AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS[status]);
 
@@ -63,6 +65,7 @@ export class CodingAgentStatusService {
           providerName,
           status,
           cwd: monitor.getCwd(terminalId),
+          lastHook,
         });
         this.syncActiveAgents();
       });

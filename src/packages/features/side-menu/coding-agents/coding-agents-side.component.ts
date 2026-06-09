@@ -50,9 +50,14 @@ import { AgentAnimationComponent } from "./agent-animation.component";
                   <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
                 }
               </div>
-              @if (agent.providerName) {
-                <span class="agent-badge">{{ agent.providerName }}</span>
-              }
+              <div class="agent-meta">
+                @if (agent.providerName) {
+                  <span class="agent-badge">{{ agent.providerName }}</span>
+                }
+                @if (agent.lastHook) {
+                  <span class="agent-id">{{ agent.lastHook }}</span>
+                }
+              </div>
             </button>
           }
         </div>
@@ -267,9 +272,23 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       text-align: left;
     }
 
-    .agent-badge {
+    .agent-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.2rem;
       flex-shrink: 0;
       align-self: flex-start;
+    }
+
+    .agent-id {
+      font-size: 0.62rem;
+      opacity: 0.25;
+      white-space: nowrap;
+      font-family: monospace;
+    }
+
+    .agent-badge {
       font-size: 0.7rem;
       padding: 0 6px;
       line-height: 18px;

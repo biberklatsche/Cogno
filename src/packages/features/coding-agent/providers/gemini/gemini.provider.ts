@@ -23,7 +23,7 @@ export class GeminiProvider implements ICodingAgentProvider {
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     return GEMINI_CONFIG.hookEvents.every(({ eventName, status }) =>
       (settings.hooks?.[eventName] ?? []).some((group) =>
-        group.hooks.some((h) => isCurrentHookCommand(h.command, status, this.id)),
+        group.hooks.some((h) => isCurrentHookCommand(h.command, status, this.id, eventName)),
       ),
     );
   }
@@ -36,7 +36,7 @@ export class GeminiProvider implements ICodingAgentProvider {
     settings.hooks = settings.hooks ?? {};
 
     for (const entry of GEMINI_CONFIG.hookEvents) {
-      const command = buildHookCommand(entry.status, shellType, this.id);
+      const command = buildHookCommand(entry.status, shellType, this.id, entry.eventName);
       const existing: GeminiHookGroup[] = settings.hooks[entry.eventName] ?? [];
       const withoutCogno = existing
         .map((group) => ({
