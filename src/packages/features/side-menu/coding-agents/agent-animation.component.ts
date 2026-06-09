@@ -45,12 +45,12 @@ function makeIdleGrid(): number[][] {
     .col {
       display: flex;
       flex-direction: column-reverse;
-      width: 3px;
+      width: 2px;
       flex-shrink: 0;
     }
     .block {
-      width: 3px;
-      height: 3px;
+      width: 2px;
+      height: 2px;
       flex-shrink: 0;
       background: currentColor;
     }
@@ -126,8 +126,7 @@ export class AgentAnimationComponent {
 
     for (let row = 0; row < MAX_HEIGHT; row++) {
       for (let col = 0; col < BAR_COUNT; col++) {
-        this.currentGrid[row][col] +=
-          (target[row][col] - this.currentGrid[row][col]) * LERP_FACTOR;
+        this.currentGrid[row][col] += (target[row][col] - this.currentGrid[row][col]) * LERP_FACTOR;
       }
     }
     this._grid.set(this.currentGrid.map((row) => [...row]));
@@ -139,7 +138,9 @@ export class AgentAnimationComponent {
         this.keyframeElapsed = 0;
       }
     } else {
-      if (this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))) {
+      if (
+        this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))
+      ) {
         this.currentGrid = makeIdleGrid();
         this._grid.set(makeIdleGrid());
         this.stopInterval();

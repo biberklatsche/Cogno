@@ -1,9 +1,9 @@
-import { TabId } from "@cogno/core-api";
+import { TabId, TerminalId } from "@cogno/core-api";
 import { BinaryTree } from "@cogno/core-domain";
 
-export type GridList = Record<TabId, Grid>;
+export type { TerminalId };
 
-export type TerminalId = string;
+export type GridList = Record<TabId, Grid>;
 
 export interface Grid {
   tabId: TabId;

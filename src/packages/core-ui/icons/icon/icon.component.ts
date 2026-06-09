@@ -3,6 +3,7 @@ import {
   mdiAbTesting,
   mdiAlert,
   mdiArrowDown,
+  mdiArrowLeft,
   mdiBell,
   mdiBellBadge,
   mdiBellCog,
@@ -11,6 +12,7 @@ import {
   mdiChevronDown,
   mdiChevronRight,
   mdiClose,
+  mdiCog,
   mdiConsole,
   mdiContentCopy,
   mdiContentSaveOutline,
@@ -188,6 +190,12 @@ export class IconComponent {
         break;
       case "mdiViewDashboardEdit":
         this.icon = mdiViewDashboardEdit;
+        break;
+      case "mdiCog":
+        this.icon = mdiCog;
+        break;
+      case "mdiArrowLeft":
+        this.icon = mdiArrowLeft;
         break;
       default:
         this.icon = mdiAbTesting;

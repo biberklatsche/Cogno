@@ -4,6 +4,7 @@ import {
   ApplicationConfigurationPort,
   parseAgentStatus,
   TerminalAnimationPort,
+  TerminalIpcMessage,
   TerminalIpcPort,
   TerminalMonitorPort,
 } from "@cogno/core-api";
@@ -17,6 +18,7 @@ export type ActiveAgent = {
   readonly providerId: string;
   readonly providerName: string;
   readonly status: "ready" | "working" | "question" | "error";
+  readonly cwd?: string;
 };
 
 @Injectable({ providedIn: "root" })
@@ -37,26 +39,53 @@ export class CodingAgentStatusService {
     const config = configPort.getConfiguration() as { coding_agents?: { mode?: string } };
     if (config?.coding_agents?.mode === "off") return;
 
-    ipc.messages$.pipe(
-      filter((m) => m.command === CODING_AGENT_STATUS_ACTION && !!m.terminalId),
-      takeUntilDestroyed(destroyRef),
-    ).subscribe(({ terminalId, args }) => {
-      const status = parseAgentStatus(args?.[0] ?? "") ?? "ready";
-      const providerId = args?.[1] ?? "";
+    ipc.messages$
+      .pipe(
+        filter(
+          (m): m is TerminalIpcMessage & { terminalId: string } =>
+            m.command === CODING_AGENT_STATUS_ACTION &&
+            !!m.terminalId &&
+            monitor.isTerminalActive(m.terminalId),
+        ),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe(({ terminalId, args }) => {
+        const status = parseAgentStatus(args?.[0] ?? "") ?? "ready";
+        const providerId = args?.[1] ?? "";
 
-      animation.register(terminalId!, AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS[status]);
+        animation.register(terminalId, AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS[status]);
 
-      const providerName = registry.providers.find((p) => p.id === providerId)?.name ?? providerId;
-      this.agentsMap.set(terminalId!, { terminalId: terminalId!, providerId, providerName, status });
+        const providerName =
+          registry.providers.find((p) => p.id === providerId)?.name ?? providerId;
+        this.agentsMap.set(terminalId, {
+          terminalId,
+          providerId,
+          providerName,
+          status,
+          cwd: monitor.getCwd(terminalId),
+        });
+        this.syncActiveAgents();
+      });
+
+    monitor.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(({ terminalId, cwd }) => {
+      const agent = this.agentsMap.get(terminalId);
+      if (!agent || agent.cwd === cwd) return;
+
+      this.agentsMap.set(terminalId, { ...agent, cwd });
       this.syncActiveAgents();
     });
 
     merge(
-      monitor.activity$.pipe(filter(({ isBusy }) => !isBusy), map(({ terminalId }) => terminalId)),
+      monitor.activity$.pipe(
+        filter(({ isBusy }) => !isBusy),
+        map(({ terminalId }) => terminalId),
+      ),
       monitor.terminated$,
-    ).pipe(takeUntilDestroyed(destroyRef)).subscribe((terminalId) => {
-      if (this.agentsMap.delete(terminalId)) this.syncActiveAgents();
-    });
+    )
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((terminalId) => {
+        if (this.agentsMap.delete(terminalId)) this.syncActiveAgents();
+      });
   }
 
   private syncActiveAgents(): void {
