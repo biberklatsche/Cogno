@@ -46,7 +46,9 @@ import { AgentAnimationComponent } from "./agent-animation.component";
               </div>
               <div class="agent-info">
                 <span class="agent-status">{{ statusLabel(agent.status) }}</span>
-                @if (agent.cwd) {
+                @if (agent.activity) {
+                  <span class="agent-activity" [appTooltip]="agent.activity">{{ agent.activity }}</span>
+                } @else if (agent.cwd) {
                   <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
                 }
               </div>
@@ -270,6 +272,15 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       text-overflow: ellipsis;
       direction: rtl;
       text-align: left;
+    }
+
+    .agent-activity {
+      font-size: 0.7rem;
+      opacity: 0.6;
+      font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .agent-meta {

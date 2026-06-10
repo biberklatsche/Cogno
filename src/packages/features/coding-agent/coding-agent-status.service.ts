@@ -20,7 +20,45 @@ export type ActiveAgent = {
   readonly status: "ready" | "working" | "question" | "error";
   readonly cwd?: string;
   readonly lastHook?: string;
+  readonly activity?: string;
 };
+
+const ACTIVITY_MAX_LENGTH = 80;
+
+/**
+ * Derives a short "what's it doing" one-liner from a Claude/Codex-style hook payload
+ * (`{ tool_name, tool_input: {...} }`). Returns `undefined` when the payload doesn't
+ * carry a usable tool call — callers should keep the previously known activity in that case.
+ */
+function extractActivity(payload: unknown, terminalId: string, hookEvent?: string): string | undefined {
+  if (typeof payload === "string") {
+    if (payload.startsWith("omitted:")) {
+      console.warn(
+        `[coding-agent-status] payload omitted for terminal ${terminalId} (${hookEvent}): ${payload}`,
+      );
+    }
+    return undefined;
+  }
+
+  if (!payload || typeof payload !== "object") return undefined;
+
+  const { tool_name: toolName, tool_input: toolInput } = payload as {
+    tool_name?: unknown;
+    tool_input?: Record<string, unknown>;
+  };
+
+  const candidate =
+    toolInput?.["command"] ?? toolInput?.["file_path"] ?? toolInput?.["pattern"] ?? toolInput?.["description"];
+
+  if (typeof candidate !== "string" || !candidate) return undefined;
+
+  const text =
+    candidate.length > ACTIVITY_MAX_LENGTH
+      ? `${candidate.slice(0, ACTIVITY_MAX_LENGTH - 1)}…`
+      : candidate;
+
+  return typeof toolName === "string" && toolName ? `${toolName}: ${text}` : text;
+}
 
 @Injectable({ providedIn: "root" })
 export class CodingAgentStatusService {
@@ -50,15 +88,17 @@ export class CodingAgentStatusService {
         ),
         takeUntilDestroyed(destroyRef),
       )
-      .subscribe(({ terminalId, args }) => {
+      .subscribe(({ terminalId, args, payload }) => {
         const status = parseAgentStatus(args?.[0] ?? "") ?? "ready";
         const providerId = args?.[1] ?? "";
         const lastHook = args?.[2] || undefined;
+        const activity = extractActivity(payload, terminalId, lastHook);
 
         animation.register(terminalId, AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS[status]);
 
         const providerName =
           registry.providers.find((p) => p.id === providerId)?.name ?? providerId;
+        const existing = this.agentsMap.get(terminalId);
         this.agentsMap.set(terminalId, {
           terminalId,
           providerId,
@@ -66,6 +106,7 @@ export class CodingAgentStatusService {
           status,
           cwd: monitor.getCwd(terminalId),
           lastHook,
+          activity: activity ?? existing?.activity,
         });
         this.syncActiveAgents();
       });

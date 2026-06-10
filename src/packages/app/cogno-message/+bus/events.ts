@@ -2,5 +2,5 @@ import { MessageBase } from "../../app-bus/app-bus";
 
 export type TerminalIpcMessageEvent = MessageBase<
   "TerminalIpcMessage",
-  { command: string; args?: string[]; terminalId?: string }
+  { command: string; args?: string[]; terminalId?: string; payload?: unknown }
 >;

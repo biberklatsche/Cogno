@@ -51,6 +51,9 @@ pub struct CognoMessagePayload {
     // The alias keeps accepting "terminal_id" from curl/PowerShell hooks.
     #[serde(alias = "terminal_id")]
     pub terminal_id: Option<String>,
+    // Arbitrary JSON forwarded as-is (e.g. an agent hook's stdin payload). Consumers
+    // parse this themselves; the server never inspects its shape.
+    pub payload: Option<serde_json::Value>,
 }
 
 fn find_port(start: u16, auto_next: bool) -> Option<u16> {

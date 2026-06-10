@@ -15,6 +15,7 @@ export class CognoMessageDispatcher {
         command: message.command,
         args: message.args,
         terminalId: message.terminalId,
+        payload: message.payload,
       },
     });
   }

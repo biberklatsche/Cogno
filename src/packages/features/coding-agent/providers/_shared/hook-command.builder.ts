@@ -2,6 +2,9 @@ import { AgentStatus } from "@cogno/core-api";
 
 export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
 
+/** Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker. */
+export const HOOK_PAYLOAD_MAX_BYTES = 65536;
+
 export type HookCommands = {
   command: string; // Unix/macOS: bash + curl
   commandWindows: string; // Windows: PowerShell + Invoke-WebRequest
@@ -52,6 +55,29 @@ export function isCurrentHookCommand(
   return command === bash || command === commandWindows;
 }
 
+/**
+ * Bash snippet that reads the hook's stdin (the agent's JSON event payload) into `$input` and
+ * replaces it with a quoted "omitted:..." marker if it doesn't look like JSON or is too large.
+ * The result is always a single, valid JSON value (object/array or string), so it can be
+ * embedded verbatim as the `payload` field of the status POST body.
+ */
+function bashPayloadCapture(): string {
+  return (
+    `input=$(cat); ` +
+    `case "$input" in \\{*|\\[*) ;; *) input="\\"omitted:not-json\\"";; esac; ` +
+    `[ \${#input} -gt ${HOOK_PAYLOAD_MAX_BYTES} ] && input="\\"omitted:too-large:\${#input}\\""`
+  );
+}
+
+/** PowerShell equivalent of {@link bashPayloadCapture}, populating `$payload`. */
+function powershellPayloadCapture(): string {
+  return (
+    `$payload=[Console]::In.ReadToEnd();` +
+    `if ($payload -notmatch '^\\s*[\\{\\[]') { $payload='"omitted:not-json"' } ` +
+    `elseif ($payload.Length -gt ${HOOK_PAYLOAD_MAX_BYTES}) { $payload='"omitted:too-large:'+$payload.Length+'"' }`
+  );
+}
+
 function buildCurlCommand(
   status: AgentStatus,
   providerId: string,
@@ -59,8 +85,9 @@ function buildCurlCommand(
   stdout?: string,
 ): string {
   const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"`;
-  const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d '${prefix}'"$COGNO_TERMINAL_ID"'"}'`;
-  const guardedCurl = `[ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
+  const data = `'${prefix}'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
+  const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d ${data}`;
+  const guardedCurl = `${bashPayloadCapture()}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and
   // force a zero exit status — this is a fire-and-forget status ping, never the agent's
@@ -74,7 +101,9 @@ function buildWindowsCommand(
   hookEvent: string,
   stdout?: string,
 ): string {
-  const body = `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'"}'`;
+  const body =
+    `${powershellPayloadCapture()};` +
+    `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
   const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
   const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch {}`;
 
