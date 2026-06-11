@@ -602,7 +602,7 @@ export class TerminalSession {
     return [
       {
         id: OSC9_NOTIFICATION_ID,
-        label: "OSC9 Notifications",
+        label: "Terminal Notifications (OSC9)",
         defaultEnabled: notificationsConfig?.osc9?.enabled ?? true,
       },
       {
