@@ -36,19 +36,20 @@ export const CLAUDE_CODE_CONFIG = {
   hookEvents: [
     { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
     { eventName: "SessionStart", status: "ready" as AgentStatus },
-    { eventName: "SessionEnd", status: "error" as AgentStatus },
+    { eventName: "SessionEnd", status: "ready" as AgentStatus },
     { eventName: "SubagentStart", status: "working" as AgentStatus },
-    { eventName: "SubagentStop", status: "working" as AgentStatus },
+    { eventName: "SubagentStop", status: "ready" as AgentStatus },
     { eventName: "PreToolUse", status: "working" as AgentStatus },
     { eventName: "PostToolUse", status: "working" as AgentStatus },
     { eventName: "PostToolUseFailure", status: "error" as AgentStatus },
-    { eventName: "Notification", status: "question" as AgentStatus, matcher: "idle_prompt" },
+    { eventName: "Notification", status: "question" as AgentStatus, matcher: "permission_prompt" },
     { eventName: "PermissionRequest", status: "question" as AgentStatus },
     { eventName: "PermissionDenied", status: "error" as AgentStatus },
     { eventName: "Stop", status: "ready" as AgentStatus },
     { eventName: "StopFailure", status: "error" as AgentStatus },
     { eventName: "PreCompact", status: "working" as AgentStatus },
     { eventName: "PostCompact", status: "ready" as AgentStatus },
+    { eventName: "TaskCompleted", status: "ready" as AgentStatus },
   ] as ReadonlyArray<ClaudeHookEntry>,
 
   isCognoCommand(command: string): boolean {

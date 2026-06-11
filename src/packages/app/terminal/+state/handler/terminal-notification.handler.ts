@@ -1,10 +1,12 @@
 import { NotificationTargetContract } from "@cogno/core-api";
+import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
 import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
-import { NotificationChannels } from "../../../notification/+bus/events";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";
+
+export const OSC9_NOTIFICATION_ID = "osc9";
 
 export class TerminalNotificationHandler implements ITerminalHandler {
   private _disposables?: IDisposable[] = undefined;
@@ -12,7 +14,7 @@ export class TerminalNotificationHandler implements ITerminalHandler {
   constructor(
     private readonly bus: AppBus,
     private readonly stateManager: TerminalStateManager,
-    private readonly channelResolver?: () => NotificationChannels,
+    private readonly notificationPreferencesStateResolver?: () => NotificationPreferencesState,
     private readonly targetResolver?: () => NotificationTargetContract | undefined,
   ) {}
 
@@ -27,8 +29,14 @@ export class TerminalNotificationHandler implements ITerminalHandler {
         const message = (data ?? "").replace(/\r/g, "").replace(/\n+/g, " ").trim();
         if (!message) return true;
 
-        const channels = this.channelResolver?.();
-        if (channels && !hasEnabledNotificationChannel(channels)) {
+        const notificationPreferencesState = this.notificationPreferencesStateResolver?.();
+        if (
+          notificationPreferencesState &&
+          !NotificationPreferencesUseCase.shouldNotify(
+            notificationPreferencesState,
+            OSC9_NOTIFICATION_ID,
+          )
+        ) {
           return true;
         }
         this.stateManager.markUnreadNotification();
@@ -43,7 +51,9 @@ export class TerminalNotificationHandler implements ITerminalHandler {
             timestamp: new Date(),
             terminalId: this.stateManager.terminalId,
             target: this.targetResolver?.(),
-            channels,
+            channels: notificationPreferencesState
+              ? NotificationPreferencesUseCase.getActiveChannels(notificationPreferencesState)
+              : undefined,
           },
         });
         return true;
@@ -90,8 +100,4 @@ export class TerminalNotificationHandler implements ITerminalHandler {
       this._disposables = undefined;
     }
   }
-}
-
-function hasEnabledNotificationChannel(notificationChannels: NotificationChannels): boolean {
-  return Object.values(notificationChannels).some(Boolean);
 }

@@ -60,19 +60,28 @@ export function isCurrentHookCommand(
  * replaces it with a quoted "omitted:..." marker if it doesn't look like JSON or is too large.
  * The result is always a single, valid JSON value (object/array or string), so it can be
  * embedded verbatim as the `payload` field of the status POST body.
+ *
+ * Only reads stdin when it's not a TTY — `cat` blocks forever if stdin is the inherited
+ * console and never sends EOF, which would hang the hook until it's killed, so the status
+ * POST never fires.
  */
 function bashPayloadCapture(): string {
   return (
-    `input=$(cat); ` +
+    `if [ -t 0 ]; then input=""; else input=$(cat); fi; ` +
     `case "$input" in \\{*|\\[*) ;; *) input="\\"omitted:not-json\\"";; esac; ` +
     `[ \${#input} -gt ${HOOK_PAYLOAD_MAX_BYTES} ] && input="\\"omitted:too-large:\${#input}\\""`
   );
 }
 
-/** PowerShell equivalent of {@link bashPayloadCapture}, populating `$payload`. */
+/**
+ * PowerShell equivalent of {@link bashPayloadCapture}, populating `$payload`.
+ * Only reads stdin when it's actually redirected (a real pipe) — `[Console]::In.ReadToEnd()`
+ * blocks forever if stdin is the inherited console/PTY and never sends EOF, which would hang
+ * the hook until it's killed, so the status POST never fires.
+ */
 function powershellPayloadCapture(): string {
   return (
-    `$payload=[Console]::In.ReadToEnd();` +
+    `if ([Console]::IsInputRedirected) { $payload=[Console]::In.ReadToEnd() } else { $payload='' };` +
     `if ($payload -notmatch '^\\s*[\\{\\[]') { $payload='"omitted:not-json"' } ` +
     `elseif ($payload.Length -gt ${HOOK_PAYLOAD_MAX_BYTES}) { $payload='"omitted:too-large:'+$payload.Length+'"' }`
   );
@@ -105,8 +114,11 @@ function buildWindowsCommand(
     `${powershellPayloadCapture()};` +
     `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
   const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
-  const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch {}`;
+  const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch { Write-Error $_ }`;
 
-  // Same guard + error-swallowing as the bash variant, expressed for PowerShell.
-  return stdout ? `${guardedRequest};Write-Output '${stdout}'` : guardedRequest;
+  // Same guard as the bash variant, expressed for PowerShell. The caught error is written to
+  // stderr for diagnostics, but we still force a zero exit status (";exit 0") — without it, a
+  // failed Invoke-WebRequest leaves $? false even though the error was reported, and
+  // `powershell -Command` reports exit code 1 for what is just a fire-and-forget status ping.
+  return stdout ? `${guardedRequest};Write-Output '${stdout}'` : `${guardedRequest};exit 0`;
 }

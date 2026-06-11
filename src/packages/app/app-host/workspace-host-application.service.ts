@@ -40,8 +40,10 @@ interface DirtyTrackingWorkspaceSignature {
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostApplicationService {
-  private readonly defaultWorkspace =
-    WorkspaceStateUseCase.createDefaultWorkspace(DEFAULT_WORKSPACE_ID);
+  private readonly defaultWorkspace = WorkspaceStateUseCase.createDefaultWorkspace(
+    DEFAULT_WORKSPACE_ID,
+    IdCreator.newTabId(),
+  );
   private readonly persistedWorkspaceRuntimeSignatureById = new Map<string, string>();
   private synchronizingWorkspaceRuntimeDepth = 0;
 
@@ -58,6 +60,7 @@ export class WorkspaceHostApplicationService {
   ) {
     this.bus.onceType$("DBInitialized").subscribe(async () => {
       const workspaces = await this.workspaceRepository.getAllWorkspaces();
+      await this.repairDuplicateTabIds(workspaces);
       const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
         workspaces,
         this.defaultWorkspace,
@@ -269,8 +272,47 @@ export class WorkspaceHostApplicationService {
     return WorkspaceStateUseCase.getWorkspaceById(this._workspaceList(), id);
   }
 
-  private getActiveWorkspace(): WorkspaceState | undefined {
+  getActiveWorkspace(): WorkspaceState | undefined {
     return WorkspaceStateUseCase.getActiveWorkspace(this._workspaceList());
+  }
+
+  /**
+   * Tab IDs must be globally unique (e.g. `BusyIndicatorService` matches animations to tabs by
+   * ID alone, across all workspaces). Older versions could persist the same tab ID into multiple
+   * workspaces (e.g. via "save as new workspace" while the default workspace's "TB_DEFAULT" tab
+   * was active). Detect and repair such collisions on startup by reassigning fresh IDs to every
+   * but the first occurrence of a tab ID.
+   */
+  private async repairDuplicateTabIds(workspaces: WorkspaceConfiguration[]): Promise<void> {
+    const seenTabIds = new Set<string>();
+
+    for (const workspace of workspaces) {
+      const remappedTabIds = new Map<string, string>();
+
+      for (const tab of workspace.tabs) {
+        if (seenTabIds.has(tab.tabId)) {
+          remappedTabIds.set(tab.tabId, IdCreator.newTabId());
+        } else {
+          seenTabIds.add(tab.tabId);
+        }
+      }
+
+      if (remappedTabIds.size === 0) continue;
+
+      workspace.tabs = workspace.tabs.map((tab) => ({
+        ...tab,
+        tabId: remappedTabIds.get(tab.tabId) ?? tab.tabId,
+      }));
+      workspace.grids = workspace.grids.map((grid) => ({
+        ...grid,
+        tabId: remappedTabIds.get(grid.tabId) ?? grid.tabId,
+      }));
+      for (const newTabId of remappedTabIds.values()) {
+        seenTabIds.add(newTabId);
+      }
+
+      await this.workspaceRepository.updateWorkspace(workspace);
+    }
   }
 
   private async persistWorkspaceConfiguration(workspace: WorkspaceConfiguration): Promise<string> {

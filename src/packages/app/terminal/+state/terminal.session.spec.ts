@@ -3,7 +3,6 @@ import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
 import { DialogRef, type DialogService } from "@cogno/core-ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
-import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
@@ -13,6 +12,7 @@ import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../config/+models/shell-config";
 import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import { Renderer } from "./renderer/renderer";
 import { TerminalSession } from "./terminal.session";
@@ -64,6 +64,7 @@ describe("TerminalSession", () => {
   let dialogService: DialogPort;
   let wiringService: WiringPort;
   let notificationTargetResolverService: NotificationTargetResolverPort;
+  let notificationChannelsPort!: NotificationChannelsPortAdapterService;
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
@@ -71,10 +72,12 @@ describe("TerminalSession", () => {
     configService = new ConfigServiceMock();
     configService.setConfig({
       font: { enable_ligatures: false },
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -126,6 +129,11 @@ describe("TerminalSession", () => {
       openContextForElement: vi.fn(),
     };
 
+    notificationChannelsPort = new NotificationChannelsPortAdapterService(
+      wiringService as AppWiringService,
+      configService as any,
+    );
+
     session = new TerminalSession(
       configService,
       appBus,
@@ -137,7 +145,7 @@ describe("TerminalSession", () => {
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
-      { pattern$: vi.fn().mockReturnValue(of(undefined)) } as any,
+      notificationChannelsPort,
     );
   });
 
@@ -154,7 +162,7 @@ describe("TerminalSession", () => {
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
-      { pattern$: vi.fn().mockReturnValue(of(undefined)) } as any,
+      notificationChannelsPort,
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
@@ -168,7 +176,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
     expect(rendererInstance.open).toHaveBeenCalledWith(mockElement, false);
-    expect(rendererInstance.register).toHaveBeenCalledTimes(15);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(16);
   });
 
   it("should enable shell integration features if configured", () => {
@@ -180,7 +188,7 @@ describe("TerminalSession", () => {
 
     const rendererInstance =
       vi.mocked(Renderer).mock.results[vi.mocked(Renderer).mock.results.length - 1].value;
-    expect(rendererInstance.register).toHaveBeenCalledTimes(17);
+    expect(rendererInstance.register).toHaveBeenCalledTimes(18);
     expect(preloadForShellIntegrationMock).toHaveBeenCalledWith("Bash");
   });
 
@@ -208,10 +216,12 @@ describe("TerminalSession", () => {
 
   it("should only show available notification channels in header menu", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -222,7 +232,7 @@ describe("TerminalSession", () => {
     session.initialize(terminalId, shellProfile);
 
     const items = session.buildHeaderMenu();
-    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Alerts" }));
+    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Notifications" }));
     const longRunningCommandToggle = items.find((i) => i.label === "Long Running Commands");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
     const appToggle = items.find((i) => i.label === "App");
@@ -297,10 +307,12 @@ describe("TerminalSession", () => {
 
   it("should allow toggling long-running command notifications from the header menu", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -321,10 +333,12 @@ describe("TerminalSession", () => {
 
   it("should publish a notification when a long-running command has finished", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -355,10 +369,12 @@ describe("TerminalSession", () => {
 
   it("should not publish a notification when a command is shorter than the configured threshold", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {

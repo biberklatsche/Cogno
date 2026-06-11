@@ -47,6 +47,7 @@ import {
   GoToStartOfLineAction,
   InjectTerminalInputAction,
   PasteAction,
+  RevealTerminalAction,
   SelectAllAction,
   SelectTextLeftAction,
   SelectTextRightAction,
@@ -110,6 +111,7 @@ export type AppMessage =
   | TerminalThemePaddingAddedEvent
   | TerminalThemePaddingRemovedEvent
   | FocusTerminalAction
+  | RevealTerminalAction
   | BlurTerminalAction
   | PasteAction
   | CopyAction

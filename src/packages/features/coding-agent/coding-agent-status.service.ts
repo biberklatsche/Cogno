@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   ApplicationConfigurationPort,
+  NotificationCenterPort,
   parseAgentStatus,
   TerminalAnimationPort,
   TerminalIpcMessage,
@@ -10,8 +11,16 @@ import {
 } from "@cogno/core-api";
 import { filter, map, merge } from "rxjs";
 import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
+import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CODING_AGENT_STATUS_ACTION } from "./providers/_shared/hook-command.builder";
+
+const STATUS_NOTIFICATION_HEADERS: Record<ActiveAgent["status"], string> = {
+  working: "Agent started working",
+  question: "Agent has a question",
+  ready: "Agent is ready",
+  error: "Agent reported an error",
+};
 
 export type ActiveAgent = {
   readonly terminalId: string;
@@ -30,7 +39,11 @@ const ACTIVITY_MAX_LENGTH = 80;
  * (`{ tool_name, tool_input: {...} }`). Returns `undefined` when the payload doesn't
  * carry a usable tool call — callers should keep the previously known activity in that case.
  */
-function extractActivity(payload: unknown, terminalId: string, hookEvent?: string): string | undefined {
+function extractActivity(
+  payload: unknown,
+  terminalId: string,
+  hookEvent?: string,
+): string | undefined {
   if (typeof payload === "string") {
     if (payload.startsWith("omitted:")) {
       console.warn(
@@ -48,7 +61,10 @@ function extractActivity(payload: unknown, terminalId: string, hookEvent?: strin
   };
 
   const candidate =
-    toolInput?.["command"] ?? toolInput?.["file_path"] ?? toolInput?.["pattern"] ?? toolInput?.["description"];
+    toolInput?.["command"] ??
+    toolInput?.["file_path"] ??
+    toolInput?.["pattern"] ??
+    toolInput?.["description"];
 
   if (typeof candidate !== "string" || !candidate) return undefined;
 
@@ -74,6 +90,8 @@ export class CodingAgentStatusService {
     registry: CodingAgentProviderRegistry,
     monitor: TerminalMonitorPort,
     destroyRef: DestroyRef,
+    private readonly notificationCenterPort: NotificationCenterPort,
+    private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
   ) {
     const config = configPort.getConfiguration() as { coding_agents?: { mode?: string } };
     if (config?.coding_agents?.mode === "off") return;
@@ -109,6 +127,10 @@ export class CodingAgentStatusService {
           activity: activity ?? existing?.activity,
         });
         this.syncActiveAgents();
+
+        if (existing && existing.status !== status) {
+          this.notifyStatusChanged(providerName, status);
+        }
       });
 
     monitor.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(({ terminalId, cwd }) => {
@@ -134,5 +156,17 @@ export class CodingAgentStatusService {
 
   private syncActiveAgents(): void {
     this._activeAgents.set([...this.agentsMap.values()]);
+  }
+
+  private notifyStatusChanged(providerName: string, status: ActiveAgent["status"]): void {
+    if (!this.notificationPreferences.shouldNotify(status)) return;
+
+    this.notificationCenterPort.dispatch({
+      header: STATUS_NOTIFICATION_HEADERS[status],
+      body: providerName || undefined,
+      type: status === "error" ? "warning" : "info",
+      timestamp: new Date(),
+      channels: this.notificationPreferences.getActiveChannels(),
+    });
   }
 }

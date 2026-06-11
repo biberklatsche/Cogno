@@ -56,6 +56,7 @@ export interface TerminalGatewayContract {
   getFocusedTerminalId(): TerminalId | undefined;
   hasTerminal(terminalId: TerminalId | undefined): boolean;
   focusTerminal(terminalId: TerminalId): void;
+  revealTerminal(terminalId: TerminalId): void;
   injectInput(request: TerminalInputRequestContract): void;
   captureFocusedSnapshot(
     options?: TerminalSnapshotOptionsContract,
@@ -73,6 +74,7 @@ export abstract class TerminalGateway implements TerminalGatewayContract {
   abstract getFocusedTerminalId(): TerminalId | undefined;
   abstract hasTerminal(terminalId: TerminalId | undefined): boolean;
   abstract focusTerminal(terminalId: TerminalId): void;
+  abstract revealTerminal(terminalId: TerminalId): void;
   abstract injectInput(request: TerminalInputRequestContract): void;
   abstract captureFocusedSnapshot(
     options?: TerminalSnapshotOptionsContract,

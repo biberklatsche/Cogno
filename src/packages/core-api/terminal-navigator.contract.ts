@@ -1,3 +1,3 @@
 export abstract class TerminalNavigator {
-  abstract navigateToTerminal(terminalId: string): void;
+  abstract navigateToTerminal(terminalId: string): Promise<void>;
 }

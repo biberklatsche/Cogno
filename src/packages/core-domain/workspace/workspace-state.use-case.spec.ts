@@ -10,9 +10,17 @@ const persistedWorkspace = {
   tabs: [{ tabId: "TB-1" }],
 };
 
+const defaultWorkspace = WorkspaceStateUseCase.createDefaultWorkspace(
+  defaultWorkspaceIdContract,
+  "TB-DEFAULT",
+);
+
 describe("WorkspaceStateUseCase", () => {
   it("creates an initial workspace list with the default workspace selected", () => {
-    const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState([persistedWorkspace]);
+    const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+      [persistedWorkspace],
+      defaultWorkspace,
+    );
 
     expect(workspaceList[0].id).toBe(defaultWorkspaceIdContract);
     expect(workspaceList[0].isSelected).toBe(true);
@@ -21,7 +29,10 @@ describe("WorkspaceStateUseCase", () => {
   });
 
   it("activates a workspace and marks runtime restore when it was closed", () => {
-    const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState([persistedWorkspace]);
+    const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+      [persistedWorkspace],
+      defaultWorkspace,
+    );
 
     const activationPlan = WorkspaceStateUseCase.activateWorkspace(workspaceList, "WS-1");
 
@@ -33,10 +44,10 @@ describe("WorkspaceStateUseCase", () => {
   });
 
   it("reorders persisted workspaces without moving the default workspace", () => {
-    const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState([
-      persistedWorkspace,
-      { ...persistedWorkspace, id: "WS-2", name: "Project Two" },
-    ]);
+    const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+      [persistedWorkspace, { ...persistedWorkspace, id: "WS-2", name: "Project Two" }],
+      defaultWorkspace,
+    );
 
     const nextWorkspaceList = WorkspaceStateUseCase.reorderWorkspaces(
       workspaceList,
@@ -54,9 +65,10 @@ describe("WorkspaceStateUseCase", () => {
   });
 
   it("closes an active workspace and resolves a fallback activation target", () => {
-    const initialWorkspaceList = WorkspaceStateUseCase.createInitialWorkspaceState([
-      persistedWorkspace,
-    ]);
+    const initialWorkspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+      [persistedWorkspace],
+      defaultWorkspace,
+    );
     const activeWorkspaceList = WorkspaceStateUseCase.activateWorkspace(
       initialWorkspaceList,
       "WS-1",
@@ -75,7 +87,7 @@ describe("WorkspaceStateUseCase", () => {
   it("deletes the active workspace and resolves the first remaining workspace as fallback", () => {
     const workspaceList = [
       {
-        ...WorkspaceStateUseCase.createDefaultWorkspace(),
+        ...defaultWorkspace,
         isSelected: false,
         isActive: false,
         isOpen: false,

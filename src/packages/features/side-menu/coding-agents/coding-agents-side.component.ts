@@ -1,8 +1,14 @@
 import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import { TerminalNavigator } from "@cogno/core-api";
-import { IconComponent, TooltipDirective } from "@cogno/core-ui";
+import {
+  DropdownComponent,
+  IconComponent,
+  NotificationPreferencesMenuComponent,
+  TooltipDirective,
+} from "@cogno/core-ui";
 import {
   ActiveAgent,
+  CodingAgentNotificationPreferencesService,
   CodingAgentStartupService,
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
@@ -11,21 +17,46 @@ import { AgentAnimationComponent } from "./agent-animation.component";
 @Component({
   selector: "app-coding-agents-side",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, AgentAnimationComponent],
+  imports: [
+    IconComponent,
+    TooltipDirective,
+    AgentAnimationComponent,
+    NotificationPreferencesMenuComponent,
+    DropdownComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="agents-panel">
       @if (view() === "active") {
         <header class="panel-header">
           <span class="panel-title">Active Agents</span>
-          <button
-            type="button"
-            class="button icon-button"
-            appTooltip="Detected agents"
-            (click)="showDetected()"
-          >
-            <app-icon name="mdiCog"></app-icon>
-          </button>
+          <div class="header-actions">
+            <app-dropdown [customTrigger]="true" placement="below-end" ariaLabel="Notification settings">
+              <button
+                dropdownTrigger
+                type="button"
+                class="button icon-button"
+                appTooltip="Notification settings"
+              >
+                <app-icon name="mdiBellCog"></app-icon>
+              </button>
+              <app-notification-preferences-menu
+                [notificationDefinitions]="notificationDefinitions"
+                [channels]="channelOptions"
+                [state]="notificationPreferencesState()"
+                (notificationToggled)="toggleNotification($event)"
+                (channelToggled)="toggleChannel($event)"
+              ></app-notification-preferences-menu>
+            </app-dropdown>
+            <button
+              type="button"
+              class="button icon-button"
+              appTooltip="Detected agents"
+              (click)="showDetected()"
+            >
+              <app-icon name="mdiCog"></app-icon>
+            </button>
+          </div>
         </header>
 
         <div class="active-list">
@@ -48,8 +79,11 @@ import { AgentAnimationComponent } from "./agent-animation.component";
                 <span class="agent-status">{{ statusLabel(agent.status) }}</span>
                 @if (agent.activity) {
                   <span class="agent-activity" [appTooltip]="agent.activity">{{ agent.activity }}</span>
-                } @else if (agent.cwd) {
-                  <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
+                } @else {
+                  <span class="agent-activity">_</span>
+                }
+                @if (agent.cwd) {
+                    <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
                 }
               </div>
               <div class="agent-meta">
@@ -135,6 +169,12 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       letter-spacing: 0.06em;
       text-transform: uppercase;
       opacity: 0.55;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
     }
 
     .detected-list {
@@ -225,8 +265,8 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       color: inherit;
       cursor: default;
       text-align: left;
-      flex: 1 1 190px;
-      min-width: 190px;
+      flex: 1 1 400px;
+      min-width: 265px;
       transition: background 0.1s;
     }
 
@@ -258,15 +298,16 @@ import { AgentAnimationComponent } from "./agent-animation.component";
 
     .agent-status {
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: 400;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .agent-cwd {
-      font-size: 0.7rem;
-      opacity: 0.45;
+      font-size: 0.8rem;
+      font-weight: 100;
+      opacity: 0.6;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -275,7 +316,8 @@ import { AgentAnimationComponent } from "./agent-animation.component";
     }
 
     .agent-activity {
-      font-size: 0.7rem;
+      font-size: 0.8rem;
+      font-weight: 100;
       opacity: 0.6;
       font-family: monospace;
       white-space: nowrap;
@@ -293,8 +335,9 @@ import { AgentAnimationComponent } from "./agent-animation.component";
     }
 
     .agent-id {
-      font-size: 0.62rem;
+      font-size: 0.7rem;
       opacity: 0.25;
+      font-weight: 100;
       white-space: nowrap;
       font-family: monospace;
     }
@@ -327,9 +370,20 @@ export class CodingAgentsSideComponent {
   readonly activeAgents = this.statusService.activeAgents;
   readonly view = signal<"active" | "detected">("active");
 
+  readonly notificationPreferencesState = this.notificationPreferences.state;
+
+  get notificationDefinitions() {
+    return this.notificationPreferences.getNotificationDefinitions();
+  }
+
+  get channelOptions() {
+    return this.notificationPreferences.getChannelOptions();
+  }
+
   constructor(
     private readonly startupService: CodingAgentStartupService,
     private readonly statusService: CodingAgentStatusService,
+    private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
     private readonly navigator: TerminalNavigator,
   ) {}
 
@@ -346,7 +400,9 @@ export class CodingAgentsSideComponent {
   }
 
   navigateTo(agent: ActiveAgent): void {
-    this.navigator.navigateToTerminal(agent.terminalId);
+    this.navigator.navigateToTerminal(agent.terminalId).catch((error: unknown) => {
+      console.error("[coding-agents-side] Failed to navigate to terminal:", error);
+    });
   }
 
   statusLabel(status: ActiveAgent["status"]): string {
@@ -354,5 +410,13 @@ export class CodingAgentsSideComponent {
     if (status === "working") return "Working";
     if (status === "question") return "Waiting for input";
     return "Error";
+  }
+
+  toggleNotification(notificationId: string): void {
+    this.notificationPreferences.toggleNotification(notificationId);
+  }
+
+  toggleChannel(channelId: string): void {
+    this.notificationPreferences.toggleChannel(channelId);
   }
 }

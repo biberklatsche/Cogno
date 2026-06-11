@@ -24,7 +24,6 @@ import { SideMenuStatePersistenceService } from "@cogno/app/app-host/side-menu-s
 import { SimpleFileAccessAdapterService } from "@cogno/app/app-host/simple-file-access.adapter.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
-import { TerminalLinkPatternAdapterService } from "@cogno/app/app-host/terminal-link-pattern.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
@@ -44,6 +43,7 @@ import {
   sideMenuFeatureDefinitionsToken,
 } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
+import { NotificationChannelsPortAdapterService } from "@cogno/app/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
@@ -62,13 +62,13 @@ import {
   Filesystem,
   HttpClientPort,
   NotificationCenterPort,
+  NotificationChannelsPort,
   Opener,
   OsPlatformPort,
   SimpleFileAccess,
   TerminalAnimationPort,
   TerminalGateway,
   TerminalIpcPort,
-  TerminalLinkPatternPort,
   TerminalMonitorPort,
   TerminalNavigator,
   TerminalSearchHostPort,
@@ -113,6 +113,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
     { provide: HttpClientPort, useExisting: HttpClientPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
+    { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     {
       provide: sideMenuFeatureDefinitionsToken,
       useValue: [...sideMenuFeatureDefinitions, ...productDefinition.sideMenuFeatureDefinitions],
@@ -125,7 +126,6 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: OsPlatformPort, useExisting: OsPlatformAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
-    { provide: TerminalLinkPatternPort, useExisting: TerminalLinkPatternAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },

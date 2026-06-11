@@ -59,6 +59,14 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
     });
   }
 
+  revealTerminal(terminalId: TerminalId): void {
+    this.appBus.publish({
+      path: ["app", "terminal"],
+      type: "RevealTerminal",
+      payload: terminalId,
+    });
+  }
+
   injectInput(request: TerminalInputRequestContract): void {
     this.appBus.publish({
       path: ["app", "terminal"],

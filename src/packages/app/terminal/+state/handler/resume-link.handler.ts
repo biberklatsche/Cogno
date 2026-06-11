@@ -4,23 +4,18 @@ import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { OS } from "@cogno/app-tauri/os";
 import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
-import { ITerminalHandler } from "../../terminal/+state/handler/handler";
-import { IPty } from "../../terminal/+state/pty/pty";
+import { IPty } from "../pty/pty";
+import { ITerminalHandler } from "./handler";
 
-const DEFAULT_RESUME_PATTERN =
+const RESUME_PATTERN =
   /\b([a-zA-Z][\w-]*)\s+(resume|--resume|-r)\s+([a-zA-Z0-9][a-zA-Z0-9_-]{7,})/gi;
 
 export class ResumeLinkHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
-  private readonly _patternSource: string;
   private readonly _isMac: boolean;
 
-  constructor(
-    private readonly _pty: IPty,
-    patternSource?: string,
-  ) {
-    this._patternSource = patternSource ?? DEFAULT_RESUME_PATTERN.source;
+  constructor(private readonly _pty: IPty) {
     this._isMac = OS.platform() === "macos";
   }
 
@@ -82,7 +77,7 @@ export class ResumeLinkHandler implements ITerminalHandler {
   private extractMatches(
     lineText: string,
   ): { text: string; startIndex: number; endIndexExclusive: number }[] {
-    const pattern = new RegExp(this._patternSource, "gi");
+    const pattern = new RegExp(RESUME_PATTERN.source, "gi");
     const out: { text: string; startIndex: number; endIndexExclusive: number }[] = [];
     for (const raw of lineText.matchAll(pattern)) {
       const start = raw.index ?? -1;

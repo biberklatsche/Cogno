@@ -31,7 +31,7 @@ export const CODEX_CONFIG = {
     { eventName: "SessionStart", status: "ready" as AgentStatus },
     { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
     { eventName: "SubagentStart", status: "working" as AgentStatus },
-    { eventName: "SubagentStop", status: "working" as AgentStatus },
+    { eventName: "SubagentStop", status: "ready" as AgentStatus },
     { eventName: "PreToolUse", status: "working" as AgentStatus },
     { eventName: "PostToolUse", status: "working" as AgentStatus },
     { eventName: "PermissionRequest", status: "question" as AgentStatus },
