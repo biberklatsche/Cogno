@@ -50,7 +50,10 @@ export class NotificationPreferencesUseCase {
     };
   }
 
-  static isNotificationEnabled(state: NotificationPreferencesState, notificationId: string): boolean {
+  static isNotificationEnabled(
+    state: NotificationPreferencesState,
+    notificationId: string,
+  ): boolean {
     return state.notifications[notificationId] ?? false;
   }
 

@@ -174,10 +174,7 @@ export const FeatureCodingAgentsSchema = z.object({
     .object({
       working: z
         .object({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Notify when an agent starts working."),
+          enabled: z.boolean().optional().describe("Notify when an agent starts working."),
         })
         .optional(),
       question: z
@@ -190,10 +187,7 @@ export const FeatureCodingAgentsSchema = z.object({
         .optional(),
       ready: z
         .object({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Notify when an agent becomes ready/idle."),
+          enabled: z.boolean().optional().describe("Notify when an agent becomes ready/idle."),
         })
         .optional(),
       error: z

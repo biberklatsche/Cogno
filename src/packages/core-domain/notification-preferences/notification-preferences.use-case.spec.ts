@@ -1,6 +1,9 @@
 import { NotificationDefinitionContract } from "@cogno/core-api";
 import { describe, expect, it } from "vitest";
-import { ChannelDefinitionContract, NotificationPreferencesUseCase } from "./notification-preferences.use-case";
+import {
+  ChannelDefinitionContract,
+  NotificationPreferencesUseCase,
+} from "./notification-preferences.use-case";
 
 const notificationDefinitions: ReadonlyArray<NotificationDefinitionContract> = [
   { id: "working", label: "Working", defaultEnabled: true },

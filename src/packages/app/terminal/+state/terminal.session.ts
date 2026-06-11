@@ -528,7 +528,8 @@ export class TerminalSession {
           notificationDefinition.id,
         ),
         closeOnSelect: false,
-        action: (item?: ContextMenuItem) => this.toggleNotification(notificationDefinition.id, item),
+        action: (item?: ContextMenuItem) =>
+          this.toggleNotification(notificationDefinition.id, item),
       });
     }
 
