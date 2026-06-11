@@ -1,7 +1,7 @@
 import { ApplicationRef, createComponent, EnvironmentInjector } from "@angular/core";
+import { ContextMenuOverlayComponent } from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ContextMenuOverlayService } from "./context-menu-overlay.service";
-import { ContextMenuOverlayComponent } from "./context-menu-overlay.types";
 
 vi.mock("@angular/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@angular/core")>();
@@ -40,7 +40,7 @@ describe("ContextMenuOverlayService", () => {
     };
     environmentInjector = {} as EnvironmentInjector;
     componentRefMock = {
-      instance: {},
+      instance: { items: [] },
       hostView: {},
       destroy: vi.fn(),
     };
@@ -51,7 +51,7 @@ describe("ContextMenuOverlayService", () => {
 
   it("opens, positions and closes overlay components", () => {
     const removeSpy = vi.spyOn(HTMLElement.prototype, "remove");
-    const ref = service.openAt({ x: 100, y: 50 }, class {} as never, { title: "Menu" });
+    const ref = service.openAtPoint({ x: 100, y: 50 }, { title: "Menu" } as never);
     const host = document.body.lastElementChild as HTMLDivElement;
     vi.spyOn(host, "getBoundingClientRect").mockReturnValue({
       left: 100,
@@ -78,7 +78,7 @@ describe("ContextMenuOverlayService", () => {
   });
 
   it("closes when clicking outside or pressing escape", () => {
-    const ref = service.openAt({ x: 10, y: 10 }, class {} as never);
+    const ref = service.openAtPoint({ x: 10, y: 10 });
     const outsideClickEvent = new PointerEvent("pointerdown", {
       bubbles: true,
       composed: true,
@@ -90,13 +90,13 @@ describe("ContextMenuOverlayService", () => {
     document.dispatchEvent(outsideClickEvent);
     expect(ref.isOpen()).toBe(false);
 
-    service.openAt({ x: 10, y: 10 }, class {} as never);
+    service.openAtPoint({ x: 10, y: 10 });
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(componentRefMock.destroy).toHaveBeenCalledTimes(2);
   });
 
   it("supports right alignment and viewport repositioning", () => {
-    const ref = service.openAt({ x: 150, y: 150 }, class {} as never, undefined, {
+    const ref = service.openAtPoint({ x: 150, y: 150 }, undefined, {
       horizontalAlign: "right",
     });
     const host = document.body.lastElementChild as HTMLDivElement;
@@ -115,7 +115,7 @@ describe("ContextMenuOverlayService", () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 200 });
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 200 });
 
-    service.openAt({ x: 150, y: 150 }, class {} as never, undefined, { horizontalAlign: "right" });
+    service.openAtPoint({ x: 150, y: 150 }, undefined, { horizontalAlign: "right" });
 
     expect(host.style.left).not.toBe("");
     expect(host.style.top).not.toBe("");
@@ -136,7 +136,7 @@ describe("ContextMenuOverlayService", () => {
       toJSON: () => ({}),
     });
 
-    const ref = service.openContextForElement(element, undefined, { horizontalAlign: "right" });
+    const ref = service.openAtElement(element, undefined, { horizontalAlign: "right" });
 
     expect(ref.isOpen()).toBe(true);
   });

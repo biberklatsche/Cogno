@@ -1,9 +1,9 @@
+export type { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
 export * from "./busy-indicator/busy-indicator.constants";
 export * from "./common/copy-edit-delete/copy-edit-delete.component";
 export * from "./common/drag-preview/drag-preview.service";
 export * from "./common/dropdown/dropdown.component";
 export * from "./common/filterable-dropdown/filterable-dropdown.component";
-export * from "./common/notification-preferences-menu/notification-preferences-menu.component";
 export * from "./common/tooltip/tooltip.directive";
 export * from "./dialog/confirm-dialog.component";
 export * from "./dialog/dialog.component";
@@ -13,3 +13,5 @@ export * from "./dialog/dialog-config";
 export * from "./dialog/dialog-ref";
 export * from "./icons/+model/icon";
 export * from "./icons/icon/icon.component";
+export * from "./menu/context-menu-overlay/context-menu.component";
+export * from "./menu/context-menu-overlay/context-menu-overlay.service";

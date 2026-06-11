@@ -1,10 +1,10 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { Clipboard } from "@cogno/app-tauri/clipboard";
+import type { ContextMenuOverlayService } from "@cogno/core-ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { PromptSegment } from "../../../../config/+models/prompt-config";
-import type { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { TerminalStateManager } from "../../state";
 import { PromptMarkerRenderer } from "./prompt-renderer";
 
@@ -19,7 +19,7 @@ describe("PromptMarkerRenderer", () => {
   let stateManager: TerminalStateManager;
   let busMock: AppBus;
   let hostElement: HTMLElement;
-  let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openContextForElement">;
+  let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
 
   beforeEach(() => {
     PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
@@ -29,7 +29,7 @@ describe("PromptMarkerRenderer", () => {
     stateManager.initialize("test-term", "Bash" as any);
     hostElement = document.createElement("div");
     contextMenuOverlayService = {
-      openContextForElement: vi.fn(),
+      openAtElement: vi.fn(),
     };
   });
 
@@ -253,7 +253,7 @@ describe("PromptMarkerRenderer", () => {
     menuButton.click();
 
     expect(getCommandOutput).toHaveBeenCalledTimes(1);
-    expect(contextMenuOverlayService.openContextForElement).toHaveBeenCalledWith(
+    expect(contextMenuOverlayService.openAtElement).toHaveBeenCalledWith(
       menuButton,
       expect.objectContaining({
         items: expect.arrayContaining([
@@ -267,7 +267,7 @@ describe("PromptMarkerRenderer", () => {
     );
 
     const menuItems =
-      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+      vi.mocked(contextMenuOverlayService.openAtElement).mock.calls[0][1]?.items ?? [];
     expect(menuItems[2]).toEqual(expect.objectContaining({ separator: true }));
     expect(menuItems[5]).toEqual(expect.objectContaining({ separator: true }));
   });
@@ -288,7 +288,7 @@ describe("PromptMarkerRenderer", () => {
     const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
     menuButton.click();
     const menuItems =
-      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+      vi.mocked(contextMenuOverlayService.openAtElement).mock.calls[0][1]?.items ?? [];
     const copyCommandItem = menuItems.find((item) => item.label === "Copy Command");
 
     await copyCommandItem?.action?.();
@@ -331,7 +331,7 @@ describe("PromptMarkerRenderer", () => {
     const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
     menuButton.click();
     const menuItems =
-      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+      vi.mocked(contextMenuOverlayService.openAtElement).mock.calls[0][1]?.items ?? [];
     const filterBlockItem = menuItems.find((item) => item.label === "Filter Block");
 
     filterBlockItem?.action?.();
@@ -378,7 +378,7 @@ describe("PromptMarkerRenderer", () => {
     const menuButton = hostElement.querySelector(".prompt-marker-menu-button") as HTMLButtonElement;
     menuButton.click();
     const menuItems =
-      vi.mocked(contextMenuOverlayService.openContextForElement).mock.calls[0][1]?.items ?? [];
+      vi.mocked(contextMenuOverlayService.openAtElement).mock.calls[0][1]?.items ?? [];
 
     menuItems.find((item) => item.label === "Scroll to Top")?.action?.();
     menuItems.find((item) => item.label === "Scroll to Bottom")?.action?.();

@@ -1,11 +1,9 @@
 import { Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { timespan } from "@cogno/core-support";
-import { IconComponent } from "@cogno/core-ui";
+import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/core-ui";
 import { map } from "rxjs";
 import { ConfigService } from "../../config/+state/config.service";
-import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import { TerminalStateManager } from "../+state/state";
 import { TerminalSession } from "../+state/terminal.session";
 
@@ -235,7 +233,7 @@ export class TerminalHeaderComponent {
     event.stopPropagation();
     this.terminalSession.focus();
     const items: ContextMenuItem[] = this.terminalSession.buildHeaderMenu();
-    this.menu.openContextForElement(
+    this.menu.openAtElement(
       event.currentTarget as HTMLElement,
       { items },
       { horizontalAlign: "right" },
@@ -250,7 +248,7 @@ export class TerminalHeaderComponent {
     if (items.length === 0) {
       return;
     }
-    this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
+    this.menu.openAtElement(event.currentTarget as HTMLElement, { items });
   }
 
   private getInitialOsc9ProgressBarEnabled(): boolean {

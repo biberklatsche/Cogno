@@ -1,6 +1,5 @@
+import type { ContextMenuItem, ContextMenuOverlayService } from "@cogno/core-ui";
 import { describe, expect, it, vi } from "vitest";
-import type { ContextMenuOverlayService } from "../context-menu-overlay/context-menu-overlay.service";
-import type { ContextMenuItem } from "../context-menu-overlay/context-menu-overlay.types";
 import type { AppMenuService } from "./app-menu.service";
 import { AppMenuButtonComponent } from "./app-menu-button.component";
 
@@ -10,8 +9,8 @@ describe("AppMenuButtonComponent", () => {
     const appMenuService: Pick<AppMenuService, "buildMenu"> = {
       buildMenu: vi.fn().mockReturnValue(menuItems),
     };
-    const contextMenuOverlayService: Pick<ContextMenuOverlayService, "openContextForElement"> = {
-      openContextForElement: vi.fn(),
+    const contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement"> = {
+      openAtElement: vi.fn(),
     };
     const component = new AppMenuButtonComponent(
       appMenuService as AppMenuService,
@@ -30,7 +29,7 @@ describe("AppMenuButtonComponent", () => {
     expect(preventDefault).toHaveBeenCalledTimes(1);
     expect(stopPropagation).toHaveBeenCalledTimes(1);
     expect(appMenuService.buildMenu).toHaveBeenCalledTimes(1);
-    expect(contextMenuOverlayService.openContextForElement).toHaveBeenCalledWith(buttonElement, {
+    expect(contextMenuOverlayService.openAtElement).toHaveBeenCalledWith(buttonElement, {
       items: menuItems,
     });
   });

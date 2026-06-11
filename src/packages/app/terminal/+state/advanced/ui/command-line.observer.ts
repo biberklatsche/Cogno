@@ -1,20 +1,17 @@
 import { IDisposable } from "@cogno/core-support";
+import { ContextMenuOverlayService } from "@cogno/core-ui";
 import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { ErrorReporter } from "../../../../common/error/error-reporter";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
-import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { ITerminalHandler } from "../../handler/handler";
 import { TerminalStateManager } from "../../state";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
 import OscParser from "../osc/cogno-osc.parser";
 import { MarkerManager } from "./marker-manager";
 
-type CommandLineObserverContextMenuOverlayPort = Pick<
-  ContextMenuOverlayService,
-  "openContextForElement"
->;
+type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 export class CommandLineObserver implements ITerminalHandler {
   private _disposables: IDisposable[] = [];

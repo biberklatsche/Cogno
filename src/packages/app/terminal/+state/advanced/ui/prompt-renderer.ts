@@ -1,8 +1,7 @@
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { PromptSegment } from "@cogno/app/config/+models/prompt-config";
-import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
 import { timespan } from "@cogno/core-support";
+import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/core-ui";
 import { mdiDotsVertical } from "@mdi/js";
 import { Command, TerminalStateManager } from "../../state";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
@@ -27,7 +26,7 @@ type PromptMarkerRenderContext = {
   scrollToCommandTop?: () => void;
   scrollToCommandBottom?: () => void;
 };
-type PromptMarkerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
+type PromptMarkerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 export class PromptMarkerRenderer {
   private static readonly DEFAULT_LABEL = "COGNO";
@@ -209,7 +208,7 @@ export class PromptMarkerRenderer {
         scrollToCommandTop,
         scrollToCommandBottom,
       );
-      this.contextMenuOverlayService?.openContextForElement(buttonElement, { items });
+      this.contextMenuOverlayService?.openAtElement(buttonElement, { items });
     });
 
     return buttonElement;

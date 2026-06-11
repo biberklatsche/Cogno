@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
 import { TerminalNavigator } from "@cogno/core-api";
 import {
-  DropdownComponent,
-  IconComponent,
-  NotificationPreferencesMenuComponent,
-  TooltipDirective,
-} from "@cogno/core-ui";
+  buildNotificationPreferencesMenuItems,
+  NotificationPreferencesState,
+} from "@cogno/core-domain";
+import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/core-ui";
 import {
   ActiveAgent,
   CodingAgentNotificationPreferencesService,
@@ -17,13 +16,7 @@ import { AgentAnimationComponent } from "./agent-animation.component";
 @Component({
   selector: "app-coding-agents-side",
   standalone: true,
-  imports: [
-    IconComponent,
-    TooltipDirective,
-    AgentAnimationComponent,
-    NotificationPreferencesMenuComponent,
-    DropdownComponent,
-  ],
+  imports: [IconComponent, TooltipDirective, AgentAnimationComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="agents-panel">
@@ -31,23 +24,14 @@ import { AgentAnimationComponent } from "./agent-animation.component";
         <header class="panel-header">
           <span class="panel-title">Active Agents</span>
           <div class="header-actions">
-            <app-dropdown [customTrigger]="true" placement="below-end" ariaLabel="Notification settings">
-              <button
-                dropdownTrigger
-                type="button"
-                class="button icon-button"
-                appTooltip="Notification settings"
-              >
-                <app-icon name="mdiBellCog"></app-icon>
-              </button>
-              <app-notification-preferences-menu
-                [notificationDefinitions]="notificationDefinitions"
-                [channels]="channelOptions"
-                [state]="notificationPreferencesState()"
-                (notificationToggled)="toggleNotification($event)"
-                (channelToggled)="toggleChannel($event)"
-              ></app-notification-preferences-menu>
-            </app-dropdown>
+            <button
+              type="button"
+              class="button icon-button"
+              appTooltip="Notification settings"
+              (click)="openNotificationMenu($event)"
+            >
+              <app-icon name="mdiBellCog"></app-icon>
+            </button>
             <button
               type="button"
               class="button icon-button"
@@ -385,6 +369,7 @@ export class CodingAgentsSideComponent {
     private readonly statusService: CodingAgentStatusService,
     private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
     private readonly navigator: TerminalNavigator,
+    private readonly contextMenu: ContextMenuOverlayService,
   ) {}
 
   showDetected(): void {
@@ -412,11 +397,30 @@ export class CodingAgentsSideComponent {
     return "Error";
   }
 
-  toggleNotification(notificationId: string): void {
-    this.notificationPreferences.toggleNotification(notificationId);
+  openNotificationMenu(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const items = buildNotificationPreferencesMenuItems({
+      notificationDefinitions: this.notificationDefinitions,
+      channels: this.channelOptions,
+      state: this.notificationPreferencesState(),
+      onToggleNotification: (id) => this.toggleNotification(id),
+      onToggleChannel: (id) => this.toggleChannel(id),
+    });
+    this.contextMenu.openAtElement(
+      event.currentTarget as HTMLElement,
+      { items },
+      { horizontalAlign: "right" },
+    );
   }
 
-  toggleChannel(channelId: string): void {
+  toggleNotification(notificationId: string): NotificationPreferencesState {
+    this.notificationPreferences.toggleNotification(notificationId);
+    return this.notificationPreferencesState();
+  }
+
+  toggleChannel(channelId: string): NotificationPreferencesState {
     this.notificationPreferences.toggleChannel(channelId);
+    return this.notificationPreferencesState();
   }
 }

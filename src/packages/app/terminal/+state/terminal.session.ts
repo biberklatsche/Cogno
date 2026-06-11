@@ -7,13 +7,20 @@ import {
   ShellDefinitionContract,
 } from "@cogno/core-api";
 import {
+  buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
 } from "@cogno/core-domain";
 import { IDisposable } from "@cogno/core-support";
-import { DialogRef, DialogService } from "@cogno/core-ui";
+import {
+  ContextMenuItem,
+  ContextMenuOverlayService,
+  DialogRef,
+  DialogService,
+} from "@cogno/core-ui";
 import { Observable, Subscription } from "rxjs";
+import { ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
@@ -21,8 +28,8 @@ import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
 import { PaneMaximizedChangedEvent } from "../../grid-list/+bus/events";
 import { TerminalId } from "../../grid-list/+model/model";
-import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
+import { KeybindService } from "../../keybinding/keybind.service";
+import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import {
   TerminalSystemInfoDialogComponent,
@@ -92,6 +99,7 @@ export class TerminalSession {
     private readonly opener: Opener,
     private readonly terminalActivity: TerminalActivityService,
     private readonly notificationChannelsPort: NotificationChannelsPort,
+    private readonly keybindService: KeybindService,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.renderer = new Renderer(this.configService.config);
@@ -251,7 +259,7 @@ export class TerminalSession {
           this.focusHandler?.focus();
           this.bus.publish({ path: ["app", "terminal"], type: "Paste", payload: this.terminalId });
         },
-        actionName: "paste",
+        keybinding: this.keybindingFor("paste"),
       },
       { separator: true },
       {
@@ -263,7 +271,7 @@ export class TerminalSession {
             payload: this.terminalId,
           });
         },
-        actionName: "split_right",
+        keybinding: this.keybindingFor("split_right"),
       },
       {
         label: "Split Left",
@@ -274,7 +282,7 @@ export class TerminalSession {
             payload: this.terminalId,
           });
         },
-        actionName: "split_left",
+        keybinding: this.keybindingFor("split_left"),
       },
       {
         label: "Split Down",
@@ -285,7 +293,7 @@ export class TerminalSession {
             payload: this.terminalId,
           });
         },
-        actionName: "split_down",
+        keybinding: this.keybindingFor("split_down"),
       },
       {
         label: "Split Up",
@@ -296,7 +304,7 @@ export class TerminalSession {
             payload: this.terminalId,
           });
         },
-        actionName: "split_up",
+        keybinding: this.keybindingFor("split_up"),
       },
       { separator: true },
       this.stateManager.isPaneMaximized
@@ -309,7 +317,7 @@ export class TerminalSession {
                 payload: this.terminalId,
               });
             },
-            actionName: "minimize_pane",
+            keybinding: this.keybindingFor("minimize_pane"),
           }
         : {
             label: "Maximize",
@@ -320,7 +328,7 @@ export class TerminalSession {
                 payload: this.terminalId,
               });
             },
-            actionName: "maximize_pane",
+            keybinding: this.keybindingFor("maximize_pane"),
           },
       { separator: true },
       {
@@ -333,7 +341,7 @@ export class TerminalSession {
             payload: this.terminalId,
           });
         },
-        actionName: "clear_buffer",
+        keybinding: this.keybindingFor("clear_buffer"),
       },
       {
         label: "Close",
@@ -344,7 +352,7 @@ export class TerminalSession {
             payload: this.terminalId,
           });
         },
-        actionName: "close_terminal",
+        keybinding: this.keybindingFor("close_terminal"),
       },
       { separator: true },
       {
@@ -360,10 +368,14 @@ export class TerminalSession {
           this.focusHandler?.focus();
           this.bus.publish({ path: ["app", "action"], type: "ActionFired", payload: "copy" });
         },
-        actionName: "copy",
+        keybinding: this.keybindingFor("copy"),
       });
     }
     return items;
+  }
+
+  private keybindingFor(actionName: ActionName): string {
+    return formatKeybinding(this.keybindService.getKeybinding(actionName));
   }
 
   buildHeaderMenu(): ContextMenuItem[] {
@@ -516,41 +528,16 @@ export class TerminalSession {
     const notificationPreferencesState = this.getNotificationPreferencesState(
       availableNotificationChannels,
     );
-    const items: ContextMenuItem[] = [];
 
-    items.push({ header: true, label: "Notifications" });
-    for (const notificationDefinition of this.getNotificationDefinitions()) {
-      items.push({
-        label: notificationDefinition.label,
-        toggle: true,
-        toggled: NotificationPreferencesUseCase.isNotificationEnabled(
-          notificationPreferencesState,
-          notificationDefinition.id,
-        ),
-        closeOnSelect: false,
-        action: (item?: ContextMenuItem) =>
-          this.toggleNotification(notificationDefinition.id, item),
-      });
-    }
-
-    if (availableNotificationChannels.length === 0) {
-      return [];
-    }
-
-    items.push({ separator: true });
-    items.push({ header: true, label: "Channels" });
-
-    for (const notificationChannel of availableNotificationChannels) {
-      items.push({
-        label: notificationChannel.displayName,
-        toggle: true,
-        toggled: notificationPreferencesState.channels[notificationChannel.id] ?? false,
-        closeOnSelect: false,
-        action: (item?: ContextMenuItem) =>
-          this.toggleNotificationChannel(notificationChannel.id, item),
-      });
-    }
-    return items;
+    return buildNotificationPreferencesMenuItems({
+      notificationDefinitions: this.getNotificationDefinitions(),
+      channels: availableNotificationChannels,
+      state: notificationPreferencesState,
+      hideWhenNoChannels: true,
+      onToggleNotification: (notificationId) => this.toggleNotification(notificationId),
+      onToggleChannel: (notificationChannelId) =>
+        this.toggleNotificationChannel(notificationChannelId),
+    });
   }
 
   private getNotificationPreferencesState(
@@ -565,26 +552,21 @@ export class TerminalSession {
     return this.notificationPreferencesState;
   }
 
-  private toggleNotification(notificationId: string, item?: ContextMenuItem): void {
+  private toggleNotification(notificationId: string): NotificationPreferencesState {
     const notificationPreferencesState = NotificationPreferencesUseCase.toggleNotification(
       this.getNotificationPreferencesState(),
       notificationId,
     );
     this.notificationPreferencesState = notificationPreferencesState;
-    if (item?.toggle) {
-      item.toggled = NotificationPreferencesUseCase.isNotificationEnabled(
-        notificationPreferencesState,
-        notificationId,
-      );
-    }
+    return notificationPreferencesState;
   }
 
-  private toggleNotificationChannel(notificationChannelId: string, item?: ContextMenuItem): void {
+  private toggleNotificationChannel(notificationChannelId: string): NotificationPreferencesState {
     const isAvailable = this.notificationChannelsPort
       .getAvailableChannels()
       .some((channel) => channel.id === notificationChannelId);
     if (!isAvailable) {
-      return;
+      return this.getNotificationPreferencesState();
     }
 
     const notificationPreferencesState = NotificationPreferencesUseCase.toggleChannel(
@@ -592,9 +574,7 @@ export class TerminalSession {
       notificationChannelId,
     );
     this.notificationPreferencesState = notificationPreferencesState;
-    if (item?.toggle) {
-      item.toggled = notificationPreferencesState.channels[notificationChannelId] ?? false;
-    }
+    return notificationPreferencesState;
   }
 
   private getNotificationDefinitions(): NotificationDefinitionContract[] {

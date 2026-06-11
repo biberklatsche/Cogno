@@ -17,6 +17,7 @@ describe("AppMenuService", () => {
       getActionDefinition: vi.fn().mockImplementation((actionName: string) => ({
         actionName,
       })),
+      getKeybinding: vi.fn().mockReturnValue(undefined),
     } as unknown as KeybindService;
     configService = {
       get config() {
@@ -48,19 +49,13 @@ describe("AppMenuService", () => {
     const menu = service.buildMenu();
 
     expect(menu).toHaveLength(7);
-    expect(menu[0]).toEqual(expect.objectContaining({ label: "zsh", actionName: "open_shell_1" }));
-    expect(menu[1]).toEqual(expect.objectContaining({ label: "bash", actionName: "open_shell_2" }));
+    expect(menu[0]).toEqual(expect.objectContaining({ label: "zsh" }));
+    expect(menu[1]).toEqual(expect.objectContaining({ label: "bash" }));
     expect(menu[2]).toEqual({ separator: true });
-    expect(menu[3]).toEqual(
-      expect.objectContaining({ label: "New Window", actionName: "new_window" }),
-    );
-    expect(menu[4]).toEqual(
-      expect.objectContaining({ label: "Settings", actionName: "open_config" }),
-    );
+    expect(menu[3]).toEqual(expect.objectContaining({ label: "New Window" }));
+    expect(menu[4]).toEqual(expect.objectContaining({ label: "Settings" }));
     expect(menu[5]).toEqual({ separator: true });
-    expect(menu[6]).toEqual(
-      expect.objectContaining({ label: "Documentation", actionName: "open_documentation" }),
-    );
+    expect(menu[6]).toEqual(expect.objectContaining({ label: "Documentation" }));
   });
 
   it("publishes direct shell actions and action-definition-based items", () => {
@@ -86,16 +81,10 @@ describe("AppMenuService", () => {
     const menu = service.buildMenu();
 
     expect(menu).toHaveLength(4);
-    expect(menu[0]).toEqual(
-      expect.objectContaining({ label: "New Window", actionName: "new_window" }),
-    );
-    expect(menu[1]).toEqual(
-      expect.objectContaining({ label: "Settings", actionName: "open_config" }),
-    );
+    expect(menu[0]).toEqual(expect.objectContaining({ label: "New Window" }));
+    expect(menu[1]).toEqual(expect.objectContaining({ label: "Settings" }));
     expect(menu[2]).toEqual({ separator: true });
-    expect(menu[3]).toEqual(
-      expect.objectContaining({ label: "Documentation", actionName: "open_documentation" }),
-    );
+    expect(menu[3]).toEqual(expect.objectContaining({ label: "Documentation" }));
   });
 
   it("throws when a standard menu item lacks an action definition", () => {

@@ -1,7 +1,5 @@
 import { Component } from "@angular/core";
-import { IconComponent } from "@cogno/core-ui";
-import { ContextMenuOverlayService } from "../context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../context-menu-overlay/context-menu-overlay.types";
+import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/core-ui";
 import { AppMenuService } from "./app-menu.service";
 
 @Component({
@@ -26,6 +24,6 @@ export class AppMenuButtonComponent {
     event.preventDefault();
     event.stopPropagation();
     const items: ContextMenuItem[] = this.appMenuService.buildMenu();
-    this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
+    this.menu.openAtElement(event.currentTarget as HTMLElement, { items });
   }
 }

@@ -4,29 +4,33 @@ import { ActionName } from "../../action/action.models";
 import { KeybindService } from "../keybind.service";
 import { Modifier } from "../modifier";
 
+export function formatKeybinding(keybinding: string | null | undefined): string {
+  if (!keybinding) {
+    return "";
+  }
+  const parts = keybinding
+    .split("+")
+    .map((k) => k.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return "";
+
+  const modifiers = Modifier.normalizeView(parts.slice(0, -1), OS.platform());
+  const key = parts[parts.length - 1];
+
+  switch (OS.platform()) {
+    case "macos":
+      return [...modifiers, key].join(" ");
+    default:
+      return [...modifiers, key].join("+");
+  }
+}
+
 @Pipe({
   name: "keybinding",
 })
 export class KeybindingPipe implements PipeTransform {
   transform(keybinding: string | null | undefined): string {
-    if (!keybinding) {
-      return "";
-    }
-    const parts = keybinding
-      .split("+")
-      .map((k) => k.trim())
-      .filter(Boolean);
-    if (parts.length === 0) return "";
-
-    const modifiers = Modifier.normalizeView(parts.slice(0, -1), OS.platform());
-    const key = parts[parts.length - 1];
-
-    switch (OS.platform()) {
-      case "macos":
-        return [...modifiers, key].join(" ");
-      default:
-        return [...modifiers, key].join("+");
-    }
+    return formatKeybinding(keybinding);
   }
 }
 

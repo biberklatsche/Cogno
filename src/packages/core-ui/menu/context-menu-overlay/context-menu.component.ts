@@ -1,23 +1,21 @@
-import { Component, Input } from "@angular/core";
-import { ColorName } from "../../common/color/color";
-
-import { ColorSelectComponent } from "../../common/color/color-select.component";
-import { ActionKeybindingPipe } from "../../keybinding/pipe/keybinding.pipe";
-import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-overlay.types";
+import { NgTemplateOutlet } from "@angular/common";
+import { Component, Input, TemplateRef } from "@angular/core";
+import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
 
 @Component({
   selector: "app-context-menu",
   standalone: true,
+  imports: [NgTemplateOutlet],
   template: `
         <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
                 @if (item.separator) {
                     <div class="sep"></div>
-                } @else if (item.colorpicker) {
+                } @else if (item.custom) {
                     <div class="embed">
-                        <app-color-select (colorSelected)="onColorPick(item, $event)" [selectedColorName]="item.selectedColorName"></app-color-select>
+                        <ng-container [ngTemplateOutlet]="customItemTemplate ?? null" [ngTemplateOutletContext]="{ $implicit: item }"></ng-container>
                     </div>
-                }@else if (item.header) {
+                } @else if (item.header) {
                     <div class="header">
                         {{item.label}}
                     </div>
@@ -43,13 +41,12 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-ove
                             (click)="onItemClick(item)"
                             role="menuitem">
                         <span class="label">{{ item.label }}</span>
-                        <span class="keybinding">{{ item.actionName | actionkeybinding }}</span>
+                        <span class="keybinding">{{ item.keybinding }}</span>
                     </button>
                 }
             }
         </div>
     `,
-  imports: [ActionKeybindingPipe, ColorSelectComponent],
   styles: [
     `
             :host {
@@ -79,7 +76,7 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-ove
                 border-radius: 4px;
                 cursor: default;
                 font-size: .9rem;
-                
+
                 .keybinding {
                     flex: 0 0 auto;
                     opacity: 0.5;
@@ -151,7 +148,7 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-ove
                 white-space: nowrap;
                 text-overflow: ellipsis;
             }
-            
+
             .label {
                 flex: 1 1 auto;
                 min-width: 0;
@@ -161,13 +158,13 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-ove
                 white-space: nowrap;
                 text-overflow: ellipsis;
             }
-            
+
             .sep {
                 height: 1px;
                 background: var(--background-color-20l);
                 margin: 6px 4px;
             }
-            
+
             .embed {
                 padding: 4px;
             }
@@ -177,23 +174,16 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "./context-menu-ove
 export class ContextMenuComponent implements ContextMenuOverlayComponent {
   @Input() items: ContextMenuItem[] = [];
   @Input() close?: () => void;
+  @Input() customItemTemplate?: TemplateRef<{ $implicit: ContextMenuItem }>;
 
   onItemClick(item: ContextMenuItem) {
     if (item.disabled) return;
     try {
-      (item.action as ((item?: ContextMenuItem) => void) | undefined)?.(item);
+      item.action?.(item);
     } finally {
       if (item.closeOnSelect !== false) {
         this.close?.();
       }
-    }
-  }
-
-  onColorPick(item: ContextMenuItem, name: ColorName) {
-    try {
-      (item.action as ((name?: ColorName) => void) | undefined)?.(name);
-    } finally {
-      this.close?.();
     }
   }
 }

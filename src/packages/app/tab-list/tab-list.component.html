@@ -50,3 +50,10 @@
         <app-menu-button></app-menu-button>
     </div>
 </nav>
+
+<ng-template #colorPickerItem let-item>
+    <app-color-select
+        [selectedColorName]="$any(item.customData)?.selectedColorName"
+        (colorSelected)="onTabColorPick($event)">
+    </app-color-select>
+</ng-template>

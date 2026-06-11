@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
-import { clear, getAppBus, getConfigService, getDestroyRef } from "../../../__test__/test-factory";
+import {
+  clear,
+  getAppBus,
+  getConfigService,
+  getDestroyRef,
+  getKeybindServiceMock,
+} from "../../../__test__/test-factory";
 import { ActionFired, type ActionFiredEvent } from "../../action/action.models";
 import type { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import type { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
+import type { KeybindService } from "../../keybinding/keybind.service";
 import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
@@ -30,7 +37,12 @@ describe("TabListService", () => {
       },
     });
 
-    service = new TabListService(bus, configService, getDestroyRef());
+    service = new TabListService(
+      bus,
+      configService,
+      getKeybindServiceMock() as KeybindService,
+      getDestroyRef(),
+    );
   });
 
   afterEach(() => {
@@ -474,7 +486,7 @@ describe("TabListService", () => {
       expect(menu.find((i) => i.label === "Close tab")).toBeTruthy();
       expect(menu.find((i) => i.label === "Close other tabs")).toBeTruthy();
       expect(menu.find((i) => i.label === "Rename tab")).toBeTruthy();
-      expect(menu.find((i) => i.colorpicker)).toBeTruthy();
+      expect(menu.find((i) => i.custom)).toBeTruthy();
     });
 
     it("should show reset tab name only for renamed tabs", () => {
@@ -515,9 +527,9 @@ describe("TabListService", () => {
     it("should set color from context menu", () => {
       service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
       const menu = service.buildContextMenu("t1");
-      const colorPicker = menu.find((i) => i.colorpicker);
+      expect(menu.find((i) => i.custom)).toBeTruthy();
 
-      colorPicker?.action?.("red");
+      service.setColor("t1", "red");
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));

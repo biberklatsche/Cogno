@@ -4,10 +4,9 @@ import {
   createComponent,
   EnvironmentInjector,
   Injectable,
-  Type,
 } from "@angular/core";
+import { ContextMenuOverlayComponent } from "@cogno/core-api";
 import { ContextMenuComponent } from "./context-menu.component";
-import { ContextMenuOverlayComponent } from "./context-menu-overlay.types";
 
 export type Point = { x: number; y: number };
 export type ContextMenuHorizontalAlign = "left" | "right";
@@ -37,10 +36,9 @@ export class ContextMenuOverlayService {
     private env: EnvironmentInjector,
   ) {}
 
-  openAt<T extends ContextMenuOverlayComponent>(
+  openAtPoint(
     pointOrEvent: Point | MouseEvent,
-    component: Type<T>,
-    inputs?: Partial<T>,
+    inputs?: Partial<ContextMenuComponent>,
     options?: ContextMenuOpenOptions,
   ): ContextMenuOverlayRef {
     const point: Point = this.toPoint(pointOrEvent);
@@ -63,13 +61,13 @@ export class ContextMenuOverlayService {
 
     document.body.appendChild(host);
 
-    const compRef = createComponent(component, {
+    const compRef = createComponent(ContextMenuComponent, {
       environmentInjector: this.env,
       hostElement: host,
     });
 
-    const instance = compRef.instance as T;
-    instance.close = instance.close ?? (() => this.close());
+    const instance = compRef.instance as ContextMenuOverlayComponent;
+    instance.close = () => this.close();
 
     if (inputs) {
       Object.assign(instance, inputs);
@@ -121,17 +119,9 @@ export class ContextMenuOverlayService {
     return ref;
   }
 
-  openContextAt(
-    pointOrEvent: Point | MouseEvent,
-    inputs?: Partial<ContextMenuOverlayComponent>,
-    options?: ContextMenuOpenOptions,
-  ): ContextMenuOverlayRef {
-    return this.openAt(pointOrEvent, ContextMenuComponent, inputs, options);
-  }
-
-  openContextForElement(
+  openAtElement(
     el: HTMLElement,
-    inputs?: Partial<ContextMenuOverlayComponent>,
+    inputs?: Partial<ContextMenuComponent>,
     options?: ContextMenuOpenOptions,
   ): ContextMenuOverlayRef {
     const rect = el.getBoundingClientRect();
@@ -139,7 +129,7 @@ export class ContextMenuOverlayService {
     if (options?.horizontalAlign === "right") {
       point.x = rect.right;
     }
-    return this.openAt(point, ContextMenuComponent, inputs, options);
+    return this.openAtPoint(point, inputs, options);
   }
 
   close() {

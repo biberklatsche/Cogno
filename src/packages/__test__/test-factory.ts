@@ -1,5 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import type { ContextMenuOverlayService } from "@cogno/core-ui";
 import { vi } from "vitest";
 import { AppBus } from "../app/app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
@@ -10,7 +11,6 @@ import type { TerminalComponentFactory } from "../app/grid-list/+state/terminal-
 import { KeybindService } from "../app/keybinding/keybind.service";
 import { KeyboardMappingService } from "../app/keybinding/keyboard/keyboard-layout.loader";
 import type { TerminalKeybindingContextService } from "../app/keybinding/terminal-keybinding-context.service";
-import type { ContextMenuOverlayService } from "../app/menu/context-menu-overlay/context-menu-overlay.service";
 import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
 import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
 import { TabListService } from "../app/tab-list/+state/tab-list.service";
@@ -94,6 +94,7 @@ export function getTerminalSession(): TerminalSession {
       {} as any,
       new TerminalActivityService(),
       { getAvailableChannels: () => [] } as any,
+      getKeybindServiceMock() as KeybindService,
     );
   }
   return terminalSession;
@@ -135,6 +136,10 @@ export function getKeybindService(): KeybindService {
   return keybindService;
 }
 
+export function getKeybindServiceMock(): Pick<KeybindService, "getKeybinding"> {
+  return { getKeybinding: vi.fn().mockReturnValue(undefined) };
+}
+
 export function getKeyboardMappingService(): KeyboardMappingService {
   if (!keybindMappingService) keybindMappingService = new KeyboardMappingService();
   return keybindMappingService;
@@ -153,7 +158,12 @@ export function getGridListService(): GridListService {
 
 export function getTabListService(): TabListService {
   if (!tabListService) {
-    tabListService = new TabListService(getAppBus(), getConfigService(), getDestroyRef());
+    tabListService = new TabListService(
+      getAppBus(),
+      getConfigService(),
+      getKeybindServiceMock() as KeybindService,
+      getDestroyRef(),
+    );
   }
   return tabListService;
 }
@@ -202,9 +212,8 @@ export function getTerminalBusyStateService(): TerminalBusyStateService {
 export function getContextMenuOverlayService(): ContextMenuOverlayService {
   if (!contextMenuOverlayService) {
     contextMenuOverlayService = {
-      openContextForElement: vi.fn(),
-      openContextAt: vi.fn(),
-      openAt: vi.fn(),
+      openAtElement: vi.fn(),
+      openAtPoint: vi.fn(),
       close: vi.fn(),
     } as unknown as ContextMenuOverlayService;
   }

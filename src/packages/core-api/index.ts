@@ -11,6 +11,7 @@ export * from "./coding-agent-provider.contract";
 export * from "./command-runner.contract";
 export * from "./configuration-transformer.contract";
 export * from "./confirm-dialog.contract";
+export * from "./context-menu-item.contract";
 export * from "./database-access.contract";
 export * from "./database-migration.contract";
 export * from "./feature-mode.contract";

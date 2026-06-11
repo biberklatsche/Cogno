@@ -1,16 +1,16 @@
-import type { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
 import type { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
+import type { ContextMenuOverlayService } from "@cogno/core-ui";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/test-factory";
 import { SelectedWorkspaceHeaderComponent } from "./selected-workspace-header.component";
 
-type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
+type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 describe("SelectedWorkspaceHeaderComponent", () => {
   let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
-  let openContextForElementMock: ReturnType<typeof vi.fn>;
+  let openAtElementMock: ReturnType<typeof vi.fn>;
   let component: SelectedWorkspaceHeaderComponent;
 
   beforeEach(() => {
@@ -20,7 +20,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       { id: "WS-3", name: "Workspace Three", isActive: false, isOpen: false },
     ]);
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    openContextForElementMock = vi.fn();
+    openAtElementMock = vi.fn();
 
     const workspaceHostPort: WorkspaceHostPortContract = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
@@ -34,7 +34,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
     };
     const contextMenuOverlayService: ContextMenuOverlayPort = {
-      openContextForElement: openContextForElementMock,
+      openAtElement: openAtElementMock,
     };
 
     component = new SelectedWorkspaceHeaderComponent(
@@ -67,9 +67,9 @@ describe("SelectedWorkspaceHeaderComponent", () => {
 
     expect(preventDefault).toHaveBeenCalledTimes(1);
     expect(stopPropagation).toHaveBeenCalledTimes(1);
-    expect(openContextForElementMock).toHaveBeenCalledTimes(1);
+    expect(openAtElementMock).toHaveBeenCalledTimes(1);
 
-    const menuConfig = openContextForElementMock.mock.calls[0][1] as {
+    const menuConfig = openAtElementMock.mock.calls[0][1] as {
       items: Array<{ label: string; action: () => void }>;
     };
     expect(menuConfig.items.map((item) => item.label)).toEqual(["Workspace One", "Workspace Two"]);
@@ -119,7 +119,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       stopPropagation: vi.fn(),
     } as Event);
 
-    const menuConfig = openContextForElementMock.mock.calls.at(-1)?.[1] as {
+    const menuConfig = openAtElementMock.mock.calls.at(-1)?.[1] as {
       items: Array<{ label: string }>;
     };
     expect(menuConfig.items.map((item) => item.label)).toEqual([

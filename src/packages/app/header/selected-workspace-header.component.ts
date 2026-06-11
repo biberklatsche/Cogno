@@ -7,14 +7,17 @@ import {
   signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ContextMenuOverlayService } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "@cogno/app/menu/context-menu-overlay/context-menu-overlay.types";
 import {
   defaultWorkspaceIdContract,
   WorkspaceEntryContract,
   WorkspaceHostPort,
 } from "@cogno/core-api";
-import { IconComponent, TooltipDirective } from "@cogno/core-ui";
+import {
+  ContextMenuItem,
+  ContextMenuOverlayService,
+  IconComponent,
+  TooltipDirective,
+} from "@cogno/core-ui";
 
 @Component({
   selector: "app-selected-workspace-header",
@@ -176,7 +179,7 @@ export class SelectedWorkspaceHeaderComponent {
     event.preventDefault();
     event.stopPropagation();
 
-    this.contextMenuOverlayService.openContextForElement(event.currentTarget as HTMLElement, {
+    this.contextMenuOverlayService.openAtElement(event.currentTarget as HTMLElement, {
       items: this.buildWorkspaceMenuItems(),
     });
   }

@@ -1,17 +1,17 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
+import type { ContextMenuOverlayService } from "@cogno/core-ui";
 import { DialogRef, type DialogService } from "@cogno/core-ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
-import { getAppBus, getStateManager } from "../../../__test__/test-factory";
+import { getAppBus, getKeybindServiceMock, getStateManager } from "../../../__test__/test-factory";
 import type { AppBus } from "../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../config/+models/shell-config";
-import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
 import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import { Renderer } from "./renderer/renderer";
@@ -23,7 +23,7 @@ type TerminalAutocompleteSuggestorPort = Pick<
 >;
 type WiringPort = Pick<AppWiringService, "getShellDefinitions" | "getNotificationChannels">;
 type DialogPort = Pick<DialogService, "open">;
-type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
+type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 type NotificationTargetResolverPort = Pick<NotificationTargetResolverService, "resolveForTerminal">;
 
 vi.mock("./renderer/renderer", () => {
@@ -126,7 +126,7 @@ describe("TerminalSession", () => {
     };
 
     const contextMenuOverlayService: ContextMenuOverlayPort = {
-      openContextForElement: vi.fn(),
+      openAtElement: vi.fn(),
     };
 
     notificationChannelsPort = new NotificationChannelsPortAdapterService(
@@ -146,6 +146,7 @@ describe("TerminalSession", () => {
       {} as any,
       new TerminalActivityService(),
       notificationChannelsPort,
+      getKeybindServiceMock() as never,
     );
   });
 
@@ -158,11 +159,12 @@ describe("TerminalSession", () => {
       featureSuggestorService,
       dialogService,
       wiringService,
-      { openContextForElement: vi.fn() },
+      { openAtElement: vi.fn() },
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
       notificationChannelsPort,
+      getKeybindServiceMock() as never,
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
