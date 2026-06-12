@@ -1,9 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { TabId } from "@cogno/core-api";
+import { TabId, TerminalId } from "@cogno/core-api";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
-import { TerminalId } from "../../grid-list/+model/model";
 import { GridListService } from "../../grid-list/+state/grid-list.service";
 import { BusyIndicatorTarget } from "./+bus/events";
 

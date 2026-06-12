@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
+import { TerminalId } from "@cogno/core-api";
 import { ShellProfile } from "../../config/+models/shell-config";
-import { TerminalId } from "../../grid-list/+model/model";
 import { TerminalStateManager } from "./state";
 import { TerminalSession } from "./terminal.session";
 

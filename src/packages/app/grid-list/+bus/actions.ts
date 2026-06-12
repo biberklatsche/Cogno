@@ -1,5 +1,5 @@
+import { TerminalId } from "@cogno/core-api";
 import { ActionBase } from "../../app-bus/app-bus";
-import { TerminalId } from "../+model/model";
 
 export type FocusActiveTerminalAction = ActionBase<"FocusActiveTerminal", TerminalId>;
 export type RemovePaneAction = ActionBase<"RemovePane", TerminalId>;

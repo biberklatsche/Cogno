@@ -10,10 +10,10 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/app-tauri/pty";
+import { TerminalId } from "@cogno/core-api";
 import { DIALOG_DATA } from "@cogno/core-ui";
 import { Observable } from "rxjs";
 import { ErrorReporter } from "../../common/error/error-reporter";
-import { TerminalId } from "../../grid-list/+model/model";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { Command, TerminalState } from "../+state/state";
 

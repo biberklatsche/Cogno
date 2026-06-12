@@ -1,13 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { OS } from "@cogno/app-tauri/os";
-import { IPathAdapter } from "@cogno/core-api";
+import { IPathAdapter, TerminalId } from "@cogno/core-api";
 import { BehaviorSubject, map, Observable, Subject, takeUntil } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ShellType } from "../../../config/+models/config";
 import { ShellProfile } from "../../../config/+models/shell-config";
 import { ConfigService } from "../../../config/+state/config.service";
-import { TerminalId } from "../../../grid-list/+model/model";
 import {
   ExecutedCommand,
   TerminalCommandHistoryStore,

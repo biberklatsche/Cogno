@@ -1,9 +1,8 @@
-import { NotificationTargetContract } from "@cogno/core-api";
+import { NotificationTargetContract, TerminalId } from "@cogno/core-api";
 import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
 import { timespan } from "@cogno/core-support";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ConfigService } from "../../../config/+state/config.service";
-import { TerminalId } from "../../../grid-list/+model/model";
 import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";
 
 export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";

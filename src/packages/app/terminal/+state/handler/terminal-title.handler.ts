@@ -1,7 +1,7 @@
+import { TerminalId } from "@cogno/core-api";
 import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalId } from "../../../grid-list/+model/model";
 import { ITerminalHandler } from "./handler";
 
 export class TerminalTitleHandler implements ITerminalHandler {

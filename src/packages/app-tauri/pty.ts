@@ -1,7 +1,7 @@
 import { Environment } from "@cogno/app/common/environment/environment";
 import { ShellProfile } from "@cogno/app/config/+models/shell-config";
-import { TerminalId } from "@cogno/app/grid-list/+model/model";
 import { TerminalDimensions } from "@cogno/app/terminal/+state/handler/resize.handler";
+import { TerminalId } from "@cogno/core-api";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 

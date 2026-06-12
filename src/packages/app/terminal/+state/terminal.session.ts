@@ -5,6 +5,7 @@ import {
   NotificationDefinitionContract,
   Opener,
   ShellDefinitionContract,
+  TerminalId,
 } from "@cogno/core-api";
 import {
   buildNotificationPreferencesMenuItems,
@@ -27,7 +28,6 @@ import { TerminalActivityService } from "../../common/terminal-activity/terminal
 import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
 import { PaneMaximizedChangedEvent, VisibleTerminalsChangedEvent } from "../../grid-list/+bus/events";
-import { TerminalId } from "../../grid-list/+model/model";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";

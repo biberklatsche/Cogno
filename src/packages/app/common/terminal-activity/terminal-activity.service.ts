@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
+import { TerminalId } from "@cogno/core-api";
 import { Observable, Subject } from "rxjs";
 import { throttleTime } from "rxjs/operators";
-import { TerminalId } from "../../grid-list/+model/model";
 
 const ACTIVITY_THROTTLE_MS = 100;
 

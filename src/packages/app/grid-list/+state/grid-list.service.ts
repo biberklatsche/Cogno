@@ -1,6 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { defaultWorkspaceIdContract, GridConfig, PaneConfig, TabId } from "@cogno/core-api";
+import {
+  defaultWorkspaceIdContract,
+  GridConfig,
+  PaneConfig,
+  TabId,
+  TerminalId,
+} from "@cogno/core-api";
 import { BinaryNode, BinaryTree } from "@cogno/core-domain";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
@@ -15,7 +21,7 @@ import {
   SelectNextPaneAction,
   SelectPreviousPaneAction,
 } from "../+bus/actions";
-import { Grid, GridList, Pane, SplitDirection, TerminalId } from "../+model/model";
+import { Grid, GridList, Pane, SplitDirection } from "../+model/model";
 import { TerminalComponentFactory } from "./terminal-component.factory";
 
 @Injectable({ providedIn: "root" })
