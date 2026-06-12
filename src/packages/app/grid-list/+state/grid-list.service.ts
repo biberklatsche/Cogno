@@ -2,7 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { defaultWorkspaceIdContract, GridConfig, PaneConfig, TabId } from "@cogno/core-api";
 import { BinaryNode, BinaryTree } from "@cogno/core-domain";
-import { BehaviorSubject, map, Observable } from "rxjs";
+import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
@@ -134,6 +134,26 @@ export class GridListService {
     private componentFactory: TerminalComponentFactory,
     destroyRef: DestroyRef,
   ) {
+    combineLatest([this._gridList, this._activeTabId])
+      .pipe(
+        map(([gridList, activeTabId]) => {
+          const grid = activeTabId ? gridList[activeTabId] : undefined;
+          if (!grid) return [];
+          return grid.tree
+            .find((node) => node.isLeaf)
+            .map((node) => node.data?.terminalId)
+            .filter((terminalId): terminalId is TerminalId => terminalId !== undefined);
+        }),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe((terminalIds) => {
+        this.bus.publish({
+          path: ["app", "grid"],
+          type: "VisibleTerminalsChanged",
+          payload: { terminalIds },
+        });
+      });
+
     this.bus
       .onType$("TabRemoved")
       .pipe(takeUntilDestroyed(destroyRef))

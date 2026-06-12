@@ -153,6 +153,40 @@ describe("Renderer", () => {
     subscription.unsubscribe();
   });
 
+  it("should dispose WebGL addon when becoming invisible and recreate it when becoming visible again", () => {
+    mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
+    renderer = new Renderer(mockConfig);
+    const terminalInstance =
+      vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
+    const loadAddonCallsBefore = terminalInstance.loadAddon.mock.calls.length;
+
+    renderer.setVisible(false);
+    expect(webglAddonDisposeSpy).toHaveBeenCalled();
+
+    renderer.setVisible(true);
+    expect(terminalInstance.loadAddon.mock.calls.length).toBeGreaterThan(loadAddonCallsBefore);
+  });
+
+  it("should cancel a pending WebGL restore when becoming invisible", () => {
+    mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
+    renderer = new Renderer(mockConfig);
+    const terminalInstance =
+      vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
+
+    webglContextLossListener?.();
+    renderer.setVisible(false);
+    const loadAddonCallsAfterHide = terminalInstance.loadAddon.mock.calls.length;
+
+    vi.runOnlyPendingTimers();
+
+    expect(terminalInstance.loadAddon.mock.calls.length).toBe(loadAddonCallsAfterHide);
+  });
+
+  it("should not dispose the WebGL addon when becoming invisible if WebGL is disabled", () => {
+    renderer.setVisible(false);
+    expect(webglAddonDisposeSpy).toBeUndefined();
+  });
+
   it("should open terminal in container and use ligatures if enabled", () => {
     const container = document.createElement("div");
     const terminalInstance = vi.mocked(Terminal).mock.results[0].value;

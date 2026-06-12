@@ -11,3 +11,7 @@ export type PaneMaximizedChangedEvent = MessageBase<
   "PaneMaximizedChanged",
   { terminalId?: TerminalId }
 >;
+export type VisibleTerminalsChangedEvent = MessageBase<
+  "VisibleTerminalsChanged",
+  { terminalIds: TerminalId[] }
+>;

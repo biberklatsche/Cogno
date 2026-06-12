@@ -16,7 +16,7 @@ export type Pane = {
   shellName?: string;
   workingDir?: string;
   title?: string;
-  terminalId?: string;
+  terminalId?: TerminalId;
   isFocused?: boolean;
 };
 

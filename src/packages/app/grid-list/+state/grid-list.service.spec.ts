@@ -99,6 +99,42 @@ describe("GridListService", () => {
       service.activeTabId$.subscribe((id) => (activeTabId = id));
       expect(activeTabId).toBe(tabId);
     });
+
+    it("should publish VisibleTerminalsChanged with an empty list when no tab is active", () => {
+      let visibleTerminalIds: string[] | undefined;
+      bus
+        .onType$("VisibleTerminalsChanged")
+        .subscribe((event) => (visibleTerminalIds = event.payload?.terminalIds));
+
+      bus.publish({
+        type: "TabAdded",
+        payload: { tabId: "tab-1", isActive: false },
+      } as TabAddedEvent);
+
+      expect(visibleTerminalIds).toEqual([]);
+    });
+
+    it("should publish VisibleTerminalsChanged for the active tab including split panes", () => {
+      let visibleTerminalIds: string[] | undefined;
+      bus
+        .onType$("VisibleTerminalsChanged")
+        .subscribe((event) => (visibleTerminalIds = event.payload?.terminalIds));
+
+      vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
+      const tabId = "tab-1";
+      bus.publish({
+        type: "TabAdded",
+        payload: { tabId, isActive: true },
+      } as TabAddedEvent);
+
+      let grids: Grid[] = [];
+      service.grids$.subscribe((g) => (grids = g));
+      const initialTerminalId = grids[0].tree.root.data?.terminalId as string;
+
+      bus.publish({ type: "SplitPaneRight", payload: initialTerminalId } as SplitPaneRightAction);
+
+      expect(new Set(visibleTerminalIds)).toEqual(new Set([initialTerminalId, "term-2"]));
+    });
   });
 
   describe("Split and Pane Management", () => {

@@ -31,6 +31,7 @@ vi.mock("./renderer/renderer", () => {
     open = vi.fn();
     register = vi.fn().mockReturnValue({ dispose: vi.fn() });
     dispose = vi.fn();
+    setVisible = vi.fn();
     terminal = TerminalMockFactory.createTerminal();
   }
 
@@ -214,6 +215,30 @@ describe("TerminalSession", () => {
     const items = session.buildContextMenu();
     expect(items.find((i) => i.label === "Minimize")).toBeDefined();
     expect(items.find((i) => i.label === "Maximize")).toBeUndefined();
+  });
+
+  it("should mark the renderer invisible when this terminal is not in the visible set", () => {
+    session.initialize(terminalId, shellProfile);
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+
+    appBus.publish({
+      type: "VisibleTerminalsChanged",
+      payload: { terminalIds: ["other-terminal-id"] },
+    } as any);
+
+    expect(rendererInstance.setVisible).toHaveBeenCalledWith(false);
+  });
+
+  it("should mark the renderer visible when this terminal is in the visible set", () => {
+    session.initialize(terminalId, shellProfile);
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+
+    appBus.publish({
+      type: "VisibleTerminalsChanged",
+      payload: { terminalIds: [terminalId] },
+    } as any);
+
+    expect(rendererInstance.setVisible).toHaveBeenCalledWith(true);
   });
 
   it("should only show available notification channels in header menu", () => {

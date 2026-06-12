@@ -18,7 +18,11 @@ import {
   SplitPaneRightAction,
   SplitPaneUpAction,
 } from "../grid-list/+bus/actions";
-import { ChangeTabTitleEvent, PaneMaximizedChangedEvent } from "../grid-list/+bus/events";
+import {
+  ChangeTabTitleEvent,
+  PaneMaximizedChangedEvent,
+  VisibleTerminalsChangedEvent,
+} from "../grid-list/+bus/events";
 import { SideMenuEvent } from "../menu/side-menu/+bus/events";
 import { OpenNotificationTargetAction } from "../notification/+bus/actions";
 import { NotificationEvent } from "../notification/+bus/events";
@@ -156,4 +160,5 @@ export type AppMessage =
   | SideMenuEvent
   | ChangeTabTitleEvent
   | PaneMaximizedChangedEvent
+  | VisibleTerminalsChangedEvent
   | TerminalIpcMessageEvent;

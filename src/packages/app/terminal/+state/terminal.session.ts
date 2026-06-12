@@ -26,7 +26,7 @@ import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/term
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
-import { PaneMaximizedChangedEvent } from "../../grid-list/+bus/events";
+import { PaneMaximizedChangedEvent, VisibleTerminalsChangedEvent } from "../../grid-list/+bus/events";
 import { TerminalId } from "../../grid-list/+model/model";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
@@ -126,6 +126,13 @@ export class TerminalSession {
       this.bus.onType$("PaneMaximizedChanged").subscribe((event: PaneMaximizedChangedEvent) => {
         this.stateManager.setPaneMaximized(event.payload?.terminalId === this.terminalId);
       }),
+    );
+    this.subscription.add(
+      this.bus
+        .onType$("VisibleTerminalsChanged")
+        .subscribe((event: VisibleTerminalsChangedEvent) => {
+          this.renderer.setVisible(event.payload?.terminalIds.includes(this.terminalId!) ?? true);
+        }),
     );
   }
 
