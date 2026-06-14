@@ -1,14 +1,14 @@
 import type { DestroyRef } from "@angular/core";
 import { CliActionListener } from "@cogno/app-tauri/cli-action";
+import type { ActionDispatcher } from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CognoMessageDispatcher } from "../cogno-message/cogno-message-dispatcher.service";
 import {
   type ActionDefinition,
   KeybindActionInterpreter,
 } from "../keybinding/keybind-action.interpreter";
 import { CliActionService } from "./cli-action.service";
 
-type DispatcherPort = Pick<CognoMessageDispatcher, "dispatch">;
+type DispatcherPort = Pick<ActionDispatcher, "dispatchAction">;
 type DestroyRefPort = Pick<DestroyRef, "onDestroy">;
 
 describe("CliActionService", () => {
@@ -25,7 +25,7 @@ describe("CliActionService", () => {
       .mockResolvedValue(unlistenMock as unknown as () => void);
 
     dispatcherMock = {
-      dispatch: vi.fn(),
+      dispatchAction: vi.fn(),
     };
 
     destroyRefMock = {
@@ -35,7 +35,7 @@ describe("CliActionService", () => {
 
   it("should register a listener on initialization", () => {
     _service = new CliActionService(
-      dispatcherMock as CognoMessageDispatcher,
+      dispatcherMock as ActionDispatcher,
       destroyRefMock as unknown as DestroyRef,
     );
     expect(registerSpy).toHaveBeenCalled();
@@ -43,7 +43,7 @@ describe("CliActionService", () => {
 
   it("should parse and dispatch action when listener is triggered", async () => {
     _service = new CliActionService(
-      dispatcherMock as CognoMessageDispatcher,
+      dispatcherMock as ActionDispatcher,
       destroyRefMock as unknown as DestroyRef,
     );
 
@@ -60,9 +60,9 @@ describe("CliActionService", () => {
     callback(testAction);
 
     expect(parseSpy).toHaveBeenCalledWith(testAction);
-    expect(dispatcherMock.dispatch).toHaveBeenCalledWith(
+    expect(dispatcherMock.dispatchAction).toHaveBeenCalledWith(
       expect.objectContaining({
-        action: "test-action",
+        actionName: "test-action",
         args: [],
       }),
     );
@@ -70,7 +70,7 @@ describe("CliActionService", () => {
 
   it("should call unlisten when DestroyRef.onDestroy is triggered", async () => {
     _service = new CliActionService(
-      dispatcherMock as CognoMessageDispatcher,
+      dispatcherMock as ActionDispatcher,
       destroyRefMock as unknown as DestroyRef,
     );
 
