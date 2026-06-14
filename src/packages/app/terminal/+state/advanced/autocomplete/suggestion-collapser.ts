@@ -1,8 +1,10 @@
 import { CommandTokenizer } from "../history/command-tokenizer";
 import { AutocompleteSuggestion } from "./autocomplete.types";
+import { tokenMatchQuality } from "./token-match";
 
 const COLLAPSE_THRESHOLD = 3;
 const MAX_KEPT_FROM_GROUP = 2;
+const COLLAPSE_SCORE_FACTOR = 0.9;
 
 type TokenizedItem = {
   suggestion: AutocompleteSuggestion;
@@ -18,7 +20,8 @@ type CollapseGroup = {
 export class SuggestionCollapser {
   private readonly commandTokenizer = new CommandTokenizer();
 
-  collapse(suggestions: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
+  collapse(suggestions: AutocompleteSuggestion[], query = ""): AutocompleteSuggestion[] {
+    const queryTokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const historySuggestions = suggestions.filter((s) => this.isHistorySuggestion(s));
     const otherSuggestions = suggestions.filter((s) => !this.isHistorySuggestion(s));
 
@@ -44,8 +47,8 @@ export class SuggestionCollapser {
 
       for (const m of group.members) assigned.add(m.suggestion);
 
-      const collapsedSuggestion = this.buildCollapsedSuggestion(group);
-      result.push(collapsedSuggestion);
+      const collapsedSuggestion = this.buildCollapsedSuggestion(group, queryTokens);
+      if (collapsedSuggestion) result.push(collapsedSuggestion);
 
       const topMembers = group.members
         .slice()
@@ -58,7 +61,7 @@ export class SuggestionCollapser {
       if (!assigned.has(item.suggestion)) result.push(item.suggestion);
     }
 
-    return [...result, ...otherSuggestions];
+    return [...result, ...otherSuggestions].sort((a, b) => b.score - a.score);
   }
 
   private findCollapseGroups(items: TokenizedItem[]): CollapseGroup[] {
@@ -95,9 +98,15 @@ export class SuggestionCollapser {
     return groups.sort((a, b) => b.members.length - a.members.length);
   }
 
-  private buildCollapsedSuggestion(group: CollapseGroup): AutocompleteSuggestion {
+  private buildCollapsedSuggestion(
+    group: CollapseGroup,
+    queryTokens: string[],
+  ): AutocompleteSuggestion | null {
     const representative = group.members[0].tokens;
     const stablePrefix = representative.slice(0, group.varPos).join(" ");
+
+    if (!this.stablePrefixMatchesAllQueryTokens(stablePrefix, queryTokens)) return null;
+
     const label = `${stablePrefix} {arg1}`;
     const insertText = `${stablePrefix} `;
     const maxScore = Math.max(...group.members.map((m) => m.suggestion.score));
@@ -107,13 +116,19 @@ export class SuggestionCollapser {
       label,
       description: "Grouped commands — select to use as template",
       insertText,
-      score: maxScore + 1,
+      score: maxScore * COLLAPSE_SCORE_FACTOR,
       source: "history-collapse",
       replaceStart: representative0.replaceStart,
       replaceEnd: representative0.replaceEnd,
       completionBehavior: "continue",
       liveCollapsedFrom: [...new Set(group.members.map((m) => m.suggestion.label))],
     };
+  }
+
+  private stablePrefixMatchesAllQueryTokens(stablePrefix: string, queryTokens: string[]): boolean {
+    if (queryTokens.length === 0) return true;
+    const prefixTokens = stablePrefix.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    return queryTokens.every((qt) => prefixTokens.some((pt) => tokenMatchQuality(qt, pt) > 0));
   }
 
   private isHistorySuggestion(suggestion: AutocompleteSuggestion): boolean {

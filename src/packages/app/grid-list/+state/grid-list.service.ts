@@ -1,10 +1,16 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { defaultWorkspaceIdContract, GridConfig, PaneConfig, TabId } from "@cogno/core-api";
-import { BehaviorSubject, map, Observable } from "rxjs";
+import {
+  defaultWorkspaceIdContract,
+  GridConfig,
+  PaneConfig,
+  TabId,
+  TerminalId,
+} from "@cogno/core-api";
+import { BinaryNode, BinaryTree } from "@cogno/core-domain";
+import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import { BinaryNode, BinaryTree } from "../../common/tree/binary-tree";
 import { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
 import { TerminalCwdChangedEvent, TerminalTitleChangedEvent } from "../../terminal/+bus/events";
 import { TerminalFocusedEvent } from "../../terminal/+state/handler/focus.handler";
@@ -15,7 +21,7 @@ import {
   SelectNextPaneAction,
   SelectPreviousPaneAction,
 } from "../+bus/actions";
-import { Grid, GridList, Pane, SplitDirection, TerminalId } from "../+model/model";
+import { Grid, GridList, Pane, SplitDirection } from "../+model/model";
 import { TerminalComponentFactory } from "./terminal-component.factory";
 
 @Injectable({ providedIn: "root" })
@@ -134,6 +140,26 @@ export class GridListService {
     private componentFactory: TerminalComponentFactory,
     destroyRef: DestroyRef,
   ) {
+    combineLatest([this._gridList, this._activeTabId])
+      .pipe(
+        map(([gridList, activeTabId]) => {
+          const grid = activeTabId ? gridList[activeTabId] : undefined;
+          if (!grid) return [];
+          return grid.tree
+            .find((node) => node.isLeaf)
+            .map((node) => node.data?.terminalId)
+            .filter((terminalId): terminalId is TerminalId => terminalId !== undefined);
+        }),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe((terminalIds) => {
+        this.bus.publish({
+          path: ["app", "grid"],
+          type: "VisibleTerminalsChanged",
+          payload: { terminalIds },
+        });
+      });
+
     this.bus
       .onType$("TabRemoved")
       .pipe(takeUntilDestroyed(destroyRef))
@@ -194,22 +220,6 @@ export class GridListService {
           this.publishPaneTitleToTab(tabId, node.data);
         }
       });
-    this.bus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        this.updateBusyPaneState(payload.terminalId, payload.isBusy);
-      });
-    this.bus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.updateBusyPaneState(event.payload, false);
-      });
-
     this.bus
       .onType$("FocusActiveTerminal")
       .pipe(takeUntilDestroyed(destroyRef))
@@ -751,22 +761,6 @@ export class GridListService {
         if (!terminalId) continue;
         this.componentFactory.destroy(terminalId);
       }
-    }
-  }
-
-  private updateBusyPaneState(terminalId: TerminalId, isBusy: boolean): void {
-    let activeWorkspaceChanged = false;
-    for (const [workspaceIdentifier, gridList] of this.gridListByWorkspaceIdentifier.entries()) {
-      const gridAndNode = this.determineGrid(gridList, terminalId);
-      if (!gridAndNode?.node.data) continue;
-      gridAndNode.node.data = { ...gridAndNode.node.data, isBusy };
-      if (workspaceIdentifier === this.activeWorkspaceIdentifier) {
-        activeWorkspaceChanged = true;
-      }
-    }
-
-    if (activeWorkspaceChanged) {
-      this._gridList.next({ ...this.getActiveWorkspaceGridList() });
     }
   }
 

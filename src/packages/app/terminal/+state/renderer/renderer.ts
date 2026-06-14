@@ -1,4 +1,5 @@
 import { OS } from "@cogno/app-tauri/os";
+import { IDisposable } from "@cogno/core-support";
 import { FitAddon } from "@xterm/addon-fit";
 import type { LigaturesAddon } from "@xterm/addon-ligatures";
 import { SearchAddon } from "@xterm/addon-search";
@@ -6,7 +7,6 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
 import { BehaviorSubject, Observable } from "rxjs";
-import { IDisposable } from "../../../common/models/models";
 import { Config } from "../../../config/+models/config";
 import {
   IFitHandler,
@@ -25,6 +25,8 @@ export interface IRenderer {
   dispose(): void;
 
   register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable;
+
+  setVisible(visible: boolean): void;
 }
 
 export class Renderer implements IRenderer, IDisposable {
@@ -42,6 +44,7 @@ export class Renderer implements IRenderer, IDisposable {
   private _webglContextLossDisposable: IDisposable | undefined = undefined;
   private _webglRestoreTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   private _webglRestoreAttempt = 0;
+  private _visible = true;
   private readonly _isWebglContextLostSubject = new BehaviorSubject<boolean>(false);
 
   constructor(config: Config) {
@@ -145,6 +148,24 @@ export class Renderer implements IRenderer, IDisposable {
 
   public get isWebglContextLost$(): Observable<boolean> {
     return this._isWebglContextLostSubject.asObservable();
+  }
+
+  public setVisible(visible: boolean): void {
+    if (!this._webglEnabled || this._disposed || this._visible === visible) {
+      return;
+    }
+    this._visible = visible;
+    if (this._webglRestoreTimeout) {
+      clearTimeout(this._webglRestoreTimeout);
+      this._webglRestoreTimeout = undefined;
+    }
+    if (visible) {
+      this._webglRestoreAttempt = 0;
+      this.useWebGl();
+      this._isWebglContextLostSubject.next(false);
+    } else {
+      this.disposeWebGlAddon();
+    }
   }
 
   private disposeWebGlAddon() {

@@ -5,8 +5,8 @@ export const aiChatFeatureId = "ai-chat";
 export const aiChatSideMenuFeatureDefinition = {
   id: aiChatFeatureId,
   title: "AI Chat",
-  icon: "mdiRobot",
+  icon: "mdiTooltipQuestion",
   order: 50,
   actionName: "open_ai_chat",
   configPath: "ai",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

@@ -1,4 +1,9 @@
 import { ActionFiredEvent } from "../action/action.models";
+import { TerminalIpcMessageEvent } from "../cogno-message/+bus/events";
+import {
+  BusyIndicatorRegisterEvent,
+  BusyIndicatorUnregisterEvent,
+} from "../common/busy-indicator/+bus/events";
 import { InitConfigAction } from "../config/+bus/actions";
 import { ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent } from "../config/+bus/events";
 import {
@@ -13,7 +18,11 @@ import {
   SplitPaneRightAction,
   SplitPaneUpAction,
 } from "../grid-list/+bus/actions";
-import { ChangeTabTitleEvent, PaneMaximizedChangedEvent } from "../grid-list/+bus/events";
+import {
+  ChangeTabTitleEvent,
+  PaneMaximizedChangedEvent,
+  VisibleTerminalsChangedEvent,
+} from "../grid-list/+bus/events";
 import { SideMenuEvent } from "../menu/side-menu/+bus/events";
 import { OpenNotificationTargetAction } from "../notification/+bus/actions";
 import { NotificationEvent } from "../notification/+bus/events";
@@ -42,6 +51,7 @@ import {
   GoToStartOfLineAction,
   InjectTerminalInputAction,
   PasteAction,
+  RevealTerminalAction,
   SelectAllAction,
   SelectTextLeftAction,
   SelectTextRightAction,
@@ -79,6 +89,8 @@ import {
 export type TerminalCommandType = AppMessage["type"];
 
 export type AppMessage =
+  | BusyIndicatorRegisterEvent
+  | BusyIndicatorUnregisterEvent
   | TabRemovedEvent
   | RemoveTabAction
   | CreateTabAction
@@ -103,6 +115,7 @@ export type AppMessage =
   | TerminalThemePaddingAddedEvent
   | TerminalThemePaddingRemovedEvent
   | FocusTerminalAction
+  | RevealTerminalAction
   | BlurTerminalAction
   | PasteAction
   | CopyAction
@@ -146,4 +159,6 @@ export type AppMessage =
   | OpenNotificationTargetAction
   | SideMenuEvent
   | ChangeTabTitleEvent
-  | PaneMaximizedChangedEvent;
+  | PaneMaximizedChangedEvent
+  | VisibleTerminalsChangedEvent
+  | TerminalIpcMessageEvent;

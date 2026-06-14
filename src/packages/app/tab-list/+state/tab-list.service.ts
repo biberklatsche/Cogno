@@ -1,18 +1,22 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/core-api";
+import { ContextMenuItem } from "@cogno/core-ui";
 import { BehaviorSubject, Observable } from "rxjs";
-import { ActionFired, ActionFiredEvent } from "../../action/action.models";
+import { ActionFired, ActionFiredEvent, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { ColorName } from "../../common/color/color";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import { ConfigService } from "../../config/+state/config.service";
 import { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
-import { TerminalId } from "../../grid-list/+model/model";
-import { GridListService } from "../../grid-list/+state/grid-list.service";
-import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
+import { KeybindService } from "../../keybinding/keybind.service";
+import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import { Tab, TabList } from "../+model/tab";
+
+export interface TabColorPickerData {
+  selectedColorName: ColorName | undefined;
+}
 
 @Injectable({ providedIn: "root" })
 export class TabListService {
@@ -21,10 +25,6 @@ export class TabListService {
   private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
   private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
   private readonly tabListByWorkspaceIdentifier = new Map<string, TabList>();
-  private readonly busyTerminalStateByTerminalId = new Map<
-    TerminalId,
-    { workspaceIdentifier: string; tabId: TabId }
-  >();
   private activeWorkspaceIdentifier: string | undefined = defaultWorkspaceIdContract;
 
   get tabs$(): Observable<Tab[]> {
@@ -72,7 +72,7 @@ export class TabListService {
   constructor(
     private bus: AppBus,
     private readonly configService: ConfigService,
-    private readonly gridListService: GridListService,
+    private readonly keybindService: KeybindService,
     destroyRef: DestroyRef,
   ) {
     this.bus
@@ -118,21 +118,6 @@ export class TabListService {
         tab.systemTitle = event.payload.title;
         this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
         event.propagationStopped = true;
-      });
-    this.bus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        this.updateBusyTabState(payload.terminalId, payload.isBusy);
-      });
-    this.bus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.updateBusyTabState(event.payload, false);
       });
     this.bus
       .on$(ActionFired.listener())
@@ -203,15 +188,23 @@ export class TabListService {
     const tab = this._tabList.value.find((tab) => tab.id === tabId);
     if (!tab) throw new Error("No tab found for TabList");
     const items: (ContextMenuItem | undefined)[] = [
-      { label: "Close tab", action: () => this.removeTab(tabId), actionName: "close_tab" },
+      {
+        label: "Close tab",
+        action: () => this.removeTab(tabId),
+        keybinding: this.keybindingFor("close_tab"),
+      },
       this._tabList.value.length > 1
         ? {
             label: "Close other tabs",
             action: () => this.removeAllTabs(tabId),
-            actionName: "close_other_tabs",
+            keybinding: this.keybindingFor("close_other_tabs"),
           }
         : undefined,
-      { label: "Close all tabs", action: () => this.removeAllTabs(), actionName: "close_all_tabs" },
+      {
+        label: "Close all tabs",
+        action: () => this.removeAllTabs(),
+        keybinding: this.keybindingFor("close_all_tabs"),
+      },
       { separator: true },
       { label: "Rename tab", action: () => this._showRename.set(tabId) },
       tab.userTitle
@@ -219,12 +212,15 @@ export class TabListService {
         : undefined,
       { separator: true },
       {
-        colorpicker: true,
-        action: (color?: ColorName) => this.setColor(tabId, color),
-        selectedColorName: tab.color,
+        custom: true,
+        customData: { selectedColorName: tab.color } satisfies TabColorPickerData,
       },
     ];
     return items.filter((s) => !!s);
+  }
+
+  private keybindingFor(actionName: ActionName): string {
+    return formatKeybinding(this.keybindService.getKeybinding(actionName));
   }
 
   removeAllTabs(except?: TabId) {
@@ -344,7 +340,7 @@ export class TabListService {
     this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, userTitle: tab.userTitle } });
   }
 
-  private setColor(tabId: TabId, name: ColorName | undefined) {
+  setColor(tabId: TabId, name: ColorName | undefined) {
     const tabList = [...this._tabList.value];
     const tab = tabList.find((tab) => tab.id === tabId);
     if (!tab) return;
@@ -454,49 +450,5 @@ export class TabListService {
 
   private cloneTabList(tabList: TabList): TabList {
     return tabList.map((tab) => ({ ...tab }));
-  }
-
-  private updateBusyTabState(terminalId: TerminalId, isBusy: boolean): void {
-    const previousBusyState = this.busyTerminalStateByTerminalId.get(terminalId);
-    if (isBusy) {
-      const resolvedBusyState = this.resolveBusyTabState(terminalId);
-      if (!resolvedBusyState) return;
-      this.busyTerminalStateByTerminalId.set(terminalId, resolvedBusyState);
-      this.applyTabBusyState(resolvedBusyState.workspaceIdentifier, resolvedBusyState.tabId);
-      return;
-    }
-
-    this.busyTerminalStateByTerminalId.delete(terminalId);
-    if (previousBusyState) {
-      this.applyTabBusyState(previousBusyState.workspaceIdentifier, previousBusyState.tabId);
-      return;
-    }
-
-    const resolvedBusyState = this.resolveBusyTabState(terminalId);
-    if (!resolvedBusyState) return;
-    this.applyTabBusyState(resolvedBusyState.workspaceIdentifier, resolvedBusyState.tabId);
-  }
-
-  private resolveBusyTabState(
-    terminalId: TerminalId,
-  ): { workspaceIdentifier: string; tabId: TabId } | undefined {
-    const workspaceIdentifier =
-      this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId);
-    const tabId = this.gridListService.findTabIdByTerminalId(terminalId);
-    if (!workspaceIdentifier || !tabId) return;
-    return { workspaceIdentifier, tabId };
-  }
-
-  private applyTabBusyState(workspaceIdentifier: string, tabId: TabId): void {
-    const tabList = this.getTabListForWorkspace(workspaceIdentifier);
-    const busyTerminalIds = Array.from(this.busyTerminalStateByTerminalId.entries())
-      .filter(
-        ([, state]) => state.workspaceIdentifier === workspaceIdentifier && state.tabId === tabId,
-      )
-      .map(([terminalId]) => terminalId);
-    const updatedTabList = tabList.map((tab) =>
-      tab.id === tabId ? { ...tab, busyTerminalIds } : tab,
-    );
-    this.setTabListForWorkspace(workspaceIdentifier, updatedTabList);
   }
 }

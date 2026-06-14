@@ -9,4 +9,4 @@ export const workspaceSideMenuFeatureDefinition = {
   order: 10,
   actionName: "open_workspace",
   configPath: "workspace",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

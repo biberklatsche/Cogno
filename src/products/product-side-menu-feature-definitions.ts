@@ -1,6 +1,8 @@
 import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { aiChatSideMenuFeatureDefinition } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
 import { AiChatSideMenuLifecycle } from "@cogno/features/side-menu/ai/ai-chat-side-menu.lifecycle";
+import { codingAgentsSideMenuFeatureDefinition } from "@cogno/features/side-menu/coding-agents/coding-agents.feature-definition";
+import { CodingAgentsSideMenuLifecycle } from "@cogno/features/side-menu/coding-agents/coding-agents-side-menu.lifecycle";
 import { commandPaletteSideMenuFeatureDefinition } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
 import { CommandPaletteSideMenuLifecycle } from "@cogno/features/side-menu/command-palette/command-palette-side-menu.lifecycle";
 import { gitSideMenuFeatureDefinition } from "@cogno/features/side-menu/git/git.feature-definition";
@@ -64,5 +66,14 @@ export const productSideMenuFeatureDefinitions = [
       import("@cogno/features/side-menu/git/git-side.component").then((m) => m.GitSideComponent),
     createLifecycle: (injector, sideMenuFeatureHandle) =>
       injector.get(GitSideMenuLifecycle).create(sideMenuFeatureHandle),
+  },
+  {
+    ...codingAgentsSideMenuFeatureDefinition,
+    targetComponent: () =>
+      import("@cogno/features/side-menu/coding-agents/coding-agents-side.component").then(
+        (m) => m.CodingAgentsSideComponent,
+      ),
+    createLifecycle: (injector, sideMenuFeatureHandle) =>
+      injector.get(CodingAgentsSideMenuLifecycle).create(sideMenuFeatureHandle),
   },
 ] as const satisfies ReadonlyArray<SideMenuFeatureDefinition>;

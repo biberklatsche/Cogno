@@ -1,16 +1,32 @@
 import { CommonModule } from "@angular/common";
-import { Component, ElementRef, effect, OnDestroy, Signal, ViewChild } from "@angular/core";
+import {
+  Component,
+  ElementRef,
+  effect,
+  OnDestroy,
+  Signal,
+  TemplateRef,
+  ViewChild,
+} from "@angular/core";
 import { TabId } from "@cogno/core-api";
-import { DragPreviewService, Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
-import { Observable } from "rxjs";
+import {
+  ContextMenuItem,
+  ContextMenuOverlayService,
+  DragPreviewService,
+  Icon,
+  IconComponent,
+  TooltipDirective,
+} from "@cogno/core-ui";
+import { map, Observable, Subscription } from "rxjs";
 import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
+import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
+import { ColorName } from "../common/color/color";
+import { ColorSelectComponent } from "../common/color/color-select.component";
 import { IdCreator } from "../common/id-creator/id-creator";
 import { StartEllipsisDirective } from "../common/text/start-ellipsis.directive";
 import { ShellType } from "../config/+models/config";
 import { ActionKeybindingPipe } from "../keybinding/pipe/keybinding.pipe";
 import { AppMenuButtonComponent } from "../menu/app-menu/app-menu-button.component";
-import { ContextMenuOverlayService } from "../menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 import { Tab } from "./+model/tab";
 import { TabListService } from "./+state/tab-list.service";
 
@@ -25,12 +41,16 @@ import { TabListService } from "./+state/tab-list.service";
     ActionKeybindingPipe,
     StartEllipsisDirective,
     BusyIndicatorComponent,
+    ColorSelectComponent,
   ],
   templateUrl: "./tab-list.component.html",
   styleUrl: "./tab-list.component.scss",
 })
 export class TabListComponent implements OnDestroy {
   private static readonly minimumDragStartDistanceInPixels = 4;
+
+  private readonly tabAnimationCountCache = new Map<TabId, Observable<number>>();
+  private readonly tabCacheCleanupSub: Subscription;
 
   tabs: Observable<Tab[]>;
   readonly showRename: Signal<TabId | undefined>;
@@ -46,14 +66,25 @@ export class TabListComponent implements OnDestroy {
     this.onWindowMouseMove(event);
   private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
   @ViewChild("renameInput") inputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild("colorPickerItem") colorPickerItemTpl!: TemplateRef<{ $implicit: ContextMenuItem }>;
+
+  private contextMenuTabId?: TabId;
 
   constructor(
     private tabListService: TabListService,
     private menu: ContextMenuOverlayService,
     private dragPreviewService: DragPreviewService,
+    readonly busyIndicatorService: BusyIndicatorService,
   ) {
     this.tabs = this.tabListService.tabs$;
     this.showRename = this.tabListService.showRename$;
+
+    this.tabCacheCleanupSub = this.tabListService.tabs$.subscribe((tabs) => {
+      const currentIds = new Set(tabs.map((t) => t.id));
+      for (const id of this.tabAnimationCountCache.keys()) {
+        if (!currentIds.has(id)) this.tabAnimationCountCache.delete(id);
+      }
+    });
 
     // Focus the rename input when it appears
     effect(() => {
@@ -76,6 +107,7 @@ export class TabListComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.tabCacheCleanupSub.unsubscribe();
     this.removeWindowPointerListeners();
     this.dragPreviewService.stopDragPreview();
   }
@@ -91,6 +123,23 @@ export class TabListComponent implements OnDestroy {
       default:
         return "mdiConsole";
     }
+  }
+
+  getTabAnimationCount$(tabId: TabId): Observable<number> {
+    let obs = this.tabAnimationCountCache.get(tabId);
+    if (!obs) {
+      obs = this.busyIndicatorService
+        .forTab$(tabId)
+        .pipe(
+          map(
+            (regs) =>
+              new Set(regs.filter((r) => r.target.kind === "terminal").map((r) => r.target.id))
+                .size,
+          ),
+        );
+      this.tabAnimationCountCache.set(tabId, obs);
+    }
+    return obs;
   }
 
   addTab() {
@@ -136,8 +185,18 @@ export class TabListComponent implements OnDestroy {
   buildContextMenu(event: MouseEvent, tabId: TabId) {
     event.preventDefault();
     event.stopPropagation();
+    this.contextMenuTabId = tabId;
     const items: ContextMenuItem[] = this.tabListService.buildContextMenu(tabId);
-    this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
+    this.menu.openAtElement(event.currentTarget as HTMLElement, {
+      items,
+      customItemTemplate: this.colorPickerItemTpl,
+    });
+  }
+
+  onTabColorPick(color: ColorName | undefined) {
+    if (this.contextMenuTabId) {
+      this.tabListService.setColor(this.contextMenuTabId, color);
+    }
   }
 
   closeRename() {

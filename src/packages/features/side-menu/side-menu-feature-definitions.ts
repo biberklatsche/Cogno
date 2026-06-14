@@ -1,5 +1,6 @@
 import { SideMenuFeatureDefinitionContract } from "@cogno/core-api";
 import { aiChatSideMenuFeatureDefinition } from "./ai/ai-chat.feature-definition";
+import { codingAgentsSideMenuFeatureDefinition } from "./coding-agents/coding-agents.feature-definition";
 import { commandPaletteSideMenuFeatureDefinition } from "./command-palette/command-palette.feature-definition";
 import { gitSideMenuFeatureDefinition } from "./git/git.feature-definition";
 import { notificationSideMenuFeatureDefinition } from "./notification/notification.feature-definition";
@@ -13,4 +14,5 @@ export const featureSideMenuFeatureDefinitions = [
   terminalSearchSideMenuFeatureDefinition,
   aiChatSideMenuFeatureDefinition,
   gitSideMenuFeatureDefinition,
+  codingAgentsSideMenuFeatureDefinition,
 ] as const satisfies ReadonlyArray<SideMenuFeatureDefinitionContract<string, string>>;

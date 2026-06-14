@@ -9,4 +9,4 @@ export const commandPaletteSideMenuFeatureDefinition = {
   order: 30,
   actionName: "open_command_palette",
   configPath: "command_palette",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

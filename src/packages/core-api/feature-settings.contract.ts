@@ -45,20 +45,6 @@ export const FeatureNotificationSchema = z.object({
         .optional(),
     })
     .optional(),
-  long_running_commands: z
-    .object({
-      enabled: z
-        .boolean()
-        .optional()
-        .describe("Show a notification after a long-running command has finished."),
-      minimum_duration_seconds: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe("Notify only when a command ran for at least this many seconds."),
-    })
-    .optional(),
   overview: z
     .object({
       max_items: z.number().int().min(0).optional(),
@@ -103,6 +89,32 @@ export const FeatureTerminalSchema = z.object({
   progress_bar: z
     .object({
       enabled: z.boolean().optional().describe("Show the progress bar in the terminal header."),
+    })
+    .optional(),
+  notifications: z
+    .object({
+      osc9: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe("Allow OSC9 terminal notifications to trigger a notification."),
+        })
+        .optional(),
+      long_running_command: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe("Show a notification after a long-running command has finished."),
+          minimum_duration_seconds: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe("Notify only when a command ran for at least this many seconds."),
+        })
+        .optional(),
     })
     .optional(),
 });
@@ -154,6 +166,37 @@ const aiProviderSchema = z.object({
 
 export const FeatureGitSchema = z.object({
   mode: aiFeatureModeSchema.optional(),
+});
+
+export const FeatureCodingAgentsSchema = z.object({
+  mode: featureModeSchema.optional(),
+  notifications: z
+    .object({
+      working: z
+        .object({
+          enabled: z.boolean().optional().describe("Notify when an agent starts working."),
+        })
+        .optional(),
+      question: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe("Notify when an agent has a question and needs input."),
+        })
+        .optional(),
+      ready: z
+        .object({
+          enabled: z.boolean().optional().describe("Notify when an agent becomes ready/idle."),
+        })
+        .optional(),
+      error: z
+        .object({
+          enabled: z.boolean().optional().describe("Notify when an agent reports an error."),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export const FeatureAiSchema = z.object({

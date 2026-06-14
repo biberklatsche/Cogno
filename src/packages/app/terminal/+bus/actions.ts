@@ -1,7 +1,8 @@
+import { TerminalId } from "@cogno/core-api";
 import { ActionBase } from "../../app-bus/app-bus";
-import { TerminalId } from "../../grid-list/+model/model";
 
 export type FocusTerminalAction = ActionBase<"FocusTerminal", TerminalId>;
+export type RevealTerminalAction = ActionBase<"RevealTerminal", TerminalId>;
 export type TerminalRemovedAction = ActionBase<"TerminalRemoved", TerminalId>;
 export type BlurTerminalAction = ActionBase<"BlurTerminal", TerminalId>;
 export type ClearBufferAction = ActionBase<"ClearBuffer", TerminalId>;

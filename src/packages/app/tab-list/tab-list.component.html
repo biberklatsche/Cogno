@@ -1,10 +1,11 @@
 <nav class="tab-list" data-tauri-drag-region>
     @for (tab of tabs | async; track tab.id) {
+        @let tabAnimationCount = (getTabAnimationCount$(tab.id) | async) ?? 0;
         <button
                 type="button"
                 class="tab"
                 [class.is-active] = tab.isActive
-                [class.is-busy]="tab.busyTerminalIds?.length"
+                [class.is-busy]="tabAnimationCount > 0"
                 [class.is-dragging]="isDraggingTab && draggedTabIdentifier === tab.id"
                 [style.background-color]="tab.color ? `var(--color-${tab.color}-ct2)` : undefined"
                 [appTooltip]="displayTitle(tab)"
@@ -17,9 +18,12 @@
                 (mouseup)="closeTabMiddle($event, tab.id);"
                 (contextmenu)="buildContextMenu($event, tab.id)"
         >
-            @if (tab.busyTerminalIds?.length) {
+            @if (tabAnimationCount > 0) {
                 <span class="busy-indicator">
-                    <app-busy-indicator [terminalIds]="tab.busyTerminalIds ?? []"></app-busy-indicator>
+                    <app-busy-indicator targetKind="tab" [targetId]="tab.id"></app-busy-indicator>
+                    @if (tabAnimationCount > 1) {
+                        <span class="busy-count">{{ tabAnimationCount }}</span>
+                    }
                 </span>
             }
             @if (showRename()===tab.id) {
@@ -46,3 +50,10 @@
         <app-menu-button></app-menu-button>
     </div>
 </nav>
+
+<ng-template #colorPickerItem let-item>
+    <app-color-select
+        [selectedColorName]="$any(item.customData)?.selectedColorName"
+        (colorSelected)="onTabColorPick($event)">
+    </app-color-select>
+</ng-template>

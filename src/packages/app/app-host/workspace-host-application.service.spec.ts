@@ -128,6 +128,39 @@ describe("WorkspaceHostApplicationService", () => {
     expect(draft.isSelected).toBe(true);
   });
 
+  it("repairs duplicate tab ids across persisted workspaces on startup", async () => {
+    const getAllWorkspacesMock = workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>;
+    const updateWorkspaceSpy = workspaceRepository.updateWorkspace as ReturnType<typeof vi.fn>;
+    getAllWorkspacesMock.mockResolvedValue([
+      {
+        id: "WS-1",
+        name: "Workspace One",
+        color: "blue",
+        isActive: true,
+        tabs: [{ tabId: "TB_DEFAULT", isActive: true, systemTitle: "Shell" }],
+        grids: [{ tabId: "TB_DEFAULT", pane: { workingDir: "C:\\repo" } }],
+      },
+      {
+        id: "WS-2",
+        name: "Workspace Two",
+        color: "red",
+        tabs: [{ tabId: "TB_DEFAULT", isActive: true, systemTitle: "Shell" }],
+        grids: [{ tabId: "TB_DEFAULT", pane: { workingDir: "C:\\other" } }],
+      },
+    ]);
+
+    bus.publish({ type: "DBInitialized" });
+
+    await vi.waitFor(() => {
+      expect(updateWorkspaceSpy).toHaveBeenCalledTimes(1);
+    });
+
+    const repairedWorkspace = updateWorkspaceSpy.mock.calls[0][0];
+    expect(repairedWorkspace.id).toBe("WS-2");
+    expect(repairedWorkspace.tabs[0].tabId).not.toBe("TB_DEFAULT");
+    expect(repairedWorkspace.grids[0].tabId).toBe(repairedWorkspace.tabs[0].tabId);
+  });
+
   it("ignores saveWorkspace for the default workspace or missing workspaces", async () => {
     const updateWorkspaceSpy = workspaceRepository.updateWorkspace as ReturnType<typeof vi.fn>;
 

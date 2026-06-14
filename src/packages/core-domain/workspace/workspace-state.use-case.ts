@@ -27,21 +27,19 @@ export interface WorkspaceUpsertPlan {
 }
 
 export class WorkspaceStateUseCase {
-  static createDefaultWorkspace(
-    defaultWorkspaceId: string = defaultWorkspaceIdContract,
-  ): WorkspaceConfiguration {
+  static createDefaultWorkspace(defaultWorkspaceId: string, tabId: string): WorkspaceConfiguration {
     return {
       id: defaultWorkspaceId,
       name: "Default Workspace",
       color: "grey",
-      grids: [{ tabId: "TB_DEFAULT", pane: {} }],
-      tabs: [{ tabId: "TB_DEFAULT" }],
+      grids: [{ tabId, pane: {} }],
+      tabs: [{ tabId }],
     };
   }
 
   static createInitialWorkspaceState(
     persistedWorkspaces: ReadonlyArray<WorkspaceConfiguration>,
-    defaultWorkspace: WorkspaceConfiguration = WorkspaceStateUseCase.createDefaultWorkspace(),
+    defaultWorkspace: WorkspaceConfiguration,
   ): WorkspaceState[] {
     const workspaceList = [defaultWorkspace, ...persistedWorkspaces].map(
       (workspaceConfiguration) => ({

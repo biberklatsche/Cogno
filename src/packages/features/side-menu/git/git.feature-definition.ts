@@ -9,4 +9,4 @@ export const gitSideMenuFeatureDefinition = {
   order: 50,
   actionName: "open_git",
   configPath: "git",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

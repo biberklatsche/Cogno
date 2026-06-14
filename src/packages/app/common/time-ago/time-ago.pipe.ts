@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from "@angular/core";
-import { formatTimeAgo } from "../timespan/timespan";
+import { formatTimeAgo } from "@cogno/core-support";
 
 @Pipe({
   name: "timeAgo",

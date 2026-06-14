@@ -1,12 +1,10 @@
 import { bytesToBase64, Clipboard } from "@cogno/app-tauri/clipboard";
-import { ShellLineEditorDefinitionContract } from "@cogno/core-api";
+import { ShellLineEditorDefinitionContract, TerminalId } from "@cogno/core-api";
+import { Char, IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { Char } from "../../../common/chars/chars";
-import { IDisposable } from "../../../common/models/models";
 import { ConfigService } from "../../../config/+state/config.service";
-import { TerminalId } from "../../../grid-list/+model/model";
 import { findLastPromptMarkerLine, sanitizePromptMarkerText } from "../prompt-marker";
 import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";

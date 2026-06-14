@@ -1,9 +1,8 @@
+import { TerminalId } from "@cogno/core-api";
+import { Char, IDisposable } from "@cogno/core-support";
 import { IDisposable as IXtermDisposable, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { Char } from "../../../common/chars/chars";
-import { IDisposable } from "../../../common/models/models";
-import { TerminalId } from "../../../grid-list/+model/model";
 import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";

@@ -1,18 +1,18 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
+import type { ContextMenuOverlayService } from "@cogno/core-ui";
+import { DialogRef, type DialogService } from "@cogno/core-ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
-import { getAppBus, getStateManager } from "../../../__test__/test-factory";
+import { getAppBus, getKeybindServiceMock, getStateManager } from "../../../__test__/test-factory";
 import type { AppBus } from "../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import type { DialogService } from "../../common/dialog";
-import { DialogRef } from "../../common/dialog/dialog-ref";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../config/+models/shell-config";
-import type { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
+import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import { Renderer } from "./renderer/renderer";
 import { TerminalSession } from "./terminal.session";
@@ -23,7 +23,7 @@ type TerminalAutocompleteSuggestorPort = Pick<
 >;
 type WiringPort = Pick<AppWiringService, "getShellDefinitions" | "getNotificationChannels">;
 type DialogPort = Pick<DialogService, "open">;
-type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
+type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 type NotificationTargetResolverPort = Pick<NotificationTargetResolverService, "resolveForTerminal">;
 
 vi.mock("./renderer/renderer", () => {
@@ -31,6 +31,7 @@ vi.mock("./renderer/renderer", () => {
     open = vi.fn();
     register = vi.fn().mockReturnValue({ dispose: vi.fn() });
     dispose = vi.fn();
+    setVisible = vi.fn();
     terminal = TerminalMockFactory.createTerminal();
   }
 
@@ -64,6 +65,7 @@ describe("TerminalSession", () => {
   let dialogService: DialogPort;
   let wiringService: WiringPort;
   let notificationTargetResolverService: NotificationTargetResolverPort;
+  let notificationChannelsPort!: NotificationChannelsPortAdapterService;
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
@@ -71,10 +73,12 @@ describe("TerminalSession", () => {
     configService = new ConfigServiceMock();
     configService.setConfig({
       font: { enable_ligatures: false },
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -123,8 +127,13 @@ describe("TerminalSession", () => {
     };
 
     const contextMenuOverlayService: ContextMenuOverlayPort = {
-      openContextForElement: vi.fn(),
+      openAtElement: vi.fn(),
     };
+
+    notificationChannelsPort = new NotificationChannelsPortAdapterService(
+      wiringService as AppWiringService,
+      configService as any,
+    );
 
     session = new TerminalSession(
       configService,
@@ -137,6 +146,8 @@ describe("TerminalSession", () => {
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
+      notificationChannelsPort,
+      getKeybindServiceMock() as never,
     );
   });
 
@@ -149,10 +160,12 @@ describe("TerminalSession", () => {
       featureSuggestorService,
       dialogService,
       wiringService,
-      { openContextForElement: vi.fn() },
+      { openAtElement: vi.fn() },
       notificationTargetResolverService as NotificationTargetResolverService,
       {} as any,
       new TerminalActivityService(),
+      notificationChannelsPort,
+      getKeybindServiceMock() as never,
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
@@ -204,12 +217,38 @@ describe("TerminalSession", () => {
     expect(items.find((i) => i.label === "Maximize")).toBeUndefined();
   });
 
+  it("should mark the renderer invisible when this terminal is not in the visible set", () => {
+    session.initialize(terminalId, shellProfile);
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+
+    appBus.publish({
+      type: "VisibleTerminalsChanged",
+      payload: { terminalIds: ["other-terminal-id"] },
+    } as any);
+
+    expect(rendererInstance.setVisible).toHaveBeenCalledWith(false);
+  });
+
+  it("should mark the renderer visible when this terminal is in the visible set", () => {
+    session.initialize(terminalId, shellProfile);
+    const rendererInstance = vi.mocked(Renderer).mock.results[0].value;
+
+    appBus.publish({
+      type: "VisibleTerminalsChanged",
+      payload: { terminalIds: [terminalId] },
+    } as any);
+
+    expect(rendererInstance.setVisible).toHaveBeenCalledWith(true);
+  });
+
   it("should only show available notification channels in header menu", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -220,7 +259,7 @@ describe("TerminalSession", () => {
     session.initialize(terminalId, shellProfile);
 
     const items = session.buildHeaderMenu();
-    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Alerts" }));
+    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Notifications" }));
     const longRunningCommandToggle = items.find((i) => i.label === "Long Running Commands");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
     const appToggle = items.find((i) => i.label === "App");
@@ -295,10 +334,12 @@ describe("TerminalSession", () => {
 
   it("should allow toggling long-running command notifications from the header menu", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -319,10 +360,12 @@ describe("TerminalSession", () => {
 
   it("should publish a notification when a long-running command has finished", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {
@@ -353,10 +396,12 @@ describe("TerminalSession", () => {
 
   it("should not publish a notification when a command is shorter than the configured threshold", () => {
     configService.setConfig({
-      notification: {
-        long_running_commands: {
-          enabled: true,
-          minimum_duration_seconds: 10,
+      terminal: {
+        notifications: {
+          long_running_command: {
+            enabled: true,
+            minimum_duration_seconds: 10,
+          },
         },
       },
       notifications: {

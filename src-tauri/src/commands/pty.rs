@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, State};
 
+use crate::http_server::HttpServerState;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,6 +57,7 @@ pub struct PtySpawnResult {
 pub async fn pty_spawn(
     app: AppHandle,
     state: State<'_, PtyState>,
+    http_server: State<'_, HttpServerState>,
     options: SpawnOptions,
 ) -> Result<PtySpawnResult, String> {
     let terminal_id = options.name.clone();
@@ -84,6 +86,13 @@ pub async fn pty_spawn(
     for (key, value) in env {
         cmd.env(key, value);
     }
+
+    // Inject HTTP server port and terminal ID so hooks can reach cogno
+    let http_port = http_server.port();
+    if http_port != 0 {
+        cmd.env("COGNO_PORT", http_port.to_string());
+    }
+    cmd.env("COGNO_TERMINAL_ID", &terminal_id);
 
     // Set working directory (expand ~ if needed)
     let expanded_dir = if working_dir.starts_with("~") {

@@ -44,3 +44,9 @@ export interface NotificationReplyChannelContract extends NotificationChannelCon
   startReceivingReplies?(settings: Readonly<Record<string, unknown>>): Promise<void> | void;
   stopReceivingReplies?(): Promise<void> | void;
 }
+
+export interface NotificationDefinitionContract {
+  readonly id: string;
+  readonly label: string;
+  readonly defaultEnabled?: boolean;
+}

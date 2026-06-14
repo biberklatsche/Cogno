@@ -256,7 +256,6 @@ export class HistoryRepository {
     });
   }
 
-
   async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {
     const previousCommand = previousCommandRaw.trim();
     const nextCommand = nextCommandRaw.trim();
@@ -329,7 +328,6 @@ export class HistoryRepository {
       );
     });
   }
-
 
   async searchDirectories(fragmentRaw: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
     const fragment = fragmentRaw.trim().toLowerCase();
@@ -848,7 +846,6 @@ export class HistoryRepository {
       [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
     );
   }
-
 
   // ---- DB wrappers with retry + tx ----
 

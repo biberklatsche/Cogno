@@ -3,7 +3,7 @@ import { TauriPty } from "@cogno/app-tauri/pty";
 import {
   TerminalBusyStateChangeContract,
   TerminalGateway,
-  TerminalIdentifierContract,
+  TerminalId,
   TerminalInputRequestContract,
   TerminalSnapshotCommandContract,
   TerminalSnapshotContract,
@@ -17,7 +17,7 @@ import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.reg
 
 @Injectable({ providedIn: "root" })
 export class TerminalGatewayAdapterService extends TerminalGateway {
-  readonly focusedTerminalId$: Observable<TerminalIdentifierContract | undefined>;
+  readonly focusedTerminalId$: Observable<TerminalId | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
   readonly cwdChanges$: Observable<void>;
 
@@ -43,18 +43,26 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
       .pipe(map(() => undefined));
   }
 
-  getFocusedTerminalId(): TerminalIdentifierContract | undefined {
+  getFocusedTerminalId(): TerminalId | undefined {
     return this.gridListService.getFocusedTerminalId();
   }
 
-  hasTerminal(terminalId: TerminalIdentifierContract | undefined): boolean {
+  hasTerminal(terminalId: TerminalId | undefined): boolean {
     return this.terminalSessionRegistry.has(terminalId);
   }
 
-  focusTerminal(terminalId: TerminalIdentifierContract): void {
+  focusTerminal(terminalId: TerminalId): void {
     this.appBus.publish({
       path: ["app", "terminal"],
       type: "FocusTerminal",
+      payload: terminalId,
+    });
+  }
+
+  revealTerminal(terminalId: TerminalId): void {
+    this.appBus.publish({
+      path: ["app", "terminal"],
+      type: "RevealTerminal",
       payload: terminalId,
     });
   }
@@ -79,7 +87,7 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
   }
 
   async captureSnapshot(
-    terminalId: TerminalIdentifierContract,
+    terminalId: TerminalId,
     options?: TerminalSnapshotOptionsContract,
   ): Promise<TerminalSnapshotContract | undefined> {
     const terminalSessionEntry = this.terminalSessionRegistry.get(terminalId);

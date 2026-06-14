@@ -9,4 +9,4 @@ export const terminalSearchSideMenuFeatureDefinition = {
   order: 40,
   actionName: "open_terminal_search",
   configPath: "search",
-} as const satisfies SideMenuFeatureDefinitionContract<string, string>;
+} as const satisfies SideMenuFeatureDefinitionContract;

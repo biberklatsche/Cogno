@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
-import { clear, getAppBus, getConfigService, getDestroyRef } from "../../../__test__/test-factory";
+import {
+  clear,
+  getAppBus,
+  getConfigService,
+  getDestroyRef,
+  getKeybindServiceMock,
+} from "../../../__test__/test-factory";
 import { ActionFired, type ActionFiredEvent } from "../../action/action.models";
 import type { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";
 import type { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
-import type { GridListService } from "../../grid-list/+state/grid-list.service";
+import type { KeybindService } from "../../keybinding/keybind.service";
 import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
@@ -14,7 +20,6 @@ describe("TabListService", () => {
   let service: TabListService;
   let bus: AppBus;
   let configService: ConfigServiceMock;
-  let gridListService: GridListService;
 
   beforeEach(() => {
     bus = getAppBus();
@@ -32,16 +37,12 @@ describe("TabListService", () => {
       },
     });
 
-    gridListService = {
-      findWorkspaceIdentifierByTerminalId: vi.fn((terminalId: string) =>
-        terminalId === "terminal-1" ? "workspace-1" : undefined,
-      ),
-      findTabIdByTerminalId: vi.fn((terminalId: string) =>
-        terminalId === "terminal-1" ? "t1" : undefined,
-      ),
-    } as unknown as GridListService;
-
-    service = new TabListService(bus, configService, gridListService, getDestroyRef());
+    service = new TabListService(
+      bus,
+      configService,
+      getKeybindServiceMock() as KeybindService,
+      getDestroyRef(),
+    );
   });
 
   afterEach(() => {
@@ -55,8 +56,8 @@ describe("TabListService", () => {
     return ActionFired.create(
       actionName,
       options?.triggerAll
-        ? { all: true, unconsumed: false, performable: false }
-        : { all: false, unconsumed: false, performable: false },
+        ? { broadcast: true, unconsumed: false, performable: false, always: false }
+        : { broadcast: false, unconsumed: false, performable: false, always: false },
       options?.args,
     );
   }
@@ -127,7 +128,7 @@ describe("TabListService", () => {
       expect(event.propagationStopped).toBe(true);
     });
 
-    it("should track busy state on tabs via TerminalBusyChanged", () => {
+    it("should not modify tabs on TerminalBusyChanged (busy state handled by BusyIndicatorService)", () => {
       service.activateWorkspace("workspace-1");
       service.addTab({
         id: "t1",
@@ -139,26 +140,12 @@ describe("TabListService", () => {
       bus.publish({
         path: ["app", "terminal"],
         type: "TerminalBusyChanged",
-        payload: {
-          terminalId: "terminal-1",
-          isBusy: true,
-        },
+        payload: { terminalId: "terminal-1", isBusy: true },
       });
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
-      expect(currentTabs[0].busyTerminalIds).toContain("terminal-1");
-
-      bus.publish({
-        path: ["app", "terminal"],
-        type: "TerminalBusyChanged",
-        payload: {
-          terminalId: "terminal-1",
-          isBusy: false,
-        },
-      });
-
-      expect(currentTabs[0].busyTerminalIds).toHaveLength(0);
+      expect(currentTabs[0].id).toBe("t1");
     });
   });
 
@@ -499,7 +486,7 @@ describe("TabListService", () => {
       expect(menu.find((i) => i.label === "Close tab")).toBeTruthy();
       expect(menu.find((i) => i.label === "Close other tabs")).toBeTruthy();
       expect(menu.find((i) => i.label === "Rename tab")).toBeTruthy();
-      expect(menu.find((i) => i.colorpicker)).toBeTruthy();
+      expect(menu.find((i) => i.custom)).toBeTruthy();
     });
 
     it("should show reset tab name only for renamed tabs", () => {
@@ -540,9 +527,9 @@ describe("TabListService", () => {
     it("should set color from context menu", () => {
       service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
       const menu = service.buildContextMenu("t1");
-      const colorPicker = menu.find((i) => i.colorpicker);
+      expect(menu.find((i) => i.custom)).toBeTruthy();
 
-      colorPicker?.action?.("red");
+      service.setColor("t1", "red");
 
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));

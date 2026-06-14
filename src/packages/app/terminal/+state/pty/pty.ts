@@ -1,6 +1,6 @@
 import { TauriPty, TauriUnlistenFn } from "@cogno/app-tauri/pty";
+import { IDisposable } from "@cogno/core-support";
 import { ErrorReporter } from "../../../common/error/error-reporter";
-import { IDisposable } from "../../../common/models/models";
 import { ShellProfile } from "../../../config/+models/shell-config";
 import { TerminalDimensions } from "../handler/resize.handler";
 

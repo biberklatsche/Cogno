@@ -1,7 +1,7 @@
+import type { ContextMenuOverlayService } from "@cogno/core-ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
-import type { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { TerminalStateManager } from "../../state";
 import { MarkerManager } from "./marker-manager";
 
@@ -9,7 +9,7 @@ describe("MarkerManager", () => {
   let markerManager: MarkerManager;
   let stateManager: TerminalStateManager;
   let mockTerminal: any;
-  let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openContextForElement">;
+  let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
   let mockBus: AppBus;
 
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe("MarkerManager", () => {
     stateManager = new TerminalStateManager(mockBus);
     stateManager.initialize("test-id", "Bash" as any);
     contextMenuOverlayService = {
-      openContextForElement: vi.fn(),
+      openAtElement: vi.fn(),
     };
     markerManager = new MarkerManager(stateManager, [], contextMenuOverlayService, mockBus);
     mockTerminal = TerminalMockFactory.createTerminal();

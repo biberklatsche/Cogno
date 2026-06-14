@@ -1,5 +1,6 @@
 use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
+use cogno_tauri_core::http_server::HttpServerState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
 use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
 
@@ -36,6 +37,7 @@ pub fn run(cli: Cli) {
             }
         }))
         .manage(PtyState::new())
+        .manage(HttpServerState::new())
         .invoke_handler(tauri::generate_handler![
             cogno_tauri_core::commands::command_runner::command_runner_execute,
             cogno_tauri_core::commands::git_blob::git_read_blob,
@@ -63,7 +65,9 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::environment::get_system_path,
             cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
             cogno_tauri_core::commands::window::new_window,
-            cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file
+            cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file,
+            cogno_tauri_core::http_server::start_http_server,
+            cogno_tauri_core::http_server::get_http_server_port
         ])
         .setup(move |app| {
             let webview_window_builder =

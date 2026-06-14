@@ -287,7 +287,10 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     const ranked = this.rankSuggestions(settled, state);
-    const suggestions = this.suggestionCollapser.collapse(ranked);
+    const suggestions = this.suggestionCollapser.collapse(
+      ranked,
+      context.mode === "command" ? context.query : "",
+    );
     this._latestSuggestions = suggestions;
     this._latestContext = context;
 

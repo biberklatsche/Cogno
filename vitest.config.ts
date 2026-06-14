@@ -16,10 +16,12 @@ export default defineConfig({
     include: [
       "src/packages/app/**/*.spec.ts",
       "src/packages/core-domain/**/*.spec.ts",
+      "src/packages/core-ui/**/*.spec.ts",
       "src/packages/features/**/*.spec.ts",
     ],
     exclude: [
       "src/packages/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
+      "src/packages/core-ui/icons/icon/icon.component.spec.ts",
     ],
     coverage: {
       reporter: ["text", "lcov"],
@@ -27,6 +29,7 @@ export default defineConfig({
       include: [
         "src/packages/app/**/*.ts",
         "src/packages/core-domain/**/*.ts",
+        "src/packages/core-ui/**/*.ts",
         "src/packages/features/**/*.ts",
       ],
       exclude: [

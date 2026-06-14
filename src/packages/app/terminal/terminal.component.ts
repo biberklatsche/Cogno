@@ -11,12 +11,10 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { IconComponent } from "@cogno/core-ui";
+import { TerminalId } from "@cogno/core-api";
+import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/core-ui";
 import { map } from "rxjs";
 import { ShellProfile } from "../config/+models/shell-config";
-import { TerminalId } from "../grid-list/+model/model";
-import { ContextMenuOverlayService } from "../menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../menu/context-menu-overlay/context-menu-overlay.types";
 import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import { TerminalCommandHistoryStore } from "./+state/advanced/history/terminal-command-history.store";
@@ -93,7 +91,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     event.stopPropagation();
     this.terminalSession.focus();
     const items: ContextMenuItem[] = this.terminalSession.buildContextMenu();
-    this.menu.openContextAt(event, { items });
+    this.menu.openAtPoint(event, { items });
   }
 
   focus(event: MouseEvent) {

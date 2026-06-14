@@ -158,9 +158,10 @@ describe("HistoryRepository", () => {
       "npm install lodash",
     ]);
 
-    const executeCalls = (
-      transactionDatabase.execute as ReturnType<typeof vi.fn>
-    ).mock.calls as [string, unknown[]][];
+    const executeCalls = (transactionDatabase.execute as ReturnType<typeof vi.fn>).mock.calls as [
+      string,
+      unknown[],
+    ][];
     const slotValueInserts = executeCalls.filter(([sql]) =>
       sql.includes("command_pattern_slot_value_stat"),
     );

@@ -1,11 +1,9 @@
 import { Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { IconComponent } from "@cogno/core-ui";
+import { timespan } from "@cogno/core-support";
+import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/core-ui";
 import { map } from "rxjs";
-import { timespan } from "../../common/timespan/timespan";
 import { ConfigService } from "../../config/+state/config.service";
-import { ContextMenuOverlayService } from "../../menu/context-menu-overlay/context-menu-overlay.service";
-import { ContextMenuItem } from "../../menu/context-menu-overlay/context-menu-overlay.types";
 import { TerminalStateManager } from "../+state/state";
 import { TerminalSession } from "../+state/terminal.session";
 
@@ -55,7 +53,7 @@ type HeaderCommandViewModel = {
           <span class="command">&nbsp;</span>
         }
       </span>
-      <span class="header-actions" >
+      <span class="header-actions">
         <button
           class="button icon-button terminal-menu-button"
           type="button"
@@ -124,7 +122,6 @@ type HeaderCommandViewModel = {
       align-items: center;
       gap: 4px;
       margin-left: auto;
-     
     }
 
     .command-menu-button {
@@ -236,7 +233,7 @@ export class TerminalHeaderComponent {
     event.stopPropagation();
     this.terminalSession.focus();
     const items: ContextMenuItem[] = this.terminalSession.buildHeaderMenu();
-    this.menu.openContextForElement(
+    this.menu.openAtElement(
       event.currentTarget as HTMLElement,
       { items },
       { horizontalAlign: "right" },
@@ -251,7 +248,7 @@ export class TerminalHeaderComponent {
     if (items.length === 0) {
       return;
     }
-    this.menu.openContextForElement(event.currentTarget as HTMLElement, { items });
+    this.menu.openAtElement(event.currentTarget as HTMLElement, { items });
   }
 
   private getInitialOsc9ProgressBarEnabled(): boolean {

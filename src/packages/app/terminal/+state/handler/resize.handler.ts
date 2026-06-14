@@ -1,9 +1,9 @@
+import { TerminalId } from "@cogno/core-api";
+import { IDisposable } from "@cogno/core-support";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { IDisposable } from "../../../common/models/models";
-import { TerminalId } from "../../../grid-list/+model/model";
 import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
 import { IFitHandler, ITerminalHandler } from "./handler";

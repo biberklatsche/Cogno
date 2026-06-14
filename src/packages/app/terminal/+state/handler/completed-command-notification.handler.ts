@@ -1,47 +1,29 @@
-import { NotificationTargetContract } from "@cogno/core-api";
+import { NotificationTargetContract, TerminalId } from "@cogno/core-api";
+import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
+import { timespan } from "@cogno/core-support";
 import { AppBus } from "../../../app-bus/app-bus";
-import { timespan } from "../../../common/timespan/timespan";
 import { ConfigService } from "../../../config/+state/config.service";
-import { TerminalId } from "../../../grid-list/+model/model";
-import { ContextMenuItem } from "../../../menu/context-menu-overlay/context-menu-overlay.types";
-import { NotificationChannels } from "../../../notification/+bus/events";
 import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";
 
-export class CompletedCommandNotificationHandler {
-  private longRunningCommandNotificationsEnabled?: boolean;
+export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";
 
+export class CompletedCommandNotificationHandler {
   constructor(
     private readonly configService: ConfigService,
     private readonly appBus: AppBus,
     private readonly terminalIdResolver: () => TerminalId | undefined,
-    private readonly notificationChannelsResolver: () => NotificationChannels,
+    private readonly notificationPreferencesStateResolver: () => NotificationPreferencesState,
     private readonly notificationTargetResolver: () => NotificationTargetContract | undefined,
   ) {}
 
-  initialize(): void {
-    this.longRunningCommandNotificationsEnabled =
-      this.getDefaultLongRunningCommandNotificationsEnabled();
-  }
-
-  isLongRunningCommandNotificationEnabled(): boolean {
-    if (this.longRunningCommandNotificationsEnabled === undefined) {
-      this.longRunningCommandNotificationsEnabled =
-        this.getDefaultLongRunningCommandNotificationsEnabled();
-    }
-
-    return this.longRunningCommandNotificationsEnabled;
-  }
-
-  toggleLongRunningCommandNotifications(item?: ContextMenuItem): void {
-    const nextValue = !this.isLongRunningCommandNotificationEnabled();
-    this.longRunningCommandNotificationsEnabled = nextValue;
-    if (item?.toggle) {
-      item.toggled = nextValue;
-    }
-  }
-
   readonly handleCompletedCommand = (executedCommand: ExecutedCommand): void => {
-    if (!this.isLongRunningCommandNotificationEnabled()) {
+    const notificationPreferencesState = this.notificationPreferencesStateResolver();
+    if (
+      !NotificationPreferencesUseCase.shouldNotify(
+        notificationPreferencesState,
+        LONG_RUNNING_COMMAND_NOTIFICATION_ID,
+      )
+    ) {
       return;
     }
 
@@ -55,8 +37,7 @@ export class CompletedCommandNotificationHandler {
     }
 
     const terminalId = this.terminalIdResolver();
-    const notificationChannels = this.notificationChannelsResolver();
-    if (!terminalId || !this.hasEnabledNotificationChannels(notificationChannels)) {
+    if (!terminalId) {
       return;
     }
 
@@ -70,23 +51,16 @@ export class CompletedCommandNotificationHandler {
         timestamp: new Date(),
         terminalId,
         target: this.notificationTargetResolver(),
-        channels: notificationChannels,
+        channels: NotificationPreferencesUseCase.getActiveChannels(notificationPreferencesState),
       },
     });
   };
 
-  private getDefaultLongRunningCommandNotificationsEnabled(): boolean {
-    return this.configService.config.notification?.long_running_commands?.enabled ?? true;
-  }
-
   private getLongRunningCommandMinimumDurationMilliseconds(): number {
     const minimumDurationSeconds =
-      this.configService.config.notification?.long_running_commands?.minimum_duration_seconds ?? 10;
+      this.configService.config.terminal?.notifications?.long_running_command
+        ?.minimum_duration_seconds ?? 10;
     return minimumDurationSeconds * 1000;
-  }
-
-  private hasEnabledNotificationChannels(notificationChannels: NotificationChannels): boolean {
-    return Object.values(notificationChannels).some(Boolean);
   }
 
   private renderLongRunningCommandNotificationBody(executedCommand: ExecutedCommand): string {

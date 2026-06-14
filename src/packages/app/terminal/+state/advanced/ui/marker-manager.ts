@@ -1,13 +1,13 @@
+import { IDisposable } from "@cogno/core-support";
+import { ContextMenuOverlayService } from "@cogno/core-ui";
 import { IDecoration, IMarker, Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { IDisposable } from "../../../../common/models/models";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
-import { ContextMenuOverlayService } from "../../../../menu/context-menu-overlay/context-menu-overlay.service";
 import { TerminalStateManager } from "../../state";
 import { CommandBlockResolver } from "./command-block-resolver";
 import { PromptMarkerRenderer } from "./prompt-renderer";
 
-type MarkerManagerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openContextForElement">;
+type MarkerManagerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 export class MarkerManager implements IDisposable {
   private _decorations: Map<IMarker, IDecoration> = new Map();

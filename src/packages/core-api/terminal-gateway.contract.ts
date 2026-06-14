@@ -1,7 +1,7 @@
 import { Observable } from "rxjs";
 import { ShellContextContract } from "./filesystem.contract";
 
-export type TerminalIdentifierContract = string;
+export type TerminalId = string;
 
 export interface TerminalSnapshotCommandContract {
   readonly id: string;
@@ -18,7 +18,7 @@ export interface TerminalSnapshotProcessContract {
 }
 
 export interface TerminalSnapshotContract {
-  readonly terminalId: TerminalIdentifierContract;
+  readonly terminalId: TerminalId;
   readonly tabId?: string;
   readonly workspaceId?: string;
   readonly shellType?: string;
@@ -39,46 +39,48 @@ export interface TerminalSnapshotOptionsContract {
 }
 
 export interface TerminalInputRequestContract {
-  readonly terminalId: TerminalIdentifierContract;
+  readonly terminalId: TerminalId;
   readonly text: string;
   readonly appendNewline?: boolean;
 }
 
 export interface TerminalBusyStateChangeContract {
-  readonly terminalId: TerminalIdentifierContract;
+  readonly terminalId: TerminalId;
   readonly isBusy: boolean;
 }
 
 export interface TerminalGatewayContract {
-  readonly focusedTerminalId$: Observable<TerminalIdentifierContract | undefined>;
+  readonly focusedTerminalId$: Observable<TerminalId | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
   readonly cwdChanges$: Observable<void>;
-  getFocusedTerminalId(): TerminalIdentifierContract | undefined;
-  hasTerminal(terminalId: TerminalIdentifierContract | undefined): boolean;
-  focusTerminal(terminalId: TerminalIdentifierContract): void;
+  getFocusedTerminalId(): TerminalId | undefined;
+  hasTerminal(terminalId: TerminalId | undefined): boolean;
+  focusTerminal(terminalId: TerminalId): void;
+  revealTerminal(terminalId: TerminalId): void;
   injectInput(request: TerminalInputRequestContract): void;
   captureFocusedSnapshot(
     options?: TerminalSnapshotOptionsContract,
   ): Promise<TerminalSnapshotContract | undefined>;
   captureSnapshot(
-    terminalId: TerminalIdentifierContract,
+    terminalId: TerminalId,
     options?: TerminalSnapshotOptionsContract,
   ): Promise<TerminalSnapshotContract | undefined>;
 }
 
 export abstract class TerminalGateway implements TerminalGatewayContract {
-  abstract readonly focusedTerminalId$: Observable<TerminalIdentifierContract | undefined>;
+  abstract readonly focusedTerminalId$: Observable<TerminalId | undefined>;
   abstract readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
   abstract readonly cwdChanges$: Observable<void>;
-  abstract getFocusedTerminalId(): TerminalIdentifierContract | undefined;
-  abstract hasTerminal(terminalId: TerminalIdentifierContract | undefined): boolean;
-  abstract focusTerminal(terminalId: TerminalIdentifierContract): void;
+  abstract getFocusedTerminalId(): TerminalId | undefined;
+  abstract hasTerminal(terminalId: TerminalId | undefined): boolean;
+  abstract focusTerminal(terminalId: TerminalId): void;
+  abstract revealTerminal(terminalId: TerminalId): void;
   abstract injectInput(request: TerminalInputRequestContract): void;
   abstract captureFocusedSnapshot(
     options?: TerminalSnapshotOptionsContract,
   ): Promise<TerminalSnapshotContract | undefined>;
   abstract captureSnapshot(
-    terminalId: TerminalIdentifierContract,
+    terminalId: TerminalId,
     options?: TerminalSnapshotOptionsContract,
   ): Promise<TerminalSnapshotContract | undefined>;
 }

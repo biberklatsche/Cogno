@@ -1,7 +1,7 @@
 import { Clipboard } from "@cogno/app-tauri/clipboard";
+import { ContextMenuItem } from "@cogno/core-ui";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { ContextMenuItem } from "../../../../menu/context-menu-overlay/context-menu-overlay.types";
 
 export type CommandMenuBlockRange = {
   beginBufferLine: number;

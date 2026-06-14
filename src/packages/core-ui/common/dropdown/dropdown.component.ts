@@ -20,21 +20,37 @@ export type DropdownItem<TValue extends string = string> = {
   standalone: true,
   template: `
     <div class="dropdown">
-      <button
-        type="button"
-        class="dropdown__trigger"
-        [class.dropdown__trigger--open]="isOpen()"
-        [disabled]="disabled"
-        [attr.aria-expanded]="isOpen()"
-        aria-haspopup="menu"
-        [attr.aria-label]="ariaLabel || label"
-        (click)="toggle()">
-        <span class="dropdown__label">{{ label }}</span>
-        <span class="dropdown__chevron" aria-hidden="true"></span>
-      </button>
+      @if (customTrigger) {
+        <div
+          class="dropdown__trigger-slot"
+          [class.dropdown__trigger--open]="isOpen()"
+          [attr.aria-expanded]="isOpen()"
+          aria-haspopup="menu"
+          (click)="toggle()">
+          <ng-content select="[dropdownTrigger]"></ng-content>
+        </div>
+      } @else {
+        <button
+          type="button"
+          class="dropdown__trigger"
+          [class.dropdown__trigger--open]="isOpen()"
+          [disabled]="disabled"
+          [attr.aria-expanded]="isOpen()"
+          aria-haspopup="menu"
+          [attr.aria-label]="ariaLabel || label"
+          (click)="toggle()">
+          <span class="dropdown__label">{{ label }}</span>
+          <span class="dropdown__chevron" aria-hidden="true"></span>
+        </button>
+      }
 
       @if (isOpen()) {
-        <div class="dropdown__menu" [class.dropdown__menu--below]="placement === 'below'" role="menu">
+        <div
+          class="dropdown__menu"
+          [class.dropdown__menu--below]="placement === 'below'"
+          [class.dropdown__menu--below-end]="placement === 'below-end'"
+          role="menu">
+          <ng-content></ng-content>
           @for (item of items; track item.value) {
             <button
               type="button"
@@ -62,6 +78,7 @@ export type DropdownItem<TValue extends string = string> = {
         background: var(--background-color-20l); outline: none;
       }
       .dropdown__trigger:disabled { opacity: 0.55; cursor: default; }
+      .dropdown__trigger-slot { display: inline-flex; }
       .dropdown__label { display: block; max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .dropdown__chevron {
         flex: 0 0 auto; width: 0.45rem; height: 0.45rem; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
@@ -73,6 +90,7 @@ export type DropdownItem<TValue extends string = string> = {
         box-shadow: 0 0.5rem 1.4rem rgb(0 0 0 / 18%); z-index: 20;
       }
       .dropdown__menu--below { bottom: unset; top: calc(100% + 0.35rem); right: unset; left: 0; }
+      .dropdown__menu--below-end { bottom: unset; top: calc(100% + 0.35rem); right: 0; }
       .dropdown__item {
         display: block; width: 100%; border: 0; border-radius: 0.4rem; background: transparent; color: inherit; cursor: pointer;
         font: inherit; text-align: left; padding: 0.45rem 0.6rem;
@@ -89,7 +107,8 @@ export class DropdownComponent<TValue extends string = string> {
   @Input() value?: TValue;
   @Input() items: ReadonlyArray<DropdownItem<TValue>> = [];
   @Input() disabled = false;
-  @Input() placement: "above" | "below" = "above";
+  @Input() placement: "above" | "below" | "below-end" = "above";
+  @Input() customTrigger = false;
   @Output() readonly valueChange = new EventEmitter<TValue>();
   @Output() readonly opened = new EventEmitter<void>();
 

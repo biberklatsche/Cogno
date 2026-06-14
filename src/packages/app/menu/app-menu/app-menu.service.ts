@@ -1,9 +1,10 @@
 import { Injectable } from "@angular/core";
+import { ContextMenuItem } from "@cogno/core-ui";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { ConfigService } from "../../config/+state/config.service";
 import { KeybindService } from "../../keybinding/keybind.service";
-import { ContextMenuItem } from "../context-menu-overlay/context-menu-overlay.types";
+import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 
 @Injectable({
   providedIn: "root",
@@ -16,14 +17,14 @@ export class AppMenuService {
   ) {}
 
   public buildMenu(): ContextMenuItem[] {
-    const terminalItems = this.configService.getOrderedShellProfiles(9).map(
-      (profile, index) =>
-        ({
-          label: profile.name,
-          actionName: `open_shell_${index + 1}`,
-          action: () => this.bus.publish(ActionFired.create(`open_shell_${index + 1}`)),
-        }) satisfies ContextMenuItem,
-    );
+    const terminalItems = this.configService.getOrderedShellProfiles(9).map((profile, index) => {
+      const actionName: ActionName = `open_shell_${index + 1}`;
+      return {
+        label: profile.name,
+        keybinding: this.keybindingFor(actionName),
+        action: () => this.bus.publish(ActionFired.create(actionName)),
+      } satisfies ContextMenuItem;
+    });
 
     const items: ContextMenuItem[] = [...terminalItems];
 
@@ -37,7 +38,7 @@ export class AppMenuService {
     items.push({
       label: "Documentation",
       action: () => this.bus.publish(ActionFired.create("open_documentation")),
-      actionName: "open_documentation",
+      keybinding: this.keybindingFor("open_documentation"),
     });
     return items;
   }
@@ -52,7 +53,11 @@ export class AppMenuService {
         }
         this.bus.publish(ActionFired.createFromDefinition(actionDef));
       },
-      actionName,
+      keybinding: this.keybindingFor(actionName),
     };
+  }
+
+  private keybindingFor(actionName: ActionName): string {
+    return formatKeybinding(this.keybindService.getKeybinding(actionName));
   }
 }

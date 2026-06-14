@@ -1,10 +1,10 @@
 import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-api";
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
-import { IDisposable } from "../../../../common/models/models";
 import { ITerminalHandler } from "../../handler/handler";
 import { isPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
 import { IPty } from "../../pty/pty";
