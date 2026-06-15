@@ -25,9 +25,16 @@
       "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline'; img-src 'self' asset: file: data: blob: http://asset.localhost"
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFDODJFMzVGOTc0QzhFQUUKUldTdWpreVhYK09Dck1Eb2ZWa255cmlpMXZ0cXM1N1c3dWV1NllRUWxGS3JiNWNPNk9yejhzMXEK",
+      "endpoints": ["https://pub-xxxxxxxx.r2.dev/cogno/prod/updater/latest.json"]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/16x16.png",
       "icons/32x32.png",

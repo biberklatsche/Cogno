@@ -26,7 +26,7 @@ const releaseSettingsFilePath = join(homedir(), ".cogno-secrets", "release.setti
 const tauriBundleDirectoryPath = join("src-tauri", "target", "release", "bundle");
 const tauriCargoTomlPath = "src-tauri/Cargo.toml";
 const tauriConfigPath = "src-tauri/tauri.conf.json";
-const supportedChannels = ["dev", "release"];
+const supportedChannels = ["dev", "prod"];
 const supportedPlatforms = {
   darwin: "macos",
   linux: "linux",
@@ -45,7 +45,7 @@ async function main() {
   }
 
   const currentPlatformName = resolveCurrentPlatformName();
-  const releaseChannel = parsedArguments.channel ?? "release";
+  const releaseChannel = parsedArguments.channel ?? "prod";
 
   validateChannel(releaseChannel);
   validateCommandLineArguments(parsedArguments);
@@ -232,10 +232,10 @@ function printHelp() {
   console.log("Local release builder for Cogno");
   console.log("");
   console.log("Build current platform:");
-  console.log("  pnpm run release:build -- --channel release");
+  console.log("  pnpm run release:build -- --channel prod");
   console.log("");
   console.log("Finalize after all three platforms are built:");
-  console.log("  pnpm run release:build -- --channel release --finalize");
+  console.log("  pnpm run release:build -- --channel prod --finalize");
   console.log("");
   console.log("Local test without tag:");
   console.log("  pnpm run release:build -- --test");
@@ -243,7 +243,7 @@ function printHelp() {
   console.log("Options:");
   console.log("  --tag <tag>         Build or finalize metadata for a specific Git tag.");
   console.log("  --test              Local test build without Git tag and without upload.");
-  console.log("  --channel <value>   dev | release (default: release)");
+  console.log("  --channel <value>   dev | prod | ... (default: prod, see supportedChannels)");
   console.log("  --notes-file <path> Optional release notes file for latest/updater metadata.");
   console.log("  --skip-build        Reuse existing bundle output.");
   console.log("  --skip-upload       Build only, do not upload.");
@@ -542,9 +542,31 @@ function runBuild({ currentPlatformName, releaseTag, releaseVersion }) {
   }
 
   runCommand("pnpm", ["build:desktop"], {
-    environmentVariables: process.env,
+    environmentVariables: {
+      ...process.env,
+      ...resolveUpdaterSigningEnvironment(),
+    },
     runnerType: "pnpm-run",
   });
+}
+
+function resolveUpdaterSigningEnvironment() {
+  const updaterSettings = loadReleaseSettings({ releaseChannel: "prod" }).updater;
+
+  if (!updaterSettings.enabled || updaterSettings.privateKeyPath === undefined) {
+    return {};
+  }
+
+  const hasPrivateKeyPassword =
+    updaterSettings.privateKeyPassword !== undefined &&
+    updaterSettings.privateKeyPassword.length > 0;
+
+  return {
+    TAURI_SIGNING_PRIVATE_KEY_PATH: updaterSettings.privateKeyPath,
+    ...(hasPrivateKeyPassword
+      ? { TAURI_SIGNING_PRIVATE_KEY_PASSWORD: updaterSettings.privateKeyPassword }
+      : {}),
+  };
 }
 
 function buildMacosReleaseArtifacts() {
@@ -631,7 +653,7 @@ function createTauriMacosBuildConfig() {
 }
 
 function resolveAppleCredentials() {
-  const appleSettings = loadReleaseSettings({ releaseChannel: "release" }).apple;
+  const appleSettings = loadReleaseSettings({ releaseChannel: "prod" }).apple;
 
   if (
     appleSettings.appleId === undefined ||
@@ -649,7 +671,7 @@ function resolveAppleCredentials() {
 }
 
 function resolveAppleSigningIdentity() {
-  const appleSettings = loadReleaseSettings({ releaseChannel: "release" }).apple;
+  const appleSettings = loadReleaseSettings({ releaseChannel: "prod" }).apple;
   const appleSigningIdentity = appleSettings.signingIdentity;
 
   if (typeof appleSigningIdentity !== "string" || appleSigningIdentity.length === 0) {
@@ -664,6 +686,7 @@ function createMacosBuildEnvironment() {
   const appleSigningIdentity = resolveAppleSigningIdentity();
   const macosBuildEnvironment = {
     ...process.env,
+    ...resolveUpdaterSigningEnvironment(),
   };
 
   if (appleCredentials !== undefined) {

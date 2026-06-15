@@ -40,6 +40,11 @@ export class AppMenuService {
       action: () => this.bus.publish(ActionFired.create("open_documentation")),
       keybinding: this.keybindingFor("open_documentation"),
     });
+    items.push({
+      label: "Check for Updates",
+      action: () => this.bus.publish(ActionFired.create("check_for_updates")),
+      keybinding: this.keybindingFor("check_for_updates"),
+    });
     return items;
   }
 

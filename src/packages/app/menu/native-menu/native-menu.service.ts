@@ -98,6 +98,14 @@ export class NativeMenuService {
             this.bus.publish(ActionFired.create("open_documentation"));
           },
         }),
+        await TauriMenu.newItem({
+          id: "check_for_updates",
+          text: "Check for Updates",
+          enabled: true,
+          action: () => {
+            this.bus.publish(ActionFired.create("check_for_updates"));
+          },
+        }),
       ],
     });
 

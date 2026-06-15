@@ -47,6 +47,7 @@ import { NotificationChannelsPortAdapterService } from "@cogno/app/notification/
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
+import { UpdaterService } from "@cogno/app/updater/updater.service";
 import { WindowService } from "@cogno/app/window/window.service";
 import { Logger } from "@cogno/app-tauri/logger";
 import {
@@ -156,6 +157,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(AiProviderDetectionService);
         injector.get(CodingAgentStatusService);
         injector.get(CodingAgentStartupService);
+        injector.get(UpdaterService);
       }, 0);
     }),
   ],
