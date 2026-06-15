@@ -12,6 +12,7 @@ import { appDatabaseMigrations } from "./migrations/migrate";
 import { AppNotificationToastStackComponent } from "./notification/app-notification-toast-stack.component";
 import { TabListComponent } from "./tab-list/tab-list.component";
 import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-indicator-adapter.service";
+import { UpdateAvailableButtonComponent } from "./updater/update-available-button.component";
 
 @Component({
   selector: "app-root",
@@ -21,11 +22,13 @@ import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-in
     TabListComponent,
     AppNotificationToastStackComponent,
     SelectedWorkspaceHeaderComponent,
+    UpdateAvailableButtonComponent,
   ],
   template: `
     <header [class.space-left-window-buttons]="os === 'macos'">
         <app-tab-list></app-tab-list>
         <app-selected-workspace-header></app-selected-workspace-header>
+        <app-update-available-button></app-update-available-button>
         <app-window-buttons></app-window-buttons>
     </header>
     <main>
