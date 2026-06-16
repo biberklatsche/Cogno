@@ -93,10 +93,10 @@ function buildCurlCommand(
   hookEvent: string,
   stdout?: string,
 ): string {
-  const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"`;
-  const data = `'${prefix}'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
+  const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","`;
+  const data = `'${prefix}'"$seq"'"],"terminal_id":"'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
   const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d ${data}`;
-  const guardedCurl = `${bashPayloadCapture()}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
+  const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and
   // force a zero exit status — this is a fire-and-forget status ping, never the agent's
@@ -111,8 +111,9 @@ function buildWindowsCommand(
   stdout?: string,
 ): string {
   const body =
+    `$seq=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();` +
     `${powershellPayloadCapture()};` +
-    `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
+    `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","'+$seq+'"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
   const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
   const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch { Write-Error $_ }`;
 
