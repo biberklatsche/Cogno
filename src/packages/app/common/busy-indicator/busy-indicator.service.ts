@@ -29,14 +29,6 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const payload = event.payload;
         if (!payload) return;
-        for (const [registrationId, registration] of this._map) {
-          if (
-            registrationId !== payload.registrationId &&
-            sameTarget(registration.target, payload.target)
-          ) {
-            this._map.delete(registrationId);
-          }
-        }
         this._map.set(payload.registrationId, payload);
         this.emit();
       });
@@ -81,10 +73,6 @@ export class BusyIndicatorService {
       distinctUntilChanged(),
     );
   }
-}
-
-function sameTarget(a: BusyIndicatorTarget, b: BusyIndicatorTarget): boolean {
-  return a.kind === b.kind && a.id === b.id;
 }
 
 function sameRegistrations(
