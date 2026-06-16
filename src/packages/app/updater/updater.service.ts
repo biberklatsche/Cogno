@@ -21,6 +21,9 @@ export class UpdaterService {
   private readonly _availableUpdate = signal<Update | null>(null);
   readonly availableUpdate = this._availableUpdate.asReadonly();
 
+  private checking = false;
+  private dialogOpen = false;
+
   constructor(
     private readonly bus: AppBus,
     private readonly dialog: DialogService,
@@ -47,6 +50,10 @@ export class UpdaterService {
   }
 
   private async checkForUpdates({ notify }: { notify: boolean }): Promise<void> {
+    if (this.checking) {
+      return;
+    }
+    this.checking = true;
     try {
       const update = await Updater.check();
 
@@ -74,10 +81,17 @@ export class UpdaterService {
       if (notify) {
         this.notify("Could not check for updates.");
       }
+    } finally {
+      this.checking = false;
     }
   }
 
   private openUpdateDialog(update: Update): void {
+    if (this.dialogOpen) {
+      return;
+    }
+    this.dialogOpen = true;
+
     const dialogRef = this.dialog.open<UpdateDialogData, UpdateDialogResult>(
       UpdateDialogComponent,
       {
@@ -96,6 +110,7 @@ export class UpdaterService {
 
     const closeDialog = dialogRef.close.bind(dialogRef);
     dialogRef.close = (result?: UpdateDialogResult) => {
+      this.dialogOpen = false;
       closeDialog(result);
       if (result === "install") {
         void this.installUpdate(update);

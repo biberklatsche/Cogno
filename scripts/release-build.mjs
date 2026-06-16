@@ -525,6 +525,21 @@ function validateVersionConsistency(releaseVersion, projectVersion) {
   }
 }
 
+function validateUpdaterEndpoint({ releaseChannel }) {
+  const tauriConfig = JSON.parse(readFileSync(tauriConfigPath, "utf-8"));
+  const endpoints = tauriConfig?.plugins?.updater?.endpoints ?? [];
+  const placeholder = endpoints.find((url) => url.includes("xxxxxxxx"));
+
+  if (placeholder !== undefined) {
+    throw new Error(
+      `${tauriConfigPath} still contains a placeholder updater endpoint: "${placeholder}"\n` +
+        `Run "pnpm r2:setup" to create the R2 bucket, then replace "pub-xxxxxxxx" with the real URL.`,
+    );
+  }
+
+  console.log(`  Updater endpoint (${releaseChannel}): ${endpoints[0] ?? "(none)"}`);
+}
+
 function recreateDirectory(directoryPath) {
   rmSync(directoryPath, { force: true, recursive: true });
   mkdirSync(directoryPath, { recursive: true });
@@ -1220,6 +1235,9 @@ async function finalizeRelease({
   releaseVersion,
 }) {
   const remoteStorageSettings = resolveRemoteStorageSettings(releaseSettings);
+
+  validateUpdaterEndpoint({ releaseChannel });
+
   const finalizedReleaseDirectoryPath = join(
     artifactRootDirectoryPath,
     "finalized",
