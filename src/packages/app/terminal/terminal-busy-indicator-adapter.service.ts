@@ -82,6 +82,7 @@ export class TerminalBusyIndicatorAdapterService {
       type: "BusyIndicatorRegister",
       payload: {
         registrationId: `terminal-busy-active-${terminalId}`,
+        slot: "terminal-busy-active",
         target: { kind: "terminal", id: terminalId },
         keyframes: TERMINAL_BUSY_FRAMES,
         priority: PRIORITY_TERMINAL_ACTIVE,
@@ -94,6 +95,7 @@ export class TerminalBusyIndicatorAdapterService {
       type: "BusyIndicatorRegister",
       payload: {
         registrationId: `terminal-busy-idle-${terminalId}`,
+        slot: "terminal-busy-idle",
         target: { kind: "terminal", id: terminalId },
         keyframes: TERMINAL_IDLE_FRAMES,
         priority: PRIORITY_TERMINAL_IDLE,

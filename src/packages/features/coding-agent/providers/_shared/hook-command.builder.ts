@@ -94,9 +94,11 @@ function buildCurlCommand(
   stdout?: string,
 ): string {
   const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","`;
-  const data = `'${prefix}'"$seq"'"],"terminal_id":"'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
-  const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d ${data}`;
-  const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
+  // Build the JSON body into _b first so the curl call is a simple "$_b" expansion —
+  // this avoids any ambiguity around single-quote injection from $input.
+  const bodyVar = `_b='${prefix}'"$seq"'"],"terminal_id":"'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
+  const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d "$_b"`;
+  const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and
   // force a zero exit status — this is a fire-and-forget status ping, never the agent's

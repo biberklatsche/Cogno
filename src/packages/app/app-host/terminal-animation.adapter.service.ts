@@ -40,6 +40,7 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
       type: "BusyIndicatorRegister",
       payload: {
         registrationId,
+        slot: registrationKey,
         target: { kind: "terminal", id: terminalId },
         keyframes: spec.keyframes,
         priority: spec.priority,

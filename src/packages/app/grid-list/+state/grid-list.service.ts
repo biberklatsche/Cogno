@@ -242,12 +242,11 @@ export class GridListService {
         const gridList = this.getActiveWorkspaceGridList();
         const focusedTabId = this.determineTabId(gridList, event.payload);
         if (!focusedTabId || focusedTabId !== this._activeTabId.value) return;
-        Object.values(gridList).forEach((grid: Grid) => {
-          const currentFocusedTab = grid.tree.first(
-            (s) => (s.isLeaf && s.data?.isFocused) ?? false,
-          );
-          if (currentFocusedTab?.data) currentFocusedTab.data.isFocused = false;
-        });
+        const activeGrid = gridList[this._activeTabId.value];
+        const currentFocusedTab = activeGrid.tree.first(
+          (s) => (s.isLeaf && s.data?.isFocused) ?? false,
+        );
+        if (currentFocusedTab?.data) currentFocusedTab.data.isFocused = false;
         const paneConfig = gridList[this._activeTabId.value].tree.first(
           (s) => s.isLeaf && s.data?.terminalId === event.payload,
         )?.data;
@@ -357,7 +356,7 @@ export class GridListService {
       const wasFocusedNode = gridAndNode.node.data?.isFocused;
       const newChild = gridAndNode.grid.tree.remove(gridAndNode.node.key);
       if (wasFocusedNode) {
-        this.scheduleTerminalFocus(newChild?.data?.terminalId);
+        this.deferFocusTo(newChild?.data?.terminalId);
       }
     }
     this.componentFactory.destroy(terminalId);
@@ -584,8 +583,9 @@ export class GridListService {
     if (!grid) return;
     this.minimizePane();
     this.setActiveWorkspaceTabIdentifier(tab);
-    const terminalId = this.getFirstTerminalId(grid.tree.root);
-    this.scheduleTerminalFocus(terminalId);
+    const focusedNode = grid.tree.first((n) => n.isLeaf && (n.data?.isFocused ?? false));
+    const terminalId = focusedNode?.data?.terminalId ?? this.getFirstTerminalId(grid.tree.root);
+    this.deferFocusTo(terminalId);
   }
 
   getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
@@ -764,7 +764,7 @@ export class GridListService {
     }
   }
 
-  private scheduleTerminalFocus(terminalId: TerminalId | undefined): void {
+  deferFocusTo(terminalId: TerminalId | undefined): void {
     if (!terminalId) {
       return;
     }

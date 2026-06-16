@@ -21,6 +21,13 @@ export type BusyIndicatorRegisterEvent = MessageBase<
   "BusyIndicatorRegister",
   {
     registrationId: string;
+    /**
+     * When set, at most one registration per (slot, target) is kept.
+     * Re-registering with the same slot but a different registrationId
+     * evicts the previous entry — preventing ghost accumulation when a
+     * caller re-registers without unregistering the old id first.
+     */
+    slot?: string;
     target: BusyIndicatorTarget;
     keyframes: number[][][];
     priority: number;

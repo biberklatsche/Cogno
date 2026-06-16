@@ -79,6 +79,7 @@ function extractActivity(
 @Injectable({ providedIn: "root" })
 export class CodingAgentStatusService {
   private readonly agentsMap = new Map<string, ActiveAgent>();
+  private readonly lastSeq = new Map<string, number>();
   private readonly _activeAgents = signal<ReadonlyArray<ActiveAgent>>([]);
 
   readonly activeAgents: Signal<ReadonlyArray<ActiveAgent>> = this._activeAgents.asReadonly();
@@ -107,6 +108,11 @@ export class CodingAgentStatusService {
         takeUntilDestroyed(destroyRef),
       )
       .subscribe(({ terminalId, args, payload }) => {
+        const seq = Number(args?.[3] ?? 0) || 0;
+        const last = this.lastSeq.get(terminalId) ?? 0;
+        if (seq > 0 && seq < last) return;
+        if (seq > 0) this.lastSeq.set(terminalId, seq);
+
         const status = parseAgentStatus(args?.[0] ?? "") ?? "ready";
         const providerId = args?.[1] ?? "";
         const lastHook = args?.[2] || undefined;
@@ -150,6 +156,7 @@ export class CodingAgentStatusService {
     )
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((terminalId) => {
+        this.lastSeq.delete(terminalId);
         if (this.agentsMap.delete(terminalId)) this.syncActiveAgents();
       });
   }

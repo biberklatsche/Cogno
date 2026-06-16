@@ -8,6 +8,7 @@ import { BusyIndicatorTarget } from "./+bus/events";
 
 export type BusyIndicatorRegistration = {
   registrationId: string;
+  slot?: string;
   target: BusyIndicatorTarget;
   keyframes: number[][][];
   priority: number;
@@ -16,6 +17,8 @@ export type BusyIndicatorRegistration = {
 @Injectable({ providedIn: "root" })
 export class BusyIndicatorService {
   private readonly _map = new Map<string, BusyIndicatorRegistration>();
+  /** Maps "${slot}:${target.kind}:${target.id}" → registrationId for slot-based eviction. */
+  private readonly _slotIndex = new Map<string, string>();
   private readonly _registrations$ = new BehaviorSubject<BusyIndicatorRegistration[]>([]);
 
   constructor(
@@ -29,6 +32,14 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const payload = event.payload;
         if (!payload) return;
+        if (payload.slot) {
+          const slotKey = `${payload.slot}:${payload.target.kind}:${payload.target.id}`;
+          const prevId = this._slotIndex.get(slotKey);
+          if (prevId && prevId !== payload.registrationId) {
+            this._map.delete(prevId);
+          }
+          this._slotIndex.set(slotKey, payload.registrationId);
+        }
         this._map.set(payload.registrationId, payload);
         this.emit();
       });
@@ -39,6 +50,13 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const registrationId = event.payload?.registrationId;
         if (!registrationId) return;
+        const reg = this._map.get(registrationId);
+        if (reg?.slot) {
+          const slotKey = `${reg.slot}:${reg.target.kind}:${reg.target.id}`;
+          if (this._slotIndex.get(slotKey) === registrationId) {
+            this._slotIndex.delete(slotKey);
+          }
+        }
         this._map.delete(registrationId);
         this.emit();
       });
@@ -73,10 +91,6 @@ export class BusyIndicatorService {
       distinctUntilChanged(),
     );
   }
-}
-
-function sameTarget(a: BusyIndicatorTarget, b: BusyIndicatorTarget): boolean {
-  return a.kind === b.kind && a.id === b.id;
 }
 
 function sameRegistrations(

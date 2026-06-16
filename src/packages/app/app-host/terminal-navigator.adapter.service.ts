@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TerminalGateway, TerminalNavigator } from "@cogno/core-api";
+import { TerminalNavigator } from "@cogno/core-api";
 import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { TabListService } from "../tab-list/+state/tab-list.service";
@@ -11,7 +11,6 @@ export class TerminalNavigatorAdapterService extends TerminalNavigator {
     private readonly appBus: AppBus,
     private readonly gridListService: GridListService,
     private readonly tabListService: TabListService,
-    private readonly terminalGateway: TerminalGateway,
     private readonly workspaceHostApplicationService: WorkspaceHostApplicationService,
   ) {
     super();
@@ -42,6 +41,6 @@ export class TerminalNavigatorAdapterService extends TerminalNavigator {
       this.tabListService.selectTab(tabId);
     }
 
-    this.terminalGateway.focusTerminal(terminalId);
+    this.gridListService.deferFocusTo(terminalId);
   }
 }
