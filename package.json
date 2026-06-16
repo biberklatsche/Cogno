@@ -23,7 +23,8 @@
     "release:build": "node ./scripts/release-build.mjs",
     "release:build:test": "node ./scripts/release-build.mjs --test --allow-dirty",
     "release:test": "node ./scripts/release-build.mjs --test",
-    "r2:setup": "node ./scripts/r2-setup.mjs"
+    "r2:setup": "node ./scripts/r2-setup.mjs",
+    "updater:dev": "node ./scripts/updater-dev-server.mjs"
   },
   "private": false,
   "dependencies": {

@@ -1,0 +1,23 @@
+{
+  "version": "0.3.1",
+  "notes": "Bug fixes and improvements",
+  "pub_date": "2026-06-16T00:00:00Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "url": "https://pub-xxxxxxxx.r2.dev/cogno/dev/releases/v0.3.1/macos/cogno_0.3.1_aarch64.app.tar.gz",
+      "signature": "untrusted comment: signature from tauri secret key\nRWSRE5zF8sBqBmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+    },
+    "darwin-x86_64": {
+      "url": "https://pub-xxxxxxxx.r2.dev/cogno/dev/releases/v0.3.1/macos/cogno_0.3.1_x86_64.app.tar.gz",
+      "signature": "untrusted comment: signature from tauri secret key\nRWSRE5zF8sBqBmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+    },
+    "linux-x86_64": {
+      "url": "https://pub-xxxxxxxx.r2.dev/cogno/dev/releases/v0.3.1/linux/cogno_0.3.1_amd64.AppImage.tar.gz",
+      "signature": "untrusted comment: signature from tauri secret key\nRWSRE5zF8sBqBmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+    },
+    "windows-x86_64": {
+      "url": "https://pub-xxxxxxxx.r2.dev/cogno/dev/releases/v0.3.1/windows/cogno_0.3.1_x64-setup.nsis.zip",
+      "signature": "untrusted comment: signature from tauri secret key\nRWSRE5zF8sBqBmAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n"
+    }
+  }
+}
