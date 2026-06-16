@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -45,10 +45,12 @@ async function main() {
 }
 
 function loadCloudflareSettings() {
-  const parsedSettings =
-    existsSync(releaseSettingsFilePath) && statSync(releaseSettingsFilePath).isFile()
-      ? JSON.parse(readFileSync(releaseSettingsFilePath, "utf-8"))
-      : {};
+  let parsedSettings = {};
+  try {
+    parsedSettings = JSON.parse(readFileSync(releaseSettingsFilePath, "utf-8"));
+  } catch {
+    // file missing or unreadable — parsedSettings stays {}
+  }
 
   const cloudflare = parsedSettings.cloudflare ?? {};
 

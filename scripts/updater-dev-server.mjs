@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
-const [major, minor, patch] = pkg.version.split(".").map(Number);
 
 const PORT = 3001;
 const ENDPOINT_PATH = "/cogno/dev/updater/latest.json";
@@ -13,9 +12,11 @@ const ENDPOINT_PATH = "/cogno/dev/updater/latest.json";
 const args = process.argv.slice(2);
 const noUpdate = args.includes("--no-update");
 const versionArgIdx = args.indexOf("--version");
-const simulatedVersion =
-  versionArgIdx !== -1 ? args[versionArgIdx + 1] : `${major}.${minor}.${patch + 1}`;
 const currentVersion = pkg.version;
+const simulatedVersion =
+  versionArgIdx !== -1
+    ? args[versionArgIdx + 1]
+    : currentVersion.replace(/(\d+)$/, (n) => String(Number(n) + 1));
 
 function makeUpdaterJson(version) {
   const fakeBase = `http://localhost:${PORT}/fake`;
