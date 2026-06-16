@@ -4,7 +4,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFDODJFMzVGOTc0QzhFQUUKUldTdWpreVhYK09Dck1Eb2ZWa255cmlpMXZ0cXM1N1c3dWV1NllRUWxGS3JiNWNPNk9yejhzMXEK",
-      "endpoints": ["https://pub-xxxxxxxx.r2.dev/cogno/dev/updater/latest.json"]
+      "endpoints": ["http://localhost:3001/cogno/dev/updater/latest.json"]
     }
   }
 }
