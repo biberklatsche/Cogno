@@ -8,8 +8,6 @@ export interface BusyIndicatorHandle {
 
 export interface BusyIndicatorRegistrationOptions {
   registrationId: string;
-  /** See BusyIndicatorRegisterEvent.slot — prevents ghost accumulation on re-register. */
-  slot?: string;
   target: BusyIndicatorTarget;
   keyframes: number[][][];
   priority: number;
@@ -26,7 +24,6 @@ export class BusyIndicatorHelper {
       type: "BusyIndicatorRegister",
       payload: {
         registrationId: options.registrationId,
-        slot: options.slot,
         target: options.target,
         keyframes: options.keyframes,
         priority: options.priority,

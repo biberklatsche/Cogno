@@ -8,8 +8,6 @@ import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.se
 
 @Injectable({ providedIn: "root" })
 export class TerminalAnimationAdapterService extends TerminalAnimationPort {
-  private readonly activeIds = new Map<string, Set<string>>();
-
   constructor(
     private readonly bus: AppBus,
     private readonly busyIndicatorService: BusyIndicatorService,
@@ -19,28 +17,19 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
     super();
 
     monitor.activity$.pipe(takeUntilDestroyed(destroyRef)).subscribe((e) => {
-      if (!e.isBusy) this.clearAllForTerminal(e.terminalId);
+      if (!e.isBusy) this.clearForTerminal(e.terminalId);
     });
 
     monitor.terminated$.pipe(takeUntilDestroyed(destroyRef)).subscribe((terminalId) => {
-      this.clearAllForTerminal(terminalId);
+      this.clearForTerminal(terminalId);
     });
   }
 
   register(terminalId: string, registrationKey: string, spec: AnimationSpec): void {
-    const registrationId = `${registrationKey}-${terminalId}`;
-    let ids = this.activeIds.get(terminalId);
-    if (!ids) {
-      ids = new Set();
-      this.activeIds.set(terminalId, ids);
-    }
-    ids.add(registrationId);
-
     this.bus.publish({
       type: "BusyIndicatorRegister",
       payload: {
-        registrationId,
-        slot: registrationKey,
+        registrationId: `${registrationKey}-${terminalId}`,
         target: { kind: "terminal", id: terminalId },
         keyframes: spec.keyframes,
         priority: spec.priority,
@@ -49,11 +38,9 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
   }
 
   unregister(terminalId: string, registrationKey: string): void {
-    const registrationId = `${registrationKey}-${terminalId}`;
-    this.activeIds.get(terminalId)?.delete(registrationId);
     this.bus.publish({
       type: "BusyIndicatorUnregister",
-      payload: { registrationId },
+      payload: { registrationId: `${registrationKey}-${terminalId}` },
     });
   }
 
@@ -63,12 +50,10 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
       .pipe(map((regs) => regs.map((r) => ({ keyframes: r.keyframes, priority: r.priority }))));
   }
 
-  private clearAllForTerminal(terminalId: string): void {
-    const ids = this.activeIds.get(terminalId);
-    if (!ids) return;
-    for (const registrationId of ids) {
-      this.bus.publish({ type: "BusyIndicatorUnregister", payload: { registrationId } });
-    }
-    this.activeIds.delete(terminalId);
+  private clearForTerminal(terminalId: string): void {
+    this.bus.publish({
+      type: "BusyIndicatorClearForTerminal",
+      payload: { terminalId },
+    });
   }
 }

@@ -44,7 +44,7 @@ describe("BusyIndicatorService", () => {
     );
   });
 
-  it("keeps only the latest animation for one terminal", () => {
+  it("stores all registrations for the same terminal concurrently", () => {
     const terminalRegistrations = observeRegistrations(service.forTerminal$("terminal-1"));
 
     registerTerminalAnimation("terminal-busy-terminal-1", "terminal-1", defaultKeyframes, 1);
@@ -55,16 +55,16 @@ describe("BusyIndicatorService", () => {
       50,
     );
 
-    expect(terminalRegistrations.current).toEqual([
-      expect.objectContaining({
-        registrationId: "coding-agent-status-terminal-1",
-        keyframes: providerKeyframes,
-        priority: 50,
-      }),
-    ]);
+    expect(terminalRegistrations.current).toHaveLength(2);
+    expect(terminalRegistrations.current.map((r) => r.registrationId)).toContain(
+      "terminal-busy-terminal-1",
+    );
+    expect(terminalRegistrations.current.map((r) => r.registrationId)).toContain(
+      "coding-agent-status-terminal-1",
+    );
   });
 
-  it("lets a later default animation replace a provider animation for the same terminal", () => {
+  it("keeps all registrations regardless of registration order", () => {
     const terminalRegistrations = observeRegistrations(service.forTerminal$("terminal-1"));
 
     registerTerminalAnimation(
@@ -75,16 +75,10 @@ describe("BusyIndicatorService", () => {
     );
     registerTerminalAnimation("terminal-busy-terminal-1", "terminal-1", defaultKeyframes, 1);
 
-    expect(terminalRegistrations.current).toEqual([
-      expect.objectContaining({
-        registrationId: "terminal-busy-terminal-1",
-        keyframes: defaultKeyframes,
-        priority: 1,
-      }),
-    ]);
+    expect(terminalRegistrations.current).toHaveLength(2);
   });
 
-  it("keeps one animation per terminal when a tab contains multiple terminals", () => {
+  it("aggregates all terminal registrations for a tab with multiple terminals", () => {
     terminalTabIds.set("terminal-1", "tab-1");
     terminalTabIds.set("terminal-2", "tab-1");
     const tabRegistrations = observeRegistrations(service.forTab$("tab-1"));
@@ -98,14 +92,17 @@ describe("BusyIndicatorService", () => {
     );
     registerTerminalAnimation("terminal-busy-terminal-2", "terminal-2", highPriorityKeyframes, 75);
 
-    expect(tabRegistrations.current).toHaveLength(2);
-    expect(tabRegistrations.current.map((registration) => registration.registrationId)).toEqual([
-      "coding-agent-status-terminal-1",
-      "terminal-busy-terminal-2",
-    ]);
+    expect(tabRegistrations.current).toHaveLength(3);
+    expect(tabRegistrations.current.map((r) => r.registrationId)).toEqual(
+      expect.arrayContaining([
+        "terminal-busy-terminal-1",
+        "coding-agent-status-terminal-1",
+        "terminal-busy-terminal-2",
+      ]),
+    );
   });
 
-  it("removes the current terminal animation when it is unregistered", () => {
+  it("removes only the unregistered animation, leaving others intact", () => {
     const terminalRegistrations = observeRegistrations(service.forTerminal$("terminal-1"));
 
     registerTerminalAnimation("terminal-busy-terminal-1", "terminal-1", defaultKeyframes, 1);
@@ -117,7 +114,9 @@ describe("BusyIndicatorService", () => {
     );
     unregisterAnimation("coding-agent-status-terminal-1");
 
-    expect(terminalRegistrations.current).toEqual([]);
+    expect(terminalRegistrations.current).toEqual([
+      expect.objectContaining({ registrationId: "terminal-busy-terminal-1" }),
+    ]);
   });
 
   it("does not remove the current terminal animation when an older registration is unregistered", () => {
@@ -137,6 +136,27 @@ describe("BusyIndicatorService", () => {
         registrationId: "coding-agent-status-terminal-1",
       }),
     ]);
+  });
+
+  it("clears all registrations for a terminal on BusyIndicatorClearForTerminal", () => {
+    terminalTabIds.set("terminal-1", "tab-1");
+    terminalTabIds.set("terminal-2", "tab-1");
+    const t1Registrations = observeRegistrations(service.forTerminal$("terminal-1"));
+    const t2Registrations = observeRegistrations(service.forTerminal$("terminal-2"));
+
+    registerTerminalAnimation("terminal-busy-terminal-1", "terminal-1", defaultKeyframes, 1);
+    registerTerminalAnimation(
+      "coding-agent-status-terminal-1",
+      "terminal-1",
+      providerKeyframes,
+      50,
+    );
+    registerTerminalAnimation("terminal-busy-terminal-2", "terminal-2", defaultKeyframes, 1);
+
+    clearForTerminal("terminal-1");
+
+    expect(t1Registrations.current).toHaveLength(0);
+    expect(t2Registrations.current).toHaveLength(1);
   });
 
   function registerTerminalAnimation(
@@ -160,6 +180,13 @@ describe("BusyIndicatorService", () => {
     bus.publish({
       type: "BusyIndicatorUnregister",
       payload: { registrationId },
+    });
+  }
+
+  function clearForTerminal(terminalId: string): void {
+    bus.publish({
+      type: "BusyIndicatorClearForTerminal",
+      payload: { terminalId },
     });
   }
 });
