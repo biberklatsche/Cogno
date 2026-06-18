@@ -29,14 +29,6 @@ export class BusyIndicatorService {
       .subscribe((event) => {
         const payload = event.payload;
         if (!payload) return;
-        for (const [registrationId, registration] of this._map) {
-          if (
-            registrationId !== payload.registrationId &&
-            sameTarget(registration.target, payload.target)
-          ) {
-            this._map.delete(registrationId);
-          }
-        }
         this._map.set(payload.registrationId, payload);
         this.emit();
       });
@@ -49,6 +41,22 @@ export class BusyIndicatorService {
         if (!registrationId) return;
         this._map.delete(registrationId);
         this.emit();
+      });
+
+    this.bus
+      .onType$("BusyIndicatorClearForTerminal")
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((event) => {
+        const terminalId = event.payload?.terminalId;
+        if (!terminalId) return;
+        let changed = false;
+        for (const [id, reg] of this._map) {
+          if (reg.target.kind === "terminal" && reg.target.id === terminalId) {
+            this._map.delete(id);
+            changed = true;
+          }
+        }
+        if (changed) this.emit();
       });
   }
 
@@ -81,10 +89,6 @@ export class BusyIndicatorService {
       distinctUntilChanged(),
     );
   }
-}
-
-function sameTarget(a: BusyIndicatorTarget, b: BusyIndicatorTarget): boolean {
-  return a.kind === b.kind && a.id === b.id;
 }
 
 function sameRegistrations(

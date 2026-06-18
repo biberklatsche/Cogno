@@ -55,7 +55,7 @@ export class CodingAgentNotificationPreferencesService {
       (status) => ({
         id: status,
         label: NOTIFICATION_LABELS[status],
-        defaultEnabled: notificationsConfig?.[status]?.enabled ?? true,
+        defaultEnabled: notificationsConfig?.[status]?.enabled ?? false,
       }),
     );
   }

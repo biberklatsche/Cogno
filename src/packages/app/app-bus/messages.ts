@@ -1,6 +1,7 @@
 import { ActionFiredEvent } from "../action/action.models";
 import { TerminalIpcMessageEvent } from "../cogno-message/+bus/events";
 import {
+  BusyIndicatorClearForTerminalEvent,
   BusyIndicatorRegisterEvent,
   BusyIndicatorUnregisterEvent,
 } from "../common/busy-indicator/+bus/events";
@@ -91,6 +92,7 @@ export type TerminalCommandType = AppMessage["type"];
 export type AppMessage =
   | BusyIndicatorRegisterEvent
   | BusyIndicatorUnregisterEvent
+  | BusyIndicatorClearForTerminalEvent
   | TabRemovedEvent
   | RemoveTabAction
   | CreateTabAction

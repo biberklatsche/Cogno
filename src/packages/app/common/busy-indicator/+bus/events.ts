@@ -31,3 +31,9 @@ export type BusyIndicatorUnregisterEvent = MessageBase<
   "BusyIndicatorUnregister",
   { registrationId: string }
 >;
+
+/** Removes all registrations whose target is `{ kind: "terminal", id: terminalId }`. */
+export type BusyIndicatorClearForTerminalEvent = MessageBase<
+  "BusyIndicatorClearForTerminal",
+  { terminalId: string }
+>;
