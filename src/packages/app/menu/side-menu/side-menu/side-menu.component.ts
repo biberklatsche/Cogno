@@ -50,7 +50,7 @@ export function isSelectedSideMenuItem(
                 <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
                     <button class="button icon-button" (click)="togglePin()">
-                        <app-icon [name]="selectedItem()?.pinned ? 'mdiPinOff' : 'mdiPin'"></app-icon>
+                        <app-icon [name]="selectedItem()?.pinned ? 'mdiPin' : 'mdiPinOff'"></app-icon>
                     </button>
                     <button class="button icon-button" (click)="toggleDisplacement()">
                         <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
