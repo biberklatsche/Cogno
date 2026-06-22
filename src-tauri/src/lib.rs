@@ -2,6 +2,7 @@ use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
 use cogno_tauri_core::http_server::HttpServerState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
+use tauri::window::Color;
 use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -74,6 +75,7 @@ pub fn run(cli: Cli) {
                 WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                     .title("")
                     .inner_size(800.0, 600.0)
+                    .background_color(Color(0x0e, 0x19, 0x25, 0xff))
                     .visible(false);
 
             #[cfg(target_os = "macos")]
