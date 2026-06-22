@@ -17,7 +17,7 @@ import {
 import { request as createHttpRequest } from "node:http";
 import { request as createHttpsRequest } from "node:https";
 import { homedir, tmpdir } from "node:os";
-import { basename, dirname, extname, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
 import { URL } from "node:url";
 
 const artifactRootDirectoryPath = "release-artifacts";
@@ -807,6 +807,15 @@ function findBundleArtifacts({ currentPlatformName, sourceBundleDirectoryPath })
     }
 
     if (currentPlatformName === "linux") {
+      if (
+        currentEntryPath.endsWith(".tar.gz") &&
+        currentEntryPath.includes(`${join("bundle", "deb")}${sep}`)
+      ) {
+        // cargo-deb's exploded build directory (bundle/deb/<pkg>/{control,data}.tar.gz)
+        // contains untagged intermediate tarballs, not release artifacts.
+        return false;
+      }
+
       return (
         currentEntryPath.endsWith(".AppImage") ||
         currentEntryPath.endsWith(".AppImage.sig") ||
