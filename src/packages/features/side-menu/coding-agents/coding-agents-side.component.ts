@@ -12,6 +12,7 @@ import {
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
 import { AgentAnimationComponent } from "./agent-animation.component";
+import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.service";
 
 @Component({
   selector: "app-coding-agents-side",
@@ -390,7 +391,7 @@ export class CodingAgentsSideComponent {
     });
   }
 
-  statusLabel(status: ActiveAgent["status"]): string {
+  statusLabel(status: AgentStatus): string {
     if (status === "ready") return "Ready";
     if (status === "working") return "Working";
     if (status === "question") return "Waiting for input";

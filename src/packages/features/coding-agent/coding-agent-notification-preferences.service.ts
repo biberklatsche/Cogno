@@ -7,9 +7,9 @@ import {
 } from "@cogno/core-api";
 import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
 import { take } from "rxjs";
-import { ActiveAgent } from "./coding-agent-status.service";
+import {ActiveAgent, AgentStatus} from "./coding-agent-status.service";
 
-const NOTIFICATION_LABELS: Record<ActiveAgent["status"], string> = {
+const NOTIFICATION_LABELS: Record<AgentStatus, string> = {
   working: "Agent starts working",
   question: "Agent has a question",
   ready: "Agent becomes ready",
@@ -51,7 +51,7 @@ export class CodingAgentNotificationPreferencesService {
       | undefined;
     const notificationsConfig = config?.coding_agents?.notifications;
 
-    return (Object.keys(NOTIFICATION_LABELS) as ReadonlyArray<ActiveAgent["status"]>).map(
+    return (Object.keys(NOTIFICATION_LABELS) as ReadonlyArray<AgentStatus>).map(
       (status) => ({
         id: status,
         label: NOTIFICATION_LABELS[status],

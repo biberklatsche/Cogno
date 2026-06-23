@@ -1,4 +1,5 @@
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::window::Color;
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[tauri::command]
@@ -13,6 +14,7 @@ pub async fn new_window(app: tauri::AppHandle) -> Result<(), String> {
     let builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::default())
         .title("")
         .inner_size(800.0, 600.0)
+        .background_color(Color(0x0e, 0x19, 0x25, 0xff))
         .visible(false);
 
     #[cfg(target_os = "macos")]
