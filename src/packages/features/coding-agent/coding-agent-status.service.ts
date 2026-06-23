@@ -2,7 +2,8 @@ import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   ApplicationConfigurationPort,
-  NotificationCenterPort, NotificationTypeContract,
+  NotificationCenterPort,
+  NotificationTypeContract,
   parseAgentStatus,
   TerminalAnimationPort,
   TerminalIpcMessage,

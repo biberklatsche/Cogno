@@ -54,6 +54,15 @@ export class CommandLineEditor implements ITerminalHandler {
       if (this.shouldReplaceSelectionWithTypedText(event)) {
         return !this.replaceSelectionWithText(event.key, event);
       }
+      if (
+        (event.key === "ArrowUp" || event.key === "ArrowDown") &&
+        !event.shiftKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.metaKey
+      ) {
+        return this.handleVerticalArrow(event);
+      }
       return true;
     });
 
@@ -322,10 +331,9 @@ export class CommandLineEditor implements ITerminalHandler {
     const actualStart = Math.min(start, end);
 
     const startInputY = this.findLastCognoMarkerY() + 1;
-    const startCol = actualStart % this._terminal.cols;
-    const startRow = startInputY + Math.floor(actualStart / this._terminal.cols);
+    const { row, column } = this.getRowColumn(actualStart);
 
-    this._terminal.select(startCol, startRow, length);
+    this._terminal.select(column, startInputY + row, length);
   }
 
   private _selectAndMove(offset: number) {
@@ -336,6 +344,42 @@ export class CommandLineEditor implements ITerminalHandler {
   private _ptyWrite(data: string) {
     if (!this._terminal) return;
     this._pty.write(data);
+  }
+
+  private handleVerticalArrow(event: KeyboardEvent): boolean {
+    if (!this._terminal) return true;
+
+    const input = this.stateManager.input;
+    const cols = this._terminal.cols;
+    const row = Math.floor(input.cursorIndex / cols);
+    const lastRow = Math.floor(input.maxCursorIndex / cols);
+    const direction = event.key === "ArrowUp" ? -1 : 1;
+
+    if ((direction === -1 && row === 0) || (direction === 1 && row === lastRow)) {
+      return true;
+    }
+
+    const newIndex =
+      direction === -1
+        ? Math.max(0, input.cursorIndex - cols)
+        : Math.min(input.maxCursorIndex, input.cursorIndex + cols);
+    const offset = newIndex - input.cursorIndex;
+    if (offset !== 0) {
+      this._clearSelection();
+      this._ptyWrite(this._buildCursorMoveCommand(offset));
+      // Optimistically reflect the move locally: the authoritative onCursorMove
+      // event lags behind the pty round-trip, so without this a fast key-repeat
+      // would read a stale cursorIndex and miscompute the next row boundary.
+      this.stateManager.updateInput({
+        ...input,
+        cursorIndex: newIndex,
+        maxCursorIndex: Math.max(input.maxCursorIndex, newIndex),
+      });
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
   }
 
   private applyAutocompleteSuggestion(inputText: string, cursorIndex: number) {
@@ -422,6 +466,11 @@ export class CommandLineEditor implements ITerminalHandler {
     );
     this._clearSelection();
     return true;
+  }
+
+  private getRowColumn(index: number): { row: number; column: number } {
+    const cols = this._terminal?.cols ?? 1;
+    return { row: Math.floor(index / cols), column: index % cols };
   }
 
   private _buildCursorMoveCommand(offset: number): string {
@@ -529,8 +578,8 @@ export class CommandLineEditor implements ITerminalHandler {
     const length = Math.abs(newPos - this._selectionStart);
 
     const startInputY = this.findLastCognoMarkerY() + 1;
-    const startCol = start % this._terminal.cols;
-    const startRow = startInputY + Math.floor(start / this._terminal.cols);
+    const { row, column: startCol } = this.getRowColumn(start);
+    const startRow = startInputY + row;
 
     this._terminal.select(startCol, startRow, length);
   }

@@ -11,8 +11,8 @@ import {
   CodingAgentStartupService,
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
+import { AgentStatus } from "@cogno/features/coding-agent/coding-agent-status.service";
 import { AgentAnimationComponent } from "./agent-animation.component";
-import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.service";
 
 @Component({
   selector: "app-coding-agents-side",
