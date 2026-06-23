@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { FeatureModeContract } from "./feature-mode.contract";
 
-const hexColorSchema = z
-  .string()
-  .regex(
-    /^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/,
-    "Must be a 4-, 6-, or 8-digit hex color",
-  );
+const hexColorSchema = z.preprocess(
+  (val) => (typeof val === "string" && val.startsWith("#") ? val.slice(1) : val),
+  z
+    .string()
+    .regex(
+      /^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/,
+      "Must be a 4-, 6-, or 8-digit hex color",
+    ),
+);
 
 const featureModeSchema = z.enum([
   "off",

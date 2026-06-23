@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   ApplicationConfigurationPort,
-  NotificationCenterPort,
+  NotificationCenterPort, NotificationTypeContract,
   parseAgentStatus,
   TerminalAnimationPort,
   TerminalIpcMessage,
@@ -15,18 +15,20 @@ import { CodingAgentNotificationPreferencesService } from "./coding-agent-notifi
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CODING_AGENT_STATUS_ACTION } from "./providers/_shared/hook-command.builder";
 
-const STATUS_NOTIFICATION_HEADERS: Record<ActiveAgent["status"], string> = {
+const STATUS_NOTIFICATION_HEADERS: Record<AgentStatus, string> = {
   working: "Agent started working",
   question: "Agent has a question",
   ready: "Agent is ready",
   error: "Agent reported an error",
 };
 
+export type AgentStatus = "ready" | "working" | "question" | "error";
+
 export type ActiveAgent = {
   readonly terminalId: string;
   readonly providerId: string;
   readonly providerName: string;
-  readonly status: "ready" | "working" | "question" | "error";
+  readonly status: AgentStatus;
   readonly cwd?: string;
   readonly lastHook?: string;
   readonly activity?: string;
@@ -165,15 +167,28 @@ export class CodingAgentStatusService {
     this._activeAgents.set([...this.agentsMap.values()]);
   }
 
-  private notifyStatusChanged(providerName: string, status: ActiveAgent["status"]): void {
+  private notifyStatusChanged(providerName: string, status: AgentStatus): void {
     if (!this.notificationPreferences.shouldNotify(status)) return;
 
     this.notificationCenterPort.dispatch({
       header: STATUS_NOTIFICATION_HEADERS[status],
       body: providerName || undefined,
-      type: status === "error" ? "warning" : "info",
+      type: this.getNotificationType(status),
       timestamp: new Date(),
       channels: this.notificationPreferences.getActiveChannels(),
     });
+  }
+
+  private getNotificationType(status: AgentStatus): NotificationTypeContract {
+    switch (status) {
+      case "error":
+        return "error";
+      case "question":
+        return "warning";
+      case "ready":
+        return "success";
+      default:
+        return "info";
+    }
   }
 }

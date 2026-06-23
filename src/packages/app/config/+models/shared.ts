@@ -1,11 +1,14 @@
 import { z } from "zod";
 
-export const HexColorSchema = z
-  .string()
-  .regex(
-    /^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/,
-    "Must be a 4-, 6-, or 8-digit hex color",
-  );
+export const HexColorSchema = z.preprocess(
+  (val) => (typeof val === "string" && val.startsWith("#") ? val.slice(1) : val),
+  z
+    .string()
+    .regex(
+      /^(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/,
+      "Must be a 4-, 6-, or 8-digit hex color",
+    ),
+);
 
 export type HexColor = z.infer<typeof HexColorSchema>;
 
