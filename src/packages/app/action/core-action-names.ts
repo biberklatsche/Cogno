@@ -26,6 +26,8 @@ export const coreActionNames: ReadonlyArray<string> = [
   "load_config",
   "trigger_autocomplete",
   "cycle_completion_mode",
+  "trigger_command_history",
+  "cycle_history_scope",
   "clear_line",
   "clear_line_to_end",
   "clear_line_to_start",

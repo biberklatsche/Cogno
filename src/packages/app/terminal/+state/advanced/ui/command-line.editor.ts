@@ -3,6 +3,7 @@ import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from
 import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
+import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
 import { ITerminalHandler } from "../../handler/handler";
@@ -355,7 +356,14 @@ export class CommandLineEditor implements ITerminalHandler {
     const lastRow = Math.floor(input.maxCursorIndex / cols);
     const direction = event.key === "ArrowUp" ? -1 : 1;
 
-    if ((direction === -1 && row === 0) || (direction === 1 && row === lastRow)) {
+    if (direction === -1 && row === 0) {
+      this._bus.publish(ActionFired.create("trigger_command_history"));
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+
+    if (direction === 1 && row === lastRow) {
       return true;
     }
 

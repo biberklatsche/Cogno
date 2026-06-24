@@ -3,9 +3,15 @@ import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 import { IPathAdapter } from "@cogno/core-api";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
+import { ConfigService } from "../../../../config/+state/config.service";
 import { ShellContext } from "../model/models";
 import { CommandPattern } from "./command-pattern.models";
-import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
+import {
+  CommandHistoryRow,
+  DirectoryHistoryRow,
+  HistoryRepository,
+  RecentCommandRow,
+} from "./history.repository";
 import { ExecutedCommand } from "./terminal-command-history.store";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
@@ -37,8 +43,9 @@ export class TerminalHistoryPersistenceService {
   };
   private _lastCwdRaw = "";
   private _recentCommandExecution?: RecentCommandExecution;
+  private _groupId?: string;
 
-  constructor() {
+  constructor(private readonly configService?: ConfigService) {
     this._actions$
       .pipe(
         concatMap((action) =>
@@ -63,7 +70,8 @@ export class TerminalHistoryPersistenceService {
       .subscribe();
   }
 
-  initialize(shellContext: ShellContext, adapter: IPathAdapter): void {
+  initialize(shellContext: ShellContext, adapter: IPathAdapter, groupId?: string): void {
+    this._groupId = groupId;
     HistoryRepository.createForContext(shellContext, adapter)
       .then((repo) => this._repo$.next(repo))
       .catch((error) =>
@@ -94,8 +102,15 @@ export class TerminalHistoryPersistenceService {
     const timestamp = Date.now();
     const recentPreviousCommand = this.getRecentTransitionSourceCommand();
 
+    const maxEntries = this.configService?.config.terminal?.history?.max_entries;
+
     this.enqueue(async (repo) => {
-      await repo.upsertCommandExecution(persistedCommand, executedCommand.directory);
+      await repo.upsertCommandExecution(
+        persistedCommand,
+        executedCommand.directory,
+        this._groupId,
+        maxEntries,
+      );
 
       if (recentPreviousCommand) {
         await repo.upsertCommandTransition(recentPreviousCommand, persistedCommand);
@@ -146,6 +161,16 @@ export class TerminalHistoryPersistenceService {
     return repo.searchCommands(fragment, cwdRaw, this.getRecentTransitionSourceCommand(), limit);
   }
 
+  async getRecentCommands(options: {
+    scope: "global" | "cwd" | "session";
+    cwdRaw?: string;
+    limit?: number;
+  }): Promise<RecentCommandRow[]> {
+    const repo = this._repo$.value;
+    if (!repo) return [];
+    return repo.getRecentCommands({ ...options, groupId: this._groupId });
+  }
+
   async searchCommandPatterns(fragment: string, limit: number = 50): Promise<CommandPattern[]> {
     const repo = this._repo$.value;
     if (!repo) return [];
@@ -175,12 +200,17 @@ export class TerminalHistoryPersistenceService {
   private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
     if (executedCommand === undefined) return false;
     if (executedCommand.command === undefined) return false;
+    if (
+      this.configService?.config.terminal?.history?.ignore_commands_with_leading_space &&
+      executedCommand.command.startsWith(" ")
+    ) {
+      return false;
+    }
     const command = executedCommand.command.trim();
     if (command.length === 0) return false;
     if (command === ":") return false;
     if (command === "true") return false;
     if (command === "false") return false;
-    if (command.startsWith(" ")) return false;
     const token = firstToken(command);
     if (!token) return false;
     if (token === "cd") return false;

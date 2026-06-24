@@ -6,6 +6,7 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import type { TerminalState } from "../../state";
 import type { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
+import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
@@ -121,9 +122,13 @@ describe("TerminalAutocompleteService", () => {
       markDirectorySelected: vi.fn(),
       markCommandSelected: vi.fn(),
     } as unknown as TerminalHistoryPersistenceService;
-    service = new TerminalAutocompleteService(fakeState as unknown as any, persistence, bus, {
-      getSharedSuggestors: vi.fn(() => []),
-    } as unknown as TerminalAutocompleteFeatureSuggestorService);
+    service = new TerminalAutocompleteService(
+      fakeState as unknown as any,
+      persistence,
+      bus,
+      { getSharedSuggestors: vi.fn(() => []) } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      new TerminalDropdownCoordinatorService(),
+    );
     (service as any)._suggestors = [];
   });
 
@@ -401,6 +406,7 @@ describe("TerminalAutocompleteService", () => {
       {
         getSharedSuggestors: vi.fn(() => []),
       } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      new TerminalDropdownCoordinatorService(),
     );
     (second as any)._suggestors = [];
     second.registerSuggestor(

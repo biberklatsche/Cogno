@@ -1,5 +1,6 @@
 import type { IPathAdapter } from "@cogno/core-api";
 import { describe, expect, it, vi } from "vitest";
+import type { ConfigService } from "../../../../config/+state/config.service";
 import type { ShellContext } from "../model/models";
 import { HistoryRepository } from "./history.repository";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
@@ -47,15 +48,25 @@ function createRepositoryDouble(): HistoryRepositoryDouble {
 
 async function createService(
   repositoryDouble: HistoryRepositoryDouble,
+  configService?: ConfigService,
 ): Promise<TerminalHistoryPersistenceService> {
   vi.spyOn(HistoryRepository, "createForContext").mockResolvedValue(
     repositoryDouble as unknown as HistoryRepository,
   );
 
-  const service = new TerminalHistoryPersistenceService();
+  const service = new TerminalHistoryPersistenceService(configService);
   service.initialize(shellContext, pathAdapter);
   await flushActions();
   return service;
+}
+
+function createConfigServiceDouble(history: {
+  max_entries?: number;
+  ignore_commands_with_leading_space?: boolean;
+}): ConfigService {
+  return {
+    config: { terminal: { history } },
+  } as unknown as ConfigService;
 }
 
 describe("TerminalHistoryPersistenceService", () => {
@@ -85,7 +96,12 @@ describe("TerminalHistoryPersistenceService", () => {
     await flushActions();
 
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledTimes(1);
-    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith("npm test", "/tmp");
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
+      "npm test",
+      "/tmp",
+      undefined,
+      undefined,
+    );
     expect(repositoryDouble.upsertCommandTransition).not.toHaveBeenCalled();
   });
 
@@ -128,6 +144,8 @@ describe("TerminalHistoryPersistenceService", () => {
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
       "grep foo file.txt",
       "/tmp",
+      undefined,
+      undefined,
     );
   });
 
@@ -143,11 +161,19 @@ describe("TerminalHistoryPersistenceService", () => {
     });
     await flushActions();
 
-    expect(repositoryDouble.upsertCommandExecution).toHaveBeenNthCalledWith(1, "git pull", "/tmp");
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenNthCalledWith(
+      1,
+      "git pull",
+      "/tmp",
+      undefined,
+      undefined,
+    );
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenNthCalledWith(
       2,
       "docker compose build",
       "/tmp",
+      undefined,
+      undefined,
     );
     expect(repositoryDouble.upsertCommandTransition).toHaveBeenCalledTimes(1);
     expect(repositoryDouble.upsertCommandTransition).toHaveBeenCalledWith(
@@ -196,6 +222,51 @@ describe("TerminalHistoryPersistenceService", () => {
     expect(repositoryDouble.deleteCommandExecution).toHaveBeenCalledWith(
       'git commit -am "fix bug"',
       "/tmp",
+    );
+  });
+
+  it("passes the configured max_entries through to the repository", async () => {
+    const repositoryDouble = createRepositoryDouble();
+    const configService = createConfigServiceDouble({ max_entries: 500 });
+    const service = await createService(repositoryDouble, configService);
+
+    service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 0 });
+    await flushActions();
+
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
+      "npm test",
+      "/tmp",
+      undefined,
+      500,
+    );
+  });
+
+  it("does not persist a command with a leading space when ignore_commands_with_leading_space is enabled", async () => {
+    const repositoryDouble = createRepositoryDouble();
+    const configService = createConfigServiceDouble({ ignore_commands_with_leading_space: true });
+    const service = await createService(repositoryDouble, configService);
+
+    service.onCommandExecuted({ command: " secret-token-cmd", directory: "/tmp", returnCode: 0 });
+    await flushActions();
+
+    expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
+  });
+
+  it("still persists a leading-space command when the setting is disabled", async () => {
+    const repositoryDouble = createRepositoryDouble();
+    const configService = createConfigServiceDouble({
+      ignore_commands_with_leading_space: false,
+    });
+    const service = await createService(repositoryDouble, configService);
+
+    service.onCommandExecuted({ command: " npm test", directory: "/tmp", returnCode: 0 });
+    await flushActions();
+
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
+      "npm test",
+      "/tmp",
+      undefined,
+      undefined,
     );
   });
 });

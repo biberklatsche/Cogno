@@ -76,7 +76,7 @@ export class TerminalStateManager {
   initialize(terminalId: string, shellType: ShellType, shellProfile?: ShellProfile): void {
     const shellContext: ShellContext = deriveShellContext(shellType, shellProfile, OS.platform());
     this._pathAdapter = PathFactory.createAdapter(shellContext);
-    this._historyPersistence.initialize(shellContext, this._pathAdapter);
+    this._historyPersistence.initialize(shellContext, this._pathAdapter, terminalId);
     this.updateState({
       terminalId,
       shellContext,

@@ -670,12 +670,16 @@ describe("CommandLineEditor", () => {
       return { result, preventDefault, stopPropagation };
     }
 
-    it("passes ArrowUp and ArrowDown through for single-line input", () => {
+    it("triggers command history on ArrowUp and passes ArrowDown through for single-line input", () => {
       state.input = { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 };
+      const publishSpy = vi.spyOn(mockBus, "publish");
 
       const up = pressArrow("ArrowUp");
-      expect(up.result).toBe(true);
-      expect(up.preventDefault).not.toHaveBeenCalled();
+      expect(up.result).toBe(false);
+      expect(up.preventDefault).toHaveBeenCalled();
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ActionFired", payload: "trigger_command_history" }),
+      );
 
       const down = pressArrow("ArrowDown");
       expect(down.result).toBe(true);
@@ -684,13 +688,17 @@ describe("CommandLineEditor", () => {
       expect(mockPty.write).not.toHaveBeenCalled();
     });
 
-    it("passes ArrowUp through on the first row but moves the cursor down for multi-line input", () => {
+    it("triggers command history on ArrowUp on the first row but moves the cursor down for multi-line input", () => {
       mockTerminal.cols = 10;
       state.input = { text: "0123456789ABCDEF", cursorIndex: 3, maxCursorIndex: 16 };
+      const publishSpy = vi.spyOn(mockBus, "publish");
 
       const up = pressArrow("ArrowUp");
-      expect(up.result).toBe(true);
-      expect(up.preventDefault).not.toHaveBeenCalled();
+      expect(up.result).toBe(false);
+      expect(up.preventDefault).toHaveBeenCalled();
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ActionFired", payload: "trigger_command_history" }),
+      );
 
       const down = pressArrow("ArrowDown");
       expect(down.result).toBe(false);

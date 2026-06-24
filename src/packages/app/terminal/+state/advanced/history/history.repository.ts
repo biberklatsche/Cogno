@@ -2,7 +2,7 @@ import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 import { DB, IDatabase } from "@cogno/app-tauri/db";
 import { IPathAdapter } from "@cogno/core-api";
 import { sleep } from "@cogno/core-support";
-import { Hash } from "../../../../common/hash/hash";
+import { Hash } from "@cogno/app/common/hash/hash";
 import { isWslContext, ShellContext } from "../model/models";
 import {
   CommandPattern,
@@ -30,6 +30,10 @@ export type DirectoryHistoryRow = {
   selectCount: number;
   lastVisitAt: number;
   lastSelectAt: number;
+};
+export type RecentCommandRow = {
+  command: string;
+  executedAt: number;
 };
 export type CommandHistoryRow = {
   command: string;
@@ -228,7 +232,12 @@ export class HistoryRepository {
     });
   }
 
-  async upsertCommandExecution(commandRaw: string, cwdRaw: string): Promise<void> {
+  async upsertCommandExecution(
+    commandRaw: string,
+    cwdRaw: string,
+    groupId?: string,
+    maxEntries?: number,
+  ): Promise<void> {
     const command = commandRaw.trim();
     if (!command) return;
 
@@ -253,7 +262,66 @@ export class HistoryRepository {
                     deleted_at = NULL`,
         [this.contextId, cwdId, cmdId, ts, ts],
       );
+      await this.exec(
+        `INSERT INTO command_log(context_id, group_id, cwd_path_id, command_id, executed_at)
+         VALUES(?, ?, ?, ?, ?)`,
+        [this.contextId, groupId ?? null, cwdId, cmdId, ts],
+      );
+
+      if (maxEntries !== undefined && maxEntries > 0) {
+        await this.exec(
+          `DELETE FROM command_log
+           WHERE context_id = ?
+             AND id NOT IN (
+               SELECT id FROM command_log WHERE context_id = ? ORDER BY executed_at DESC LIMIT ?
+             )`,
+          [this.contextId, this.contextId, maxEntries],
+        );
+      }
     });
+  }
+
+  async getRecentCommands(options: {
+    scope: "global" | "cwd" | "session";
+    cwdRaw?: string;
+    groupId?: string;
+    limit?: number;
+  }): Promise<RecentCommandRow[]> {
+    const limit = options.limit ?? 50;
+    const conditions = ["cl.context_id = ?", "c.deleted_at IS NULL"];
+    const params: unknown[] = [this.contextId];
+
+    if (options.scope === "cwd") {
+      const cwd = safeNormalize(this.adapter, options.cwdRaw ?? "");
+      if (!cwd) return [];
+      conditions.push("p.path = ?");
+      params.push(cwd);
+    } else if (options.scope === "session") {
+      if (!options.groupId) return [];
+      conditions.push("cl.group_id = ?");
+      params.push(options.groupId);
+    }
+
+    const pathJoin = options.scope === "cwd" ? "JOIN path p ON p.id = cl.cwd_path_id" : "";
+
+    return this.sel<RecentCommandRow[]>(
+      `WITH ordered AS (
+         SELECT
+           c.command_text AS command,
+           cl.executed_at AS executedAt,
+           LAG(c.command_text) OVER (ORDER BY cl.executed_at DESC, cl.id DESC) AS prevCommand
+         FROM command_log cl
+                  JOIN command c ON c.id = cl.command_id
+                  ${pathJoin}
+         WHERE ${conditions.join(" AND ")}
+       )
+       SELECT command, executedAt
+       FROM ordered
+       WHERE prevCommand IS NULL OR prevCommand != command
+       ORDER BY executedAt DESC
+       LIMIT ?`,
+      [...params, limit],
+    );
   }
 
   async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {

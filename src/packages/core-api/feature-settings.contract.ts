@@ -120,6 +120,24 @@ export const FeatureTerminalSchema = z.object({
         .optional(),
     })
     .optional(),
+  history: z
+    .object({
+      max_entries: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe(
+          "Maximum number of commands to keep per shell context in the command history log. Older entries beyond this count are pruned. 0 or unset means unlimited.",
+        ),
+      ignore_commands_with_leading_space: z
+        .boolean()
+        .optional()
+        .describe(
+          "Don't add a command to history if it was typed with a leading space, matching the HISTCONTROL=ignorespace convention used by bash/zsh.",
+        ),
+    })
+    .optional(),
 });
 
 export const FeatureAutocompleteSchema = z.object({
