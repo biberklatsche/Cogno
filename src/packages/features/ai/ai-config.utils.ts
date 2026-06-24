@@ -25,8 +25,13 @@ export type AiFeatureConfigValue = {
 
 type ConfigLike = Record<string, unknown>;
 
+function getAiConfigValue(configuration: ConfigLike): unknown {
+  const featureConfig = configuration["feature"];
+  return isPlainObject(featureConfig) ? featureConfig["ai"] : undefined;
+}
+
 export function getAiFeatureConfig(configuration: ConfigLike): AiFeatureConfigValue | undefined {
-  const aiConfig = configuration["ai"];
+  const aiConfig = getAiConfigValue(configuration);
   if (!isPlainObject(aiConfig)) {
     return undefined;
   }
@@ -163,7 +168,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export function getRawProviderOverrides(
   configuration: ConfigLike,
 ): Readonly<Record<string, { readonly base_url?: string; readonly enabled?: boolean }>> {
-  const ai = configuration["ai"];
+  const ai = getAiConfigValue(configuration);
   if (!isPlainObject(ai)) return {};
   const providers = ai["providers"];
   if (!isPlainObject(providers)) return {};
@@ -185,7 +190,7 @@ export function mergeDetectedProviders(
 ): ConfigLike {
   if (detected.length === 0) return config;
 
-  const ai = config["ai"];
+  const ai = getAiConfigValue(config);
   if (!isPlainObject(ai)) return config;
 
   const existingProviders = isPlainObject(ai["providers"])
@@ -204,5 +209,15 @@ export function mergeDetectedProviders(
     }
   }
 
-  return { ...config, ai: { ...(ai as Record<string, unknown>), providers: existingProviders } };
+  const featureConfig = isPlainObject(config["feature"])
+    ? (config["feature"] as Record<string, unknown>)
+    : {};
+
+  return {
+    ...config,
+    feature: {
+      ...featureConfig,
+      ai: { ...(ai as Record<string, unknown>), providers: existingProviders },
+    },
+  };
 }

@@ -23,8 +23,10 @@ class ConfigServiceMockForNotificationBadge extends ConfigService {
 
   get config(): Config {
     return {
-      notification: {
-        highlight_terminal_on_activity: this.notificationBadgeEnabledState.value,
+      terminal: {
+        notifications: {
+          unread_badge: this.notificationBadgeEnabledState.value,
+        },
       },
     } as Config;
   }
@@ -91,7 +93,7 @@ describe("TerminalStateManager", () => {
     expect(terminalStateManager.hasUnreadNotification).toBe(false);
   });
 
-  it("should not mark unread notification when notification.highlight_terminal_on_activity is false", () => {
+  it("should not mark unread notification when terminal.notifications.unread_badge is false", () => {
     const bus = new AppBus();
     const notificationBadgeEnabledState = { value: false };
     const configService = new ConfigServiceMockForNotificationBadge(notificationBadgeEnabledState);
@@ -109,7 +111,7 @@ describe("TerminalStateManager", () => {
     expect(terminalStateManager.hasUnreadNotification).toBe(false);
   });
 
-  it("should clear unread notification on ConfigLoaded when highlight_terminal_on_activity is switched to false", () => {
+  it("should clear unread notification on ConfigLoaded when unread_badge is switched to false", () => {
     const bus = new AppBus();
     const notificationBadgeEnabledState = { value: true };
     const configService = new ConfigServiceMockForNotificationBadge(notificationBadgeEnabledState);

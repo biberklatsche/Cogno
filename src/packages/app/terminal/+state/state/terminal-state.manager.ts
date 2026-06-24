@@ -221,8 +221,8 @@ export class TerminalStateManager {
       return true;
     }
     try {
-      const notificationConfig = this.configService.config.notification;
-      return notificationConfig?.highlight_terminal_on_activity ?? true;
+      const notificationsConfig = this.configService.config.terminal?.notifications;
+      return notificationsConfig?.unread_badge ?? true;
     } catch {
       return true;
     }

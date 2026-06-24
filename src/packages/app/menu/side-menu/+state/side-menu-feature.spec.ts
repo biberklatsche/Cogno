@@ -35,14 +35,14 @@ describe("SideMenuFeature", () => {
     icon: "mdiFolder",
     order: 1,
     actionName: "open_workspace",
-    configPath: "workspace",
+    configPath: "feature.workspace",
     targetComponent: DummyComponent,
   };
 
   beforeEach(() => {
     appBus = new AppBus();
     configSubject = new BehaviorSubject<Record<string, unknown>>({
-      workspace: { mode: "visible" },
+      feature: { workspace: { mode: "visible" } },
     });
     applicationConfigurationPort = {
       configuration$: configSubject.asObservable(),
@@ -91,18 +91,49 @@ describe("SideMenuFeature", () => {
       expect.objectContaining({ label: "Workspace", hidden: false }),
     );
 
-    configSubject.next({ workspace: { mode: "hidden" } });
+    configSubject.next({ feature: { workspace: { mode: "hidden" } } });
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
       expect.objectContaining({ label: "Workspace", hidden: true }),
     );
 
-    configSubject.next({ workspace: { mode: "off" } });
+    configSubject.next({ feature: { workspace: { mode: "off" } } });
     expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith("Workspace");
 
     vi.mocked(sideMenuService.isSelected).mockReturnValue(true);
-    configSubject.next({ workspace_available: false, workspace: { mode: "visible" } });
+    configSubject.next({
+      workspace_available: false,
+      feature: { workspace: { mode: "visible" } },
+    });
     expect(sideMenuService.close).toHaveBeenCalledWith(true);
     expect(lifecycle.onModeChange).toHaveBeenCalled();
+  });
+
+  it("applies a user-configured order override and falls back to the static default", () => {
+    const lifecycle = { onModeChange: vi.fn() };
+
+    new SideMenuFeature(
+      definition,
+      lifecycle,
+      sideMenuService as unknown as SideMenuService,
+      appBus,
+      applicationConfigurationPort,
+      keybindService as unknown as KeybindService,
+      destroyRef,
+    );
+
+    expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
+      expect.objectContaining({ order: definition.order }),
+    );
+
+    configSubject.next({ feature: { workspace: { mode: "visible", order: 5 } } });
+    expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
+      expect.objectContaining({ order: 5 }),
+    );
+
+    configSubject.next({ feature: { workspace: { mode: "visible" } } });
+    expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
+      expect.objectContaining({ order: definition.order }),
+    );
   });
 
   it("wires action handling, lifecycle callbacks and teardown", () => {
@@ -144,11 +175,11 @@ describe("SideMenuFeature", () => {
     feature.close();
 
     expect(keybindService.registerListener).toHaveBeenCalledWith(
-      "workspace",
+      "feature.workspace",
       ["Enter"],
       expect.any(Function),
     );
-    expect(keybindService.unregisterListener).toHaveBeenCalledWith("workspace");
+    expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
     expect(sideMenuService.updateIcon).toHaveBeenCalledWith("Workspace", "mdiRobot");
     expect(sideMenuService.close).toHaveBeenCalled();
 

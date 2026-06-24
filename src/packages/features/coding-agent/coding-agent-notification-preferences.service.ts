@@ -44,12 +44,14 @@ export class CodingAgentNotificationPreferencesService {
   getNotificationDefinitions(): ReadonlyArray<NotificationDefinitionContract> {
     const config = this.configPort.getConfiguration() as
       | {
-          coding_agents?: {
-            notifications?: Readonly<Record<string, { enabled?: boolean }>>;
+          feature?: {
+            coding_agents?: {
+              notifications?: Readonly<Record<string, { enabled?: boolean }>>;
+            };
           };
         }
       | undefined;
-    const notificationsConfig = config?.coding_agents?.notifications;
+    const notificationsConfig = config?.feature?.coding_agents?.notifications;
 
     return (Object.keys(NOTIFICATION_LABELS) as ReadonlyArray<AgentStatus>).map((status) => ({
       id: status,

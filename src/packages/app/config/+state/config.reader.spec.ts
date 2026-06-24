@@ -157,44 +157,44 @@ describe("ConfigReader", () => {
     expect(config.font?.family).toContain("ui-monospace");
   });
 
-  it("parses notification channels and overview settings", () => {
+  it("parses notification channel and overview settings", () => {
     const text = `
-      notifications.app.available=true
-      notifications.app.enabled=true
-      notifications.app.duration_seconds=7
-      notifications.os.available=true
-      notifications.os.enabled=false
-      notification.highlight_terminal_on_activity=false
+      notification.channel.app.available=true
+      notification.channel.app.enabled=true
+      notification.channel.app.duration_seconds=7
+      notification.channel.os.available=true
+      notification.channel.os.enabled=false
+      terminal.notifications.unread_badge=false
       terminal.notifications.long_running_command.enabled=true
       terminal.notifications.long_running_command.minimum_duration_seconds=15
-      notification.overview.max_items=42
+      feature.notification_overview.overview.max_items=42
     `;
     const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text, extensions);
 
     expect(result.diagnostics.length).toBe(0);
-    expect(result.config.notifications?.app?.available).toBe(true);
-    expect(result.config.notifications?.app?.enabled).toBe(true);
-    expect(result.config.notifications?.app?.duration_seconds).toBe(7);
-    expect(result.config.notifications?.os?.available).toBe(true);
-    expect(result.config.notifications?.os?.enabled).toBe(false);
-    expect(result.config.notification?.highlight_terminal_on_activity).toBe(false);
+    expect(result.config.notification?.channel?.app?.available).toBe(true);
+    expect(result.config.notification?.channel?.app?.enabled).toBe(true);
+    expect(result.config.notification?.channel?.app?.duration_seconds).toBe(7);
+    expect(result.config.notification?.channel?.os?.available).toBe(true);
+    expect(result.config.notification?.channel?.os?.enabled).toBe(false);
+    expect(result.config.terminal?.notifications?.unread_badge).toBe(false);
     expect(result.config.terminal?.notifications?.long_running_command?.enabled).toBe(true);
     expect(
       result.config.terminal?.notifications?.long_running_command?.minimum_duration_seconds,
     ).toBe(15);
-    expect(result.config.notification?.overview?.max_items).toBe(42);
+    expect(result.config.feature?.notification_overview?.overview?.max_items).toBe(42);
   });
 
-  it("parses search color settings", () => {
+  it("parses terminal decoration color settings", () => {
     const text = `
-      search.match.background_color=2f8fda55
-      search.active_match.border_color=f5e663
+      terminal.decoration.color.background=2f8fda55
+      terminal.decoration.active_color.border=f5e663
     `;
     const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text, extensions);
 
     expect(result.diagnostics.length).toBe(0);
-    expect(result.config.search?.match?.background_color).toBe("2f8fda55");
-    expect(result.config.search?.active_match?.border_color).toBe("f5e663");
+    expect(result.config.terminal?.decoration?.color?.background).toBe("2f8fda55");
+    expect(result.config.terminal?.decoration?.active_color?.border).toBe("f5e663");
   });
 
   it("parses numeric-looking hex color settings as strings", () => {
@@ -203,7 +203,7 @@ describe("ConfigReader", () => {
       color.black=123456
       scrollbar.slider_hover_color=123456
       selection.background_color=12345678
-      search.match.border_color=123
+      terminal.decoration.color.border=123
       prompt.segment.user.background=050505
     `;
     const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text, extensions);
@@ -213,7 +213,7 @@ describe("ConfigReader", () => {
     expect(result.config.color?.black).toBe("123456");
     expect(result.config.scrollbar?.slider_hover_color).toBe("123456");
     expect(result.config.selection?.background_color).toBe("12345678");
-    expect(result.config.search?.match?.border_color).toBe("123");
+    expect(result.config.terminal?.decoration?.color?.border).toBe("123");
     expect(result.config.prompt?.segment.user?.background).toBe("050505");
   });
 
@@ -225,5 +225,35 @@ describe("ConfigReader", () => {
 
     expect(result.diagnostics.length).toBe(0);
     expect(result.config.terminal?.progress_bar?.enabled).toBe(false);
+  });
+
+  it("does not crash on old, pre-`feature.*`-namespace settings keys and falls back to defaults", () => {
+    // Old-style keys deliberately set to values that DIFFER from the new defaults below,
+    // so the assertions prove the stale override was ignored, not coincidentally matched.
+    const text = `
+      ai.mode=hidden
+      git.mode=visible
+      command_palette.mode=off
+      coding_agents.mode=off
+      search.mode=off
+      workspace.mode=off
+      notification.mode=off
+      notification.exceptions.handled.enabled=true
+      notifications.app.enabled=false
+      search.match.background_color=000000
+    `;
+
+    expect(() =>
+      ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text, extensions),
+    ).not.toThrow();
+
+    const result = ConfigReader.fromStringToConfigWithDiagnostics(defaultText, text, extensions);
+
+    expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
+    // Stale keys are stripped, not applied — the bundled feature.*/notification.* defaults win instead.
+    expect(result.config.feature?.ai?.mode).toBe("off");
+    expect(result.config.feature?.git?.mode).toBe("off");
+    expect(result.config.notification?.exception?.handled?.enabled).toBe(false);
+    expect(result.config.notification?.channel?.app?.enabled).toBe(true);
   });
 });

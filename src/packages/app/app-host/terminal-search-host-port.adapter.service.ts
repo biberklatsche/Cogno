@@ -38,8 +38,8 @@ export class TerminalSearchHostPortAdapterService implements TerminalSearchHostP
 
     this.terminalSearchColorConfig$ = this.configService.config$.pipe(
       map((configuration) => ({
-        matchBackgroundColor: configuration.search?.match?.background_color,
-        matchBorderColor: configuration.search?.match?.border_color,
+        matchBackgroundColor: configuration.terminal?.decoration?.color?.background,
+        matchBorderColor: configuration.terminal?.decoration?.color?.border,
       })),
     );
 

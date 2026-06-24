@@ -1,16 +1,15 @@
 import {
+  ApplicationSettingsSectionDefinitionContract,
   FeatureAiSchema,
-  FeatureAutocompleteSchema,
   FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
   FeatureGitSchema,
-  FeatureNotificationSchema,
-  FeatureNotificationsSchema,
+  FeatureNotificationOverviewSchema,
   FeatureSearchSchema,
-  FeatureTerminalSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/core-api";
 import { z } from "zod";
+import { AutocompleteSettingsSchema } from "./autocomplete-settings";
 import { ClipboardConfig, ClipboardConfigSchema } from "./clipboard-config";
 import { Color, ColorSchema } from "./color-config";
 import { Cursor, CursorSchema } from "./cursor-config";
@@ -18,12 +17,14 @@ import { Font, FontSchema } from "./font-config";
 import { ImageSchema } from "./image-config";
 import { Keybinding, KeybindsSchema } from "./keybind-config";
 import { MenuSchema } from "./menu-config";
+import { NotificationSettingsSchema } from "./notification-settings";
 import { Padding, PaddingSchema } from "./padding-config";
 import { PromptConfigSchema } from "./prompt-config";
 import { Scrollbar, ScrollbarSchema } from "./scrollbar-config";
 import { Selection, SelectionSchema } from "./selection-config";
 import { FeatureMode, HexColor } from "./shared";
 import { ShellConfig, ShellConfigSchema, ShellType } from "./shell-config";
+import { TerminalSettingsSchema } from "./terminal-settings";
 
 export {
   ClipboardConfig,
@@ -69,19 +70,53 @@ export const baseConfigSchemaShape = {
   scrollbar: ScrollbarSchema.optional(),
   prompt: PromptConfigSchema.optional(),
   http_server: HttpServerSchema.optional(),
+  notification: NotificationSettingsSchema.optional(),
+  terminal: TerminalSettingsSchema.optional(),
+  autocomplete: AutocompleteSettingsSchema.optional(),
 } satisfies z.ZodRawShape;
 
+export const baseConfigDefaults: Readonly<Record<string, unknown>> = {
+  notification: {
+    exception: {
+      handled: {
+        enabled: false,
+      },
+      unhandled: {
+        enabled: false,
+      },
+    },
+  },
+  autocomplete: {
+    provider: {
+      timeout_ms: 160,
+    },
+  },
+};
+
+export const baseSettingsSections: ReadonlyArray<ApplicationSettingsSectionDefinitionContract> = [
+  { id: "notification", title: "Notification", order: 300 },
+  { id: "terminal", title: "Terminal", order: 500 },
+  { id: "autocomplete", title: "Autocomplete", order: 600 },
+];
+
+// All toggleable features live under the `feature` namespace (e.g. `feature.ai.*`,
+// `feature.git.*`) so the key itself signals "optional feature" vs. everything else
+// being core. Mirrors features/feature-settings-extension.ts's runtime shape — kept
+// here too only so the static `Config` type reflects it (see config.reader.ts for why
+// this duplication exists: createApplicationSettingsDefinition() is the real runtime
+// validator, seeded from baseConfigSchemaShape and merged with registered extensions).
 export const featureConfigSchemaShape = {
-  workspace: FeatureWorkspaceSchema.optional(),
-  notification: FeatureNotificationSchema.optional(),
-  notifications: FeatureNotificationsSchema.optional(),
-  command_palette: FeatureCommandPaletteSchema.optional(),
-  terminal: FeatureTerminalSchema.optional(),
-  autocomplete: FeatureAutocompleteSchema.optional(),
-  search: FeatureSearchSchema.optional(),
-  ai: FeatureAiSchema.optional(),
-  git: FeatureGitSchema.optional(),
-  coding_agents: FeatureCodingAgentsSchema.optional(),
+  feature: z
+    .object({
+      workspace: FeatureWorkspaceSchema.optional(),
+      notification_overview: FeatureNotificationOverviewSchema.optional(),
+      command_palette: FeatureCommandPaletteSchema.optional(),
+      search: FeatureSearchSchema.optional(),
+      ai: FeatureAiSchema.optional(),
+      git: FeatureGitSchema.optional(),
+      coding_agents: FeatureCodingAgentsSchema.optional(),
+    })
+    .optional(),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z

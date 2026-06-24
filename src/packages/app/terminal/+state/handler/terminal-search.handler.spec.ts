@@ -23,16 +23,18 @@ describe("TerminalSearchHandler", () => {
     };
     terminalSearchHandler = new TerminalSearchHandler(appBus, "terminal-1", {
       config$: of({
-        search: {
-          match: {
-            background_color: "112233",
-            border_color: "223344",
-            overview_ruler_color: "334455",
-          },
-          active_match: {
-            background_color: "445566",
-            border_color: "556677",
-            overview_ruler_color: "667788",
+        terminal: {
+          decoration: {
+            color: {
+              background: "112233",
+              border: "223344",
+              overview_ruler: "334455",
+            },
+            active_color: {
+              background: "445566",
+              border: "556677",
+              overview_ruler: "667788",
+            },
           },
         },
       }),

@@ -73,7 +73,7 @@ export class NotificationDispatchService {
   private getNotificationChannelSettings(
     notificationChannelId: string,
   ): NotificationChannelSettingsContract & Readonly<Record<string, unknown>> {
-    const notificationsConfiguration = this.configService.config.notifications as
+    const notificationsConfiguration = this.configService.config.notification?.channel as
       | Readonly<Record<string, unknown>>
       | undefined;
     const settings = notificationsConfiguration?.[notificationChannelId];

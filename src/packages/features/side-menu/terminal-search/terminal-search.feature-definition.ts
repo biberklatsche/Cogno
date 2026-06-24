@@ -8,5 +8,5 @@ export const terminalSearchSideMenuFeatureDefinition = {
   icon: "mdiFilter",
   order: 40,
   actionName: "open_terminal_search",
-  configPath: "search",
+  configPath: "feature.search",
 } as const satisfies SideMenuFeatureDefinitionContract;

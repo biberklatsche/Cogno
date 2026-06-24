@@ -8,5 +8,5 @@ export const codingAgentsSideMenuFeatureDefinition = {
   icon: "mdiRobot",
   order: 65,
   actionName: "open_coding_agents",
-  configPath: "coding_agents",
+  configPath: "feature.coding_agents",
 } as const satisfies SideMenuFeatureDefinitionContract;

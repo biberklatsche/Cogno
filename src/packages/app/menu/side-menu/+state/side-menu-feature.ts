@@ -58,9 +58,14 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
 
   private setupConfigListener(): void {
     const sub = this.applicationConfigurationPort.configuration$.subscribe((configuration) => {
-      const mode = this.getFeatureMode(configuration);
+      const featureConfiguration = this.resolveConfigPath(
+        configuration as Record<string, unknown>,
+        this.config.configPath,
+      );
+      const mode = this.getFeatureMode(featureConfiguration);
       const isAvailable =
         this.config.isAvailable?.(configuration as Record<string, unknown>) ?? true;
+      this.menuItem = { ...this.menuItem, order: this.getFeatureOrder(featureConfiguration) };
       this.handleModeChange(mode, isAvailable);
     });
     this.subscriptions.add(sub);
@@ -97,8 +102,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     this.subscriptions.add(blurSub);
   }
 
-  private getFeatureMode(configuration: Record<string, unknown>): FeatureModeContract {
-    const featureConfiguration = configuration[this.config.configPath];
+  private getFeatureMode(featureConfiguration: unknown): FeatureModeContract {
     if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
       return "visible";
     }
@@ -109,6 +113,22 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
     }
 
     return "visible";
+  }
+
+  private getFeatureOrder(featureConfiguration: unknown): number {
+    if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
+      return this.config.order;
+    }
+
+    const orderValue = (featureConfiguration as { order?: unknown }).order;
+    return typeof orderValue === "number" ? orderValue : this.config.order;
+  }
+
+  private resolveConfigPath(source: Record<string, unknown>, path: string): unknown {
+    return path.split(".").reduce<unknown>((value, segment) => {
+      if (typeof value !== "object" || value === null) return undefined;
+      return (value as Record<string, unknown>)[segment];
+    }, source);
   }
 
   private handleModeChange(mode: FeatureModeContract, isAvailable: boolean): void {

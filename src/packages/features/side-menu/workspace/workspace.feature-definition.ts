@@ -8,5 +8,5 @@ export const workspaceSideMenuFeatureDefinition = {
   icon: "mdiViewDashboard",
   order: 10,
   actionName: "open_workspace",
-  configPath: "workspace",
+  configPath: "feature.workspace",
 } as const satisfies SideMenuFeatureDefinitionContract;

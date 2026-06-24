@@ -28,19 +28,21 @@ describe("NotificationDispatchService", () => {
     appBus = new AppBus();
     configService = new ConfigServiceMock();
     configService.setConfig({
-      notifications: {
-        app: {
-          available: true,
-          enabled: true,
-          duration_seconds: 5,
-        },
-        os: {
-          available: true,
-          enabled: false,
-        },
-        "reply-channel": {
-          available: true,
-          enabled: true,
+      notification: {
+        channel: {
+          app: {
+            available: true,
+            enabled: true,
+            duration_seconds: 5,
+          },
+          os: {
+            available: true,
+            enabled: false,
+          },
+          "reply-channel": {
+            available: true,
+            enabled: true,
+          },
         },
       },
     } as Config);

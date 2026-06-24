@@ -1,75 +1,56 @@
-import {
-  ApplicationSettingsExtensionContract,
-  FeatureCodingAgentsSchema,
-  FeatureGitSchema,
-} from "@cogno/core-api";
+import { ApplicationSettingsExtensionContract } from "@cogno/core-api";
+import { z } from "zod";
 import {
   FeatureAiSchema,
-  FeatureAutocompleteSchema,
+  FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
-  FeatureNotificationSchema,
-  FeatureNotificationsSchema,
+  FeatureGitSchema,
+  FeatureNotificationOverviewSchema,
   FeatureSearchSchema,
-  FeatureTerminalSchema,
   FeatureWorkspaceSchema,
 } from "./feature-settings.schemas";
 
 const featureSettingsSchemaShape = {
-  workspace: FeatureWorkspaceSchema.optional(),
-  notification: FeatureNotificationSchema.optional(),
-  notifications: FeatureNotificationsSchema.optional(),
-  command_palette: FeatureCommandPaletteSchema.optional(),
-  terminal: FeatureTerminalSchema.optional(),
-  autocomplete: FeatureAutocompleteSchema.optional(),
-  search: FeatureSearchSchema.optional(),
-  ai: FeatureAiSchema.optional(),
-  git: FeatureGitSchema.optional(),
-  coding_agents: FeatureCodingAgentsSchema.optional(),
+  feature: z
+    .object({
+      workspace: FeatureWorkspaceSchema.optional(),
+      notification_overview: FeatureNotificationOverviewSchema.optional(),
+      command_palette: FeatureCommandPaletteSchema.optional(),
+      search: FeatureSearchSchema.optional(),
+      ai: FeatureAiSchema.optional(),
+      git: FeatureGitSchema.optional(),
+      coding_agents: FeatureCodingAgentsSchema.optional(),
+    })
+    .optional(),
 } as const;
 
 export const defaultFeatureSettingsExtension = {
   defaults: {
-    notification: {
-      exceptions: {
-        handled: {
-          enabled: false,
+    feature: {
+      ai: {
+        mode: "visible",
+        request: {
+          include_process_tree: false,
+          max_commands: 8,
+          max_output_chars: 4000,
         },
-        unhandled: {
-          enabled: false,
-        },
       },
-    },
-    autocomplete: {
-      provider: {
-        timeout_ms: 160,
+      git: {
+        mode: "visible",
       },
-    },
-    ai: {
-      mode: "visible",
-      request: {
-        include_process_tree: false,
-        max_commands: 8,
-        max_output_chars: 4000,
+      coding_agents: {
+        mode: "visible",
       },
-    },
-    git: {
-      mode: "visible",
-    },
-    coding_agents: {
-      mode: "visible",
     },
   },
   schemaShape: featureSettingsSchemaShape,
   settingsSections: [
-    { id: "workspace", title: "Workspace", order: 100 },
-    { id: "notification", title: "Notification Center", order: 200 },
-    { id: "notifications", title: "Notification Channels", order: 300 },
-    { id: "command_palette", title: "Command Palette", order: 400 },
-    { id: "terminal", title: "Terminal", order: 500 },
-    { id: "autocomplete", title: "Autocomplete", order: 600 },
-    { id: "search", title: "Search", order: 700 },
-    { id: "ai", title: "AI", order: 800 },
-    { id: "git", title: "Git", order: 900 },
-    { id: "coding_agents", title: "Coding Agents", order: 1000 },
+    { id: "feature.workspace", title: "Workspace", order: 100 },
+    { id: "feature.notification_overview", title: "Notification Overview", order: 200 },
+    { id: "feature.command_palette", title: "Command Palette", order: 400 },
+    { id: "feature.search", title: "Search", order: 700 },
+    { id: "feature.ai", title: "AI", order: 800 },
+    { id: "feature.git", title: "Git", order: 900 },
+    { id: "feature.coding_agents", title: "Coding Agents", order: 1000 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;

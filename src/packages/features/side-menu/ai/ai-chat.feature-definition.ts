@@ -8,5 +8,5 @@ export const aiChatSideMenuFeatureDefinition = {
   icon: "mdiTooltipQuestion",
   order: 50,
   actionName: "open_ai_chat",
-  configPath: "ai",
+  configPath: "feature.ai",
 } as const satisfies SideMenuFeatureDefinitionContract;
