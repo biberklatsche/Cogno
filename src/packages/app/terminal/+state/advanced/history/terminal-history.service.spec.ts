@@ -5,8 +5,8 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalState } from "../../state";
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import type { RecentCommandRow } from "./history.repository";
-import type { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { TerminalHistoryService } from "./terminal-history.service";
+import type { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 
 class FakeStateManager {
   private readonly subject = new BehaviorSubject<TerminalState>({
@@ -61,7 +61,10 @@ describe("TerminalHistoryService", () => {
   let fakeState: FakeStateManager;
   let bus: AppBus;
   let coordinator: TerminalDropdownCoordinatorService;
-  let persistence: { getRecentCommands: ReturnType<typeof vi.fn>; markCommandSelected: ReturnType<typeof vi.fn> };
+  let persistence: {
+    getRecentCommands: ReturnType<typeof vi.fn>;
+    markCommandSelected: ReturnType<typeof vi.fn>;
+  };
   let service: TerminalHistoryService;
 
   beforeEach(() => {
@@ -162,9 +165,8 @@ describe("TerminalHistoryService", () => {
 
   it("falls back to the global scope when the preferred scope has no entries", async () => {
     window.localStorage.setItem("terminal.history.scope", "session");
-    persistence.getRecentCommands.mockImplementation(
-      async ({ scope }: { scope: string }) =>
-        scope === "global" ? makeRows(["git status", "npm test"]) : [],
+    persistence.getRecentCommands.mockImplementation(async ({ scope }: { scope: string }) =>
+      scope === "global" ? makeRows(["git status", "npm test"]) : [],
     );
 
     const localBus = new AppBus();

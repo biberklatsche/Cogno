@@ -124,10 +124,7 @@ describe("mergeDetectedProviders", () => {
   it("adds detected provider to config using first model as default", () => {
     const config = { feature: { ai: { mode: "visible" } } };
     const result = mergeDetectedProviders(config, [detectedOllama]);
-    const featureConfig = (result as Record<string, unknown>)["feature"] as Record<
-      string,
-      unknown
-    >;
+    const featureConfig = (result as Record<string, unknown>)["feature"] as Record<string, unknown>;
     expect(featureConfig["ai"]).toMatchObject({
       providers: {
         ollama: {

@@ -11,9 +11,9 @@ import {
   resolveRightUiInset,
 } from "../ui/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
-import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
-import { HistoryEntry, HistoryScope, TerminalHistoryViewState } from "./recent-history.types";
 import { RecentCommandRow } from "./history.repository";
+import { HistoryEntry, HistoryScope, TerminalHistoryViewState } from "./recent-history.types";
+import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const PANEL_MIN_WIDTH = 280;
@@ -132,7 +132,8 @@ export class TerminalHistoryService implements OnDestroy {
     if (!view.visible) return;
 
     switch (event.key) {
-      case "ArrowDown": {
+      case "ArrowUp": {
+        // Newest entry is rendered at the bottom, so "up" steps toward older entries.
         event.preventDefault();
         event.stopPropagation();
         const next =
@@ -140,7 +141,7 @@ export class TerminalHistoryService implements OnDestroy {
         this.setSelectedIndex(next);
         return;
       }
-      case "ArrowUp": {
+      case "ArrowDown": {
         event.preventDefault();
         event.stopPropagation();
         const next =
@@ -331,7 +332,11 @@ export class TerminalHistoryService implements OnDestroy {
       windowWidth,
       windowHeight,
       estimatedPanelWidth,
-      estimatedPanelHeight: estimateDropdownPanelHeight(entries.length, cellHeight, PANEL_FOOTER_PX),
+      estimatedPanelHeight: estimateDropdownPanelHeight(
+        entries.length,
+        cellHeight,
+        PANEL_FOOTER_PX,
+      ),
     });
   }
 

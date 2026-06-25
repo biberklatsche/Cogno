@@ -26,7 +26,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
             [class.open]="workspaceEntry.isOpen"
             [class.is-fixed]="workspaceEntry.id === defaultWorkspaceId"
             [class.is-dragging]="isDraggingWorkspace && draggedWorkspaceIdentifier === workspaceEntry.id"
-            [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + '-ct2)' : undefined"
+            [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'color-mix(in srgb, var(--color-' + workspaceEntry.color + ') var(--menu-opacity-ct2), transparent)' : undefined"
             [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
             [appTooltip]="workspaceEntry.name"
             [appTooltipSecondary]="getWorkspaceShortcutLabel($index)"

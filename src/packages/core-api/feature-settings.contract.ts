@@ -21,7 +21,9 @@ const featureOrderSchema = z
   .number()
   .int()
   .optional()
-  .describe("Override the side-menu display position for this feature. Lower numbers appear first.");
+  .describe(
+    "Override the side-menu display position for this feature. Lower numbers appear first.",
+  );
 
 export const FeatureCommandPaletteSchema = z.object({
   mode: featureModeSchema.optional(),

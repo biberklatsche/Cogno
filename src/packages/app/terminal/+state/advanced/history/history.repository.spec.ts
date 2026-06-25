@@ -245,9 +245,11 @@ describe("HistoryRepository", () => {
     }
 
     it("queries globally scoped, without a cwd or group filter, but tags origin", async () => {
-      const selectSpy = vi.spyOn(DB, "select").mockResolvedValue([
-        { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 0 },
-      ] as never);
+      const selectSpy = vi
+        .spyOn(DB, "select")
+        .mockResolvedValue([
+          { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 0 },
+        ] as never);
 
       const repository = makeRepository();
       const rows = await repository.getRecentCommands({

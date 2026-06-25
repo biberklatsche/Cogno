@@ -27,15 +27,25 @@ const cognoTheme = EditorView.theme(
     ".cm-content": { caretColor: "var(--foreground-color)" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--foreground-color)" },
     "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection":
-      { background: "color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent)" },
+      {
+        background:
+          "color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent)",
+      },
     ".cm-gutters": {
-      background: "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))",
+      background:
+        "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))",
       color: "color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent)",
       border: "none",
       minWidth: "40px",
     },
-    ".cm-activeLineGutter": { background: "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color))" },
-    ".cm-activeLine": { background: "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))" },
+    ".cm-activeLineGutter": {
+      background:
+        "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color))",
+    },
+    ".cm-activeLine": {
+      background:
+        "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))",
+    },
   },
   { dark: true },
 );
@@ -79,7 +89,10 @@ const cognoHighlightStyle = HighlightStyle.define([
   { tag: tags.strikethrough, textDecoration: "line-through" },
   { tag: [tags.link, tags.url], color: "var(--color-blue)", textDecoration: "underline" },
   { tag: tags.invalid, color: "var(--color-red)", textDecoration: "underline wavy" },
-  { tag: tags.meta, color: "color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent)" },
+  {
+    tag: tags.meta,
+    color: "color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent)",
+  },
 ]);
 
 const LANGUAGE_IMPORTS: Record<string, () => Promise<Extension>> = {

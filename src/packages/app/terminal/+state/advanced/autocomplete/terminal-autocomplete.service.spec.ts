@@ -126,7 +126,9 @@ describe("TerminalAutocompleteService", () => {
       fakeState as unknown as any,
       persistence,
       bus,
-      { getSharedSuggestors: vi.fn(() => []) } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      {
+        getSharedSuggestors: vi.fn(() => []),
+      } as unknown as TerminalAutocompleteFeatureSuggestorService,
       new TerminalDropdownCoordinatorService(),
     );
     (service as any)._suggestors = [];

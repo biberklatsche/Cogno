@@ -1,8 +1,8 @@
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
+import { Hash } from "@cogno/app/common/hash/hash";
 import { DB, IDatabase } from "@cogno/app-tauri/db";
 import { IPathAdapter } from "@cogno/core-api";
 import { sleep } from "@cogno/core-support";
-import { Hash } from "@cogno/app/common/hash/hash";
 import { isWslContext, ShellContext } from "../model/models";
 import {
   CommandPattern,

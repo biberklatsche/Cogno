@@ -15,7 +15,9 @@ export function createApplicationSettingsDefinition(
   settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract> = [],
 ): ApplicationSettingsDefinition {
   const schemaShape: ZodRawShape = { ...baseConfigSchemaShape };
-  const settingsSections: ApplicationSettingsSectionDefinitionContract[] = [...baseSettingsSections];
+  const settingsSections: ApplicationSettingsSectionDefinitionContract[] = [
+    ...baseSettingsSections,
+  ];
   let defaults: Record<string, unknown> = { ...baseConfigDefaults };
 
   for (const settingsExtension of settingsExtensions) {

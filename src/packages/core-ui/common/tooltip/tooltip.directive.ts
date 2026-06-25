@@ -53,7 +53,8 @@ export class TooltipDirective implements OnDestroy {
     this.tooltipElement.style.gap = "1rem";
     this.tooltipElement.style.position = "fixed";
     this.tooltipElement.style.padding = "3px 10px";
-    this.tooltipElement.style.background = "color-mix(in srgb, var(--background-color) var(--menu-opacity-ct), transparent)";
+    this.tooltipElement.style.background =
+      "color-mix(in srgb, var(--background-color) var(--menu-opacity-ct), transparent)";
     this.tooltipElement.style.color = "var(--foreground-color)";
     this.tooltipElement.style.borderRadius = "4px";
     this.tooltipElement.style.fontSize = "1rem";

@@ -2,9 +2,9 @@ import { NgStyle } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { TooltipDirective } from "@cogno/core-ui";
+import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
 import { TimeAgoPipe } from "../../../../common/time-ago/time-ago.pipe";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
-import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
 import { HistoryEntryOrigin, HistoryScope } from "./recent-history.types";
 import { TerminalHistoryService } from "./terminal-history.service";
 
@@ -35,24 +35,24 @@ const INITIAL_VIEW_STATE = {
         }"
       >
         <div class="history-list">
-          @for (entry of viewState().entries; track entry.command + ':' + entry.executedAt; let i = $index) {
+          @for (row of reversedEntries(); track row.entry.command + ':' + row.entry.executedAt) {
             <button
               class="history-item"
-              [class.active]="i === viewState().selectedIndex"
+              [class.active]="row.originalIndex === viewState().selectedIndex"
               type="button"
-              (click)="select(i)"
+              (click)="select(row.originalIndex)"
             >
-              <span class="label" appStartEllipsis [appStartEllipsis]="entry.command"></span>
+              <span class="label" appStartEllipsis [appStartEllipsis]="row.entry.command"></span>
               <span class="entry-meta">
-                @if (entry.origin) {
+                @if (row.entry.origin) {
                   <span
                     class="origin-dot"
-                    [class.origin-session]="entry.origin === 'session'"
-                    [class.origin-cwd]="entry.origin === 'cwd'"
-                    [appTooltip]="originTooltip(entry.origin)"
+                    [class.origin-session]="row.entry.origin === 'session'"
+                    [class.origin-cwd]="row.entry.origin === 'cwd'"
+                    [appTooltip]="originTooltip(row.entry.origin)"
                   ></span>
                 }
-                <span class="meta">{{ entry.executedAt | timeAgo }}</span>
+                <span class="meta">{{ row.entry.executedAt | timeAgo }}</span>
               </span>
             </button>
           }
@@ -160,7 +160,7 @@ const INITIAL_VIEW_STATE = {
         margin-top: 4px;
         padding: 6px 8px 4px;
         border-top: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-        color: var(--foreground-color);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-size: 11px;
         display: flex;
         align-items: center;
@@ -201,6 +201,15 @@ export class TerminalHistoryComponent {
   });
   protected readonly scopeLabel = computed(() => this.labelForScope(this.viewState().scope));
   protected readonly scopeTooltip = computed(() => this.tooltipForScope(this.viewState().scope));
+  /**
+   * Entries arrive newest-first, but the dropdown shows the newest entry at the bottom (closest
+   * to the input) so Up/Down behave like normal shell history recall — Up steps to older entries.
+   */
+  protected readonly reversedEntries = computed(() =>
+    this.viewState()
+      .entries.map((entry, originalIndex) => ({ entry, originalIndex }))
+      .reverse(),
+  );
 
   constructor(private readonly history: TerminalHistoryService) {}
 
