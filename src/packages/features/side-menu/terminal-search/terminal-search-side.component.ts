@@ -10,6 +10,7 @@ import {
   viewChildren,
 } from "@angular/core";
 import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
+import { TooltipDirective } from "@cogno/core-ui";
 import {
   collectDirectionalNavigationItems,
   scrollSelectedListItemIntoView,
@@ -25,6 +26,7 @@ type SearchTextSegment = {
 @Component({
   selector: "app-terminal-search-side",
   standalone: true,
+  imports: [TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         <div class="search-controls">
@@ -47,7 +49,7 @@ type SearchTextSegment = {
                 [class.is-active]="caseSensitive()"
                 [style.background-color]="caseSensitive() ? matchBackgroundColor() : null"
                 [style.border-color]="caseSensitive() ? matchBorderColor() : null"
-                title="Case sensitive"
+                [appTooltip]="'Case sensitive'"
                 (click)="$event.stopPropagation(); toggleCaseSensitive()"
             >
                 Aa
@@ -58,7 +60,7 @@ type SearchTextSegment = {
                 [class.is-active]="regularExpression()"
                 [style.background-color]="regularExpression() ? matchBackgroundColor() : null"
                 [style.border-color]="regularExpression() ? matchBorderColor() : null"
-                title="Regular expression"
+                [appTooltip]="'Regular expression'"
                 (click)="$event.stopPropagation(); toggleRegularExpression()"
             >
                 .*

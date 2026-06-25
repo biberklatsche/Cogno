@@ -68,7 +68,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                     <button
                       class="button icon-button workspace-save-button visible"
                       type="button"
-                      title="Save workspace"
+                      [appTooltip]="'Save workspace'"
                       (click)="saveWorkspace(workspaceEntry.id, $event)"
                     >
                       <app-icon name="mdiContentSaveOutline"></app-icon>

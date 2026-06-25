@@ -1,12 +1,12 @@
 import { Component, Signal } from "@angular/core";
 import { NotificationCenterItemContract, NotificationCenterItemIdContract } from "@cogno/core-api";
-import { IconComponent } from "@cogno/core-ui";
+import { IconComponent, TooltipDirective } from "@cogno/core-ui";
 import { NotificationCenterStateService } from "./notification-center-state.service";
 
 @Component({
   selector: "app-notification-side",
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, TooltipDirective],
   template: `
     <section class="notification-header">
       <div></div>
@@ -30,7 +30,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
             <small class="timestamp">{{ toRelativeTime(notification.timestamp) }}</small>
           </div>
           @if (notification.count > 1) {
-            <div class="count" title="Occurrences">{{ notification.count }}</div>
+            <div class="count" [appTooltip]="'Occurrences'">{{ notification.count }}</div>
           }
           <button class="button icon-button" type="button" (click)="remove(notification.id); $event.stopPropagation()">
             <app-icon name="mdiClose"></app-icon>

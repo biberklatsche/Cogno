@@ -1,5 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, EventEmitter, input, Output } from "@angular/core";
+import { TooltipDirective } from "@cogno/core-ui";
 import { map, Observable } from "rxjs";
 import { Color } from "../../config/+models/config";
 import { ConfigService } from "../../config/+state/config.service";
@@ -13,7 +14,7 @@ interface ColorItem {
 @Component({
   selector: "app-color-select",
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TooltipDirective],
   template: `
       @if (colors$ | async; as colors) {
           <div class="color-grid">
@@ -22,7 +23,7 @@ interface ColorItem {
                           type="button"
                           class="color-btn default-btn"
                           (click)="onPick('default')"
-                          [title]="'default'">
+                          [appTooltip]="'default'">
                   </button>
               }
               @for (c of colors; track c.name) {
@@ -31,7 +32,7 @@ interface ColorItem {
                           class="color-btn"
                           [style.background]="c.value"
                           (click)="onPick(c.name)"
-                          [title]="c.name"
+                          [appTooltip]="c.name"
                   >
                       @if (c.name === selectedColorName()) {
                           <div class="selector" [style.border-color]="c.value"></div>
