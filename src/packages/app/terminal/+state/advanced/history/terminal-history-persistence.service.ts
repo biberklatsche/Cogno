@@ -70,6 +70,10 @@ export class TerminalHistoryPersistenceService {
       .subscribe();
   }
 
+  get groupId(): string | undefined {
+    return this._groupId;
+  }
+
   initialize(shellContext: ShellContext, adapter: IPathAdapter, groupId?: string): void {
     this._groupId = groupId;
     HistoryRepository.createForContext(shellContext, adapter)

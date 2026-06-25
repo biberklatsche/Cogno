@@ -5,7 +5,7 @@ import { TooltipDirective } from "@cogno/core-ui";
 import { TimeAgoPipe } from "../../../../common/time-ago/time-ago.pipe";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
-import { HistoryScope } from "./recent-history.types";
+import { HistoryEntryOrigin, HistoryScope } from "./recent-history.types";
 import { TerminalHistoryService } from "./terminal-history.service";
 
 const INITIAL_VIEW_STATE = {
@@ -43,12 +43,29 @@ const INITIAL_VIEW_STATE = {
               (click)="select(i)"
             >
               <span class="label" appStartEllipsis [appStartEllipsis]="entry.command"></span>
-              <span class="meta">{{ entry.executedAt | timeAgo }}</span>
+              <span class="entry-meta">
+                @if (entry.origin) {
+                  <span
+                    class="origin-badge"
+                    [class.origin-session]="entry.origin === 'session'"
+                    [class.origin-cwd]="entry.origin === 'cwd'"
+                    [appTooltip]="originTooltip(entry.origin)"
+                    >{{ originLabel(entry.origin) }}</span
+                  >
+                }
+                <span class="meta">{{ entry.executedAt | timeAgo }}</span>
+              </span>
             </button>
           }
         </div>
         <div class="history-description">
-          <span class="scope-badge" [appTooltip]="scopeTooltip()">{{ scopeLabel() }}</span>
+          <span
+            class="scope-badge"
+            [class.scope-session]="viewState().scope === 'session'"
+            [class.scope-cwd]="viewState().scope === 'cwd'"
+            [appTooltip]="scopeTooltip()"
+            >{{ scopeLabel() }}</span
+          >
           <i>{{ "cycle_history_scope" | actionkeybinding }}</i>
         </div>
       </div>
@@ -56,6 +73,15 @@ const INITIAL_VIEW_STATE = {
   `,
   styles: [
     `
+      :host {
+        /* Fixed, non-themeable colors for the origin/scope indicators below — they must stay
+           a stable, recognizable meaning regardless of the user's configured ANSI palette. */
+        --history-origin-session-color: #4dabf7;
+        --history-origin-session-color-ct: #4dabf733;
+        --history-origin-cwd-color: #38d9a9;
+        --history-origin-cwd-color-ct: #38d9a933;
+      }
+
       .history-panel {
         position: fixed;
         box-sizing: border-box;
@@ -108,10 +134,34 @@ const INITIAL_VIEW_STATE = {
         text-align: left;
       }
 
+      .history-item .entry-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
       .history-item .meta {
         opacity: 0.7;
         font-size: 11px;
         white-space: nowrap;
+      }
+
+      .origin-badge {
+        flex: 0 0 auto;
+        border-radius: 999px;
+        padding: 0 5px;
+        font-size: 9px;
+        line-height: 1.4;
+      }
+
+      .origin-badge.origin-session {
+        background: var(--history-origin-session-color-ct);
+        color: var(--history-origin-session-color);
+      }
+
+      .origin-badge.origin-cwd {
+        background: var(--history-origin-cwd-color-ct);
+        color: var(--history-origin-cwd-color);
       }
 
       .history-description {
@@ -135,6 +185,16 @@ const INITIAL_VIEW_STATE = {
         color: var(--background-color);
       }
 
+      .history-description .scope-badge.scope-session {
+        background: var(--history-origin-session-color-ct);
+        color: var(--history-origin-session-color);
+      }
+
+      .history-description .scope-badge.scope-cwd {
+        background: var(--history-origin-cwd-color-ct);
+        color: var(--history-origin-cwd-color);
+      }
+
       .history-description i {
         opacity: 0.7;
         font-style: normal;
@@ -154,6 +214,14 @@ export class TerminalHistoryComponent {
 
   protected select(index: number): void {
     this.history.selectEntry(index);
+  }
+
+  protected originLabel(origin: HistoryEntryOrigin): string {
+    return origin === "session" ? "Tab" : "Dir";
+  }
+
+  protected originTooltip(origin: HistoryEntryOrigin): string {
+    return origin === "session" ? "Also run in this tab" : "Also run in the current directory";
   }
 
   private labelForScope(scope: HistoryScope): string {

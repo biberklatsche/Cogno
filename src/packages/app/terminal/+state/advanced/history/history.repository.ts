@@ -34,6 +34,8 @@ export type DirectoryHistoryRow = {
 export type RecentCommandRow = {
   command: string;
   executedAt: number;
+  isCurrentSession?: number;
+  isCurrentCwd?: number;
 };
 export type CommandHistoryRow = {
   command: string;
@@ -302,25 +304,34 @@ export class HistoryRepository {
       params.push(options.groupId);
     }
 
-    const pathJoin = options.scope === "cwd" ? "JOIN path p ON p.id = cl.cwd_path_id" : "";
+    // Every row is tagged with whether it matches the *current* session/cwd, regardless of
+    // scope (SQL's NULL semantics make `column = NULL` false, so this is a no-op when the
+    // current session/cwd is unknown). The UI uses this to mark entries that also belong to
+    // the narrower "session"/"cwd" scopes, even while viewing a different scope.
+    const originParams = [
+      options.groupId ?? null,
+      safeNormalize(this.adapter, options.cwdRaw ?? "") ?? null,
+    ];
 
     return this.sel<RecentCommandRow[]>(
       `WITH ordered AS (
          SELECT
            c.command_text AS command,
            cl.executed_at AS executedAt,
+           CASE WHEN cl.group_id = ? THEN 1 ELSE 0 END AS isCurrentSession,
+           CASE WHEN p.path = ? THEN 1 ELSE 0 END AS isCurrentCwd,
            LAG(c.command_text) OVER (ORDER BY cl.executed_at DESC, cl.id DESC) AS prevCommand
          FROM command_log cl
                   JOIN command c ON c.id = cl.command_id
-                  ${pathJoin}
+                  LEFT JOIN path p ON p.id = cl.cwd_path_id
          WHERE ${conditions.join(" AND ")}
        )
-       SELECT command, executedAt
+       SELECT command, executedAt, isCurrentSession, isCurrentCwd
        FROM ordered
        WHERE prevCommand IS NULL OR prevCommand != command
        ORDER BY executedAt DESC
        LIMIT ?`,
-      [...params, limit],
+      [...originParams, ...params, limit],
     );
   }
 

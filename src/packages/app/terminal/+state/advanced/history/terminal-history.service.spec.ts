@@ -86,7 +86,6 @@ describe("TerminalHistoryService", () => {
 
   it("shows the panel with the most recent entry preselected when triggered", async () => {
     bus.publish(ActionFired.create("trigger_command_history"));
-    await vi.waitFor(() => expect(persistence.getRecentCommands).toHaveBeenCalled());
 
     const view = await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
@@ -96,10 +95,10 @@ describe("TerminalHistoryService", () => {
       visible: true,
       selectedIndex: 0,
       entries: makeRows(["git status", "npm test"]),
-      scope: "session",
+      scope: "global",
     });
     expect(persistence.getRecentCommands).toHaveBeenCalledWith({
-      scope: "session",
+      scope: "global",
       cwdRaw: "/Users/larswolfram/projects",
     });
   });
@@ -115,7 +114,9 @@ describe("TerminalHistoryService", () => {
   it("publishes ApplyAutocompleteSuggestion and hides when an entry is selected", async () => {
     const publishSpy = vi.spyOn(bus, "publish");
     bus.publish(ActionFired.create("trigger_command_history"));
-    await vi.waitFor(() => expect(persistence.getRecentCommands).toHaveBeenCalled());
+    await new Promise((resolve) => {
+      service.viewState$.subscribe((v) => v.visible && resolve(v));
+    });
 
     service.selectEntry(1);
 
@@ -138,13 +139,16 @@ describe("TerminalHistoryService", () => {
 
   it("re-queries and cycles through scopes on cycle_history_scope while visible", async () => {
     bus.publish(ActionFired.create("trigger_command_history"));
-    await vi.waitFor(() => expect(persistence.getRecentCommands).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => {
+      service.viewState$.subscribe((v) => v.visible && resolve(v));
+    });
+    expect(persistence.getRecentCommands).toHaveBeenCalledTimes(1);
 
     bus.publish(ActionFired.create("cycle_history_scope"));
     await vi.waitFor(() => expect(persistence.getRecentCommands).toHaveBeenCalledTimes(2));
 
     expect(persistence.getRecentCommands).toHaveBeenLastCalledWith({
-      scope: "global",
+      scope: "cwd",
       cwdRaw: "/Users/larswolfram/projects",
     });
   });
@@ -154,5 +158,54 @@ describe("TerminalHistoryService", () => {
     await Promise.resolve();
 
     expect(persistence.getRecentCommands).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the global scope when the preferred scope has no entries", async () => {
+    window.localStorage.setItem("terminal.history.scope", "session");
+    persistence.getRecentCommands.mockImplementation(
+      async ({ scope }: { scope: string }) =>
+        scope === "global" ? makeRows(["git status", "npm test"]) : [],
+    );
+
+    const localBus = new AppBus();
+    const fallbackService = new TerminalHistoryService(
+      fakeState as unknown as any,
+      persistence as unknown as TerminalHistoryPersistenceService,
+      localBus,
+      coordinator,
+    );
+    localBus.publish(ActionFired.create("trigger_command_history"));
+
+    const view = await new Promise((resolve) => {
+      fallbackService.viewState$.subscribe((v) => v.visible && resolve(v));
+    });
+
+    expect(view).toMatchObject({ visible: true, scope: "global" });
+    expect(persistence.getRecentCommands).toHaveBeenLastCalledWith({
+      scope: "global",
+      cwdRaw: "/Users/larswolfram/projects",
+    });
+
+    fallbackService.ngOnDestroy();
+    window.localStorage.removeItem("terminal.history.scope");
+  });
+
+  it("tags entries with their origin relative to the current session/cwd", async () => {
+    persistence.getRecentCommands.mockResolvedValue([
+      { command: "git status", executedAt: 1000, isCurrentSession: 1, isCurrentCwd: 0 },
+      { command: "npm test", executedAt: 999, isCurrentSession: 0, isCurrentCwd: 1 },
+      { command: "ls", executedAt: 998, isCurrentSession: 0, isCurrentCwd: 0 },
+    ]);
+
+    bus.publish(ActionFired.create("trigger_command_history"));
+    const view = (await new Promise((resolve) => {
+      service.viewState$.subscribe((v) => v.visible && resolve(v));
+    })) as { entries: { command: string; origin?: string }[] };
+
+    expect(view.entries).toEqual([
+      { command: "git status", executedAt: 1000, origin: "session" },
+      { command: "npm test", executedAt: 999, origin: "cwd" },
+      { command: "ls", executedAt: 998, origin: undefined },
+    ]);
   });
 });

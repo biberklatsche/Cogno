@@ -13,6 +13,7 @@ import {
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { HistoryEntry, HistoryScope, TerminalHistoryViewState } from "./recent-history.types";
+import { RecentCommandRow } from "./history.repository";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const PANEL_MIN_WIDTH = 280;
@@ -30,7 +31,7 @@ const INITIAL_VIEW_STATE: TerminalHistoryViewState = {
   placement: "below",
   selectedIndex: null,
   entries: [],
-  scope: "session",
+  scope: "global",
 };
 
 @Injectable()
@@ -184,10 +185,10 @@ export class TerminalHistoryService implements OnDestroy {
   private async showHistory(): Promise<void> {
     const requestId = ++this._activeRequestId;
     const state = this.stateManager.state;
-    const scope = this._viewState.value.scope;
-    const allEntries = await this.persistence.getRecentCommands({ scope, cwdRaw: state.cwd });
+    const preferredScope = this._viewState.value.scope;
+    const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
     if (requestId !== this._activeRequestId) return;
-    this._allEntries = allEntries;
+    this._allEntries = this.toEntries(rows);
     this._lastInputSignature = this.inputSignature(state);
 
     const entries = this.filterEntries(this._allEntries, state.input.text);
@@ -214,24 +215,47 @@ export class TerminalHistoryService implements OnDestroy {
   private async cycleScope(): Promise<void> {
     const requestId = ++this._activeRequestId;
     const view = this._viewState.value;
-    const nextScope = this.nextScope(view.scope);
-    this.saveScope(nextScope);
+    const preferredScope = this.nextScope(view.scope);
+    this.saveScope(preferredScope);
 
     const state = this.stateManager.state;
-    const allEntries = await this.persistence.getRecentCommands({
-      scope: nextScope,
-      cwdRaw: state.cwd,
-    });
+    const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
     if (requestId !== this._activeRequestId) return;
-    this._allEntries = allEntries;
+    this._allEntries = this.toEntries(rows);
 
     const entries = this.filterEntries(this._allEntries, state.input.text);
     this._viewState.next({
       ...view,
-      scope: nextScope,
+      scope,
       selectedIndex: entries.length > 0 ? 0 : null,
       entries,
     });
+  }
+
+  /**
+   * A narrow scope (session/cwd) is often empty for a brand-new terminal or directory.
+   * Fall back to the broader "global" scope for display only — the user's chosen
+   * scope preference (persisted via saveScope) is left untouched.
+   */
+  private async fetchEntries(
+    preferredScope: HistoryScope,
+    cwdRaw?: string,
+  ): Promise<{ scope: HistoryScope; rows: RecentCommandRow[] }> {
+    const rows = await this.persistence.getRecentCommands({ scope: preferredScope, cwdRaw });
+    if (rows.length > 0 || preferredScope === "global") {
+      return { scope: preferredScope, rows };
+    }
+
+    const globalRows = await this.persistence.getRecentCommands({ scope: "global", cwdRaw });
+    return { scope: "global", rows: globalRows };
+  }
+
+  private toEntries(rows: RecentCommandRow[]): HistoryEntry[] {
+    return rows.map((row) => ({
+      command: row.command,
+      executedAt: row.executedAt,
+      origin: row.isCurrentSession ? "session" : row.isCurrentCwd ? "cwd" : undefined,
+    }));
   }
 
   private applyTextFilter(inputText: string): void {
@@ -326,7 +350,7 @@ export class TerminalHistoryService implements OnDestroy {
     } catch {
       // ignore storage access errors
     }
-    return "session";
+    return "global";
   }
 
   private saveScope(scope: HistoryScope): void {
