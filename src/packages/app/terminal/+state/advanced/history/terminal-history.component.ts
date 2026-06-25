@@ -46,12 +46,11 @@ const INITIAL_VIEW_STATE = {
               <span class="entry-meta">
                 @if (entry.origin) {
                   <span
-                    class="origin-badge"
+                    class="origin-dot"
                     [class.origin-session]="entry.origin === 'session'"
                     [class.origin-cwd]="entry.origin === 'cwd'"
                     [appTooltip]="originTooltip(entry.origin)"
-                    >{{ originLabel(entry.origin) }}</span
-                  >
+                  ></span>
                 }
                 <span class="meta">{{ entry.executedAt | timeAgo }}</span>
               </span>
@@ -66,7 +65,7 @@ const INITIAL_VIEW_STATE = {
             [appTooltip]="scopeTooltip()"
             >{{ scopeLabel() }}</span
           >
-          <i>{{ "cycle_history_scope" | actionkeybinding }}</i>
+          <i>{{ "cycle_tab" | actionkeybinding }}</i>
         </div>
       </div>
     }
@@ -74,10 +73,8 @@ const INITIAL_VIEW_STATE = {
   styles: [
     `
       :host {
-        /* Fixed, non-themeable colors for the origin/scope indicators below — they must stay
-           a stable, recognizable meaning regardless of the user's configured ANSI palette. */
-        --history-origin-session-color: #4dabf7;
-        --history-origin-cwd-color: #38d9a9;
+        --history-origin-session-color: var(--color-blue);
+        --history-origin-cwd-color: var(--color-green);
       }
 
       .history-panel {
@@ -109,7 +106,7 @@ const INITIAL_VIEW_STATE = {
         border: none;
         border-radius: var(--button-border-radius);
         text-align: left;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 8px;
         height: 25px;
@@ -139,27 +136,24 @@ const INITIAL_VIEW_STATE = {
       }
 
       .history-item .meta {
-        opacity: 0.7;
+        opacity: var(--opacity-strong);
         font-size: 11px;
         white-space: nowrap;
       }
 
-      .origin-badge {
+      .origin-dot {
         flex: 0 0 auto;
-        border-radius: 999px;
-        padding: 0 5px;
-        font-size: 9px;
-        line-height: 1.4;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
       }
 
-      .origin-badge.origin-session {
-        background: color-mix(in srgb, var(--history-origin-session-color) var(--opacity-subtle), transparent);
-        color: var(--history-origin-session-color);
+      .origin-dot.origin-session {
+        background: var(--history-origin-session-color);
       }
 
-      .origin-badge.origin-cwd {
-        background: color-mix(in srgb, var(--history-origin-cwd-color) var(--opacity-subtle), transparent);
-        color: var(--history-origin-cwd-color);
+      .origin-dot.origin-cwd {
+        background: var(--history-origin-cwd-color);
       }
 
       .history-description {
@@ -170,7 +164,7 @@ const INITIAL_VIEW_STATE = {
         font-size: 11px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-end;
         gap: 10px;
       }
 
@@ -194,7 +188,7 @@ const INITIAL_VIEW_STATE = {
       }
 
       .history-description i {
-        opacity: 0.7;
+        opacity: var(--opacity-strong);
         font-style: normal;
       }
     `,
@@ -212,10 +206,6 @@ export class TerminalHistoryComponent {
 
   protected select(index: number): void {
     this.history.selectEntry(index);
-  }
-
-  protected originLabel(origin: HistoryEntryOrigin): string {
-    return origin === "session" ? "Tab" : "Dir";
   }
 
   protected originTooltip(origin: HistoryEntryOrigin): string {

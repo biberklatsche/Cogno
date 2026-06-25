@@ -80,7 +80,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
                             {{ filterModeLabel() }}     
                         </span>
                         <i>
-                            {{ 'cycle_completion_mode' | actionkeybinding }}
+                            {{ 'cycle_tab' | actionkeybinding }}
                         </i>
                     </span>
                 </div>
@@ -124,7 +124,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
             border: none;
             border-radius: var(--button-border-radius);
             text-align: left;
-            align-items: baseline;
+            align-items: center;
             justify-content: space-between;
             gap: 8px;
             height: 32px;
@@ -233,11 +233,13 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         }
 
         .autocomplete-description .description-hint .mode-badge.mode-history {
-            background: var(--color-green);
+            background: color-mix(in srgb, var(--color-green) var(--opacity-subtle), transparent);
+            color: var(--color-green);
         }
 
         .autocomplete-description .description-hint .mode-badge.mode-context {
-            background: var(--color-blue);
+            background: color-mix(in srgb, var(--color-blue) var(--opacity-subtle), transparent);
+            color: var(--color-blue);
         }
     `,
   ],

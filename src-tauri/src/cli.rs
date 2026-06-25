@@ -31,7 +31,7 @@ pub const COGNO_ACTION_NAMES: &[&str] = &[
     "minimize_window",
     "open_config",
     "load_config",
-    "cycle_completion_mode",
+    "cycle_tab",
     "clear_line",
     "clear_line_to_end",
     "clear_line_to_start",

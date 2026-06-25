@@ -327,7 +327,7 @@ describe("TerminalAutocompleteService", () => {
     expect(currentFilterMode(service)).toBe("all");
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -339,7 +339,7 @@ describe("TerminalAutocompleteService", () => {
     expect(currentFilterMode(service)).toBe("context-only");
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -354,7 +354,7 @@ describe("TerminalAutocompleteService", () => {
       new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
     );
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -381,7 +381,7 @@ describe("TerminalAutocompleteService", () => {
     await vi.advanceTimersByTimeAsync(400);
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -432,7 +432,7 @@ describe("TerminalAutocompleteService", () => {
     expect(currentFilterMode(service)).toBe("all");
 
     const result = bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -856,7 +856,7 @@ describe("TerminalAutocompleteService", () => {
     expect((service as any)._viewState.value.suggestions[0].source).toBe("history-cmd + spec-cmd");
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,

@@ -114,7 +114,7 @@ export class TerminalHistoryService implements OnDestroy {
           return;
         }
 
-        if (event.payload !== "cycle_history_scope") return;
+        if (event.payload !== "cycle_tab") return;
         if (!this._viewState.value.visible) return;
 
         void this.cycleScope();

@@ -137,14 +137,14 @@ describe("TerminalHistoryService", () => {
     expect((view as any).visible).toBe(false);
   });
 
-  it("re-queries and cycles through scopes on cycle_history_scope while visible", async () => {
+  it("re-queries and cycles through scopes on cycle_tab while visible", async () => {
     bus.publish(ActionFired.create("trigger_command_history"));
     await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
     });
     expect(persistence.getRecentCommands).toHaveBeenCalledTimes(1);
 
-    bus.publish(ActionFired.create("cycle_history_scope"));
+    bus.publish(ActionFired.create("cycle_tab"));
     await vi.waitFor(() => expect(persistence.getRecentCommands).toHaveBeenCalledTimes(2));
 
     expect(persistence.getRecentCommands).toHaveBeenLastCalledWith({
@@ -153,8 +153,8 @@ describe("TerminalHistoryService", () => {
     });
   });
 
-  it("ignores cycle_history_scope while hidden", async () => {
-    bus.publish(ActionFired.create("cycle_history_scope"));
+  it("ignores cycle_tab while hidden", async () => {
+    bus.publish(ActionFired.create("cycle_tab"));
     await Promise.resolve();
 
     expect(persistence.getRecentCommands).not.toHaveBeenCalled();

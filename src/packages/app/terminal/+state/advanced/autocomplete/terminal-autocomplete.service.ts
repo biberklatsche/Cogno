@@ -181,7 +181,7 @@ export class TerminalAutocompleteService implements OnDestroy {
           return;
         }
 
-        if (event.payload !== "cycle_completion_mode") return;
+        if (event.payload !== "cycle_tab") return;
 
         const view = this._viewState.value;
         if (!view.visible) return;
