@@ -157,11 +157,11 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
       .chat-toolbar { display: flex; align-items: center; justify-content: right; gap: 0.5rem; }
       .status { font-size: 0.8rem; opacity: 0.75; }
       .message-list { display: flex; flex-direction: column; gap: 0.75rem; overflow: auto; min-height: 0; }
-      .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem 1rem; border-radius: 8px; background: var(--background-color-10l); font-size: 0.9rem; opacity: 0.75; text-align: center; }
+      .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; padding: 2rem 1rem; border-radius: 8px; background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)); font-size: 0.9rem; opacity: 0.75; text-align: center; }
 
-      .message-card { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: 10px; background: var(--background-color-10l); }
-      .message-card.assistant { background: var(--background-color-20l); }
-      .message-card.system { border: 1px solid var(--background-color-20l); }
+      .message-card { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; border-radius: 10px; background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)); }
+      .message-card.assistant { background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); }
+      .message-card.system { border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); }
       .message-header {
         display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.03em; opacity: 0.7; text-transform: uppercase;
       }
@@ -194,13 +194,13 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
       .command-list { display: flex; flex-direction: column; gap: 0.5rem; }
       .command-card {
         display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; align-items: start; padding: 0.6rem;
-        border: 1px solid var(--background-color-20l); border-radius: 8px; background: var(--background-color-10l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); border-radius: 8px; background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       }
       .command-card.disabled { opacity: 0.55; }
       .command-text { font-family: var(--font-family-monospace, monospace); font-size: 0.85rem; }
       .command-context-note {
         grid-column: 1 / -1; display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.1rem;
-        padding-top: 0.4rem; border-top: 1px solid var(--background-color-20l); font-size: 0.72rem; opacity: 0.7;
+        padding-top: 0.4rem; border-top: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); font-size: 0.72rem; opacity: 0.7;
       }
 
       .command-context-link {
@@ -227,12 +227,12 @@ import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-provide
       }
 
       .run-button {
-        background: var(--highlight-color-10l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--color-mix-unit) * var(--mix-step-1)), var(--highlight-color));
       }
 
       .composer {
-        display: grid; gap: 0.5rem; padding: 0.65rem; border: 1px solid var(--background-color-20l);
-        border-radius: 10px; background: var(--background-color-10l);
+        display: grid; gap: 0.5rem; padding: 0.65rem; border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+        border-radius: 10px; background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       }
       .composer-input {
         resize: none; min-height: 5.5rem; max-height: 12rem; border: 0; outline: none; background: transparent; color: inherit; padding: 0.1rem;

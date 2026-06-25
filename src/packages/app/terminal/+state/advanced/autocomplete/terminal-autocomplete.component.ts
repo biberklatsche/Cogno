@@ -96,7 +96,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
             max-width: 920px;
             overflow: hidden;
             background: var(--background-color);
-            border: 1px solid var(--background-color-20l);
+            border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             border-radius: 8px;
             box-shadow: var(--shadow3);
             z-index: 110;
@@ -140,7 +140,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         }
 
         .autocomplete-item.active {
-            background: var(--highlight-color-ct2);
+            background: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
             color: var(--background-color);
         }
 
@@ -188,7 +188,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         .autocomplete-description {
             margin-top: 4px;
             padding: 6px 8px 4px;
-            border-top: 1px solid var(--background-color-20l);
+            border-top: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             color: var(--foreground-color);
             font-size: 11px;
             display: flex;
@@ -229,7 +229,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         }
 
         .autocomplete-description .description-hint .mode-badge.mode-all {
-            background: var(--background-color-20l);
+            background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         }
 
         .autocomplete-description .description-hint .mode-badge.mode-history {

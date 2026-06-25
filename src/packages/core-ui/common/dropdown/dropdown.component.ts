@@ -75,7 +75,7 @@ export type DropdownItem<TValue extends string = string> = {
         border: 0; border-radius: 0.35rem; background: transparent; color: inherit; cursor: pointer; font: inherit; font-size: 0.9rem; font-weight: 600; line-height: 1.2;
       }
       .dropdown__trigger:hover, .dropdown__trigger:focus-visible, .dropdown__trigger--open {
-        background: var(--background-color-20l); outline: none;
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); outline: none;
       }
       .dropdown__trigger:disabled { opacity: 0.55; cursor: default; }
       .dropdown__trigger-slot { display: inline-flex; }
@@ -86,7 +86,7 @@ export type DropdownItem<TValue extends string = string> = {
       }
       .dropdown__menu {
         position: absolute; right: 0; bottom: calc(100% + 0.35rem); min-width: 14rem; max-width: 20rem; max-height: 20rem; overflow-y: auto; padding: 0.35rem;
-        border: 1px solid var(--background-color-20l); border-radius: 0.6rem; background: var(--background-color);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); border-radius: 0.6rem; background: var(--background-color);
         box-shadow: 0 0.5rem 1.4rem rgb(0 0 0 / 18%); z-index: 20;
       }
       .dropdown__menu--below { bottom: unset; top: calc(100% + 0.35rem); right: unset; left: 0; }
@@ -95,7 +95,7 @@ export type DropdownItem<TValue extends string = string> = {
         display: block; width: 100%; border: 0; border-radius: 0.4rem; background: transparent; color: inherit; cursor: pointer;
         font: inherit; text-align: left; padding: 0.45rem 0.6rem;
       }
-      .dropdown__item:hover, .dropdown__item:focus-visible { background: var(--background-color-20l); outline: none; }
+      .dropdown__item:hover, .dropdown__item:focus-visible { background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)); outline: none; }
       .dropdown__item--selected, .dropdown__item:disabled { opacity: 0.6; }
     `,
   ],

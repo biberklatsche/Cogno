@@ -22,41 +22,6 @@ export const Color = {
     return result;
   },
 
-  lightenDarkenColor(col: string, amt: number): string {
-    amt = Math.floor(amt);
-    if (col[0] === "#") {
-      col = col.slice(1);
-    }
-    let opacity = "";
-    if (col.length === 8) {
-      opacity = col.slice(6, 8);
-      col = col.slice(0, 6);
-    }
-    const num = parseInt(col, 16);
-    let r = (num >> 16) + amt;
-    if (r > 255) {
-      r = 255;
-    } else if (r < 0) {
-      r = 0;
-    }
-    let b = ((num >> 8) & 0x00ff) + amt;
-    if (b > 255) {
-      b = 255;
-    } else if (b < 0) {
-      b = 0;
-    }
-    let g = (num & 0x0000ff) + amt;
-    if (g > 255) {
-      g = 255;
-    } else if (g < 0) {
-      g = 0;
-    }
-    const [rs, gs, bs] = [r, g, b].map((color) =>
-      color <= 15 ? `0${color.toString(16)}` : color.toString(16),
-    );
-    return `#${rs}${bs}${gs}${opacity}`;
-  },
-
   isValid(color: string | undefined | null): boolean {
     try {
       if (!color || color.length < 7 || color.length > 7 || color[0] !== "#") {

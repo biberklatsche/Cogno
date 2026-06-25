@@ -112,7 +112,7 @@ export type FilterableDropdownGroup<TValue extends string = string> = {
       .fd__trigger:hover,
       .fd__trigger:focus-visible,
       .fd__trigger--open {
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         outline: none;
       }
 
@@ -148,7 +148,7 @@ export type FilterableDropdownGroup<TValue extends string = string> = {
         max-height: 22rem;
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--background-color-20l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-radius: 0.6rem;
         background: var(--background-color);
         box-shadow: 0 0.5rem 1.4rem rgb(0 0 0 / 20%);
@@ -164,8 +164,8 @@ export type FilterableDropdownGroup<TValue extends string = string> = {
       .fd__search {
         width: 100%;
         box-sizing: border-box;
-        background: var(--background-color-10l);
-        border: 1px solid var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-radius: 0.35rem;
         color: inherit;
         font: inherit;
@@ -186,7 +186,7 @@ export type FilterableDropdownGroup<TValue extends string = string> = {
 
       .fd__group-label {
         padding: 0.3rem 0.6rem 0.15rem;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-size: 0.72rem;
         font-weight: 600;
         letter-spacing: 0.05em;
@@ -212,7 +212,7 @@ export type FilterableDropdownGroup<TValue extends string = string> = {
 
       .fd__item:hover,
       .fd__item:focus-visible {
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         outline: none;
       }
 
@@ -227,7 +227,7 @@ export type FilterableDropdownGroup<TValue extends string = string> = {
 
       .fd__empty {
         padding: 0.5rem 0.6rem;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-size: 0.85rem;
         font-style: italic;
       }

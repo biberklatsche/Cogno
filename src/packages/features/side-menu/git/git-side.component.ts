@@ -376,7 +376,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         justify-content: center;
         gap: 0.5rem;
         flex: 1;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-style: italic;
         text-align: center;
         padding: 1rem;
@@ -408,7 +408,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         resize: vertical;
         background: var(--background-color);
         color: var(--foreground-color);
-        border: 1px solid var(--background-color-20l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-radius: var(--button-border-radius);
         padding: 0.4rem 0.5rem;
         font-family: inherit;
@@ -458,7 +458,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         gap: 0.2rem;
         background: none;
         border: none;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-size: var(--git-secondary-font-size);
         font-weight: 600;
         letter-spacing: 0.05em;
@@ -506,11 +506,11 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
       }
 
       .file-item:hover {
-        background: var(--background-color-10l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       }
 
       .file-item.selected {
-        background: var(--highlight-color-ct2);
+        background: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
       }
 
       .status-badge {
@@ -554,7 +554,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-size: var(--git-primary-font-size);
         max-width: 40%;
       }
@@ -564,7 +564,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         width: 1.75rem;
         height: 1.75rem;
         padding: 0.25rem;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
       }
 
       .dir-child {
@@ -575,7 +575,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
       }
 
       .loading-icon app-icon {
@@ -619,7 +619,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
 
       .empty-state {
         padding: 1rem 0.75rem;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-style: italic;
         text-align: center;
       }
@@ -644,7 +644,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         font-size: var(--git-primary-font-size);
       }
 
@@ -662,7 +662,7 @@ type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
         justify-content: center;
         gap: 0.6rem;
         height: 100%;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
       }
 
       .diff-loading-state app-icon {

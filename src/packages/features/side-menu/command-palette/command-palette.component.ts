@@ -66,8 +66,8 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
       .search-input {
         padding: 6px 8px;
         border-radius: 6px;
-        border: 1px solid var(--background-color-20l);
-        background: var(--background-color-10l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
         color: inherit;
         outline: none;
         box-sizing: border-box;
@@ -96,13 +96,13 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
       }
 
       .command:hover {
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         opacity: 1;
         outline: none;
       }
 
       .command.selected {
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         opacity: 1;
         outline: none;
       }

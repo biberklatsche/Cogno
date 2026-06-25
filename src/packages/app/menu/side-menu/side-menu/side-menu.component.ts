@@ -106,7 +106,7 @@ export function isSelectedSideMenuItem(
             }
 
             .button.icon-button.selected {
-                background-color: var(--background-color-10l);
+                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
             }
 
             .button {

@@ -127,8 +127,8 @@ type SearchTextSegment = {
             .search-input {
                 padding: 6px 8px;
                 border-radius: 6px;
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
+                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 color: inherit;
                 outline: none;
                 box-sizing: border-box;
@@ -137,8 +137,8 @@ type SearchTextSegment = {
             }
 
             .search-option-button {
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
+                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 color: inherit;
                 border-radius: 6px;
                 height: 2rem;
@@ -202,7 +202,7 @@ type SearchTextSegment = {
 
                 &:hover,
                 &.selected {
-                    background: var(--background-color-20l);
+                    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
                 }
             }
 
@@ -219,8 +219,8 @@ type SearchTextSegment = {
             }
 
             .load-more-button {
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
+                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 color: inherit;
                 border-radius: 6px;
                 min-height: 2rem;

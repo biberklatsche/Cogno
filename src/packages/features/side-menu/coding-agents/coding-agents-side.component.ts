@@ -242,11 +242,11 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       align-items: center;
       gap: 0.75rem;
       padding: 0.65rem 0.75rem;
-      border: 1px solid var(--background-color-20l);
+      border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
       border-left-width: 3px;
-      border-left-color: var(--agent-status-color, var(--background-color-20l));
+      border-left-color: var(--agent-status-color, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)));
       border-radius: 8px;
-      background: var(--background-color-10l);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       color: inherit;
       cursor: default;
       text-align: left;
@@ -256,7 +256,7 @@ import { AgentAnimationComponent } from "./agent-animation.component";
     }
 
     .agent-card:hover {
-      background: var(--background-color-20l);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
     .agent-card.working { --agent-status-color: var(--color-blue); }

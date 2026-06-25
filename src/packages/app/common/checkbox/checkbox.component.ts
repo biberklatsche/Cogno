@@ -53,8 +53,8 @@ import { Component, input, model } from "@angular/core";
               position: absolute;
               top: 0;
               left: 0;
-              border: 2px solid var(--background-color-20l);
-              background-color: var(--background-color-40l);
+              border: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+              background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
           }
 
           .checkbox {

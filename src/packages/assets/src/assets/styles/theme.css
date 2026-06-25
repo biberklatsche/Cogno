@@ -2,6 +2,26 @@ html {
     --button-border-radius:6px;
 }
 
+:root {
+    /* Fixed, global scale used by every inline color-mix() at the usage sites (no more
+       per-color derived variables — adding a new color never requires new variables,
+       it just references its own base color plus this shared scale). */
+    --opacity-subtle: 40%;
+    --opacity-strong: 73%;
+    /* Step multipliers for the lighten/darken scale. A "level" (10/20/30/40) is just
+       `unit * step`; retune the whole app's lighten/darken spacing by editing these 4
+       numbers instead of hunting down literal "* 20"s. */
+    --mix-step-1: 10;
+    --mix-step-2: 20;
+    --mix-step-3: 30;
+    --mix-step-4: 40;
+    /* Per-level lighten/darken unit for colors whose blend amount never depends on
+       brightness (foreground/highlight always shift by exactly `level` raw RGB units
+       out of 255). Background/shadow have their own brightness-dependent unit, set
+       reactively from style.service.ts as --background-mix-unit/--shadow-mix-unit. */
+    --color-mix-unit: 0.392%;
+}
+
 h1, h2, h3, h4, h5, h6, p {
     margin: 0;
     padding: 0;
@@ -14,8 +34,8 @@ button, a {
 .button {
     padding: 6px 10px;
     border-radius: var(--button-border-radius, 6px);
-    border: 1px solid var(--background-color-20l);
-    background: var(--background-color-10l);
+    border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
     color: var(--foreground-color);
     font: inherit;
     font-size: 0.9rem;
@@ -30,19 +50,19 @@ button, a {
         height: 26px;
         padding: 4px;
         background: none;
-        color: var(--foreground-color-10t);
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
         &:hover {
             color: var(--foreground-color);
-            background: var(--background-color-20l);
+            background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         }
     }
 
     &.primary {
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
     &:hover(not:disabled) {
-        background: var(--background-color-30l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
     }
 
     &:disabled {
@@ -51,8 +71,8 @@ button, a {
 }
 
 .base-overlay {
-    background-color: var(--background-color-10l-ct);
-    border: 1px solid var(--background-color-20l);
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct), transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     border-radius: 6px;
     backdrop-filter: blur(5px);
     color: var(--foreground-color);
@@ -78,7 +98,7 @@ input {
     border-radius: var(--button-border-radius);
     box-sizing: border-box;
     width: 100%;
-    background-color: var(--background-color-20l);
+    background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
 
     &.inline-input {
         border: none;

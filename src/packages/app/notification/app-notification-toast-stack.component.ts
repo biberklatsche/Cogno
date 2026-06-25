@@ -64,7 +64,7 @@ import {
             padding: 10px;
             border-left: 3px solid var(--accent, var(--color-blue));
             border-radius: 6px;
-            background: var(--background-color-20l);
+            background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             box-shadow: 0 6px 14px color-mix(in srgb, var(--color-black) 35%, transparent);
             min-width: min(360px, calc(100vw - 24px));
             animation: toast-in 0.16s ease-out;

@@ -74,14 +74,14 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         position: relative;
         padding: 0.5rem 0.75rem 0.5rem 0.5rem;
         margin: 0 0 0.25rem;
-        border: 1px solid var(--background-color-20l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-left: 3px solid transparent;
         border-radius: 4px;
         transition: background 0.1s;
       }
 
       .notification:hover {
-        background-color: var(--background-color-20l);
+        background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
       }
 
       .timestamp {

@@ -23,248 +23,65 @@ export class StyleService {
     const isLightTheme = Color.isLight(`#${config.color?.background}`);
     const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
     const shadowFactor = this.getShadowFactor(isLightTheme);
-    const factor = isLightTheme ? -1 : 1;
     const menuOpacity = config.menu?.opacity ?? 100;
-    const opacity = Color.getHexOpacity(menuOpacity);
-    const opacityDouble = Color.getHexOpacity(menuOpacity === 100 ? 100 : menuOpacity / 2);
+    const menuOpacityDouble = menuOpacity === 100 ? 100 : menuOpacity / 2;
     const inactiveOpacity = (config.terminal?.inactive_overlay_opacity ?? 50) / 100;
+
+    document.documentElement.style.setProperty(
+      "--theme-lighten-color",
+      isLightTheme ? "black" : "white",
+    );
+    document.documentElement.style.setProperty(
+      "--theme-darken-color",
+      isLightTheme ? "white" : "black",
+    );
+    document.documentElement.style.setProperty(
+      "--background-mix-unit",
+      `${(Math.abs(backgroundFactor) / 255) * 100}%`,
+    );
+    document.documentElement.style.setProperty(
+      "--shadow-mix-unit",
+      `${(shadowFactor / 255) * 100}%`,
+    );
+    document.documentElement.style.setProperty("--menu-opacity-ct", `${menuOpacity}%`);
+    document.documentElement.style.setProperty("--menu-opacity-ct2", `${menuOpacityDouble}%`);
 
     document.documentElement.style.setProperty(
       "--background-color",
       `#${config.color?.background}`,
     );
     document.documentElement.style.setProperty(
-      "--background-color-ct",
-      `#${config.color?.background}${opacity}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-ct2",
-      `#${config.color?.background}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-10l",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * 10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-10l-ct",
-      `${Color.lightenDarkenColor(`#${config.color?.background}${opacity}`, backgroundFactor * 10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-10l-ct2",
-      `${Color.lightenDarkenColor(`#${config.color?.background}${opacityDouble}`, backgroundFactor * 10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-20l",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * 20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-20l-ct",
-      `${Color.lightenDarkenColor(`#${config.color?.background}${opacity}`, backgroundFactor * 20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-20l-ct2",
-      `${Color.lightenDarkenColor(`#${config.color?.background}${opacityDouble}`, backgroundFactor * 20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-30l",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * 30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-30l-ct",
-      `${Color.lightenDarkenColor(`#${config.color?.background}${opacity}`, backgroundFactor * 30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-30l-ct2",
-      `${Color.lightenDarkenColor(`#${config.color?.background}${opacityDouble}`, backgroundFactor * 30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-40l",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * 40)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-10d",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * -10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-20d",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * -20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-30d",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * -30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--background-color-40d",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, backgroundFactor * -40)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--color-shadow1",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, shadowFactor * -10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--color-shadow2",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, shadowFactor * -20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--color-shadow3",
-      `${Color.lightenDarkenColor(`#${config.color?.background}`, shadowFactor * -30)}`,
-    );
-    document.documentElement.style.setProperty(
       "--foreground-color",
       `#${config.color?.foreground}`,
     );
-    document.documentElement.style.setProperty(
-      "--foreground-color-t",
-      `#${config.color?.foreground}BB`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-10t",
-      `#${config.color?.foreground}66`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-10l",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * 10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-20l",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * 20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-30l",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * 30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-40l",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * 40)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-10d",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * -10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-20d",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * -20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-30d",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * -30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--foreground-color-40d",
-      `${Color.lightenDarkenColor(`#${config.color?.foreground}`, factor * -40)}`,
-    );
     document.documentElement.style.setProperty("--highlight-color", `#${config.color?.highlight}`);
-    document.documentElement.style.setProperty(
-      "--highlight-color-ct2",
-      `#${config.color?.highlight}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-10l",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * 10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-20l",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * 20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-30l",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * 30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-40l",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * 40)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-10d",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * -10)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-20d",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * -20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-20d-ct",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}${opacity}`, factor * -20)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-30d",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * -30)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-40d",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}`, factor * -40)}`,
-    );
-    document.documentElement.style.setProperty(
-      "--highlight-color-40d-ct2",
-      `${Color.lightenDarkenColor(`#${config.color?.highlight}${opacityDouble}`, factor * -40)}`,
-    );
     document.documentElement.style.setProperty("--color-green", `#${config.color?.green}`);
-    document.documentElement.style.setProperty(
-      "--color-green-ct2",
-      `#${config.color?.green}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-green-10t", `#${config.color?.green}66`);
     document.documentElement.style.setProperty("--color-red", `#${config.color?.red}`);
-    document.documentElement.style.setProperty(
-      "--color-red-ct2",
-      `#${config.color?.red}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-red-10t", `#${config.color?.red}66`);
     document.documentElement.style.setProperty("--color-blue", `#${config.color?.blue}`);
-    document.documentElement.style.setProperty(
-      "--color-blue-ct2",
-      `#${config.color?.blue}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-blue-10t", `#${config.color?.blue}66`);
     document.documentElement.style.setProperty("--color-yellow", `#${config.color?.yellow}`);
-    document.documentElement.style.setProperty(
-      "--color-yellow-ct2",
-      `#${config.color?.yellow}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-yellow-10t", `#${config.color?.yellow}66`);
     document.documentElement.style.setProperty("--color-magenta", `#${config.color?.magenta}`);
-    document.documentElement.style.setProperty(
-      "--color-magenta-ct2",
-      `#${config.color?.magenta}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty(
-      "--color-magenta-10t",
-      `#${config.color?.magenta}66`,
-    );
     document.documentElement.style.setProperty("--color-cyan", `#${config.color?.cyan}`);
-    document.documentElement.style.setProperty(
-      "--color-cyan-ct2",
-      `#${config.color?.cyan}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-cyan-10t", `#${config.color?.cyan}66`);
-
     document.documentElement.style.setProperty("--color-white", `#${config.color?.white}`);
-    document.documentElement.style.setProperty(
-      "--color-white-ct2",
-      `#${config.color?.white}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-white-10t", `#${config.color?.white}66`);
     document.documentElement.style.setProperty("--color-black", `#${config.color?.black}`);
-    document.documentElement.style.setProperty(
-      "--color-black-ct2",
-      `#${config.color?.black}${opacityDouble}`,
-    );
-    document.documentElement.style.setProperty("--color-black-10t", `#${config.color?.black}66`);
     document.documentElement.style.setProperty("--color-grey", `#555555`);
-    document.documentElement.style.setProperty("--color-grey-ct2", `#555555${opacityDouble}`);
-    document.documentElement.style.setProperty("--color-grey-10t", `#55555566`);
     document.documentElement.style.setProperty("--cursor-color", `#${config.cursor?.color}`);
+    const shadow1 =
+      "color-mix(in srgb, var(--theme-darken-color) calc(var(--shadow-mix-unit) * var(--mix-step-1)), var(--background-color))";
+    const shadow2 =
+      "color-mix(in srgb, var(--theme-darken-color) calc(var(--shadow-mix-unit) * var(--mix-step-2)), var(--background-color))";
+    const shadow3 =
+      "color-mix(in srgb, var(--theme-darken-color) calc(var(--shadow-mix-unit) * var(--mix-step-3)), var(--background-color))";
     document.documentElement.style.setProperty(
       "--shadow1",
-      "0 1px 1px 0 var(--color-shadow3), 0 2px 1px -1px var(--color-shadow1), 0 1px 3px 0 var(--color-shadow2)",
+      `0 1px 1px 0 ${shadow3}, 0 2px 1px -1px ${shadow1}, 0 1px 3px 0 ${shadow2}`,
     );
     document.documentElement.style.setProperty(
       "--shadow2",
-      "0 2px 2px 0 var(--color-shadow3), 0 3px 1px -2px var(--color-shadow1), 0 1px 5px 0 var(--color-shadow2)",
+      `0 2px 2px 0 ${shadow3}, 0 3px 1px -2px ${shadow1}, 0 1px 5px 0 ${shadow2}`,
     );
     document.documentElement.style.setProperty(
       "--shadow3",
-      "0 3px 4px 0 var(--color-shadow3), 0 3px 3px -2px var(--color-shadow1), 0 1px 8px 0 var(--color-shadow2)",
+      `0 3px 4px 0 ${shadow3}, 0 3px 3px -2px ${shadow1}, 0 1px 8px 0 ${shadow2}`,
     );
     document.documentElement.style.setProperty("--font-size", `${config.font?.size}px`);
     document.documentElement.style.setProperty("--font-weight", `${config.font?.weight}`);

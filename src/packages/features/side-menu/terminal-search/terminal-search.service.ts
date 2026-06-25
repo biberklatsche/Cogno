@@ -11,7 +11,7 @@ import {
 export class TerminalSearchService {
   private readonly searchInputDebounceMilliseconds = 120;
   private readonly resultPageLineLimit = 200;
-  private readonly defaultMatchBackgroundColor = "var(--highlight-color-ct2)";
+  private readonly defaultMatchBackgroundColor = "color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent)";
   private readonly defaultMatchBorderColor = "var(--highlight-color)";
   private readonly searchStateSignal = signal<TextSearchState>(
     TextSearchUseCase.createInitialState(),

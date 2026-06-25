@@ -51,7 +51,7 @@ type ProcessTreeNode = {
       gap: 6px;
       padding: 2px;
       border-radius: 8px;
-      background: var(--background-color-10l);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       align-self: flex-start;
     }
 
@@ -67,7 +67,7 @@ type ProcessTreeNode = {
 
     .tab.is-active {
       opacity: 1;
-      background: var(--background-color-20l);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
     .row {

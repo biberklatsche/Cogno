@@ -102,8 +102,8 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
                     width: 1.8rem;
                     height: 1rem;
                     border-radius: 999px;
-                    background: var(--background-color-20l);
-                    border: 1px solid var(--background-color-40l);
+                    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                    border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
                     position: relative;
                     transition: background-color .12s ease;
 
@@ -131,7 +131,7 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
             }
 
             .item:hover:enabled, .item:focus-visible:enabled {
-                background: var(--background-color-20l);
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
                 outline: none;
             }
 
@@ -161,7 +161,7 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
 
             .sep {
                 height: 1px;
-                background: var(--background-color-20l);
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
                 margin: 6px 4px;
             }
 

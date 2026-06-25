@@ -27,7 +27,7 @@ import { IconComponent } from "../../icons/icon/icon.component";
           background: none;
           outline: none;
           cursor: default;
-          color: var(--foreground-color-10t);
+          color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
 
           &:hover {
             color: var(--foreground-color);

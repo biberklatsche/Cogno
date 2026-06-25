@@ -61,7 +61,7 @@ interface ColorItem {
       opacity: 0.7;
         &:hover {opacity: 1;}
         &.default-btn {
-            border: 1px solid var(--background-color-40l);
+            border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
             background-color: transparent;
         }
     }

@@ -77,9 +77,7 @@ const INITIAL_VIEW_STATE = {
         /* Fixed, non-themeable colors for the origin/scope indicators below — they must stay
            a stable, recognizable meaning regardless of the user's configured ANSI palette. */
         --history-origin-session-color: #4dabf7;
-        --history-origin-session-color-ct: #4dabf733;
         --history-origin-cwd-color: #38d9a9;
-        --history-origin-cwd-color-ct: #38d9a933;
       }
 
       .history-panel {
@@ -89,7 +87,7 @@ const INITIAL_VIEW_STATE = {
         max-width: 920px;
         overflow: hidden;
         background: var(--background-color);
-        border: 1px solid var(--background-color-20l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-radius: 8px;
         box-shadow: var(--shadow3);
         z-index: 110;
@@ -123,7 +121,7 @@ const INITIAL_VIEW_STATE = {
       }
 
       .history-item.active {
-        background: var(--highlight-color-ct2);
+        background: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
         color: var(--background-color);
       }
 
@@ -155,19 +153,19 @@ const INITIAL_VIEW_STATE = {
       }
 
       .origin-badge.origin-session {
-        background: var(--history-origin-session-color-ct);
+        background: color-mix(in srgb, var(--history-origin-session-color) var(--opacity-subtle), transparent);
         color: var(--history-origin-session-color);
       }
 
       .origin-badge.origin-cwd {
-        background: var(--history-origin-cwd-color-ct);
+        background: color-mix(in srgb, var(--history-origin-cwd-color) var(--opacity-subtle), transparent);
         color: var(--history-origin-cwd-color);
       }
 
       .history-description {
         margin-top: 4px;
         padding: 6px 8px 4px;
-        border-top: 1px solid var(--background-color-20l);
+        border-top: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         color: var(--foreground-color);
         font-size: 11px;
         display: flex;
@@ -181,17 +179,17 @@ const INITIAL_VIEW_STATE = {
         padding: 1px 8px;
         font-size: 10px;
         line-height: 1.5;
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         color: var(--background-color);
       }
 
       .history-description .scope-badge.scope-session {
-        background: var(--history-origin-session-color-ct);
+        background: color-mix(in srgb, var(--history-origin-session-color) var(--opacity-subtle), transparent);
         color: var(--history-origin-session-color);
       }
 
       .history-description .scope-badge.scope-cwd {
-        background: var(--history-origin-cwd-color-ct);
+        background: color-mix(in srgb, var(--history-origin-cwd-color) var(--opacity-subtle), transparent);
         color: var(--history-origin-cwd-color);
       }
 

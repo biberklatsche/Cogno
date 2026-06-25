@@ -2,36 +2,6 @@ import { describe, expect, it } from "vitest";
 import { Color } from "./color";
 
 describe("Color", () => {
-  it("should work with lighten", () => {
-    const newColor = Color.lightenDarkenColor("#000000", +10);
-    expect(newColor).toEqual("#0a0a0a");
-  });
-
-  it("should work with lighten white", () => {
-    const newColor = Color.lightenDarkenColor("#ffffff", +10);
-    expect(newColor).toEqual("#ffffff");
-  });
-
-  it("should work with darken", () => {
-    const newColor = Color.lightenDarkenColor("#ffffff", -10);
-    expect(newColor).toEqual("#f5f5f5");
-  });
-
-  it("should work with darken black", () => {
-    const newColor = Color.lightenDarkenColor("#000000", -10);
-    expect(newColor).toEqual("#000000");
-  });
-
-  it("should work with opacity hex lighten", () => {
-    const newColor = Color.lightenDarkenColor("#00000040", 10);
-    expect(newColor).toEqual("#0a0a0a40");
-  });
-
-  it("should work with opacity hex darken", () => {
-    const newColor = Color.lightenDarkenColor("#ffffff40", -10);
-    expect(newColor).toEqual("#f5f5f540");
-  });
-
   it("should return no hex opacity if value is null or undefined", () => {
     expect(Color.getHexOpacity(null)).toEqual("");
     expect(Color.getHexOpacity(undefined)).toEqual("");
