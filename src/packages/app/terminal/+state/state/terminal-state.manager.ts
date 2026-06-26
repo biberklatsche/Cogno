@@ -314,18 +314,17 @@ export class TerminalStateManager {
 
   updateCwd(cwd: string): void {
     const normalizedPath = this._pathAdapter?.normalize(cwd);
-    const prevCwd = this._stateSubject.value.cwd;
-    const normalizedPrevPath = prevCwd ? this._pathAdapter?.normalize(prevCwd) : "";
-    const cwdChanged = normalizedPath !== normalizedPrevPath;
+    const storedCwd = normalizedPath ?? cwd;
+    const cwdChanged = storedCwd !== this._stateSubject.value.cwd;
 
-    this.updateState({ cwd });
+    this.updateState({ cwd: storedCwd });
 
     if (!normalizedPath) return;
     const backendOsPath = this._pathAdapter?.render(normalizedPath, { purpose: "backend_fs" });
     if (!backendOsPath) return;
 
     if (cwdChanged) {
-      this._historyPersistence.onCwdChanged(cwd);
+      this._historyPersistence.onCwdChanged(normalizedPath);
     }
 
     this._bus.publish({

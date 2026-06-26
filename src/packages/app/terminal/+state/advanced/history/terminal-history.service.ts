@@ -41,7 +41,6 @@ export class TerminalHistoryService implements OnDestroy {
     scope: this.loadScope(),
   });
   private readonly _subscription = new Subscription();
-  private readonly _keydownHandler: (event: KeyboardEvent) => void;
   private _hostElement?: HTMLElement;
   private _allEntries: HistoryEntry[] = [];
   private _lastInputSignature = "";
@@ -58,15 +57,11 @@ export class TerminalHistoryService implements OnDestroy {
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
     this.subscribeStateChanges();
-
-    this._keydownHandler = (event: KeyboardEvent) => this.handleKeydown(event);
-    window.addEventListener("keydown", this._keydownHandler, { capture: true });
   }
 
   ngOnDestroy(): void {
     this.dropdownCoordinator.release(this);
     this._subscription.unsubscribe();
-    window.removeEventListener("keydown", this._keydownHandler, { capture: true });
   }
 
   setHostElement(element: HTMLElement): void {
@@ -125,7 +120,7 @@ export class TerminalHistoryService implements OnDestroy {
     );
   }
 
-  private handleKeydown(event: KeyboardEvent): void {
+  dispatchKeydown(event: KeyboardEvent): void {
     if (!this.stateManager.isFocused) return;
 
     const view = this._viewState.value;
@@ -215,20 +210,34 @@ export class TerminalHistoryService implements OnDestroy {
 
   private async cycleScope(): Promise<void> {
     const requestId = ++this._activeRequestId;
-    const view = this._viewState.value;
-    const preferredScope = this.nextScope(view.scope);
+    const preferredScope = this.nextScope(this._viewState.value.scope);
     this.saveScope(preferredScope);
 
     const state = this.stateManager.state;
     const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
     if (requestId !== this._activeRequestId) return;
-    this._allEntries = this.toEntries(rows);
 
+    // Re-read view after the async gap — hide() may have fired during fetchEntries.
+    const view = this._viewState.value;
+    if (!view.visible) return;
+
+    this._allEntries = this.toEntries(rows);
     const entries = this.filterEntries(this._allEntries, state.input.text);
+
+    if (entries.length === 0) {
+      this.hide();
+      return;
+    }
+
+    const position = this.computePanelPosition(state, entries);
     this._viewState.next({
       ...view,
+      x: position.x,
+      y: position.y,
+      width: position.width,
+      placement: position.placement,
       scope,
-      selectedIndex: entries.length > 0 ? 0 : null,
+      selectedIndex: 0,
       entries,
     });
   }

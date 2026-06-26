@@ -4,8 +4,8 @@ import { TerminalDropdownCoordinatorService } from "./terminal-dropdown-coordina
 describe("TerminalDropdownCoordinatorService", () => {
   it("hides the previous owner when a different owner claims", () => {
     const coordinator = new TerminalDropdownCoordinatorService();
-    const first = { hide: vi.fn() };
-    const second = { hide: vi.fn() };
+    const first = { hide: vi.fn(), dispatchKeydown: vi.fn() };
+    const second = { hide: vi.fn(), dispatchKeydown: vi.fn() };
 
     coordinator.claim(first);
     coordinator.claim(second);
@@ -16,7 +16,7 @@ describe("TerminalDropdownCoordinatorService", () => {
 
   it("does not hide when the same owner claims again", () => {
     const coordinator = new TerminalDropdownCoordinatorService();
-    const owner = { hide: vi.fn() };
+    const owner = { hide: vi.fn(), dispatchKeydown: vi.fn() };
 
     coordinator.claim(owner);
     coordinator.claim(owner);
@@ -26,8 +26,8 @@ describe("TerminalDropdownCoordinatorService", () => {
 
   it("release only clears the current owner if it matches", () => {
     const coordinator = new TerminalDropdownCoordinatorService();
-    const first = { hide: vi.fn() };
-    const second = { hide: vi.fn() };
+    const first = { hide: vi.fn(), dispatchKeydown: vi.fn() };
+    const second = { hide: vi.fn(), dispatchKeydown: vi.fn() };
 
     coordinator.claim(first);
     coordinator.release(second);

@@ -421,7 +421,7 @@ defines its own action and is fully self-contained. Do not add new feature actio
 - Four suggestion sources: history commands, history patterns, history directories, spec commands (1000+ CLI tools)
 - Top 3 history suggestions always shown first
 - Filter modes: `all`, `history-only`, `context-only` — cycled with `cycle_tab`, persists across sessions
-- Keyboard: Tab/↓ next, ↑ previous, Enter accept, Escape dismiss, trigger_autocomplete, cycle_tab
+- Keyboard: ↓/↑ navigate, Enter accept, Escape dismiss, trigger_autocomplete; Tab → cycle_tab (cycles filter mode; also cycles history scope while the history dropdown is open)
 - Config: `autocomplete.provider.timeout_ms`
 
 ---

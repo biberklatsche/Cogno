@@ -110,8 +110,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     this.registerDefaultSuggestors();
     this.subscribeStateChanges();
 
-    this._keydownHandler = (event: KeyboardEvent) => this.handleKeydown(event);
-
+    this._keydownHandler = (event: KeyboardEvent) => this.handleSuppressKeydown(event);
     window.addEventListener("keydown", this._keydownHandler, { capture: true });
   }
 
@@ -194,20 +193,12 @@ export class TerminalAutocompleteService implements OnDestroy {
     );
   }
 
-  private handleKeydown(event: KeyboardEvent): void {
+  // Called by the coordinator's single global listener when this service is the active owner.
+  dispatchKeydown(event: KeyboardEvent): void {
     if (!this.stateManager.isFocused) return;
 
     const view = this._viewState.value;
-    if (!view.visible) {
-      if (this.isArrowKey(event.key)) {
-        this._suppressUntilTyping = true;
-        return;
-      }
-      if (this.isTypingKey(event)) {
-        this._suppressUntilTyping = false;
-      }
-      return;
-    }
+    if (!view.visible) return;
 
     switch (event.key) {
       case "ArrowDown": {
@@ -250,6 +241,18 @@ export class TerminalAutocompleteService implements OnDestroy {
       }
       default:
         return;
+    }
+  }
+
+  // Lightweight per-instance listener for suppress-until-typing tracking (runs even when not visible).
+  private handleSuppressKeydown(event: KeyboardEvent): void {
+    if (!this.stateManager.isFocused) return;
+    if (this._viewState.value.visible) return; // handled by coordinator
+
+    if (this.isArrowKey(event.key)) {
+      this._suppressUntilTyping = true;
+    } else if (this.isTypingKey(event)) {
+      this._suppressUntilTyping = false;
     }
   }
 
