@@ -6,7 +6,6 @@ import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { ConfigService } from "../../../../config/+state/config.service";
 import { ShellContext } from "../model/models";
-import { ShellHistoryReader } from "./shell-history-reader";
 import { CommandPattern } from "./command-pattern.models";
 import {
   CommandHistoryRow,
@@ -14,6 +13,7 @@ import {
   HistoryRepository,
   RecentCommandRow,
 } from "./history.repository";
+import { ShellHistoryReader } from "./shell-history-reader";
 import { ExecutedCommand } from "./terminal-command-history.store";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
