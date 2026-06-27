@@ -31,7 +31,11 @@ export class TerminalPathResolver {
   private toBackendFsPath(pathAdapter: IPathAdapter, pathLike: string): string | undefined {
     const normalized = this.safeNormalize(pathAdapter, pathLike);
     if (!normalized) return undefined;
-    return pathAdapter.render(normalized, { purpose: "backend_fs" });
+    try {
+      return pathAdapter.render(normalized, { purpose: "backend_fs" });
+    } catch {
+      return undefined;
+    }
   }
 
   private safeNormalize(pathAdapter: IPathAdapter, pathLike: string): string | undefined {
