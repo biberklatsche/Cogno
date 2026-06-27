@@ -84,6 +84,12 @@ export const TerminalSettingsSchema = z.object({
         .describe(
           "Don't add a command to history if it was typed with a leading space, matching the HISTCONTROL=ignorespace convention used by bash/zsh.",
         ),
+      import_shell_history: z
+        .boolean()
+        .optional()
+        .describe(
+          "On first launch with an empty history, import commands from the native shell history file (bash/gitbash: ~/.bash_history, zsh: ~/.zsh_history, powershell: PSReadLine ConsoleHost_history.txt).",
+        ),
     })
     .optional(),
 });

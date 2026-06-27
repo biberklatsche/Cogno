@@ -1,10 +1,12 @@
 import { Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
+import { Path } from "@cogno/app-tauri/path";
 import { IPathAdapter } from "@cogno/core-api";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { ConfigService } from "../../../../config/+state/config.service";
 import { ShellContext } from "../model/models";
+import { ShellHistoryReader } from "./shell-history-reader";
 import { CommandPattern } from "./command-pattern.models";
 import {
   CommandHistoryRow,
@@ -26,6 +28,21 @@ type RecentCommandExecution = {
 
 const TRANSITION_RETENTION_WINDOW_MS = 30 * 60 * 1000;
 
+function deduplicateByCommand(
+  entries: { command: string; timestamp: number }[],
+): { command: string; timestamp: number }[] {
+  const seen = new Map<string, number>();
+  for (const entry of entries) {
+    const existing = seen.get(entry.command);
+    if (existing === undefined || entry.timestamp > existing) {
+      seen.set(entry.command, entry.timestamp);
+    }
+  }
+  return Array.from(seen.entries())
+    .map(([command, timestamp]) => ({ command, timestamp }))
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
 function firstToken(commandRaw: string): string {
   const trimmed = commandRaw.trim();
   if (!trimmed) return "";
@@ -35,6 +52,8 @@ function firstToken(commandRaw: string): string {
 
 @Injectable()
 export class TerminalHistoryPersistenceService {
+  private static _shellHistoryImportStarted = false;
+
   private readonly _repo$ = new BehaviorSubject<HistoryRepository | null>(null);
   private readonly _actions$ = new Subject<PersistenceAction>();
   private readonly _returnCodePolicy: ReturnCodePolicy = {
@@ -77,7 +96,16 @@ export class TerminalHistoryPersistenceService {
   initialize(shellContext: ShellContext, adapter: IPathAdapter, groupId?: string): void {
     this._groupId = groupId;
     HistoryRepository.createForContext(shellContext, adapter)
-      .then((repo) => this._repo$.next(repo))
+      .then((repo) => {
+        this._repo$.next(repo);
+        if (
+          this.configService?.config.terminal?.history?.import_shell_history &&
+          !TerminalHistoryPersistenceService._shellHistoryImportStarted
+        ) {
+          TerminalHistoryPersistenceService._shellHistoryImportStarted = true;
+          this.enqueue((r) => this.importShellHistoryIfEmpty(r, shellContext));
+        }
+      })
       .catch((error) =>
         ErrorReporter.reportException({
           error,
@@ -88,6 +116,39 @@ export class TerminalHistoryPersistenceService {
           },
         }),
       );
+  }
+
+  private async importShellHistoryIfEmpty(
+    repo: HistoryRepository,
+    shellContext: ShellContext,
+  ): Promise<void> {
+    const hasCommands = await repo.hasAnyCommands();
+    if (hasCommands) return;
+
+    try {
+      const homeDir = await Path.homeDir();
+      const entries = await ShellHistoryReader.read(
+        shellContext.shellType,
+        shellContext.backendOs,
+        homeDir,
+      );
+      if (entries.length === 0) return;
+
+      const historyConfig = this.configService?.config.terminal?.history;
+      const maxEntries = historyConfig?.max_entries;
+
+      const deduplicated = deduplicateByCommand(entries);
+      const limited = maxEntries && maxEntries > 0 ? deduplicated.slice(-maxEntries) : deduplicated;
+
+      await repo.bulkImportCommands(limited, homeDir);
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "TerminalHistoryPersistenceService",
+        context: { operation: "importShellHistory", shellType: shellContext.shellType },
+      });
+    }
   }
 
   onCwdChanged(cwdRaw: string): void {

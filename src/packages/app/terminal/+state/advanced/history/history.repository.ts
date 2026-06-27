@@ -289,7 +289,7 @@ export class HistoryRepository {
     groupId?: string;
     limit?: number;
   }): Promise<RecentCommandRow[]> {
-    const limit = options.limit ?? 50;
+    const limit = options.limit ?? 500;
     const conditions = ["cl.context_id = ?", "c.deleted_at IS NULL"];
     const params: unknown[] = [this.contextId];
 
@@ -333,6 +333,61 @@ export class HistoryRepository {
        LIMIT ?`,
       [...originParams, ...params, limit],
     );
+  }
+
+  async hasAnyCommands(): Promise<boolean> {
+    const rows = await this.sel<{ found: number }[]>(
+      `SELECT 1 AS found FROM command_log WHERE context_id = ? LIMIT 1`,
+      [this.contextId],
+    );
+    return rows.length > 0;
+  }
+
+  async bulkImportCommands(
+    entries: { command: string; timestamp: number }[],
+    cwdRaw: string,
+  ): Promise<void> {
+    if (entries.length === 0) return;
+
+    const cwd = safeNormalize(this.adapter, cwdRaw);
+    if (!cwd) return;
+    const parent = this.adapter.parentOf(cwd);
+
+    const BATCH_SIZE = 500;
+    for (let offset = 0; offset < entries.length; offset += BATCH_SIZE) {
+      const batch = entries.slice(offset, offset + BATCH_SIZE);
+      await this.tx(async () => {
+        const cwdId = await this.ensurePathId(cwd, parent);
+
+        for (const entry of batch) {
+          const command = entry.command.trim();
+          if (!command) continue;
+
+          const cmdId = await this.ensureCommandId(command);
+
+          await this.exec(
+            `INSERT INTO command_stat(
+               context_id, cwd_path_id, command_id,
+               exec_count, last_exec_at,
+               select_count, last_select_at,
+               avg_duration_ms, success_count, last_return_code,
+               created_at, deleted_at
+             ) VALUES(?, ?, ?, 1, ?, 0, NULL, NULL, 0, NULL, ?, NULL)
+             ON CONFLICT(context_id, cwd_path_id, command_id) DO UPDATE SET
+               exec_count = command_stat.exec_count + 1,
+               last_exec_at = MAX(command_stat.last_exec_at, excluded.last_exec_at),
+               deleted_at = NULL`,
+            [this.contextId, cwdId, cmdId, entry.timestamp, entry.timestamp],
+          );
+
+          await this.exec(
+            `INSERT INTO command_log(context_id, group_id, cwd_path_id, command_id, executed_at)
+             VALUES(?, NULL, ?, ?, ?)`,
+            [this.contextId, cwdId, cmdId, entry.timestamp],
+          );
+        }
+      });
+    }
   }
 
   async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {
