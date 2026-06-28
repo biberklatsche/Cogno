@@ -501,7 +501,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     this.bus.publish({
       path: ["app", "terminal"],
-      type: "ApplyAutocompleteSuggestion",
+      type: "ReplaceTerminalInput",
       payload: {
         terminalId: this.stateManager.terminalId,
         inputText,

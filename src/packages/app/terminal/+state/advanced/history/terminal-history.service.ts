@@ -3,6 +3,7 @@ import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
+import { ConfigService } from "../../../../config/+state/config.service";
 import { TerminalState, TerminalStateManager } from "../../state";
 import {
   computeDropdownPanelPosition,
@@ -55,6 +56,7 @@ export class TerminalHistoryService implements OnDestroy {
     private readonly persistence: TerminalHistoryPersistenceService,
     private readonly bus: AppBus,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
+    private readonly configService: ConfigService,
   ) {
     this.subscribeStateChanges();
   }
@@ -293,13 +295,16 @@ export class TerminalHistoryService implements OnDestroy {
       this.persistence.markCommandSelected(entry.command, this.stateManager.state.cwd);
     }
 
+    const autoExecute = this.configService.config.terminal?.history?.auto_execute ?? false;
+
     this.bus.publish({
       path: ["app", "terminal"],
-      type: "ApplyAutocompleteSuggestion",
+      type: "ReplaceTerminalInput",
       payload: {
         terminalId: this.stateManager.terminalId,
         inputText: entry.command,
         cursorIndex: entry.command.length,
+        autoExecute,
       },
     });
 

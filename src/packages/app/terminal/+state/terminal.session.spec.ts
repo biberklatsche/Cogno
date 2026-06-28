@@ -474,7 +474,7 @@ describe("TerminalSession", () => {
     expect(appBus.publish).toHaveBeenCalledWith(
       expect.objectContaining({
         path: ["app", "terminal"],
-        type: "InjectTerminalInput",
+        type: "WriteRawToPty",
         payload: {
           terminalId,
           text: "/c/temp/plain.txt '/c/temp/with space.txt'",

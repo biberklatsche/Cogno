@@ -71,7 +71,7 @@ describe("TerminalGatewayAdapterService", () => {
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         path: ["app", "terminal"],
-        type: "InjectTerminalInput",
+        type: "WriteRawToPty",
         payload: { terminalId: "terminal-2", text: "ls\n" },
       }),
     );

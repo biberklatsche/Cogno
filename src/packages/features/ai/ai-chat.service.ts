@@ -126,7 +126,7 @@ export class AiChatService {
     this.terminalGateway.injectInput({
       terminalId,
       text: commandSuggestion.command,
-      appendNewline: false,
+      autoExecute: false,
     });
   }
 
@@ -151,7 +151,7 @@ export class AiChatService {
       this.terminalGateway.injectInput({
         terminalId,
         text: commandSuggestion.command,
-        appendNewline: true,
+        autoExecute: true,
       });
       this.appendSystemMessage(`Running command: ${commandSuggestion.command}`);
       return;
@@ -162,7 +162,7 @@ export class AiChatService {
     this.terminalGateway.injectInput({
       terminalId,
       text: commandSuggestion.command,
-      appendNewline: true,
+      autoExecute: true,
     });
     this.appendSystemMessage(`Running command and continuing: ${commandSuggestion.command}`);
 

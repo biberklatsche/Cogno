@@ -34,15 +34,13 @@ export class InputHandler implements ITerminalHandler {
       }),
     );
     this.subscription.add(
-      this._bus
-        .on$({ path: ["app", "terminal"], type: "InjectTerminalInput" })
-        .subscribe((event) => {
-          if (event.payload?.terminalId !== this._terminalId) return;
-          this.pty.write(event.payload.text);
-          if (event.payload.appendNewline) {
-            queueMicrotask(() => this.pty.write(Char.Enter));
-          }
-        }),
+      this._bus.on$({ path: ["app", "terminal"], type: "WriteRawToPty" }).subscribe((event) => {
+        if (event.payload?.terminalId !== this._terminalId) return;
+        this.pty.write(event.payload.text);
+        if (event.payload.autoExecute) {
+          queueMicrotask(() => this.pty.write(Char.Enter));
+        }
+      }),
     );
     this.terminalInputDisposable = terminal.onData(() => {
       this.stateManager.clearUnreadNotification();

@@ -85,7 +85,7 @@ describe("CommandLineEditor", () => {
     editor.registerTerminal(mockTerminal);
 
     mockBus.publish({
-      type: "ApplyAutocompleteSuggestion",
+      type: "ReplaceTerminalInput",
       payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
       path: ["app", "terminal"],
     });

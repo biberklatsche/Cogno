@@ -35,7 +35,6 @@ import {
   TabSelectedEvent,
 } from "../tab-list/+bus/events";
 import {
-  ApplyAutocompleteSuggestionAction,
   BlurTerminalAction,
   ClearBufferAction,
   ClearLineAction,
@@ -50,8 +49,8 @@ import {
   GoToNextWordAction,
   GoToPreviousWordAction,
   GoToStartOfLineAction,
-  InjectTerminalInputAction,
   PasteAction,
+  ReplaceTerminalInputAction,
   RevealTerminalAction,
   SelectAllAction,
   SelectTextLeftAction,
@@ -61,6 +60,7 @@ import {
   SelectWordLeftAction,
   SelectWordRightAction,
   TerminalRemovedAction,
+  WriteRawToPtyAction,
 } from "../terminal/+bus/actions";
 import {
   PtyInitializedEvent,
@@ -138,8 +138,8 @@ export type AppMessage =
   | SelectWordLeftAction
   | SelectTextToEndOfLineAction
   | SelectTextToStartOfLineAction
-  | InjectTerminalInputAction
-  | ApplyAutocompleteSuggestionAction
+  | WriteRawToPtyAction
+  | ReplaceTerminalInputAction
   | ActionFiredEvent
   | FullScreenAppEnteredEvent
   | FullScreenAppLeavedEvent

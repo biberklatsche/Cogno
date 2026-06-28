@@ -238,9 +238,7 @@ describe("TerminalAutocompleteService", () => {
     );
 
     expect(
-      (bus.publish as any).mock.calls.some(
-        (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
-      ),
+      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
     ).toBe(false);
   });
 
@@ -264,9 +262,7 @@ describe("TerminalAutocompleteService", () => {
     );
 
     expect(
-      (bus.publish as any).mock.calls.some(
-        (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
-      ),
+      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
     ).toBe(true);
   });
 
@@ -363,9 +359,7 @@ describe("TerminalAutocompleteService", () => {
       }),
     );
     expect(
-      (bus.publish as any).mock.calls.some(
-        (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
-      ),
+      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
     ).toBe(false);
   });
 
@@ -707,7 +701,7 @@ describe("TerminalAutocompleteService", () => {
     );
 
     const applyCall = (bus.publish as any).mock.calls.find(
-      (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
+      (c: any[]) => c[0]?.type === "ReplaceTerminalInput",
     );
     expect(applyCall).toBeTruthy();
     expect(applyCall[0].payload.inputText).toBe("cd projects");

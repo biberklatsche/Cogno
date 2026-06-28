@@ -490,7 +490,7 @@ export class TerminalSession {
 
     this.bus.publish({
       path: ["app", "terminal"],
-      type: "InjectTerminalInput",
+      type: "WriteRawToPty",
       payload: {
         terminalId: this.terminalId,
         text: renderedPaths.join(" "),

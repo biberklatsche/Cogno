@@ -134,7 +134,7 @@ export class CommandLineEditor implements ITerminalHandler {
     );
     this.subscription.add(
       this._bus
-        .on$({ path: ["app", "terminal"], type: "ApplyAutocompleteSuggestion" })
+        .on$({ path: ["app", "terminal"], type: "ReplaceTerminalInput" })
         .subscribe((event) => {
           const payload = event.payload;
           if (
@@ -145,6 +145,9 @@ export class CommandLineEditor implements ITerminalHandler {
             return;
           this._selectionStart = null;
           this.applyAutocompleteSuggestion(payload.inputText, payload.cursorIndex);
+          if (payload.autoExecute) {
+            queueMicrotask(() => this._pty.write("\r"));
+          }
         }),
     );
 

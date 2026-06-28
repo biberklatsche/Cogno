@@ -90,6 +90,12 @@ export const TerminalSettingsSchema = z.object({
         .describe(
           "On first launch with an empty history, import commands from the native shell history file (bash/gitbash: ~/.bash_history, zsh: ~/.zsh_history, powershell: PSReadLine ConsoleHost_history.txt).",
         ),
+      auto_execute: z
+        .boolean()
+        .optional()
+        .describe(
+          "When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter.",
+        ),
     })
     .optional(),
 });

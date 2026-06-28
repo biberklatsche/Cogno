@@ -80,6 +80,7 @@ describe("TerminalHistoryService", () => {
       persistence as unknown as TerminalHistoryPersistenceService,
       bus,
       coordinator,
+      { config: {} } as any,
     );
   });
 
@@ -114,7 +115,7 @@ describe("TerminalHistoryService", () => {
     expect(persistence.getRecentCommands).not.toHaveBeenCalled();
   });
 
-  it("publishes ApplyAutocompleteSuggestion and hides when an entry is selected", async () => {
+  it("publishes ReplaceTerminalInput and hides when an entry is selected", async () => {
     const publishSpy = vi.spyOn(bus, "publish");
     bus.publish(ActionFired.create("trigger_command_history"));
     await new Promise((resolve) => {
@@ -125,7 +126,7 @@ describe("TerminalHistoryService", () => {
 
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: "ApplyAutocompleteSuggestion",
+        type: "ReplaceTerminalInput",
         payload: { terminalId: "t1", inputText: "npm test", cursorIndex: 8 },
       }),
     );
@@ -175,6 +176,7 @@ describe("TerminalHistoryService", () => {
       persistence as unknown as TerminalHistoryPersistenceService,
       localBus,
       coordinator,
+      { config: {} } as any,
     );
     localBus.publish(ActionFired.create("trigger_command_history"));
 
