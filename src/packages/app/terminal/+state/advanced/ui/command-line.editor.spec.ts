@@ -35,6 +35,7 @@ describe("CommandLineEditor", () => {
       isCommandRunning: false,
       input: { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 },
       shellType: "Bash" as any,
+      updateInput: vi.fn(),
     };
     editor = new CommandLineEditor(mockBus, mockPty, state as any);
     mockTerminal = TerminalMockFactory.createTerminal();
@@ -84,7 +85,7 @@ describe("CommandLineEditor", () => {
     editor.registerTerminal(mockTerminal);
 
     mockBus.publish({
-      type: "ApplyAutocompleteSuggestion",
+      type: "ReplaceTerminalInput",
       payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
       path: ["app", "terminal"],
     });
@@ -650,6 +651,125 @@ describe("CommandLineEditor", () => {
 
       // startIdx=0, endIdx=16. length=16.
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 16);
+    });
+  });
+
+  describe("Vertical arrow navigation", () => {
+    function pressArrow(key: "ArrowUp" | "ArrowDown", modifiers: Partial<KeyboardEvent> = {}) {
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      const preventDefault = vi.fn();
+      const stopPropagation = vi.fn();
+      const event = {
+        type: "keydown",
+        key,
+        preventDefault,
+        stopPropagation,
+        ...modifiers,
+      } as unknown as KeyboardEvent;
+      const result = customKeyHandler(event);
+      return { result, preventDefault, stopPropagation };
+    }
+
+    it("triggers command history on ArrowUp and passes ArrowDown through for single-line input", () => {
+      state.input = { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 };
+      const publishSpy = vi.spyOn(mockBus, "publish");
+
+      const up = pressArrow("ArrowUp");
+      expect(up.result).toBe(false);
+      expect(up.preventDefault).toHaveBeenCalled();
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ActionFired", payload: "trigger_command_history" }),
+      );
+
+      const down = pressArrow("ArrowDown");
+      expect(down.result).toBe(true);
+      expect(down.preventDefault).not.toHaveBeenCalled();
+
+      expect(mockPty.write).not.toHaveBeenCalled();
+    });
+
+    it("triggers command history on ArrowUp on the first row but moves the cursor down for multi-line input", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEF", cursorIndex: 3, maxCursorIndex: 16 };
+      const publishSpy = vi.spyOn(mockBus, "publish");
+
+      const up = pressArrow("ArrowUp");
+      expect(up.result).toBe(false);
+      expect(up.preventDefault).toHaveBeenCalled();
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ActionFired", payload: "trigger_command_history" }),
+      );
+
+      const down = pressArrow("ArrowDown");
+      expect(down.result).toBe(false);
+      expect(down.preventDefault).toHaveBeenCalled();
+      // moves from index 3 to index 13 -> offset 10 -> 10x right arrow
+      expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[C".repeat(10));
+    });
+
+    it("moves the cursor up and down on a middle row for multi-line input", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEFGHIJ", cursorIndex: 13, maxCursorIndex: 20 };
+
+      const up = pressArrow("ArrowUp");
+      expect(up.result).toBe(false);
+      expect(up.preventDefault).toHaveBeenCalled();
+      // moves from index 13 to index 3 -> offset -10 -> 10x left arrow
+      expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[D".repeat(10));
+
+      const down = pressArrow("ArrowDown");
+      expect(down.result).toBe(false);
+      expect(down.preventDefault).toHaveBeenCalled();
+      // moves from index 13 to index 20 (clamped to maxCursorIndex) -> offset 7
+      expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[C".repeat(7));
+    });
+
+    it("moves the cursor up but passes ArrowDown through on the last row for multi-line input", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEF", cursorIndex: 13, maxCursorIndex: 16 };
+
+      const down = pressArrow("ArrowDown");
+      expect(down.result).toBe(true);
+      expect(down.preventDefault).not.toHaveBeenCalled();
+
+      const up = pressArrow("ArrowUp");
+      expect(up.result).toBe(false);
+      expect(up.preventDefault).toHaveBeenCalled();
+      expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[D".repeat(10));
+    });
+
+    it("ignores ArrowUp/ArrowDown with modifier keys", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEF", cursorIndex: 13, maxCursorIndex: 16 };
+
+      const up = pressArrow("ArrowUp", { ctrlKey: true });
+      expect(up.result).toBe(true);
+      expect(up.preventDefault).not.toHaveBeenCalled();
+      expect(mockPty.write).not.toHaveBeenCalled();
+    });
+
+    it("clears any active selection when moving the cursor vertically", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEFGHIJ", cursorIndex: 13, maxCursorIndex: 20 };
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+
+      pressArrow("ArrowUp");
+
+      expect(mockTerminal.clearSelection).toHaveBeenCalled();
+    });
+
+    it("optimistically updates cursorIndex/maxCursorIndex so a fast key-repeat doesn't read stale state", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEFGHIJ", cursorIndex: 13, maxCursorIndex: 20 };
+
+      pressArrow("ArrowDown");
+
+      // moved from 13 to 20 (clamped); maxCursorIndex stays 20.
+      expect(state.updateInput).toHaveBeenCalledWith({
+        text: "0123456789ABCDEFGHIJ",
+        cursorIndex: 20,
+        maxCursorIndex: 20,
+      });
     });
   });
 });

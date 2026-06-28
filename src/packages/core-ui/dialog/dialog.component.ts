@@ -44,7 +44,7 @@ type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
         box-sizing: border-box;
         background: var(--background-color);
         color: var(--foreground-color);
-        border: 1px solid var(--background-color-20l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-radius: 8px;
         box-shadow: 0 10px 24px rgba(0,0,0,0.3);
         max-width: 90vw;
@@ -59,7 +59,7 @@ type ResizeDirection = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
         align-items: center;
         justify-content: space-between;
         padding: 6px;
-        border-bottom: 1px solid var(--background-color-20l);
+        border-bottom: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
       }
 
       .header.movable {

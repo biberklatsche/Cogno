@@ -132,7 +132,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
     readonly unhandledEnabled: boolean;
   } {
     try {
-      const exceptionsConfiguration = this.configService.config.notification?.exceptions;
+      const exceptionsConfiguration = this.configService.config.notification?.exception;
 
       return {
         handledEnabled: exceptionsConfiguration?.handled?.enabled ?? false,

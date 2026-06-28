@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { FeatureModeContract } from "./feature-mode.contract";
 
-const hexColorSchema = z.preprocess(
+export const hexColorSchema = z.preprocess(
   (val) => (typeof val === "string" && val.startsWith("#") ? val.slice(1) : val),
   z
     .string()
@@ -11,43 +11,33 @@ const hexColorSchema = z.preprocess(
     ),
 );
 
-const featureModeSchema = z.enum([
+export const featureModeSchema = z.enum([
   "off",
   "hidden",
   "visible",
 ] satisfies ReadonlyArray<FeatureModeContract>);
 
-export const FeatureWorkspaceSchema = z.object({
+const featureOrderSchema = z
+  .number()
+  .int()
+  .optional()
+  .describe(
+    "Override the side-menu display position for this feature. Lower numbers appear first.",
+  );
+
+export const FeatureCommandPaletteSchema = z.object({
   mode: featureModeSchema.optional(),
+  order: featureOrderSchema,
 });
 
-export const FeatureNotificationSchema = z.object({
+export const FeatureWorkspaceSchema = z.object({
   mode: featureModeSchema.optional(),
-  highlight_terminal_on_activity: z.boolean().optional(),
-  exceptions: z
-    .object({
-      handled: z
-        .object({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe(
-              "Show a notification for handled exceptions reported through the central error reporter.",
-            ),
-        })
-        .optional(),
-      unhandled: z
-        .object({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe(
-              "Show a notification for unhandled renderer exceptions caught by the global error reporter.",
-            ),
-        })
-        .optional(),
-    })
-    .optional(),
+  order: featureOrderSchema,
+});
+
+export const FeatureNotificationOverviewSchema = z.object({
+  mode: featureModeSchema.optional(),
+  order: featureOrderSchema,
   overview: z
     .object({
       max_items: z.number().int().min(0).optional(),
@@ -55,102 +45,9 @@ export const FeatureNotificationSchema = z.object({
     .optional(),
 });
 
-export const FeatureNotificationsSchema = z.object({
-  app: z
-    .object({
-      available: z.boolean().optional(),
-      enabled: z.boolean().optional(),
-      duration_seconds: z.number().int().min(0).optional(),
-    })
-    .optional(),
-  os: z
-    .object({
-      available: z.boolean().optional(),
-      enabled: z.boolean().optional(),
-    })
-    .optional(),
-});
-
-export const FeatureCommandPaletteSchema = z.object({
-  mode: featureModeSchema.optional(),
-});
-
-export const FeatureTerminalSchema = z.object({
-  webgl: z.boolean().optional(),
-  inactive_overlay_opacity: z
-    .number()
-    .int()
-    .min(0, "Opacity must be at least 0")
-    .max(100, "Opacity must be at most 100")
-    .optional(),
-  ignore_bracketed_paste_mode: z.boolean().optional(),
-  minimum_contrast_ratio: z.number().optional(),
-  screen_reader_mode: z.boolean().optional(),
-  allow_transparency: z.boolean().optional(),
-  tab_stop_width: z.number().optional(),
-  word_separator: z.string().optional(),
-  progress_bar: z
-    .object({
-      enabled: z.boolean().optional().describe("Show the progress bar in the terminal header."),
-    })
-    .optional(),
-  notifications: z
-    .object({
-      osc9: z
-        .object({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Allow OSC9 terminal notifications to trigger a notification."),
-        })
-        .optional(),
-      long_running_command: z
-        .object({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Show a notification after a long-running command has finished."),
-          minimum_duration_seconds: z
-            .number()
-            .int()
-            .min(0)
-            .optional()
-            .describe("Notify only when a command ran for at least this many seconds."),
-        })
-        .optional(),
-    })
-    .optional(),
-});
-
-export const FeatureAutocompleteSchema = z.object({
-  provider: z
-    .object({
-      timeout_ms: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .describe("Maximum time in milliseconds for one dynamic autocomplete provider."),
-    })
-    .optional(),
-});
-
 export const FeatureSearchSchema = z.object({
   mode: featureModeSchema.optional(),
-  match: z
-    .object({
-      background_color: hexColorSchema.optional(),
-      border_color: hexColorSchema.optional(),
-      overview_ruler_color: hexColorSchema.optional(),
-    })
-    .optional(),
-  active_match: z
-    .object({
-      background_color: hexColorSchema.optional(),
-      border_color: hexColorSchema.optional(),
-      overview_ruler_color: hexColorSchema.optional(),
-    })
-    .optional(),
+  order: featureOrderSchema,
 });
 
 const aiProviderTypeSchema = z.enum(["openai_compatible", "ollama_native"] as const);
@@ -169,10 +66,12 @@ const aiProviderSchema = z.object({
 
 export const FeatureGitSchema = z.object({
   mode: aiFeatureModeSchema.optional(),
+  order: featureOrderSchema,
 });
 
 export const FeatureCodingAgentsSchema = z.object({
   mode: featureModeSchema.optional(),
+  order: featureOrderSchema,
   notifications: z
     .object({
       working: z
@@ -204,6 +103,7 @@ export const FeatureCodingAgentsSchema = z.object({
 
 export const FeatureAiSchema = z.object({
   mode: aiFeatureModeSchema.optional(),
+  order: featureOrderSchema,
   active_provider: z.string().optional(),
   resume_pattern: z
     .string()

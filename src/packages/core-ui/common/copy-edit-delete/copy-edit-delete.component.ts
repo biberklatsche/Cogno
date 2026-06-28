@@ -1,5 +1,6 @@
 import { Component, input, output, signal, ViewEncapsulation } from "@angular/core";
 import { IconComponent } from "../../icons/icon/icon.component";
+import { TooltipDirective } from "../tooltip/tooltip.directive";
 
 @Component({
   selector: "app-copy-edit-delete",
@@ -27,7 +28,7 @@ import { IconComponent } from "../../icons/icon/icon.component";
           background: none;
           outline: none;
           cursor: default;
-          color: var(--foreground-color-10t);
+          color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
 
           &:hover {
             color: var(--foreground-color);
@@ -43,17 +44,17 @@ import { IconComponent } from "../../icons/icon/icon.component";
           <button class="button icon-button icon-placeholder"></button>
         }
         @if (enableEdit()) {
-          <button class="button icon-button" title="Edit" (click)="onEvent.emit('edit'); $event.stopPropagation()">
+          <button class="button icon-button" [appTooltip]="'Edit'" (click)="onEvent.emit('edit'); $event.stopPropagation()">
             <app-icon name="mdiSquareEditOutline"></app-icon>
           </button>
         }
         @if (enableCopy()) {
-          <button class="button icon-button" title="Copy" (click)="onEvent.emit('copy'); $event.stopPropagation()">
+          <button class="button icon-button" [appTooltip]="'Copy'" (click)="onEvent.emit('copy'); $event.stopPropagation()">
             <app-icon name="mdiContentCopy"></app-icon>
           </button>
         }
         @if (enableDelete()) {
-          <button class="button icon-button" title="Delete" (click)="isInDeleteMode.set(true); $event.stopPropagation()">
+          <button class="button icon-button" [appTooltip]="'Delete'" (click)="isInDeleteMode.set(true); $event.stopPropagation()">
             <app-icon name="mdiTrashCanOutline"></app-icon>
           </button>
         }
@@ -73,7 +74,7 @@ import { IconComponent } from "../../icons/icon/icon.component";
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [IconComponent],
+  imports: [IconComponent, TooltipDirective],
 })
 export class CopyEditDeleteComponent {
   isInDeleteMode = signal(false);

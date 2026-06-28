@@ -25,19 +25,20 @@ export type SelectWordRightAction = ActionBase<"SelectWordRight", TerminalId>;
 export type SelectWordLeftAction = ActionBase<"SelectWordLeft", TerminalId>;
 export type SelectTextToEndOfLineAction = ActionBase<"SelectTextToEndOfLine", TerminalId>;
 export type SelectTextToStartOfLineAction = ActionBase<"SelectTextToStartOfLine", TerminalId>;
-export type ApplyAutocompleteSuggestionAction = ActionBase<
-  "ApplyAutocompleteSuggestion",
+export type ReplaceTerminalInputAction = ActionBase<
+  "ReplaceTerminalInput",
   {
     terminalId: TerminalId;
     inputText: string;
     cursorIndex: number;
+    autoExecute?: boolean;
   }
 >;
-export type InjectTerminalInputAction = ActionBase<
-  "InjectTerminalInput",
+export type WriteRawToPtyAction = ActionBase<
+  "WriteRawToPty",
   {
     terminalId: TerminalId;
     text: string;
-    appendNewline?: boolean;
+    autoExecute?: boolean;
   }
 >;

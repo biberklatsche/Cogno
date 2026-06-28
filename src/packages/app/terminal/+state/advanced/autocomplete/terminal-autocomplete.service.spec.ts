@@ -6,6 +6,7 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import type { TerminalState } from "../../state";
 import type { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
+import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
@@ -121,9 +122,15 @@ describe("TerminalAutocompleteService", () => {
       markDirectorySelected: vi.fn(),
       markCommandSelected: vi.fn(),
     } as unknown as TerminalHistoryPersistenceService;
-    service = new TerminalAutocompleteService(fakeState as unknown as any, persistence, bus, {
-      getSharedSuggestors: vi.fn(() => []),
-    } as unknown as TerminalAutocompleteFeatureSuggestorService);
+    service = new TerminalAutocompleteService(
+      fakeState as unknown as any,
+      persistence,
+      bus,
+      {
+        getSharedSuggestors: vi.fn(() => []),
+      } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      new TerminalDropdownCoordinatorService(),
+    );
     (service as any)._suggestors = [];
   });
 
@@ -231,9 +238,7 @@ describe("TerminalAutocompleteService", () => {
     );
 
     expect(
-      (bus.publish as any).mock.calls.some(
-        (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
-      ),
+      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
     ).toBe(false);
   });
 
@@ -257,9 +262,7 @@ describe("TerminalAutocompleteService", () => {
     );
 
     expect(
-      (bus.publish as any).mock.calls.some(
-        (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
-      ),
+      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
     ).toBe(true);
   });
 
@@ -322,7 +325,7 @@ describe("TerminalAutocompleteService", () => {
     expect(currentFilterMode(service)).toBe("all");
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -334,7 +337,7 @@ describe("TerminalAutocompleteService", () => {
     expect(currentFilterMode(service)).toBe("context-only");
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -349,16 +352,14 @@ describe("TerminalAutocompleteService", () => {
       new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
     );
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
       }),
     );
     expect(
-      (bus.publish as any).mock.calls.some(
-        (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
-      ),
+      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
     ).toBe(false);
   });
 
@@ -376,7 +377,7 @@ describe("TerminalAutocompleteService", () => {
     await vi.advanceTimersByTimeAsync(400);
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -401,6 +402,7 @@ describe("TerminalAutocompleteService", () => {
       {
         getSharedSuggestors: vi.fn(() => []),
       } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      new TerminalDropdownCoordinatorService(),
     );
     (second as any)._suggestors = [];
     second.registerSuggestor(
@@ -426,7 +428,7 @@ describe("TerminalAutocompleteService", () => {
     expect(currentFilterMode(service)).toBe("all");
 
     const result = bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,
@@ -699,7 +701,7 @@ describe("TerminalAutocompleteService", () => {
     );
 
     const applyCall = (bus.publish as any).mock.calls.find(
-      (c: any[]) => c[0]?.type === "ApplyAutocompleteSuggestion",
+      (c: any[]) => c[0]?.type === "ReplaceTerminalInput",
     );
     expect(applyCall).toBeTruthy();
     expect(applyCall[0].payload.inputText).toBe("cd projects");
@@ -850,7 +852,7 @@ describe("TerminalAutocompleteService", () => {
     expect((service as any)._viewState.value.suggestions[0].source).toBe("history-cmd + spec-cmd");
 
     bus.publish(
-      ActionFired.create("cycle_completion_mode", {
+      ActionFired.create("cycle_tab", {
         all: false,
         unconsumed: false,
         performable: true,

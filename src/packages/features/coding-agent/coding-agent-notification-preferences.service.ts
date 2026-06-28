@@ -7,7 +7,7 @@ import {
 } from "@cogno/core-api";
 import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
 import { take } from "rxjs";
-import {ActiveAgent, AgentStatus} from "./coding-agent-status.service";
+import { AgentStatus } from "./coding-agent-status.service";
 
 const NOTIFICATION_LABELS: Record<AgentStatus, string> = {
   working: "Agent starts working",
@@ -44,20 +44,20 @@ export class CodingAgentNotificationPreferencesService {
   getNotificationDefinitions(): ReadonlyArray<NotificationDefinitionContract> {
     const config = this.configPort.getConfiguration() as
       | {
-          coding_agents?: {
-            notifications?: Readonly<Record<string, { enabled?: boolean }>>;
+          feature?: {
+            coding_agents?: {
+              notifications?: Readonly<Record<string, { enabled?: boolean }>>;
+            };
           };
         }
       | undefined;
-    const notificationsConfig = config?.coding_agents?.notifications;
+    const notificationsConfig = config?.feature?.coding_agents?.notifications;
 
-    return (Object.keys(NOTIFICATION_LABELS) as ReadonlyArray<AgentStatus>).map(
-      (status) => ({
-        id: status,
-        label: NOTIFICATION_LABELS[status],
-        defaultEnabled: notificationsConfig?.[status]?.enabled ?? false,
-      }),
-    );
+    return (Object.keys(NOTIFICATION_LABELS) as ReadonlyArray<AgentStatus>).map((status) => ({
+      id: status,
+      label: NOTIFICATION_LABELS[status],
+      defaultEnabled: notificationsConfig?.[status]?.enabled ?? false,
+    }));
   }
 
   getChannelOptions(): ReadonlyArray<NotificationChannelOptionContract> {

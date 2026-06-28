@@ -22,27 +22,29 @@ describe("AiProviderRegistryService", () => {
     applicationConfigurationPort = {
       configuration$: { subscribe: vi.fn() },
       getConfiguration: vi.fn().mockReturnValue({
-        ai: {
-          mode: "visible",
-          active_provider: "openai",
-          providers: {
-            openai: {
-              type: "openai_compatible",
-              base_url: "https://example.test",
-              model: "gpt-test",
-              enabled: true,
-            },
-            ollama: {
-              type: "ollama_native",
-              base_url: "http://localhost:11434",
-              model: "llama3",
-              enabled: true,
-            },
-            disabled: {
-              type: "openai_compatible",
-              base_url: "https://disabled.test",
-              model: "gpt-disabled",
-              enabled: false,
+        feature: {
+          ai: {
+            mode: "visible",
+            active_provider: "openai",
+            providers: {
+              openai: {
+                type: "openai_compatible",
+                base_url: "https://example.test",
+                model: "gpt-test",
+                enabled: true,
+              },
+              ollama: {
+                type: "ollama_native",
+                base_url: "http://localhost:11434",
+                model: "llama3",
+                enabled: true,
+              },
+              disabled: {
+                type: "openai_compatible",
+                base_url: "https://disabled.test",
+                model: "gpt-disabled",
+                enabled: false,
+              },
             },
           },
         },
@@ -90,14 +92,16 @@ describe("AiProviderRegistryService", () => {
     expect(service.validateActiveProvider()).toEqual(["Config is not loaded yet."]);
 
     vi.mocked(applicationConfigurationPort.getConfiguration).mockReturnValue({
-      ai: {
-        mode: "visible",
-        active_provider: "custom",
-        providers: {
-          custom: {
-            type: "openai_compatible",
-            base_url: "https://custom.test",
-            model: "gpt-custom",
+      feature: {
+        ai: {
+          mode: "visible",
+          active_provider: "custom",
+          providers: {
+            custom: {
+              type: "openai_compatible",
+              base_url: "https://custom.test",
+              model: "gpt-custom",
+            },
           },
         },
       },
@@ -147,13 +151,15 @@ describe("AiProviderRegistryService", () => {
     expect(service.resolveActiveProvider()?.providerId).toBe("openai");
 
     vi.mocked(applicationConfigurationPort.getConfiguration).mockReturnValue({
-      ai: {
-        mode: "off",
-        providers: {
-          openai: {
-            type: "openai_compatible",
-            base_url: "https://example.test",
-            model: "gpt-test",
+      feature: {
+        ai: {
+          mode: "off",
+          providers: {
+            openai: {
+              type: "openai_compatible",
+              base_url: "https://example.test",
+              model: "gpt-test",
+            },
           },
         },
       },

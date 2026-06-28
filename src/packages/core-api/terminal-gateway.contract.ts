@@ -41,7 +41,7 @@ export interface TerminalSnapshotOptionsContract {
 export interface TerminalInputRequestContract {
   readonly terminalId: TerminalId;
   readonly text: string;
-  readonly appendNewline?: boolean;
+  readonly autoExecute?: boolean;
 }
 
 export interface TerminalBusyStateChangeContract {

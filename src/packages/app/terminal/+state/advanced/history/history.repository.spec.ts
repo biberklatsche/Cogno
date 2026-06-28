@@ -122,6 +122,191 @@ describe("HistoryRepository", () => {
     );
   });
 
+  it("also logs the execution to command_log with the given groupId", async () => {
+    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
+        .mockResolvedValueOnce([{ id: 10 }]),
+    };
+    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
+      handler(transactionDatabase as IDatabase),
+    );
+
+    const repository = new (
+      HistoryRepository as unknown as new (
+        contextId: number,
+        adapter: IPathAdapter,
+      ) => HistoryRepository
+    )(7, pathAdapter);
+
+    await repository.upsertCommandExecution("npm test", "/workspace", "TE123-abc");
+
+    expect(transactionDatabase.execute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO command_log"),
+      [7, "TE123-abc", 1, 10, expect.any(Number)],
+    );
+  });
+
+  it("logs a null groupId when none is provided", async () => {
+    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
+        .mockResolvedValueOnce([{ id: 10 }]),
+    };
+    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
+      handler(transactionDatabase as IDatabase),
+    );
+
+    const repository = new (
+      HistoryRepository as unknown as new (
+        contextId: number,
+        adapter: IPathAdapter,
+      ) => HistoryRepository
+    )(7, pathAdapter);
+
+    await repository.upsertCommandExecution("npm test", "/workspace");
+
+    expect(transactionDatabase.execute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO command_log"),
+      [7, null, 1, 10, expect.any(Number)],
+    );
+  });
+
+  it("prunes command_log beyond maxEntries when given", async () => {
+    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
+        .mockResolvedValueOnce([{ id: 10 }]),
+    };
+    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
+      handler(transactionDatabase as IDatabase),
+    );
+
+    const repository = new (
+      HistoryRepository as unknown as new (
+        contextId: number,
+        adapter: IPathAdapter,
+      ) => HistoryRepository
+    )(7, pathAdapter);
+
+    await repository.upsertCommandExecution("npm test", "/workspace", undefined, 500);
+
+    expect(transactionDatabase.execute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM command_log"),
+      [7, 7, 500],
+    );
+  });
+
+  it("does not prune command_log when maxEntries is not given", async () => {
+    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
+      execute: vi.fn().mockResolvedValue(undefined),
+      select: vi
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
+        .mockResolvedValueOnce([{ id: 10 }]),
+    };
+    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
+      handler(transactionDatabase as IDatabase),
+    );
+
+    const repository = new (
+      HistoryRepository as unknown as new (
+        contextId: number,
+        adapter: IPathAdapter,
+      ) => HistoryRepository
+    )(7, pathAdapter);
+
+    await repository.upsertCommandExecution("npm test", "/workspace");
+
+    const pruneCalls = (transactionDatabase.execute as ReturnType<typeof vi.fn>).mock.calls.filter(
+      ([sql]) => sql.includes("DELETE FROM command_log"),
+    );
+    expect(pruneCalls).toHaveLength(0);
+  });
+
+  describe("getRecentCommands", () => {
+    function makeRepository(): HistoryRepository {
+      return new (
+        HistoryRepository as unknown as new (
+          contextId: number,
+          adapter: IPathAdapter,
+        ) => HistoryRepository
+      )(7, pathAdapter);
+    }
+
+    it("queries globally scoped, without a cwd or group filter, but tags origin", async () => {
+      const selectSpy = vi
+        .spyOn(DB, "select")
+        .mockResolvedValue([
+          { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 0 },
+        ] as never);
+
+      const repository = makeRepository();
+      const rows = await repository.getRecentCommands({
+        scope: "global",
+        groupId: "TE123-abc",
+        cwdRaw: "/workspace/project",
+      });
+
+      expect(rows).toEqual([
+        { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 0 },
+      ]);
+      const [sql, params] = selectSpy.mock.calls[0];
+      expect(sql).toContain("FROM command_log cl");
+      expect(sql).toContain("LEFT JOIN path p");
+      expect(sql).toContain("CASE WHEN cl.group_id = ? THEN 1 ELSE 0 END AS isCurrentSession");
+      expect(sql).toContain("CASE WHEN p.path = ? THEN 1 ELSE 0 END AS isCurrentCwd");
+      expect(sql).not.toContain("WHERE cl.context_id = ? AND c.deleted_at IS NULL AND");
+      expect(params).toEqual(["TE123-abc", "/workspace/project", 7, 50]);
+    });
+
+    it("filters by normalized cwd for the cwd scope, while still tagging origin", async () => {
+      const selectSpy = vi.spyOn(DB, "select").mockResolvedValue([] as never);
+
+      const repository = makeRepository();
+      await repository.getRecentCommands({ scope: "cwd", cwdRaw: "/workspace//project" });
+
+      const [sql, params] = selectSpy.mock.calls[0];
+      expect(sql).toContain("p.path = ?");
+      expect(sql).toContain("LEFT JOIN path p");
+      expect(params).toEqual([null, "/workspace/project", 7, "/workspace/project", 50]);
+    });
+
+    it("returns an empty list for cwd scope when cwd cannot be normalized", async () => {
+      const repository = makeRepository();
+      const rows = await repository.getRecentCommands({ scope: "cwd", cwdRaw: "" });
+      expect(rows).toEqual([]);
+    });
+
+    it("filters by groupId for the session scope, while still tagging origin", async () => {
+      const selectSpy = vi.spyOn(DB, "select").mockResolvedValue([] as never);
+
+      const repository = makeRepository();
+      await repository.getRecentCommands({ scope: "session", groupId: "TE123-abc" });
+
+      const [sql, params] = selectSpy.mock.calls[0];
+      expect(sql).toContain("cl.group_id = ?");
+      expect(sql).toContain("LEFT JOIN path p");
+      expect(params).toEqual(["TE123-abc", "", 7, "TE123-abc", 50]);
+    });
+
+    it("returns an empty list for session scope when no groupId is given", async () => {
+      const repository = makeRepository();
+      const rows = await repository.getRecentCommands({ scope: "session" });
+      expect(rows).toEqual([]);
+    });
+  });
+
   it("confirmLivePattern seeds slot values from all original commands, not just the first", async () => {
     const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
       execute: vi.fn().mockResolvedValue(undefined),

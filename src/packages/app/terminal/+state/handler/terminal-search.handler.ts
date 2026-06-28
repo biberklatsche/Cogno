@@ -59,12 +59,12 @@ export class TerminalSearchHandler implements ITerminalHandler {
     this.subscription.add(
       this.configService.config$.subscribe((config) => {
         this.updateSearchDecorationOptions(
-          config.search?.match?.background_color,
-          config.search?.match?.border_color,
-          config.search?.match?.overview_ruler_color,
-          config.search?.active_match?.background_color,
-          config.search?.active_match?.border_color,
-          config.search?.active_match?.overview_ruler_color,
+          config.terminal?.decoration?.color?.background,
+          config.terminal?.decoration?.color?.border,
+          config.terminal?.decoration?.color?.overview_ruler,
+          config.terminal?.decoration?.active_color?.background,
+          config.terminal?.decoration?.active_color?.border,
+          config.terminal?.decoration?.active_color?.overview_ruler,
         );
       }),
     );

@@ -26,7 +26,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
             [class.open]="workspaceEntry.isOpen"
             [class.is-fixed]="workspaceEntry.id === defaultWorkspaceId"
             [class.is-dragging]="isDraggingWorkspace && draggedWorkspaceIdentifier === workspaceEntry.id"
-            [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + '-ct2)' : undefined"
+            [style.background-color]="workspaceEntry.isActive && workspaceEntry.color ? 'color-mix(in srgb, var(--color-' + workspaceEntry.color + ') var(--menu-opacity-ct2), transparent)' : undefined"
             [style.border-color]="workspaceEntry.isOpen && workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : undefined"
             [appTooltip]="workspaceEntry.name"
             [appTooltipSecondary]="getWorkspaceShortcutLabel($index)"
@@ -68,7 +68,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                     <button
                       class="button icon-button workspace-save-button visible"
                       type="button"
-                      title="Save workspace"
+                      [appTooltip]="'Save workspace'"
                       (click)="saveWorkspace(workspaceEntry.id, $event)"
                     >
                       <app-icon name="mdiContentSaveOutline"></app-icon>
@@ -123,8 +123,8 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       .workspace-tile {
         position: relative;
         border-radius: var(--button-border-radius);
-        border: 1px solid var(--background-color-20l-ct);
-        background-color: var(--background-color-20l-ct);
+        border: 1px solid color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
+        background-color: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
         opacity: 0.7;
         cursor: default;
         height: 3.5rem;
@@ -144,8 +144,8 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       }
 
       .workspace-tile.selected {
-        background: var(--background-color-20l);
-        border: 1px solid var(--background-color-30l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
         outline: none;
         opacity: 1;
       }
@@ -219,9 +219,9 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         height: 0.8rem;
         padding: 1px;
         border-radius: 999px;
-        background: var(--background-color-20l-ct);
+        background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
         color: var(--foreground-color);
-        box-shadow: 0 0 0 1px var(--background-color-20l-ct);
+        box-shadow: 0 0 0 1px color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
         opacity: 0.95;
       }
 

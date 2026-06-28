@@ -27,15 +27,25 @@ const cognoTheme = EditorView.theme(
     ".cm-content": { caretColor: "var(--foreground-color)" },
     ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--foreground-color)" },
     "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection":
-      { background: "var(--highlight-color-ct2)" },
+      {
+        background:
+          "color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent)",
+      },
     ".cm-gutters": {
-      background: "var(--background-color-10l)",
-      color: "var(--foreground-color-10t)",
+      background:
+        "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))",
+      color: "color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent)",
       border: "none",
       minWidth: "40px",
     },
-    ".cm-activeLineGutter": { background: "var(--background-color-20l)" },
-    ".cm-activeLine": { background: "var(--background-color-10l)" },
+    ".cm-activeLineGutter": {
+      background:
+        "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color))",
+    },
+    ".cm-activeLine": {
+      background:
+        "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))",
+    },
   },
   { dark: true },
 );
@@ -48,7 +58,7 @@ const cognoHighlightStyle = HighlightStyle.define([
   { tag: [tags.string, tags.character, tags.docString], color: "var(--color-green)" },
   {
     tag: [tags.comment, tags.lineComment, tags.blockComment, tags.docComment],
-    color: "var(--foreground-color-10t)",
+    color: "color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent)",
     fontStyle: "italic",
   },
   { tag: [tags.number, tags.integer, tags.float], color: "var(--color-cyan)" },
@@ -79,7 +89,10 @@ const cognoHighlightStyle = HighlightStyle.define([
   { tag: tags.strikethrough, textDecoration: "line-through" },
   { tag: [tags.link, tags.url], color: "var(--color-blue)", textDecoration: "underline" },
   { tag: tags.invalid, color: "var(--color-red)", textDecoration: "underline wavy" },
-  { tag: tags.meta, color: "var(--foreground-color-10t)" },
+  {
+    tag: tags.meta,
+    color: "color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent)",
+  },
 ]);
 
 const LANGUAGE_IMPORTS: Record<string, () => Promise<Extension>> = {
@@ -237,11 +250,11 @@ function nextFrame(): Promise<void> {
       }
 
       app-git-diff-view .cm-deletedChunk {
-        background: var(--color-red-ct2);
+        background: color-mix(in srgb, var(--color-red) var(--menu-opacity-ct2), transparent);
       }
 
       app-git-diff-view .cm-changedLine {
-        background: var(--color-green-ct2);
+        background: color-mix(in srgb, var(--color-green) var(--menu-opacity-ct2), transparent);
       }
 
       app-git-diff-view .cm-deletedText {

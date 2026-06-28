@@ -18,6 +18,8 @@ import { ShellProfile } from "../config/+models/shell-config";
 import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import { TerminalCommandHistoryStore } from "./+state/advanced/history/terminal-command-history.store";
+import { TerminalHistoryComponent } from "./+state/advanced/history/terminal-history.component";
+import { TerminalHistoryService } from "./+state/advanced/history/terminal-history.service";
 import { TerminalHistoryPersistenceService } from "./+state/advanced/history/terminal-history-persistence.service";
 import { TerminalStateManager } from "./+state/state";
 import { TerminalSession } from "./+state/terminal.session";
@@ -30,11 +32,17 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
   styleUrls: ["./terminal.component.scss"],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TerminalHeaderComponent, TerminalAutocompleteComponent, IconComponent],
+  imports: [
+    TerminalHeaderComponent,
+    TerminalAutocompleteComponent,
+    TerminalHistoryComponent,
+    IconComponent,
+  ],
   providers: [
     TerminalCommandHistoryStore,
     TerminalHistoryPersistenceService,
     TerminalAutocompleteService,
+    TerminalHistoryService,
     TerminalFileDropService,
     TerminalSession,
     TerminalStateManager,
@@ -58,6 +66,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalSession: TerminalSession,
     private terminalStateManager: TerminalStateManager,
     private terminalAutocomplete: TerminalAutocompleteService,
+    private terminalHistory: TerminalHistoryService,
     private terminalFileDropService: TerminalFileDropService,
   ) {
     this.isFocused = toSignal(this.terminalStateManager.isFocused$);
@@ -82,6 +91,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
+    this.terminalHistory.setHostElement(this.terminalContainer.nativeElement);
     this.terminalSession.initializeTerminal(this.terminalContainer.nativeElement);
     this.terminalFileDropService.initialize(this.terminalContainer.nativeElement);
   }

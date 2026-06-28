@@ -4,6 +4,7 @@ import addCommandTransitionsMigration from "./004_add_command_transitions.sql?ra
 import addCommandPatternsMigration from "./005_add_command_patterns.sql?raw";
 import addCommandPatternFeedbackMigration from "./006_add_command_pattern_feedback.sql?raw";
 import cleanupPatternFeedbackColumnsMigration from "./007_cleanup_pattern_feedback_columns.sql?raw";
+import addCommandLogMigration from "./008_add_command_log.sql?raw";
 
 export const appDatabaseMigrations = registerDatabaseMigrations("app", [
   { name: "add-command-history", sql: addHistoryMigration },
@@ -11,4 +12,5 @@ export const appDatabaseMigrations = registerDatabaseMigrations("app", [
   { name: "add-command-patterns", sql: addCommandPatternsMigration },
   { name: "add-command-pattern-feedback", sql: addCommandPatternFeedbackMigration },
   { name: "cleanup-pattern-feedback-columns", sql: cleanupPatternFeedbackColumnsMigration },
+  { name: "add-command-log", sql: addCommandLogMigration },
 ]);

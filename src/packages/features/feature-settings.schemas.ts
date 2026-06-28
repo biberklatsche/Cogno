@@ -1,11 +1,9 @@
 export {
   FeatureAiSchema,
-  FeatureAutocompleteSchema,
   FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
-  FeatureNotificationSchema,
-  FeatureNotificationsSchema,
+  FeatureGitSchema,
+  FeatureNotificationOverviewSchema,
   FeatureSearchSchema,
-  FeatureTerminalSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/core-api";

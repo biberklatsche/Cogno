@@ -99,7 +99,7 @@ import {
 
       .selected-workspace-header--interactive:hover,
       .selected-workspace-header--interactive:focus-visible {
-        background: var(--background-color-20l);
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         outline: none;
       }
 

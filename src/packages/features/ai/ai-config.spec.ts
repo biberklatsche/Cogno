@@ -6,14 +6,16 @@ import type { DetectedAiProvider } from "./ai-detection.models";
 describe("ai-config", () => {
   it("should resolve the active provider when configured", () => {
     const configuration = {
-      ai: {
-        active_provider: "local",
-        providers: {
-          local: {
-            type: "ollama_native",
-            base_url: "http://localhost:11434",
-            model: "qwen3",
-            enabled: true,
+      feature: {
+        ai: {
+          active_provider: "local",
+          providers: {
+            local: {
+              type: "ollama_native",
+              base_url: "http://localhost:11434",
+              model: "qwen3",
+              enabled: true,
+            },
           },
         },
       },
@@ -36,11 +38,13 @@ describe("ai-config", () => {
   it("should report availability only for usable providers", () => {
     expect(
       hasUsableAiProvider({
-        ai: {
-          providers: {
-            broken: {
-              type: "openai_compatible",
-              enabled: true,
+        feature: {
+          ai: {
+            providers: {
+              broken: {
+                type: "openai_compatible",
+                enabled: true,
+              },
             },
           },
         },
@@ -49,13 +53,15 @@ describe("ai-config", () => {
 
     expect(
       hasUsableAiProvider({
-        ai: {
-          providers: {
-            local: {
-              type: "openai_compatible",
-              base_url: "http://localhost:1234/v1",
-              model: "gpt-oss",
-              enabled: true,
+        feature: {
+          ai: {
+            providers: {
+              local: {
+                type: "openai_compatible",
+                base_url: "http://localhost:1234/v1",
+                model: "gpt-oss",
+                enabled: true,
+              },
             },
           },
         },
@@ -65,15 +71,17 @@ describe("ai-config", () => {
 
   it("should disable provider resolution when ai mode is off", () => {
     const configuration = {
-      ai: {
-        mode: "off",
-        active_provider: "local",
-        providers: {
-          local: {
-            type: "openai_compatible",
-            base_url: "http://localhost:1234/v1",
-            model: "gpt-oss",
-            enabled: true,
+      feature: {
+        ai: {
+          mode: "off",
+          active_provider: "local",
+          providers: {
+            local: {
+              type: "openai_compatible",
+              base_url: "http://localhost:1234/v1",
+              model: "gpt-oss",
+              enabled: true,
+            },
           },
         },
       },
@@ -86,14 +94,16 @@ describe("ai-config", () => {
   it("should treat visible mode as active when providers are configured", () => {
     expect(
       hasUsableAiProvider({
-        ai: {
-          mode: "visible",
-          providers: {
-            ollama: {
-              type: "ollama_native",
-              base_url: "http://localhost:11434",
-              model: "llama3",
-              enabled: true,
+        feature: {
+          ai: {
+            mode: "visible",
+            providers: {
+              ollama: {
+                type: "ollama_native",
+                base_url: "http://localhost:11434",
+                model: "llama3",
+                enabled: true,
+              },
             },
           },
         },
@@ -112,9 +122,10 @@ describe("mergeDetectedProviders", () => {
   };
 
   it("adds detected provider to config using first model as default", () => {
-    const config = { ai: { mode: "visible" } };
+    const config = { feature: { ai: { mode: "visible" } } };
     const result = mergeDetectedProviders(config, [detectedOllama]);
-    expect((result as Record<string, unknown>)["ai"]).toMatchObject({
+    const featureConfig = (result as Record<string, unknown>)["feature"] as Record<string, unknown>;
+    expect(featureConfig["ai"]).toMatchObject({
       providers: {
         ollama: {
           type: "ollama_native",
@@ -129,19 +140,22 @@ describe("mergeDetectedProviders", () => {
 
   it("does not overwrite provider already present in config", () => {
     const config = {
-      ai: {
-        providers: {
-          ollama: {
-            type: "ollama_native",
-            base_url: "http://custom:11434",
-            model: "qwen3",
-            enabled: true,
+      feature: {
+        ai: {
+          providers: {
+            ollama: {
+              type: "ollama_native",
+              base_url: "http://custom:11434",
+              model: "qwen3",
+              enabled: true,
+            },
           },
         },
       },
     };
     const result = mergeDetectedProviders(config, [detectedOllama]) as Record<string, unknown>;
-    const providers = (result["ai"] as Record<string, unknown>)["providers"] as Record<
+    const featureConfig = result["feature"] as Record<string, unknown>;
+    const providers = (featureConfig["ai"] as Record<string, unknown>)["providers"] as Record<
       string,
       unknown
     >;
@@ -152,7 +166,7 @@ describe("mergeDetectedProviders", () => {
   });
 
   it("returns the same config reference when no providers are detected", () => {
-    const config = { ai: { mode: "visible" } };
+    const config = { feature: { ai: { mode: "visible" } } };
     expect(mergeDetectedProviders(config, [])).toBe(config);
   });
 

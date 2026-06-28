@@ -24,7 +24,7 @@ describe("ErrorReportingRuntimeService", () => {
       get config() {
         return {
           notification: {
-            exceptions: {
+            exception: {
               handled: { enabled: true },
               unhandled: { enabled: true },
             },
@@ -95,7 +95,7 @@ describe("ErrorReportingRuntimeService", () => {
       get config() {
         return {
           notification: {
-            exceptions: {
+            exception: {
               handled: { enabled: false },
               unhandled: { enabled: false },
             },

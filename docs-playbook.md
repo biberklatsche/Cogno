@@ -164,7 +164,7 @@ Descriptions for each action (derive from name, match these):
 - `open_ai_chat` — Toggle the AI chat panel
 - `open_terminal_search` — Toggle the in-terminal search bar
 - `trigger_autocomplete` — Manually trigger autocomplete suggestions
-- `cycle_completion_mode` — Cycle through available autocomplete modes
+- `cycle_tab` — Cycle through available autocomplete modes (or history scope, while that dropdown is open)
 - `select_workspace_default` — Switch to the default workspace
 - `select_workspace_1` … `select_workspace_9` — Switch to a workspace by slot number
 
@@ -420,8 +420,8 @@ defines its own action and is fully self-contained. Do not add new feature actio
 - How suggestions appear (debounced, panel above/below cursor, max 6 visible, up to 100 ranked)
 - Four suggestion sources: history commands, history patterns, history directories, spec commands (1000+ CLI tools)
 - Top 3 history suggestions always shown first
-- Filter modes: `all`, `history-only`, `context-only` — cycled with `cycle_completion_mode`, persists across sessions
-- Keyboard: Tab/↓ next, ↑ previous, Enter accept, Escape dismiss, trigger_autocomplete, cycle_completion_mode
+- Filter modes: `all`, `history-only`, `context-only` — cycled with `cycle_tab`, persists across sessions
+- Keyboard: ↓/↑ navigate, Enter accept, Escape dismiss, trigger_autocomplete; Tab → cycle_tab (cycles filter mode; also cycles history scope while the history dropdown is open)
 - Config: `autocomplete.provider.timeout_ms`
 
 ---

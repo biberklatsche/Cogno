@@ -66,20 +66,20 @@ describe("InputHandler", () => {
       expect(clearSpy).not.toHaveBeenCalled();
     });
 
-    it("writes injected text to pty on InjectTerminalInput", () => {
+    it("writes injected text to pty on WriteRawToPty", () => {
       mockBus.publish({
-        type: "InjectTerminalInput",
+        type: "WriteRawToPty",
         path: ["app", "terminal"],
         payload: { terminalId, text: "hello from ai" },
       });
       expect(mockPty.write).toHaveBeenCalledWith("hello from ai");
     });
 
-    it("appends Enter after injected text when appendNewline is true", async () => {
+    it("appends Enter after injected text when autoExecute is true", async () => {
       mockBus.publish({
-        type: "InjectTerminalInput",
+        type: "WriteRawToPty",
         path: ["app", "terminal"],
-        payload: { terminalId, text: "run this", appendNewline: true },
+        payload: { terminalId, text: "run this", autoExecute: true },
       });
 
       expect(mockPty.write).toHaveBeenNthCalledWith(1, "run this");

@@ -1,8 +1,8 @@
 :root {
     --sb-size: 10px;
-    --sb-thumb: var(--background-color-20l);
-    --sb-thumb-hover: var(--background-color-30l);
-    --sb-track: transparent; /* oder var(--background-color-10l) */
+    --sb-thumb: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    --sb-thumb-hover: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+    --sb-track: transparent; /* oder color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) */
 }
 
 html, body {

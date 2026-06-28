@@ -14,7 +14,7 @@ export class NotificationChannelsPortAdapterService implements NotificationChann
   ) {}
 
   getAvailableChannels(): ReadonlyArray<NotificationChannelOptionContract> {
-    const notificationsConfig = this.configService.config.notifications as
+    const notificationsConfig = this.configService.config.notification?.channel as
       | Readonly<Record<string, { readonly available?: boolean; readonly enabled?: boolean }>>
       | undefined;
 

@@ -7,6 +7,13 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
+import {
+  computeDropdownPanelPosition,
+  estimateDropdownPanelHeight,
+  resolveBoundsRect,
+  resolveRightUiInset,
+} from "../ui/dropdown-panel-positioning";
+import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { SuggestionCollapser } from "./suggestion-collapser";
@@ -19,7 +26,6 @@ import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplet
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
 const MAX_SUGGESTIONS = 100;
-const PANEL_MAX_VISIBLE_ITEMS = 6;
 const MAX_TOP_HISTORY_SUGGESTIONS = 3;
 const SUGGESTOR_ISSUE_NOTIFICATION_THROTTLE_MS = 10_000;
 
@@ -29,7 +35,6 @@ const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
 const PANEL_ITEM_GAP = 8;
 const PANEL_OUTER_PADDING_AND_BORDER = 10; // panel padding + border budget
 const LABEL_MEASURE_MAX_CHARS = 140;
-const PANEL_ITEM_HEIGHT_PX = 25;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
 export type SuggestionFilterMode = "all" | "history-only" | "context-only";
@@ -66,7 +71,6 @@ type SuggestorRunResult =
 
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
-  private static visibleOwner: TerminalAutocompleteService | null = null;
   private readonly suggestionHighlighter = new SuggestionHighlighter();
   private readonly suggestionCollapser = new SuggestionCollapser();
 
@@ -99,21 +103,19 @@ export class TerminalAutocompleteService implements OnDestroy {
     private readonly persistence: TerminalHistoryPersistenceService,
     private readonly bus: AppBus,
     private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
+    private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
     this._filterMode.next(this.loadFilterMode());
     this._lastInputSignature = this.inputSignature(this.stateManager.state);
     this.registerDefaultSuggestors();
     this.subscribeStateChanges();
 
-    this._keydownHandler = (event: KeyboardEvent) => this.handleKeydown(event);
-
+    this._keydownHandler = (event: KeyboardEvent) => this.handleSuppressKeydown(event);
     window.addEventListener("keydown", this._keydownHandler, { capture: true });
   }
 
   ngOnDestroy(): void {
-    if (TerminalAutocompleteService.visibleOwner === this) {
-      TerminalAutocompleteService.visibleOwner = null;
-    }
+    this.dropdownCoordinator.release(this);
     this._subscription.unsubscribe();
     window.removeEventListener("keydown", this._keydownHandler, { capture: true });
   }
@@ -178,7 +180,7 @@ export class TerminalAutocompleteService implements OnDestroy {
           return;
         }
 
-        if (event.payload !== "cycle_completion_mode") return;
+        if (event.payload !== "cycle_tab") return;
 
         const view = this._viewState.value;
         if (!view.visible) return;
@@ -191,20 +193,12 @@ export class TerminalAutocompleteService implements OnDestroy {
     );
   }
 
-  private handleKeydown(event: KeyboardEvent): void {
+  // Called by the coordinator's single global listener when this service is the active owner.
+  dispatchKeydown(event: KeyboardEvent): void {
     if (!this.stateManager.isFocused) return;
 
     const view = this._viewState.value;
-    if (!view.visible) {
-      if (this.isArrowKey(event.key)) {
-        this._suppressUntilTyping = true;
-        return;
-      }
-      if (this.isTypingKey(event)) {
-        this._suppressUntilTyping = false;
-      }
-      return;
-    }
+    if (!view.visible) return;
 
     switch (event.key) {
       case "ArrowDown": {
@@ -247,6 +241,18 @@ export class TerminalAutocompleteService implements OnDestroy {
       }
       default:
         return;
+    }
+  }
+
+  // Lightweight per-instance listener for suppress-until-typing tracking (runs even when not visible).
+  private handleSuppressKeydown(event: KeyboardEvent): void {
+    if (!this.stateManager.isFocused) return;
+    if (this._viewState.value.visible) return; // handled by coordinator
+
+    if (this.isArrowKey(event.key)) {
+      this._suppressUntilTyping = true;
+    } else if (this.isTypingKey(event)) {
+      this._suppressUntilTyping = false;
     }
   }
 
@@ -495,7 +501,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
     this.bus.publish({
       path: ["app", "terminal"],
-      type: "ApplyAutocompleteSuggestion",
+      type: "ReplaceTerminalInput",
       payload: {
         terminalId: this.stateManager.terminalId,
         inputText,
@@ -512,11 +518,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     suggestions: AutocompleteSuggestion[],
     measuredPanelHeight: number | null,
   ): { x: number; y: number; width: number; placement: "below" | "above" } {
-    const col = Math.max(1, state.cursorPosition.viewport.col);
-    const row = Math.max(1, state.cursorPosition.viewport.row);
     const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
     const cellHeight = Math.max(1, state.dimensions.cellHeight || 18);
-    const hostRect = this._hostElement?.getBoundingClientRect();
     const fallbackViewportWidth = Math.max(cellWidth, state.dimensions.cols * cellWidth);
     const viewportWidth = Math.max(
       cellWidth,
@@ -530,8 +533,8 @@ export class TerminalAutocompleteService implements OnDestroy {
       1,
       window.innerHeight || document.documentElement.clientHeight || cellHeight,
     );
-    const bounds = this.resolveBoundsRect(windowWidth, windowHeight);
-    const rightUiInset = this.resolveRightUiInset(windowWidth);
+    const bounds = resolveBoundsRect(windowWidth, windowHeight);
+    const rightUiInset = resolveRightUiInset(windowWidth);
     const effectiveRight = Math.max(bounds.left + 16, bounds.right - rightUiInset);
     // Width is derived from the full window bounds (minus right-side overlays), not pane width.
     const availableWidth = Math.max(240, effectiveRight - bounds.left);
@@ -554,51 +557,25 @@ export class TerminalAutocompleteService implements OnDestroy {
       Math.min(availableWidth - 8, Math.min(PANEL_MAX_WIDTH, desiredWidth)),
     );
 
-    const cursorX = (hostRect?.left ?? 0) + (col - 1) * cellWidth;
-    const minX = Math.max(4, bounds.left + 4);
-    const maxX = Math.max(minX, effectiveRight - estimatedPanelWidth - 4);
-    const x = Math.max(minX, Math.min(cursorX, maxX));
-
-    const cursorLineTop = (hostRect?.top ?? 0) + (row - 1) * cellHeight;
-    const belowY = cursorLineTop + cellHeight + 4;
-    const aboveAnchorY = cursorLineTop - cellHeight;
-    const minimumTopY = Math.max(4, bounds.top + 4);
-    const estimatedPanelHeight = this.estimatePanelHeight(suggestions.length, cellHeight);
-    const panelHeight = measuredPanelHeight ?? estimatedPanelHeight;
-    const hasRoomForBelowAnchor = belowY <= bounds.bottom - 4;
-    const hasRoomBelow = hasRoomForBelowAnchor && belowY + panelHeight <= bounds.bottom - 4;
-    const placement: "below" | "above" = hasRoomBelow ? "below" : "above";
-
-    let y =
-      placement === "below" ? Math.max(minimumTopY, belowY) : Math.max(minimumTopY, aboveAnchorY);
-
-    if (panelHeight > 0) {
-      if (placement === "below") {
-        const maximumBelowY = Math.max(minimumTopY, bounds.bottom - panelHeight - 4);
-        y = Math.min(y, maximumBelowY);
-      } else {
-        // Above placement uses translateY(-100%), so this anchor must keep panel top within viewport.
-        const minimumAboveAnchorY = minimumTopY + panelHeight;
-        y = Math.max(y, minimumAboveAnchorY);
-      }
-    }
-
-    return {
-      x,
-      y,
-      width: estimatedPanelWidth,
-      placement,
-    };
+    return computeDropdownPanelPosition({
+      col: state.cursorPosition.viewport.col,
+      row: state.cursorPosition.viewport.row,
+      cellWidth,
+      cellHeight,
+      hostRect: this._hostElement?.getBoundingClientRect(),
+      windowWidth,
+      windowHeight,
+      estimatedPanelWidth,
+      estimatedPanelHeight: this.estimatePanelHeight(suggestions.length, cellHeight),
+      measuredPanelHeight,
+    });
   }
 
   private estimatePanelHeight(suggestionCount: number, cellHeight: number): number {
-    const rowHeight = Math.max(PANEL_ITEM_HEIGHT_PX, Math.round(cellHeight * 1.7));
-    const visibleRows = Math.max(1, Math.min(PANEL_MAX_VISIBLE_ITEMS, suggestionCount));
-    return (
-      PANEL_OUTER_PADDING_AND_BORDER +
-      PANEL_LIST_EXTRA_PX +
-      visibleRows * rowHeight +
-      PANEL_DESCRIPTION_MIN_PX
+    return estimateDropdownPanelHeight(
+      suggestionCount,
+      cellHeight,
+      PANEL_LIST_EXTRA_PX + PANEL_DESCRIPTION_MIN_PX,
     );
   }
 
@@ -708,10 +685,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     return suggestion.completionBehavior !== "continue";
   }
 
-  private hide(): void {
-    if (TerminalAutocompleteService.visibleOwner === this) {
-      TerminalAutocompleteService.visibleOwner = null;
-    }
+  hide(): void {
+    this.dropdownCoordinator.release(this);
     this._latestSuggestions = [];
     this._latestContext = null;
     this._viewState.next(INITIAL_VIEW_STATE);
@@ -786,39 +761,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private takeVisibleOwnership(): void {
-    const previous = TerminalAutocompleteService.visibleOwner;
-    if (previous && previous !== this) {
-      previous.hide();
-    }
-    TerminalAutocompleteService.visibleOwner = this;
-  }
-
-  private resolveBoundsRect(windowWidth: number, windowHeight: number): DOMRect {
-    return new DOMRect(0, 0, windowWidth, windowHeight);
-  }
-
-  private resolveRightUiInset(windowWidth: number): number {
-    // Reserve space for visible right side menu UI so autocomplete never renders under it.
-    const host = document.querySelector("app-side-menu");
-    if (!host) return 0;
-
-    const candidates = [
-      ...host.querySelectorAll<HTMLElement>("aside:not(.hidden)"),
-      ...host.querySelectorAll<HTMLElement>("menu:not(.hidden)"),
-    ];
-
-    let maxInset = 0;
-    for (const el of candidates) {
-      const style = window.getComputedStyle(el);
-      if (style.display === "none" || style.visibility === "hidden") continue;
-
-      const rect = el.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) continue;
-
-      const inset = Math.max(0, windowWidth - rect.left);
-      if (inset > maxInset) maxInset = inset;
-    }
-    return maxInset;
+    this.dropdownCoordinator.claim(this);
   }
 
   private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {

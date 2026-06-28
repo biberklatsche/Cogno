@@ -45,10 +45,10 @@ app-terminal {
         justify-content: center;
         width: 2rem;
         height: 2rem;
-        border: 1px solid var(--background-color-20l);
+        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
         border-radius: 5px;
-        background: color-mix(in srgb, var(--background-color-20l) 88%, transparent);
-        color: color-mix(in srgb, var(--foreground-color-40d) 88%, transparent);
+        background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) 88%, transparent);
+        color: color-mix(in srgb, color-mix(in srgb, var(--theme-darken-color) calc(var(--color-mix-unit) * var(--mix-step-4)), var(--foreground-color)) 88%, transparent);
         box-shadow: var(--shadow2);
 
         &:hover {

@@ -171,12 +171,12 @@ describe("StyleService", () => {
       configService.setConfig(configWithOpacity);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--background-color-ct",
-        "#1e1e1e80",
+        "--menu-opacity-ct",
+        "50%",
       );
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--background-color-ct2",
-        "#1e1e1e40",
+        "--menu-opacity-ct2",
+        "25%",
       );
     });
 
@@ -189,12 +189,12 @@ describe("StyleService", () => {
       configService.setConfig(configWithFullOpacity);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--background-color-ct",
-        "#1e1e1eFF",
+        "--menu-opacity-ct",
+        "100%",
       );
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--background-color-ct2",
-        "#1e1e1eFF",
+        "--menu-opacity-ct2",
+        "100%",
       );
     });
   });
@@ -276,8 +276,8 @@ describe("StyleService", () => {
       configService.setConfig(configNoMenu);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--background-color-ct",
-        "#1e1e1eFF",
+        "--menu-opacity-ct",
+        "100%",
       );
     });
 
@@ -287,8 +287,8 @@ describe("StyleService", () => {
       configService.setConfig(configZeroOpacity);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--background-color-ct",
-        "#1e1e1e00",
+        "--menu-opacity-ct",
+        "0%",
       );
     });
   });

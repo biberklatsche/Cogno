@@ -9,9 +9,9 @@
   width:100%;
 }
 .divider{
-  background: var(--background-color-20l);
+  background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
   &:hover{
-    background: var(--background-color-30l);
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
   }
 }
 .divider.horizontal {

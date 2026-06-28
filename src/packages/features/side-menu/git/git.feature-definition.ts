@@ -8,5 +8,5 @@ export const gitSideMenuFeatureDefinition = {
   icon: "mdiGit",
   order: 50,
   actionName: "open_git",
-  configPath: "git",
+  configPath: "feature.git",
 } as const satisfies SideMenuFeatureDefinitionContract;

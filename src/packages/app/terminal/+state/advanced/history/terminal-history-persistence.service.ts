@@ -1,11 +1,19 @@
 import { Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
+import { Path } from "@cogno/app-tauri/path";
 import { IPathAdapter } from "@cogno/core-api";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
+import { ConfigService } from "../../../../config/+state/config.service";
 import { ShellContext } from "../model/models";
 import { CommandPattern } from "./command-pattern.models";
-import { CommandHistoryRow, DirectoryHistoryRow, HistoryRepository } from "./history.repository";
+import {
+  CommandHistoryRow,
+  DirectoryHistoryRow,
+  HistoryRepository,
+  RecentCommandRow,
+} from "./history.repository";
+import { ShellHistoryReader } from "./shell-history-reader";
 import { ExecutedCommand } from "./terminal-command-history.store";
 
 type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
@@ -20,6 +28,21 @@ type RecentCommandExecution = {
 
 const TRANSITION_RETENTION_WINDOW_MS = 30 * 60 * 1000;
 
+function deduplicateByCommand(
+  entries: { command: string; timestamp: number }[],
+): { command: string; timestamp: number }[] {
+  const seen = new Map<string, number>();
+  for (const entry of entries) {
+    const existing = seen.get(entry.command);
+    if (existing === undefined || entry.timestamp > existing) {
+      seen.set(entry.command, entry.timestamp);
+    }
+  }
+  return Array.from(seen.entries())
+    .map(([command, timestamp]) => ({ command, timestamp }))
+    .sort((a, b) => a.timestamp - b.timestamp);
+}
+
 function firstToken(commandRaw: string): string {
   const trimmed = commandRaw.trim();
   if (!trimmed) return "";
@@ -29,6 +52,8 @@ function firstToken(commandRaw: string): string {
 
 @Injectable()
 export class TerminalHistoryPersistenceService {
+  private static _shellHistoryImportStarted = false;
+
   private readonly _repo$ = new BehaviorSubject<HistoryRepository | null>(null);
   private readonly _actions$ = new Subject<PersistenceAction>();
   private readonly _returnCodePolicy: ReturnCodePolicy = {
@@ -37,8 +62,9 @@ export class TerminalHistoryPersistenceService {
   };
   private _lastCwdRaw = "";
   private _recentCommandExecution?: RecentCommandExecution;
+  private _groupId?: string;
 
-  constructor() {
+  constructor(private readonly configService?: ConfigService) {
     this._actions$
       .pipe(
         concatMap((action) =>
@@ -63,9 +89,23 @@ export class TerminalHistoryPersistenceService {
       .subscribe();
   }
 
-  initialize(shellContext: ShellContext, adapter: IPathAdapter): void {
+  get groupId(): string | undefined {
+    return this._groupId;
+  }
+
+  initialize(shellContext: ShellContext, adapter: IPathAdapter, groupId?: string): void {
+    this._groupId = groupId;
     HistoryRepository.createForContext(shellContext, adapter)
-      .then((repo) => this._repo$.next(repo))
+      .then((repo) => {
+        this._repo$.next(repo);
+        if (
+          this.configService?.config.terminal?.history?.import_shell_history &&
+          !TerminalHistoryPersistenceService._shellHistoryImportStarted
+        ) {
+          TerminalHistoryPersistenceService._shellHistoryImportStarted = true;
+          this.enqueue((r) => this.importShellHistoryIfEmpty(r, shellContext));
+        }
+      })
       .catch((error) =>
         ErrorReporter.reportException({
           error,
@@ -76,6 +116,39 @@ export class TerminalHistoryPersistenceService {
           },
         }),
       );
+  }
+
+  private async importShellHistoryIfEmpty(
+    repo: HistoryRepository,
+    shellContext: ShellContext,
+  ): Promise<void> {
+    const hasCommands = await repo.hasAnyCommands();
+    if (hasCommands) return;
+
+    try {
+      const homeDir = await Path.homeDir();
+      const entries = await ShellHistoryReader.read(
+        shellContext.shellType,
+        shellContext.backendOs,
+        homeDir,
+      );
+      if (entries.length === 0) return;
+
+      const historyConfig = this.configService?.config.terminal?.history;
+      const maxEntries = historyConfig?.max_entries;
+
+      const deduplicated = deduplicateByCommand(entries);
+      const limited = maxEntries && maxEntries > 0 ? deduplicated.slice(-maxEntries) : deduplicated;
+
+      await repo.bulkImportCommands(limited, homeDir);
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "TerminalHistoryPersistenceService",
+        context: { operation: "importShellHistory", shellType: shellContext.shellType },
+      });
+    }
   }
 
   onCwdChanged(cwdRaw: string): void {
@@ -94,8 +167,15 @@ export class TerminalHistoryPersistenceService {
     const timestamp = Date.now();
     const recentPreviousCommand = this.getRecentTransitionSourceCommand();
 
+    const maxEntries = this.configService?.config.terminal?.history?.max_entries;
+
     this.enqueue(async (repo) => {
-      await repo.upsertCommandExecution(persistedCommand, executedCommand.directory);
+      await repo.upsertCommandExecution(
+        persistedCommand,
+        executedCommand.directory,
+        this._groupId,
+        maxEntries,
+      );
 
       if (recentPreviousCommand) {
         await repo.upsertCommandTransition(recentPreviousCommand, persistedCommand);
@@ -146,6 +226,16 @@ export class TerminalHistoryPersistenceService {
     return repo.searchCommands(fragment, cwdRaw, this.getRecentTransitionSourceCommand(), limit);
   }
 
+  async getRecentCommands(options: {
+    scope: "global" | "cwd" | "session";
+    cwdRaw?: string;
+    limit?: number;
+  }): Promise<RecentCommandRow[]> {
+    const repo = this._repo$.value;
+    if (!repo) return [];
+    return repo.getRecentCommands({ ...options, groupId: this._groupId });
+  }
+
   async searchCommandPatterns(fragment: string, limit: number = 50): Promise<CommandPattern[]> {
     const repo = this._repo$.value;
     if (!repo) return [];
@@ -175,12 +265,17 @@ export class TerminalHistoryPersistenceService {
   private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
     if (executedCommand === undefined) return false;
     if (executedCommand.command === undefined) return false;
+    if (
+      this.configService?.config.terminal?.history?.ignore_commands_with_leading_space &&
+      executedCommand.command.startsWith(" ")
+    ) {
+      return false;
+    }
     const command = executedCommand.command.trim();
     if (command.length === 0) return false;
     if (command === ":") return false;
     if (command === "true") return false;
     if (command === "false") return false;
-    if (command.startsWith(" ")) return false;
     const token = firstToken(command);
     if (!token) return false;
     if (token === "cd") return false;

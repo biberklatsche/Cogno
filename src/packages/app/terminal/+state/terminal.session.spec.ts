@@ -81,9 +81,11 @@ describe("TerminalSession", () => {
           },
         },
       },
-      notifications: {
-        app: { available: true, enabled: false },
-        os: { available: true, enabled: false },
+      notification: {
+        channel: {
+          app: { available: true, enabled: false },
+          os: { available: true, enabled: false },
+        },
       },
     } as any);
     appBus = getAppBus();
@@ -251,9 +253,11 @@ describe("TerminalSession", () => {
           },
         },
       },
-      notifications: {
-        app: { available: true, enabled: false },
-        os: { available: false, enabled: false },
+      notification: {
+        channel: {
+          app: { available: true, enabled: false },
+          os: { available: false, enabled: false },
+        },
       },
     } as any);
     session.initialize(terminalId, shellProfile);
@@ -342,8 +346,10 @@ describe("TerminalSession", () => {
           },
         },
       },
-      notifications: {
-        app: { available: true, enabled: true },
+      notification: {
+        channel: {
+          app: { available: true, enabled: true },
+        },
       },
     } as any);
     session.initialize(terminalId, shellProfile);
@@ -368,8 +374,10 @@ describe("TerminalSession", () => {
           },
         },
       },
-      notifications: {
-        app: { available: true, enabled: true },
+      notification: {
+        channel: {
+          app: { available: true, enabled: true },
+        },
       },
     } as any);
     session.initialize(terminalId, shellProfile);
@@ -404,8 +412,10 @@ describe("TerminalSession", () => {
           },
         },
       },
-      notifications: {
-        app: { available: true, enabled: true },
+      notification: {
+        channel: {
+          app: { available: true, enabled: true },
+        },
       },
     } as any);
     session.initialize(terminalId, shellProfile);
@@ -464,7 +474,7 @@ describe("TerminalSession", () => {
     expect(appBus.publish).toHaveBeenCalledWith(
       expect.objectContaining({
         path: ["app", "terminal"],
-        type: "InjectTerminalInput",
+        type: "WriteRawToPty",
         payload: {
           terminalId,
           text: "/c/temp/plain.txt '/c/temp/with space.txt'",

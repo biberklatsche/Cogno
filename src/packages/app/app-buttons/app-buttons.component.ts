@@ -54,7 +54,7 @@ type WindowControlIconName =
                 width: calc(var(--header-height) * 1.3);
                 border: none;
                 background-color: #00000000;
-                color: var(--foreground-color-10t);
+                color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
                 outline: none;
                 display: inline-flex;
                 justify-content: center;
@@ -78,7 +78,7 @@ type WindowControlIconName =
 
                 &:hover {
                     color: var(--foreground-color);
-                    background-color: var(--background-color-40l) !important;
+                    background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color)) !important;
                 }
 
                 &.close:hover {

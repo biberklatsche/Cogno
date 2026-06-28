@@ -33,10 +33,10 @@
   height: 26px;
   min-height: 26px;
   padding: 0 28px 0 8px;
-  border: 1px solid var(--background-color-10l-ct2);
+  border: 1px solid color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct2), transparent);
   border-radius: var(--button-border-radius);
-  background: var(--background-color-10l-ct2);
-  color: var(--foreground-color-10t);
+  background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct2), transparent);
+  color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
   flex: 0 1 240px;
   max-width: 240px;
   min-width: max(calc(16px + 2 * 8px), var(--tab-min, 32px));
@@ -45,24 +45,24 @@
 
   &.is-active {
     color: var(--foreground-color);
-    border-color: var(--background-color-30l);
-    background: var(--background-color-20l-ct);
+    border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+    background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
 
     &:hover {
       color: var(--foreground-color);
-      border-color: var(--background-color-40l);
-      background: var(--background-color-30l);
+      border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
     }
   }
 
   &:hover {
     color: var(--foreground-color);
-    border-color: var(--background-color-40l);
-    background: var(--background-color-30l);
+    border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
 
     .close {
-      color: var(--foreground-color-40d);
-      background: var(--background-color-20l);
+      color: color-mix(in srgb, var(--theme-darken-color) calc(var(--color-mix-unit) * var(--mix-step-4)), var(--foreground-color));
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
       opacity: 1;
     }
   }
@@ -100,7 +100,7 @@
   align-items: center;
   gap: 3px;
   pointer-events: none;
-  color: color-mix(in srgb, var(--foreground-color-40d) 60%, transparent);
+  color: color-mix(in srgb, color-mix(in srgb, var(--theme-darken-color) calc(var(--color-mix-unit) * var(--mix-step-4)), var(--foreground-color)) 60%, transparent);
   transform: translateY(-50%);
 }
 
@@ -122,14 +122,14 @@
   height: 16px;
   cursor: default;
   opacity: 0;
-  color: var(--foreground-color-40d);
-  background-color: var(--background-color-20l-ct);
+  color: color-mix(in srgb, var(--theme-darken-color) calc(var(--color-mix-unit) * var(--mix-step-4)), var(--foreground-color));
+  background-color: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
   transition: opacity 120ms ease;
 
   &:hover {
     opacity: 1 !important;
     color: var(--foreground-color) !important;
-    background: var(--background-color-20l) !important;
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) !important;
   }
 }
 

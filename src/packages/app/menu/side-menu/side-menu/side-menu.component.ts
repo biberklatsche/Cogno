@@ -50,7 +50,7 @@ export function isSelectedSideMenuItem(
                 <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
                     <button class="button icon-button" (click)="togglePin()">
-                        <app-icon [name]="selectedItem()?.pinned ? 'mdiPinOff' : 'mdiPin'"></app-icon>
+                        <app-icon [name]="selectedItem()?.pinned ? 'mdiPin': 'mdiPinOff'"></app-icon>
                     </button>
                     <button class="button icon-button" (click)="toggleDisplacement()">
                         <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
@@ -106,7 +106,7 @@ export function isSelectedSideMenuItem(
             }
 
             .button.icon-button.selected {
-                background-color: var(--background-color-10l);
+                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
             }
 
             .button {

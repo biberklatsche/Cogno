@@ -8,5 +8,5 @@ export const notificationSideMenuFeatureDefinition = {
   icon: "mdiBell",
   order: 20,
   actionName: "open_notification",
-  configPath: "notification",
+  configPath: "feature.notification_overview",
 } as const satisfies SideMenuFeatureDefinitionContract;

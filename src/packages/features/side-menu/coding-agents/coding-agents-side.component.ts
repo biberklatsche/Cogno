@@ -11,8 +11,8 @@ import {
   CodingAgentStartupService,
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
+import { AgentStatus } from "@cogno/features/coding-agent/coding-agent-status.service";
 import { AgentAnimationComponent } from "./agent-animation.component";
-import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.service";
 
 @Component({
   selector: "app-coding-agents-side",
@@ -61,14 +61,14 @@ import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.serv
                 <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
               </div>
               <div class="agent-info">
+                @if (agent.cwd) {
+                  <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
+                }
                 <span class="agent-status">{{ statusLabel(agent.status) }}</span>
                 @if (agent.activity) {
                   <span class="agent-activity" [appTooltip]="agent.activity">{{ agent.activity }}</span>
                 } @else {
                   <span class="agent-activity">_</span>
-                }
-                @if (agent.cwd) {
-                    <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
                 }
               </div>
               <div class="agent-meta">
@@ -242,11 +242,11 @@ import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.serv
       align-items: center;
       gap: 0.75rem;
       padding: 0.65rem 0.75rem;
-      border: 1px solid var(--background-color-20l);
+      border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
       border-left-width: 3px;
-      border-left-color: var(--agent-status-color, var(--background-color-20l));
+      border-left-color: var(--agent-status-color, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)));
       border-radius: 8px;
-      background: var(--background-color-10l);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       color: inherit;
       cursor: default;
       text-align: left;
@@ -256,7 +256,7 @@ import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.serv
     }
 
     .agent-card:hover {
-      background: var(--background-color-20l);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
     .agent-card.working { --agent-status-color: var(--color-blue); }
@@ -282,17 +282,16 @@ import {AgentStatus} from "@cogno/features/coding-agent/coding-agent-status.serv
     }
 
     .agent-status {
-      font-size: 0.85rem;
-      font-weight: 400;
+      font-size: 0.80rem;
+      font-weight: 100;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .agent-cwd {
-      font-size: 0.8rem;
-      font-weight: 100;
-      opacity: 0.6;
+      font-size: 0.85rem;
+      font-weight: 400;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;

@@ -10,6 +10,7 @@ import {
   viewChildren,
 } from "@angular/core";
 import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
+import { TooltipDirective } from "@cogno/core-ui";
 import {
   collectDirectionalNavigationItems,
   scrollSelectedListItemIntoView,
@@ -25,6 +26,7 @@ type SearchTextSegment = {
 @Component({
   selector: "app-terminal-search-side",
   standalone: true,
+  imports: [TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         <div class="search-controls">
@@ -47,7 +49,7 @@ type SearchTextSegment = {
                 [class.is-active]="caseSensitive()"
                 [style.background-color]="caseSensitive() ? matchBackgroundColor() : null"
                 [style.border-color]="caseSensitive() ? matchBorderColor() : null"
-                title="Case sensitive"
+                [appTooltip]="'Case sensitive'"
                 (click)="$event.stopPropagation(); toggleCaseSensitive()"
             >
                 Aa
@@ -58,7 +60,7 @@ type SearchTextSegment = {
                 [class.is-active]="regularExpression()"
                 [style.background-color]="regularExpression() ? matchBackgroundColor() : null"
                 [style.border-color]="regularExpression() ? matchBorderColor() : null"
-                title="Regular expression"
+                [appTooltip]="'Regular expression'"
                 (click)="$event.stopPropagation(); toggleRegularExpression()"
             >
                 .*
@@ -127,8 +129,8 @@ type SearchTextSegment = {
             .search-input {
                 padding: 6px 8px;
                 border-radius: 6px;
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
+                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 color: inherit;
                 outline: none;
                 box-sizing: border-box;
@@ -137,8 +139,8 @@ type SearchTextSegment = {
             }
 
             .search-option-button {
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
+                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 color: inherit;
                 border-radius: 6px;
                 height: 2rem;
@@ -202,7 +204,7 @@ type SearchTextSegment = {
 
                 &:hover,
                 &.selected {
-                    background: var(--background-color-20l);
+                    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
                 }
             }
 
@@ -219,8 +221,8 @@ type SearchTextSegment = {
             }
 
             .load-more-button {
-                border: 1px solid var(--background-color-20l);
-                background: var(--background-color-10l);
+                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 color: inherit;
                 border-radius: 6px;
                 min-height: 2rem;

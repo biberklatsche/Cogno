@@ -70,7 +70,7 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
   injectInput(request: TerminalInputRequestContract): void {
     this.appBus.publish({
       path: ["app", "terminal"],
-      type: "InjectTerminalInput",
+      type: "WriteRawToPty",
       payload: request,
     });
   }
