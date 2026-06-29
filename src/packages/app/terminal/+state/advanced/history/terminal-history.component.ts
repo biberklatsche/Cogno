@@ -1,5 +1,12 @@
 import { NgStyle } from "@angular/common";
-import { ChangeDetectionStrategy, Component, computed } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  effect,
+  ViewChild,
+} from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { TooltipDirective } from "@cogno/core-ui";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
@@ -34,7 +41,7 @@ const INITIAL_VIEW_STATE = {
           transform: viewState().placement === 'above' ? 'translateY(-100%)' : 'none'
         }"
       >
-        <div class="history-list">
+        <div class="history-list" #historyList>
           @for (row of reversedEntries(); track row.entry.command + ':' + row.entry.executedAt) {
             <button
               class="history-item"
@@ -211,7 +218,21 @@ export class TerminalHistoryComponent {
       .reverse(),
   );
 
-  constructor(private readonly history: TerminalHistoryService) {}
+  @ViewChild("historyList") private listRef?: ElementRef<HTMLDivElement>;
+
+  constructor(private readonly history: TerminalHistoryService) {
+    effect(() => {
+      const view = this.viewState();
+      if (!view.visible || view.selectedIndex === null) return;
+      queueMicrotask(() => this.scrollSelectedIntoView());
+    });
+  }
+
+  private scrollSelectedIntoView(): void {
+    const list = this.listRef?.nativeElement;
+    if (!list) return;
+    list.querySelector<HTMLElement>(".active")?.scrollIntoView({ block: "nearest" });
+  }
 
   protected select(index: number): void {
     this.history.selectEntry(index);

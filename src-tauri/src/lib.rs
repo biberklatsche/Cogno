@@ -19,8 +19,8 @@ pub fn run(cli: Cli) {
         .plugin({
             let log_level = std::env::var("COGNO_LOG_LEVEL")
                 .ok()
-                .and_then(|s| s.parse::<log::LevelFilter>().ok())
-                .unwrap_or(log::LevelFilter::Info);
+                .and_then(|s| s.parse::<tauri_plugin_log::log::LevelFilter>().ok())
+                .unwrap_or(tauri_plugin_log::log::LevelFilter::Info);
             tauri_plugin_log::Builder::new()
                 .level(log_level)
                 .target(tauri_plugin_log::Target::new(

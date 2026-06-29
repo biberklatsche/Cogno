@@ -22,6 +22,7 @@ const PANEL_MAX_WIDTH = 920;
 const PANEL_OUTER_PADDING_AND_BORDER = 10;
 const PANEL_FOOTER_PX = 38;
 const LABEL_MEASURE_MAX_CHARS = 140;
+const META_COLUMN_PX = 110; // origin dot + time-ago text + gap
 const SCOPE_STORAGE_KEY = "terminal.history.scope";
 
 const INITIAL_VIEW_STATE: TerminalHistoryViewState = {
@@ -330,7 +331,10 @@ export class TerminalHistoryService implements OnDestroy {
     const labelCharPx = Math.max(6, Math.floor(cellWidth * 0.95));
     const widestLinePx = entries.reduce((max, entry) => {
       const labelChars = Math.min(entry.command.length, LABEL_MEASURE_MAX_CHARS);
-      return Math.max(max, labelChars * labelCharPx + PANEL_OUTER_PADDING_AND_BORDER);
+      return Math.max(
+        max,
+        labelChars * labelCharPx + META_COLUMN_PX + PANEL_OUTER_PADDING_AND_BORDER,
+      );
     }, 0);
     const estimatedPanelWidth = Math.max(
       PANEL_MIN_WIDTH,
