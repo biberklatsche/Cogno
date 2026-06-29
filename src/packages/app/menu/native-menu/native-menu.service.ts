@@ -41,8 +41,10 @@ export class NativeMenuService {
       id: "cogno",
       text: "Cogno",
       items: [
+        await this.buildMenuItem("open_about", "About Cogno"),
+        await TauriMenu.newPredefinedItem({ item: "Separator" }),
         await this.buildMenuItem("open_config", "Settings"),
-        await this.buildMenuItem("load_config", "Reload Config"),
+        await this.buildMenuItem("load_config", "Reload Configuration"),
         await TauriMenu.newPredefinedItem({ item: "Separator" }),
         await this.buildMenuItem("quit", "Quit"),
       ],

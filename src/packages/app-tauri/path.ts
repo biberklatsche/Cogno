@@ -39,4 +39,7 @@ export const Path = {
   cognoDbFilePath(devMode: boolean): Promise<string> {
     return invoke<string>("get_cogno_db_file_path", { devMode });
   },
+  cognoLogFilePath(): Promise<string> {
+    return invoke<string>("get_cogno_log_file_path");
+  },
 };

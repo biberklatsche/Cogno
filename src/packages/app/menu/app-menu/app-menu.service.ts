@@ -40,6 +40,11 @@ export class AppMenuService {
       action: () => this.bus.publish(ActionFired.create("open_documentation")),
       keybinding: this.keybindingFor("open_documentation"),
     });
+    items.push({
+      label: "About Cogno",
+      action: () => this.bus.publish(ActionFired.create("open_about")),
+      keybinding: this.keybindingFor("open_about"),
+    });
     return items;
   }
 

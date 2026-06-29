@@ -994,7 +994,6 @@ export class HistoryRepository {
   private async tx(fn: () => Promise<void>): Promise<void> {
     // Prevent nested transactions
     if (this._inTransaction) {
-      console.warn("######_inTransaction");
       // Already in a transaction, just execute fn
       await fn();
       return;
