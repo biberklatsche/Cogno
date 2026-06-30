@@ -20,6 +20,8 @@ const REFRESH_DEBOUNCE_MS = 80;
 const PANEL_MIN_WIDTH = 280;
 const PANEL_MAX_WIDTH = 920;
 const PANEL_OUTER_PADDING_AND_BORDER = 10;
+const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
+const PANEL_ITEM_GAP = 8;
 const PANEL_FOOTER_PX = 38;
 const LABEL_MEASURE_MAX_CHARS = 140;
 const META_COLUMN_PX = 110; // origin dot + time-ago text + gap
@@ -191,11 +193,6 @@ export class TerminalHistoryService implements OnDestroy {
     this._lastInputSignature = this.inputSignature(state);
 
     const entries = this.filterEntries(this._allEntries, state.input.text);
-    if (entries.length === 0) {
-      this.hide();
-      return;
-    }
-
     const position = this.computePanelPosition(state, entries);
     this.dropdownCoordinator.claim(this);
 
@@ -205,7 +202,7 @@ export class TerminalHistoryService implements OnDestroy {
       y: position.y,
       width: position.width,
       placement: position.placement,
-      selectedIndex: 0,
+      selectedIndex: entries.length > 0 ? 0 : null,
       entries,
       scope,
     });
@@ -227,11 +224,6 @@ export class TerminalHistoryService implements OnDestroy {
     this._allEntries = this.toEntries(rows);
     const entries = this.filterEntries(this._allEntries, state.input.text);
 
-    if (entries.length === 0) {
-      this.hide();
-      return;
-    }
-
     const position = this.computePanelPosition(state, entries);
     this._viewState.next({
       ...view,
@@ -240,27 +232,17 @@ export class TerminalHistoryService implements OnDestroy {
       width: position.width,
       placement: position.placement,
       scope,
-      selectedIndex: 0,
+      selectedIndex: entries.length > 0 ? 0 : null,
       entries,
     });
   }
 
-  /**
-   * A narrow scope (session/cwd) is often empty for a brand-new terminal or directory.
-   * Fall back to the broader "global" scope for display only — the user's chosen
-   * scope preference (persisted via saveScope) is left untouched.
-   */
   private async fetchEntries(
     preferredScope: HistoryScope,
     cwdRaw?: string,
   ): Promise<{ scope: HistoryScope; rows: RecentCommandRow[] }> {
     const rows = await this.persistence.getRecentCommands({ scope: preferredScope, cwdRaw });
-    if (rows.length > 0 || preferredScope === "global") {
-      return { scope: preferredScope, rows };
-    }
-
-    const globalRows = await this.persistence.getRecentCommands({ scope: "global", cwdRaw });
-    return { scope: "global", rows: globalRows };
+    return { scope: preferredScope, rows };
   }
 
   private toEntries(rows: RecentCommandRow[]): HistoryEntry[] {
@@ -333,7 +315,11 @@ export class TerminalHistoryService implements OnDestroy {
       const labelChars = Math.min(entry.command.length, LABEL_MEASURE_MAX_CHARS);
       return Math.max(
         max,
-        labelChars * labelCharPx + META_COLUMN_PX + PANEL_OUTER_PADDING_AND_BORDER,
+        labelChars * labelCharPx +
+          PANEL_ITEM_GAP +
+          META_COLUMN_PX +
+          PANEL_ITEM_HORIZONTAL_PADDING +
+          PANEL_OUTER_PADDING_AND_BORDER,
       );
     }, 0);
     const estimatedPanelWidth = Math.max(

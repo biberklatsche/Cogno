@@ -58,7 +58,8 @@ const VIRTUAL_BUFFER_ITEMS = 3;
                             <span class="meta" appTooltip="{{ entry.item.source }} &middot; {{ entry.item.score }}">
                                 <span
                                     class="source-dot"
-                                    [class.history]="isHistorySuggestion(entry.item)"
+                                    [class.history-local]="isLocalHistorySuggestion(entry.item)"
+                                    [class.history]="isHistorySuggestion(entry.item) && !isLocalHistorySuggestion(entry.item)"
                                     [class.context]="!isHistorySuggestion(entry.item)"
                                 ></span>
                             </span>
@@ -140,7 +141,7 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         }
 
         .autocomplete-item.active {
-            background: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
+            background: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct), transparent);
             color: var(--background-color);
         }
 
@@ -162,7 +163,6 @@ const VIRTUAL_BUFFER_ITEMS = 3;
         }
 
         .autocomplete-item .meta {
-            opacity: 0.7;
             font-size: 11px;
             white-space: nowrap;
             display: inline-flex;
@@ -177,12 +177,18 @@ const VIRTUAL_BUFFER_ITEMS = 3;
             flex: 0 0 auto;
         }
 
+        .autocomplete-item .meta .source-dot.history-local {
+            background: var(--color-green);
+        }
+
         .autocomplete-item .meta .source-dot.history {
             background: var(--color-green);
+            opacity: 0.5;
         }
 
         .autocomplete-item .meta .source-dot.context {
             background: var(--color-blue);
+            opacity: 0.7;
         }
 
         .autocomplete-description {
@@ -326,6 +332,10 @@ export class TerminalAutocompleteComponent {
       .map((v) => v.trim().toLowerCase())
       .filter(Boolean);
     return parts.some((part) => part.includes("history"));
+  }
+
+  protected isLocalHistorySuggestion(item: AutocompleteSuggestion): boolean {
+    return item.source.split("+").some((s) => s.trim() === "history-cmd-local");
   }
 
   protected onListScroll(event: Event): void {

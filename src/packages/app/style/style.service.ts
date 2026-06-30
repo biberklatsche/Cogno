@@ -24,7 +24,7 @@ export class StyleService {
     const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
     const shadowFactor = this.getShadowFactor(isLightTheme);
     const menuOpacity = config.menu?.opacity ?? 100;
-    const menuOpacityDouble = menuOpacity === 100 ? 100 : menuOpacity / 2;
+    const menuOpacity2 = menuOpacity === 100 ? 100 : menuOpacity / 2;
     const inactiveOpacity = (config.terminal?.inactive_overlay_opacity ?? 50) / 100;
 
     document.documentElement.style.setProperty(
@@ -44,7 +44,7 @@ export class StyleService {
       `${(shadowFactor / 255) * 100}%`,
     );
     document.documentElement.style.setProperty("--menu-opacity-ct", `${menuOpacity}%`);
-    document.documentElement.style.setProperty("--menu-opacity-ct2", `${menuOpacityDouble}%`);
+    document.documentElement.style.setProperty("--menu-opacity-ct2", `${menuOpacity2}%`);
 
     document.documentElement.style.setProperty(
       "--background-color",

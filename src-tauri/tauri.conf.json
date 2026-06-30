@@ -28,6 +28,10 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "shortDescription": "The terminal for the AI era.",
+    "longDescription": "Cogno is a terminal emulator built for the AI era — with smart autocomplete, command history intelligence, and a clean, fast interface.",
+    "licenseFile": "../LICENSE",
+    "category": "DeveloperTool",
     "icon": [
       "icons/16x16.png",
       "icons/32x32.png",
@@ -47,7 +51,13 @@
     ],
     "macOS": {
       "entitlements": "entitlements.plist",
-      "infoPlist": "Info.plist"
+      "infoPlist": "Info.plist",
+      "dmg": {
+        "background": "assets/dmg-background.png",
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 180, "y": 160 },
+        "applicationFolderPosition": { "x": 480, "y": 160 }
+      }
     }
   }
 }

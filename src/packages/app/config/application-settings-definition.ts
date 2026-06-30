@@ -3,7 +3,7 @@ import {
   ApplicationSettingsSectionDefinitionContract,
 } from "@cogno/core-api";
 import { ZodRawShape, z } from "zod";
-import { baseConfigDefaults, baseConfigSchemaShape, baseSettingsSections } from "./+models/config";
+import { baseConfigSchemaShape, baseSettingsSections } from "./+models/config";
 
 export interface ApplicationSettingsDefinition {
   readonly defaults: Readonly<Record<string, unknown>>;
@@ -18,7 +18,7 @@ export function createApplicationSettingsDefinition(
   const settingsSections: ApplicationSettingsSectionDefinitionContract[] = [
     ...baseSettingsSections,
   ];
-  let defaults: Record<string, unknown> = { ...baseConfigDefaults };
+  let defaults: Record<string, unknown> = {};
 
   for (const settingsExtension of settingsExtensions) {
     registerSettingsSchemaShape(schemaShape, settingsExtension.schemaShape);

@@ -75,24 +75,6 @@ export const baseConfigSchemaShape = {
   autocomplete: AutocompleteSettingsSchema.optional(),
 } satisfies z.ZodRawShape;
 
-export const baseConfigDefaults: Readonly<Record<string, unknown>> = {
-  notification: {
-    exception: {
-      handled: {
-        enabled: false,
-      },
-      unhandled: {
-        enabled: false,
-      },
-    },
-  },
-  autocomplete: {
-    provider: {
-      timeout_ms: 160,
-    },
-  },
-};
-
 export const baseSettingsSections: ReadonlyArray<ApplicationSettingsSectionDefinitionContract> = [
   { id: "notification", title: "Notification", order: 300 },
   { id: "terminal", title: "Terminal", order: 500 },

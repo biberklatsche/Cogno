@@ -42,6 +42,9 @@ const INITIAL_VIEW_STATE = {
         }"
       >
         <div class="history-list" #historyList>
+          @if (reversedEntries().length === 0) {
+            <div class="history-empty">No entries</div>
+          }
           @for (row of reversedEntries(); track row.entry.command + ':' + row.entry.executedAt) {
             <button
               class="history-item"
@@ -102,6 +105,17 @@ const INITIAL_VIEW_STATE = {
         max-height: calc(6 * 25px + 8px);
         overflow-y: auto;
         overflow-x: hidden;
+      }
+
+      .history-empty {
+        padding: 4px 8px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        font-family: var(--font-family);
+        font-size: calc(var(--font-size) - 1px);
+        opacity: var(--opacity-subtle);
+        font-style: italic;
       }
 
       .history-item {
