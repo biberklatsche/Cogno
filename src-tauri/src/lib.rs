@@ -23,12 +23,14 @@ pub fn run(cli: Cli) {
                 .unwrap_or(tauri_plugin_log::log::LevelFilter::Info);
             tauri_plugin_log::Builder::new()
                 .level(log_level)
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::Webview,
-                ))
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::LogDir { file_name: None },
-                ))
+                // Suppress tao's harmless Windows event loop ordering warnings (known tao/winit issue on Windows, not fixable from userland)
+                .level_for("tao", tauri_plugin_log::log::LevelFilter::Error)
+                .targets([
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+                    tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir { file_name: None },
+                    ),
+                ])
                 .build()
         })
         .plugin(tauri_plugin_fs::init())
