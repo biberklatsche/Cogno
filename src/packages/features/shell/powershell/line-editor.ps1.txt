@@ -73,6 +73,10 @@ function Invoke-CognoReplaceCurrentInput {
         [Microsoft.PowerShell.PSConsoleReadLine]::BackwardChar()
         $offset--
     }
+
+    if ($Payload.autoExecute -eq $true) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+    }
 }
 
 function Start-CognoLineEditorPipeListener {
@@ -158,6 +162,10 @@ function Invoke-CognoReplaceCurrentInput {
     while ($offset -gt 0) {
         [Microsoft.PowerShell.PSConsoleReadLine]::BackwardChar()
         $offset--
+    }
+
+    if ($Payload.autoExecute -eq $true) {
+        [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
     }
 }
 

@@ -144,8 +144,16 @@ export class CommandLineEditor implements ITerminalHandler {
           )
             return;
           this._selectionStart = null;
-          this.applyAutocompleteSuggestion(payload.inputText, payload.cursorIndex);
-          if (payload.autoExecute) {
+          const handledNatively = this.applyAutocompleteSuggestion(
+            payload.inputText,
+            payload.cursorIndex,
+            payload.autoExecute,
+          );
+          // The native path submits via AcceptLine() itself (see line-editor.ps1.txt) so the
+          // shell integration process applies replace-then-submit atomically and in order.
+          // Writing "\r" here separately would race the pipe round-trip and, for PowerShell,
+          // could submit the buffer before the replace was applied.
+          if (payload.autoExecute && !handledNatively) {
             queueMicrotask(() => this._pty.write("\r"));
           }
         }),
@@ -393,14 +401,19 @@ export class CommandLineEditor implements ITerminalHandler {
     return false;
   }
 
-  private applyAutocompleteSuggestion(inputText: string, cursorIndex: number) {
-    if (!this._terminal) return;
+  private applyAutocompleteSuggestion(
+    inputText: string,
+    cursorIndex: number,
+    autoExecute?: boolean,
+  ): boolean {
+    if (!this._terminal) return false;
     if (this.supportsNativeShellAction("replaceCurrentInput")) {
       this._pty.executeLineEditorAction("replaceCurrentInput", {
         text: inputText,
         cursorIndex,
+        autoExecute,
       });
-      return;
+      return true;
     }
 
     const input = this.stateManager.input;
@@ -414,6 +427,7 @@ export class CommandLineEditor implements ITerminalHandler {
     if (leftToTarget > 0) {
       this._ptyWrite(this._buildCursorMoveCommand(-leftToTarget));
     }
+    return false;
   }
 
   private cutSelection() {
