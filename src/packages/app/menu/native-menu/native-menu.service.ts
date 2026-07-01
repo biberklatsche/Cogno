@@ -121,8 +121,7 @@ export class NativeMenuService {
       accelerator: this.keybindService.getKeybinding(actionName),
       action: () => {
         const actionDef = this.keybindService.getActionDefinition(actionName);
-        if (!actionDef) throw new Error(`Action definition ${actionName} not found.`);
-        this.bus.publish(ActionFired.createFromDefinition(actionDef));
+        this.bus.publish(actionDef ? ActionFired.createFromDefinition(actionDef) : ActionFired.create(actionName));
       },
     });
   }
