@@ -121,7 +121,9 @@ export class NativeMenuService {
       accelerator: this.keybindService.getKeybinding(actionName),
       action: () => {
         const actionDef = this.keybindService.getActionDefinition(actionName);
-        this.bus.publish(actionDef ? ActionFired.createFromDefinition(actionDef) : ActionFired.create(actionName));
+        this.bus.publish(
+          actionDef ? ActionFired.createFromDefinition(actionDef) : ActionFired.create(actionName),
+        );
       },
     });
   }
