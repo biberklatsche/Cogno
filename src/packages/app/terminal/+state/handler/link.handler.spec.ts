@@ -182,6 +182,50 @@ describe("LinkHandler", () => {
     );
   });
 
+  it("resolves quoted Windows paths with spaces on Windows", () => {
+    createScenario("PowerShell", "windows", "C:\\work");
+    const line = TerminalMockFactory.createLine(
+      'Open "C:\\_dev\\projects\\My Folder\\file.txt" now',
+    );
+    vi.mocked(terminal.buffer.active.getLine).mockReturnValue(line);
+
+    let links: any[] | undefined;
+    provider.provideLinks(1, (result: any[] | undefined) => {
+      links = result;
+    });
+
+    expect(links).toHaveLength(1);
+    links?.[0].activate(new MouseEvent("click", { ctrlKey: true }), links?.[0].text);
+
+    expect(openPathSpy).toHaveBeenCalledWith("C:\\_dev\\projects\\My Folder\\file.txt");
+  });
+
+  it("resolves paths that wrap across multiple terminal rows", () => {
+    createScenario("PowerShell", "windows", "C:\\work");
+    const firstRow = TerminalMockFactory.createLine(
+      "Open C:\\_dev\\projects\\Second\\src\\packages\\app\\terminal\\+sta",
+    );
+    const secondRow = TerminalMockFactory.createLine("te\\handler\\link.handler.ts");
+    (secondRow as unknown as { isWrapped: boolean }).isWrapped = true;
+    vi.mocked(terminal.buffer.active.getLine).mockImplementation((row0: number) => {
+      if (row0 === 0) return firstRow;
+      if (row0 === 1) return secondRow;
+      return undefined;
+    });
+
+    let links: any[] | undefined;
+    provider.provideLinks(2, (result: any[] | undefined) => {
+      links = result;
+    });
+
+    expect(links).toHaveLength(1);
+    links?.[0].activate(new MouseEvent("click", { ctrlKey: true }), links?.[0].text);
+
+    expect(openPathSpy).toHaveBeenCalledWith(
+      "C:\\_dev\\projects\\Second\\src\\packages\\app\\terminal\\+state\\handler\\link.handler.ts",
+    );
+  });
+
   it("shows hover hint for ctrl+click on Windows links", () => {
     createScenario("PowerShell", "windows", "C:\\work");
     const line = TerminalMockFactory.createLine("Open C:\\temp\\file.txt");

@@ -14,10 +14,12 @@ type LinkMatch = {
   kind: "url" | "path";
 };
 
+type LineSegment = { row0: number; start: number; end: number };
+
 export class LinkHandler implements ITerminalHandler {
   private static readonly URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`]+/gi;
   private static readonly PATH_PATTERN =
-    /(?:[A-Za-z]:(?:\\|\/)[^\s<>"'`]+|(?:\\\\|\/\/)[^\s<>"'`]+|\/[A-Za-z]:(?:\/[^\n<>"'`]+)+|\/[^\s<>"'`]+|(?:\.\.?(?:\\|\/))[^\s<>"'`]+|(?:[^/\\\s<>"'`:()[\]{},;=]+(?:[\\/][^\s<>"'`:()[\]{},;=]+)+))/g;
+    /(?:"[^"\n]+"|'[^'\n]+'|`[^`\n]+`|[A-Za-z]:(?:\\|\/)[^\s<>"'`]+|(?:\\\\|\/\/)[^\s<>"'`]+|\/[A-Za-z]:(?:\/[^\n<>"'`]+)+|\/[^\s<>"'`]+|(?:\.\.?(?:\\|\/))[^\s<>"'`]+|(?:[^/\\\s<>"'`:()[\]{},;=]+(?:[\\/][^\s<>"'`:()[\]{},;=]+)+))/g;
   private static readonly LEADING_STRIP = new Set(["'", '"', "`", "(", "["]);
   private static readonly TRAILING_STRIP = new Set([
     ".",
@@ -32,6 +34,7 @@ export class LinkHandler implements ITerminalHandler {
     "]",
     ")",
   ]);
+  private static readonly MAX_WRAPPED_ROWS = 50;
 
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
@@ -47,49 +50,53 @@ export class LinkHandler implements ITerminalHandler {
     this._terminal = terminal;
     this._linkProviderDisposable = terminal.registerLinkProvider({
       provideLinks: (bufferLineNumber, callback) => {
-        const lineText = this.readBufferLineText(bufferLineNumber);
-        if (!lineText) {
+        const logicalLine = this.readLogicalLine(bufferLineNumber);
+        if (!logicalLine || !logicalLine.text) {
           callback(undefined);
           return;
         }
-        const matches = this.extractMatches(lineText);
+        const matches = this.extractMatches(logicalLine.text);
         if (matches.length === 0) {
           callback(undefined);
           return;
         }
         callback(
-          matches.map((match) => ({
-            range: {
-              start: { x: match.startIndex + 1, y: bufferLineNumber },
-              end: { x: match.endIndexExclusive, y: bufferLineNumber },
-            },
-            text: match.text,
-            decorations: { underline: true, pointerCursor: true },
-            hover: () => {
-              this._terminal?.element?.setAttribute("title", this.hoverHint);
-            },
-            leave: () => {
-              this._terminal?.element?.removeAttribute("title");
-            },
-            activate: (event: MouseEvent, text: string) => {
-              event.preventDefault();
-              if (this.isOpenModifierPressed(event)) {
-                if (match.kind === "url") {
-                  void this._opener.openUrl(text);
-                  return;
+          matches.map((match) => {
+            const start = this.mapOffsetToPosition(match.startIndex, logicalLine.segments);
+            const end = this.mapOffsetToPosition(match.endIndexExclusive, logicalLine.segments);
+            return {
+              range: {
+                start: { x: start.col + 1, y: start.row0 + 1 },
+                end: { x: end.col, y: end.row0 + 1 },
+              },
+              text: match.text,
+              decorations: { underline: true, pointerCursor: true },
+              hover: () => {
+                this._terminal?.element?.setAttribute("title", this.hoverHint);
+              },
+              leave: () => {
+                this._terminal?.element?.removeAttribute("title");
+              },
+              activate: (event: MouseEvent, text: string) => {
+                event.preventDefault();
+                if (this.isOpenModifierPressed(event)) {
+                  if (match.kind === "url") {
+                    void this._opener.openUrl(text);
+                    return;
+                  }
+                  const backendPath = this._pathResolver.resolvePathForOpen(
+                    text,
+                    this._stateManager.state.cwd,
+                    this._stateManager.pathAdapter,
+                  );
+                  if (!backendPath) return;
+                  void this._opener.openPath(backendPath);
+                } else {
+                  void Clipboard.writeText(text);
                 }
-                const backendPath = this._pathResolver.resolvePathForOpen(
-                  text,
-                  this._stateManager.state.cwd,
-                  this._stateManager.pathAdapter,
-                );
-                if (!backendPath) return;
-                void this._opener.openPath(backendPath);
-              } else {
-                void Clipboard.writeText(text);
-              }
-            },
-          })),
+              },
+            };
+          }),
         );
       },
     });
@@ -103,9 +110,43 @@ export class LinkHandler implements ITerminalHandler {
     this._terminal = undefined;
   }
 
-  private readBufferLineText(bufferLineNumber: number): string {
-    const line = this._terminal?.buffer.active.getLine(bufferLineNumber - 1);
-    return line?.translateToString(true) ?? "";
+  private readLogicalLine(
+    bufferLineNumber: number,
+  ): { text: string; segments: LineSegment[] } | undefined {
+    const buffer = this._terminal?.buffer.active;
+    if (!buffer) return undefined;
+
+    let startRow0 = bufferLineNumber - 1;
+    for (let i = 0; i < LinkHandler.MAX_WRAPPED_ROWS && startRow0 > 0; i++) {
+      if (!buffer.getLine(startRow0)?.isWrapped) break;
+      startRow0--;
+    }
+
+    const segments: LineSegment[] = [];
+    let text = "";
+    let row0 = startRow0;
+    for (let i = 0; i < LinkHandler.MAX_WRAPPED_ROWS; i++) {
+      const line = buffer.getLine(row0);
+      if (!line) break;
+      const lineText = line.translateToString(true);
+      segments.push({ row0, start: text.length, end: text.length + lineText.length });
+      text += lineText;
+      const nextLine = buffer.getLine(row0 + 1);
+      if (!nextLine?.isWrapped) break;
+      row0++;
+    }
+
+    return segments.length > 0 ? { text, segments } : undefined;
+  }
+
+  private mapOffsetToPosition(offset: number, segments: LineSegment[]): { row0: number; col: number } {
+    for (const segment of segments) {
+      if (offset <= segment.end) {
+        return { row0: segment.row0, col: offset - segment.start };
+      }
+    }
+    const last = segments[segments.length - 1];
+    return { row0: last.row0, col: offset - last.start };
   }
 
   private extractMatches(lineText: string): LinkMatch[] {
