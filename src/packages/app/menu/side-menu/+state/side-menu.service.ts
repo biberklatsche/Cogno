@@ -98,6 +98,7 @@ export class SideMenuService {
     }
 
     if (current) {
+      this.blur();
       this.bus.publish({ type: "SideMenuViewClosed", payload: { label: current.label } });
     }
 
