@@ -139,7 +139,10 @@ export class LinkHandler implements ITerminalHandler {
     return segments.length > 0 ? { text, segments } : undefined;
   }
 
-  private mapOffsetToPosition(offset: number, segments: LineSegment[]): { row0: number; col: number } {
+  private mapOffsetToPosition(
+    offset: number,
+    segments: LineSegment[],
+  ): { row0: number; col: number } {
     for (const segment of segments) {
       if (offset <= segment.end) {
         return { row0: segment.row0, col: offset - segment.start };
