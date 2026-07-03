@@ -75,6 +75,15 @@ pub fn get_cogno_db_file_path(dev_mode: bool) -> Result<String, String> {
     Ok(db_path.display().to_string())
 }
 
+/// Returns the path to the application log file.
+#[tauri::command]
+pub fn get_cogno_log_file_path(app_handle: tauri::AppHandle) -> Result<String, String> {
+    use tauri::Manager;
+    let log_dir = app_handle.path().app_log_dir().map_err(|e| e.to_string())?;
+    let log_file = log_dir.join("cogno.log");
+    Ok(log_file.display().to_string())
+}
+
 #[tauri::command]
 pub fn get_system_path() -> Result<Option<String>, String> {
     Ok(std::env::var("PATH").ok())

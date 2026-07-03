@@ -110,6 +110,30 @@ describe("SideMenuService", () => {
     expect(publishedTypes).not.toContain("SideMenuViewOpened");
   });
 
+  it("should blur the currently focused item when switching directly to another item", () => {
+    service.addMenuItem({
+      label: "CommandPalette",
+      icon: "mdiConsole",
+      hidden: false,
+      pinned: false,
+      actionName: "open_command_palette",
+      component: DummyComponent,
+    });
+
+    service.open("Workspace");
+    service.togglePin();
+    expect(service.isFocused()).toBe(true);
+
+    const publishSpy = vi.spyOn(bus, "publish");
+    service.open("CommandPalette");
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()?.label).toBe("CommandPalette");
+    expect(service.isFocused()).toBe(true);
+    expect(publishedTypes).toContain("SideMenuViewBlurred");
+    expect(publishedTypes).toContain("SideMenuViewFocused");
+  });
+
   it("should clamp side menu panel width", () => {
     service.setPanelWidthInPixels(100);
     expect(service.panelWidthInPixels()).toBe(280);

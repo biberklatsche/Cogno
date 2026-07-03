@@ -96,6 +96,38 @@ describe("CommandLineEditor", () => {
     });
   });
 
+  it("should forward autoExecute to the native replace action instead of writing a separate carriage return", () => {
+    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+    });
+    editor.registerTerminal(mockTerminal);
+
+    mockBus.publish({
+      type: "ReplaceTerminalInput",
+      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
+      path: ["app", "terminal"],
+    });
+
+    expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
+      text: "pnpm run build",
+      cursorIndex: 4,
+      autoExecute: true,
+    });
+    expect(mockPty.write).not.toHaveBeenCalledWith("\r");
+  });
+
+  it("should still write a carriage return for autoExecute when no native replace action is available", async () => {
+    mockBus.publish({
+      type: "ReplaceTerminalInput",
+      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
+      path: ["app", "terminal"],
+    });
+
+    await Promise.resolve();
+
+    expect(mockPty.write).toHaveBeenCalledWith("\r");
+  });
+
   it("should clear line to end", () => {
     mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
     // text: 'hello world example' (len 19), cursor: 6 (at 'w')

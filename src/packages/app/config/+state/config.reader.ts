@@ -245,7 +245,7 @@ export class ConfigReader {
         const pathLabel = ConfigReader.pathToString(path);
         diagnostics.push({
           level: "warning",
-          message: `Unknown setting(s) at ${pathLabel}: ${issue.keys.join(", ")}`,
+          message: `Unrecognized setting(s) in ${pathLabel}: ${issue.keys.map((k) => `'${k}'`).join(", ")} — these will be ignored`,
         });
         const parent = ConfigReader.getByPath(target, path);
         if (parent && typeof parent === "object") {
@@ -284,9 +284,10 @@ export class ConfigReader {
 
   private static pathToString(path: ReadonlyArray<string | number>): string {
     if (path.length === 0) {
-      return "<root>";
+      return "the config file";
     }
-    return path.map((part) => (typeof part === "number" ? `[${part}]` : part)).join(".");
+    const joined = path.map((part) => (typeof part === "number" ? `[${part}]` : part)).join(".");
+    return `'${joined}'`;
   }
 
   private static getByPath(

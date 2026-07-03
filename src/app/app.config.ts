@@ -6,6 +6,7 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
+import { AboutDialogAdapterService } from "@cogno/app/app-host/about-dialog.adapter.service";
 import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
 import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
@@ -156,6 +157,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(AiProviderDetectionService);
         injector.get(CodingAgentStatusService);
         injector.get(CodingAgentStartupService);
+        injector.get(AboutDialogAdapterService);
       }, 0);
     }),
   ],

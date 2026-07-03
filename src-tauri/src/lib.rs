@@ -16,13 +16,23 @@ pub fn run(cli: Cli) {
     Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(
+        .plugin({
+            let log_level = std::env::var("COGNO_LOG_LEVEL")
+                .ok()
+                .and_then(|s| s.parse::<tauri_plugin_log::log::LevelFilter>().ok())
+                .unwrap_or(tauri_plugin_log::log::LevelFilter::Info);
             tauri_plugin_log::Builder::new()
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::Webview,
-                ))
-                .build(),
-        )
+                .level(log_level)
+                // Suppress tao's harmless Windows event loop ordering warnings (known tao/winit issue on Windows, not fixable from userland)
+                .level_for("tao", tauri_plugin_log::log::LevelFilter::Error)
+                .targets([
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+                    tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir { file_name: None },
+                    ),
+                ])
+                .build()
+        })
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
@@ -63,6 +73,7 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::environment::get_cogno_home_dir,
             cogno_tauri_core::commands::environment::get_cogno_config_file_path,
             cogno_tauri_core::commands::environment::get_cogno_db_file_path,
+            cogno_tauri_core::commands::environment::get_cogno_log_file_path,
             cogno_tauri_core::commands::environment::get_system_path,
             cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
             cogno_tauri_core::commands::window::new_window,
