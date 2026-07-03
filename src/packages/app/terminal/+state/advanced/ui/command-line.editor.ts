@@ -149,10 +149,11 @@ export class CommandLineEditor implements ITerminalHandler {
             payload.cursorIndex,
             payload.autoExecute,
           );
-          // The native path submits via AcceptLine() itself (see line-editor.ps1.txt) so the
-          // shell integration process applies replace-then-submit atomically and in order.
-          // Writing "\r" here separately would race the pipe round-trip and, for PowerShell,
-          // could submit the buffer before the replace was applied.
+          // The native path submits by injecting a synthetic Enter keystroke itself
+          // (see line-editor.ps1.txt) so the shell integration process applies
+          // replace-then-submit atomically and in order. Writing "\r" here separately
+          // would race the pipe round-trip and, for PowerShell, could submit the
+          // buffer before the replace was applied.
           if (payload.autoExecute && !handledNatively) {
             queueMicrotask(() => this._pty.write("\r"));
           }
