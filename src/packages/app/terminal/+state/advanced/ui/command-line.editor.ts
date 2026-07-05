@@ -7,6 +7,7 @@ import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
 import { ITerminalHandler } from "../../handler/handler";
+import { buildCursorMoveSequence, TerminalInputReplacer } from "../../input-replacer";
 import { isPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
 import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
@@ -18,12 +19,16 @@ export class CommandLineEditor implements ITerminalHandler {
   private readonly WORD_SEPARATORS = "()[]{}'\"\\,;:/&<>*+=$^!~` ";
   private _selectionStart: number | null = null;
 
+  private readonly _inputReplacer: TerminalInputReplacer;
+
   constructor(
     private _bus: AppBus,
     private _pty: IPty,
     private stateManager: TerminalStateManager,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
-  ) {}
+  ) {
+    this._inputReplacer = new TerminalInputReplacer(_pty, stateManager, lineEditor);
+  }
 
   dispose(): void {
     this.subscription.unsubscribe();
@@ -144,39 +149,16 @@ export class CommandLineEditor implements ITerminalHandler {
           )
             return;
           this._selectionStart = null;
-          const prepared = this.lineEditor?.insertSanitizer?.prepareInsert(
+          if (!this._terminal) return;
+          this._inputReplacer.replaceInput(
             payload.inputText,
             payload.cursorIndex,
-          ) ?? { text: payload.inputText, cursorIndex: payload.cursorIndex };
-          const handledNatively = this.applyAutocompleteSuggestion(
-            prepared.text,
-            prepared.cursorIndex,
             payload.autoExecute,
           );
-          // The native path submits by injecting a synthetic Enter keystroke itself
-          // (see line-editor.ps1.txt) so the shell integration process applies
-          // replace-then-submit atomically and in order. Writing "\r" here separately
-          // would race the pipe round-trip and, for PowerShell, could submit the
-          // buffer before the replace was applied.
-          if (payload.autoExecute && !handledNatively) {
-            queueMicrotask(() => this._pty.write("\r"));
-          }
         }),
     );
 
     return this;
-  }
-
-  /**
-   * Even without a shell-specific sanitizer, remaining newlines must never be
-   * written raw — they would act as accept-line. Bracketed paste is the
-   * conservative fallback: shells without support show garbage, but never
-   * execute the lines.
-   */
-  private wrapForRawInsert(text: string): string {
-    const sanitizer = this.lineEditor?.insertSanitizer;
-    if (sanitizer) return sanitizer.wrapForPtyWrite(text);
-    return text.includes("\n") ? `\x1b[200~${text}\x1b[201~` : text;
   }
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
@@ -204,7 +186,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const text = input.text;
     const countToEnd = text.length - input.cursorIndex;
     this._ptyWrite(
-      this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(text.length),
+      buildCursorMoveSequence(countToEnd) + String.fromCharCode(8).repeat(text.length),
     );
   }
 
@@ -213,7 +195,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const countToEnd = input.text.length - input.cursorIndex;
     if (countToEnd > 0) {
       this._ptyWrite(
-        this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(countToEnd),
+        buildCursorMoveSequence(countToEnd) + String.fromCharCode(8).repeat(countToEnd),
       );
     }
   }
@@ -250,7 +232,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
     if (countToDelete > 0) {
       this._ptyWrite(
-        this._buildCursorMoveCommand(countToDelete) + String.fromCharCode(8).repeat(countToDelete),
+        buildCursorMoveSequence(countToDelete) + String.fromCharCode(8).repeat(countToDelete),
       );
     }
   }
@@ -265,7 +247,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const countToMove = nextWordEnd - currentPos;
 
     if (countToMove > 0) {
-      this._ptyWrite(this._buildCursorMoveCommand(countToMove));
+      this._ptyWrite(buildCursorMoveSequence(countToMove));
     }
   }
 
@@ -278,7 +260,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const countToMove = currentPos - prevWordStart;
 
     if (countToMove > 0) {
-      this._ptyWrite(this._buildCursorMoveCommand(-countToMove));
+      this._ptyWrite(buildCursorMoveSequence(-countToMove));
     }
   }
 
@@ -286,7 +268,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const input = this.stateManager.input;
     if (input.cursorIndex === 0) return;
 
-    this._ptyWrite(this._buildCursorMoveCommand(-input.cursorIndex));
+    this._ptyWrite(buildCursorMoveSequence(-input.cursorIndex));
   }
 
   goToEndOfLine() {
@@ -294,7 +276,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const countToMove = input.text.length - input.cursorIndex;
     if (countToMove <= 0) return;
 
-    this._ptyWrite(this._buildCursorMoveCommand(countToMove));
+    this._ptyWrite(buildCursorMoveSequence(countToMove));
   }
 
   selectTextRight() {
@@ -349,7 +331,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const textLength = input.text.length;
 
     const offsetToEnd = textLength - currentCursorIdx;
-    this._ptyWrite(this._buildCursorMoveCommand(offsetToEnd));
+    this._ptyWrite(buildCursorMoveSequence(offsetToEnd));
 
     this.selectAbsolute(0, textLength);
   }
@@ -367,7 +349,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   private _selectAndMove(offset: number) {
     this.select(offset);
-    this._ptyWrite(this._buildCursorMoveCommand(offset));
+    this._ptyWrite(buildCursorMoveSequence(offset));
   }
 
   private _ptyWrite(data: string) {
@@ -402,7 +384,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const offset = newIndex - input.cursorIndex;
     if (offset !== 0) {
       this._clearSelection();
-      this._ptyWrite(this._buildCursorMoveCommand(offset));
+      this._ptyWrite(buildCursorMoveSequence(offset));
       // Optimistically reflect the move locally: the authoritative onCursorMove
       // event lags behind the pty round-trip, so without this a fast key-repeat
       // would read a stale cursorIndex and miscompute the next row boundary.
@@ -415,35 +397,6 @@ export class CommandLineEditor implements ITerminalHandler {
 
     event.preventDefault();
     event.stopPropagation();
-    return false;
-  }
-
-  private applyAutocompleteSuggestion(
-    inputText: string,
-    cursorIndex: number,
-    autoExecute?: boolean,
-  ): boolean {
-    if (!this._terminal) return false;
-    if (this.supportsNativeShellAction("replaceCurrentInput")) {
-      this._pty.executeLineEditorAction("replaceCurrentInput", {
-        text: inputText,
-        cursorIndex,
-        autoExecute,
-      });
-      return true;
-    }
-
-    const input = this.stateManager.input;
-    const countToEnd = input.text.length - input.cursorIndex;
-    const clearCmd =
-      this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(input.text.length);
-    this._ptyWrite(clearCmd);
-    this._ptyWrite(this.wrapForRawInsert(inputText));
-
-    const leftToTarget = inputText.length - Math.max(0, Math.min(cursorIndex, inputText.length));
-    if (leftToTarget > 0) {
-      this._ptyWrite(this._buildCursorMoveCommand(-leftToTarget));
-    }
     return false;
   }
 
@@ -504,7 +457,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const cursorOffsetToEnd = range.endIdx - currentCursorIdx;
 
     this._ptyWrite(
-      this._buildCursorMoveCommand(cursorOffsetToEnd) + String.fromCharCode(8).repeat(deleteLength),
+      buildCursorMoveSequence(cursorOffsetToEnd) + String.fromCharCode(8).repeat(deleteLength),
     );
     this._clearSelection();
     return true;
@@ -513,18 +466,6 @@ export class CommandLineEditor implements ITerminalHandler {
   private getRowColumn(index: number): { row: number; column: number } {
     const cols = this._terminal?.cols ?? 1;
     return { row: Math.floor(index / cols), column: index % cols };
-  }
-
-  private _buildCursorMoveCommand(offset: number): string {
-    if (offset === 0) {
-      return "";
-    }
-
-    const escapeCode = String.fromCharCode(27);
-    const direction = offset > 0 ? "C" : "D";
-    const count = Math.abs(offset);
-
-    return `${escapeCode}[${direction}`.repeat(count);
   }
 
   private _clearSelection() {

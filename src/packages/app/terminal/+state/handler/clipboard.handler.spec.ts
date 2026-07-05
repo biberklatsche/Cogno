@@ -141,9 +141,12 @@ describe("ClipboardHandler", () => {
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
+      // Unified replace path: clear the whole line ("hello world", cursor 5),
+      // write the recomposed text, then move the cursor after the pasted part.
       await vi.waitFor(() => {
-        expect(mockPty.write).toHaveBeenNthCalledWith(1, "\x08".repeat(5));
-        expect(mockPty.write).toHaveBeenNthCalledWith(2, "bye");
+        expect(mockPty.write).toHaveBeenNthCalledWith(1, "\x1b[C".repeat(6) + "\x08".repeat(11));
+        expect(mockPty.write).toHaveBeenNthCalledWith(2, "bye world");
+        expect(mockPty.write).toHaveBeenNthCalledWith(3, "\x1b[D".repeat(6));
       });
     });
 
@@ -176,8 +179,12 @@ describe("ClipboardHandler", () => {
 
       // The backslash continuation is flattened; the remaining real newline is
       // wrapped in bracketed paste instead of being written raw (accept-line).
+      // The recomposed text keeps the unselected input tail (" world").
       await vi.waitFor(() => {
-        expect(mockPty.write).toHaveBeenNthCalledWith(2, "\x1b[200~echo a b\necho c\x1b[201~");
+        expect(mockPty.write).toHaveBeenNthCalledWith(
+          2,
+          "\x1b[200~echo a b\necho c world\x1b[201~",
+        );
       });
     });
 

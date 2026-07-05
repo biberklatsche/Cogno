@@ -1,10 +1,11 @@
 import { bytesToBase64, Clipboard } from "@cogno/app-tauri/clipboard";
 import { ShellLineEditorDefinitionContract, TerminalId } from "@cogno/core-api";
-import { Char, IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ConfigService } from "../../../config/+state/config.service";
+import { TerminalInputReplacer } from "../input-replacer";
 import { findLastPromptMarkerLine, sanitizePromptMarkerText } from "../prompt-marker";
 import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
@@ -18,6 +19,7 @@ function base64ToText(base64: string): string {
 export class ClipboardHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private subscription: Subscription = new Subscription();
+  private readonly inputReplacer: TerminalInputReplacer;
 
   constructor(
     private bus: AppBus,
@@ -26,8 +28,10 @@ export class ClipboardHandler implements ITerminalHandler {
     private pty: IPty,
     private configService: ConfigService,
     private readonly selectionHandler: SelectionHandler,
-    private readonly lineEditor?: ShellLineEditorDefinitionContract,
-  ) {}
+    readonly lineEditor?: ShellLineEditorDefinitionContract,
+  ) {
+    this.inputReplacer = new TerminalInputReplacer(pty, stateManager, lineEditor);
+  }
 
   dispose(): void {
     this.subscription.unsubscribe();
@@ -140,44 +144,13 @@ export class ClipboardHandler implements ITerminalHandler {
     if (deleteLength <= 0) return false;
 
     const input = this.stateManager.input;
-    if (this.lineEditor?.nativeActionsViaShellIntegration?.includes("replaceCurrentInput")) {
-      const nextText =
-        input.text.slice(0, selectionRange.startIndex) +
-        replacementText +
-        input.text.slice(selectionRange.endIndex);
-      this.pty.executeLineEditorAction("replaceCurrentInput", {
-        text: nextText,
-        cursorIndex: selectionRange.startIndex + replacementText.length,
-      });
-      this.selectionHandler.clearSelection();
-      return true;
-    }
-
-    const cursorOffsetToSelectionEnd = selectionRange.endIndex - input.cursorIndex;
-    this.pty.write(
-      this.buildCursorMoveCommand(cursorOffsetToSelectionEnd) + Char.Backspace.repeat(deleteLength),
-    );
+    const nextText =
+      input.text.slice(0, selectionRange.startIndex) +
+      replacementText +
+      input.text.slice(selectionRange.endIndex);
     this.selectionHandler.clearSelection();
-    // Same multiline safety as the ReplaceTerminalInput path: a raw newline
-    // written to the pty acts as accept-line and would execute the pasted
-    // lines immediately.
-    const sanitizer = this.lineEditor?.insertSanitizer;
-    const prepared = sanitizer
-      ? sanitizer.prepareInsert(replacementText, replacementText.length).text
-      : replacementText;
-    const wrapped = sanitizer
-      ? sanitizer.wrapForPtyWrite(prepared)
-      : prepared.includes("\n")
-        ? `\x1b[200~${prepared}\x1b[201~`
-        : prepared;
-    this.pty.write(wrapped);
+    this.inputReplacer.replaceInput(nextText, selectionRange.startIndex + replacementText.length);
     return true;
-  }
-
-  private buildCursorMoveCommand(offset: number): string {
-    if (offset === 0) return "";
-    const direction = offset > 0 ? "\x1b[C" : "\x1b[D";
-    return direction.repeat(Math.abs(offset));
   }
 
   private getSelectedInputRange(): { startIndex: number; endIndex: number } | undefined {
