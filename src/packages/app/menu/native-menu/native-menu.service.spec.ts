@@ -152,7 +152,7 @@ describe("NativeMenuService", () => {
     );
   });
 
-  it("throws when an action definition is missing and reports feature modes", async () => {
+  it("falls back to a plain action event when the definition is missing and reports feature modes", async () => {
     vi.mocked(keybindService.getActionDefinition).mockReturnValue(undefined as never);
 
     expect(
@@ -171,10 +171,18 @@ describe("NativeMenuService", () => {
       ).getFeatureMode("missing"),
     ).toBeUndefined();
 
+    const publishedEvents: unknown[] = [];
+    vi.spyOn(appBus, "publish").mockImplementation((event) => {
+      publishedEvents.push(event);
+    });
+
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
 
-    expect(() => menuItemActionCallbacks.get("open_workspace")?.()).toThrow(
-      "Action definition open_workspace not found.",
+    // A missing action definition must not break the menu item: the callback
+    // degrades to publishing a plain ActionFired for the action name.
+    expect(() => menuItemActionCallbacks.get("open_workspace")?.()).not.toThrow();
+    expect(publishedEvents).toContainEqual(
+      expect.objectContaining(ActionFired.create("open_workspace")),
     );
   });
 });

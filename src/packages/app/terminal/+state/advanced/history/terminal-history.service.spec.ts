@@ -127,7 +127,7 @@ describe("TerminalHistoryService", () => {
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "ReplaceTerminalInput",
-        payload: { terminalId: "t1", inputText: "npm test", cursorIndex: 8 },
+        payload: { terminalId: "t1", inputText: "npm test", cursorIndex: 8, autoExecute: false },
       }),
     );
     expect(persistence.markCommandSelected).toHaveBeenCalledWith(
@@ -164,14 +164,14 @@ describe("TerminalHistoryService", () => {
     expect(persistence.getRecentCommands).not.toHaveBeenCalled();
   });
 
-  it("falls back to the global scope when the preferred scope has no entries", async () => {
+  it("keeps the persisted scope even when it has no entries (empty state instead of fallback)", async () => {
     window.localStorage.setItem("terminal.history.scope", "session");
     persistence.getRecentCommands.mockImplementation(async ({ scope }: { scope: string }) =>
       scope === "global" ? makeRows(["git status", "npm test"]) : [],
     );
 
     const localBus = new AppBus();
-    const fallbackService = new TerminalHistoryService(
+    const stickyScopeService = new TerminalHistoryService(
       fakeState as unknown as any,
       persistence as unknown as TerminalHistoryPersistenceService,
       localBus,
@@ -181,16 +181,18 @@ describe("TerminalHistoryService", () => {
     localBus.publish(ActionFired.create("trigger_command_history"));
 
     const view = await new Promise((resolve) => {
-      fallbackService.viewState$.subscribe((v) => v.visible && resolve(v));
+      stickyScopeService.viewState$.subscribe((v) => v.visible && resolve(v));
     });
 
-    expect(view).toMatchObject({ visible: true, scope: "global" });
+    // The scope is sticky: the panel opens in the persisted scope and shows
+    // its empty state; the user switches scopes explicitly via cycle_tab.
+    expect(view).toMatchObject({ visible: true, scope: "session", entries: [] });
     expect(persistence.getRecentCommands).toHaveBeenLastCalledWith({
-      scope: "global",
+      scope: "session",
       cwdRaw: "/Users/larswolfram/projects",
     });
 
-    fallbackService.ngOnDestroy();
+    stickyScopeService.ngOnDestroy();
     window.localStorage.removeItem("terminal.history.scope");
   });
 
