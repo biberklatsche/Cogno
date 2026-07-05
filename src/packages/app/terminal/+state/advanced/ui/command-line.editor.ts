@@ -144,9 +144,13 @@ export class CommandLineEditor implements ITerminalHandler {
           )
             return;
           this._selectionStart = null;
-          const handledNatively = this.applyAutocompleteSuggestion(
+          const prepared = this.lineEditor?.insertSanitizer?.prepareInsert(
             payload.inputText,
             payload.cursorIndex,
+          ) ?? { text: payload.inputText, cursorIndex: payload.cursorIndex };
+          const handledNatively = this.applyAutocompleteSuggestion(
+            prepared.text,
+            prepared.cursorIndex,
             payload.autoExecute,
           );
           // The native path submits by injecting a synthetic Enter keystroke itself
@@ -161,6 +165,18 @@ export class CommandLineEditor implements ITerminalHandler {
     );
 
     return this;
+  }
+
+  /**
+   * Even without a shell-specific sanitizer, remaining newlines must never be
+   * written raw — they would act as accept-line. Bracketed paste is the
+   * conservative fallback: shells without support show garbage, but never
+   * execute the lines.
+   */
+  private wrapForRawInsert(text: string): string {
+    const sanitizer = this.lineEditor?.insertSanitizer;
+    if (sanitizer) return sanitizer.wrapForPtyWrite(text);
+    return text.includes("\n") ? `\x1b[200~${text}\x1b[201~` : text;
   }
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
@@ -422,7 +438,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const clearCmd =
       this._buildCursorMoveCommand(countToEnd) + String.fromCharCode(8).repeat(input.text.length);
     this._ptyWrite(clearCmd);
-    this._ptyWrite(inputText);
+    this._ptyWrite(this.wrapForRawInsert(inputText));
 
     const leftToTarget = inputText.length - Math.max(0, Math.min(cursorIndex, inputText.length));
     if (leftToTarget > 0) {

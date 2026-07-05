@@ -1,0 +1,22 @@
+#!/bin/zsh
+# Cogno ZDOTDIR wrapper (.zshenv)
+# zsh sources this instead of the user's ~/.zshenv because ZDOTDIR points to
+# Cogno's integration directory. It replays only the user's own .zshenv - the
+# /etc startup files are handled natively by zsh, exactly once and in order.
+# COGNO_USER_ZDOTDIR tracks the user's real ZDOTDIR so the later stages
+# (.zprofile/.zshrc) can replay from and finally restore it.
+
+if [[ -z "${COGNO_USER_ZDOTDIR}" ]]; then
+    typeset -g COGNO_USER_ZDOTDIR="${HOME}"
+fi
+
+if [[ "${COGNO_ALLOW_USER_RC}" == "1" && -f "${COGNO_USER_ZDOTDIR}/.zshenv" ]]; then
+    typeset -g COGNO_WRAPPER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_USER_ZDOTDIR}"
+    source "${ZDOTDIR}/.zshenv"
+    # The user's .zshenv may change ZDOTDIR - remember it, then re-point to
+    # Cogno's directory so our .zprofile/.zshrc wrappers keep loading.
+    COGNO_USER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_WRAPPER_ZDOTDIR}"
+    unset COGNO_WRAPPER_ZDOTDIR
+fi

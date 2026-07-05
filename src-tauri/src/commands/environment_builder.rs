@@ -60,6 +60,39 @@ impl EnvironmentBuilder {
         }
     }
 
+    /// Applies the environment captured from the user's real login shell.
+    ///
+    /// The login PATH is exported as COGNO_LOGIN_PATH so bootstrap scripts can
+    /// merge it as a baseline. When shell integration is disabled there is no
+    /// bootstrap script, so the login PATH directly replaces the (minimal)
+    /// GUI-process PATH the child would otherwise inherit.
+    pub fn with_login_environment(
+        mut self,
+        login_path: Option<String>,
+        lang: Option<String>,
+    ) -> Self {
+        if let Some(path) = login_path {
+            self.env
+                .insert("COGNO_LOGIN_PATH".to_string(), path.clone());
+
+            let has_integration = self.env.contains_key("COGNO_INTEGRATION_ROOT");
+            if !has_integration {
+                self.env.insert("PATH".to_string(), path);
+            }
+        }
+
+        if let Some(lang) = lang {
+            let lang_missing = std::env::var("LANG")
+                .map(|value| value.trim().is_empty())
+                .unwrap_or(true);
+            if lang_missing {
+                self.env.insert("LANG".to_string(), lang);
+            }
+        }
+
+        self
+    }
+
     pub fn with_path_injection(
         mut self,
         inject_path: bool,
@@ -90,8 +123,17 @@ impl EnvironmentBuilder {
                 !has_integration || (cfg!(windows) && shell_type == "PowerShell");
 
             if should_set_path_directly {
-                if let Ok(system_path) = std::env::var("PATH") {
-                    let new_path = format!("{}{}{}", path_prefix, separator, system_path);
+                // Prefer the PATH already staged by with_login_environment
+                // (the login-shell baseline) over the GUI process PATH, which
+                // is minimal when the app was launched by launchd/systemd.
+                let base_path = self
+                    .env
+                    .get("PATH")
+                    .cloned()
+                    .or_else(|| std::env::var("PATH").ok());
+
+                if let Some(base_path) = base_path {
+                    let new_path = format!("{}{}{}", path_prefix, separator, base_path);
                     self.env.insert("PATH".to_string(), new_path);
                 }
             }
@@ -147,6 +189,10 @@ impl EnvironmentBuilder {
                         .insert("ZDOTDIR".to_string(), zsh_dir.to_string_lossy().to_string());
                 }
                 "Fish" => {
+                    // TODO: Replace with `fish --init-command 'source ...'` (fish >= 3.4)
+                    // before Fish support ships. Redirecting XDG_CONFIG_HOME leaks into
+                    // every XDG-aware tool in the session (git, gh, ...) and hides the
+                    // user's real fish config.
                     // Fish expects XDG_CONFIG_HOME/fish/config.fish
                     // So we point XDG_CONFIG_HOME to integration_root (contains fish/ subdirectory)
                     self.env.insert(

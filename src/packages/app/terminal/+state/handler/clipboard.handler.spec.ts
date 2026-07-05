@@ -1,5 +1,6 @@
 import { Clipboard } from "@cogno/app-tauri/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/core-api";
+import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
@@ -143,6 +144,40 @@ describe("ClipboardHandler", () => {
       await vi.waitFor(() => {
         expect(mockPty.write).toHaveBeenNthCalledWith(1, "\x08".repeat(5));
         expect(mockPty.write).toHaveBeenNthCalledWith(2, "bye");
+      });
+    });
+
+    it("flattens continuations and bracket-pastes real newlines when pasting multiline text over a selection", async () => {
+      // POSIX shells provide the insert sanitizer via their shell definition.
+      handler.dispose();
+      handler = new ClipboardHandler(
+        mockBus,
+        terminalId,
+        mockStateManager as TerminalStateManager,
+        mockPty as IPty,
+        mockConfigService,
+        mockSelectionHandler,
+        { insertSanitizer: posixInsertSanitizer },
+      );
+      handler.registerTerminal(mockTerminal);
+      (mockTerminal as { cols: number }).cols = 80;
+      (mockTerminal.buffer.active as { length: number }).length = 2;
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((i) =>
+        i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
+      );
+      vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
+      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 },
+      });
+      vi.mocked(Clipboard.readText).mockResolvedValue("echo a \\\n  b\necho c");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      // The backslash continuation is flattened; the remaining real newline is
+      // wrapped in bracketed paste instead of being written raw (accept-line).
+      await vi.waitFor(() => {
+        expect(mockPty.write).toHaveBeenNthCalledWith(2, "\x1b[200~echo a b\necho c\x1b[201~");
       });
     });
 

@@ -13,6 +13,10 @@ pub fn run(cli: Cli) {
         ".cogno-dev",
     ));
 
+    // Capture the user's login-shell environment in the background so the
+    // first terminal spawn does not pay the login-shell startup cost.
+    cogno_tauri_core::commands::login_environment::prefetch_login_environment();
+
     Builder::default()
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_clipboard_manager::init())

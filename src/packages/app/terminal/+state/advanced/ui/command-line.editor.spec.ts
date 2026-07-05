@@ -1,4 +1,5 @@
 import { Clipboard } from "@cogno/app-tauri/clipboard";
+import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
@@ -126,6 +127,103 @@ describe("CommandLineEditor", () => {
     await Promise.resolve();
 
     expect(mockPty.write).toHaveBeenCalledWith("\r");
+  });
+
+  describe("multiline replacement", () => {
+    beforeEach(() => {
+      // POSIX shells provide the insert sanitizer via their shell definition.
+      editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+        insertSanitizer: posixInsertSanitizer,
+      });
+      editor.registerTerminal(mockTerminal);
+    });
+
+    it("should flatten backslash-newline continuations into single spaces", () => {
+      mockBus.publish({
+        type: "ReplaceTerminalInput",
+        payload: {
+          terminalId,
+          inputText: "node cli.mjs check \\\n    --input ./data.con \\\n    --format kvdt",
+          cursorIndex: 60,
+        },
+        path: ["app", "terminal"],
+      });
+
+      expect(mockPty.write).toHaveBeenCalledWith(
+        "node cli.mjs check --input ./data.con --format kvdt",
+      );
+    });
+
+    it("should map an end-of-text cursor to the end of the flattened text", () => {
+      const inputText = "echo a \\\n    b";
+      mockBus.publish({
+        type: "ReplaceTerminalInput",
+        payload: { terminalId, inputText, cursorIndex: inputText.length },
+        path: ["app", "terminal"],
+      });
+
+      // "echo a b" — cursor at end, so no cursor-left movement is written.
+      expect(mockPty.write).toHaveBeenCalledWith("echo a b");
+      expect(mockPty.write).not.toHaveBeenCalledWith(expect.stringContaining("\x1b[D"));
+    });
+
+    it("should keep an escaped backslash before a newline and preserve the real newline", () => {
+      // "foo\\" + newline: the first backslash escapes the second, the newline is real.
+      mockBus.publish({
+        type: "ReplaceTerminalInput",
+        payload: { terminalId, inputText: "echo foo\\\\\ndone", cursorIndex: 0 },
+        path: ["app", "terminal"],
+      });
+
+      expect(mockPty.write).toHaveBeenCalledWith("\x1b[200~echo foo\\\\\ndone\x1b[201~");
+    });
+
+    it("should wrap unescaped multiline constructs in bracketed paste", () => {
+      const inputText = "for f in *.txt\ndo\n  echo $f\ndone";
+      mockBus.publish({
+        type: "ReplaceTerminalInput",
+        payload: { terminalId, inputText, cursorIndex: inputText.length },
+        path: ["app", "terminal"],
+      });
+
+      expect(mockPty.write).toHaveBeenCalledWith(`\x1b[200~${inputText}\x1b[201~`);
+    });
+
+    it("should not flatten backslash continuations for shells without an insert sanitizer (PowerShell)", () => {
+      editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+        nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+      });
+      editor.registerTerminal(mockTerminal);
+
+      const inputText = "Get-ChildItem C:\\foo\\\n  | Select Name";
+      mockBus.publish({
+        type: "ReplaceTerminalInput",
+        payload: { terminalId, inputText, cursorIndex: 4 },
+        path: ["app", "terminal"],
+      });
+
+      expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
+        text: inputText,
+        cursorIndex: 4,
+        autoExecute: undefined,
+      });
+    });
+
+    it("should still bracket-paste multiline text when no sanitizer is available", () => {
+      editor = new CommandLineEditor(mockBus, mockPty, state as any);
+      editor.registerTerminal(mockTerminal);
+
+      const inputText = "echo a \\\n  b";
+      mockBus.publish({
+        type: "ReplaceTerminalInput",
+        payload: { terminalId, inputText, cursorIndex: inputText.length },
+        path: ["app", "terminal"],
+      });
+
+      // Unknown shell: no flatten, but the raw newline must never be written
+      // bare — the conservative fallback wraps it in bracketed paste.
+      expect(mockPty.write).toHaveBeenCalledWith(`\x1b[200~${inputText}\x1b[201~`);
+    });
   });
 
   it("should clear line to end", () => {

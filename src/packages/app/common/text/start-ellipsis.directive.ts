@@ -1,4 +1,12 @@
-import { AfterViewInit, Directive, ElementRef, effect, input, OnDestroy } from "@angular/core";
+import {
+  AfterViewInit,
+  Directive,
+  ElementRef,
+  effect,
+  input,
+  OnDestroy,
+  output,
+} from "@angular/core";
 
 type MatchRange = { start: number; end: number };
 
@@ -9,8 +17,10 @@ type MatchRange = { start: number; end: number };
 export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
   appStartEllipsis = input<string>("");
   appStartEllipsisMatches = input<MatchRange[] | undefined>(undefined);
+  appStartEllipsisTruncated = output<boolean>();
 
   private readonly prefix = "\u2026";
+  private lastTruncated?: boolean;
   private resizeObserver?: ResizeObserver;
   private readonly handleWindowResize = () => this.scheduleApply();
   private animationFrameId?: number;
@@ -65,6 +75,7 @@ export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
 
     if (element.scrollWidth <= element.clientWidth) {
       this.renderContent(element, fullText, ranges, 0);
+      this.emitTruncated(false);
       return;
     }
 
@@ -91,6 +102,13 @@ export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
       }
     }
     this.renderContent(element, fullText, ranges, cutStart);
+    this.emitTruncated(cutStart > 0);
+  }
+
+  private emitTruncated(truncated: boolean): void {
+    if (this.lastTruncated === truncated) return;
+    this.lastTruncated = truncated;
+    this.appStartEllipsisTruncated.emit(truncated);
   }
 
   private renderContent(

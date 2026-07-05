@@ -20,10 +20,30 @@ _cogno_log() {
 
 _cogno_log "Bash bootstrap started"
 
-# Use login-shell PATH as baseline if provided by backend
+# Safety net: use the backend-captured login-shell PATH as the baseline so
+# lookup order matches a normal terminal (e.g. Homebrew before /usr/bin).
+# Current entries that are not part of the login PATH (profile-configured
+# extras) keep their precedence in front of the baseline.
 if [[ -n "${COGNO_LOGIN_PATH}" ]]; then
-    _cogno_log "Applying COGNO_LOGIN_PATH baseline"
-    export PATH="${COGNO_LOGIN_PATH}"
+    _cogno_log "Merging COGNO_LOGIN_PATH baseline"
+    _cogno_old_ifs="${IFS}"
+    # Disable globbing during the unquoted split: PATH entries may contain
+    # glob characters that would otherwise expand against the cwd.
+    _cogno_glob_was_off=""
+    case $- in *f*) _cogno_glob_was_off=1 ;; esac
+    set -f
+    IFS=':'
+    _cogno_prefix=""
+    for _cogno_dir in ${PATH}; do
+        if [[ -n "${_cogno_dir}" && ":${COGNO_LOGIN_PATH}:${_cogno_prefix}:" != *":${_cogno_dir}:"* ]]; then
+            _cogno_prefix="${_cogno_prefix:+${_cogno_prefix}:}${_cogno_dir}"
+        fi
+    done
+    IFS="${_cogno_old_ifs}"
+    [[ -z "${_cogno_glob_was_off}" ]] && set +f
+    PATH="${_cogno_prefix:+${_cogno_prefix}:}${COGNO_LOGIN_PATH}"
+    unset _cogno_dir _cogno_prefix _cogno_old_ifs _cogno_glob_was_off
+    export PATH
 fi
 
 # Optionally load user's Bash startup files (only if COGNO_ALLOW_USER_RC=1)
@@ -46,6 +66,15 @@ if [[ "${COGNO_ALLOW_USER_RC}" == "1" ]]; then
     elif [[ -f "${HOME}/.profile" ]]; then
         _cogno_log "Loading user .profile"
         source "${HOME}/.profile"
+    fi
+
+    # Interactive non-login shells on Debian/Ubuntu read /etc/bash.bashrc.
+    # Debian's /etc/profile already sources it for interactive shells, so only
+    # load it here when the profile chain does not reference it (heuristic:
+    # a commented-out reference also skips, which is the safer default).
+    if [[ -f /etc/bash.bashrc ]] && ! grep -qs 'bash\.bashrc' /etc/profile; then
+        _cogno_log "Loading /etc/bash.bashrc"
+        source /etc/bash.bashrc
     fi
 
     # Load interactive rc file

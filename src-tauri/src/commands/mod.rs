@@ -7,6 +7,7 @@ pub mod environment;
 pub mod environment_builder;
 pub mod fonts;
 pub mod keyboard;
+pub mod login_environment;
 pub mod ai_http;
 pub mod processes;
 pub mod pty;

@@ -78,10 +78,22 @@ _cogno_precmd() {
   COGNO_CMD_SEEN=0
   COGNO_LAST_CMD=""
 
+  # Re-assert the Cogno prompt every cycle: prompt frameworks loaded from the
+  # user's rc files (powerlevel10k, starship, oh-my-posh, ...) rewrite PROMPT
+  # from their own precmd hooks and would otherwise remove the hidden marker.
+  PROMPT="${COGNO_PROMPT}"
+  RPROMPT=""
+
   return $last_ec
 }
 
 add-zsh-hook preexec _cogno_preexec
 add-zsh-hook precmd  _cogno_precmd
 
-PROMPT=$'\n%{\e[8m%}^^#${COGNO_COUNT}%{\e[0m%}\n'
+# Keep Cogno's precmd last so it runs after any prompt-framework hooks that
+# were registered by the user's rc files.
+precmd_functions=(${precmd_functions:#_cogno_precmd} _cogno_precmd)
+
+typeset -g COGNO_PROMPT=$'\n%{\e[8m%}^^#${COGNO_COUNT}%{\e[0m%}\n'
+PROMPT="${COGNO_PROMPT}"
+RPROMPT=""

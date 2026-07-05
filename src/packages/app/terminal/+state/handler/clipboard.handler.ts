@@ -158,7 +158,19 @@ export class ClipboardHandler implements ITerminalHandler {
       this.buildCursorMoveCommand(cursorOffsetToSelectionEnd) + Char.Backspace.repeat(deleteLength),
     );
     this.selectionHandler.clearSelection();
-    this.pty.write(replacementText);
+    // Same multiline safety as the ReplaceTerminalInput path: a raw newline
+    // written to the pty acts as accept-line and would execute the pasted
+    // lines immediately.
+    const sanitizer = this.lineEditor?.insertSanitizer;
+    const prepared = sanitizer
+      ? sanitizer.prepareInsert(replacementText, replacementText.length).text
+      : replacementText;
+    const wrapped = sanitizer
+      ? sanitizer.wrapForPtyWrite(prepared)
+      : prepared.includes("\n")
+        ? `\x1b[200~${prepared}\x1b[201~`
+        : prepared;
+    this.pty.write(wrapped);
     return true;
   }
 

@@ -40,6 +40,10 @@ if ($env:COGNO_ALLOW_USER_RC -eq "1") {
     }
 }
 
+# Note: COGNO_LOGIN_PATH is deliberately not used here. On Windows, GUI
+# processes inherit the user's registry PATH, and the profiles replayed above
+# restore any session-specific additions.
+
 # Apply PATH prefix after user startup files, so Cogno CLI stays available.
 if ($env:COGNO_PATH_PREFIX) {
     Write-CognoLog "Applying PATH prefix: $($env:COGNO_PATH_PREFIX)"

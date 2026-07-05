@@ -100,11 +100,49 @@ _cogno_precmd() {
   return $last_ec
 }
 
-# Set up hooks
-trap '_cogno_preexec' DEBUG
+# Re-assert the Cogno prompt after all other PROMPT_COMMAND entries ran:
+# user hooks (starship, oh-my-posh, ...) rewrite PS1 every cycle and would
+# otherwise remove the hidden marker.
+_cogno_reassert_ps1() {
+  PS1="$COGNO_PS1"
+}
 
-# PROMPT_COMMAND must be a simple string in Bash 3.2
-PROMPT_COMMAND='_cogno_precmd'
+# Set up the preexec hook. If the user's rc files installed bash-preexec, it
+# owns the DEBUG trap - register with it instead of fighting over the trap.
+if declare -p preexec_functions >/dev/null 2>&1; then
+  _cogno_preexec_bp() {
+    COGNO_LAST_CMD="$1"
+    COGNO_CMD_SEEN=1
+  }
+  preexec_functions+=(_cogno_preexec_bp)
+else
+  # Chain any existing user DEBUG trap instead of overwriting it.
+  # `trap -p DEBUG` prints `trap -- '<code>' DEBUG`; eval into an array to
+  # extract <code> with the original quoting intact.
+  eval "_cogno_prev_debug_trap=($(trap -p DEBUG))"
+  if [[ -n "${_cogno_prev_debug_trap[2]:-}" ]]; then
+    # Restore $? before the user's trap code runs: it must observe the exit
+    # code of the last real command, not _cogno_preexec's (which is almost
+    # always 0). A function call restores it without forking a subshell.
+    _cogno_restore_ec() { return "${1:-0}"; }
+    trap "_cogno_trap_ec=\$?; _cogno_preexec; _cogno_restore_ec \"\${_cogno_trap_ec}\"; ${_cogno_prev_debug_trap[2]}" DEBUG
+  else
+    trap '_cogno_preexec' DEBUG
+  fi
+  unset _cogno_prev_debug_trap
+fi
+
+# Chain PROMPT_COMMAND instead of overwriting it, so user hooks from rc files
+# (direnv, starship, ...) keep working. Cogno's precmd runs first because it
+# must observe the real $? of the last command; it returns that $? so the
+# user's entries still see the original exit code.
+if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+  # Bash >= 5.1 may use an array PROMPT_COMMAND.
+  PROMPT_COMMAND=("_cogno_precmd" "${PROMPT_COMMAND[@]}" "_cogno_reassert_ps1")
+else
+  PROMPT_COMMAND="_cogno_precmd${PROMPT_COMMAND:+;$PROMPT_COMMAND};_cogno_reassert_ps1"
+fi
 
 # Hide the marker from the user while keeping it in the buffer for detection.
-PS1='\n\[\e[8m\]^^#${COGNO_COUNT}\[\e[0m\]\n'
+COGNO_PS1='\n\[\e[8m\]^^#${COGNO_COUNT}\[\e[0m\]\n'
+PS1="$COGNO_PS1"
