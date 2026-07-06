@@ -146,3 +146,25 @@ fi
 # Hide the marker from the user while keeping it in the buffer for detection.
 COGNO_PS1='\n\[\e[8m\]^^#${COGNO_COUNT}\[\e[0m\]\n'
 PS1="$COGNO_PS1"
+
+# Capability handshake: report what this session's integration can actually
+# do. The app gates its native line-editor paths on this report and never
+# assumes a capability statically. Policy: bash < 4.0 (e.g. the macOS system
+# bash 3.2) is below Cogno's support floor and runs degraded on the sanitizer
+# fallback.
+_cogno_emit_capabilities() {
+  local version="${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}"
+  local degraded=""
+  if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    degraded="bash-version"
+  fi
+  # Bracketed paste needs readline >= 7 AND must not be disabled by the
+  # user's inputrc - probe the live setting instead of guessing from versions.
+  local bracketed_paste="false"
+  if bind -v 2>/dev/null | grep -q 'set enable-bracketed-paste on'; then
+    bracketed_paste="true"
+  fi
+  printf '\033]733;COGNO:CAPS;shell=bash;shellVersion=%s;nativeActions=;bracketedPaste=%s;degraded=%s;\033\\' \
+    "$version" "$bracketed_paste" "$degraded"
+}
+_cogno_emit_capabilities

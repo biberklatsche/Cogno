@@ -7,7 +7,11 @@ import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
 import { ITerminalHandler } from "../../handler/handler";
-import { buildCursorMoveSequence, TerminalInputReplacer } from "../../input-replacer";
+import {
+  buildCursorMoveSequence,
+  isNativeActionAvailable,
+  TerminalInputReplacer,
+} from "../../input-replacer";
 import { isPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
 import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
@@ -162,7 +166,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
-    if (this.lineEditor?.nativeActionsViaShellIntegration?.includes(actionId)) {
+    if (this.supportsNativeShellAction(actionId)) {
       this._pty.executeLineEditorAction(actionId);
       return true;
     }
@@ -177,7 +181,11 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private supportsNativeShellAction(actionId: ShellLineEditorActionContract): boolean {
-    return this.lineEditor?.nativeActionsViaShellIntegration?.includes(actionId) ?? false;
+    return isNativeActionAvailable(
+      actionId,
+      this.lineEditor,
+      this.stateManager.sessionCapabilities,
+    );
   }
 
   clearCurrentInput() {

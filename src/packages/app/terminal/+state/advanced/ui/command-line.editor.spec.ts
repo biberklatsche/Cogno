@@ -37,6 +37,12 @@ describe("CommandLineEditor", () => {
       input: { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 },
       shellType: "Bash" as any,
       updateInput: vi.fn(),
+      // Default: the capability handshake reported every action the static
+      // definitions in these tests use, so the native paths are exercised.
+      sessionCapabilities: {
+        nativeActions: ["clearLineToEnd", "deleteSelection", "replaceCurrentInput"],
+        bracketedPaste: true,
+      },
     };
     editor = new CommandLineEditor(mockBus, mockPty, state as any);
     mockTerminal = TerminalMockFactory.createTerminal();
@@ -95,6 +101,23 @@ describe("CommandLineEditor", () => {
       text: "pnpm run build",
       cursorIndex: 4,
     });
+  });
+
+  it("should not use the native action when the session handshake did not report it", () => {
+    state.sessionCapabilities = { nativeActions: [], bracketedPaste: true };
+    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+    });
+    editor.registerTerminal(mockTerminal);
+
+    mockBus.publish({
+      type: "ReplaceTerminalInput",
+      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
+      path: ["app", "terminal"],
+    });
+
+    expect(mockPty.executeLineEditorAction).not.toHaveBeenCalled();
+    expect(mockPty.write).toHaveBeenCalled();
   });
 
   it("should forward autoExecute to the native replace action instead of writing a separate carriage return", () => {

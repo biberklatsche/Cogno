@@ -97,3 +97,15 @@ precmd_functions=(${precmd_functions:#_cogno_precmd} _cogno_precmd)
 typeset -g COGNO_PROMPT=$'\n%{\e[8m%}^^#${COGNO_COUNT}%{\e[0m%}\n'
 PROMPT="${COGNO_PROMPT}"
 RPROMPT=""
+
+# Capability handshake: report what this session's integration can actually
+# do. The app gates its native line-editor paths on this report and never
+# assumes a capability statically. Native actions are added here once the ZLE
+# replace channel ships.
+autoload -Uz is-at-least
+_cogno_bracketed_paste="false"
+if is-at-least 5.1 "${ZSH_VERSION}"; then
+  _cogno_bracketed_paste="true"
+fi
+print -n -r -- $'\e]733;COGNO:CAPS;shell=zsh;shellVersion='"${ZSH_VERSION}"$';nativeActions=;bracketedPaste='"${_cogno_bracketed_paste}"$';\e\\'
+unset _cogno_bracketed_paste

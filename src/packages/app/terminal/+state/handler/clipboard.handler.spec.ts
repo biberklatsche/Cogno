@@ -61,7 +61,10 @@ describe("ClipboardHandler", () => {
   let handler: ClipboardHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
-  let mockStateManager: Pick<TerminalStateManager, "isCommandRunning" | "input">;
+  let mockStateManager: Pick<
+    TerminalStateManager,
+    "isCommandRunning" | "input" | "sessionCapabilities"
+  >;
   let mockPty: Pick<IPty, "write" | "executeLineEditorAction">;
   let mockConfigService: ConfigService;
   let mockSelectionHandler: SelectionHandler;
@@ -73,6 +76,7 @@ describe("ClipboardHandler", () => {
     mockStateManager = {
       isCommandRunning: false,
       input: { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 },
+      sessionCapabilities: undefined,
     };
     mockPty = { write: vi.fn(), executeLineEditorAction: vi.fn() };
     mockConfigService = makeConfigService();
@@ -192,6 +196,12 @@ describe("ClipboardHandler", () => {
       const lineEditor: ShellLineEditorDefinitionContract = {
         nativeActionsViaShellIntegration: ["replaceCurrentInput"],
       };
+      // The static definition alone is not enough: the session must have
+      // reported the action in the capability handshake.
+      mockStateManager.sessionCapabilities = {
+        nativeActions: ["replaceCurrentInput"],
+        bracketedPaste: false,
+      };
       handler = new ClipboardHandler(
         mockBus,
         terminalId,
@@ -228,6 +238,41 @@ describe("ClipboardHandler", () => {
           cursorIndex: 7,
         }),
       );
+    });
+
+    it("falls back to raw writes when the session has not reported replaceCurrentInput", async () => {
+      const lineEditor: ShellLineEditorDefinitionContract = {
+        nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+      };
+      // No capability handshake for this session (sessionCapabilities stays
+      // undefined) — the static definition must not enable the native path.
+      handler = new ClipboardHandler(
+        mockBus,
+        terminalId,
+        mockStateManager as TerminalStateManager,
+        mockPty as IPty,
+        mockConfigService,
+        mockSelectionHandler,
+        lineEditor,
+      );
+      handler.registerTerminal(mockTerminal);
+
+      (mockTerminal as { cols: number }).cols = 80;
+      (mockTerminal.buffer.active as { length: number }).length = 2;
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((i) =>
+        i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
+      );
+      vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
+      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 },
+      });
+      vi.mocked(Clipboard.readText).mockResolvedValue("bye");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      await vi.waitFor(() => expect(mockPty.write).toHaveBeenCalledWith("bye world"));
+      expect(mockPty.executeLineEditorAction).not.toHaveBeenCalled();
     });
   });
 

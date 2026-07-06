@@ -70,6 +70,22 @@ $bel = [char]7
 $conceal = "${esc}[8m"
 $sgrReset = "${esc}[0m"
 
+# Capability handshake: report what this session's integration can actually
+# do. The app gates its native line-editor paths on this report and never
+# assumes a capability statically (PSReadLine present, pipe listener up,
+# platform).
+$cognoNativeActions = ""
+if ($global:COGNO_PWSH_LINE_EDITOR_READY -eq $true) {
+    $cognoNativeActions = "clearLine,clearLineToEnd,clearLineToStart,deletePreviousWord,deleteNextWord,deleteSelection,goToNextWord,goToPreviousWord"
+    if ($env:OS -eq "Windows_NT") {
+        # Submitting a replaced line injects a synthetic Enter via
+        # WriteConsoleInput (Windows-only, see line-editor.ps1). Unix pwsh
+        # stays on the raw replace path until an alternative ships.
+        $cognoNativeActions = "$cognoNativeActions,replaceCurrentInput"
+    }
+}
+Write-Host -NoNewline "${esc}]733;COGNO:CAPS;shell=pwsh;shellVersion=$($PSVersionTable.PSVersion);nativeActions=$cognoNativeActions;bracketedPaste=false;${bel}"
+
 # State
 $global:COGNO_COUNT = 0
 $global:COGNO_LAST_CMD = ""

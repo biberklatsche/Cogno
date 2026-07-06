@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { OS } from "@cogno/app-tauri/os";
-import { IPathAdapter, TerminalId } from "@cogno/core-api";
+import { IPathAdapter, ShellSessionCapabilitiesContract, TerminalId } from "@cogno/core-api";
 import { BehaviorSubject, map, Observable, Subject, takeUntil } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ShellType } from "../../../config/+models/config";
@@ -257,6 +257,18 @@ export class TerminalStateManager {
   getCommandDuration(): number | undefined {
     const startTime = this._stateSubject.value.commandStartTime;
     return startTime !== undefined ? Date.now() - startTime : undefined;
+  }
+
+  get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
+    return this._stateSubject.value.sessionCapabilities;
+  }
+
+  get sessionCapabilities$(): Observable<ShellSessionCapabilitiesContract | undefined> {
+    return this._stateSubject.pipe(map((s) => s.sessionCapabilities));
+  }
+
+  updateSessionCapabilities(sessionCapabilities: ShellSessionCapabilitiesContract): void {
+    this.updateState({ sessionCapabilities });
   }
 
   get input(): TerminalInput {

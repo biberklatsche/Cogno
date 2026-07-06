@@ -238,6 +238,41 @@ describe("CommandLineObserver", () => {
     expect(stateManager.commands[0].user).toBe("larswolfram");
   });
 
+  it("should store session capabilities from a COGNO:CAPS handshake", () => {
+    observer.registerTerminal(mockTerminal);
+
+    const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
+    const result = oscHandler(
+      "COGNO:CAPS;shell=zsh;shellVersion=5.9;nativeActions=replaceCurrentInput;bracketedPaste=true;",
+    );
+
+    expect(result).toBe(true);
+    expect(stateManager.sessionCapabilities).toEqual({
+      shellVersion: "5.9",
+      nativeActions: ["replaceCurrentInput"],
+      bracketedPaste: true,
+      degradedReason: undefined,
+    });
+  });
+
+  it("should not run the prompt logic for a COGNO:CAPS handshake", () => {
+    observer.registerTerminal(mockTerminal);
+    stateManager.startCommand();
+    const publishSpy = vi.spyOn(mockBus, "publish");
+    publishSpy.mockClear();
+
+    const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
+    oscHandler("COGNO:CAPS;shell=bash;shellVersion=3.2;degraded=bash-version;");
+
+    // The handshake must neither end the running command nor request a
+    // cursor restore — that is prompt-cycle behavior.
+    expect(stateManager.isCommandRunning).toBe(true);
+    expect(publishSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "TerminalCursorRestoreRequested" }),
+    );
+    expect(stateManager.sessionCapabilities?.degradedReason).toBe("bash-version");
+  });
+
   it("should publish cursor restore request when OSC 733 is received", () => {
     observer.registerTerminal(mockTerminal);
     const publishSpy = vi.spyOn(mockBus, "publish");

@@ -1,4 +1,8 @@
-import { ShellLineEditorDefinitionContract } from "@cogno/core-api";
+import {
+  ShellLineEditorActionContract,
+  ShellLineEditorDefinitionContract,
+  ShellSessionCapabilitiesContract,
+} from "@cogno/core-api";
 import { IPty } from "./pty/pty";
 import { TerminalStateManager } from "./state";
 
@@ -7,6 +11,22 @@ export function buildCursorMoveSequence(offset: number): string {
   if (offset === 0) return "";
   const direction = offset > 0 ? "\x1b[C" : "\x1b[D";
   return direction.repeat(Math.abs(offset));
+}
+
+/**
+ * A native line-editor action is only available when the static shell
+ * definition supports it AND the running session reported it in the
+ * capability handshake. Whether the integration actually works (shell
+ * version, PSReadLine present, platform) is per-session knowledge; before the
+ * handshake arrives every consumer must use the raw fallback.
+ */
+export function isNativeActionAvailable(
+  action: ShellLineEditorActionContract,
+  lineEditor: ShellLineEditorDefinitionContract | undefined,
+  sessionCapabilities: ShellSessionCapabilitiesContract | undefined,
+): boolean {
+  if (!lineEditor?.nativeActionsViaShellIntegration?.includes(action)) return false;
+  return sessionCapabilities?.nativeActions.includes(action) ?? false;
 }
 
 /**
@@ -32,7 +52,13 @@ export class TerminalInputReplacer {
     const sanitizer = this.lineEditor?.insertSanitizer;
     const prepared = sanitizer ? sanitizer.prepareInsert(text, cursorIndex) : { text, cursorIndex };
 
-    if (this.lineEditor?.nativeActionsViaShellIntegration?.includes("replaceCurrentInput")) {
+    if (
+      isNativeActionAvailable(
+        "replaceCurrentInput",
+        this.lineEditor,
+        this.stateManager.sessionCapabilities,
+      )
+    ) {
       // The native path submits by injecting a synthetic Enter keystroke
       // itself (see line-editor.ps1.txt) so the shell integration process
       // applies replace-then-submit atomically and in order. Writing "\r"

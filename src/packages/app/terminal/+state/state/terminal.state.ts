@@ -1,4 +1,5 @@
 import { OS } from "@cogno/app-tauri/os";
+import { ShellSessionCapabilitiesContract } from "@cogno/core-api";
 import { ShellContext } from "../advanced/model/models";
 
 export type Position = { col: number; row: number };
@@ -51,6 +52,11 @@ export type TerminalState = {
   input: TerminalInput;
   cwd: string;
   scrolledLinesFromBottom: number;
+  /**
+   * Capabilities reported by the session's shell integration via the
+   * COGNO:CAPS handshake; undefined until (and unless) the handshake arrives.
+   */
+  sessionCapabilities: ShellSessionCapabilitiesContract | undefined;
 };
 
 export const INITIAL_STATE: TerminalState = {
@@ -90,4 +96,5 @@ export const INITIAL_STATE: TerminalState = {
   commandStartTime: undefined,
   input: { cursorIndex: 0, maxCursorIndex: 0, text: "" },
   scrolledLinesFromBottom: 0,
+  sessionCapabilities: undefined,
 };

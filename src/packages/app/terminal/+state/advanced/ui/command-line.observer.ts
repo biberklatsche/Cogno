@@ -9,6 +9,7 @@ import { ITerminalHandler } from "../../handler/handler";
 import { TerminalStateManager } from "../../state";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
 import OscParser from "../osc/cogno-osc.parser";
+import { toSessionCapabilities } from "../osc/session-capabilities.parser";
 import { MarkerManager } from "./marker-manager";
 
 type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
@@ -112,6 +113,16 @@ export class CommandLineObserver implements ITerminalHandler {
     );
     this._disposables.push(
       terminal.parser.registerOscHandler(733, (data: string) => {
+        // The capability handshake arrives once while the integration script
+        // loads, before the first prompt — it must not run the prompt logic
+        // (endCommand, cursor restore, command update).
+        if (data.startsWith("COGNO:CAPS;")) {
+          const caps = OscParser.parse(data.slice("COGNO:CAPS;".length));
+          if (caps) {
+            this.stateManager.updateSessionCapabilities(toSessionCapabilities(caps));
+          }
+          return true;
+        }
         this.stateManager.endCommand();
         this.appBus.publish({
           path: ["app", "terminal", this.stateManager.terminalId],
