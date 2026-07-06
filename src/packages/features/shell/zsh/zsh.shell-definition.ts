@@ -8,5 +8,8 @@ export const zshShellDefinition: ShellDefinitionContract = {
   pathAdapter: zshShellPathAdapterDefinition,
   lineEditor: {
     insertSanitizer: posixInsertSanitizer,
+    // Available only when the session's capability handshake also reports it
+    // (the FIFO channel in integration.zsh came up).
+    nativeActionsViaShellIntegration: ["replaceCurrentInput"],
   },
 };

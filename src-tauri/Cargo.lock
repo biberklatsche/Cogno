@@ -841,6 +841,7 @@ dependencies = [
  "font-kit",
  "futures-util",
  "hex",
+ "libc",
  "log",
  "portable-pty",
  "rand 0.8.5",

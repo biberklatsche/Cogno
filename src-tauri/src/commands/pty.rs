@@ -26,6 +26,19 @@ struct Session {
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
+    line_editor_fifo_path: Option<std::path::PathBuf>,
+}
+
+/// Removes a session's line-editor FIFO (and its per-session directory, if
+/// now empty). Called from every place a session is dropped; idempotent, so
+/// racing removal paths are harmless.
+fn remove_line_editor_fifo(fifo_path: &Option<std::path::PathBuf>) {
+    if let Some(path) = fifo_path {
+        let _ = std::fs::remove_file(path);
+        if let Some(dir) = path.parent() {
+            let _ = std::fs::remove_dir(dir);
+        }
+    }
 }
 
 pub struct PtyState {
@@ -67,6 +80,7 @@ pub async fn pty_spawn(
     let spawner = ShellSpawner::new(dev_mode)?;
     let (program, args, env, working_dir) = spawner.prepare_spawn(&options.profile)?;
     let line_editor_pipe_name = env.get("COGNO_LINE_EDITOR_PIPE_NAME").cloned();
+    let line_editor_fifo_path = create_line_editor_fifo(&options.profile.shell_type, &env);
 
     let pty_system = native_pty_system();
 
@@ -85,6 +99,10 @@ pub async fn pty_spawn(
     // Set environment variables
     for (key, value) in env {
         cmd.env(key, value);
+    }
+
+    if let Some(fifo_path) = &line_editor_fifo_path {
+        cmd.env("COGNO_LINE_EDITOR_PIPE", fifo_path.as_os_str());
     }
 
     // Inject HTTP server port and terminal ID so hooks can reach cogno
@@ -135,6 +153,7 @@ pub async fn pty_spawn(
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
         line_editor_pipe_name,
+        line_editor_fifo_path,
     };
 
     {
@@ -162,7 +181,9 @@ pub async fn pty_spawn(
         );
 
         let mut sessions = sessions_for_child.lock().unwrap();
-        sessions.remove(&terminal_id_for_child);
+        if let Some(session) = sessions.remove(&terminal_id_for_child) {
+            remove_line_editor_fifo(&session.line_editor_fifo_path);
+        }
         drop(sessions);
 
         if exit_notified_for_child
@@ -254,7 +275,9 @@ pub async fn pty_spawn(
                 .is_ok()
         {
             let mut sessions = sessions_for_reader.lock().unwrap();
-            sessions.remove(&terminal_id_clone);
+            if let Some(session) = sessions.remove(&terminal_id_clone) {
+                remove_line_editor_fifo(&session.line_editor_fifo_path);
+            }
             drop(sessions);
 
             let _ = app_clone.emit(
@@ -299,6 +322,7 @@ pub fn pty_write(
                 let mut sessions = state.sessions.lock().unwrap();
                 if let Some(session) = sessions.remove(&terminal_id) {
                     session.should_exit.store(true, Ordering::Relaxed);
+                    remove_line_editor_fifo(&session.line_editor_fifo_path);
                     let emit = session
                         .exit_notified
                         .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
@@ -327,27 +351,50 @@ pub fn pty_execute_line_editor_action(
     action: String,
     payload_json: Option<String>,
 ) -> Result<(), String> {
-    let sessions = state.sessions.lock().unwrap();
+    let mut sessions = state.sessions.lock().unwrap();
 
-    let Some(session) = sessions.get(&terminal_id) else {
+    let Some(session) = sessions.get_mut(&terminal_id) else {
         return Err(format!("Session not found: {}", terminal_id));
     };
 
-    if session.shell_type != "PowerShell" {
+    if session.shell_type == "PowerShell" {
+        let Some(pipe_name) = session.line_editor_pipe_name.as_deref() else {
+            return Err(format!(
+                "Shell session {} does not expose a line editor pipe",
+                terminal_id
+            ));
+        };
+        return write_shell_action_to_pipe(pipe_name, &action, payload_json.as_deref());
+    }
+
+    let Some(fifo_path) = session.line_editor_fifo_path.clone() else {
         return Err(format!(
             "Shell actions are not supported for shell type: {}",
             session.shell_type
         ));
-    }
-
-    let Some(pipe_name) = session.line_editor_pipe_name.as_deref() else {
-        return Err(format!(
-            "Shell session {} does not expose a line editor pipe",
-            terminal_id
-        ));
     };
 
-    write_shell_action_to_pipe(pipe_name, &action, payload_json.as_deref())
+    write_shell_action_to_fifo(&fifo_path, &action, payload_json.as_deref())?;
+
+    // The shell-side fd handler cannot submit (accept-line is a no-op inside
+    // a `zle -F` widget), so autoExecute is implemented here: a CR through
+    // the PTY, written after the FIFO message. ZLE services fd handlers
+    // before pending keyboard bytes, so the CR always accepts the freshly
+    // replaced buffer, never the old one.
+    let auto_execute = payload_json
+        .as_deref()
+        .and_then(|payload| serde_json::from_str::<serde_json::Value>(payload).ok())
+        .and_then(|payload| payload.get("autoExecute").and_then(|value| value.as_bool()))
+        .unwrap_or(false);
+    if auto_execute {
+        session
+            .writer
+            .write_all(b"\r")
+            .and_then(|_| session.writer.flush())
+            .map_err(|e| format!("Failed to submit replaced input: {}", e))?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -385,6 +432,7 @@ pub fn pty_kill(
 
     if let Some(session) = sessions.remove(&terminal_id) {
         session.should_exit.store(true, Ordering::Relaxed);
+        remove_line_editor_fifo(&session.line_editor_fifo_path);
         drop(session.master);
         drop(session.writer);
         Ok(())
@@ -430,4 +478,133 @@ fn write_shell_action_to_pipe(
     _payload_json: Option<&str>,
 ) -> Result<(), String> {
     Err("Shell actions via pipe are currently only supported on Windows".to_string())
+}
+
+/// Creates the per-session FIFO backing the native line-editor channel of
+/// POSIX shells (currently zsh, read via `zle -F`). Returns None when the
+/// shell has no such channel or creation fails - the integration script then
+/// finds no COGNO_LINE_EDITOR_PIPE, reports no native actions in the
+/// capability handshake, and the app stays on the raw fallback.
+#[cfg(unix)]
+fn create_line_editor_fifo(
+    shell_type: &str,
+    env: &HashMap<String, String>,
+) -> Option<std::path::PathBuf> {
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::PermissionsExt;
+
+    if shell_type != "ZSH" {
+        return None;
+    }
+    // Without integration no script would ever read the FIFO.
+    if !env.contains_key("COGNO_INTEGRATION_ROOT") {
+        return None;
+    }
+    let session_id = env.get("COGNO_SESSION_ID")?;
+
+    // Command lines can contain secrets: private directory, user-only FIFO.
+    let dir = std::env::temp_dir().join(format!("cogno-{}", session_id));
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        log::warn!(target: "pty", "failed to create line editor fifo dir: {}", e);
+        return None;
+    }
+    if let Err(e) = std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)) {
+        log::warn!(target: "pty", "failed to restrict line editor fifo dir: {}", e);
+        return None;
+    }
+
+    let fifo_path = dir.join("line-editor");
+    let c_path = std::ffi::CString::new(fifo_path.as_os_str().as_bytes()).ok()?;
+    if unsafe { libc::mkfifo(c_path.as_ptr(), 0o600) } != 0 {
+        log::warn!(
+            target: "pty",
+            "failed to create line editor fifo: {}",
+            std::io::Error::last_os_error()
+        );
+        let _ = std::fs::remove_dir(&dir);
+        return None;
+    }
+    Some(fifo_path)
+}
+
+#[cfg(not(unix))]
+fn create_line_editor_fifo(
+    _shell_type: &str,
+    _env: &HashMap<String, String>,
+) -> Option<std::path::PathBuf> {
+    None
+}
+
+/// Writes a line-editor action into the session's FIFO in the line format the
+/// zsh handler consumes with `IFS=';' read -r action cursor autoexec text`:
+/// the text is the last field, so it may contain unescaped semicolons; only
+/// backslash, CR and LF are escaped and decoded shell-side via ${(g::)...}.
+#[cfg(unix)]
+fn write_shell_action_to_fifo(
+    fifo_path: &std::path::Path,
+    action: &str,
+    payload_json: Option<&str>,
+) -> Result<(), String> {
+    use std::os::unix::fs::OpenOptionsExt;
+
+    let payload = payload_json
+        .and_then(|payload| serde_json::from_str::<serde_json::Value>(payload).ok())
+        .unwrap_or(serde_json::Value::Null);
+    let text = payload
+        .get("text")
+        .and_then(|value| value.as_str())
+        .unwrap_or("");
+    let cursor_index = payload
+        .get("cursorIndex")
+        .and_then(|value| value.as_i64())
+        .unwrap_or(-1);
+    let auto_execute = payload
+        .get("autoExecute")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+
+    let escaped_text = text
+        .replace('\\', "\\\\")
+        .replace('\r', "\\r")
+        .replace('\n', "\\n");
+    let message = format!(
+        "{};{};{};{}\n",
+        action,
+        cursor_index,
+        if auto_execute { "1" } else { "0" },
+        escaped_text
+    );
+
+    // O_NONBLOCK makes the open fail with ENXIO instead of blocking forever
+    // when the shell never opened its read end (integration failed to load).
+    // The shell keeps the FIFO open read-write for the whole session, so a
+    // healthy session always has a reader.
+    let mut fifo = std::fs::OpenOptions::new()
+        .write(true)
+        .custom_flags(libc::O_NONBLOCK)
+        .open(fifo_path)
+        .map_err(|e| {
+            format!(
+                "Failed to open line editor fifo {}: {}",
+                fifo_path.display(),
+                e
+            )
+        })?;
+
+    fifo.write_all(message.as_bytes()).map_err(|e| {
+        format!(
+            "Failed to write shell action to {}: {}",
+            fifo_path.display(),
+            e
+        )
+    })
+}
+
+#[cfg(not(unix))]
+fn write_shell_action_to_fifo(
+    _fifo_path: &std::path::Path,
+    _action: &str,
+    _payload_json: Option<&str>,
+) -> Result<(), String> {
+    Err("Shell actions via fifo are only supported on Unix".to_string())
 }
