@@ -93,9 +93,35 @@ export class ClipboardHandler implements ITerminalHandler {
       return;
     }
 
-    if (this.stateManager.isCommandRunning || !this.replaceSelectedInput(clipboardText)) {
+    if (this.stateManager.isCommandRunning) {
       this._terminal.paste(clipboardText);
+      return;
     }
+    if (this.replaceSelectedInput(clipboardText)) return;
+    if (this.openComposerForMultilinePaste(clipboardText)) return;
+    this._terminal.paste(clipboardText);
+  }
+
+  /**
+   * Pasting multiline text at the prompt opens the composer seeded with the
+   * current input plus the pasted text at the cursor: the user reviews and
+   * edits it there instead of the shell receiving half-executed lines.
+   */
+  private openComposerForMultilinePaste(clipboardText: string): boolean {
+    if (!/\r?\n/.test(clipboardText)) return false;
+    const input = this.stateManager.input;
+    const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
+    const pasted = clipboardText.replace(/\r\n/g, "\n");
+    this.bus.publish({
+      path: ["app", "terminal"],
+      type: "OpenComposer",
+      payload: {
+        terminalId: this.terminalId,
+        seedText: input.text.slice(0, cursor) + pasted + input.text.slice(cursor),
+        cursorIndex: cursor + pasted.length,
+      },
+    });
+    return true;
   }
 
   private async handleOsc52(data: string): Promise<void> {

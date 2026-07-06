@@ -54,6 +54,56 @@ describe("CommandLineEditor", () => {
     editor.registerTerminal(mockTerminal);
   });
 
+  describe("composer trigger", () => {
+    it("opens the composer on Shift+Enter at the prompt, seeded with the input plus a newline", () => {
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+
+      const event = {
+        type: "keydown",
+        key: "Enter",
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+      const result = customKeyHandler(event);
+
+      expect(result).toBe(false);
+      // Input "hello world example" with cursor 6: the newline lands at the cursor.
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "OpenComposer",
+          payload: {
+            terminalId,
+            seedText: "hello \nworld example",
+            cursorIndex: 7,
+          },
+        }),
+      );
+      expect(mockPty.write).not.toHaveBeenCalled();
+    });
+
+    it("writes a raw newline on Shift+Enter while a command is running", () => {
+      state.isCommandRunning = true;
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+
+      const event = {
+        type: "keydown",
+        key: "Enter",
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+      customKeyHandler(event);
+
+      expect(mockPty.write).toHaveBeenCalledWith("\n");
+      expect(publishSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "OpenComposer" }),
+      );
+    });
+  });
+
   it("should clear current input completely", () => {
     editor.clearCurrentInput();
     // hello world example (len 19), cursor at 6.

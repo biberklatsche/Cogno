@@ -52,7 +52,25 @@ export class CommandLineEditor implements ITerminalHandler {
     terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
       if (event.type !== "keydown") return true;
       if (event.key === "Enter" && event.shiftKey) {
-        this._ptyWrite(String.fromCharCode(10));
+        if (this.stateManager.isCommandRunning) {
+          // A program is reading stdin (REPL, heredoc prompt): a raw newline
+          // is the only sensible meaning here.
+          this._ptyWrite(String.fromCharCode(10));
+        } else {
+          // At the prompt, multiline input is edited in the composer overlay
+          // instead of fighting the shell's single-line editing model.
+          const input = this.stateManager.input;
+          const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
+          this._bus.publish({
+            path: ["app", "terminal"],
+            type: "OpenComposer",
+            payload: {
+              terminalId: this.stateManager.terminalId,
+              seedText: input.text.slice(0, cursor) + "\n" + input.text.slice(cursor),
+              cursorIndex: cursor + 1,
+            },
+          });
+        }
         event.preventDefault();
         event.stopPropagation();
         return false;

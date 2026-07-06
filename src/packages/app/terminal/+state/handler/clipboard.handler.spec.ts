@@ -130,6 +130,39 @@ describe("ClipboardHandler", () => {
       expect(pasteSpy).not.toHaveBeenCalled();
     });
 
+    it("opens the composer instead of pasting when multiline text is pasted at the prompt", async () => {
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const pasteSpy = vi.spyOn(mockTerminal, "paste");
+      vi.mocked(Clipboard.readText).mockResolvedValue("echo one\necho two");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      // Input "hello world" with cursor 5: the pasted block lands at the cursor.
+      await vi.waitFor(() =>
+        expect(publishSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: "OpenComposer",
+            payload: {
+              terminalId,
+              seedText: "helloecho one\necho two world",
+              cursorIndex: 5 + "echo one\necho two".length,
+            },
+          }),
+        ),
+      );
+      expect(pasteSpy).not.toHaveBeenCalled();
+    });
+
+    it("pastes multiline text directly while a command is running", async () => {
+      (mockStateManager as { isCommandRunning: boolean }).isCommandRunning = true;
+      const pasteSpy = vi.spyOn(mockTerminal, "paste");
+      vi.mocked(Clipboard.readText).mockResolvedValue("echo one\necho two");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      await vi.waitFor(() => expect(pasteSpy).toHaveBeenCalledWith("echo one\necho two"));
+    });
+
     it("replaces selected input range when pasting over selection", async () => {
       (mockTerminal as { cols: number }).cols = 80;
       (mockTerminal.buffer.active as { length: number }).length = 2;

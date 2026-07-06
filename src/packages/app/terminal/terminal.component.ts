@@ -17,6 +17,8 @@ import { map } from "rxjs";
 import { ShellProfile } from "../config/+models/shell-config";
 import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
+import { TerminalComposerComponent } from "./+state/advanced/composer/terminal-composer.component";
+import { TerminalComposerService } from "./+state/advanced/composer/terminal-composer.service";
 import { TerminalCommandHistoryStore } from "./+state/advanced/history/terminal-command-history.store";
 import { TerminalHistoryComponent } from "./+state/advanced/history/terminal-history.component";
 import { TerminalHistoryService } from "./+state/advanced/history/terminal-history.service";
@@ -35,6 +37,7 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
   imports: [
     TerminalHeaderComponent,
     TerminalAutocompleteComponent,
+    TerminalComposerComponent,
     TerminalHistoryComponent,
     IconComponent,
   ],
@@ -42,6 +45,7 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
     TerminalCommandHistoryStore,
     TerminalHistoryPersistenceService,
     TerminalAutocompleteService,
+    TerminalComposerService,
     TerminalHistoryService,
     TerminalFileDropService,
     TerminalSession,
@@ -66,6 +70,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     private terminalSession: TerminalSession,
     private terminalStateManager: TerminalStateManager,
     private terminalAutocomplete: TerminalAutocompleteService,
+    private terminalComposer: TerminalComposerService,
     private terminalHistory: TerminalHistoryService,
     private terminalFileDropService: TerminalFileDropService,
   ) {
@@ -91,6 +96,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
+    this.terminalComposer.setHostElement(this.terminalContainer.nativeElement);
     this.terminalHistory.setHostElement(this.terminalContainer.nativeElement);
     this.terminalSession.initializeTerminal(this.terminalContainer.nativeElement);
     this.terminalFileDropService.initialize(this.terminalContainer.nativeElement);
