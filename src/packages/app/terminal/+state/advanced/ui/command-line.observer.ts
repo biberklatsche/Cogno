@@ -11,6 +11,7 @@ import { ExecutedCommand } from "../history/terminal-command-history.store";
 import OscParser from "../osc/cogno-osc.parser";
 import { toSessionCapabilities } from "../osc/session-capabilities.parser";
 import { MarkerManager } from "./marker-manager";
+import { PromptMarkerRegistry } from "./prompt-marker.registry";
 
 type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
@@ -26,12 +27,14 @@ export class CommandLineObserver implements ITerminalHandler {
     contextMenuOverlayService: CommandLineObserverContextMenuOverlayPort,
     private readonly appBus: AppBus,
     private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
+    private readonly _markerRegistry: PromptMarkerRegistry = new PromptMarkerRegistry(),
   ) {
     this._markerManager = new MarkerManager(
       stateManager,
       promptSegments,
       contextMenuOverlayService,
       appBus,
+      this._markerRegistry,
     );
 
     // Debounce marker refresh to improve performance with long outputs
@@ -43,6 +46,7 @@ export class CommandLineObserver implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    this._markerRegistry.setTerminal(terminal);
     this._markerManager.setTerminal(terminal);
 
     this._disposables.push(
@@ -59,6 +63,7 @@ export class CommandLineObserver implements ITerminalHandler {
           const promptHeight = cursorYAbsolute - startInputY;
           const cursorIndex = cursorX + terminal.cols * promptHeight;
           const input = this.stateManager.input;
+          if (cursorIndex === input.cursorIndex) return;
           const maxCursorIndex =
             cursorIndex > input.maxCursorIndex ? cursorIndex : input.maxCursorIndex;
           this.stateManager.updateInput({
@@ -92,15 +97,19 @@ export class CommandLineObserver implements ITerminalHandler {
 
     this._disposables.push(
       this._terminal.onResize(() => {
+        // Reflow may have shifted marker lines — re-anchor before re-rendering.
+        this._markerRegistry.resync();
         this._markerManager.disposeMarkers();
         this._markerManager.refreshMarkers();
       }),
     );
     this._disposables.push(
       this._terminal.onWriteParsed(() => {
+        this._markerRegistry.onWriteParsed();
         if (this.stateManager.isCommandRunning) return;
         const text = this.readCurrentText();
         const input = this.stateManager.input;
+        if (text === input.text) return;
         this.stateManager.updateInput({ ...input, text: text });
       }),
     );
@@ -124,6 +133,9 @@ export class CommandLineObserver implements ITerminalHandler {
           return true;
         }
         this.stateManager.endCommand();
+        // PS1 prints the `^^#<id>` marker line right after this sequence —
+        // arm the registry so the next parsed writes anchor it.
+        this._markerRegistry.expectMarker();
         this.appBus.publish({
           path: ["app", "terminal", this.stateManager.terminalId],
           type: "TerminalCursorRestoreRequested",
@@ -152,20 +164,12 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables = [];
     this._refreshMarkerSubject.complete();
     this._markerManager.dispose();
+    this._markerRegistry.dispose();
     this._terminal = undefined;
   }
 
   private findLastCognoMarkerY(): number {
-    let lastPromptRow = -1;
-    if (!this._terminal?.buffer?.active) return lastPromptRow;
-    for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
-      const line = this._terminal.buffer.active.getLine(i);
-      if (line?.translateToString().startsWith("^^#")) {
-        lastPromptRow = i;
-        break;
-      }
-    }
-    return lastPromptRow;
+    return this._markerRegistry.lastMarkerLine();
   }
 
   private readCurrentText(): string {

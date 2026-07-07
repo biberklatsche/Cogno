@@ -184,6 +184,7 @@ export class TerminalStateManager {
   }
 
   setScrolledLinesFromBottom(scrolledLinesFromBottom: number): void {
+    if (this._stateSubject.value.scrolledLinesFromBottom === scrolledLinesFromBottom) return;
     this.updateState({ scrolledLinesFromBottom });
   }
 
@@ -199,10 +200,14 @@ export class TerminalStateManager {
     if (!this.isTerminalNotificationBadgeEnabled()) {
       return;
     }
+    if (this._stateSubject.value.hasUnreadNotification) return;
     this.updateState({ hasUnreadNotification: true });
   }
 
   clearUnreadNotification(): void {
+    // Called on every keystroke via terminal.onData — skip the state emission
+    // when nothing changes, otherwise every subscriber runs per keypress.
+    if (!this._stateSubject.value.hasUnreadNotification) return;
     this.updateState({ hasUnreadNotification: false });
   }
 

@@ -12,9 +12,10 @@ import {
   isNativeActionAvailable,
   TerminalInputReplacer,
 } from "../../input-replacer";
-import { isPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
+import { findLastPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
 import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
+import { PromptMarkerRegistry } from "./prompt-marker.registry";
 
 export class CommandLineEditor implements ITerminalHandler {
   private _terminal?: Terminal;
@@ -30,6 +31,7 @@ export class CommandLineEditor implements ITerminalHandler {
     private _pty: IPty,
     private stateManager: TerminalStateManager,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
+    private readonly markerRegistry?: PromptMarkerRegistry,
   ) {
     this._inputReplacer = new TerminalInputReplacer(_pty, stateManager, lineEditor);
   }
@@ -66,7 +68,7 @@ export class CommandLineEditor implements ITerminalHandler {
             type: "OpenComposer",
             payload: {
               terminalId: this.stateManager.terminalId,
-              seedText: input.text.slice(0, cursor) + "\n" + input.text.slice(cursor),
+              seedText: `${input.text.slice(0, cursor)}\n${input.text.slice(cursor)}`,
               cursorIndex: cursor + 1,
             },
           });
@@ -593,17 +595,15 @@ export class CommandLineEditor implements ITerminalHandler {
     this._terminal.select(startCol, startRow, length);
   }
 
+  private static readonly FALLBACK_MARKER_SCAN_LINES = 500;
+
   private findLastCognoMarkerY(): number {
-    let lastPromptRow = -1;
-    if (!this._terminal?.buffer?.active) return lastPromptRow;
-    for (let i = this._terminal.buffer.active.length - 1; i >= 0; i--) {
-      const line = this._terminal.buffer.active.getLine(i);
-      if (line && isPromptMarkerLine(line.translateToString())) {
-        lastPromptRow = i;
-        break;
-      }
-    }
-    return lastPromptRow;
+    if (this.markerRegistry) return this.markerRegistry.lastMarkerLine();
+    if (!this._terminal?.buffer?.active) return -1;
+    return findLastPromptMarkerLine(
+      this._terminal.buffer.active,
+      CommandLineEditor.FALLBACK_MARKER_SCAN_LINES,
+    );
   }
 
   private findPreviousWordStart(text: string, currentPos: number): number {

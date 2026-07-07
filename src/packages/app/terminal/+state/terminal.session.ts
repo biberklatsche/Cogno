@@ -43,6 +43,7 @@ import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { PromptMarkerRegistry } from "./advanced/ui/prompt-marker.registry";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import {
   CompletedCommandNotificationHandler,
@@ -242,6 +243,9 @@ export class TerminalSession {
       this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(
         this.shellProfile.shell_type,
       );
+      // Shared prompt-marker positions: the observer anchors/maintains them,
+      // the editor reads them for selection math.
+      const promptMarkerRegistry = new PromptMarkerRegistry();
       this.disposables.push(
         this.renderer.register(
           new CommandLineObserver(
@@ -250,12 +254,19 @@ export class TerminalSession {
             this.contextMenuOverlayService,
             this.bus,
             this.completedCommandNotificationHandler.handleCompletedCommand,
+            promptMarkerRegistry,
           ),
         ),
       );
       this.disposables.push(
         this.renderer.register(
-          new CommandLineEditor(this.bus, this.pty, this.stateManager, shellDefinition?.lineEditor),
+          new CommandLineEditor(
+            this.bus,
+            this.pty,
+            this.stateManager,
+            shellDefinition?.lineEditor,
+            promptMarkerRegistry,
+          ),
         ),
       );
     }

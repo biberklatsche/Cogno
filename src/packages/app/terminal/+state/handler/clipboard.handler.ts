@@ -185,7 +185,9 @@ export class ClipboardHandler implements ITerminalHandler {
     if (!selection) return undefined;
 
     const input = this.stateManager.input;
-    const startInputY = findLastPromptMarkerLine(this._terminal.buffer.active) + 1;
+    // The current prompt's marker sits near the buffer end — cap the scan so a
+    // paste never walks the whole scrollback.
+    const startInputY = findLastPromptMarkerLine(this._terminal.buffer.active, 500) + 1;
     const startIndex = (selection.start.y - startInputY) * this._terminal.cols + selection.start.x;
     const endIndex = (selection.end.y - startInputY) * this._terminal.cols + selection.end.x;
 

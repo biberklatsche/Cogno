@@ -24,6 +24,8 @@ pub struct SpawnOptions {
 /// that fires a `bind -x` handler reading that file.
 #[derive(Clone)]
 enum LineEditorChannel {
+    // Only constructed on unix (see create_line_editor_channel).
+    #[cfg_attr(not(unix), allow(dead_code))]
     Fifo(std::path::PathBuf),
     TriggerFile(std::path::PathBuf),
 }

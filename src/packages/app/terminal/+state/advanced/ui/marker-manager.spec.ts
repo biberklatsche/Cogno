@@ -1,9 +1,18 @@
 import type { ContextMenuOverlayService } from "@cogno/core-ui";
+import type { IMarker } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalStateManager } from "../../state";
 import { MarkerManager } from "./marker-manager";
+import { PromptMarker, PromptMarkerRegistry } from "./prompt-marker.registry";
+
+function createRegistryMarker(commandId: string, line: number): PromptMarker {
+  return {
+    commandId,
+    marker: { line, isDisposed: false, dispose: vi.fn(), onDispose: vi.fn() } as unknown as IMarker,
+  };
+}
 
 describe("MarkerManager", () => {
   let markerManager: MarkerManager;
@@ -11,6 +20,7 @@ describe("MarkerManager", () => {
   let mockTerminal: any;
   let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
   let mockBus: AppBus;
+  let registryMarkers: PromptMarker[];
 
   beforeEach(() => {
     mockBus = new AppBus();
@@ -20,151 +30,146 @@ describe("MarkerManager", () => {
     contextMenuOverlayService = {
       openAtElement: vi.fn(),
     };
-    markerManager = new MarkerManager(stateManager, [], contextMenuOverlayService, mockBus);
+    registryMarkers = [];
+    const registry = { markers: registryMarkers } as unknown as PromptMarkerRegistry;
+    markerManager = new MarkerManager(
+      stateManager,
+      [],
+      contextMenuOverlayService,
+      mockBus,
+      registry,
+    );
     mockTerminal = TerminalMockFactory.createTerminal();
-    mockTerminal.registerMarker = vi.fn().mockReturnValue({ dispose: vi.fn(), line: 0 });
     mockTerminal.registerDecoration = vi.fn().mockReturnValue({
+      isDisposed: false,
       dispose: vi.fn(),
       onRender: vi.fn(),
       onDispose: vi.fn(),
     });
+    mockTerminal.buffer.active.length = 100;
+    mockTerminal.rows = 10;
+    mockTerminal.buffer.active.viewportY = 0;
+    vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(
+      TerminalMockFactory.createLine("^^#1"),
+    );
     markerManager.setTerminal(mockTerminal);
   });
 
-  it("should create markers for lines starting with ^^#", () => {
-    const line1 = TerminalMockFactory.createLine("^^#1 text");
-    const line2 = TerminalMockFactory.createLine("other text");
-
-    vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
-      if (index === 0) return line1;
-      if (index === 1) return line2;
-      return null;
-    });
-    mockTerminal.buffer.active.length = 2;
-    mockTerminal.rows = 10;
-    mockTerminal.buffer.active.viewportY = 0;
-    mockTerminal.buffer.active.baseY = 0;
-    mockTerminal.buffer.active.cursorY = 0;
+  it("should create decorations for registry markers inside the viewport window", () => {
+    registryMarkers.push(createRegistryMarker("1", 0));
 
     markerManager.refreshMarkers();
 
-    expect(mockTerminal.registerMarker).toHaveBeenCalledWith(0);
-    expect(mockTerminal.registerDecoration).toHaveBeenCalled();
+    expect(mockTerminal.registerDecoration).toHaveBeenCalledWith(
+      expect.objectContaining({ marker: registryMarkers[0].marker }),
+    );
   });
 
-  it("should not recreate existing markers", () => {
-    const line = TerminalMockFactory.createLine("^^#1");
-    vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(line);
-    mockTerminal.buffer.active.length = 1;
-    mockTerminal.rows = 10;
-    mockTerminal.buffer.active.viewportY = 0;
-    mockTerminal.buffer.active.baseY = 0;
-    mockTerminal.buffer.active.cursorY = 0;
+  it("should not recreate existing decorations", () => {
+    registryMarkers.push(createRegistryMarker("1", 0));
 
     markerManager.refreshMarkers();
     markerManager.refreshMarkers();
 
-    expect(mockTerminal.registerMarker).toHaveBeenCalledTimes(1);
+    expect(mockTerminal.registerDecoration).toHaveBeenCalledTimes(1);
   });
 
-  it("should create multiple markers for multiple ^^# lines", () => {
-    const line1 = TerminalMockFactory.createLine("^^#1 text");
-    const line2 = TerminalMockFactory.createLine("^^#2 text");
-
-    vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
-      if (index === 5) return line1;
-      if (index === 7) return line2;
-      return null;
-    });
-    mockTerminal.buffer.active.length = 10;
-    mockTerminal.rows = 10;
-    mockTerminal.buffer.active.viewportY = 0;
-    mockTerminal.buffer.active.baseY = 0;
-    mockTerminal.buffer.active.cursorY = 10;
+  it("should create decorations for multiple registry markers", () => {
+    registryMarkers.push(createRegistryMarker("1", 5), createRegistryMarker("2", 7));
 
     markerManager.refreshMarkers();
 
-    expect(mockTerminal.registerMarker).toHaveBeenCalledWith(5 - 10); // lineIndex - cursorYAbsolute
-    expect(mockTerminal.registerMarker).toHaveBeenCalledWith(7 - 10);
     expect(mockTerminal.registerDecoration).toHaveBeenCalledTimes(2);
   });
 
-  it("should use correct marker index when baseY is not 0", () => {
-    const line1 = TerminalMockFactory.createLine("^^#1 text");
-
-    vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
-      if (index === 105) return line1;
-      return null;
-    });
-    mockTerminal.buffer.active.length = 200;
-    mockTerminal.rows = 10;
-    mockTerminal.buffer.active.viewportY = 100;
-    mockTerminal.buffer.active.baseY = 50;
-    mockTerminal.buffer.active.cursorY = 20; // Absolute cursor Y = 50 + 20 = 70
+  it("should not create decorations for markers far outside the viewport", () => {
+    registryMarkers.push(createRegistryMarker("1", 90));
 
     markerManager.refreshMarkers();
 
-    // registerMarker nimmt den Offset relativ zum Cursor.
-    // lineIndex = 105, cursorYAbsolute = 70 => offset = 105 - 70 = 35
-    expect(mockTerminal.registerMarker).toHaveBeenCalledWith(35);
+    expect(mockTerminal.registerDecoration).not.toHaveBeenCalled();
   });
 
-  it("should dispose old markers", () => {
-    const lineWithCogno = TerminalMockFactory.createLine("^^#1");
-    const lineWithoutCogno = TerminalMockFactory.createLine("no cogno");
-
-    vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(lineWithCogno);
-    mockTerminal.buffer.active.length = 1;
-    mockTerminal.rows = 10;
-    mockTerminal.buffer.active.viewportY = 0;
-    mockTerminal.buffer.active.baseY = 0;
-    mockTerminal.buffer.active.cursorY = 0;
-
+  it("should dispose decorations whose markers left the viewport window", () => {
     const decorationMock = {
+      isDisposed: false,
       dispose: vi.fn(),
       onRender: vi.fn(),
       onDispose: vi.fn(),
     };
     mockTerminal.registerDecoration.mockReturnValue(decorationMock);
+    const entry = createRegistryMarker("1", 0);
+    registryMarkers.push(entry);
 
     markerManager.refreshMarkers();
-    expect(mockTerminal.registerMarker).toHaveBeenCalledWith(0);
-    expect(mockTerminal.registerMarker).toHaveBeenCalledTimes(1);
+    expect(decorationMock.dispose).not.toHaveBeenCalled();
 
-    vi.mocked(mockTerminal.buffer.active.getLine).mockReturnValue(lineWithoutCogno);
+    (entry.marker as { line: number }).line = 90;
     markerManager.refreshMarkers();
 
     expect(decorationMock.dispose).toHaveBeenCalled();
   });
 
-  it("should keep markers that are still in viewport", () => {
-    const lineWithCogno = TerminalMockFactory.createLine("^^#1");
-    const emptyLine = TerminalMockFactory.createLine(" ");
-    vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((index: number) => {
-      if (index === 0) return lineWithCogno;
-      return emptyLine;
-    });
-    mockTerminal.buffer.active.length = 100;
-    mockTerminal.rows = 10;
-    mockTerminal.buffer.active.viewportY = 0;
-    mockTerminal.buffer.active.baseY = 0;
-    mockTerminal.buffer.active.cursorY = 0;
-
-    const decorationMock2 = {
+  it("should keep decorations for markers still inside the scan window", () => {
+    const decorationMock = {
+      isDisposed: false,
       dispose: vi.fn(),
       onRender: vi.fn(),
       onDispose: vi.fn(),
     };
-    mockTerminal.registerDecoration.mockReturnValue(decorationMock2);
+    mockTerminal.registerDecoration.mockReturnValue(decorationMock);
+    registryMarkers.push(createRegistryMarker("1", 0));
 
     markerManager.refreshMarkers();
-    expect(mockTerminal.registerMarker).toHaveBeenCalledWith(0);
-    expect(mockTerminal.registerMarker).toHaveBeenCalledTimes(1);
 
-    // Scroll a bit, but line 0 is still in scan range (viewport 0-10, scan -20 to 30)
+    // Scroll a bit, but line 0 is still in scan range (viewport 5-14, scan -16 to 34)
     mockTerminal.buffer.active.viewportY = 5;
     markerManager.refreshMarkers();
 
-    expect(decorationMock2.dispose).not.toHaveBeenCalled();
+    expect(decorationMock.dispose).not.toHaveBeenCalled();
+  });
+
+  it("should skip marker work and clear decorations in the alternate buffer", () => {
+    const decorationMock = {
+      isDisposed: false,
+      dispose: vi.fn(),
+      onRender: vi.fn(),
+      onDispose: vi.fn(),
+    };
+    mockTerminal.registerDecoration.mockReturnValue(decorationMock);
+    registryMarkers.push(createRegistryMarker("1", 0));
+    markerManager.refreshMarkers();
+
+    mockTerminal.buffer.active.type = "alternate";
+    const updateCommandsSpy = vi.spyOn(stateManager, "updateCommands");
+    markerManager.refreshMarkers();
+
+    expect(decorationMock.dispose).toHaveBeenCalled();
+    expect(updateCommandsSpy).not.toHaveBeenCalled();
+  });
+
+  it("should publish command visibility only when it changes", () => {
+    stateManager.updateCommand({ id: "1", directory: "/", user: "u", machine: "m" });
+    registryMarkers.push(createRegistryMarker("1", 2));
+    const updateCommandsSpy = vi.spyOn(stateManager, "updateCommands");
+
+    markerManager.refreshMarkers();
+    markerManager.refreshMarkers();
+
+    expect(updateCommandsSpy).toHaveBeenCalledTimes(1);
+    expect(stateManager.commands[0].isInViewport).toBe(true);
+  });
+
+  it("should mark the last command above the viewport as first out of viewport", () => {
+    stateManager.updateCommand({ id: "1", directory: "/", user: "u", machine: "m" });
+    stateManager.updateCommand({ id: "2", directory: "/", user: "u", machine: "m" });
+    registryMarkers.push(createRegistryMarker("1", 10), createRegistryMarker("2", 55));
+    mockTerminal.buffer.active.viewportY = 50;
+
+    markerManager.refreshMarkers();
+
+    expect(stateManager.commands[0].isFirstCommandOutOfViewport).toBe(true);
+    expect(stateManager.commands[0].isInViewport).toBe(false);
+    expect(stateManager.commands[1].isInViewport).toBe(true);
   });
 });
