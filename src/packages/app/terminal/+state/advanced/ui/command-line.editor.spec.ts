@@ -113,6 +113,49 @@ describe("CommandLineEditor", () => {
     expect(mockPty.write).toHaveBeenCalledWith(expected);
   });
 
+  describe("ghost-text bound shrinking", () => {
+    it("resets maxCursorIndex when clearing the whole input", () => {
+      editor.clearCurrentInput();
+
+      expect(state.updateInput).toHaveBeenCalledWith(
+        expect.objectContaining({ maxCursorIndex: 0 }),
+      );
+    });
+
+    it("caps maxCursorIndex at the cursor when clearing to end of line", () => {
+      editor.clearLineToEnd();
+
+      // Cursor at 6: everything after it is deleted.
+      expect(state.updateInput).toHaveBeenCalledWith(
+        expect.objectContaining({ maxCursorIndex: 6 }),
+      );
+    });
+
+    it("shrinks maxCursorIndex by the deleted count when clearing to start of line", () => {
+      editor.clearLineToStart();
+
+      // 6 chars before the cursor deleted: 19 - 6.
+      expect(state.updateInput).toHaveBeenCalledWith(
+        expect.objectContaining({ maxCursorIndex: 13 }),
+      );
+    });
+
+    it("shrinks maxCursorIndex by the word length on deletePreviousWord", () => {
+      editor.deletePreviousWord();
+
+      // Cursor at 6 ("hello |world..."): "hello " (6 chars) is deleted.
+      expect(state.updateInput).toHaveBeenCalledWith(
+        expect.objectContaining({ maxCursorIndex: 13 }),
+      );
+    });
+
+    it("does not shrink on deleteNextWord (forward count may include ghost text)", () => {
+      editor.deleteNextWord();
+
+      expect(state.updateInput).not.toHaveBeenCalled();
+    });
+  });
+
   it("should prefer native shell input when defined", () => {
     editor = new CommandLineEditor(mockBus, mockPty, state as any, {
       nativeInputByAction: { clearLineToEnd: "\x0b" },

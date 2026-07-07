@@ -63,6 +63,70 @@ describe("CommandLineObserver", () => {
     expect(stateManager.isCommandRunning).toBe(true);
   });
 
+  describe("ghost-text bound shrinking on deletion", () => {
+    function fireKey(key: string): void {
+      const onKeyCallback = vi.mocked(mockTerminal.onKey).mock.calls[0][0];
+      onKeyCallback({ key: "\x7f", domEvent: { key } as KeyboardEvent });
+    }
+
+    beforeEach(() => {
+      observer.registerTerminal(mockTerminal);
+      stateManager.endCommand();
+    });
+
+    it("shrinks maxCursorIndex by one on Backspace", () => {
+      // "git" typed, then deleted back from a longer input: the stale bound
+      // (10) would let re-rendered ghost text leak into the read window.
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 10 });
+
+      fireKey("Backspace");
+
+      expect(stateManager.input.maxCursorIndex).toBe(9);
+    });
+
+    it("does not shrink below the post-delete cursor position", () => {
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 3 });
+
+      fireKey("Backspace");
+
+      expect(stateManager.input.maxCursorIndex).toBe(2);
+    });
+
+    it("ignores Backspace at the start of the input", () => {
+      stateManager.updateInput({ text: "git", cursorIndex: 0, maxCursorIndex: 5 });
+
+      fireKey("Backspace");
+
+      expect(stateManager.input.maxCursorIndex).toBe(5);
+    });
+
+    it("shrinks on Delete when input follows the cursor", () => {
+      stateManager.updateInput({ text: "gitx", cursorIndex: 1, maxCursorIndex: 4 });
+
+      fireKey("Delete");
+
+      expect(stateManager.input.maxCursorIndex).toBe(3);
+    });
+
+    it("ignores Delete at the end of the input", () => {
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 3 });
+
+      fireKey("Delete");
+
+      expect(stateManager.input.maxCursorIndex).toBe(3);
+    });
+
+    it("does not shrink while a command is running", () => {
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 10 });
+      stateManager.startCommand();
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 10 });
+
+      fireKey("Backspace");
+
+      expect(stateManager.input.maxCursorIndex).toBe(10);
+    });
+  });
+
   it("should update sessionState.input when terminal is parsed and command is not running", () => {
     observer.registerTerminal(mockTerminal);
     const onWriteParsedCallback = vi.mocked(mockTerminal.onWriteParsed).mock.calls[0][0];

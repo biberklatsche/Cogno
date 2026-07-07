@@ -206,6 +206,20 @@ export class CommandLineEditor implements ITerminalHandler {
     );
   }
 
+  /**
+   * Deletions shorten the real input, so the ghost-text bound (see
+   * CommandLineObserver.shrinkMaxCursorIndexOnDelete) must shrink along —
+   * but only by amounts that are provably real input, i.e. at or before the
+   * cursor. Forward word-deletes stay out: their count is measured on the
+   * inferred text, which may include ghost characters, and shrinking too far
+   * would cut real input off the inference.
+   */
+  private shrinkMaxCursorIndexTo(upperBound: number): void {
+    const input = this.stateManager.input;
+    if (upperBound >= input.maxCursorIndex) return;
+    this.stateManager.updateInput({ ...input, maxCursorIndex: Math.max(0, upperBound) });
+  }
+
   clearCurrentInput() {
     if (!this._terminal) return;
     const input = this.stateManager.input;
@@ -214,6 +228,7 @@ export class CommandLineEditor implements ITerminalHandler {
     this._ptyWrite(
       buildCursorMoveSequence(countToEnd) + String.fromCharCode(8).repeat(text.length),
     );
+    this.shrinkMaxCursorIndexTo(0);
   }
 
   clearLineToEnd() {
@@ -223,6 +238,7 @@ export class CommandLineEditor implements ITerminalHandler {
       this._ptyWrite(
         buildCursorMoveSequence(countToEnd) + String.fromCharCode(8).repeat(countToEnd),
       );
+      this.shrinkMaxCursorIndexTo(input.cursorIndex);
     }
   }
 
@@ -231,6 +247,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const countToStart = input.cursorIndex;
     if (countToStart > 0) {
       this._ptyWrite(String.fromCharCode(8).repeat(countToStart));
+      this.shrinkMaxCursorIndexTo(input.maxCursorIndex - countToStart);
     }
   }
 
@@ -244,6 +261,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
     if (countToDelete > 0) {
       this._ptyWrite(String.fromCharCode(8).repeat(countToDelete));
+      this.shrinkMaxCursorIndexTo(input.maxCursorIndex - countToDelete);
     }
   }
 
