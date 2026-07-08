@@ -170,6 +170,55 @@ describe("PromptMarkerRegistry", () => {
     expect(registry.markers).toHaveLength(0);
   });
 
+  it("should drop a marker whose line was blanked by a screen clear via validateRange", () => {
+    mockTerminal.buffer.active.cursorY = 5;
+    setLines({ 4: "^^#42", 5: "" });
+    registry.expectMarker();
+    registry.onWriteParsed();
+    const staleMarker = registry.markers[0].marker as unknown as {
+      dispose: ReturnType<typeof vi.fn>;
+    };
+
+    // `clear` blanked the screen in place; xterm keeps the marker alive.
+    setLines({ 4: "", 5: "" });
+    registry.validateRange(0, 30);
+
+    expect(staleMarker.dispose).toHaveBeenCalled();
+    expect(registry.markers).toHaveLength(0);
+  });
+
+  it("should re-anchor a marker whose line moved within the validated range", () => {
+    mockTerminal.buffer.active.cursorY = 5;
+    setLines({ 4: "^^#42", 5: "" });
+    registry.expectMarker();
+    registry.onWriteParsed();
+
+    // Ctrl+L-style redraw: screen cleared and the prompt reprinted higher up.
+    setLines({ 0: "^^#42", 4: "", 5: "" });
+    registry.validateRange(0, 30);
+
+    expect(registry.markers).toHaveLength(1);
+    expect(registry.markers[0].commandId).toBe("42");
+    expect(registry.markers[0].marker.line).toBe(0);
+  });
+
+  it("should leave markers outside the validated range untouched", () => {
+    mockTerminal.buffer.active.cursorY = 5;
+    setLines({ 4: "^^#42", 5: "" });
+    registry.expectMarker();
+    registry.onWriteParsed();
+    const marker = registry.markers[0].marker as unknown as {
+      dispose: ReturnType<typeof vi.fn>;
+    };
+
+    // The marker's line no longer matches, but it sits outside the window.
+    setLines({});
+    registry.validateRange(10, 30);
+
+    expect(marker.dispose).not.toHaveBeenCalled();
+    expect(registry.markers).toHaveLength(1);
+  });
+
   it("should dispose all markers on dispose", () => {
     mockTerminal.buffer.active.cursorY = 5;
     setLines({ 4: "^^#42", 5: "" });

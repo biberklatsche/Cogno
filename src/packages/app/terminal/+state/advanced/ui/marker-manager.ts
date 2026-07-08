@@ -69,10 +69,16 @@ export class MarkerManager implements IDisposable {
     const viewportStart = buffer.viewportY - 1;
     const viewportEnd = viewportStart + this._terminal.rows - 1;
 
-    this.updateViewportVisibility(viewportStart, viewportEnd);
-
     const startScan = Math.max(0, viewportStart - DECORATION_WINDOW_LINES);
     const endScan = Math.min(buffer.length - 1, viewportEnd + DECORATION_WINDOW_LINES);
+
+    // `clear` and other screen rewrites blank marker lines without disposing
+    // the markers — drop or re-anchor them before rendering decorations.
+    // Rewrites only ever hit on-screen lines, so the window bound keeps this
+    // off the scrollback.
+    this.markerRegistry.validateRange(startScan, endScan);
+
+    this.updateViewportVisibility(viewportStart, viewportEnd);
 
     const markersInWindow = new Set<IMarker>();
     for (const { marker, commandId } of this.markerRegistry.markers) {

@@ -21,6 +21,7 @@ describe("MarkerManager", () => {
   let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
   let mockBus: AppBus;
   let registryMarkers: PromptMarker[];
+  let registryValidateRange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     mockBus = new AppBus();
@@ -31,7 +32,11 @@ describe("MarkerManager", () => {
       openAtElement: vi.fn(),
     };
     registryMarkers = [];
-    const registry = { markers: registryMarkers } as unknown as PromptMarkerRegistry;
+    const registry = {
+      markers: registryMarkers,
+      validateRange: vi.fn(),
+    } as unknown as PromptMarkerRegistry;
+    registryValidateRange = vi.mocked(registry.validateRange);
     markerManager = new MarkerManager(
       stateManager,
       [],
@@ -127,6 +132,13 @@ describe("MarkerManager", () => {
     markerManager.refreshMarkers();
 
     expect(decorationMock.dispose).not.toHaveBeenCalled();
+  });
+
+  it("should validate registry markers against the scan window before rendering", () => {
+    markerManager.refreshMarkers();
+
+    // Viewport -1..8 (viewportY - 1 .. + rows - 1), window ±20, clamped to the buffer.
+    expect(registryValidateRange).toHaveBeenCalledWith(0, 28);
   });
 
   it("should skip marker work and clear decorations in the alternate buffer", () => {

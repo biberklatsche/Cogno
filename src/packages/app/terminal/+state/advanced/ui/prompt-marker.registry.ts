@@ -84,12 +84,24 @@ export class PromptMarkerRegistry implements IDisposable {
    * reflow has shifted away from their `^^#<id>` text. Only called on resize.
    */
   resync(): void {
+    this.validateRange(0, Number.MAX_SAFE_INTEGER);
+  }
+
+  /**
+   * Validate the markers within `[lowestLine, highestLine]` against their
+   * buffer lines. Screen-rewriting sequences (`clear`, TUI redraws, deleted
+   * lines) blank a marker's line without xterm disposing the marker — such
+   * stale markers are re-anchored to their relocated `^^#<id>` text or
+   * dropped when the text is gone.
+   */
+  validateRange(lowestLine: number, highestLine: number): void {
     const terminal = this._terminal;
     const buffer = terminal?.buffer?.active;
     if (!terminal || !buffer || buffer.type === "alternate") return;
     this.pruneDisposedMarkers();
 
     for (const entry of [...this._markers]) {
+      if (entry.marker.line < lowestLine || entry.marker.line > highestLine) continue;
       const expectedPrefix = `^^#${entry.commandId}`;
       const lineText = buffer.getLine(entry.marker.line)?.translateToString() ?? "";
       if (lineText.startsWith(expectedPrefix)) continue;
