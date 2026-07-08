@@ -10,6 +10,7 @@ import { TerminalStateManager } from "../../state";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
 import OscParser from "../osc/cogno-osc.parser";
 import { toSessionCapabilities } from "../osc/session-capabilities.parser";
+import { CommandLineBuffer } from "./command-line.buffer";
 import { MarkerManager } from "./marker-manager";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";
 
@@ -28,6 +29,7 @@ export class CommandLineObserver implements ITerminalHandler {
     private readonly appBus: AppBus,
     private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
     private readonly _markerRegistry: PromptMarkerRegistry = new PromptMarkerRegistry(),
+    private readonly _commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(_markerRegistry),
   ) {
     this._markerManager = new MarkerManager(
       stateManager,
@@ -46,7 +48,7 @@ export class CommandLineObserver implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
-    this._markerRegistry.setTerminal(terminal);
+    this._commandLineBuffer.setTerminal(terminal);
     this._markerManager.setTerminal(terminal);
 
     this._disposables.push(
@@ -54,14 +56,7 @@ export class CommandLineObserver implements ITerminalHandler {
         if (!terminal?.buffer?.active) return;
         if (this.stateManager.isCommandRunning) return;
         try {
-          const buffer = terminal.buffer?.active;
-          const startInputY = this.findLastCognoMarkerY() + 1;
-          const cursorX = buffer.cursorX;
-          const cursorYViewport = buffer.cursorY;
-          const viewportY = buffer.viewportY;
-          const cursorYAbsolute = cursorYViewport + viewportY;
-          const promptHeight = cursorYAbsolute - startInputY;
-          const cursorIndex = cursorX + terminal.cols * promptHeight;
+          const cursorIndex = this._commandLineBuffer.cursorInputIndex();
           const input = this.stateManager.input;
           if (cursorIndex === input.cursorIndex) return;
           const maxCursorIndex =
@@ -107,8 +102,8 @@ export class CommandLineObserver implements ITerminalHandler {
       this._terminal.onWriteParsed(() => {
         this._markerRegistry.onWriteParsed();
         if (this.stateManager.isCommandRunning) return;
-        const text = this.readCurrentText();
         const input = this.stateManager.input;
+        const text = this._commandLineBuffer.readInputText(input.maxCursorIndex);
         if (text === input.text) return;
         this.stateManager.updateInput({ ...input, text: text });
       }),
@@ -164,30 +159,6 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables = [];
     this._refreshMarkerSubject.complete();
     this._markerManager.dispose();
-    this._markerRegistry.dispose();
     this._terminal = undefined;
-  }
-
-  private findLastCognoMarkerY(): number {
-    return this._markerRegistry.lastMarkerLine();
-  }
-
-  private readCurrentText(): string {
-    const terminal = this._terminal;
-    const buffer = terminal?.buffer?.active;
-    if (!terminal || !buffer) return "";
-    const lastCognoMarkerY = this.findLastCognoMarkerY();
-    const input = this.stateManager.input;
-    const heightOfPrompt = Math.ceil(input.maxCursorIndex / terminal.cols);
-    let text = "";
-    for (let i = lastCognoMarkerY + 1; i <= lastCognoMarkerY + heightOfPrompt; i++) {
-      const line = buffer.getLine(i);
-      if (!line) continue;
-      text += line.translateToString(false);
-    }
-    if (text.length > input.maxCursorIndex) {
-      text = text.substring(0, input.maxCursorIndex);
-    }
-    return text.trimEnd();
   }
 }

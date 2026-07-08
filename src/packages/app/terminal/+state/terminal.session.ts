@@ -40,6 +40,7 @@ import {
   TerminalSystemInfoSource,
 } from "../system-info/terminal-system-info-dialog.component";
 import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
+import { CommandLineBuffer } from "./advanced/ui/command-line.buffer";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
@@ -67,6 +68,7 @@ import {
 import { TerminalSearchHandler } from "./handler/terminal-search.handler";
 import { TerminalTitleHandler } from "./handler/terminal-title.handler";
 import { ThemeHandler } from "./handler/theme.handler";
+import { TerminalInputWriter } from "./input-writer";
 import { KeybindExecutor } from "./keybind/keybind.executor";
 import { IPty, Pty } from "./pty/pty";
 import { IRenderer, Renderer } from "./renderer/renderer";
@@ -220,6 +222,20 @@ export class TerminalSession {
           )
       : undefined;
 
+    // Shared prompt-marker positions, buffer reads and input writes: the
+    // observer anchors/maintains the markers, the editor and clipboard
+    // handler read them for selection math and share one pty-writing path. A
+    // single instance per session keeps them consistent after a `clear` or
+    // reflow.
+    const promptMarkerRegistry = new PromptMarkerRegistry();
+    const commandLineBuffer = new CommandLineBuffer(promptMarkerRegistry);
+    const inputWriter = new TerminalInputWriter(
+      this.pty,
+      this.stateManager,
+      shellDefinition?.lineEditor,
+    );
+    this.disposables.push(promptMarkerRegistry);
+
     this.disposables.push(
       this.renderer.register(
         new ClipboardHandler(
@@ -230,6 +246,8 @@ export class TerminalSession {
           this.configService,
           selectionHandler,
           shellDefinition?.lineEditor,
+          commandLineBuffer,
+          inputWriter,
         ),
       ),
     );
@@ -243,9 +261,6 @@ export class TerminalSession {
       this.terminalAutocompleteFeatureSuggestorService.preloadForShellIntegration(
         this.shellProfile.shell_type,
       );
-      // Shared prompt-marker positions: the observer anchors/maintains them,
-      // the editor reads them for selection math.
-      const promptMarkerRegistry = new PromptMarkerRegistry();
       this.disposables.push(
         this.renderer.register(
           new CommandLineObserver(
@@ -255,6 +270,7 @@ export class TerminalSession {
             this.bus,
             this.completedCommandNotificationHandler.handleCompletedCommand,
             promptMarkerRegistry,
+            commandLineBuffer,
           ),
         ),
       );
@@ -265,7 +281,8 @@ export class TerminalSession {
             this.pty,
             this.stateManager,
             shellDefinition?.lineEditor,
-            promptMarkerRegistry,
+            commandLineBuffer,
+            inputWriter,
           ),
         ),
       );

@@ -7,14 +7,10 @@ import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
 import { ITerminalHandler } from "../../handler/handler";
-import {
-  buildCursorMoveSequence,
-  isNativeActionAvailable,
-  TerminalInputReplacer,
-} from "../../input-replacer";
-import { findLastPromptMarkerLine, sanitizePromptMarkerText } from "../../prompt-marker";
+import { TerminalInputWriter } from "../../input-writer";
 import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
+import { CommandLineBuffer } from "./command-line.buffer";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";
 
 export class CommandLineEditor implements ITerminalHandler {
@@ -24,17 +20,20 @@ export class CommandLineEditor implements ITerminalHandler {
   private readonly WORD_SEPARATORS = "()[]{}'\"\\,;:/&<>*+=$^!~` ";
   private _selectionStart: number | null = null;
 
-  private readonly _inputReplacer: TerminalInputReplacer;
-
   constructor(
     private _bus: AppBus,
     private _pty: IPty,
     private stateManager: TerminalStateManager,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
-    private readonly markerRegistry?: PromptMarkerRegistry,
-  ) {
-    this._inputReplacer = new TerminalInputReplacer(_pty, stateManager, lineEditor);
-  }
+    private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
+      new PromptMarkerRegistry(),
+    ),
+    private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
+      _pty,
+      stateManager,
+      lineEditor,
+    ),
+  ) {}
 
   dispose(): void {
     this.subscription.unsubscribe();
@@ -44,9 +43,10 @@ export class CommandLineEditor implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    this.commandLineBuffer.setTerminal(terminal);
 
     this._onSelectionChange = terminal.onSelectionChange(() => {
-      if (this._terminal && !this._terminal.hasSelection()) {
+      if (!this.commandLineBuffer.hasSelection()) {
         this._selectionStart = null;
       }
     });
@@ -78,7 +78,10 @@ export class CommandLineEditor implements ITerminalHandler {
         return false;
       }
       if (this.stateManager.isCommandRunning) return true;
-      if ((event.key === "Backspace" || event.key === "Delete") && this._terminal?.hasSelection()) {
+      if (
+        (event.key === "Backspace" || event.key === "Delete") &&
+        this.commandLineBuffer.hasSelection()
+      ) {
         return !this.deleteSelection();
       }
       if (this.shouldReplaceSelectionWithTypedText(event)) {
@@ -174,7 +177,7 @@ export class CommandLineEditor implements ITerminalHandler {
             return;
           this._selectionStart = null;
           if (!this._terminal) return;
-          this._inputReplacer.replaceInput(
+          this.inputWriter.replaceInput(
             payload.inputText,
             payload.cursorIndex,
             payload.autoExecute,
@@ -187,7 +190,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
     if (this.supportsNativeShellAction(actionId)) {
-      this._pty.executeLineEditorAction(actionId);
+      this.inputWriter.executeNativeAction(actionId);
       return true;
     }
 
@@ -201,11 +204,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private supportsNativeShellAction(actionId: ShellLineEditorActionContract): boolean {
-    return isNativeActionAvailable(
-      actionId,
-      this.lineEditor,
-      this.stateManager.sessionCapabilities,
-    );
+    return this.inputWriter.isNativeActionAvailable(actionId);
   }
 
   clearCurrentInput() {
@@ -213,27 +212,19 @@ export class CommandLineEditor implements ITerminalHandler {
     const input = this.stateManager.input;
     const text = input.text;
     const countToEnd = text.length - input.cursorIndex;
-    this._ptyWrite(
-      buildCursorMoveSequence(countToEnd) + String.fromCharCode(8).repeat(text.length),
-    );
+    this.inputWriter.deleteChars(countToEnd, text.length);
   }
 
   clearLineToEnd() {
     const input = this.stateManager.input;
     const countToEnd = input.text.length - input.cursorIndex;
-    if (countToEnd > 0) {
-      this._ptyWrite(
-        buildCursorMoveSequence(countToEnd) + String.fromCharCode(8).repeat(countToEnd),
-      );
-    }
+    this.inputWriter.deleteChars(countToEnd, countToEnd);
   }
 
   clearLineToStart() {
     const input = this.stateManager.input;
     const countToStart = input.cursorIndex;
-    if (countToStart > 0) {
-      this._ptyWrite(String.fromCharCode(8).repeat(countToStart));
-    }
+    this.inputWriter.deleteChars(0, countToStart);
   }
 
   deletePreviousWord() {
@@ -244,9 +235,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
     const countToDelete = currentPos - prevWordStart;
 
-    if (countToDelete > 0) {
-      this._ptyWrite(String.fromCharCode(8).repeat(countToDelete));
-    }
+    this.inputWriter.deleteChars(0, countToDelete);
   }
 
   deleteNextWord() {
@@ -258,11 +247,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const nextWordEnd = this.findNextWordEnd(text, currentPos);
     const countToDelete = nextWordEnd - currentPos;
 
-    if (countToDelete > 0) {
-      this._ptyWrite(
-        buildCursorMoveSequence(countToDelete) + String.fromCharCode(8).repeat(countToDelete),
-      );
-    }
+    this.inputWriter.deleteChars(countToDelete, countToDelete);
   }
 
   goToNextWord() {
@@ -274,9 +259,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const nextWordEnd = this.findNextWordEnd(text, currentPos);
     const countToMove = nextWordEnd - currentPos;
 
-    if (countToMove > 0) {
-      this._ptyWrite(buildCursorMoveSequence(countToMove));
-    }
+    this.inputWriter.moveCursor(countToMove);
   }
 
   goToPreviousWord() {
@@ -287,16 +270,14 @@ export class CommandLineEditor implements ITerminalHandler {
     const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
     const countToMove = currentPos - prevWordStart;
 
-    if (countToMove > 0) {
-      this._ptyWrite(buildCursorMoveSequence(-countToMove));
-    }
+    this.inputWriter.moveCursor(-countToMove);
   }
 
   goToStartOfLine() {
     const input = this.stateManager.input;
     if (input.cursorIndex === 0) return;
 
-    this._ptyWrite(buildCursorMoveSequence(-input.cursorIndex));
+    this.inputWriter.moveCursor(-input.cursorIndex);
   }
 
   goToEndOfLine() {
@@ -304,7 +285,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const countToMove = input.text.length - input.cursorIndex;
     if (countToMove <= 0) return;
 
-    this._ptyWrite(buildCursorMoveSequence(countToMove));
+    this.inputWriter.moveCursor(countToMove);
   }
 
   selectTextRight() {
@@ -359,25 +340,14 @@ export class CommandLineEditor implements ITerminalHandler {
     const textLength = input.text.length;
 
     const offsetToEnd = textLength - currentCursorIdx;
-    this._ptyWrite(buildCursorMoveSequence(offsetToEnd));
+    this.inputWriter.moveCursor(offsetToEnd);
 
-    this.selectAbsolute(0, textLength);
-  }
-
-  private selectAbsolute(start: number, end: number) {
-    if (!this._terminal) return;
-    const length = Math.abs(end - start);
-    const actualStart = Math.min(start, end);
-
-    const startInputY = this.findLastCognoMarkerY() + 1;
-    const { row, column } = this.getRowColumn(actualStart);
-
-    this._terminal.select(column, startInputY + row, length);
+    this.commandLineBuffer.selectInputSpan(0, textLength);
   }
 
   private _selectAndMove(offset: number) {
     this.select(offset);
-    this._ptyWrite(buildCursorMoveSequence(offset));
+    this.inputWriter.moveCursor(offset);
   }
 
   private _ptyWrite(data: string) {
@@ -389,7 +359,7 @@ export class CommandLineEditor implements ITerminalHandler {
     if (!this._terminal) return true;
 
     const input = this.stateManager.input;
-    const cols = this._terminal.cols;
+    const cols = this.commandLineBuffer.cols;
     const row = Math.floor(input.cursorIndex / cols);
     const lastRow = Math.floor(input.maxCursorIndex / cols);
     const direction = event.key === "ArrowUp" ? -1 : 1;
@@ -412,7 +382,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const offset = newIndex - input.cursorIndex;
     if (offset !== 0) {
       this._clearSelection();
-      this._ptyWrite(buildCursorMoveSequence(offset));
+      this.inputWriter.moveCursor(offset);
       // Optimistically reflect the move locally: the authoritative onCursorMove
       // event lags behind the pty round-trip, so without this a fast key-repeat
       // would read a stale cursorIndex and miscompute the next row boundary.
@@ -429,9 +399,11 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private cutSelection() {
-    if (!this._terminal?.hasSelection()) return;
+    if (!this.commandLineBuffer.hasSelection()) return;
 
-    const selectionText = sanitizePromptMarkerText(this._terminal.getSelection());
+    const selectionText = this.commandLineBuffer.sanitizeCopiedText(
+      this.commandLineBuffer.getSelection(),
+    );
     if (selectionText) {
       Clipboard.writeText(selectionText);
     }
@@ -456,12 +428,12 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private deleteSelection(): boolean {
-    const range = this.getSelectedInputRange();
+    const range = this.commandLineBuffer.selectedInputRange(this.stateManager.input.maxCursorIndex);
     if (!range) {
       return false;
     }
 
-    const deleteLength = range.endIdx - range.startIdx;
+    const deleteLength = range.endIndex - range.startIndex;
     if (deleteLength <= 0) {
       this._clearSelection();
       return true;
@@ -472,8 +444,8 @@ export class CommandLineEditor implements ITerminalHandler {
     }
 
     if (this.supportsNativeShellAction("deleteSelection")) {
-      this._pty.executeLineEditorAction("deleteSelection", {
-        start: range.startIdx,
+      this.inputWriter.executeNativeAction("deleteSelection", {
+        start: range.startIndex,
         length: deleteLength,
       });
       this._clearSelection();
@@ -482,28 +454,21 @@ export class CommandLineEditor implements ITerminalHandler {
 
     const input = this.stateManager.input;
     const currentCursorIdx = input.cursorIndex;
-    const cursorOffsetToEnd = range.endIdx - currentCursorIdx;
+    const cursorOffsetToEnd = range.endIndex - currentCursorIdx;
 
-    this._ptyWrite(
-      buildCursorMoveSequence(cursorOffsetToEnd) + String.fromCharCode(8).repeat(deleteLength),
-    );
+    this.inputWriter.deleteChars(cursorOffsetToEnd, deleteLength);
     this._clearSelection();
     return true;
   }
 
-  private getRowColumn(index: number): { row: number; column: number } {
-    const cols = this._terminal?.cols ?? 1;
-    return { row: Math.floor(index / cols), column: index % cols };
-  }
-
   private _clearSelection() {
     this._selectionStart = null;
-    this._terminal?.clearSelection();
+    this.commandLineBuffer.clearSelection();
   }
 
   private shouldReplaceSelectionWithTypedText(event: KeyboardEvent): boolean {
     return Boolean(
-      this._terminal?.hasSelection() &&
+      this.commandLineBuffer.hasSelection() &&
         event.key.length === 1 &&
         !event.ctrlKey &&
         !event.altKey &&
@@ -516,17 +481,17 @@ export class CommandLineEditor implements ITerminalHandler {
       return false;
     }
 
-    const range = this.getSelectedInputRange();
+    const range = this.commandLineBuffer.selectedInputRange(this.stateManager.input.maxCursorIndex);
     if (!range) {
       return false;
     }
 
     const input = this.stateManager.input;
     const nextText =
-      input.text.slice(0, range.startIdx) + replacementText + input.text.slice(range.endIdx);
-    const nextCursorIndex = range.startIdx + replacementText.length;
+      input.text.slice(0, range.startIndex) + replacementText + input.text.slice(range.endIndex);
+    const nextCursorIndex = range.startIndex + replacementText.length;
 
-    this._pty.executeLineEditorAction("replaceCurrentInput", {
+    this.inputWriter.executeNativeAction("replaceCurrentInput", {
       text: nextText,
       cursorIndex: nextCursorIndex,
     });
@@ -534,50 +499,19 @@ export class CommandLineEditor implements ITerminalHandler {
     return true;
   }
 
-  private getSelectedInputRange(): { startIdx: number; endIdx: number } | undefined {
-    if (!this._terminal) {
-      return undefined;
-    }
-
-    const selection = this._terminal.getSelectionPosition();
-    if (!selection) {
-      return undefined;
-    }
-
-    const lastCognoY = this.findLastCognoMarkerY();
-    const startInputY = lastCognoY + 1;
-    const cols = this._terminal.cols;
-
-    const startIdx = (selection.start.y - startInputY) * cols + selection.start.x;
-    const endIdx = (selection.end.y - startInputY) * cols + selection.end.x;
-
-    const input = this.stateManager.input;
-    if (startIdx < 0 || endIdx > input.maxCursorIndex) {
-      return undefined;
-    }
-
-    return { startIdx, endIdx };
-  }
-
   private select(count: number) {
     if (!this._terminal) return;
-    if (!this._terminal.buffer.active) return;
 
     const input = this.stateManager.input;
     const currentPos = input.cursorIndex;
 
     if (this._selectionStart === null) {
-      const selection = this._terminal.getSelectionPosition();
-      if (selection) {
-        const lastCognoY = this.findLastCognoMarkerY();
-        const startInputY = lastCognoY + 1;
-        const cols = this._terminal.cols;
-        const startIdx = (selection.start.y - startInputY) * cols + selection.start.x;
-        const endIdx = (selection.end.y - startInputY) * cols + selection.end.x;
-        if (Math.abs(currentPos - endIdx) < Math.abs(currentPos - startIdx)) {
-          this._selectionStart = startIdx;
+      const range = this.commandLineBuffer.selectedInputRange(input.maxCursorIndex);
+      if (range) {
+        if (Math.abs(currentPos - range.endIndex) < Math.abs(currentPos - range.startIndex)) {
+          this._selectionStart = range.startIndex;
         } else {
-          this._selectionStart = endIdx;
+          this._selectionStart = range.endIndex;
         }
       } else {
         this._selectionStart = currentPos;
@@ -588,22 +522,7 @@ export class CommandLineEditor implements ITerminalHandler {
     const start = Math.min(this._selectionStart, newPos);
     const length = Math.abs(newPos - this._selectionStart);
 
-    const startInputY = this.findLastCognoMarkerY() + 1;
-    const { row, column: startCol } = this.getRowColumn(start);
-    const startRow = startInputY + row;
-
-    this._terminal.select(startCol, startRow, length);
-  }
-
-  private static readonly FALLBACK_MARKER_SCAN_LINES = 500;
-
-  private findLastCognoMarkerY(): number {
-    if (this.markerRegistry) return this.markerRegistry.lastMarkerLine();
-    if (!this._terminal?.buffer?.active) return -1;
-    return findLastPromptMarkerLine(
-      this._terminal.buffer.active,
-      CommandLineEditor.FALLBACK_MARKER_SCAN_LINES,
-    );
+    this.commandLineBuffer.selectInputSpan(start, length);
   }
 
   private findPreviousWordStart(text: string, currentPos: number): number {

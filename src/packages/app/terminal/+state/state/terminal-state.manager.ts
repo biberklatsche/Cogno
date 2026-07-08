@@ -241,10 +241,16 @@ export class TerminalStateManager {
     return this._stateSubject.pipe(map((s) => s.isCommandRunning));
   }
 
-  startCommand(): void {
+  /**
+   * `overrideInputText` lets programmatic submitters (history auto-execute,
+   * composer, autocomplete) pass the text they are about to submit: unlike a
+   * real Enter keypress, their state update hasn't gone through the terminal
+   * echo yet, so `input.text` here would still be stale.
+   */
+  startCommand(overrideInputText?: string): void {
     const currentInput = this._stateSubject.value.input;
 
-    this._historyStore.startCommand(currentInput.text);
+    this._historyStore.startCommand(overrideInputText ?? currentInput.text);
 
     this.updateState({
       isCommandRunning: true,

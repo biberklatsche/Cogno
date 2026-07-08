@@ -1,6 +1,5 @@
 import { IDisposable } from "@cogno/core-support";
 import { IBuffer, IMarker, Terminal } from "@xterm/xterm";
-import { findLastPromptMarkerLine } from "../../prompt-marker";
 
 export type PromptMarker = {
   commandId: string;
@@ -8,6 +7,30 @@ export type PromptMarker = {
 };
 
 const PROMPT_MARKER_ID_REGEX = /^\^\^#(\d+)/;
+
+function isPromptMarkerLine(lineText: string): boolean {
+  return /^\^\^#\d+/.test(lineText);
+}
+
+/**
+ * The marker of the current prompt always sits close to the buffer end, so
+ * callers on hot paths must cap the scan — an unbounded scan walks the whole
+ * scrollback (default 100k lines) when no marker line matches.
+ */
+function findLastPromptMarkerLine(
+  buffer: {
+    length: number;
+    getLine(y: number): { translateToString(): string } | undefined;
+  },
+  maxScanLines: number,
+): number {
+  const lowestLineIndex = Math.max(0, buffer.length - maxScanLines);
+  for (let lineIndex = buffer.length - 1; lineIndex >= lowestLineIndex; lineIndex--) {
+    const line = buffer.getLine(lineIndex);
+    if (line && isPromptMarkerLine(line.translateToString())) return lineIndex;
+  }
+  return -1;
+}
 
 /** How far above the cursor a freshly printed marker line is searched. */
 const ANCHOR_SCAN_WINDOW_LINES = 50;
