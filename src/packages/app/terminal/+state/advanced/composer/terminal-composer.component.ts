@@ -53,10 +53,13 @@ const INITIAL_VIEW_STATE: ComposerViewState = {
           (keydown)="onKeydown($event)"
         ></textarea>
         <div class="composer-hints">
-          <span><i>Enter</i> run</span>
-          <span><i>Shift+Enter</i> newline</span>
-          <span><i>{{ insertOnlyKeyLabel }}</i> insert</span>
-          <span><i>Esc</i> cancel</span>
+          <span class="composer-hints-label">Multiline Input</span>
+          <div class="composer-hints-shortcuts">
+            <span>Run <i>Enter</i></span>
+            <span>Newline <i>Shift+Enter</i></span>
+            <span>Insert <i>{{ insertOnlyKeyLabel }}</i></span>
+            <span>Cancel <i>Esc</i></span>
+          </div>
         </div>
       </div>
     }
@@ -100,7 +103,13 @@ const INITIAL_VIEW_STATE: ComposerViewState = {
         font-size: 11px;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .composer-hints-shortcuts {
+        display: flex;
+        align-items: center;
         gap: 12px;
       }
 

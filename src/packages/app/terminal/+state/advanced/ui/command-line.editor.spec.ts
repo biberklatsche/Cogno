@@ -84,6 +84,32 @@ describe("CommandLineEditor", () => {
       expect(mockPty.write).not.toHaveBeenCalled();
     });
 
+    it("opens the composer on Shift+Enter at an empty prompt without seeding a blank second line", () => {
+      state.input = { text: "", cursorIndex: 0, maxCursorIndex: 0 };
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+
+      const event = {
+        type: "keydown",
+        key: "Enter",
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+      customKeyHandler(event);
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "OpenComposer",
+          payload: {
+            terminalId,
+            seedText: "",
+            cursorIndex: 0,
+          },
+        }),
+      );
+    });
+
     it("writes a raw newline on Shift+Enter while a command is running", () => {
       state.isCommandRunning = true;
       const publishSpy = vi.spyOn(mockBus, "publish");

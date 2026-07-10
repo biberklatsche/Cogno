@@ -63,13 +63,19 @@ export class CommandLineEditor implements ITerminalHandler {
           // instead of fighting the shell's single-line editing model.
           const input = this.stateManager.input;
           const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
+          // An empty prompt has no line to split — inserting "\n" there would
+          // seed the composer with two blank lines instead of one. Just place
+          // the cursor at the end of what's already there.
+          const hasText = input.text.length > 0;
           this._bus.publish({
             path: ["app", "terminal"],
             type: "OpenComposer",
             payload: {
               terminalId: this.stateManager.terminalId,
-              seedText: `${input.text.slice(0, cursor)}\n${input.text.slice(cursor)}`,
-              cursorIndex: cursor + 1,
+              seedText: hasText
+                ? `${input.text.slice(0, cursor)}\n${input.text.slice(cursor)}`
+                : "",
+              cursorIndex: hasText ? cursor + 1 : 0,
             },
           });
         }

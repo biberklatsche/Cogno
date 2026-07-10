@@ -100,13 +100,17 @@ export class TerminalComposerService implements OnDestroy {
    * be left in the prompt for further shell-side interaction.
    */
   submit(text: string, options?: { insertOnly?: boolean }): void {
+    // Trailing blank lines are composer editing artifacts (e.g. the newline
+    // left over from Shift+Enter), not intentional input — drop them before
+    // handing the text to the shell.
+    const trimmedText = text.trimEnd();
     this.bus.publish({
       path: ["app", "terminal"],
       type: "ReplaceTerminalInput",
       payload: {
         terminalId: this.stateManager.terminalId,
-        inputText: text,
-        cursorIndex: text.length,
+        inputText: trimmedText,
+        cursorIndex: trimmedText.length,
         autoExecute: !options?.insertOnly,
       },
     });
