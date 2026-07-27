@@ -6,6 +6,7 @@ import {
   NotificationChannelSettingsContract,
   NotificationChannelsContract,
   NotificationReplyChannelContract,
+  NotificationTargetContract,
 } from "@cogno/core-api";
 import { AppBus } from "../../app-bus/app-bus";
 import { ConfigService } from "../../config/+state/config.service";
@@ -135,6 +136,7 @@ type NotificationPayload = {
   readonly channels?: Partial<NotificationChannelsContract>;
   readonly header: string;
   readonly source?: string;
+  readonly target?: NotificationTargetContract;
   readonly terminalId?: string;
   readonly timestamp?: Date;
   readonly type?: "error" | "success" | "warning" | "info";

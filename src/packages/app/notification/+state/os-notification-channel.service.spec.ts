@@ -1,11 +1,23 @@
-import { NotificationOs } from "@cogno/app-tauri/notification";
+import {
+  NotificationOs,
+  OsNotificationClickListener,
+  OsNotificationTarget,
+} from "@cogno/app-tauri/notification";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../app-bus/app-bus";
 import { OsNotificationChannelService } from "./os-notification-channel.service";
 
 vi.mock("@cogno/app-tauri/notification", () => ({
   NotificationOs: {
-    send: vi.fn<(title: string, body?: string) => Promise<unknown>>(),
+    send: vi.fn<
+      (title: string, body?: string, target?: OsNotificationTarget) => Promise<unknown>
+    >(),
+  },
+  OsNotificationClickListener: {
+    register:
+      vi.fn<
+        (listener: (target: OsNotificationTarget | undefined) => void) => Promise<() => void>
+      >(),
   },
 }));
 
@@ -15,8 +27,51 @@ describe("OsNotificationChannelService", () => {
 
   beforeEach(() => {
     appBus = new AppBus();
-    osNotificationChannelService = new OsNotificationChannelService(appBus);
     vi.mocked(NotificationOs.send).mockReset();
+    vi.mocked(OsNotificationClickListener.register).mockReset();
+    vi.mocked(OsNotificationClickListener.register).mockResolvedValue(() => {});
+    osNotificationChannelService = new OsNotificationChannelService(appBus);
+  });
+
+  it("forwards the notification target to the OS notification", async () => {
+    vi.mocked(NotificationOs.send).mockResolvedValue({ status: "sent" });
+    const target = { workspaceId: "workspace-1", tabId: "tab-1", terminalId: "terminal-1" };
+
+    await osNotificationChannelService.dispatch({
+      notification: {
+        header: "Build completed",
+        body: "All tests passed",
+        target,
+      },
+      settings: {},
+    });
+
+    expect(NotificationOs.send).toHaveBeenCalledWith("Build completed", "All tests passed", target);
+  });
+
+  it("publishes OpenNotificationTarget when an OS notification is clicked", () => {
+    const publishSpy = vi.spyOn(appBus, "publish");
+    const clickListener = vi.mocked(OsNotificationClickListener.register).mock.calls[0]?.[0];
+    const target = { workspaceId: "workspace-1", tabId: "tab-1", terminalId: "terminal-1" };
+
+    clickListener?.(target);
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: ["app", "notification"],
+        type: "OpenNotificationTarget",
+        payload: target,
+      }),
+    );
+  });
+
+  it("ignores OS notification clicks without a target", () => {
+    const publishSpy = vi.spyOn(appBus, "publish");
+    const clickListener = vi.mocked(OsNotificationClickListener.register).mock.calls[0]?.[0];
+
+    clickListener?.(undefined);
+
+    expect(publishSpy).not.toHaveBeenCalled();
   });
 
   it("publishes a warning notification when OS permission is denied", async () => {
