@@ -17,6 +17,8 @@ export class InputHandler implements ITerminalHandler {
     private _terminalId: TerminalId,
     private stateManager: TerminalStateManager,
     private pty: IPty,
+    /** Fired on user-initiated raw writes so the session can scroll back to the prompt. */
+    private onUserInput?: () => void,
   ) {}
 
   dispose(): void {
@@ -37,6 +39,7 @@ export class InputHandler implements ITerminalHandler {
       this._bus.on$({ path: ["app", "terminal"], type: "WriteRawToPty" }).subscribe((event) => {
         if (event.payload?.terminalId !== this._terminalId) return;
         this.pty.write(event.payload.text);
+        this.onUserInput?.();
         if (event.payload.autoExecute) {
           queueMicrotask(() => this.pty.write(Char.Enter));
         }

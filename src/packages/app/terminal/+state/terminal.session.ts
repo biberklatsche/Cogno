@@ -233,6 +233,7 @@ export class TerminalSession {
       this.pty,
       this.stateManager,
       shellDefinition?.lineEditor,
+      () => this.scrollToBottomOnUserInput(),
     );
     this.disposables.push(promptMarkerRegistry);
 
@@ -253,7 +254,9 @@ export class TerminalSession {
     );
     this.disposables.push(
       this.renderer.register(
-        new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty),
+        new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty, () =>
+          this.scrollToBottomOnUserInput(),
+        ),
       ),
     );
 
@@ -449,6 +452,18 @@ export class TerminalSession {
 
   scrollToBottom(): void {
     this.renderer.terminal.scrollToBottom();
+  }
+
+  /**
+   * Scrolls back to the prompt when the user types while scrolled up. xterm
+   * does this on its own for keys it handles (`scrollOnUserInput`); this is
+   * the equivalent for input paths that bypass xterm's key handling, such as
+   * autocomplete inserts, composer submits and line-editor actions.
+   */
+  private scrollToBottomOnUserInput(): void {
+    if (this.configService.config.scrollbar?.scroll_on_user_input ?? true) {
+      this.renderer.terminal.scrollToBottom();
+    }
   }
 
   getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {

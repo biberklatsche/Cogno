@@ -22,7 +22,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   constructor(
     private _bus: AppBus,
-    private _pty: IPty,
+    _pty: IPty,
     private stateManager: TerminalStateManager,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
     private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
@@ -358,7 +358,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   private _ptyWrite(data: string) {
     if (!this._terminal) return;
-    this._pty.write(data);
+    this.inputWriter.writeRaw(data);
   }
 
   private handleVerticalArrow(event: KeyboardEvent): boolean {

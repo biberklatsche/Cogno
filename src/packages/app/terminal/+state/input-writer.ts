@@ -41,12 +41,20 @@ export class TerminalInputWriter {
     private readonly pty: IPty,
     private readonly stateManager: TerminalStateManager,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
+    /**
+     * Invoked on every user-initiated write. Direct keyboard input scrolls
+     * the viewport via xterm's own `scrollOnUserInput`, but writes through
+     * this class bypass xterm's key handling — the session hooks this to
+     * apply the same scroll-to-prompt behavior.
+     */
+    private readonly onUserInput?: () => void,
   ) {}
 
   /** Move the cursor by `offset` columns (negative = left). */
   moveCursor(offset: number): void {
     if (offset === 0) return;
     this.pty.write(buildCursorMoveSequence(offset));
+    this.onUserInput?.();
   }
 
   /**
@@ -57,6 +65,18 @@ export class TerminalInputWriter {
   deleteChars(offsetToRangeEnd: number, count: number): void {
     if (count <= 0) return;
     this.pty.write(buildCursorMoveSequence(offsetToRangeEnd) + "\b".repeat(count));
+    this.onUserInput?.();
+  }
+
+  /**
+   * Writes user-typed raw data (characters, control sequences) to the pty.
+   * Prefer this over `IPty.write` for anything a user gesture produced so
+   * the `onUserInput` hook fires; program-initiated writes (e.g. OSC
+   * responses) must keep using the pty directly.
+   */
+  writeRaw(data: string): void {
+    this.pty.write(data);
+    this.onUserInput?.();
   }
 
   /** True when the shell integration can run `actionId` natively this session. */
@@ -71,6 +91,7 @@ export class TerminalInputWriter {
   /** Dispatch a native line-editor action to the shell integration process. */
   executeNativeAction(actionId: ShellLineEditorActionContract, payload?: object): void {
     this.pty.executeLineEditorAction(actionId, payload);
+    this.onUserInput?.();
   }
 
   /**
@@ -86,6 +107,10 @@ export class TerminalInputWriter {
     // raw path derives its clear sequence from it, and startCommand() resets
     // the state manager's input.
     const currentInput = this.stateManager.input;
+
+    // Notify up front: the raw path's individual writes may all be skipped
+    // when the current input is empty, yet the insert below always happens.
+    this.onUserInput?.();
 
     if (autoExecute) {
       // A real Enter keypress is what normally flips `isCommandRunning` (via

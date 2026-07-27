@@ -89,7 +89,7 @@ export class ClipboardHandler implements ITerminalHandler {
     const ttlSeconds = this.configService.config.clipboard?.image_paste_ttl_seconds ?? 60;
     const filePath = await Clipboard.readImageFromClipboard(ttlSeconds * 1000);
     if (filePath !== null) {
-      this.pty.write(filePath.includes(" ") ? `"${filePath}"` : filePath);
+      this.inputWriter.writeRaw(filePath.includes(" ") ? `"${filePath}"` : filePath);
       return;
     }
 
