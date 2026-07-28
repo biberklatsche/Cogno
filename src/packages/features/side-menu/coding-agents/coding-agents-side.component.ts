@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, signal } from "@angular/core";
-import { TerminalNavigator } from "@cogno/core-api";
+import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { TerminalGateway, TerminalNavigator } from "@cogno/core-api";
 import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
@@ -55,6 +56,7 @@ import { AgentAnimationComponent } from "./agent-animation.component";
               type="button"
               class="agent-card"
               [class]="agent.status"
+              [class.focused]="agent.terminalId === focusedTerminalId()"
               (click)="navigateTo(agent)"
             >
               <div class="agent-animation">
@@ -259,6 +261,13 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
+    .agent-card.focused {
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+      border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+      /* border-color above covers all sides — restore the status stripe. */
+      border-left-color: var(--agent-status-color, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color)));
+    }
+
     .agent-card.working { --agent-status-color: var(--color-blue); }
     .agent-card.ready { --agent-status-color: var(--color-green); }
     .agent-card.question { --agent-status-color: var(--color-yellow); }
@@ -354,6 +363,9 @@ export class CodingAgentsSideComponent {
   readonly activeAgents = this.statusService.activeAgents;
   readonly view = signal<"active" | "detected">("active");
 
+  private readonly focusedTerminalIdSignal = signal<string | undefined>(undefined);
+  readonly focusedTerminalId = this.focusedTerminalIdSignal.asReadonly();
+
   readonly notificationPreferencesState = this.notificationPreferences.state;
 
   get notificationDefinitions() {
@@ -370,7 +382,16 @@ export class CodingAgentsSideComponent {
     private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
     private readonly navigator: TerminalNavigator,
     private readonly contextMenu: ContextMenuOverlayService,
-  ) {}
+    terminalGateway: TerminalGateway,
+    destroyRef: DestroyRef,
+  ) {
+    this.focusedTerminalIdSignal.set(terminalGateway.getFocusedTerminalId());
+    terminalGateway.focusedTerminalId$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((terminalId) => {
+        this.focusedTerminalIdSignal.set(terminalId);
+      });
+  }
 
   showDetected(): void {
     this.view.set("detected");
